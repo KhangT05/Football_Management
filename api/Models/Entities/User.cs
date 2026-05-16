@@ -1,3 +1,5 @@
+using DoAnTotNghiep.API.Models.Entities.Base;
+
 namespace DoAnTotNghiep.API.Models.Entities;
 /// <summary>
 /// Đại diện cho người dùng trên hệ thống
@@ -19,7 +21,7 @@ namespace DoAnTotNghiep.API.Models.Entities;
 ///    - Constructor không tham số cho EF.
 ///    - Constructor có tham số cho logic nghiệp vụ.
 /// </summary>
-public class Users : BaseEntities
+public class User : BaseEntities
 {
     /// <summary>
     /// thông tin tên user
@@ -45,7 +47,7 @@ public class Users : BaseEntities
     /// <param name="email"></param>
     /// <param name="phone"></param>
     /// còn constructor không tham số thì có thể không bắt buộc phải truyền
-    public Users(string name, string password, string email, string phone)
+    public User(string name, string password, string email, string phone)
     {
         Name = name;
         Password = password;

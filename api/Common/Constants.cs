@@ -39,9 +39,7 @@ public static class MaxLength
     /// </summary>
     public static class Name
     {
-        public const int Person = 100; // Họ tên đầy đủ
-        public const int Team = 100; // Tên đội
-        public const int Tournament = 200; // Tên giải đấu
+        public const int Default = 100; // Độ dài chung cho tên
         public const int Short = 50;  // Tên ngắn, nickname
     }
     /// <summary>

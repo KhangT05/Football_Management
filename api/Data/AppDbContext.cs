@@ -6,7 +6,6 @@ namespace DoAnTotNghiep.API.Data;
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-    public DbSet<Users> Users { get; set; }
     #region on model creating
     /// <summary>
     /// Cấu hình model cho toàn bộ hệ thống.
@@ -37,13 +36,41 @@ public class AppDbContext : DbContext
     ///    - Tăng tính tái sử dụng
     ///    - Giảm lặp code
     ///    - Dễ bảo trì và mở rộng hệ thống
+
+    #endregion
+    // User Management
+    public DbSet<User> Users { get; set; }
+    public DbSet<Role> Roles { get; set; }
+    public DbSet<UserRole> UserRoles { get; set; }
+
+    // Tournament Management
+    // public DbSet<Tournament> Tournaments { get; set; }
+    // public DbSet<Season> Seasons { get; set; }
+    // public DbSet<Phase> Phases { get; set; }
+    // public DbSet<TournamentTeam> TournamentTeams { get; set; }
+
+    // Team & Player Management
+    // public DbSet<Team> Teams { get; set; }
+    // public DbSet<Player> Players { get; set; }
+    // public DbSet<TeamPlayer> TeamPlayers { get; set; }
+
+    // Match Management
+    // public DbSet<Match> Matches { get; set; }
+    // public DbSet<MatchEvent> MatchEvents { get; set; }
+    // public DbSet<MatchResult> MatchResults { get; set; }
+
+    // Statistics & Standings
+    // public DbSet<PlayerStatistic> PlayerStatistics { get; set; }
+    // public DbSet<TeamStanding> TeamStandings { get; set; }
+    // public DbSet<BracketSlot> BracketSlots { get; set; }
     /// </summary>
     /// <param name="modelBuilder"></param>
+    /// sử dụng để cấu hình mô hình dữ liệu, bao gồm:
+    /// - Áp dụng tất cả các cấu hình entity từ assembly hiện tại
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-
     }
-    #endregion
 }

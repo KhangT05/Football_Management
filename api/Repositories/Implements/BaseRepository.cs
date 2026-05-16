@@ -1,8 +1,8 @@
 using DoAnTotNghiep.API.Data;
-using DoAnTotNghiep.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using DoAnTotNghiep.API.Common.Exceptions;
 using DoAnTotNghiep.API.Repositories.Interfaces;
+using DoAnTotNghiep.API.Models.Entities.Base;
 namespace DoAnTotNghiep.API.Repositories.Implements;
 
 public class BaseRepository<TEntity> : IBaseRepository<TEntity>
@@ -32,6 +32,27 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity>
 
     public void Update(TEntity entity) => _db.Entry(entity).State = EntityState.Modified;
     public void Remove(TEntity entity) => _dbSet.Remove(entity);
+    public void Restore(TEntity entity)
+    {
+        entity.IsDeleted = false;
+        Update(entity);
+    }
+    public void RemovePermanently(TEntity entity) => _dbSet.Remove(entity);
+    public void RestoreRange(IEnumerable<TEntity> entities)
+    {
+        //foreach (var entity in entities)
+        {//
+         // entity.IsDeleted = false;
+         //Update(entity);
+        }// Cách tối ưu hơn: sử dụng LINQ để cập nhật tất cả các entity trong một lần gọi
+        //foreach (var entity in entities)
+        {
+            //  entity.IsDeleted = false;
+        }// Sau đó, gọi UpdateRange để cập nhật tất cả các entity đã được đánh dấu là không bị xóa
+        //UpdateRange(entities);// Cách tối ưu hơn: sử dụng LINQ để cập nhật
+        //  tất cả các entity trong một lần gọi
+
+    }
 
     // public void UpdateRange(IEnumerable<TEntity> entities)
     // {

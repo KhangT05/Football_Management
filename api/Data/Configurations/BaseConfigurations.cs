@@ -1,4 +1,4 @@
-using DoAnTotNghiep.API.Models.Entities;
+using DoAnTotNghiep.API.Models.Entities.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

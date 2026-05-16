@@ -11,6 +11,10 @@ public class APIResponse<T>
     public object? Error { get; init; }
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     public int StatusCode { get; init; }
+    /// <summary>
+    /// Dùng hashset ở đây là để không trùng,lookup O(1)
+    /// nếu dùng thì sẽ nhanh hơn List.Contains
+    /// </summary>
     private static readonly HashSet<HttpStatusCode> SuccessCode =
     [
         HttpStatusCode.OK, // 200,
