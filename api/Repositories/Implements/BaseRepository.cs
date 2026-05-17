@@ -6,7 +6,7 @@ using DoAnTotNghiep.API.Models.Entities.Base;
 namespace DoAnTotNghiep.API.Repositories.Implements;
 
 public class BaseRepository<TEntity> : IBaseRepository<TEntity>
-    where TEntity : BaseEntities
+    where TEntity : BaseEntity
 {
     protected readonly AppDbContext _db;
     protected readonly DbSet<TEntity> _dbSet;
@@ -34,7 +34,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity>
     public void Remove(TEntity entity) => _dbSet.Remove(entity);
     public void Restore(TEntity entity)
     {
-        entity.IsDeleted = false;
+        // entity.IsDeleted = false;
         Update(entity);
     }
     public void RemovePermanently(TEntity entity) => _dbSet.Remove(entity);

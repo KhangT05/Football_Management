@@ -2,7 +2,7 @@ using DoAnTotNghiep.API.Models.Entities.Base;
 
 namespace DoAnTotNghiep.API.Models.Entities;
 
-public class UserRole : BaseEntities
+public class UserRole
 {
     /// <summary>
     /// Quan hệ nhiều-nhiều giữa User và Role
@@ -12,12 +12,4 @@ public class UserRole : BaseEntities
 
     public User User { get; set; }
     public Role Role { get; set; }
-
-    public UserRole() { }
-
-    public UserRole(int userId, int roleId)
-    {
-        UserId = userId;
-        RoleId = roleId;
-    }
 }

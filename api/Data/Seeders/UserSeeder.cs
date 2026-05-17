@@ -8,7 +8,7 @@ public static class UserSeeder
     public static async Task SeedAsync(AppDbContext db)
     {
         if (await db.Users.AnyAsync()) return;
-        var users = new List<Users>
+        var users = new List<User>
         {
             new("Admin System",
                 BCrypt.Net.BCrypt.HashPassword("Admin@123"),

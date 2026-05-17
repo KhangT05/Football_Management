@@ -3,7 +3,7 @@ using DoAnTotNghiep.API.Models.Entities.Base;
 namespace DoAnTotNghiep.API.Repositories.Interfaces;
 
 public interface IBaseRepository<TEntity>
-where TEntity : BaseEntities
+where TEntity : BaseEntity
 {
     Task<TEntity?> FindAsync(int Id);
     Task<TEntity?> FindOrFailAsync(int Id);

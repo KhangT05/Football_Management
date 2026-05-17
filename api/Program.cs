@@ -4,7 +4,6 @@ using DoAnTotNghiep.API.Data.Seeders;
 using DoAnTotNghiep.API.Middleware;
 using DoAnTotNghiep.API.Repositories.Implements;
 using DoAnTotNghiep.API.Repositories.Interfaces;
-using DoAnTotNghiep.API.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -94,6 +93,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddControllers(opt => opt.Conventions.Add(new ApiRouteConvention("api/v1")));
+
 var app = builder.Build();
 await DataSeeder.SeedAsync(app.Services);
 

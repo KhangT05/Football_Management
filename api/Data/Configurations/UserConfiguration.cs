@@ -10,11 +10,13 @@ public class UserConfiguration : BaseEntityConfiguration<User>
     public override void Configure(EntityTypeBuilder<User> builder)
     {
         base.Configure(builder);
+
         builder.ToTable("Users");
-        builder.Property(e => e.Name).IsRequired(true).HasMaxLength(MaxLength.Name.Default);
-        builder.Property(e => e.Email).IsRequired(true).HasMaxLength(MaxLength.Contact.Email);
-        builder.Property(e => e.Password).IsRequired(true).HasMaxLength(MaxLength.System.Password);
-        builder.Property(e => e.Phone).IsRequired(false).HasMaxLength(MaxLength.Contact.Phone);
+
+        builder.Property(e => e.Name).IsRequired(true).HasMaxLength(MaxLength.Default);
+        builder.Property(e => e.Email).IsRequired(true).HasMaxLength(MaxLength.Short);
+        builder.Property(e => e.Password).IsRequired(true).HasMaxLength(MaxLength.Credential);
+        builder.Property(e => e.Phone).IsRequired(false).HasMaxLength(MaxLength.Phone);
         builder.HasMany(u => u.UserRoles).WithOne(ur => ur.User)
             .HasForeignKey(ur => ur.UserId).OnDelete(DeleteBehavior.Cascade);
     }

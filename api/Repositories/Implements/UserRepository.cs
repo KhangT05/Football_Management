@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DoAnTotNghiep.API.Repositories.Implements;
 
-public class UserRepository : BaseRepository<Users>, IUserRepository
+public class UserRepository : BaseRepository<User>, IUserRepository
 {
-    private readonly DbSet<Users> _user;
+    private readonly DbSet<User> _user;
     public UserRepository(
         AppDbContext db
     ) : base(db)
