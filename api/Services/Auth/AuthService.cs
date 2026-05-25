@@ -20,7 +20,6 @@ namespace Football_Management.API.Services.Auth;
 public class AuthService
 {
     private readonly IUserRepository _userRepo;
-    private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IConfiguration _config;
     private readonly AppDbContext _db;
     private readonly ILogger<AuthService> _logger;
@@ -31,14 +30,12 @@ public class AuthService
 
     public AuthService(
         IUserRepository userRepo,
-        IPasswordHasher<User> passwordHasher,
         IConfiguration config,
         AppDbContext db,
         ILogger<AuthService> logger,
         IMapper mapper)
     {
         _userRepo = userRepo;
-        _passwordHasher = passwordHasher;
         _config = config;
         _db = db;
         _logger = logger;
@@ -64,7 +61,8 @@ public class AuthService
                 throw new ForbiddenException("Email đã được sử dụng.");
 
             var user = _mapper.Map<User>(request);
-            user.Password = _passwordHasher.HashPassword(user, request.Password);
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             await _userRepo.AddAsync(user);
             await _db.SaveChangesAsync();

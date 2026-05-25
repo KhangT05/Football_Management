@@ -2,10 +2,7 @@ using Football_Management.API.Data;
 using Football_Management.API.Data.Seeders;
 using Football_Management.API.Extensions;
 using Football_Management.API.Middleware;
-using Football_Management.API.Models.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -26,9 +23,6 @@ builder.Services.AddAutoMapper(cfg =>
 // DB
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-
-// IDENTITY
-builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"];
