@@ -11,7 +11,8 @@ import ManagePlayers from "./pages/admin/ManagePlayers";
 import UpdateResults from "./pages/admin/UpdateResults";
 import Dashboard from "./pages/admin/Dashboard";
 import Settings from "./pages/admin/Settings";
-import Login from "./pages/admin/Login";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import PublicLayout from "./layouts/PublicLayout";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         </Route>
         {/* Auth Route */}
         <Route path="/quan-ly-giai-dau/dang-nhap" element={<Login />} />
+        <Route path="/dang-ky" element={<Register />} />
         {/* Admin Routes */}
         <Route path="/quan-ly-giai-dau" element={<Dashboard />} />
         <Route path="/quan-ly-giai-dau/tran-dau" element={<ManageMatches />} />
