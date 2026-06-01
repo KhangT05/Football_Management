@@ -39,6 +39,7 @@ public class User : BaseEntity
     /// số diện thoại của users
     /// </summary>
     public string Phone { get; set; }
+    // public Player? Player { get; set; }
     /// <summary>
     /// constructor có tham số, nghĩa là khi tạo tham số thì bắt buộc phải truyền đầy đủ vào object đó
     /// </summary>

@@ -11,6 +11,7 @@ public class FootballManagemenAutoMapper : Profile
         MapUser();
         MapRole();
         MapAuth();
+        MapTournament();
     }
     private void MapUser()
     {
@@ -28,5 +29,10 @@ public class FootballManagemenAutoMapper : Profile
         CreateMap<AuthRegisterRequest, User>()
             .ForMember(dest => dest.Password, opt => opt.Ignore())
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone));
+    }
+    private void MapTournament()
+    {
+        CreateMap<Tournament, TournamentDto>();
+        CreateMap<CreateUpdateTournamentDto, Tournament>();
     }
 }

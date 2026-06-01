@@ -26,7 +26,7 @@ public abstract class BaseController<TEntity, TResponse, TCreateRequest, TUpdate
     }
 
     // ── CRUD ──────────────────────────────────────────────────────
-    [AllowAnonymous]
+    [Authorize]
     [HttpGet]
     public virtual async Task<IActionResult> GetAll()
     {
@@ -41,7 +41,7 @@ public abstract class BaseController<TEntity, TResponse, TCreateRequest, TUpdate
     public virtual async Task<IActionResult> GetById(int id)
     {
         var sw = Stopwatch.StartNew();
-        var result = await Service.GetAllAsync();
+        var result = await Service.GetByIdAsync(id);
         Logger.LogInformation("{Entity} GetAll {Elapsed}ms", typeof(TEntity).Name, sw.ElapsedMilliseconds);
         return Ok(result);
     }

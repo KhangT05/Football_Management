@@ -45,15 +45,15 @@ public class AppDbContext : DbContext
     public DbSet<Role> Roles { get; set; }
 
     // Tournament Management
-    // public DbSet<Tournament> Tournaments { get; set; }
+    public DbSet<Tournament> Tournaments { get; set; }
     // public DbSet<Season> Seasons { get; set; }
     // public DbSet<Phase> Phases { get; set; }
     // public DbSet<SeasonTeam> SeasonTeams { get; set; }
 
     // Team & Player Management
-    public DbSet<Team> Teams { get; set; }
-    public DbSet<Player> Players { get; set; }
-    public DbSet<TeamPlayer> TeamPlayers { get; set; }
+    // public DbSet<Team> Teams { get; set; }
+    // public DbSet<Player> Players { get; set; }
+    // public DbSet<TeamPlayer> TeamPlayers { get; set; }
 
     // Match Management
     // public DbSet<Match> Matches { get; set; }
