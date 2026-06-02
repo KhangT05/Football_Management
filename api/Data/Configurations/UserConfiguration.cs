@@ -3,7 +3,7 @@ using Football_Management.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Football_Management.API.Data.Configuration;
+namespace Football_Management.API.Data.Configurations;
 
 public class UserConfiguration : BaseEntityConfiguration<User>
 {

@@ -1,5 +1,4 @@
 using Football_Management.API.Common;
-using Football_Management.API.Data.Configuration;
 using Football_Management.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -16,7 +15,7 @@ public class TournamentConfiguration : BaseEntityConfiguration<Tournament>
         builder.Property(t => t.Description).HasMaxLength(MaxLength.MaxDesc);
         builder.Property(t => t.Logo).HasMaxLength(MaxLength.Description);
 
-        // builder.HasMany(t => t.Seasons).WithOne(s => s.Tournament)
-        //     .HasForeignKey(s => s.TournamentId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(t => t.Seasons).WithOne(s => s.Tournament)
+            .HasForeignKey(s => s.TournamentId).OnDelete(DeleteBehavior.Cascade);
     }
 }

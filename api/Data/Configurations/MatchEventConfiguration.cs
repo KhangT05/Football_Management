@@ -1,21 +1,57 @@
-// using Football_Management.API.Data.Configuration;
-// using Football_Management.API.Models.Entities;
-// using Microsoft.EntityFrameworkCore;
-// using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Football_Management.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-// namespace Football_Management.API.Data.Configurations;
+namespace Football_Management.API.Data.Configurations;
 
-// public class MatchEventConfiguration : BaseEntityConfiguration<MatchEvent>
-// {
-//     public void Configure(EntityTypeBuilder<MatchEvent> builder)
-//     {
-//         builder.HasKey(me => me.Id);
-//         builder.Property(me => me.EventType).IsRequired().HasMaxLength(50);
-//         builder.Property(me => me.Details).HasMaxLength(500);
-//         builder.Property(me => me.CardColor).HasMaxLength(20);
+// MatchEventConfiguration.cs
+public class MatchEventConfiguration : AuditableEntityConfiguration<MatchEvent>
+{
+    public override void Configure(EntityTypeBuilder<MatchEvent> builder)
+    {
+        base.Configure(builder);
+        builder.ToTable("MatchEvents");
 
-//         builder.HasOne(me => me.Match).WithMany(m => m.MatchEvents).HasForeignKey(me => me.MatchId).OnDelete(DeleteBehavior.Cascade);
-//         builder.HasOne(me => me.Player).WithMany().HasForeignKey(me => me.PlayerId).OnDelete(DeleteBehavior.SetNull);
-//         builder.HasOne(me => me.Team).WithMany().HasForeignKey(me => me.TeamId).OnDelete(DeleteBehavior.SetNull);
-//     }
-// }
+        builder.Property(e => e.EventType)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(e => e.Period)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(e => e.CardColor)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .IsRequired(false);
+
+        builder.Property(e => e.Minute).IsRequired();
+        builder.Property(e => e.AddedMinute).IsRequired(false);
+
+        builder.HasOne(e => e.Match)
+            .WithMany(m => m.MatchEvents)
+            .HasForeignKey(e => e.MatchId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // 3 FK đến Player — đều NoAction
+        builder.HasOne(e => e.Player)
+            .WithMany()
+            .HasForeignKey(e => e.PlayerId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+
+        builder.HasOne(e => e.SubOutPlayer)
+            .WithMany()
+            .HasForeignKey(e => e.SubOutPlayerId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+
+        builder.HasOne(e => e.Team)
+            .WithMany()
+            .HasForeignKey(e => e.TeamId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+    }
+}

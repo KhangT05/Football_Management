@@ -3,7 +3,7 @@ using Football_Management.API.Models.Entities.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Football_Management.API.Data.Configuration;
+namespace Football_Management.API.Data.Configurations;
 
 /// <summary>
 /// Base configuration cho tất cả entity kế thừa <see cref="BaseEntity"/>.

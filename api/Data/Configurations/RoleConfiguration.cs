@@ -1,5 +1,4 @@
 using Football_Management.API.Common;
-using Football_Management.API.Data.Configuration;
 using Football_Management.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

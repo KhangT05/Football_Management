@@ -1,13 +1,19 @@
-export interface BaseEntity {
-    id: number;
-    isActive: boolean;
-    created_at: Date;
-    updated_at: Date | null;
-}
-export interface AuditableEntity extends BaseEntity {
-    createdBy: number | null;
-    updatedBy: number | null;
-    deletedAt: Date | null;
-    deletedBy: number | null;
-    isDeleted: boolean;
-}
+// import {
+//     Column,
+//     CreateDateColumn,
+//     PrimaryGeneratedColumn
+// } from 'typeorm';
+
+// export abstract class BaseEntity {
+//     @PrimaryGeneratedColumn()
+//     id: number;
+
+//     @Column({ default: true })
+//     isActive: boolean;
+
+//     @CreateDateColumn()
+//     created_at: Date;
+
+//     @UpdateDateColumn({ nullable: true })
+//     updated_at: Date | null;
+// }

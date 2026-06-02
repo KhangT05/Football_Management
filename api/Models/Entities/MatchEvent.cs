@@ -1,33 +1,35 @@
-// using Football_Management.API.Models.Entities.Base;
+using Football_Management.API.Common.Enums;
+using Football_Management.API.Models.Entities.Base;
 
-// namespace Football_Management.API.Models.Entities;
+namespace Football_Management.API.Models.Entities;
 
-// public class MatchEvent : AuditableEntity
-// {
-//     public int MatchId { get; set; }
-//     public string EventType { get; set; } // GOAL, CARD (yellow/red), SUBSTITUTION, FULL_TIME
-//     public int Minute { get; set; }
-//     public int? SecondMinute { get; set; }
-//     public int? PlayerId { get; set; }
-//     public int? TeamId { get; set; }
-//     public string Details { get; set; } // e.g., "Yellow Card", "Goal", "Substitution: In: PlayerA, Out: PlayerB"
-//     public string CardColor { get; set; } // YELLOW, RED (if EventType is CARD)
+public class MatchEvent : AuditableEntity
+{
+    public int MatchId { get; set; }
+    public MatchEventType EventType { get; set; }
+    public int Minute { get; set; }
+    public int? AddedMinute { get; set; }
+    public int? PlayerId { get; set; }
+    public int? TeamId { get; set; }
+    public CardColor? CardColor { get; set; }
 
-//     public Match Match { get; set; }
-//     public Player Player { get; set; }
-//     public Team Team { get; set; }
+    public Match Match { get; set; }
+    public Player Player { get; set; }
+    public Team Team { get; set; }
+    public MatchPeriod Period { get; set; }
+    public int? SubOutPlayerId { get; set; }
+    public Player SubOutPlayer { get; set; }
 
-//     public MatchEvent() { }
+    public MatchEvent() { }
 
-//     public MatchEvent(int matchId, string eventType, int minute, int? playerId = null,
-//      int? teamId = null, string? details = null, string? cardColor = null)
-//     {
-//         MatchId = matchId;
-//         EventType = eventType;
-//         Minute = minute;
-//         PlayerId = playerId;
-//         TeamId = teamId;
-//         Details = details;
-//         CardColor = cardColor;
-//     }
-// }
+    public MatchEvent(int matchId, MatchEventType eventType, int minute, int? playerId = null,
+     int? teamId = null, CardColor? cardColor = null)
+    {
+        MatchId = matchId;
+        EventType = eventType;
+        Minute = minute;
+        PlayerId = playerId;
+        TeamId = teamId;
+        CardColor = cardColor;
+    }
+}

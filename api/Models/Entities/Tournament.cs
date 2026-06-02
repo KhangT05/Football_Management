@@ -22,7 +22,7 @@ public class Tournament : AuditableEntity
     public string Logo { get; set; }
     public int MaxTeams { get; set; }
     // Navigation property
-    // public ICollection<Season> Seasons { get; set; } = new List<Season>();
+    public ICollection<Season> Seasons { get; set; } = new List<Season>();
 
     public Tournament() { }
 

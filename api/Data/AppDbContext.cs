@@ -46,24 +46,29 @@ public class AppDbContext : DbContext
 
     // Tournament Management
     public DbSet<Tournament> Tournaments { get; set; }
-    // public DbSet<Season> Seasons { get; set; }
-    // public DbSet<Phase> Phases { get; set; }
-    // public DbSet<SeasonTeam> SeasonTeams { get; set; }
+    public DbSet<Season> Seasons { get; set; }
+    public DbSet<Phase> Phases { get; set; }
+    public DbSet<SeasonTeam> SeasonTeams { get; set; }
 
     // Team & Player Management
-    // public DbSet<Team> Teams { get; set; }
-    // public DbSet<Player> Players { get; set; }
-    // public DbSet<TeamPlayer> TeamPlayers { get; set; }
+    public DbSet<Team> Teams { get; set; }
+    public DbSet<Player> Players { get; set; }
+    public DbSet<TeamPlayer> TeamPlayers { get; set; }
 
     // Match Management
-    // public DbSet<Match> Matches { get; set; }
-    // public DbSet<MatchEvent> MatchEvents { get; set; }
-    // public DbSet<MatchResult> MatchResults { get; set; }
+    public DbSet<Match> Matches { get; set; }
+    public DbSet<MatchEvent> MatchEvents { get; set; }
+    public DbSet<MatchResult> MatchResults { get; set; }
 
     // Statistics & Standings
-    // public DbSet<PlayerStatistic> PlayerStatistics { get; set; }
-    // public DbSet<TeamStanding> TeamStandings { get; set; }
-    // public DbSet<BracketSlot> BracketSlots { get; set; }
+    public DbSet<PlayerStatistic> PlayerStatistics { get; set; }
+    public DbSet<TeamStanding> TeamStandings { get; set; }
+    public DbSet<BracketSlot> BracketSlots { get; set; }
+    public DbSet<Venue> Venues { get; set; }
+    public DbSet<SeasonRule> SeasonRules { get; set; }
+    public DbSet<TournamentDocument> TournamentDocuments { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Payment> Payments { get; set; }
     /// </summary>
     /// <param name="modelBuilder"></param>
     /// sử dụng để cấu hình mô hình dữ liệu, bao gồm:
