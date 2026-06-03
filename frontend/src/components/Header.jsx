@@ -1,11 +1,20 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Information } from '../data/data';
+import useAuthStore from '../store/authStore';
+import { User, ChevronDown, LogOut, UserCircle, Shield, Trophy } from 'lucide-react';
 
 export default function Header() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { isAuthenticated, user, logout } = useAuthStore();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
     
     return(
-        <header className="sticky top-0 z-50 bg-[#003280] border-b border-blue-700 shadow-sm text-white">
+        <header className="sticky top-0 z-50 bg-navy border-b border-navy-light shadow-lg shadow-black/20 text-white">
         <div className="container mx-auto px-4 lg:px-8">
             <div className="flex items-center justify-between h-20">
                 <Link to="/" className="flex items-center gap-3">
@@ -14,7 +23,7 @@ export default function Header() {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
-                        <p className="text-blue-100 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
+                        <p className="text-gray-400 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
                     </div>
                 </Link>
                 
@@ -24,13 +33,59 @@ export default function Header() {
                     <Link to="/bang-xep-hang" className={`${location.pathname === '/bang-xep-hang' ? 'text-white font-bold' : 'text-blue-200 hover:text-white'} transition-colors duration-300`}>Bảng Xếp Hạng</Link>
                 </nav>
                 
-                <div className="flex items-center gap-4">
-                    <Link to="/dang-ky-doi-bong" className="hidden lg:inline-block bg-white text-blue-600 px-6 py-2.5 rounded-lg font-extrabold hover:bg-gray-100 transition-all duration-300 shadow-md text-sm uppercase tracking-wider mr-2">
-                        Đăng Kí Đội
-                    </Link>
-                    <Link to="/quan-ly-giai-dau/dang-nhap" className="bg-transparent border border-white text-white px-6 py-2.5 rounded-lg font-bold hover:bg-white hover:text-blue-600 transition-all duration-300 text-sm uppercase tracking-wider">
-                        Đăng Nhập
-                    </Link>
+                <div className="flex items-center gap-4 relative">
+                    {!isAuthenticated ? (
+                        <>
+                            <Link to="/dang-ky-doi-bong" className="hidden lg:inline-block bg-navy-light text-white px-6 py-2.5 rounded-lg font-bold hover:bg-navy-dark transition-all duration-300 shadow-md text-sm uppercase tracking-wider border border-navy-light mr-2">
+                                Đăng Kí Đội
+                            </Link>
+                            <Link to="/quan-ly-giai-dau/dang-nhap" className="bg-neon/10 border border-neon text-neon px-6 py-2.5 rounded-lg font-bold hover:bg-neon hover:text-navy transition-all duration-300 text-sm uppercase tracking-wider shadow-[0_0_10px_rgba(57,255,20,0.2)]">
+                                Đăng Nhập
+                            </Link>
+                        </>
+                    ) : (
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 bg-navy-light/50 border border-navy-light px-4 py-2 rounded-lg font-medium hover:bg-navy-light transition-colors text-white">
+                                <div className="w-7 h-7 bg-neon/20 rounded-full flex items-center justify-center text-neon font-bold text-xs border border-neon/50">
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                                </div>
+                                <span className="hidden sm:block text-sm font-semibold">{user?.name || 'Tài khoản'}</span>
+                                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            <div className="absolute right-0 mt-2 w-64 bg-navy-dark border border-navy-light rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-2 z-50">
+                                <div className="p-4 border-b border-navy-light">
+                                    <p className="text-sm font-bold text-white">{user?.name || 'Quản trị viên'}</p>
+                                    <p className="text-xs text-gray-400 truncate">{user?.email || 'admin@example.com'}</p>
+                                </div>
+                                <div className="p-2 flex flex-col gap-1">
+                                    <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                                        <UserCircle className="w-4 h-4 text-emerald-400" />
+                                        Thông tin cá nhân
+                                    </Link>
+                                    <Link to="/dang-ky-doi-bong" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                                        <Trophy className="w-4 h-4 text-yellow-400" />
+                                        Đăng ký đội thi đấu
+                                    </Link>
+                                    <Link to="/doi-cua-toi" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                                        <Shield className="w-4 h-4 text-purple-400" />
+                                        Đội bóng của tôi
+                                    </Link>
+                                    <Link to="/quan-ly-giai-dau" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                                        <Shield className="w-4 h-4 text-blue-400" />
+                                        Trang quản trị (Admin)
+                                    </Link>
+                                </div>
+                                <div className="p-2 border-t border-navy-light">
+                                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer">
+                                        <LogOut className="w-4 h-4" />
+                                        Đăng xuất
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

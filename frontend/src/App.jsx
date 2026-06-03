@@ -5,6 +5,8 @@ import LeaderboardTeams from "./pages/LeaderboardTeams";
 import MatchDetail from "./pages/MatchDetail";
 import RegisterTeam from "./pages/RegisterTeam";
 import TeamDetail from "./pages/TeamDetail";
+import Profile from "./pages/Profile";
+import MyTeam from "./pages/MyTeam";
 import ManageMatches from "./pages/admin/ManageMatches";
 import ManageTeams from "./pages/admin/ManageTeams";
 import ManagePlayers from "./pages/admin/ManagePlayers";
@@ -26,6 +28,8 @@ function App() {
           <Route path="/doi-bong/:id" element={<TeamDetail />} />
           <Route path="/tran-dau/:id" element={<MatchDetail />} />
           <Route path="/dang-ky-doi-bong" element={<RegisterTeam />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/doi-cua-toi" element={<MyTeam />} />
         </Route>
         {/* Auth Route */}
         <Route path="/quan-ly-giai-dau/dang-nhap" element={<Login />} />

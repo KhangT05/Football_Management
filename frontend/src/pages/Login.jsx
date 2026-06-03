@@ -16,7 +16,7 @@ export default function Login() {
     clearError();
     const result = await login({ email, password });
     if (result.success) {
-      navigate('/quan-ly-giai-dau');
+      navigate('/');
     }
   };
 
@@ -31,7 +31,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs"></div>
       </div>
 
-      {/* Decorative gradient glowing orbs */}
+      {/* Decorative linear glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -69,7 +69,7 @@ export default function Login() {
               <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Tài khoản / Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
                 <input 
                   type="email" 
@@ -92,7 +92,7 @@ export default function Login() {
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
                 <input 
                   type={showPassword ? "text" : "password"} 
@@ -104,7 +104,7 @@ export default function Login() {
                 />
                 <button 
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-slate-300 transition-colors focus:outline-none"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

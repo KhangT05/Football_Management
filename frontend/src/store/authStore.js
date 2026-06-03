@@ -10,8 +10,14 @@ const useAuthStore = create((set) => ({
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
-      const response = await authApi.login(credentials);
-      // Giả sử API trả về { token: '...', user: {...} }
+      // Tạm thời ngắt kết nối API auth, giả lập đăng nhập thành công
+      // const response = await authApi.login(credentials);
+      
+      const response = { 
+        token: 'mock-token-123', 
+        user: { name: 'Admin', email: credentials?.email || 'admin@example.com' } 
+      };
+
       if (response && response.token) {
         localStorage.setItem('token', response.token);
         set({
@@ -32,7 +38,10 @@ const useAuthStore = create((set) => ({
   register: async (userData) => {
     set({ loading: true, error: null });
     try {
-      const response = await authApi.register(userData);
+      // Tạm thời ngắt kết nối API auth, giả lập đăng ký thành công
+      // const response = await authApi.register(userData);
+      
+      const response = { message: 'Mock register success' };
       set({ loading: false });
       return { success: true, data: response };
     } catch (error) {

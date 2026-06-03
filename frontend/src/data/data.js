@@ -115,12 +115,12 @@ export const initialPlayers = [
 ];
 
 export const HeroData = {
-  textNormal: 'Nơi Đam Mê',
-  textHighlight: 'Chạm Đỉnh Bàn Thắng',
-  active: 'Mùa giải 2026 chính thức khởi tranh',
-  description: 'Hệ thống giải bóng đá sinh viên Khoa Công Nghệ Thông Tin. Theo dõi đội bóng yêu thích, thống kê chi tiết và cập nhật kết quả realtime với phong cách hoàn toàn mới.',
+  textNormal: 'Giải Bóng Đá Sinh Viên',
+  textHighlight: 'Cúp Cao Thắng',
+  active: 'Đồng hành cùng đam mê tuổi trẻ Sinh viên',
+  description: 'Sân chơi thể thao lành mạnh, chuyên nghiệp dành cho sinh viên. Nơi giao lưu học hỏi, rèn luyện thể chất và cháy hết mình cùng đam mê bóng đá.',
   buttonLink: '/lich-thi-dau',
-  imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2670&auto=format&fit=crop',
+  imageUrl: 'https://images.unsplash.com/photo-1519332978332-21b7d621d05e?q=80&w=2670&auto=format&fit=crop',
 };
 
 export const Information = {

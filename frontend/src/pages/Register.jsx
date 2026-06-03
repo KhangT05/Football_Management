@@ -56,7 +56,7 @@ export default function Register() {
         <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs"></div>
       </div>
 
-      {/* Decorative gradient glowing orbs */}
+      {/* Decorative linear glowing orbs */}
       <div className="fixed top-1/4 right-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="fixed bottom-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -102,7 +102,7 @@ export default function Register() {
                 <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Họ và Tên</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <User className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                   </div>
                   <input 
                     type="text" 
@@ -121,7 +121,7 @@ export default function Register() {
                 <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">MSSV</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Fingerprint className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <Fingerprint className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                   </div>
                   <input 
                     type="text" 
@@ -141,7 +141,7 @@ export default function Register() {
               <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
                 <input 
                   type="email" 
@@ -160,7 +160,7 @@ export default function Register() {
               <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Mật khẩu</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
                 <input 
                   type={showPassword ? "text" : "password"} 
@@ -173,7 +173,7 @@ export default function Register() {
                 />
                 <button 
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-slate-300 transition-colors focus:outline-none"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -186,7 +186,7 @@ export default function Register() {
               <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Xác nhận mật khẩu</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
                 <input 
                   type={showConfirmPassword ? "text" : "password"} 
@@ -199,7 +199,7 @@ export default function Register() {
                 />
                 <button 
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-slate-300 transition-colors focus:outline-none"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

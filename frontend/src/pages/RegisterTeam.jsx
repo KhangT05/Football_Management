@@ -92,7 +92,7 @@ export default function RegisterTeam() {
                     <div className="border-2 border-dashed border-slate-600 rounded-2xl p-8 hover:border-emerald-500 hover:bg-slate-800/50 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group">
                        <UploadCloud className="w-10 h-10 text-slate-400 group-hover:text-emerald-400 mb-3 transition-colors" />
                        <p className="text-white font-semibold">Click hoặc Kéo thả ảnh vào đây</p>
-                       <p className="text-xs text-slate-500 mt-1">PNG, JPG tối đa 5MB</p>
+                       <p className="text-xs text-gray-400 mt-1">PNG, JPG tối đa 5MB</p>
                     </div>
                  </div>
               </div>
@@ -178,7 +178,7 @@ export default function RegisterTeam() {
 
            {/* Action Footer */}
            <div className="mt-12 pt-8 border-t border-slate-700">
-              <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl mb-6">
+              <div className="flex items-start gap-3 bg-blue-500/10 border border-navy-light/20 p-4 rounded-xl mb-6">
                  <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                  <p className="text-sm text-slate-300 leading-relaxed">
                     Bằng việc nhấn "Gửi Đơn Đăng Ký", bạn đại diện cho đội bóng cam kết tuân thủ mọi <a href="#" className="text-neon hover:underline">Điều lệ và Quy định</a> của Giải Thể thao điện tử Khoa CNTT hiện đại. Mọi quyết định cuối cùng thuộc về BTC.

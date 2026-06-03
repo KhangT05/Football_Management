@@ -3,9 +3,9 @@ import { Information } from "../data/data";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#003280] border-t border-gray-200 pt-16 pb-8">
+    <footer className="bg-[#003280] border-t border-navy-light pt-16 pb-8">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="grid grid-cols-1 border-b border-gray-200 pb-12">
+        <div className="grid grid-cols-1 border-b border-navy-light pb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
             <div className="space-y-6 max-w-md">
               <div className="flex items-center gap-3">
@@ -26,14 +26,14 @@ export default function Footer() {
               <h4 className="text-black font-bold tracking-wider uppercase mb-4 text-sm">Ban Tổ Chức</h4>
               <p className="text-white text-sm">{Information.organization}</p>
               <p className="text-white text-sm flex items-center md:justify-end gap-2">
-                <MapPin className="w-4 h-4 text-red-600" /> {Information.address}
+                <MapPin className="w-4 h-4 text-red-500" /> {Information.address}
               </p>
               <p className="text-white text-sm">Email: {Information.email}</p>
               <p className="text-white text-sm">Điện thoại: {Information.phone}</p>
             </div>
           </div>
         </div>
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
           <p>&copy; {Information.copyright}</p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-white hover:text-black font-medium transition-colors">Điều khoản</a>
