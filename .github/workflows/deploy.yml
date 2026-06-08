@@ -10,7 +10,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    working-directory: football_management
+
+    defaults:
+      run:
+        working-directory: football_management
     strategy:
       matrix:
         node-version: [20]
