@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: FOOTBALL_MANAGEMENT
+        working-directory: api
     strategy:
       matrix:
         node-version: [20]
@@ -32,7 +32,6 @@ jobs:
 
     - name: Install DI
       run: npm ci
-      working-directory: /api
     
     - name: LINT
       run: npm run lint
