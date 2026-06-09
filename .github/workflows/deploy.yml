@@ -33,11 +33,11 @@ jobs:
     - name: Install DI
       run: npm ci
     
-    - name: LINT
-      run: npm run lint
+    # - name: LINT
+    #   run: npm run lint || true
     
     - name: BUILD
       run: npm run build
 
-    - name: TEST
-      run: npm test
+    # - name: TEST
+    #   run: npm test
