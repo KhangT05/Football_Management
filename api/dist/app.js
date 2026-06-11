@@ -8,6 +8,7 @@ import prisma from "./libs/prisma.js";
 import swaggerUi from "swagger-ui-express";
 import { RegisterRoutes } from "./generated/routes.js";
 import swaggerOutput from "./generated/swagger.json" with { type: "json" };
+import { errorMiddleware } from "./middleware/error.middleware.js";
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -17,16 +18,7 @@ app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerOutput));
 const router = express.Router();
 RegisterRoutes(router);
 app.use("/api/v1/", router);
-import { ValidateError } from "tsoa";
-app.use((err, req, res, next) => {
-    if (err instanceof ValidateError) {
-        return res.status(422).json({ message: "Validation failed", details: err.fields });
-    }
-    if (err instanceof Error) {
-        return res.status(500).json({ message: err.message });
-    }
-    next(err);
-});
+app.use(errorMiddleware);
 const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await prisma.$connect();

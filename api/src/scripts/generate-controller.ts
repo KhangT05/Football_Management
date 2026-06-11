@@ -54,7 +54,7 @@ function pluralize(word: string): string {
 const [, , entityNameArg, ...flags] = process.argv;
 
 if (!entityNameArg) {
-  console.error("Usage: tsx scripts/generate-controller.ts <EntityName> [--no-delete] [--readonly] [--auth] [--paginate] [--force]");
+  console.error("Usage: tsx scripts/generate-controller.ts <EntityName> [--no-delete] [--readonly] [--auth] [--paginate] [--force] [--queryable]");
   process.exit(1);
 }
 
@@ -62,8 +62,10 @@ const entityName = entityNameArg.charAt(0).toUpperCase() + entityNameArg.slice(1
 const noDelete = flags.includes("--no-delete");
 const readonly = flags.includes("--readonly");
 const auth = flags.includes("--auth");
-const paginate = flags.includes("--paginate");
 const force = flags.includes("--force");
+const queryable = flags.includes("--queryable");
+const paginate = !queryable && flags.includes("--paginate");
+
 
 const entityLower = entityName.toLowerCase();
 const routePath = pluralize(entityLower);
@@ -94,6 +96,12 @@ function checkExport(filePath: string, exportName: string): boolean {
 
 const serviceContent = readFileSync(servicePath, "utf8");
 
+const hasSafeType = checkExport(servicePath, `Safe${entityName}`);
+const usesRawPrismaType = checkExport(servicePath, `} from "@prisma/client"`);
+
+if (!hasSafeType && !usesRawPrismaType) {
+  console.warn(`  WARN   No Safe${entityName} or Prisma type found in ${servicePath}`);
+}
 if (!checkExport(servicePath, `Safe${entityName}`)) {
   console.warn(`  WARN   Safe${entityName} not found in ${servicePath} — make sure it's exported`);
 }
@@ -111,33 +119,49 @@ if (!readonly) {
   }
 }
 
-// Detect if service has paginate signature
-const hasPaginateInService = serviceContent.includes("PaginationOpts") ||
-  serviceContent.includes("page:") ||
-  serviceContent.includes("{ page,");
-
 // ─── Controller template ──────────────────────────────────────────────────────
 
 function controllerTemplate(): string {
+  // queryable đã có pagination built-in → usePaginate chỉ cho standalone --paginate
+  const needsPaginatedResult = queryable || paginate;
+
   const tsoaImports = ["Controller", "Get", "Path", "Tags", "Route"];
   if (!readonly) tsoaImports.push("Post", "Patch", "Body", "SuccessResponse");
   if (!readonly && !noDelete) tsoaImports.push("Delete");
-  if (paginate) tsoaImports.push("Query");
+  if (queryable || paginate) tsoaImports.push("Query");
   if (auth) tsoaImports.push("Security");
+
+  const returnType = hasSafeType ? `Safe${entityName}` : entityName;
+
+  const serviceImport = hasSafeType
+    ? `import { ${entityName}Service, type Safe${entityName} } from "../services/${entityLower}.service.js";`
+    : `import { ${entityName}Service } from "../services/${entityLower}.service.js";`;
+
+  const prismaImport = !hasSafeType
+    ? `import type { ${entityName} } from "../generated/prisma/client.js";`
+    : null;
+
+  const paginatedImportPath = queryable
+    ? `"../lib/queryable.js"`
+    : `"../types/pagination.js"`;
 
   const lines: string[] = [
     `import { ${tsoaImports.join(", ")} } from "tsoa";`,
-    `import { ${entityName}Service, type Safe${entityName} } from "../services/${entityLower}.service.js";`,
+    serviceImport,
   ];
+
+  if (prismaImport) lines.push(prismaImport);
 
   if (!readonly) {
     lines.push(`import { type Create${entityName}Dto, type Update${entityName}Dto } from "../dtos/${entityLower}.schema.js";`);
   }
 
-  if (paginate) {
-    lines.push(`import type { PaginatedResult } from "../types/pagination.js";`);
+  if (queryable) {
+    lines.push(`import { PaginatedResult, QueryRequest } from "../libs/queryable.js";`);
   }
-
+  else if (paginate) {
+    lines.push(`import { PaginatedResult } from "../types/pagination.js";`);
+  }
   lines.push(``);
 
   if (auth) lines.push(`@Security("jwt")`);
@@ -148,26 +172,39 @@ function controllerTemplate(): string {
   lines.push(`    super();`);
   lines.push(`  }`);
 
-  if (paginate) {
+  // findAll — 3 variants
+  if (queryable) {
+    lines.push(`
+  @Get("/")
+  async findAll(
+    @Query() page = 1,
+    @Query() per_page = 20,
+    @Query() q?: string,
+    @Query() sort?: string,
+    @Query() direction?: "asc" | "desc"
+  ): Promise<PaginatedResult<${returnType}>> {
+    return this.service.findAll({ page, per_page, q, sort, direction });
+  }`);
+  } else if (paginate) {
     lines.push(`
   @Get("/")
   async findAll(
     @Query() page = 1,
     @Query() limit = 20
-  ): Promise<PaginatedResult<Safe${entityName}>> {
+  ): Promise<PaginatedResult<${returnType}>> {
     return this.service.findAll({ page, limit });
   }`);
   } else {
     lines.push(`
   @Get("/")
-  async findAll(): Promise<Safe${entityName}[]> {
+  async findAll(): Promise<${returnType}[]> {
     return this.service.findAll();
   }`);
   }
 
   lines.push(`
   @Get("{id}")
-  async findById(@Path() id: number): Promise<Safe${entityName}> {
+  async findById(@Path() id: number): Promise<${returnType}> {
     return this.service.findByIdOrFail(id);
   }`);
 
@@ -175,7 +212,7 @@ function controllerTemplate(): string {
     lines.push(`
   @Post("/")
   @SuccessResponse(201, "Created")
-  async create(@Body() body: Create${entityName}Dto): Promise<Safe${entityName}> {
+  async create(@Body() body: Create${entityName}Dto): Promise<${returnType}> {
     this.setStatus(201);
     return this.service.create(body);
   }`);
@@ -185,7 +222,7 @@ function controllerTemplate(): string {
   async update(
     @Path() id: number,
     @Body() body: Update${entityName}Dto
-  ): Promise<Safe${entityName}> {
+  ): Promise<${returnType}> {
     return this.service.update(id, body);
   }`);
   }
@@ -223,7 +260,7 @@ console.log(`\nGenerating controller for: ${entityName}`);
 console.log(`  Route : /${routePath}`);
 console.log(`  Reads : ${servicePath}`);
 if (!readonly) console.log(`  Reads : ${schemaPath}`);
-console.log(`  Flags : readonly=${readonly}, noDelete=${noDelete}, auth=${auth}, paginate=${paginate}, force=${force}\n`);
+console.log(`  Flags : readonly=${readonly}, noDelete=${noDelete}, auth=${auth}, paginate=${paginate}, force=${force}, queryable=${queryable}\n`);
 
 writeFile(
   resolve(CONTROLLERS_DIR, `${entityLower}.controller.ts`),
