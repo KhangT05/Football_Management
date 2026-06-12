@@ -1,15 +1,27 @@
-import { Controller, Post, Get, Route, Tags, Security, Body, Request, SuccessResponse, Header } from 'tsoa';
+import {
+    Controller,
+    Post,
+    Get,
+    Route,
+    Tags,
+    Security,
+    Body,
+    Request,
+    SuccessResponse,
+    Middlewares,
+    Header
+} from 'tsoa';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { AuthService } from '../services/auth.service.js';
 import type { TokenResponseDto, UserPayload } from '../types/auth.types.js';
 import { ApiResponseShape, makeResponse } from '../common/api.response.js';
 import type { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
-import { Middlewares } from 'tsoa';
 import { authLimiter, originGuard } from '../middleware/auth.middleware.js';
 
 const COOKIE_NAME = 'refresh_token';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IS_PROD = process.env.NODE_ENV === 'production';
+const COOKIE_PATH = '/api/v1/auth/refresh';
 
 function setRefreshCookie(res: ExpressResponse, uuid: string) {
     res.cookie(COOKIE_NAME, uuid, {
@@ -17,12 +29,12 @@ function setRefreshCookie(res: ExpressResponse, uuid: string) {
         secure: IS_PROD,
         sameSite: 'lax',
         maxAge: COOKIE_TTL_MS,
-        path: '/auth/refresh',
+        path: COOKIE_PATH,
     });
 }
 
 function clearRefreshCookie(res: ExpressResponse) {
-    res.clearCookie(COOKIE_NAME, { path: '/auth/refresh' });
+    res.clearCookie(COOKIE_NAME, { path: COOKIE_PATH });
 }
 
 @Route('auth')
@@ -42,7 +54,12 @@ export class AuthController extends Controller {
         const tokens = await this.service.login(body);
         setRefreshCookie(res, tokens.refreshTokenUuid);
         return makeResponse<TokenResponseDto>(
-            { accessToken: tokens.accessToken, tokenType: 'Bearer', expiresIn: 900, csrfToken: tokens.csrfToken },
+            {
+                accessToken: tokens.accessToken,
+                tokenType: 'Bearer',
+                expiresIn: 900,
+                csrfToken: tokens.csrfToken
+            },
             'Đăng nhập thành công',
         );
     }
@@ -60,7 +77,12 @@ export class AuthController extends Controller {
         setRefreshCookie(res, tokens.refreshTokenUuid);
         this.setStatus(201);
         return makeResponse<TokenResponseDto>(
-            { accessToken: tokens.accessToken, tokenType: 'Bearer', expiresIn: 900, csrfToken: tokens.csrfToken },
+            {
+                accessToken: tokens.accessToken,
+                tokenType: 'Bearer',
+                expiresIn: 900,
+                csrfToken: tokens.csrfToken
+            },
             'Đăng ký thành công',
         );
     }

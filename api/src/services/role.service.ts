@@ -1,5 +1,5 @@
 import { CreateRoleDto, UpdateRoleDto } from "../dtos/role.schema.js";
-import { Role } from "../generated/prisma/client.js";
+import { PrismaClient, Role } from "../generated/prisma/client.js";
 import prisma from "../libs/prisma.js";
 import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
 
@@ -7,7 +7,9 @@ export class RoleService {
 
     private readonly query: Queryable<Role>;
 
-    constructor() {
+    constructor(
+        private readonly prisma: PrismaClient
+    ) {
         this.query = new Queryable<Role>(prisma.role, {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],

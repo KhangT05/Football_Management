@@ -37,7 +37,7 @@ export const authLimiter = rateLimit({
 export const originGuard = (req: Request, res: Response, next: NextFunction) => {
     const allowed = process.env.APP_ORIGIN ?? 'http://localhost:3000';
     const requestOrigin = (() => {
-        try { return new URL(origin).origin; } catch { return ''; }
+        try { return new URL(req.headers['origin'] ?? '').origin } catch { return ''; }
     })();
     if (allowed !== requestOrigin) {
         res.status(403).json({ message: 'Forbidden origin' });

@@ -1,12 +1,14 @@
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.schema.js";
-import { User } from "../generated/prisma/client.js";
+import { PrismaClient, User } from "../generated/prisma/client.js";
 import bcrypt from "bcrypt";
 import prisma from "../libs/prisma.js";
 
 export type SafeUser = Omit<User, "password">;
 
 export class UserService {
-    constructor() { }
+    constructor(
+        private readonly prisma: PrismaClient
+    ) { }
 
     findAll(): Promise<SafeUser[]> {
         return prisma.user.findMany({

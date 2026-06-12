@@ -14,7 +14,7 @@ export function signAccessToken(user_id: number): string {
 export function verifyAccessToken(token: string): JwtPayload {
     const decoded = jwt.verify(token, SECRET) as unknown as JwtPayload;
     if (typeof decoded != 'object' || decoded == null ||
-        typeof decoded.sub !== 'number' || typeof decoded.guard !== 'string') {
+        typeof decoded.sub !== 'number' || decoded.guard !== 'api') {
         throw new Error('Invalid token payload');
     }
     return decoded;

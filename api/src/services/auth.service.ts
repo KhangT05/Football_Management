@@ -6,20 +6,30 @@ import { createAppError } from '../common/app.error.js';
 import { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
 import { sessionStore } from '../libs/session.js';
 import { signAccessToken } from '../libs/jwt.js';
+import { PrismaClient } from '../generated/prisma/client.js';
 
 export class AuthService {
+    constructor(
+        private readonly prisma: PrismaClient
+    ) {
+
+    }
     async login(dto: LoginDto): Promise<AuthTokens> {
         const user = await prisma.user.findUnique({ where: { email: dto.email } }).catch(() => {
-            throw createAppError('UNAUTHORIZED', 'prisma.user.findUnique failed on login');
+            throw createAppError('UNAUTHORIZED');
         });
 
-        // Không phân biệt "sai email" vs "sai password" — tránh user enumeration
-        if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-            throw createAppError('UNAUTHORIZED', `Login failed for email: ${dto.email}`);
-        }
+        const passwordMatch = user
+            ? await bcrypt.compare(dto.password, user.password)
+            : false;
 
+        // Không phân biệt "sai email" vs "sai password" — tránh user enumeration
+        if (!user || !passwordMatch) {
+            throw createAppError('UNAUTHORIZED');
+        }
+        // console.log(user.is_active);
         if (!user.is_active) {
-            throw createAppError('FORBIDDEN', `Inactive user attempted login: ${user.id}`);
+            throw createAppError('FORBIDDEN');
         }
 
         return this.issueTokens(user.id);
@@ -27,7 +37,7 @@ export class AuthService {
 
     async register(dto: RegisterDto): Promise<AuthTokens> {
         const exists = await prisma.user.findUnique({ where: { email: dto.email } }).catch(() => {
-            throw createAppError('UNAUTHORIZED', 'prisma.user.findUnique failed on register');
+            throw createAppError('UNAUTHORIZED');
         });
 
         if (exists) {
@@ -37,8 +47,11 @@ export class AuthService {
         const hashed = await bcrypt.hash(dto.password, 12);
         const user = await prisma.user.create({
             data: { email: dto.email, password: hashed, name: dto.name },
-        }).catch(() => {
-            throw createAppError('UNAUTHORIZED', 'prisma.user.create failed on register');
+        }).catch((err) => {
+            if (err?.code === 'P2002') {
+                throw createAppError('CONFLICT', 'Email already exists', 'Email đã được sử dụng');
+            }
+            throw createAppError('UNAUTHORIZED');
         });
 
         return this.issueTokens(user.id);

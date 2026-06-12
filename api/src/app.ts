@@ -10,6 +10,7 @@ import { RegisterRoutes } from "./generated/routes.js";
 import swaggerOutput from "./generated/swagger.json" with { type: "json" };
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import cookieParser from "cookie-parser";
+import { connectRedis } from "./libs/redis.js";
 
 const app = express();
 
@@ -38,6 +39,8 @@ const PORT = process.env.PORT ?? 3000;
 
 
 async function bootstrap() {
+
+    await connectRedis();
 
     await prisma.$connect();
 
