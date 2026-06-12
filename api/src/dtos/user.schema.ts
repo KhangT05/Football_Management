@@ -7,11 +7,16 @@ export const createUserSchema = z.object({
     phone: z.string(),
 });
 
-export const updateUserSchema = z.object({
-    name: z.string().min(1).optional(),
-    phone: z.string().optional(),
-    is_active: z.boolean().optional(),
+export const updateUserSchema = createUserSchema
+    .omit({ password: true, email: true })
+    .partial()
+    .extend({
+        // password update tách riêng — không nên update trong cùng profile update
+        roleIds: z.array(z.number().int().positive()).optional(),
+    });
+export const roleIdsSchema = z.object({
+    roleIds: z.array(z.number().int().positive()).min(1),
 });
-
 export type CreateUserDto = z.infer<typeof createUserSchema>;
 export type UpdateUserDto = z.infer<typeof updateUserSchema>;
+export type RoleIdsDto = z.infer<typeof roleIdsSchema>;

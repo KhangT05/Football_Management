@@ -45,19 +45,21 @@ export const originGuard = (req: Request, res: Response, next: NextFunction) => 
     }
     next();
 };
-export async function expressAuthentication(
-    req: Request,
-    securityName: string,
-    _scopes?: string[]
-): Promise<{ user_id: number }> {
-    if (securityName === "api") {
+
+
+export async function expressAuthentication(req: Request, securityName: string): Promise<{ user_id: number }> {
+    console.log('[auth] headers:', req.headers.authorization);
+    if (securityName === "jwt") {
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {
-            throw Object.assign(new Error("Missing access token"), { status: 401 });
+            throw createAppError('UNAUTHORIZED', 'Missing access token'); // dùng AppError thay vì plain Error
         }
-        const token = authHeader.slice(7);
-        const payload = verifyAccessToken(token); // throws nếu invalid
-        return { user_id: payload.sub };
+        try {
+            const payload = verifyAccessToken(authHeader.slice(7));
+            return { user_id: payload.sub };
+        } catch {
+            throw createAppError('UNAUTHORIZED', 'Invalid or expired access token');
+        }
     }
-    throw Object.assign(new Error("Unknown security scheme"), { status: 401 });
+    throw createAppError('FORBIDDEN', 'Unknown security scheme');
 }

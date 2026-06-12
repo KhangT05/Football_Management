@@ -164,7 +164,7 @@ function controllerTemplate(): string {
   }
   lines.push(``);
 
-  if (auth) lines.push(`@Security("api")`);
+  if (auth) lines.push(`@Security("jwt")`);
   lines.push(`@Route("${routePath}")`);
   lines.push(`@Tags("${entityName}s")`);
   lines.push(`export class ${entityName}Controller extends Controller {`);

@@ -1,13 +1,14 @@
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
-import { UserService, type SafeUser } from "../services/user.service.js";
-import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
+import { VenueService } from "../services/venue.service.js";
+import type { Venue } from "../generated/prisma/client.js";
+import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.js";
 import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
 
 @Security("jwt")
-@Route("users")
-@Tags("Users")
-export class UserController extends Controller {
-  constructor(private service: UserService) {
+@Route("venues")
+@Tags("Venues")
+export class VenueController extends Controller {
+  constructor(private service: VenueService) {
     super();
   }
 
@@ -18,18 +19,18 @@ export class UserController extends Controller {
     @Query() q?: string,
     @Query() sort?: string,
     @Query() direction?: "asc" | "desc"
-  ): Promise<PaginatedResult<SafeUser>> {
+  ): Promise<PaginatedResult<Venue>> {
     return this.service.findAll({ page, per_page, q, sort, direction });
   }
 
   @Get("{id}")
-  async findById(@Path() id: number): Promise<SafeUser> {
+  async findById(@Path() id: number): Promise<Venue> {
     return this.service.findByIdOrFail(id);
   }
 
   @Post("/")
   @SuccessResponse(201, "Created")
-  async create(@Body() body: CreateUserDto): Promise<SafeUser> {
+  async create(@Body() body: CreateVenueDto): Promise<Venue> {
     this.setStatus(201);
     return this.service.create(body);
   }
@@ -37,8 +38,8 @@ export class UserController extends Controller {
   @Patch("{id}")
   async update(
     @Path() id: number,
-    @Body() body: UpdateUserDto
-  ): Promise<SafeUser> {
+    @Body() body: UpdateVenueDto
+  ): Promise<Venue> {
     return this.service.update(id, body);
   }
 

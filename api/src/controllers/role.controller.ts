@@ -4,7 +4,7 @@ import type { Role } from "../generated/prisma/client.js";
 import { type CreateRoleDto, type UpdateRoleDto } from "../dtos/role.schema.js";
 import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
 
-@Security("api")
+@Security("jwt")
 @Route("roles")
 @Tags("Roles")
 export class RoleController extends Controller {

@@ -5,13 +5,11 @@
         "src/controllers/*.ts"
     ],
     "spec": {
-        "components": {
-            "securitySchemes": {
-                "api": {
-                    "type": "http",
-                    "scheme": "bearer",
-                    "bearerFormat": "JWT"
-                }
+        "securityDefinitions": {
+            "jwt": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
             }
         },
         "outputDirectory": "src/generated",

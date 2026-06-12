@@ -13,7 +13,7 @@ export class UserService {
         private readonly prisma: PrismaClient
     ) {
         this.query = new Queryable<SafeUser>(prisma.user, {
-            searchFields: ["name", "description"],
+            searchFields: ["name", "email", "phone"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
             filterable: ["is_active"],
