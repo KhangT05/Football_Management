@@ -11,8 +11,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
-import { UserService } from "../services/user.service.js";
-let UserController = class UserController extends Controller {
+import { VenueService } from "../services/venue.service.js";
+let VenueController = class VenueController extends Controller {
     service;
     constructor(service) {
         super();
@@ -46,14 +46,14 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "findAll", null);
+], VenueController.prototype, "findAll", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "findById", null);
+], VenueController.prototype, "findById", null);
 __decorate([
     Post("/"),
     SuccessResponse(201, "Created"),
@@ -61,7 +61,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "create", null);
+], VenueController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
     __param(0, Path()),
@@ -69,7 +69,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "update", null);
+], VenueController.prototype, "update", null);
 __decorate([
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
@@ -77,12 +77,12 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "softDelete", null);
-UserController = __decorate([
+], VenueController.prototype, "softDelete", null);
+VenueController = __decorate([
     Security("jwt"),
-    Route("users"),
-    Tags("Users"),
-    __metadata("design:paramtypes", [UserService])
-], UserController);
-export { UserController };
-//# sourceMappingURL=user.controller.js.map
+    Route("venues"),
+    Tags("Venues"),
+    __metadata("design:paramtypes", [VenueService])
+], VenueController);
+export { VenueController };
+//# sourceMappingURL=venue.controller.js.map

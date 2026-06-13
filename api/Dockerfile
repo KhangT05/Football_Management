@@ -1,5 +1,5 @@
 FROM node:22-alpine AS builder
-WORKDIR /api
+WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
@@ -7,13 +7,12 @@ RUN npx prisma generate
 RUN npm run build
 
 FROM node:22-alpine AS runner
-WORKDIR /api
+WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm ci --omit=dev          
-COPY --from=builder /api/dist ./dist
-COPY --from=builder /api/node_modules ./node_modules
-COPY --from=builder /api/package*.json ./
-COPY --from=builder /api/prisma ./prisma
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
 EXPOSE 3005
-CMD ["node", "dist/index.js"]

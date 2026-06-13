@@ -7,28 +7,16 @@
         "requestBodies": {},
         "responses": {},
         "schemas": {
-            "Pick_User.Exclude_keyofUser.password__": {
+            "DefaultSelection__36_VenuePayload_": {
                 "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "id": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "email": {
-                        "type": "string"
-                    },
-                    "phone": {
-                        "type": "string"
-                    },
-                    "is_active": {
+                    "is_deleted": {
                         "type": "boolean"
                     },
-                    "email_verified": {
-                        "type": "boolean"
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time"
                     },
-                    "email_verified_at": {
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     },
@@ -36,31 +24,39 @@
                         "type": "string",
                         "format": "date-time"
                     },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
                     }
                 },
                 "required": [
-                    "name",
-                    "id",
-                    "email",
-                    "phone",
-                    "is_active",
-                    "email_verified",
-                    "email_verified_at",
+                    "is_deleted",
+                    "deleted_at",
+                    "updated_at",
                     "created_at",
-                    "updated_at"
+                    "is_active",
+                    "address",
+                    "id",
+                    "name"
                 ],
-                "type": "object",
-                "description": "From T, pick a set of properties whose keys are in the union K"
+                "type": "object"
             },
-            "Omit_User.password_": {
-                "$ref": "#/components/schemas/Pick_User.Exclude_keyofUser.password__",
-                "description": "Construct a type with the properties of T except for those in type K."
+            "VenueModel": {
+                "$ref": "#/components/schemas/DefaultSelection__36_VenuePayload_",
+                "description": "Model Venue"
             },
-            "SafeUser": {
-                "$ref": "#/components/schemas/Omit_User.password_"
+            "Venue": {
+                "$ref": "#/components/schemas/VenueModel",
+                "description": "Model Venue"
             },
             "PaginationMeta": {
                 "properties": {
@@ -93,6 +89,115 @@
                 ],
                 "type": "object",
                 "additionalProperties": false
+            },
+            "PaginatedResult_Venue_": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/Venue"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "infer_typeofcreateVenueSchema_": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "address",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "CreateVenueDto": {
+                "$ref": "#/components/schemas/infer_typeofcreateVenueSchema_"
+            },
+            "infer_typeofupdateVenueSchema_": {
+                "properties": {
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateVenueDto": {
+                "$ref": "#/components/schemas/infer_typeofupdateVenueSchema_"
+            },
+            "Pick_User.Exclude_keyofUser.password__": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "email_verified": {
+                        "type": "boolean"
+                    },
+                    "email_verified_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "name",
+                    "id",
+                    "is_active",
+                    "created_at",
+                    "updated_at",
+                    "email",
+                    "phone",
+                    "email_verified",
+                    "email_verified_at"
+                ],
+                "type": "object",
+                "description": "From T, pick a set of properties whose keys are in the union K"
+            },
+            "Omit_User.password_": {
+                "$ref": "#/components/schemas/Pick_User.Exclude_keyofUser.password__",
+                "description": "Construct a type with the properties of T except for those in type K."
+            },
+            "SafeUser": {
+                "$ref": "#/components/schemas/Omit_User.password_"
             },
             "PaginatedResult_SafeUser_": {
                 "properties": {
@@ -141,8 +246,12 @@
             },
             "infer_typeofupdateUserSchema_": {
                 "properties": {
-                    "is_active": {
-                        "type": "boolean"
+                    "role_ids": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
                     },
                     "phone": {
                         "type": "string"
@@ -400,7 +509,13 @@
                 "additionalProperties": false
             }
         },
-        "securitySchemes": {}
+        "securitySchemes": {
+            "jwt": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
     },
     "info": {
         "title": "api",
@@ -411,6 +526,222 @@
         "contact": {}
     },
     "paths": {
+        "/venues": {
+            "get": {
+                "operationId": "FindAll",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult_Venue_"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Venue"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateVenueDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/venues/{id}": {
+            "get": {
+                "operationId": "FindById",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Venue"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "Update",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Venue"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateVenueDto"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "SoftDelete",
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
         "/users": {
             "get": {
                 "operationId": "FindAll",
@@ -429,7 +760,11 @@
                 "tags": [
                     "Users"
                 ],
-                "security": [],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
                 "parameters": [
                     {
                         "in": "query",
@@ -498,7 +833,11 @@
                 "tags": [
                     "Users"
                 ],
-                "security": [],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -530,7 +869,11 @@
                 "tags": [
                     "Users"
                 ],
-                "security": [],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
                 "parameters": [
                     {
                         "in": "path",
@@ -560,7 +903,11 @@
                 "tags": [
                     "Users"
                 ],
-                "security": [],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
                 "parameters": [
                     {
                         "in": "path",
@@ -593,7 +940,11 @@
                 "tags": [
                     "Users"
                 ],
-                "security": [],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
                 "parameters": [
                     {
                         "in": "path",
@@ -627,7 +978,7 @@
                 ],
                 "security": [
                     {
-                        "api": []
+                        "jwt": []
                     }
                 ],
                 "parameters": [
@@ -700,7 +1051,7 @@
                 ],
                 "security": [
                     {
-                        "api": []
+                        "jwt": []
                     }
                 ],
                 "parameters": [],
@@ -736,7 +1087,7 @@
                 ],
                 "security": [
                     {
-                        "api": []
+                        "jwt": []
                     }
                 ],
                 "parameters": [
@@ -770,7 +1121,7 @@
                 ],
                 "security": [
                     {
-                        "api": []
+                        "jwt": []
                     }
                 ],
                 "parameters": [
@@ -807,7 +1158,7 @@
                 ],
                 "security": [
                     {
-                        "api": []
+                        "jwt": []
                     }
                 ],
                 "parameters": [

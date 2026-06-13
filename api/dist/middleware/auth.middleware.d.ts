@@ -9,7 +9,7 @@ declare global {
 export declare function authenticate(req: Request, _res: Response, next: NextFunction): void;
 export declare const authLimiter: import("express-rate-limit").RateLimitRequestHandler;
 export declare const originGuard: (req: Request, res: Response, next: NextFunction) => void;
-export declare function expressAuthentication(req: Request, securityName: string, _scopes?: string[]): Promise<{
+export declare function expressAuthentication(req: Request, securityName: string): Promise<{
     user_id: number;
 }>;
 //# sourceMappingURL=auth.middleware.d.ts.map

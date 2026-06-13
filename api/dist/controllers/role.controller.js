@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], RoleController.prototype, "softDelete", null);
 RoleController = __decorate([
-    Security("api"),
+    Security("jwt"),
     Route("roles"),
     Tags("Roles"),
     __metadata("design:paramtypes", [RoleService])

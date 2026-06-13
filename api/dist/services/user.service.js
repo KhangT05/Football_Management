@@ -1,12 +1,40 @@
+// services/user.service.ts
 import bcrypt from "bcrypt";
 import { Queryable } from "../libs/queryable.js";
+import { createAppError } from "../common/app.error.js";
+import { RelationService } from "../libs/relation.service.js";
+// ─── Projection ───────────────────────────────────────────────────────────────
+const USER_SELECT = {
+    omit: { password: true },
+};
+// ─── Service ──────────────────────────────────────────────────────────────────
 export class UserService {
     prisma;
     query;
+    rolesRelationService = new RelationService({
+        table: "user_role",
+        ownerKey: "user_id",
+        targetKey: "role_id",
+        validateOwner: async (id, db) => {
+            const exists = await db.user.findUnique({ where: { id }, select: { id: true } });
+            if (!exists)
+                throw createAppError("NOT_FOUND", `User ${id} not found`);
+        },
+        validateTargets: async (ids, db) => {
+            const found = await db.role.findMany({
+                where: { id: { in: ids }, is_active: true },
+                select: { id: true },
+            });
+            if (found.length !== ids.length) {
+                const missing = ids.filter((id) => !found.some((r) => r.id === id));
+                throw createAppError("BAD_REQUEST", `Role IDs không hợp lệ: ${missing.join(", ")}`);
+            }
+        },
+    });
     constructor(prisma) {
         this.prisma = prisma;
         this.query = new Queryable(prisma.user, {
-            searchFields: ["name", "description"],
+            searchFields: ["name", "email", "phone"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
             filterable: ["is_active"],
@@ -17,57 +45,84 @@ export class UserService {
             },
         });
     }
+    // ─── Read ──────────────────────────────────────────────────────────────────
     findAll(req = {}) {
-        // return this.prisma.user.findMany({
-        //     where: { is_active: true },
-        //     omit: { password: true },
-        // });
         return this.query.run(req);
     }
     findById(id) {
-        return this.prisma.user.findUnique({
-            where: { id },
-            omit: { password: true },
-        });
+        return this.prisma.user.findUnique({ where: { id }, ...USER_SELECT });
     }
     async findByIdOrFail(id) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
-            omit: { password: true },
-        });
+        const user = await this.findById(id);
         if (!user)
-            throw new Error(`User ${id} not found`);
+            throw createAppError("NOT_FOUND", `User ${id} not found`);
         return user;
     }
+    /** Full record including password — auth only, never expose */
     findByEmail(email) {
         return this.prisma.user.findUnique({ where: { email } });
     }
+    // ─── Write ─────────────────────────────────────────────────────────────────
     async create(data) {
         const existing = await this.findByEmail(data.email);
         if (existing)
-            throw new Error("Email đã tồn tại.");
+            throw createAppError("CONFLICT", `Email ${data.email} already exists`);
         const hashed = await bcrypt.hash(data.password, 10);
         return this.prisma.user.create({
-            data: {
-                ...data,
-                password: hashed,
-            },
-            omit: { password: true },
+            data: { ...data, password: hashed },
+            ...USER_SELECT,
         });
     }
-    update(id, data) {
-        const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
-        return this.prisma.user.update({
-            where: { id },
-            data: clean,
-            omit: { password: true },
-        });
+    async update(id, data) {
+        const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `User ${id} not found`);
+        // Tách role_ids ra — không update trực tiếp qua user.update
+        const { role_ids, ...fields } = data;
+        const patch = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined));
+        return this.prisma.user.update({ where: { id }, data: patch, ...USER_SELECT });
+    }
+    async updatePassword(id, currentPassword, newPassword) {
+        const user = await this.prisma.user.findUnique({ where: { id } });
+        if (!user)
+            throw createAppError("NOT_FOUND", `User ${id} not found`);
+        const valid = await bcrypt.compare(currentPassword, user.password);
+        if (!valid)
+            throw createAppError("UNAUTHORIZED", "Mật khẩu hiện tại không đúng");
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.prisma.user.update({ where: { id }, data: { password: hashed } });
     }
     async softDelete(id) {
-        await this.prisma.user.update({
-            where: { id },
-            data: { is_active: false },
+        const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `User ${id} not found`);
+        await this.prisma.user.update({ where: { id }, data: { is_active: false } });
+    }
+    // ─── Role N-N ──────────────────────────────────────────────────────────────
+    async getRoles(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                user_roles: {
+                    where: { role: { is_active: true } },
+                    select: { role: true },
+                },
+            },
         });
+        if (!user)
+            throw createAppError("NOT_FOUND", `User ${userId} not found`);
+        return user.user_roles.map((ur) => ur.role);
+    }
+    /** Idempotent — skipDuplicates, safe khi gọi nhiều lần */
+    async attachRoles(userId, roleIds) {
+        await this.rolesRelationService.attach(userId, roleIds, this.prisma);
+    }
+    async detachRoles(userId, roleIds) {
+        await this.rolesRelationService.detach(userId, roleIds, this.prisma);
+    }
+    /** Replace toàn bộ role set — wrap $transaction enforce bởi RelationService.sync */
+    async syncRoles(userId, roleIds) {
+        await this.prisma.$transaction((tx) => this.rolesRelationService.sync(userId, roleIds, tx));
     }
 }
 //# sourceMappingURL=user.service.js.map
