@@ -14,7 +14,7 @@ services:
       depends_on:                                  # MISSING: không có depends_on mysql/redis
         - mysql
         - redis
-      networks:
+    networks:
         - app_network
   mysql:
     image: mysql:8.0
