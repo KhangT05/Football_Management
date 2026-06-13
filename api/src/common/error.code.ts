@@ -3,6 +3,7 @@ export const ERROR_REGISTRY = {
     UNAUTHORIZED: { httpStatus: 401, expose: 403, isAuthError: true },
     FORBIDDEN: { httpStatus: 403, expose: 403, isAuthError: true },
     NOT_FOUND: { httpStatus: 404, expose: 403, isAuthError: true },
+    BAD_REQUEST: { httpStatus: 400, expose: 400, isAuthError: false },
 
     // Business logic — expose thật vì cần client handle
     CONFLICT: { httpStatus: 409, expose: 409, isAuthError: false },

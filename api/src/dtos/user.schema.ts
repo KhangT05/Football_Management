@@ -12,10 +12,10 @@ export const updateUserSchema = createUserSchema
     .partial()
     .extend({
         // password update tách riêng — không nên update trong cùng profile update
-        roleIds: z.array(z.number().int().positive()).optional(),
+        role_ids: z.array(z.number().int().positive()).optional(),
     });
 export const roleIdsSchema = z.object({
-    roleIds: z.array(z.number().int().positive()).min(1),
+    role_ids: z.array(z.number().int().positive()).min(1),
 });
 export type CreateUserDto = z.infer<typeof createUserSchema>;
 export type UpdateUserDto = z.infer<typeof updateUserSchema>;

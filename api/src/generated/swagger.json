@@ -246,8 +246,12 @@
 			},
 			"infer_typeofupdateUserSchema_": {
 				"properties": {
-					"is_active": {
-						"type": "boolean"
+					"role_ids": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
 					},
 					"phone": {
 						"type": "string"
