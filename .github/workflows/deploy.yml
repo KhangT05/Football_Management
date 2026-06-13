@@ -124,7 +124,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: IMAGE_API,GHCR_TOKEN,GHCR_USER
+          envs: GHCR_TOKEN,GHCR_USER
           script: |
             set -e
             cd /opt/football_management
@@ -135,4 +135,3 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
-          IMAGE_API: ${{ env.IMAGE_API }}
