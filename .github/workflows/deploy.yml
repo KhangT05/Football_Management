@@ -133,5 +133,5 @@ jobs:
             docker compose up -d --no-build --remove-orphans
             docker image prune -f
         env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
+          GHCR_USER: ${{ github.actor }}
