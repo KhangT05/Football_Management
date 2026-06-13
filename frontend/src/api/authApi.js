@@ -6,10 +6,10 @@ export const authApi = {
     return axiosClient.post('/auth/login', data);
   },
   register: (data) => {
-    // data: { ten, mssv, email, password }
-    return axiosClient.post('/auth/register', data);
+    // map ten to name as expected by backend RegisterDto
+    return axiosClient.post('/auth/register', { name: data.ten, email: data.email, password: data.password });
   },
   getProfile: () => {
-    return axiosClient.get('/auth/profile');
+    return axiosClient.get('/auth/me');
   },
 };
