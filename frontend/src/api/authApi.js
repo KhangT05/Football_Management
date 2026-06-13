@@ -12,4 +12,19 @@ export const authApi = {
   getProfile: () => {
     return axiosClient.get('/auth/me');
   },
+  socialLogin: (provider) => {
+    // provider: 'google' | 'github'
+    // Mock API call to simulate waiting for Backend implementation
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject({
+          response: {
+            data: {
+              message: `Tính năng kết nối ${provider === 'google' ? 'Google' : 'Github'} đang được Backend phát triển.`
+            }
+          }
+        });
+      }, 1000);
+    });
+  },
 };

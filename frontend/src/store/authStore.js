@@ -60,6 +60,22 @@ const useAuthStore = create((set) => ({
     set({ user: null, isAuthenticated: false });
   },
 
+  socialLogin: async (provider) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await authApi.socialLogin(provider);
+      // Logic for successful social login when backend is ready
+      // const token = response.data?.accessToken;
+      // ... same logic as login
+      set({ loading: false });
+      return { success: true };
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || `Có lỗi xảy ra khi kết nối ${provider}.`;
+      set({ error: errorMsg, loading: false });
+      return { success: false, error: errorMsg };
+    }
+  },
+
   clearError: () => set({ error: null })
 }));
 
