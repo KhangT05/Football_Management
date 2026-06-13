@@ -112,3 +112,4 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
+          IMAGE_API: ${{ env.IMAGE_API }}
