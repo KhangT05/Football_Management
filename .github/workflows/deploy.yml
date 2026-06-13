@@ -6,7 +6,7 @@ on:
     branches: [ "master" ]
 
 env:
-  IMAGE_API: ghcr.io/${{ github.repository_owner  }}/football_management
+  IMAGE_API: ghcr.io/${{ github.repository_owner  }}/Football_Management
 
 jobs:
 
@@ -104,7 +104,7 @@ jobs:
   #         envs: IMAGE_API,GHCR_TOKEN,GHCR_USER
   #         script: |
   #           set -e
-  #           cd /opt/football_management
+  #           cd /opt/Football_Management
   #           echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER} --password-stdin
   #           docker compose pull api
   #           docker compose up -d --no-build --remove-orphans api
@@ -127,7 +127,7 @@ jobs:
           username: ${{secrets.VPS_USER}}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.yml"
-          target: /opt/football_management
+          target: /opt/Football_Management
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -138,7 +138,7 @@ jobs:
           envs: GHCR_TOKEN,GHCR_USER
           script: |
             set -e
-            cd /opt/football_management
+            cd /opt/Football_Management
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
             docker compose pull api
             docker compose up -d --no-build --remove-orphans

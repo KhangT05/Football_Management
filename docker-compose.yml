@@ -2,7 +2,7 @@ services:
   api:
     build:
       context: ./api
-    image: ghcr.io/${GITHUB_USERNAME}/football_management:latest
+    image: ghcr.io/${GITHUB_USERNAME}/Football_Management:latest
     # Khởi động lại nếu bị crash hoặc server reboot
     restart: unless-stopped
     ports: 
