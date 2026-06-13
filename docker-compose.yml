@@ -12,6 +12,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET}
+      SWAGGER_ENABLED: true
       # Phụ thuộc vào
     depends_on:                                  # MISSING: không có depends_on mysql/redis
         - mysql
