@@ -13,7 +13,6 @@ import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
 
 const app = express();
-app.set("trust proxy", 1);
 
 app.use(cors({
     origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
