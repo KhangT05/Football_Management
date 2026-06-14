@@ -1,7 +1,6 @@
 import "dotenv/config";
 import "express-async-errors";
 import express from "express";
-import helmet from "helmet";
 import morgan from "morgan";
 import cors from "cors";
 import prisma from "./libs/prisma.js";
@@ -11,8 +10,8 @@ import swaggerOutput from "./generated/swagger.json" with { type: "json" };
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
+import { runSeeders } from "./seeders/index.js";
 const app = express();
-app.use(helmet());
 app.use(cors({
     origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
     credentials: true
@@ -29,6 +28,7 @@ const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await connectRedis();
     await prisma.$connect();
+    await runSeeders(prisma);
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });

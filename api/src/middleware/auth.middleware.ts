@@ -48,7 +48,7 @@ export const originGuard = (req: Request, res: Response, next: NextFunction) => 
 
 
 export async function expressAuthentication(req: Request, securityName: string): Promise<{ user_id: number }> {
-    console.log('[auth] headers:', req.headers.authorization);
+
     if (securityName === "jwt") {
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {

@@ -9,6 +9,7 @@
  *   --no-delete          Omit DELETE endpoint
  *   --readonly           GET only
  *   --auth               Add @Security("jwt")
+ *   --auth-user          Inject userId from JWT into create() via @Request()
  *   --paginate           findAll with @Query page/limit
  *   --queryable          findAll with full query params (overrides --paginate)
  *   --force              Overwrite existing controller
@@ -36,6 +37,12 @@
  * For --relation-service implicit N-N, you also need:
  *   src/dtos/<entity>.schema.ts        — must export <Related>IdsDto per relation
  *   e.g. RoleIdsDto for roles:Role:n-n
+ *
+ * --auth-user:
+ *   Requires Express.Request to be augmented with user: { id: number }
+ *   e.g. in src/types/express.d.ts:
+ *     declare global { namespace Express { interface Request { user?: { id: number } } } }
+ *   Service.create() must accept (data: CreateDto, userId: number)
  */
 
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "fs";
@@ -82,9 +89,9 @@ function singularize(field: string): string {
 // ─── Relation types ───────────────────────────────────────────────────────────
 
 type RelationDef = {
-  field: string;  // e.g. "roles"
-  entity: string;  // e.g. "Role"
-  explicit: boolean; // true = junction table has extra fields
+  field: string;
+  entity: string;
+  explicit: boolean;
 };
 
 function parseRelations(raw: string): RelationDef[] {
@@ -114,7 +121,7 @@ const [, , entityNameArg, ...flags] = process.argv;
 if (!entityNameArg) {
   console.error(
     "Usage: tsx scripts/generate-controller.ts <EntityName> " +
-    "[--no-delete] [--readonly] [--auth] [--paginate] [--queryable] [--force] " +
+    "[--no-delete] [--readonly] [--auth] [--auth-user] [--paginate] [--queryable] [--force] " +
     "[--relation-service] " +
     '[--relations "<field>:<Entity>:n-n[:explicit],..."]'
   );
@@ -125,6 +132,7 @@ const entityName = capitalize(entityNameArg);
 const noDelete = flags.includes("--no-delete");
 const readonly = flags.includes("--readonly");
 const auth = flags.includes("--auth");
+const authUser = flags.includes("--auth-user"); // inject userId from JWT into create()
 const force = flags.includes("--force");
 const queryable = flags.includes("--queryable");
 const paginate = !queryable && flags.includes("--paginate");
@@ -180,6 +188,11 @@ if (!readonly) {
     console.warn(`  WARN   Create${entityName}Dto not found in ${schemaPath}`);
   if (!checkExport(schemaPath, `Update${entityName}Dto`))
     console.warn(`  WARN   Update${entityName}Dto not found in ${schemaPath}`);
+}
+
+// Warn if --auth-user used without --auth
+if (authUser && !auth) {
+  console.warn(`  WARN   --auth-user used without --auth — controller won't have @Security("jwt")`);
 }
 
 for (const rel of relations) {
@@ -349,6 +362,7 @@ function controllerTemplate(): string {
   if (!readonly && !noDelete) tsoaImports.push("Delete");
   if (queryable || paginate) tsoaImports.push("Query");
   if (auth) tsoaImports.push("Security");
+  if (authUser) tsoaImports.push("Request");
 
   const hasImplicitRelations = relations.some((r) => !r.explicit);
   const hasExplicitRelations = relations.some((r) => r.explicit);
@@ -375,8 +389,14 @@ function controllerTemplate(): string {
 
   const lines: string[] = [
     `import { ${tsoaImports.join(", ")} } from "tsoa";`,
-    serviceImport,
   ];
+
+  // Express Request type import — only needed when --auth-user
+  if (authUser) {
+    lines.push(`import type { Request as ExRequest } from "express";`);
+  }
+
+  lines.push(serviceImport);
 
   if (prismaImport) lines.push(prismaImport);
 
@@ -449,13 +469,27 @@ function controllerTemplate(): string {
   }`);
 
   if (!readonly) {
-    lines.push(`
+    // create — two variants depending on --auth-user
+    if (authUser) {
+      lines.push(`
+  @Post("/")
+  @SuccessResponse(201, "Created")
+  async create(
+    @Body() body: Create${entityName}Dto,
+    @Request() req: ExRequest
+  ): Promise<${returnType}> {
+    this.setStatus(201);
+    return this.service.create(body, req.user!.id);
+  }`);
+    } else {
+      lines.push(`
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(@Body() body: Create${entityName}Dto): Promise<${returnType}> {
     this.setStatus(201);
     return this.service.create(body);
   }`);
+    }
 
     lines.push(`
   @Patch("{id}")
@@ -488,9 +522,21 @@ function controllerTemplate(): string {
 // ─── Service stub generator ───────────────────────────────────────────────────
 
 function printServiceStubs(): void {
-  if (relations.length === 0) return;
+  const needsStubs = relations.length > 0 || authUser;
+  if (!needsStubs) return;
 
   console.log(`\n── Service stubs to implement in ${entityLower}.service.ts ──\n`);
+
+  // --auth-user: show create() signature change
+  if (authUser) {
+    console.log(`  // --auth-user: update create() signature to accept userId`);
+    console.log(`  async create(data: Create${entityName}Dto, userId: number): Promise<Safe${entityName}> {`);
+    console.log(`    return this.prisma.${entityLower}.create({`);
+    console.log(`      data: { ...data, user_id: userId },`);
+    console.log(`    });`);
+    console.log(`  }`);
+    console.log(``);
+  }
 
   for (const rel of relations) {
     const field = rel.field;
@@ -614,7 +660,7 @@ console.log(`  Route     : /${routePath}`);
 console.log(`  Service   : ${servicePath}`);
 if (!readonly) console.log(`  Schema    : ${schemaPath}`);
 console.log(
-  `  Flags     : readonly=${readonly}, noDelete=${noDelete}, auth=${auth}, ` +
+  `  Flags     : readonly=${readonly}, noDelete=${noDelete}, auth=${auth}, authUser=${authUser}, ` +
   `paginate=${paginate}, queryable=${queryable}, force=${force}, relationService=${useRelationService}`
 );
 if (relations.length > 0) {
@@ -635,14 +681,21 @@ printServiceStubs();
 
 console.log(`Next steps:`);
 console.log(`  1. Copy service stubs above into ${entityLower}.service.ts`);
-console.log(`  2. Register ${entityName}Controller in ioc.ts`);
-console.log(`  3. npm run tsoa:gen`);
+if (authUser) {
+  console.log(`  2. Ensure Express.Request is augmented with user: { id: number } (src/types/express.d.ts)`);
+  console.log(`  3. Update service.create() to accept (data, userId) and pass user_id to Prisma`);
+  console.log(`  4. Register ${entityName}Controller in ioc.ts`);
+  console.log(`  5. npm run tsoa:gen`);
+} else {
+  console.log(`  2. Register ${entityName}Controller in ioc.ts`);
+  console.log(`  3. npm run tsoa:gen`);
+}
 if (relations.some((r) => r.explicit)) {
-  console.log(`  4. Verify Prisma @@id([${entityLower}Id, relatedId]) on junction model`);
-  console.log(`     and compound unique key name matches update/delete where clause`);
+  console.log(`  • Verify Prisma @@id([${entityLower}Id, relatedId]) on junction model`);
+  console.log(`    and compound unique key name matches update/delete where clause`);
 }
 if (useRelationService) {
-  console.log(`  5. Verify RelationService config: table name, ownerKey, targetKey`);
-  console.log(`     validateOwner / validateTargets throw AppException, not raw Error`);
+  console.log(`  • Verify RelationService config: table name, ownerKey, targetKey`);
+  console.log(`    validateOwner / validateTargets throw AppException, not raw Error`);
 }
 console.log(``);
