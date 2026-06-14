@@ -4,14 +4,6 @@
   - You are about to drop the `userrole` table. If the table is not empty, all the data it contains will be lost.
 
 */
--- DropForeignKey
-ALTER TABLE `userrole` DROP FOREIGN KEY `UserRole_roleId_fkey`;
-
--- DropForeignKey
-ALTER TABLE `userrole` DROP FOREIGN KEY `UserRole_userId_fkey`;
-
--- DropTable
-DROP TABLE `UserRole`;
 
 -- CreateTable
 CREATE TABLE `User_Role` (
