@@ -9,6 +9,7 @@
  *   --no-delete          Omit DELETE endpoint
  *   --readonly           GET only
  *   --auth               Add @Security("jwt")
+ *   --auth-user          Inject userId from JWT into create() via @Request()
  *   --paginate           findAll with @Query page/limit
  *   --queryable          findAll with full query params (overrides --paginate)
  *   --force              Overwrite existing controller
@@ -36,6 +37,12 @@
  * For --relation-service implicit N-N, you also need:
  *   src/dtos/<entity>.schema.ts        — must export <Related>IdsDto per relation
  *   e.g. RoleIdsDto for roles:Role:n-n
+ *
+ * --auth-user:
+ *   Requires Express.Request to be augmented with user: { id: number }
+ *   e.g. in src/types/express.d.ts:
+ *     declare global { namespace Express { interface Request { user?: { id: number } } } }
+ *   Service.create() must accept (data: CreateDto, userId: number)
  */
 export {};
 //# sourceMappingURL=generate-controller.d.ts.map

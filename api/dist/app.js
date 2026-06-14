@@ -10,7 +10,6 @@ import swaggerOutput from "./generated/swagger.json" with { type: "json" };
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
-import { runSeeders } from "./seeders/index.js";
 const app = express();
 app.use(cors({
     origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
@@ -28,7 +27,7 @@ const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await connectRedis();
     await prisma.$connect();
-    await runSeeders(prisma);
+    // await runSeeders(prisma);
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });

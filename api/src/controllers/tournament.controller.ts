@@ -1,8 +1,10 @@
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import type { Request as ExRequest } from "express";
+type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentService } from "../services/tournament.service.js";
 import type { Tournament } from "../generated/prisma/client.js";
 import { type CreateTournamentDto, type UpdateTournamentDto } from "../dtos/tournament.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult } from "../libs/queryable.js";
 
 @Security("jwt")
 @Route("tournaments")
@@ -30,9 +32,13 @@ export class TournamentController extends Controller {
 
   @Post("/")
   @SuccessResponse(201, "Created")
-  async create(@Body() body: CreateTournamentDto): Promise<Tournament> {
+  async create(
+    @Body() body: CreateTournamentDto,
+    @Request() req: AuthRequest
+  ): Promise<Tournament> {
     this.setStatus(201);
-    return this.service.create(body);
+    console.log(req.user.user_id);
+    return this.service.create(body, req.user.user_id);
   }
 
   @Patch("{id}")

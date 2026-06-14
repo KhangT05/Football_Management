@@ -79,15 +79,16 @@ export class AuthService {
         if (refreshTokenUuid) await sessionStore.del(refreshTokenUuid);
     }
 
-    async getMe(user_id: number): Promise<UserPayload> {
+    async getMe(id: number): Promise<UserPayload> {
+
         const user = await this.prisma.user.findUnique({
-            where: { id: user_id },
+            where: { id: id },
             select: { id: true, name: true, email: true },
         }).catch(() => {
-            throw createAppError('UNAUTHORIZED', `this.prisma.user.findUnique failed for user_id: ${user_id}`);
+            throw createAppError('UNAUTHORIZED', `this.prisma.user.findUnique failed for id: ${id}`);
         });
 
-        if (!user) throw createAppError('NOT_FOUND', `User not found: ${user_id}`);
+        if (!user) throw createAppError('NOT_FOUND', `User not found: ${id}`);
         return user;
     }
 
