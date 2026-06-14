@@ -33,7 +33,7 @@ const VENUES = [
     "Sân bóng Pro League",
 ];
 
-export async function seedVenues(db: PrismaClient) {
+export async function seedVenues(db: PrismaClient): Promise<void> {
     const venues = VENUES.map((name, index) => ({
         name,
         address: `Địa chỉ ${index + 1}, TP.HCM`,
