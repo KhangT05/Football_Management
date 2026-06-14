@@ -40,9 +40,9 @@ export class TournamentService {
         return tournament;
     }
 
-    async create(data: CreateTournamentDto): Promise<Tournament> {
+    async create(data: CreateTournamentDto, userId: number): Promise<Tournament> {
         return this.prisma.tournament.create({
-            data: data
+            data: { ...data, user_id: userId }
         });
     }
 

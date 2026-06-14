@@ -17,6 +17,7 @@ import type { TokenResponseDto, UserPayload } from '../types/auth.types.js';
 import { ApiResponseShape, makeResponse } from '../common/api.response.js';
 import type { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
 import { authLimiter, originGuard } from '../middleware/auth.middleware.js';
+type AuthRequest = ExpressRequest & { user: { user_id: number } };
 
 const COOKIE_NAME = 'refresh_token';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -115,9 +116,8 @@ export class AuthController extends Controller {
 
     @Get('/me')
     @Security('jwt')
-    async me(@Request() req: ExpressRequest): Promise<ApiResponseShape<UserPayload>> {
-        const user_id = (req as any).user_id as number;
-        const user = await this.service.getMe(user_id);
+    async me(@Request() req: AuthRequest): Promise<ApiResponseShape<UserPayload>> {
+        const user = await this.service.getMe(req.user.user_id);
         return makeResponse<UserPayload>(user, 'OK');
     }
 }

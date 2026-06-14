@@ -394,6 +394,7 @@ function controllerTemplate(): string {
   // Express Request type import — only needed when --auth-user
   if (authUser) {
     lines.push(`import type { Request as ExRequest } from "express";`);
+    lines.push(`type AuthRequest = ExRequest & { user: { id: number } };`);
   }
 
   lines.push(serviceImport);
@@ -476,10 +477,10 @@ function controllerTemplate(): string {
   @SuccessResponse(201, "Created")
   async create(
     @Body() body: Create${entityName}Dto,
-    @Request() req: ExRequest
+    @Request() req: AuthRequest
   ): Promise<${returnType}> {
     this.setStatus(201);
-    return this.service.create(body, req.user!.id);
+    return this.service.create(body, req.user.id);
   }`);
     } else {
       lines.push(`

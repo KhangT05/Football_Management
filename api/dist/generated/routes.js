@@ -614,6 +614,7 @@ export function RegisterRoutes(app) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreateTournamentDto" },
+        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
     app.post('/tournaments', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.create)), async function TournamentController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

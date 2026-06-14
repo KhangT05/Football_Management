@@ -32,9 +32,9 @@ export class TournamentService {
             throw new Error(`tournament ${id} not found`);
         return tournament;
     }
-    async create(data) {
+    async create(data, userId) {
         return this.prisma.tournament.create({
-            data: data
+            data: { ...data, user_id: userId }
         });
     }
     async update(id, data) {

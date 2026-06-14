@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
 import { TournamentService } from "../services/tournament.service.js";
 let TournamentController = class TournamentController extends Controller {
     service;
@@ -24,9 +24,9 @@ let TournamentController = class TournamentController extends Controller {
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
-    async create(body) {
+    async create(body, req) {
         this.setStatus(201);
-        return this.service.create(body);
+        return this.service.create(body, req.user.id);
     }
     async update(id, body) {
         return this.service.update(id, body);
@@ -58,8 +58,9 @@ __decorate([
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
+    __param(1, Request()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "create", null);
 __decorate([

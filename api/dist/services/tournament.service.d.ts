@@ -8,7 +8,7 @@ export declare class TournamentService {
     findAll(req?: QueryRequest): Promise<PaginatedResult<Tournament>>;
     findById(id: number): Promise<Tournament | null>;
     findByIdOrFail(id: number): Promise<Tournament>;
-    create(data: CreateTournamentDto): Promise<Tournament>;
+    create(data: CreateTournamentDto, userId: number): Promise<Tournament>;
     update(id: number, data: UpdateTournamentDto): Promise<Tournament>;
     softDelete(id: number): Promise<void>;
 }
