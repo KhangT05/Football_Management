@@ -18,6 +18,8 @@ import { expressAuthentication } from './../middleware/auth.middleware.js';
 import { iocContainer } from './../libs/ioc.js';
 import type { IocContainer, IocContainerFactory } from '@tsoa/runtime';
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
+import multer from 'multer';
+
 
 const expressAuthenticationRecasted = expressAuthentication as (req: ExRequest, securityName: string, scopes?: string[], res?: ExResponse) => Promise<any>;
 
@@ -149,16 +151,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofcreateTournamentSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"logo":{"dataType":"string"},"description":{"dataType":"string"},"is_active":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateTournamentDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofcreateTournamentSchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateTournamentSchema_": {
         "dataType": "refAlias",
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"is_active":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"logo":{"dataType":"string"},"description":{"dataType":"string"},"name":{"dataType":"string"}},"validators":{}},
@@ -284,13 +276,14 @@ const templateService = new ExpressTemplateService(models, {"noImplicitAdditiona
 
 
 
-export function RegisterRoutes(app: Router) {
+export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof multer>}) {
 
     // ###########################################################################################################
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
 
+    const upload = opts?.multer ||  multer({"limits":{"fileSize":8388608}});
 
     
         const argsVenueController_findAll: Record<string, TsoaRoute.ParameterSchema> = {
@@ -740,11 +733,20 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsTournamentController_create: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"CreateTournamentDto"},
+                name: {"in":"formData","name":"name","required":true,"dataType":"string"},
+                description: {"in":"formData","name":"description","required":true,"dataType":"string"},
+                max_teams: {"in":"formData","name":"max_teams","required":true,"dataType":"string"},
+                logo: {"in":"formData","name":"logo","required":true,"dataType":"file"},
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/tournaments',
             authenticateMiddleware([{"jwt":[]}]),
+            upload.fields([
+                {
+                    name: "logo",
+                    maxCount: 1
+                }
+            ]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.create)),
 

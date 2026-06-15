@@ -24,6 +24,11 @@
         "routesDir": "src/generated",
         "iocModule": "src/libs/ioc",
         "esm": true,
-        "authenticationModule": "./src/middleware/auth.middleware.ts"
+        "authenticationModule": "./src/middleware/auth.middleware.ts",
+        "multerOpts": {
+            "limits": {
+                "fileSize": 5242880
+            }
+        }
     }
 }

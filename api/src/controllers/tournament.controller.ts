@@ -1,10 +1,11 @@
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, UploadedFile, FormField } from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentService } from "../services/tournament.service.js";
 import type { Tournament } from "../generated/prisma/client.js";
 import { type CreateTournamentDto, type UpdateTournamentDto } from "../dtos/tournament.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { storageService } from "../services/storage.service.js";
 
 @Security("jwt")
 @Route("tournaments")
@@ -33,12 +34,31 @@ export class TournamentController extends Controller {
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(
-    @Body() body: CreateTournamentDto,
+    @FormField() name: string,
+    @FormField() description: string,
+    @FormField() max_teams: string,   // FormField luôn là string, parse sau
+    @UploadedFile("logo") logo: Express.Multer.File | undefined,
     @Request() req: AuthRequest
   ): Promise<Tournament> {
     this.setStatus(201);
-    console.log(req.user.user_id);
-    return this.service.create(body, req.user.user_id);
+
+    let logo_url: string | undefined;
+    if (logo) {
+      const result = await storageService.upload({
+        namespace: "tournaments",
+        kind: "logo",
+        file: logo,
+      });
+      logo_url = result.url;
+    }
+
+    return this.service.create({
+      name,
+      description,
+      logo: logo_url,
+      max_teams: parseInt(max_teams, 10),
+      is_active: true,
+    }, req.user.user_id);
   }
 
   @Patch("{id}")

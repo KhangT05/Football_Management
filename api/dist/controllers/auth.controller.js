@@ -73,8 +73,7 @@ let AuthController = class AuthController extends Controller {
         this.setStatus(204);
     }
     async me(req) {
-        const user_id = req.user_id;
-        const user = await this.service.getMe(user_id);
+        const user = await this.service.getMe(req.user.user_id);
         return makeResponse(user, 'OK');
     }
 };

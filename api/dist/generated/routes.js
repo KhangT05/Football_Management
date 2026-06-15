@@ -12,6 +12,7 @@ import { AuthController } from './../controllers/auth.controller.js';
 import { expressAuthentication } from './../middleware/auth.middleware.js';
 // @ts-ignore - no great way to install types from subpackage
 import { iocContainer } from './../libs/ioc.js';
+import multer from 'multer';
 const expressAuthenticationRecasted = expressAuthentication;
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 const models = {
@@ -139,16 +140,6 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofcreateTournamentSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "logo": { "dataType": "string" }, "description": { "dataType": "string" }, "is_active": { "dataType": "boolean", "required": true }, "max_teams": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateTournamentDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofcreateTournamentSchema_", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateTournamentSchema_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "max_teams": { "dataType": "double" }, "logo": { "dataType": "string" }, "description": { "dataType": "string" }, "name": { "dataType": "string" } }, "validators": {} },
@@ -269,11 +260,12 @@ const models = {
 };
 const templateService = new ExpressTemplateService(models, { "noImplicitAdditionalProperties": "throw-on-extras", "bodyCoercion": true });
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-export function RegisterRoutes(app) {
+export function RegisterRoutes(app, opts) {
     // ###########################################################################################################
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
+    const upload = opts?.multer || multer({ "limits": { "fileSize": 8388608 } });
     const argsVenueController_findAll = {
         page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
         per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
@@ -613,10 +605,18 @@ export function RegisterRoutes(app) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentController_create = {
-        body: { "in": "body", "name": "body", "required": true, "ref": "CreateTournamentDto" },
+        name: { "in": "formData", "name": "name", "required": true, "dataType": "string" },
+        description: { "in": "formData", "name": "description", "required": true, "dataType": "string" },
+        max_teams: { "in": "formData", "name": "max_teams", "required": true, "dataType": "string" },
+        logo: { "in": "formData", "name": "logo", "required": true, "dataType": "file" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
-    app.post('/tournaments', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.create)), async function TournamentController_create(request, response, next) {
+    app.post('/tournaments', authenticateMiddleware([{ "jwt": [] }]), upload.fields([
+        {
+            name: "logo",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.create)), async function TournamentController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {

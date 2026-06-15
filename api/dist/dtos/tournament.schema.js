@@ -1,4 +1,3 @@
-// models/tournament.model.ts
 import { z } from "zod";
 export const createTournamentSchema = z.object({
     name: z.string().max(255),

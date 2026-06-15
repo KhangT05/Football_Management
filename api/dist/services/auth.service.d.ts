@@ -8,7 +8,7 @@ export declare class AuthService {
     register(dto: RegisterDto): Promise<AuthTokens>;
     refresh(refreshTokenUuid: string | undefined, csrfHeader: string | undefined): Promise<AuthTokens>;
     logout(refreshTokenUuid: string | undefined): Promise<void>;
-    getMe(user_id: number): Promise<UserPayload>;
+    getMe(id: number): Promise<UserPayload>;
     private issueTokens;
 }
 //# sourceMappingURL=auth.service.d.ts.map
