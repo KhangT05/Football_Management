@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
 export default function Login() {
@@ -9,6 +9,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
   const { login, socialLogin, loading, error, clearError } = useAuthStore();
   const [socialLoadingProvider, setSocialLoadingProvider] = useState(null);
 
@@ -17,7 +19,7 @@ export default function Login() {
     clearError();
     const result = await login({ email, password });
     if (result.success) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
   };
 
