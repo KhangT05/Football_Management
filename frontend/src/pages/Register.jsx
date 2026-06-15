@@ -103,44 +103,22 @@ export default function Register() {
           )}
 
           <form onSubmit={handleRegister} className="space-y-4">
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name Field */}
-              <div className="space-y-1.5 group">
-                <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Họ và Tên</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                  </div>
-                  <input 
-                    type="text" 
-                    name="ten"
-                    required
-                    value={formData.ten}
-                    onChange={handleChange}
-                    placeholder="Nguyễn Văn A" 
-                    className="block w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700/70 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-                  />
+            {/* Name Field */}
+            <div className="space-y-1.5 group">
+              <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">Họ và Tên</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
-              </div>
-
-              {/* MSSV Field */}
-              <div className="space-y-1.5 group">
-                <label className="block text-sm font-semibold text-slate-300 group-focus-within:text-emerald-400 transition-colors">MSSV</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Fingerprint className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                  </div>
-                  <input 
-                    type="text" 
-                    name="mssv"
-                    required
-                    value={formData.mssv}
-                    onChange={handleChange}
-                    placeholder="20T102xxxx" 
-                    className="block w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700/70 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  name="ten"
+                  required
+                  value={formData.ten}
+                  onChange={handleChange}
+                  placeholder="Nguyễn Văn A" 
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700/70 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
+                />
               </div>
             </div>
 

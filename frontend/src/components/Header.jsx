@@ -1,94 +1,220 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Information } from '../data/data';
 import useAuthStore from '../store/authStore';
-import { User, ChevronDown, LogOut, UserCircle, Shield, Trophy } from 'lucide-react';
+import {
+  User, ChevronDown, LogOut, UserCircle, Shield, Trophy,
+  Menu, X, CalendarDays, BarChart3, Home
+} from 'lucide-react';
 
 export default function Header() {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { isAuthenticated, user, logout } = useAuthStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
-    
-    return(
-        <header className="sticky top-0 z-50 bg-navy border-b border-navy-light shadow-lg shadow-black/20 text-white">
-        <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex items-center justify-between h-20">
-                <Link to="/" className="flex items-center gap-3">
-                    <div className="">
-                        <img src={Information.imgUrl} alt="" className='w-12 h-12 text-white rounded-full' />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
-                        <p className="text-gray-400 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
-                    </div>
-                </Link>
-                
-                <nav className="hidden md:flex items-center gap-8 font-medium">
-                    <Link to="/" className={`${location.pathname === '/' ? 'text-white font-bold' : 'text-blue-200 hover:text-white'} transition-colors duration-300`}>Trang Chủ</Link>
-                    <Link to="/lich-thi-dau" className={`${location.pathname === '/lich-thi-dau' ? 'text-white font-bold' : 'text-blue-200 hover:text-white'} transition-colors duration-300`}>Lịch Thi Đấu</Link>
-                    <Link to="/bang-xep-hang" className={`${location.pathname === '/bang-xep-hang' ? 'text-white font-bold' : 'text-blue-200 hover:text-white'} transition-colors duration-300`}>Bảng Xếp Hạng</Link>
-                </nav>
-                
-                <div className="flex items-center gap-4 relative">
-                    {!isAuthenticated ? (
-                        <>
-                            <Link to="/dang-ky-doi-bong" className="hidden lg:inline-block bg-navy-light text-white px-6 py-2.5 rounded-lg font-bold hover:bg-navy-dark transition-all duration-300 shadow-md text-sm uppercase tracking-wider border border-navy-light mr-2">
-                                Đăng Kí Đội
-                            </Link>
-                            <Link to="/quan-ly-giai-dau/dang-nhap" className="bg-neon/10 border border-neon text-neon px-6 py-2.5 rounded-lg font-bold hover:bg-neon hover:text-navy transition-all duration-300 text-sm uppercase tracking-wider shadow-[0_0_10px_rgba(57,255,20,0.2)]">
-                                Đăng Nhập
-                            </Link>
-                        </>
-                    ) : (
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 bg-navy-light/50 border border-navy-light px-4 py-2 rounded-lg font-medium hover:bg-navy-light transition-colors text-white">
-                                <div className="w-7 h-7 bg-neon/20 rounded-full flex items-center justify-center text-neon font-bold text-xs border border-neon/50">
-                                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
-                                </div>
-                                <span className="hidden sm:block text-sm font-semibold">{user?.name || 'Tài khoản'}</span>
-                                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
-                            </button>
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    navigate('/');
+  };
 
-                            {/* Dropdown Menu */}
-                            <div className="absolute right-0 mt-2 w-64 bg-navy-dark border border-navy-light rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-2 z-50">
-                                <div className="p-4 border-b border-navy-light">
-                                    <p className="text-sm font-bold text-white">{user?.name || 'Quản trị viên'}</p>
-                                    <p className="text-xs text-gray-400 truncate">{user?.email || 'admin@example.com'}</p>
-                                </div>
-                                <div className="p-2 flex flex-col gap-1">
-                                    <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                                        <UserCircle className="w-4 h-4 text-emerald-400" />
-                                        Thông tin cá nhân
-                                    </Link>
-                                    <Link to="/dang-ky-doi-bong" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                                        <Trophy className="w-4 h-4 text-yellow-400" />
-                                        Đăng ký đội thi đấu
-                                    </Link>
-                                    <Link to="/doi-cua-toi" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                                        <Shield className="w-4 h-4 text-purple-400" />
-                                        Đội bóng của tôi
-                                    </Link>
-                                    <Link to="/quan-ly-giai-dau" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                                        <Shield className="w-4 h-4 text-blue-400" />
-                                        Trang quản trị (Admin)
-                                    </Link>
-                                </div>
-                                <div className="p-2 border-t border-navy-light">
-                                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer">
-                                        <LogOut className="w-4 h-4" />
-                                        Đăng xuất
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+  const isActive = (path) => location.pathname === path;
+
+  const navLinks = [
+    { to: '/', label: 'Trang Chủ', icon: Home },
+    { to: '/lich-thi-dau', label: 'Lịch Thi Đấu', icon: CalendarDays },
+    { to: '/bang-xep-hang', label: 'Bảng Xếp Hạng', icon: BarChart3 },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 bg-navy border-b border-navy-light shadow-lg shadow-black/20 text-white">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 shrink-0" onClick={() => setMobileOpen(false)}>
+            <div>
+              <img src={Information.imgUrl} alt="" className='w-12 h-12 text-white rounded-full' />
             </div>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
+              <p className="text-gray-400 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
+            </div>
+          </Link>
+
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1 font-medium">
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`relative px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 group ${
+                  isActive(to)
+                    ? 'text-white bg-navy-light'
+                    : 'text-blue-200 hover:text-white hover:bg-navy-light/60'
+                }`}
+              >
+                {label}
+                {/* Active underline */}
+                {isActive(to) && (
+                  <span className="absolute bottom-1 left-4 right-4 h-0.5 bg-neon rounded-full" />
+                )}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Desktop Auth */}
+          <div className="hidden md:flex items-center gap-4 relative">
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  to="/dang-ky-doi-bong"
+                  className="hidden lg:inline-block bg-navy-light text-white px-5 py-2.5 rounded-lg font-bold hover:bg-navy-dark transition-all duration-300 shadow-md text-sm uppercase tracking-wider border border-navy-light"
+                >
+                  Đăng Kí Đội
+                </Link>
+                <Link
+                  to="/quan-ly-giai-dau/dang-nhap"
+                  className="bg-neon/10 border border-neon text-neon px-5 py-2.5 rounded-lg font-bold hover:bg-neon hover:text-navy transition-all duration-300 text-sm uppercase tracking-wider shadow-[0_0_10px_rgba(57,255,20,0.2)]"
+                >
+                  Đăng Nhập
+                </Link>
+              </>
+            ) : (
+              <div className="relative group">
+                <button className="flex items-center gap-2 bg-navy-light/50 border border-navy-light px-4 py-2 rounded-lg font-medium hover:bg-navy-light transition-colors text-white">
+                  <div className="w-7 h-7 bg-neon/20 rounded-full flex items-center justify-center text-neon font-bold text-xs border border-neon/50">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                  </div>
+                  <span className="hidden sm:block text-sm font-semibold">{user?.name || 'Tài khoản'}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:rotate-180 transition-transform duration-300" />
+                </button>
+
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-64 bg-navy-dark border border-navy-light rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-2 z-50">
+                  <div className="p-4 border-b border-navy-light">
+                    <p className="text-sm font-bold text-white">{user?.name || 'Quản trị viên'}</p>
+                    <p className="text-xs text-gray-400 truncate">{user?.email || 'admin@example.com'}</p>
+                  </div>
+                  <div className="p-2 flex flex-col gap-1">
+                    <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                      <UserCircle className="w-4 h-4 text-emerald-400" />
+                      Thông tin cá nhân
+                    </Link>
+                    <Link to="/dang-ky-doi-bong" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                      <Trophy className="w-4 h-4 text-yellow-400" />
+                      Đăng ký đội thi đấu
+                    </Link>
+                    <Link to="/doi-cua-toi" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                      <Shield className="w-4 h-4 text-purple-400" />
+                      Đội bóng của tôi
+                    </Link>
+                    <Link to="/quan-ly-giai-dau" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
+                      <Shield className="w-4 h-4 text-blue-400" />
+                      Trang quản trị (Admin)
+                    </Link>
+                  </div>
+                  <div className="p-2 border-t border-navy-light">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile: Hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg border border-navy-light bg-navy-light/50 text-white hover:bg-navy-light transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="border-t border-navy-light bg-navy-dark px-4 py-4 space-y-1">
+          {/* Nav links */}
+          {navLinks.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
+                isActive(to)
+                  ? 'bg-navy-light text-white border-l-2 border-neon'
+                  : 'text-gray-300 hover:bg-navy-light hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </Link>
+          ))}
+
+          <div className="border-t border-navy-light pt-3 mt-3">
+            {!isAuthenticated ? (
+              <div className="flex flex-col gap-2">
+                <Link
+                  to="/dang-ky-doi-bong"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-navy-light text-white font-bold text-sm hover:bg-navy transition-colors"
+                >
+                  <Trophy className="w-4 h-4" /> Đăng Kí Đội
+                </Link>
+                <Link
+                  to="/quan-ly-giai-dau/dang-nhap"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neon/10 border border-neon text-neon font-bold text-sm hover:bg-neon hover:text-navy transition-colors"
+                >
+                  Đăng Nhập
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* User info */}
+                <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-navy-light/40 rounded-lg">
+                  <div className="w-9 h-9 bg-neon/20 rounded-full flex items-center justify-center text-neon font-bold border border-neon/50">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{user?.name || 'Tài khoản'}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[180px]">{user?.email}</p>
+                  </div>
+                </div>
+
+                <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-navy-light hover:text-white transition-colors">
+                  <UserCircle className="w-4 h-4 text-emerald-400" /> Thông tin cá nhân
+                </Link>
+                <Link to="/dang-ky-doi-bong" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-navy-light hover:text-white transition-colors">
+                  <Trophy className="w-4 h-4 text-yellow-400" /> Đăng ký đội thi đấu
+                </Link>
+                <Link to="/doi-cua-toi" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-navy-light hover:text-white transition-colors">
+                  <Shield className="w-4 h-4 text-purple-400" /> Đội bóng của tôi
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 transition-colors mt-1"
+                >
+                  <LogOut className="w-4 h-4" /> Đăng xuất
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </header>
-    )
+  );
 }
