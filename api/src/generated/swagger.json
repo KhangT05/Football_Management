@@ -271,10 +271,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"max_teams": {
-						"type": "number",
-						"format": "double"
-					},
 					"logo": {
 						"type": "string"
 					},
@@ -306,7 +302,6 @@
 				},
 				"required": [
 					"user_id",
-					"max_teams",
 					"logo",
 					"description",
 					"deleted_at",
@@ -349,10 +344,6 @@
 				"properties": {
 					"is_active": {
 						"type": "boolean"
-					},
-					"max_teams": {
-						"type": "number",
-						"format": "double"
 					},
 					"logo": {
 						"type": "string"
@@ -1172,9 +1163,6 @@
 									"description": {
 										"type": "string"
 									},
-									"max_teams": {
-										"type": "string"
-									},
 									"logo": {
 										"type": "string",
 										"format": "binary"
@@ -1183,7 +1171,6 @@
 								"required": [
 									"name",
 									"description",
-									"max_teams",
 									"logo"
 								]
 							}
