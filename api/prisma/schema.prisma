@@ -73,7 +73,6 @@ model Tournament {
   name        String
   description String?
   logo        String?
-  max_teams   Int
   is_active   Boolean   @default(true)
   created_at  DateTime  @default(now())
   updated_at  DateTime? @updatedAt
@@ -107,6 +106,7 @@ model Season {
   start_date            DateTime
   end_date              DateTime
   registration_deadline DateTime
+  max_teams             Int
   is_registration_open  Boolean      @default(false)
   is_active             Boolean      @default(true)
   created_at            DateTime     @default(now())

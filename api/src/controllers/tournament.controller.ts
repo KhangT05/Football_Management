@@ -36,7 +36,6 @@ export class TournamentController extends Controller {
   async create(
     @FormField() name: string,
     @FormField() description: string,
-    @FormField() max_teams: string,   // FormField luôn là string, parse sau
     @UploadedFile("logo") logo: Express.Multer.File | undefined,
     @Request() req: AuthRequest
   ): Promise<Tournament> {
@@ -56,7 +55,6 @@ export class TournamentController extends Controller {
       name,
       description,
       logo: logo_url,
-      max_teams: parseInt(max_teams, 10),
       is_active: true,
     }, req.user.user_id);
   }

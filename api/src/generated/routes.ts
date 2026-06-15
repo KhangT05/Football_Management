@@ -129,7 +129,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_TournamentPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"user_id":{"dataType":"double","required":true},"max_teams":{"dataType":"double","required":true},"logo":{"dataType":"string","required":true},"description":{"dataType":"string","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"user_id":{"dataType":"double","required":true},"logo":{"dataType":"string","required":true},"description":{"dataType":"string","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TournamentModel": {
@@ -153,7 +153,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateTournamentSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"is_active":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"logo":{"dataType":"string"},"description":{"dataType":"string"},"name":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"is_active":{"dataType":"boolean"},"logo":{"dataType":"string"},"description":{"dataType":"string"},"name":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateTournamentDto": {
@@ -735,7 +735,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         const argsTournamentController_create: Record<string, TsoaRoute.ParameterSchema> = {
                 name: {"in":"formData","name":"name","required":true,"dataType":"string"},
                 description: {"in":"formData","name":"description","required":true,"dataType":"string"},
-                max_teams: {"in":"formData","name":"max_teams","required":true,"dataType":"string"},
                 logo: {"in":"formData","name":"logo","required":true,"dataType":"file"},
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
