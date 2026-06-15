@@ -10,8 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, UploadedFile, FormField } from "tsoa";
 import { TournamentService } from "../services/tournament.service.js";
+import { storageService } from "../services/storage.service.js";
 let TournamentController = class TournamentController extends Controller {
     service;
     constructor(service) {
@@ -24,9 +25,24 @@ let TournamentController = class TournamentController extends Controller {
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
-    async create(body, req) {
+    async create(name, description, max_teams, logo, req) {
         this.setStatus(201);
-        return this.service.create(body, req.user.id);
+        let logo_url;
+        if (logo) {
+            const result = await storageService.upload({
+                namespace: "tournaments",
+                kind: "logo",
+                file: logo,
+            });
+            logo_url = result.url;
+        }
+        return this.service.create({
+            name,
+            description,
+            logo: logo_url,
+            max_teams: parseInt(max_teams, 10),
+            is_active: true,
+        }, req.user.user_id);
     }
     async update(id, body) {
         return this.service.update(id, body);
@@ -57,10 +73,13 @@ __decorate([
 __decorate([
     Post("/"),
     SuccessResponse(201, "Created"),
-    __param(0, Body()),
-    __param(1, Request()),
+    __param(0, FormField()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, UploadedFile("logo")),
+    __param(4, Request()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [String, String, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "create", null);
 __decorate([

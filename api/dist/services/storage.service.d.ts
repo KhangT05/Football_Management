@@ -1,0 +1,18 @@
+import { CompressOptions, IStorageProvider, ProcessedImage, TransformOptions, UploadInput, UploadResult } from "../storage/types.js";
+export declare class StorageService {
+    private readonly provider;
+    private readonly concurrency;
+    constructor(provider?: IStorageProvider);
+    upload(input: UploadInput): Promise<UploadResult>;
+    uploadMany(inputs: UploadInput[]): Promise<UploadResult[]>;
+    delete(publicId: string): Promise<void>;
+    deleteMany(publicIds: string[]): Promise<void>;
+    buildUrl(publicId: string, transform?: TransformOptions): string;
+    reprocess(file: Express.Multer.File, opts: CompressOptions): Promise<ProcessedImage>;
+}
+export declare class StorageError extends Error {
+    readonly code: string;
+    constructor(message: string, code: string);
+}
+export declare const storageService: StorageService;
+//# sourceMappingURL=storage.service.d.ts.map

@@ -1,6 +1,17 @@
 import { CreateTournamentDto, UpdateTournamentDto } from "../dtos/tournament.schema.js";
 import { PrismaClient, Tournament } from "../generated/prisma/client.js";
 import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+/**
+ * Upload logo → lưu url + publicId vào DB trong cùng 1 flow.
+ *
+ * Failure modes:
+ * - Upload cloud thành công nhưng DB fail → publicId bị orphan trên Cloudinary.
+ *   Fix: lưu publicId vào DB trước (pending), sau khi upload xong update status.
+ *   Hoặc: idempotency — dùng deterministic publicId từ tournamentId, overwrite: true.
+ *
+ * Design decision ở đây: simple path — nếu DB fail, caller phải retry upload.
+ * Acceptable nếu logo upload không critical. Nếu cần strong guarantee → xem comment bên dưới.
+ */
 
 export class TournamentService {
 
@@ -23,18 +34,51 @@ export class TournamentService {
     }
 
     findAll(req: QueryRequest = {}): Promise<PaginatedResult<Tournament>> {
-        return this.query.run(req);
+        return this.query.run(req, {
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true
+                    }
+                }
+            }
+        });
     }
 
     findById(id: number): Promise<Tournament | null> {
         return this.prisma.tournament.findUnique({
-            where: { id },
+            where: {
+                id
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true
+                    }
+                }
+            }
         });
     }
 
     async findByIdOrFail(id: number): Promise<Tournament> {
         const tournament = await this.prisma.tournament.findUnique({
             where: { id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true
+                    }
+                }
+            }
         });
         if (!tournament) throw new Error(`tournament ${id} not found`);
         return tournament;
