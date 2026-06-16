@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
 import { SeasonService } from "../services/season.service.js";
+import * as seasonSchema from "../dtos/season.schema.js";
 let SeasonController = class SeasonController extends Controller {
     service;
     constructor(service) {
@@ -34,6 +35,9 @@ let SeasonController = class SeasonController extends Controller {
     async softDelete(id) {
         this.setStatus(204);
         return this.service.softDelete(id);
+    }
+    async updateStatus(id, body) {
+        return this.service.updateStatus(id, body.status, { cancel_reason: body.cancel_reason });
     }
 };
 __decorate([
@@ -79,6 +83,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "softDelete", null);
+__decorate([
+    Patch("{id}/status"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], SeasonController.prototype, "updateStatus", null);
 SeasonController = __decorate([
     Security("jwt"),
     Route("seasons"),

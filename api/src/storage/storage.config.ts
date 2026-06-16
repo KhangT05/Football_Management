@@ -23,8 +23,8 @@ export const storageConfig = {
     compress: {
         maxWidth: 1920,
         maxHeight: 1080,
-        quality: 85,
-        format: "webp" as const,
+        quality: 100,
+        format: "original" as const,
         stripExif: true,
     },
 } as const;

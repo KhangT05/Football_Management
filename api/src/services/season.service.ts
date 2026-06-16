@@ -1,15 +1,18 @@
 import { createAppError } from "../common/app.error.js";
 import { CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
-import { PrismaClient, Season } from "../generated/prisma/client.js";
+import { PrismaClient, Season, SeasonStatus } from "../generated/prisma/client.js";
 import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
 
-export class SeasonService {
+const STATUS_TRANSITIONS: Partial<Record<SeasonStatus, SeasonStatus[]>> = {
+    [SeasonStatus.upcoming]: [SeasonStatus.registration_open, SeasonStatus.cancelled],
+    [SeasonStatus.registration_open]: [SeasonStatus.ongoing, SeasonStatus.cancelled],
+    [SeasonStatus.ongoing]: [SeasonStatus.finished, SeasonStatus.cancelled],
+};
 
+export class SeasonService {
     private readonly query: Queryable<Season>;
 
-    constructor(
-        private readonly prisma: PrismaClient
-    ) {
+    constructor(private readonly prisma: PrismaClient) {
         this.query = new Queryable<Season>(prisma.season, {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],
@@ -27,31 +30,8 @@ export class SeasonService {
         return this.query.run(req, {
             include: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true
-                    }
-                }
-            }
-        });
-    }
-
-    findById(id: number): Promise<Season | null> {
-        return this.prisma.season.findUnique({
-            where: {
-                id
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true
-                    }
-                }
+                    select: { id: true, name: true, email: true, phone: true }
+                },
             }
         });
     }
@@ -61,38 +41,131 @@ export class SeasonService {
             where: { id },
             include: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true
-                    }
-                }
+                    select: { id: true, name: true, email: true, phone: true }
+                },
+                tournament: true
             }
         });
-        if (!season) throw createAppError('UNAUTHORIZED', `season ${id} not found`);
+        if (!season) throw createAppError('NOT_FOUND', `Season ${id} not found`);
         return season;
     }
 
     async create(data: CreateSeasonDto, userId: number): Promise<Season> {
+        this.validateDatesIfPresent(data.start_date, data.end_date, data.registration_deadline);
+
         return this.prisma.season.create({
-            data: { ...data, user_id: userId }
+            data: {
+                ...data,
+                user_id: userId,
+                description: data.description ?? null,
+                start_date: data.start_date ?? null,
+                end_date: data.end_date ?? null,
+                registration_deadline: data.registration_deadline ?? null,
+            },
         });
     }
 
     async update(id: number, data: UpdateSeasonDto): Promise<Season> {
-        await this.findByIdOrFail(id);
+        const existing = await this.findByIdOrFail(id);
+        this.validateStatusAllowsEdit(existing.status);
+
+        const start_date = data.start_date ?? existing.start_date;
+        const end_date = data.end_date ?? existing.end_date;
+        const registration_deadline = data.registration_deadline ?? existing.registration_deadline;
+
+        this.validateDatesIfPresent(start_date, end_date, registration_deadline);
+
+        return this.prisma.season.update({ where: { id }, data });
+    }
+
+    async updateStatus(
+        id: number,
+        newStatus: SeasonStatus,
+        meta?: { cancel_reason?: string }
+    ): Promise<Season> {
+        const existing = await this.findByIdOrFail(id);
+
+        this.validateStatusTransition(existing.status, newStatus);
+        this.validateStatusPreConditions(existing, newStatus);
+
         return this.prisma.season.update({
             where: { id },
-            data,
+            data: {
+                status: newStatus,
+                ...(newStatus === 'cancelled' && {
+                    is_active: false,
+                    cancel_reason: meta?.cancel_reason ?? null,
+                }),
+                ...(newStatus === 'finished' && {
+                    is_active: false,
+                }),
+            },
         });
     }
 
     async softDelete(id: number): Promise<void> {
-        await this.findByIdOrFail(id);
+        const existing = await this.findByIdOrFail(id);
+        this.validateStatusAllowsEdit(existing.status);
         await this.prisma.season.update({
             where: { id },
-            data: { is_active: false },
+            data: { is_active: false, is_deleted: true, deleted_at: new Date() },
         });
+    }
+
+    // ─── Private ────────────────────────────────────────────────
+
+    private validateDatesIfPresent(
+        start_date?: Date | null,
+        end_date?: Date | null,
+        registration_deadline?: Date | null
+    ): void {
+        const now = new Date();
+
+        // Chỉ validate relationship khi có đủ cặp liên quan
+        if (start_date && end_date) {
+            if (start_date >= end_date)
+                throw createAppError('VALIDATION_ERROR', 'start_date must be before end_date');
+        }
+
+        if (registration_deadline && start_date) {
+            if (registration_deadline >= start_date)
+                throw createAppError('VALIDATION_ERROR', 'registration_deadline must be before start_date');
+        }
+
+        // future check chỉ trên field được gửi lên — không suy ra từ existing
+        if (start_date && start_date <= now)
+            throw createAppError('VALIDATION_ERROR', 'start_date must be in the future');
+
+        if (registration_deadline && registration_deadline <= now)
+            throw createAppError('VALIDATION_ERROR', 'registration_deadline must be in the future');
+    }
+
+    private validateStatusTransition(from: SeasonStatus, to: SeasonStatus): void {
+        if (!STATUS_TRANSITIONS[from]?.includes(to)) {
+            throw createAppError('VALIDATION_ERROR', `Cannot transition from '${from}' to '${to}'`);
+        }
+    }
+
+    private validateStatusPreConditions(existing: Season, newStatus: SeasonStatus): void {
+        const now = new Date();
+
+        if (newStatus === 'registration_open') {
+            if (!existing.start_date || !existing.end_date || !existing.registration_deadline)
+                throw createAppError('VALIDATION_ERROR', 'start_date, end_date, registration_deadline are required before opening registration');
+
+            if (existing.registration_deadline <= now)
+                throw createAppError('VALIDATION_ERROR', 'registration_deadline has already passed');
+
+            if (existing.start_date <= now)
+                throw createAppError('VALIDATION_ERROR', 'start_date has already passed');
+        }
+
+        // ongoing, finished, cancelled: admin chủ động — không enforce date check
+    }
+
+    private validateStatusAllowsEdit(status: SeasonStatus): void {
+        const LOCKED: SeasonStatus[] = ['registration_open', 'ongoing', 'finished', 'cancelled'];
+        if (LOCKED.includes(status))
+            throw createAppError('VALIDATION_ERROR', `Cannot modify season with status: ${status}`);
     }
 }

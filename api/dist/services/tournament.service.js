@@ -54,7 +54,8 @@ export class TournamentService {
                         email: true,
                         phone: true
                     }
-                }
+                },
+                seasons: true
             }
         });
     }
@@ -69,7 +70,8 @@ export class TournamentService {
                         email: true,
                         phone: true
                     }
-                }
+                },
+                seasons: true
             }
         });
         if (!tournament)
