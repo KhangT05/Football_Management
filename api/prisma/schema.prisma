@@ -28,7 +28,7 @@ model User {
   user_roles         User_Role[]
   tournaments        Tournament[]
   seasons            Season[]
-  seasonRules        SeasonRule[]
+  tournamentRules    TournamentRule[]
   teams              Team[]
   player             Player?
   teamPlayers        TeamPlayer[]
@@ -79,9 +79,10 @@ model Tournament {
 
   deleted_at DateTime?
 
-  seasons Season[]
-  user    User?    @relation(fields: [user_id], references: [id])
-  user_id Int?
+  seasons        Season[]
+  user           User?           @relation(fields: [user_id], references: [id])
+  user_id        Int?
+  tournamentRule TournamentRule?
 
   @@map("tournaments")
 }
@@ -112,14 +113,14 @@ model Season {
   created_at            DateTime     @default(now())
   updated_at            DateTime?    @updatedAt
 
-  deleted_at DateTime?
-  is_deleted Boolean   @default(false)
+  deleted_at       DateTime?
+  is_deleted       Boolean   @default(false)
+  registration_fee Decimal   @default(0) @db.Decimal(10, 2)
 
   tournament_id Int
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
 
-  season_rule      SeasonRule?
   phases           Phase[]
   season_teams     SeasonTeam[]
   user             User?             @relation(fields: [user_id], references: [id])
@@ -131,37 +132,38 @@ model Season {
   @@map("seasons")
 }
 
-model SeasonRule {
-  id         Int       @id @default(autoincrement())
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
+model TournamentRule {
+  id            Int       @id @default(autoincrement())
+  tournament_id Int       @unique
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime?
+  is_deleted    Boolean   @default(false)
 
   created_by_id Int?
   updated_by_id Int?
-  deleted_at    DateTime?
   deleted_by_id Int?
-  is_deleted    Boolean   @default(false)
 
-  season_id Int @unique
+  // Scoring — không apply cho knockout phase
+  points_per_win  Int @default(3)
+  points_per_draw Int @default(1)
+  points_per_loss Int @default(0)
 
-  points_per_win          Int     @default(3)
-  points_per_draw         Int     @default(1)
-  points_per_loss         Int     @default(0)
-  yellow_cards_suspension Int     @default(3)
-  max_players_per_team    Int     @default(25)
-  min_players_per_team    Int     @default(11)
-  registration_fee        Decimal @default(0) @db.Decimal(10, 2)
-  forfeit_score           Int     @default(3)
-  teams_advance_per_group Int     @default(2)
-  // ["goal_diff","goals_scored","head_to_head","yellow_cards","draw"]
-  tiebreaker_order        Json    @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
+  // Apply mọi phase format
+  forfeit_score           Int  @default(3)
+  yellow_cards_suspension Int  @default(3)
+  max_players_per_team    Int  @default(25)
+  min_players_per_team    Int  @default(11)
+  // Chỉ apply cho round_robin phase
+  teams_advance_per_group Int  @default(2)
+  tiebreaker_order        Json @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
 
-  season  Season @relation(fields: [season_id], references: [id], onDelete: Cascade)
-  user    User?  @relation(fields: [user_id], references: [id])
-  user_id Int?
+  tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [user_id], references: [id])
+  user_id    Int?
 
-  @@map("season_rules")
+  @@map("tournament_rules")
 }
 
 // ============================================================
