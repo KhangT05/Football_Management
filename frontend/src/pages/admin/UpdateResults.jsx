@@ -240,7 +240,7 @@ export default function UpdateResults() {
           {/* Central Scoreboard */}
           <div className="lg:col-span-4 order-1 lg:order-2">
             <div className="bg-navy p-6 md:p-8 rounded-3xl border border-navy-light shadow-xl h-full flex flex-col justify-center relative overflow-hidden">
-              {/* Top gradient bar */}
+              {/* Top linear bar */}
               <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-blue-500 via-emerald-400 to-amber-400 rounded-t-3xl" />
 
               {/* Match date badge */}

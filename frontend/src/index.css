@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 @theme {
   --color-navy-dark: #070e17;
@@ -77,7 +77,7 @@
 
 /* ─── Skeleton Loading ───────────────────────────────── */
 .skeleton {
-  background: linear-gradient(
+  background: linear-linear(
     90deg,
     #112240 25%,
     #1a3155 50%,
@@ -91,4 +91,4 @@
 /* ─── Toast progress bar ─────────────────────────────── */
 .animate-progress-bar {
   animation: progressBar linear both;
-}
+}

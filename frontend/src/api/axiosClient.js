@@ -56,14 +56,6 @@ export function clearAccessToken() {
 // TẠO AXIOS INSTANCE
 // ============================================================
 const axiosClient = axios.create({
-  /**
-   * Dùng đường dẫn tương đối thay vì URL tuyệt đối:
-   * - Browser gửi request đến cùng origin (http://localhost:3001/api/v1/...)
-   * - Vite proxy server-side forward sang http://localhost:3000/api/v1/...
-   * - Không có cross-origin request → không bị CORS block
-   *
-   * KHÔNG dùng: 'http://localhost:3000/api/v1' (sẽ bị CORS block nếu port khác nhau)
-   */
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
@@ -71,6 +63,8 @@ const axiosClient = axios.create({
   // withCredentials = true: Cho phép trình duyệt tự gửi httpOnly cookie
   // (bao gồm refresh_token cookie mà backend set)
   withCredentials: true,
+  // Timeout 15 giây — ngăn request treo vô thời hạn khi server không phản hồi
+  timeout: 15000,
 });
 
 
