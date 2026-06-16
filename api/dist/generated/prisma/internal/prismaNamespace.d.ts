@@ -236,7 +236,7 @@ export declare const ModelName: {
     readonly User_Role: "User_Role";
     readonly Tournament: "Tournament";
     readonly Season: "Season";
-    readonly SeasonRule: "SeasonRule";
+    readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
     readonly Group: "Group";
     readonly GroupTeam: "GroupTeam";
@@ -268,7 +268,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "season" | "seasonRule" | "phase" | "group" | "groupTeam" | "team" | "player" | "teamPlayer" | "seasonTeam" | "match" | "matchEvent" | "passkeyCredential" | "oAuthAccount" | "venue" | "teamLeader" | "teamStanding" | "playerStatistic" | "notification" | "payment" | "seasonTeamPlayer" | "matchResult";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "season" | "tournamentRule" | "phase" | "group" | "groupTeam" | "team" | "player" | "teamPlayer" | "seasonTeam" | "match" | "matchEvent" | "passkeyCredential" | "oAuthAccount" | "venue" | "teamLeader" | "teamStanding" | "playerStatistic" | "notification" | "payment" | "seasonTeamPlayer" | "matchResult";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -602,69 +602,69 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
-        SeasonRule: {
-            payload: Prisma.$SeasonRulePayload<ExtArgs>;
-            fields: Prisma.SeasonRuleFieldRefs;
+        TournamentRule: {
+            payload: Prisma.$TournamentRulePayload<ExtArgs>;
+            fields: Prisma.TournamentRuleFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.SeasonRuleFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload> | null;
+                    args: Prisma.TournamentRuleFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.SeasonRuleFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 findFirst: {
-                    args: Prisma.SeasonRuleFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload> | null;
+                    args: Prisma.TournamentRuleFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.SeasonRuleFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 findMany: {
-                    args: Prisma.SeasonRuleFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>[];
+                    args: Prisma.TournamentRuleFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>[];
                 };
                 create: {
-                    args: Prisma.SeasonRuleCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 createMany: {
-                    args: Prisma.SeasonRuleCreateManyArgs<ExtArgs>;
+                    args: Prisma.TournamentRuleCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 delete: {
-                    args: Prisma.SeasonRuleDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 update: {
-                    args: Prisma.SeasonRuleUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 deleteMany: {
-                    args: Prisma.SeasonRuleDeleteManyArgs<ExtArgs>;
+                    args: Prisma.TournamentRuleDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.SeasonRuleUpdateManyArgs<ExtArgs>;
+                    args: Prisma.TournamentRuleUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 upsert: {
-                    args: Prisma.SeasonRuleUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonRulePayload>;
+                    args: Prisma.TournamentRuleUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TournamentRulePayload>;
                 };
                 aggregate: {
-                    args: Prisma.SeasonRuleAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateSeasonRule>;
+                    args: Prisma.TournamentRuleAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTournamentRule>;
                 };
                 groupBy: {
-                    args: Prisma.SeasonRuleGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.SeasonRuleGroupByOutputType>[];
+                    args: Prisma.TournamentRuleGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TournamentRuleGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.SeasonRuleCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.SeasonRuleCountAggregateOutputType> | number;
+                    args: Prisma.TournamentRuleCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TournamentRuleCountAggregateOutputType> | number;
                 };
             };
         };
@@ -2009,35 +2009,31 @@ export declare const SeasonScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
+    readonly registration_fee: "registration_fee";
     readonly tournament_id: "tournament_id";
     readonly user_id: "user_id";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
-export declare const SeasonRuleScalarFieldEnum: {
+export declare const TournamentRuleScalarFieldEnum: {
     readonly id: "id";
+    readonly tournament_id: "tournament_id";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
-    readonly created_by_id: "created_by_id";
-    readonly updated_by_id: "updated_by_id";
     readonly deleted_at: "deleted_at";
-    readonly deleted_by_id: "deleted_by_id";
     readonly is_deleted: "is_deleted";
-    readonly season_id: "season_id";
     readonly points_per_win: "points_per_win";
     readonly points_per_draw: "points_per_draw";
     readonly points_per_loss: "points_per_loss";
+    readonly forfeit_score: "forfeit_score";
     readonly yellow_cards_suspension: "yellow_cards_suspension";
     readonly max_players_per_team: "max_players_per_team";
     readonly min_players_per_team: "min_players_per_team";
-    readonly registration_fee: "registration_fee";
-    readonly forfeit_score: "forfeit_score";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
     readonly user_id: "user_id";
 };
-export type SeasonRuleScalarFieldEnum = (typeof SeasonRuleScalarFieldEnum)[keyof typeof SeasonRuleScalarFieldEnum];
+export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
 export declare const PhaseScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
@@ -2659,7 +2655,7 @@ export type GlobalOmitConfig = {
     user_Role?: Prisma.User_RoleOmit;
     tournament?: Prisma.TournamentOmit;
     season?: Prisma.SeasonOmit;
-    seasonRule?: Prisma.SeasonRuleOmit;
+    tournamentRule?: Prisma.TournamentRuleOmit;
     phase?: Prisma.PhaseOmit;
     group?: Prisma.GroupOmit;
     groupTeam?: Prisma.GroupTeamOmit;

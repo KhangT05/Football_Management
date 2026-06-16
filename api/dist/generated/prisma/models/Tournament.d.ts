@@ -206,6 +206,7 @@ export type TournamentWhereInput = {
     user_id?: Prisma.IntNullableFilter<"Tournament"> | number | null;
     seasons?: Prisma.SeasonListRelationFilter;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+    tournamentRule?: Prisma.XOR<Prisma.TournamentRuleNullableScalarRelationFilter, Prisma.TournamentRuleWhereInput> | null;
 };
 export type TournamentOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -219,6 +220,7 @@ export type TournamentOrderByWithRelationInput = {
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     seasons?: Prisma.SeasonOrderByRelationAggregateInput;
     user?: Prisma.UserOrderByWithRelationInput;
+    tournamentRule?: Prisma.TournamentRuleOrderByWithRelationInput;
     _relevance?: Prisma.TournamentOrderByRelevanceInput;
 };
 export type TournamentWhereUniqueInput = Prisma.AtLeast<{
@@ -236,6 +238,7 @@ export type TournamentWhereUniqueInput = Prisma.AtLeast<{
     user_id?: Prisma.IntNullableFilter<"Tournament"> | number | null;
     seasons?: Prisma.SeasonListRelationFilter;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+    tournamentRule?: Prisma.XOR<Prisma.TournamentRuleNullableScalarRelationFilter, Prisma.TournamentRuleWhereInput> | null;
 }, "id" | "name">;
 export type TournamentOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -277,6 +280,7 @@ export type TournamentCreateInput = {
     deleted_at?: Date | string | null;
     seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentInput;
     user?: Prisma.UserCreateNestedOneWithoutTournamentsInput;
+    tournamentRule?: Prisma.TournamentRuleCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentUncheckedCreateInput = {
     id?: number;
@@ -289,6 +293,7 @@ export type TournamentUncheckedCreateInput = {
     deleted_at?: Date | string | null;
     user_id?: number | null;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutTournamentInput;
+    tournamentRule?: Prisma.TournamentRuleUncheckedCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -300,6 +305,7 @@ export type TournamentUpdateInput = {
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     seasons?: Prisma.SeasonUpdateManyWithoutTournamentNestedInput;
     user?: Prisma.UserUpdateOneWithoutTournamentsNestedInput;
+    tournamentRule?: Prisma.TournamentRuleUpdateOneWithoutTournamentNestedInput;
 };
 export type TournamentUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -312,6 +318,7 @@ export type TournamentUncheckedUpdateInput = {
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutTournamentNestedInput;
+    tournamentRule?: Prisma.TournamentRuleUncheckedUpdateOneWithoutTournamentNestedInput;
 };
 export type TournamentCreateManyInput = {
     id?: number;
@@ -459,6 +466,18 @@ export type TournamentUpdateOneRequiredWithoutSeasonsNestedInput = {
     connect?: Prisma.TournamentWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.TournamentUpdateToOneWithWhereWithoutSeasonsInput, Prisma.TournamentUpdateWithoutSeasonsInput>, Prisma.TournamentUncheckedUpdateWithoutSeasonsInput>;
 };
+export type TournamentCreateNestedOneWithoutTournamentRuleInput = {
+    create?: Prisma.XOR<Prisma.TournamentCreateWithoutTournamentRuleInput, Prisma.TournamentUncheckedCreateWithoutTournamentRuleInput>;
+    connectOrCreate?: Prisma.TournamentCreateOrConnectWithoutTournamentRuleInput;
+    connect?: Prisma.TournamentWhereUniqueInput;
+};
+export type TournamentUpdateOneRequiredWithoutTournamentRuleNestedInput = {
+    create?: Prisma.XOR<Prisma.TournamentCreateWithoutTournamentRuleInput, Prisma.TournamentUncheckedCreateWithoutTournamentRuleInput>;
+    connectOrCreate?: Prisma.TournamentCreateOrConnectWithoutTournamentRuleInput;
+    upsert?: Prisma.TournamentUpsertWithoutTournamentRuleInput;
+    connect?: Prisma.TournamentWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.TournamentUpdateToOneWithWhereWithoutTournamentRuleInput, Prisma.TournamentUpdateWithoutTournamentRuleInput>, Prisma.TournamentUncheckedUpdateWithoutTournamentRuleInput>;
+};
 export type TournamentCreateWithoutUserInput = {
     name: string;
     description?: string | null;
@@ -468,6 +487,7 @@ export type TournamentCreateWithoutUserInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentInput;
+    tournamentRule?: Prisma.TournamentRuleCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentUncheckedCreateWithoutUserInput = {
     id?: number;
@@ -479,6 +499,7 @@ export type TournamentUncheckedCreateWithoutUserInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutTournamentInput;
+    tournamentRule?: Prisma.TournamentRuleUncheckedCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentCreateOrConnectWithoutUserInput = {
     where: Prisma.TournamentWhereUniqueInput;
@@ -524,6 +545,7 @@ export type TournamentCreateWithoutSeasonsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user?: Prisma.UserCreateNestedOneWithoutTournamentsInput;
+    tournamentRule?: Prisma.TournamentRuleCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentUncheckedCreateWithoutSeasonsInput = {
     id?: number;
@@ -535,6 +557,7 @@ export type TournamentUncheckedCreateWithoutSeasonsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    tournamentRule?: Prisma.TournamentRuleUncheckedCreateNestedOneWithoutTournamentInput;
 };
 export type TournamentCreateOrConnectWithoutSeasonsInput = {
     where: Prisma.TournamentWhereUniqueInput;
@@ -558,6 +581,7 @@ export type TournamentUpdateWithoutSeasonsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user?: Prisma.UserUpdateOneWithoutTournamentsNestedInput;
+    tournamentRule?: Prisma.TournamentRuleUpdateOneWithoutTournamentNestedInput;
 };
 export type TournamentUncheckedUpdateWithoutSeasonsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -569,6 +593,66 @@ export type TournamentUncheckedUpdateWithoutSeasonsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    tournamentRule?: Prisma.TournamentRuleUncheckedUpdateOneWithoutTournamentNestedInput;
+};
+export type TournamentCreateWithoutTournamentRuleInput = {
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentInput;
+    user?: Prisma.UserCreateNestedOneWithoutTournamentsInput;
+};
+export type TournamentUncheckedCreateWithoutTournamentRuleInput = {
+    id?: number;
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutTournamentInput;
+};
+export type TournamentCreateOrConnectWithoutTournamentRuleInput = {
+    where: Prisma.TournamentWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TournamentCreateWithoutTournamentRuleInput, Prisma.TournamentUncheckedCreateWithoutTournamentRuleInput>;
+};
+export type TournamentUpsertWithoutTournamentRuleInput = {
+    update: Prisma.XOR<Prisma.TournamentUpdateWithoutTournamentRuleInput, Prisma.TournamentUncheckedUpdateWithoutTournamentRuleInput>;
+    create: Prisma.XOR<Prisma.TournamentCreateWithoutTournamentRuleInput, Prisma.TournamentUncheckedCreateWithoutTournamentRuleInput>;
+    where?: Prisma.TournamentWhereInput;
+};
+export type TournamentUpdateToOneWithWhereWithoutTournamentRuleInput = {
+    where?: Prisma.TournamentWhereInput;
+    data: Prisma.XOR<Prisma.TournamentUpdateWithoutTournamentRuleInput, Prisma.TournamentUncheckedUpdateWithoutTournamentRuleInput>;
+};
+export type TournamentUpdateWithoutTournamentRuleInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    seasons?: Prisma.SeasonUpdateManyWithoutTournamentNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTournamentsNestedInput;
+};
+export type TournamentUncheckedUpdateWithoutTournamentRuleInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    seasons?: Prisma.SeasonUncheckedUpdateManyWithoutTournamentNestedInput;
 };
 export type TournamentCreateManyUserInput = {
     id?: number;
@@ -589,6 +673,7 @@ export type TournamentUpdateWithoutUserInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     seasons?: Prisma.SeasonUpdateManyWithoutTournamentNestedInput;
+    tournamentRule?: Prisma.TournamentRuleUpdateOneWithoutTournamentNestedInput;
 };
 export type TournamentUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -600,6 +685,7 @@ export type TournamentUncheckedUpdateWithoutUserInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutTournamentNestedInput;
+    tournamentRule?: Prisma.TournamentRuleUncheckedUpdateOneWithoutTournamentNestedInput;
 };
 export type TournamentUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -647,6 +733,7 @@ export type TournamentSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     user_id?: boolean;
     seasons?: boolean | Prisma.Tournament$seasonsArgs<ExtArgs>;
     user?: boolean | Prisma.Tournament$userArgs<ExtArgs>;
+    tournamentRule?: boolean | Prisma.Tournament$tournamentRuleArgs<ExtArgs>;
     _count?: boolean | Prisma.TournamentCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["tournament"]>;
 export type TournamentSelectScalar = {
@@ -664,6 +751,7 @@ export type TournamentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs
 export type TournamentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     seasons?: boolean | Prisma.Tournament$seasonsArgs<ExtArgs>;
     user?: boolean | Prisma.Tournament$userArgs<ExtArgs>;
+    tournamentRule?: boolean | Prisma.Tournament$tournamentRuleArgs<ExtArgs>;
     _count?: boolean | Prisma.TournamentCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $TournamentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -671,6 +759,7 @@ export type $TournamentPayload<ExtArgs extends runtime.Types.Extensions.Internal
     objects: {
         seasons: Prisma.$SeasonPayload<ExtArgs>[];
         user: Prisma.$UserPayload<ExtArgs> | null;
+        tournamentRule: Prisma.$TournamentRulePayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -961,6 +1050,7 @@ export interface Prisma__TournamentClient<T, Null = never, ExtArgs extends runti
     readonly [Symbol.toStringTag]: "PrismaPromise";
     seasons<T extends Prisma.Tournament$seasonsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tournament$seasonsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     user<T extends Prisma.Tournament$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tournament$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    tournamentRule<T extends Prisma.Tournament$tournamentRuleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tournament$tournamentRuleArgs<ExtArgs>>): Prisma.Prisma__TournamentRuleClient<runtime.Types.Result.GetResult<Prisma.$TournamentRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1367,6 +1457,24 @@ export type Tournament$userArgs<ExtArgs extends runtime.Types.Extensions.Interna
      */
     include?: Prisma.UserInclude<ExtArgs> | null;
     where?: Prisma.UserWhereInput;
+};
+/**
+ * Tournament.tournamentRule
+ */
+export type Tournament$tournamentRuleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TournamentRule
+     */
+    select?: Prisma.TournamentRuleSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the TournamentRule
+     */
+    omit?: Prisma.TournamentRuleOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TournamentRuleInclude<ExtArgs> | null;
+    where?: Prisma.TournamentRuleWhereInput;
 };
 /**
  * Tournament without action

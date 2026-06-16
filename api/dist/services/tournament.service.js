@@ -1,3 +1,4 @@
+import { createAppError } from "../common/app.error.js";
 import { Queryable } from "../libs/queryable.js";
 /**
  * Upload logo → lưu url + publicId vào DB trong cùng 1 flow.
@@ -41,24 +42,6 @@ export class TournamentService {
             }
         });
     }
-    findById(id) {
-        return this.prisma.tournament.findUnique({
-            where: {
-                id
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true
-                    }
-                },
-                seasons: true
-            }
-        });
-    }
     async findByIdOrFail(id) {
         const tournament = await this.prisma.tournament.findUnique({
             where: { id },
@@ -75,7 +58,7 @@ export class TournamentService {
             }
         });
         if (!tournament)
-            throw new Error(`tournament ${id} not found`);
+            throw createAppError('NOT_FOUND', `Tournament ${id} not found`);
         return tournament;
     }
     async create(data, userId) {
@@ -92,9 +75,18 @@ export class TournamentService {
     }
     async softDelete(id) {
         await this.findByIdOrFail(id);
+        const activeSeasonCount = await this.prisma.season.count({
+            where: {
+                tournament_id: id,
+                is_deleted: false,
+                status: { in: ['registration_open', 'ongoing'] },
+            },
+        });
+        if (activeSeasonCount > 0)
+            throw createAppError('VALIDATION_ERROR', 'Cannot delete tournament with active seasons');
         await this.prisma.tournament.update({
             where: { id },
-            data: { is_active: false },
+            data: { is_active: false, deleted_at: new Date() },
         });
     }
 }

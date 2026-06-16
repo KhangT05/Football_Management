@@ -31,7 +31,7 @@ export declare const ModelName: {
     readonly User_Role: "User_Role";
     readonly Tournament: "Tournament";
     readonly Season: "Season";
-    readonly SeasonRule: "SeasonRule";
+    readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
     readonly Group: "Group";
     readonly GroupTeam: "GroupTeam";
@@ -113,35 +113,31 @@ export declare const SeasonScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
+    readonly registration_fee: "registration_fee";
     readonly tournament_id: "tournament_id";
     readonly user_id: "user_id";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
-export declare const SeasonRuleScalarFieldEnum: {
+export declare const TournamentRuleScalarFieldEnum: {
     readonly id: "id";
+    readonly tournament_id: "tournament_id";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
-    readonly created_by_id: "created_by_id";
-    readonly updated_by_id: "updated_by_id";
     readonly deleted_at: "deleted_at";
-    readonly deleted_by_id: "deleted_by_id";
     readonly is_deleted: "is_deleted";
-    readonly season_id: "season_id";
     readonly points_per_win: "points_per_win";
     readonly points_per_draw: "points_per_draw";
     readonly points_per_loss: "points_per_loss";
+    readonly forfeit_score: "forfeit_score";
     readonly yellow_cards_suspension: "yellow_cards_suspension";
     readonly max_players_per_team: "max_players_per_team";
     readonly min_players_per_team: "min_players_per_team";
-    readonly registration_fee: "registration_fee";
-    readonly forfeit_score: "forfeit_score";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
     readonly user_id: "user_id";
 };
-export type SeasonRuleScalarFieldEnum = (typeof SeasonRuleScalarFieldEnum)[keyof typeof SeasonRuleScalarFieldEnum];
+export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
 export declare const PhaseScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";

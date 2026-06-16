@@ -211,7 +211,7 @@ export type UserWhereInput = {
     user_roles?: Prisma.User_RoleListRelationFilter;
     tournaments?: Prisma.TournamentListRelationFilter;
     seasons?: Prisma.SeasonListRelationFilter;
-    seasonRules?: Prisma.SeasonRuleListRelationFilter;
+    tournamentRules?: Prisma.TournamentRuleListRelationFilter;
     teams?: Prisma.TeamListRelationFilter;
     player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
     teamPlayers?: Prisma.TeamPlayerListRelationFilter;
@@ -235,7 +235,7 @@ export type UserOrderByWithRelationInput = {
     user_roles?: Prisma.User_RoleOrderByRelationAggregateInput;
     tournaments?: Prisma.TournamentOrderByRelationAggregateInput;
     seasons?: Prisma.SeasonOrderByRelationAggregateInput;
-    seasonRules?: Prisma.SeasonRuleOrderByRelationAggregateInput;
+    tournamentRules?: Prisma.TournamentRuleOrderByRelationAggregateInput;
     teams?: Prisma.TeamOrderByRelationAggregateInput;
     player?: Prisma.PlayerOrderByWithRelationInput;
     teamPlayers?: Prisma.TeamPlayerOrderByRelationAggregateInput;
@@ -263,7 +263,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     user_roles?: Prisma.User_RoleListRelationFilter;
     tournaments?: Prisma.TournamentListRelationFilter;
     seasons?: Prisma.SeasonListRelationFilter;
-    seasonRules?: Prisma.SeasonRuleListRelationFilter;
+    tournamentRules?: Prisma.TournamentRuleListRelationFilter;
     teams?: Prisma.TeamListRelationFilter;
     player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
     teamPlayers?: Prisma.TeamPlayerListRelationFilter;
@@ -318,7 +318,7 @@ export type UserCreateInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -342,7 +342,7 @@ export type UserUncheckedCreateInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -365,7 +365,7 @@ export type UserUpdateInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -389,7 +389,7 @@ export type UserUncheckedUpdateInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -551,19 +551,19 @@ export type UserUpdateOneWithoutSeasonsNestedInput = {
     connect?: Prisma.UserWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSeasonsInput, Prisma.UserUpdateWithoutSeasonsInput>, Prisma.UserUncheckedUpdateWithoutSeasonsInput>;
 };
-export type UserCreateNestedOneWithoutSeasonRulesInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutSeasonRulesInput, Prisma.UserUncheckedCreateWithoutSeasonRulesInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutSeasonRulesInput;
+export type UserCreateNestedOneWithoutTournamentRulesInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutTournamentRulesInput, Prisma.UserUncheckedCreateWithoutTournamentRulesInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTournamentRulesInput;
     connect?: Prisma.UserWhereUniqueInput;
 };
-export type UserUpdateOneWithoutSeasonRulesNestedInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutSeasonRulesInput, Prisma.UserUncheckedCreateWithoutSeasonRulesInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutSeasonRulesInput;
-    upsert?: Prisma.UserUpsertWithoutSeasonRulesInput;
+export type UserUpdateOneWithoutTournamentRulesNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutTournamentRulesInput, Prisma.UserUncheckedCreateWithoutTournamentRulesInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTournamentRulesInput;
+    upsert?: Prisma.UserUpsertWithoutTournamentRulesInput;
     disconnect?: Prisma.UserWhereInput | boolean;
     delete?: Prisma.UserWhereInput | boolean;
     connect?: Prisma.UserWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSeasonRulesInput, Prisma.UserUpdateWithoutSeasonRulesInput>, Prisma.UserUncheckedUpdateWithoutSeasonRulesInput>;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTournamentRulesInput, Prisma.UserUpdateWithoutTournamentRulesInput>, Prisma.UserUncheckedUpdateWithoutTournamentRulesInput>;
 };
 export type UserCreateNestedOneWithoutTeamsInput = {
     create?: Prisma.XOR<Prisma.UserCreateWithoutTeamsInput, Prisma.UserUncheckedCreateWithoutTeamsInput>;
@@ -681,7 +681,7 @@ export type UserCreateWithoutUser_rolesInput = {
     updated_at?: Date | string | null;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -704,7 +704,7 @@ export type UserUncheckedCreateWithoutUser_rolesInput = {
     updated_at?: Date | string | null;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -739,7 +739,7 @@ export type UserUpdateWithoutUser_rolesInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -762,7 +762,7 @@ export type UserUncheckedUpdateWithoutUser_rolesInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -784,7 +784,7 @@ export type UserCreateWithoutTournamentsInput = {
     updated_at?: Date | string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -807,7 +807,7 @@ export type UserUncheckedCreateWithoutTournamentsInput = {
     updated_at?: Date | string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -842,7 +842,7 @@ export type UserUpdateWithoutTournamentsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -865,7 +865,7 @@ export type UserUncheckedUpdateWithoutTournamentsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -887,7 +887,7 @@ export type UserCreateWithoutSeasonsInput = {
     updated_at?: Date | string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -910,7 +910,7 @@ export type UserUncheckedCreateWithoutSeasonsInput = {
     updated_at?: Date | string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -945,7 +945,7 @@ export type UserUpdateWithoutSeasonsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -968,7 +968,7 @@ export type UserUncheckedUpdateWithoutSeasonsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -978,7 +978,7 @@ export type UserUncheckedUpdateWithoutSeasonsInput = {
     oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
-export type UserCreateWithoutSeasonRulesInput = {
+export type UserCreateWithoutTournamentRulesInput = {
     name: string;
     email: string;
     password: string;
@@ -1000,7 +1000,7 @@ export type UserCreateWithoutSeasonRulesInput = {
     oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
-export type UserUncheckedCreateWithoutSeasonRulesInput = {
+export type UserUncheckedCreateWithoutTournamentRulesInput = {
     id?: number;
     name: string;
     email: string;
@@ -1023,20 +1023,20 @@ export type UserUncheckedCreateWithoutSeasonRulesInput = {
     oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
-export type UserCreateOrConnectWithoutSeasonRulesInput = {
+export type UserCreateOrConnectWithoutTournamentRulesInput = {
     where: Prisma.UserWhereUniqueInput;
-    create: Prisma.XOR<Prisma.UserCreateWithoutSeasonRulesInput, Prisma.UserUncheckedCreateWithoutSeasonRulesInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutTournamentRulesInput, Prisma.UserUncheckedCreateWithoutTournamentRulesInput>;
 };
-export type UserUpsertWithoutSeasonRulesInput = {
-    update: Prisma.XOR<Prisma.UserUpdateWithoutSeasonRulesInput, Prisma.UserUncheckedUpdateWithoutSeasonRulesInput>;
-    create: Prisma.XOR<Prisma.UserCreateWithoutSeasonRulesInput, Prisma.UserUncheckedCreateWithoutSeasonRulesInput>;
+export type UserUpsertWithoutTournamentRulesInput = {
+    update: Prisma.XOR<Prisma.UserUpdateWithoutTournamentRulesInput, Prisma.UserUncheckedUpdateWithoutTournamentRulesInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutTournamentRulesInput, Prisma.UserUncheckedCreateWithoutTournamentRulesInput>;
     where?: Prisma.UserWhereInput;
 };
-export type UserUpdateToOneWithWhereWithoutSeasonRulesInput = {
+export type UserUpdateToOneWithWhereWithoutTournamentRulesInput = {
     where?: Prisma.UserWhereInput;
-    data: Prisma.XOR<Prisma.UserUpdateWithoutSeasonRulesInput, Prisma.UserUncheckedUpdateWithoutSeasonRulesInput>;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutTournamentRulesInput, Prisma.UserUncheckedUpdateWithoutTournamentRulesInput>;
 };
-export type UserUpdateWithoutSeasonRulesInput = {
+export type UserUpdateWithoutTournamentRulesInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     password?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1058,7 +1058,7 @@ export type UserUpdateWithoutSeasonRulesInput = {
     oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
-export type UserUncheckedUpdateWithoutSeasonRulesInput = {
+export type UserUncheckedUpdateWithoutTournamentRulesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1094,7 +1094,7 @@ export type UserCreateWithoutTeamsInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
@@ -1117,7 +1117,7 @@ export type UserUncheckedCreateWithoutTeamsInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
@@ -1152,7 +1152,7 @@ export type UserUpdateWithoutTeamsInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
@@ -1175,7 +1175,7 @@ export type UserUncheckedUpdateWithoutTeamsInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
@@ -1197,7 +1197,7 @@ export type UserCreateWithoutPlayerInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
@@ -1220,7 +1220,7 @@ export type UserUncheckedCreateWithoutPlayerInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
@@ -1255,7 +1255,7 @@ export type UserUpdateWithoutPlayerInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
@@ -1278,7 +1278,7 @@ export type UserUncheckedUpdateWithoutPlayerInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
@@ -1300,7 +1300,7 @@ export type UserCreateWithoutTeamPlayersInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
@@ -1323,7 +1323,7 @@ export type UserUncheckedCreateWithoutTeamPlayersInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
@@ -1358,7 +1358,7 @@ export type UserUpdateWithoutTeamPlayersInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
@@ -1381,7 +1381,7 @@ export type UserUncheckedUpdateWithoutTeamPlayersInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
@@ -1403,7 +1403,7 @@ export type UserCreateWithoutSeasonTeamsInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -1426,7 +1426,7 @@ export type UserUncheckedCreateWithoutSeasonTeamsInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -1461,7 +1461,7 @@ export type UserUpdateWithoutSeasonTeamsInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -1484,7 +1484,7 @@ export type UserUncheckedUpdateWithoutSeasonTeamsInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -1506,7 +1506,7 @@ export type UserCreateWithoutMatchesInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -1529,7 +1529,7 @@ export type UserUncheckedCreateWithoutMatchesInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -1564,7 +1564,7 @@ export type UserUpdateWithoutMatchesInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -1587,7 +1587,7 @@ export type UserUncheckedUpdateWithoutMatchesInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -1609,7 +1609,7 @@ export type UserCreateWithoutPasskeyCredentialsInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -1632,7 +1632,7 @@ export type UserUncheckedCreateWithoutPasskeyCredentialsInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -1667,7 +1667,7 @@ export type UserUpdateWithoutPasskeyCredentialsInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -1690,7 +1690,7 @@ export type UserUncheckedUpdateWithoutPasskeyCredentialsInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -1712,7 +1712,7 @@ export type UserCreateWithoutOauthAccountsInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -1735,7 +1735,7 @@ export type UserUncheckedCreateWithoutOauthAccountsInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -1770,7 +1770,7 @@ export type UserUpdateWithoutOauthAccountsInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -1793,7 +1793,7 @@ export type UserUncheckedUpdateWithoutOauthAccountsInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -1815,7 +1815,7 @@ export type UserCreateWithoutTeamLeadersInput = {
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
@@ -1838,7 +1838,7 @@ export type UserUncheckedCreateWithoutTeamLeadersInput = {
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
     teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
@@ -1873,7 +1873,7 @@ export type UserUpdateWithoutTeamLeadersInput = {
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
@@ -1896,7 +1896,7 @@ export type UserUncheckedUpdateWithoutTeamLeadersInput = {
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    seasonRules?: Prisma.SeasonRuleUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
     teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
@@ -1912,7 +1912,7 @@ export type UserCountOutputType = {
     user_roles: number;
     tournaments: number;
     seasons: number;
-    seasonRules: number;
+    tournamentRules: number;
     teams: number;
     teamPlayers: number;
     seasonTeams: number;
@@ -1925,7 +1925,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
     user_roles?: boolean | UserCountOutputTypeCountUser_rolesArgs;
     tournaments?: boolean | UserCountOutputTypeCountTournamentsArgs;
     seasons?: boolean | UserCountOutputTypeCountSeasonsArgs;
-    seasonRules?: boolean | UserCountOutputTypeCountSeasonRulesArgs;
+    tournamentRules?: boolean | UserCountOutputTypeCountTournamentRulesArgs;
     teams?: boolean | UserCountOutputTypeCountTeamsArgs;
     teamPlayers?: boolean | UserCountOutputTypeCountTeamPlayersArgs;
     seasonTeams?: boolean | UserCountOutputTypeCountSeasonTeamsArgs;
@@ -1964,8 +1964,8 @@ export type UserCountOutputTypeCountSeasonsArgs<ExtArgs extends runtime.Types.Ex
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountSeasonRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    where?: Prisma.SeasonRuleWhereInput;
+export type UserCountOutputTypeCountTournamentRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.TournamentRuleWhereInput;
 };
 /**
  * UserCountOutputType without action
@@ -2023,7 +2023,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     user_roles?: boolean | Prisma.User$user_rolesArgs<ExtArgs>;
     tournaments?: boolean | Prisma.User$tournamentsArgs<ExtArgs>;
     seasons?: boolean | Prisma.User$seasonsArgs<ExtArgs>;
-    seasonRules?: boolean | Prisma.User$seasonRulesArgs<ExtArgs>;
+    tournamentRules?: boolean | Prisma.User$tournamentRulesArgs<ExtArgs>;
     teams?: boolean | Prisma.User$teamsArgs<ExtArgs>;
     player?: boolean | Prisma.User$playerArgs<ExtArgs>;
     teamPlayers?: boolean | Prisma.User$teamPlayersArgs<ExtArgs>;
@@ -2051,7 +2051,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     user_roles?: boolean | Prisma.User$user_rolesArgs<ExtArgs>;
     tournaments?: boolean | Prisma.User$tournamentsArgs<ExtArgs>;
     seasons?: boolean | Prisma.User$seasonsArgs<ExtArgs>;
-    seasonRules?: boolean | Prisma.User$seasonRulesArgs<ExtArgs>;
+    tournamentRules?: boolean | Prisma.User$tournamentRulesArgs<ExtArgs>;
     teams?: boolean | Prisma.User$teamsArgs<ExtArgs>;
     player?: boolean | Prisma.User$playerArgs<ExtArgs>;
     teamPlayers?: boolean | Prisma.User$teamPlayersArgs<ExtArgs>;
@@ -2068,7 +2068,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         user_roles: Prisma.$User_RolePayload<ExtArgs>[];
         tournaments: Prisma.$TournamentPayload<ExtArgs>[];
         seasons: Prisma.$SeasonPayload<ExtArgs>[];
-        seasonRules: Prisma.$SeasonRulePayload<ExtArgs>[];
+        tournamentRules: Prisma.$TournamentRulePayload<ExtArgs>[];
         teams: Prisma.$TeamPayload<ExtArgs>[];
         player: Prisma.$PlayerPayload<ExtArgs> | null;
         teamPlayers: Prisma.$TeamPlayerPayload<ExtArgs>[];
@@ -2369,7 +2369,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
     user_roles<T extends Prisma.User$user_rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$user_rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$User_RolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     tournaments<T extends Prisma.User$tournamentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tournamentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TournamentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     seasons<T extends Prisma.User$seasonsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$seasonsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
-    seasonRules<T extends Prisma.User$seasonRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$seasonRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    tournamentRules<T extends Prisma.User$tournamentRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tournamentRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TournamentRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     teams<T extends Prisma.User$teamsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teamsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     player<T extends Prisma.User$playerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$playerArgs<ExtArgs>>): Prisma.Prisma__PlayerClient<runtime.Types.Result.GetResult<Prisma.$PlayerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     teamPlayers<T extends Prisma.User$teamPlayersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teamPlayersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamPlayerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
@@ -2815,27 +2815,27 @@ export type User$seasonsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
     distinct?: Prisma.SeasonScalarFieldEnum | Prisma.SeasonScalarFieldEnum[];
 };
 /**
- * User.seasonRules
+ * User.tournamentRules
  */
-export type User$seasonRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$tournamentRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the SeasonRule
+     * Select specific fields to fetch from the TournamentRule
      */
-    select?: Prisma.SeasonRuleSelect<ExtArgs> | null;
+    select?: Prisma.TournamentRuleSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the SeasonRule
+     * Omit specific fields from the TournamentRule
      */
-    omit?: Prisma.SeasonRuleOmit<ExtArgs> | null;
+    omit?: Prisma.TournamentRuleOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.SeasonRuleInclude<ExtArgs> | null;
-    where?: Prisma.SeasonRuleWhereInput;
-    orderBy?: Prisma.SeasonRuleOrderByWithRelationInput | Prisma.SeasonRuleOrderByWithRelationInput[];
-    cursor?: Prisma.SeasonRuleWhereUniqueInput;
+    include?: Prisma.TournamentRuleInclude<ExtArgs> | null;
+    where?: Prisma.TournamentRuleWhereInput;
+    orderBy?: Prisma.TournamentRuleOrderByWithRelationInput | Prisma.TournamentRuleOrderByWithRelationInput[];
+    cursor?: Prisma.TournamentRuleWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?: Prisma.SeasonRuleScalarFieldEnum | Prisma.SeasonRuleScalarFieldEnum[];
+    distinct?: Prisma.TournamentRuleScalarFieldEnum | Prisma.TournamentRuleScalarFieldEnum[];
 };
 /**
  * User.teams

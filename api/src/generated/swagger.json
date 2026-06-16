@@ -265,6 +265,268 @@
 			"UpdateUserDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateUserSchema_"
 			},
+			"TiebreakerOption": {
+				"type": "string",
+				"enum": [
+					"goal_diff",
+					"goals_scored",
+					"head_to_head",
+					"goals_conceded",
+					"yellow_cards",
+					"red_cards"
+				]
+			},
+			"TournamentRuleDto": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"points_per_win": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_draw": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_loss": {
+						"type": "number",
+						"format": "double"
+					},
+					"forfeit_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"max_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"min_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"tiebreaker_order": {
+						"items": {
+							"$ref": "#/components/schemas/TiebreakerOption"
+						},
+						"type": "array"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"user": {
+						"properties": {
+							"phone": {
+								"type": "string",
+								"nullable": true
+							},
+							"email": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"phone",
+							"email",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"tournament": {
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"tournament_id",
+					"is_active",
+					"points_per_win",
+					"points_per_draw",
+					"points_per_loss",
+					"forfeit_score",
+					"yellow_cards_suspension",
+					"max_players_per_team",
+					"min_players_per_team",
+					"teams_advance_per_group",
+					"tiebreaker_order",
+					"created_at",
+					"updated_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"infer_typeofcreateTournamentRuleSchema_": {
+				"properties": {
+					"tiebreaker_order": {
+						"items": {
+							"type": "string",
+							"enum": [
+								"goal_diff",
+								"goals_scored",
+								"head_to_head",
+								"goals_conceded",
+								"yellow_cards",
+								"red_cards"
+							]
+						},
+						"type": "array"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"min_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"max_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"forfeit_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_loss": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_draw": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_win": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"tiebreaker_order",
+					"teams_advance_per_group",
+					"min_players_per_team",
+					"max_players_per_team",
+					"yellow_cards_suspension",
+					"forfeit_score",
+					"points_per_loss",
+					"points_per_draw",
+					"points_per_win",
+					"tournament_id"
+				],
+				"type": "object"
+			},
+			"CreateTournamentRuleDto": {
+				"$ref": "#/components/schemas/infer_typeofcreateTournamentRuleSchema_"
+			},
+			"infer_typeofupdateTournamentRuleSchema_": {
+				"properties": {
+					"tiebreaker_order": {
+						"items": {
+							"type": "string",
+							"enum": [
+								"goal_diff",
+								"goals_scored",
+								"head_to_head",
+								"goals_conceded",
+								"yellow_cards",
+								"red_cards"
+							]
+						},
+						"type": "array"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"min_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"max_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"forfeit_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_loss": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_draw": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_win": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"type": "object"
+			},
+			"UpdateTournamentRuleDto": {
+				"$ref": "#/components/schemas/infer_typeofupdateTournamentRuleSchema_"
+			},
 			"DefaultSelection__36_TournamentPayload_": {
 				"properties": {
 					"user_id": {
@@ -370,11 +632,13 @@
 					"cancelled"
 				]
 			},
+			"Decimal": {
+				"type": "string"
+			},
 			"DefaultSelection__36_SeasonPayload_": {
 				"properties": {
-					"tournament_id": {
-						"type": "number",
-						"format": "double"
+					"registration_fee": {
+						"$ref": "#/components/schemas/Decimal"
 					},
 					"is_registration_open": {
 						"type": "boolean"
@@ -405,8 +669,9 @@
 					"description": {
 						"type": "string"
 					},
-					"is_deleted": {
-						"type": "boolean"
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
 					},
 					"deleted_at": {
 						"type": "string",
@@ -432,7 +697,7 @@
 					}
 				},
 				"required": [
-					"tournament_id",
+					"registration_fee",
 					"is_registration_open",
 					"max_teams",
 					"registration_deadline",
@@ -441,7 +706,7 @@
 					"status",
 					"user_id",
 					"description",
-					"is_deleted",
+					"tournament_id",
 					"deleted_at",
 					"updated_at",
 					"created_at",
@@ -1280,6 +1545,176 @@
 				},
 				"tags": [
 					"Users"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/tournamentrules": {
+			"get": {
+				"operationId": "FindAll",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TournamentRuleDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TournamentRules"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreateTournamentRuleDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TournamentRules"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTournamentRuleDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tournamentrules/{id}": {
+			"get": {
+				"operationId": "FindById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TournamentRuleDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TournamentRules"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpdateTournamentRuleDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TournamentRules"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTournamentRuleDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "SoftDelete",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"TournamentRules"
 				],
 				"security": [
 					{

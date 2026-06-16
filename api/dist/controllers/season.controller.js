@@ -27,7 +27,7 @@ let SeasonController = class SeasonController extends Controller {
     }
     async create(body, req) {
         this.setStatus(201);
-        return this.service.create(body, req.user.id);
+        return this.service.create(body, req.user.user_id);
     }
     async update(id, body) {
         return this.service.update(id, body);

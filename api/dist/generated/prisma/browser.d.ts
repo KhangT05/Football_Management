@@ -28,10 +28,10 @@ export type Tournament = Prisma.TournamentModel;
  */
 export type Season = Prisma.SeasonModel;
 /**
- * Model SeasonRule
+ * Model TournamentRule
  *
  */
-export type SeasonRule = Prisma.SeasonRuleModel;
+export type TournamentRule = Prisma.TournamentRuleModel;
 /**
  * Model Phase
  *

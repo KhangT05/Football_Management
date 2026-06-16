@@ -394,7 +394,7 @@ function controllerTemplate(): string {
   // Express Request type import — only needed when --auth-user
   if (authUser) {
     lines.push(`import type { Request as ExRequest } from "express";`);
-    lines.push(`type AuthRequest = ExRequest & { user: { id: number } };`);
+    lines.push(`type AuthRequest = ExRequest & { user: { user_id: number } };`);
   }
 
   lines.push(serviceImport);
@@ -480,7 +480,7 @@ function controllerTemplate(): string {
     @Request() req: AuthRequest
   ): Promise<${returnType}> {
     this.setStatus(201);
-    return this.service.create(body, req.user.id);
+    return this.service.create(body, req.user.user_id);
   }`);
     } else {
       lines.push(`
@@ -683,7 +683,7 @@ printServiceStubs();
 console.log(`Next steps:`);
 console.log(`  1. Copy service stubs above into ${entityLower}.service.ts`);
 if (authUser) {
-  console.log(`  2. Ensure Express.Request is augmented with user: { id: number } (src/types/express.d.ts)`);
+  console.log(`  2. Ensure Express.Request is augmented with user: { user_id: number } (src/types/express.d.ts)`);
   console.log(`  3. Update service.create() to accept (data, userId) and pass user_id to Prisma`);
   console.log(`  4. Register ${entityName}Controller in ioc.ts`);
   console.log(`  5. npm run tsoa:gen`);

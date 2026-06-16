@@ -1,1 +1,1 @@
-{"version":3,"file":"season-auto-transition.job.d.ts","sourceRoot":"","sources":["../../src/jobs/season-auto-transition.job.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAgB,MAAM,+BAA+B,CAAC;AAK3E,wBAAsB,uBAAuB,CAAC,MAAM,EAAE,YAAY,GAAG,OAAO,CAAC,IAAI,CAAC,CAyEjF"}
+{"version":3,"file":"season-auto-transition.job.d.ts","sourceRoot":"","sources":["../../src/jobs/season-auto-transition.job.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAgB,MAAM,+BAA+B,CAAC;AAK3E,wBAAsB,uBAAuB,CAAC,MAAM,EAAE,YAAY,GAAG,OAAO,CAAC,IAAI,CAAC,CAkDjF"}
