@@ -74,8 +74,15 @@ export class SeasonService {
         const registration_deadline = data.registration_deadline ?? existing.registration_deadline;
 
         this.validateDatesIfPresent(start_date, end_date, registration_deadline);
-
-        return this.prisma.season.update({ where: { id }, data });
+        return this.prisma.season.update({
+            where: { id },
+            data: {
+                ...data,
+                start_date: start_date ?? undefined,
+                end_date: end_date ?? undefined,
+                registration_deadline: registration_deadline ?? undefined,
+            },
+        });
     }
 
     async updateStatus(
@@ -108,7 +115,7 @@ export class SeasonService {
         this.validateStatusAllowsEdit(existing.status);
         await this.prisma.season.update({
             where: { id },
-            data: { is_active: false, is_deleted: true, deleted_at: new Date() },
+            data: { is_active: false, deleted_at: new Date() },
         });
     }
 

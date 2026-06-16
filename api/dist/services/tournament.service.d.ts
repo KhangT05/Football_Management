@@ -17,7 +17,6 @@ export declare class TournamentService {
     private readonly query;
     constructor(prisma: PrismaClient);
     findAll(req?: QueryRequest): Promise<PaginatedResult<Tournament>>;
-    findById(id: number): Promise<Tournament | null>;
     findByIdOrFail(id: number): Promise<Tournament>;
     create(data: CreateTournamentDto, userId: number): Promise<Tournament>;
     update(id: number, data: UpdateTournamentDto): Promise<Tournament>;

@@ -26,7 +26,9 @@ export class SeasonService {
     findAll(req = {}) {
         return this.query.run(req, {
             include: {
-                user: { select: { id: true, name: true, email: true, phone: true } }
+                user: {
+                    select: { id: true, name: true, email: true, phone: true }
+                },
             }
         });
     }
@@ -34,7 +36,10 @@ export class SeasonService {
         const season = await this.prisma.season.findUnique({
             where: { id },
             include: {
-                user: { select: { id: true, name: true, email: true, phone: true } }
+                user: {
+                    select: { id: true, name: true, email: true, phone: true }
+                },
+                tournament: true
             }
         });
         if (!season)
@@ -61,7 +66,15 @@ export class SeasonService {
         const end_date = data.end_date ?? existing.end_date;
         const registration_deadline = data.registration_deadline ?? existing.registration_deadline;
         this.validateDatesIfPresent(start_date, end_date, registration_deadline);
-        return this.prisma.season.update({ where: { id }, data });
+        return this.prisma.season.update({
+            where: { id },
+            data: {
+                ...data,
+                start_date: start_date ?? undefined,
+                end_date: end_date ?? undefined,
+                registration_deadline: registration_deadline ?? undefined,
+            },
+        });
     }
     async updateStatus(id, newStatus, meta) {
         const existing = await this.findByIdOrFail(id);
@@ -86,7 +99,7 @@ export class SeasonService {
         this.validateStatusAllowsEdit(existing.status);
         await this.prisma.season.update({
             where: { id },
-            data: { is_active: false, is_deleted: true, deleted_at: new Date() },
+            data: { is_active: false, deleted_at: new Date() },
         });
     }
     // ─── Private ────────────────────────────────────────────────

@@ -16,12 +16,14 @@ export type AggregateSeason = {
 export type SeasonAvgAggregateOutputType = {
     id: number | null;
     max_teams: number | null;
+    registration_fee: runtime.Decimal | null;
     tournament_id: number | null;
     user_id: number | null;
 };
 export type SeasonSumAggregateOutputType = {
     id: number | null;
     max_teams: number | null;
+    registration_fee: runtime.Decimal | null;
     tournament_id: number | null;
     user_id: number | null;
 };
@@ -39,7 +41,7 @@ export type SeasonMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
+    registration_fee: runtime.Decimal | null;
     tournament_id: number | null;
     user_id: number | null;
 };
@@ -57,7 +59,7 @@ export type SeasonMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
+    registration_fee: runtime.Decimal | null;
     tournament_id: number | null;
     user_id: number | null;
 };
@@ -75,7 +77,7 @@ export type SeasonCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
+    registration_fee: number;
     tournament_id: number;
     user_id: number;
     _all: number;
@@ -83,12 +85,14 @@ export type SeasonCountAggregateOutputType = {
 export type SeasonAvgAggregateInputType = {
     id?: true;
     max_teams?: true;
+    registration_fee?: true;
     tournament_id?: true;
     user_id?: true;
 };
 export type SeasonSumAggregateInputType = {
     id?: true;
     max_teams?: true;
+    registration_fee?: true;
     tournament_id?: true;
     user_id?: true;
 };
@@ -106,7 +110,7 @@ export type SeasonMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
+    registration_fee?: true;
     tournament_id?: true;
     user_id?: true;
 };
@@ -124,7 +128,7 @@ export type SeasonMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
+    registration_fee?: true;
     tournament_id?: true;
     user_id?: true;
 };
@@ -142,7 +146,7 @@ export type SeasonCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
+    registration_fee?: true;
     tournament_id?: true;
     user_id?: true;
     _all?: true;
@@ -237,7 +241,7 @@ export type SeasonGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
+    registration_fee: runtime.Decimal;
     tournament_id: number;
     user_id: number | null;
     _count: SeasonCountAggregateOutputType | null;
@@ -266,11 +270,10 @@ export type SeasonWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Season"> | boolean;
+    registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
-    season_rule?: Prisma.XOR<Prisma.SeasonRuleNullableScalarRelationFilter, Prisma.SeasonRuleWhereInput> | null;
     phases?: Prisma.PhaseListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
@@ -292,11 +295,10 @@ export type SeasonOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament?: Prisma.TournamentOrderByWithRelationInput;
-    season_rule?: Prisma.SeasonRuleOrderByWithRelationInput;
     phases?: Prisma.PhaseOrderByRelationAggregateInput;
     season_teams?: Prisma.SeasonTeamOrderByRelationAggregateInput;
     user?: Prisma.UserOrderByWithRelationInput;
@@ -307,10 +309,10 @@ export type SeasonOrderByWithRelationInput = {
 };
 export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    name?: string;
     AND?: Prisma.SeasonWhereInput | Prisma.SeasonWhereInput[];
     OR?: Prisma.SeasonWhereInput[];
     NOT?: Prisma.SeasonWhereInput | Prisma.SeasonWhereInput[];
-    name?: Prisma.StringFilter<"Season"> | string;
     description?: Prisma.StringNullableFilter<"Season"> | string | null;
     status?: Prisma.EnumSeasonStatusFilter<"Season"> | $Enums.SeasonStatus;
     start_date?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
@@ -322,18 +324,17 @@ export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Season"> | boolean;
+    registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
-    season_rule?: Prisma.XOR<Prisma.SeasonRuleNullableScalarRelationFilter, Prisma.SeasonRuleWhereInput> | null;
     phases?: Prisma.PhaseListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     playerStatistics?: Prisma.PlayerStatisticListRelationFilter;
     notifications?: Prisma.NotificationListRelationFilter;
     matches?: Prisma.MatchListRelationFilter;
-}, "id">;
+}, "id" | "name">;
 export type SeasonOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
@@ -348,7 +349,7 @@ export type SeasonOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.SeasonCountOrderByAggregateInput;
@@ -374,7 +375,7 @@ export type SeasonScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Season"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Season"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"Season"> | boolean;
+    registration_fee?: Prisma.DecimalWithAggregatesFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntWithAggregatesFilter<"Season"> | number;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"Season"> | number | null;
 };
@@ -391,9 +392,8 @@ export type SeasonCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -415,10 +415,9 @@ export type SeasonUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
@@ -438,9 +437,8 @@ export type SeasonUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -462,10 +460,9 @@ export type SeasonUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -486,7 +483,7 @@ export type SeasonCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
 };
@@ -503,7 +500,7 @@ export type SeasonUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
 export type SeasonUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -519,7 +516,7 @@ export type SeasonUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
@@ -550,13 +547,14 @@ export type SeasonCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type SeasonAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     max_teams?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -574,7 +572,7 @@ export type SeasonMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -592,13 +590,14 @@ export type SeasonMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type SeasonSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     max_teams?: Prisma.SortOrder;
+    registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -689,17 +688,12 @@ export type SeasonUncheckedUpdateManyWithoutTournamentNestedInput = {
 export type EnumSeasonStatusFieldUpdateOperationsInput = {
     set?: $Enums.SeasonStatus;
 };
-export type SeasonCreateNestedOneWithoutSeason_ruleInput = {
-    create?: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_ruleInput, Prisma.SeasonUncheckedCreateWithoutSeason_ruleInput>;
-    connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutSeason_ruleInput;
-    connect?: Prisma.SeasonWhereUniqueInput;
-};
-export type SeasonUpdateOneRequiredWithoutSeason_ruleNestedInput = {
-    create?: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_ruleInput, Prisma.SeasonUncheckedCreateWithoutSeason_ruleInput>;
-    connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutSeason_ruleInput;
-    upsert?: Prisma.SeasonUpsertWithoutSeason_ruleInput;
-    connect?: Prisma.SeasonWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.SeasonUpdateToOneWithWhereWithoutSeason_ruleInput, Prisma.SeasonUpdateWithoutSeason_ruleInput>, Prisma.SeasonUncheckedUpdateWithoutSeason_ruleInput>;
+export type DecimalFieldUpdateOperationsInput = {
+    set?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    increment?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
 export type SeasonCreateNestedOneWithoutPhasesInput = {
     create?: Prisma.XOR<Prisma.SeasonCreateWithoutPhasesInput, Prisma.SeasonUncheckedCreateWithoutPhasesInput>;
@@ -778,9 +772,8 @@ export type SeasonCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
@@ -801,9 +794,8 @@ export type SeasonUncheckedCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
@@ -848,7 +840,7 @@ export type SeasonScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Season"> | boolean;
+    registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
 };
@@ -865,8 +857,7 @@ export type SeasonCreateWithoutTournamentInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -888,9 +879,8 @@ export type SeasonUncheckedCreateWithoutTournamentInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
@@ -918,109 +908,6 @@ export type SeasonUpdateManyWithWhereWithoutTournamentInput = {
     where: Prisma.SeasonScalarWhereInput;
     data: Prisma.XOR<Prisma.SeasonUpdateManyMutationInput, Prisma.SeasonUncheckedUpdateManyWithoutTournamentInput>;
 };
-export type SeasonCreateWithoutSeason_ruleInput = {
-    name: string;
-    description?: string | null;
-    status?: $Enums.SeasonStatus;
-    start_date?: Date | string | null;
-    end_date?: Date | string | null;
-    registration_deadline?: Date | string | null;
-    max_teams: number;
-    is_registration_open?: boolean;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    is_deleted?: boolean;
-    tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
-    user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
-    notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
-};
-export type SeasonUncheckedCreateWithoutSeason_ruleInput = {
-    id?: number;
-    name: string;
-    description?: string | null;
-    status?: $Enums.SeasonStatus;
-    start_date?: Date | string | null;
-    end_date?: Date | string | null;
-    registration_deadline?: Date | string | null;
-    max_teams: number;
-    is_registration_open?: boolean;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    is_deleted?: boolean;
-    tournament_id: number;
-    user_id?: number | null;
-    phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
-    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
-};
-export type SeasonCreateOrConnectWithoutSeason_ruleInput = {
-    where: Prisma.SeasonWhereUniqueInput;
-    create: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_ruleInput, Prisma.SeasonUncheckedCreateWithoutSeason_ruleInput>;
-};
-export type SeasonUpsertWithoutSeason_ruleInput = {
-    update: Prisma.XOR<Prisma.SeasonUpdateWithoutSeason_ruleInput, Prisma.SeasonUncheckedUpdateWithoutSeason_ruleInput>;
-    create: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_ruleInput, Prisma.SeasonUncheckedCreateWithoutSeason_ruleInput>;
-    where?: Prisma.SeasonWhereInput;
-};
-export type SeasonUpdateToOneWithWhereWithoutSeason_ruleInput = {
-    where?: Prisma.SeasonWhereInput;
-    data: Prisma.XOR<Prisma.SeasonUpdateWithoutSeason_ruleInput, Prisma.SeasonUncheckedUpdateWithoutSeason_ruleInput>;
-};
-export type SeasonUpdateWithoutSeason_ruleInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    status?: Prisma.EnumSeasonStatusFieldUpdateOperationsInput | $Enums.SeasonStatus;
-    start_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    end_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_deadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
-    user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
-    notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
-};
-export type SeasonUncheckedUpdateWithoutSeason_ruleInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    status?: Prisma.EnumSeasonStatusFieldUpdateOperationsInput | $Enums.SeasonStatus;
-    start_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    end_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_deadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
-    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
-};
 export type SeasonCreateWithoutPhasesInput = {
     name: string;
     description?: string | null;
@@ -1034,9 +921,8 @@ export type SeasonCreateWithoutPhasesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
@@ -1057,10 +943,9 @@ export type SeasonUncheckedCreateWithoutPhasesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1092,9 +977,8 @@ export type SeasonUpdateWithoutPhasesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
@@ -1115,10 +999,9 @@ export type SeasonUncheckedUpdateWithoutPhasesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1137,9 +1020,8 @@ export type SeasonCreateWithoutSeason_teamsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
@@ -1160,10 +1042,9 @@ export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1195,9 +1076,8 @@ export type SeasonUpdateWithoutSeason_teamsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
@@ -1218,10 +1098,9 @@ export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1240,9 +1119,8 @@ export type SeasonCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1263,10 +1141,9 @@ export type SeasonUncheckedCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1298,9 +1175,8 @@ export type SeasonUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1321,10 +1197,9 @@ export type SeasonUncheckedUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1343,9 +1218,8 @@ export type SeasonCreateWithoutPlayerStatisticsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1366,10 +1240,9 @@ export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1401,9 +1274,8 @@ export type SeasonUpdateWithoutPlayerStatisticsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1424,10 +1296,9 @@ export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1446,9 +1317,8 @@ export type SeasonCreateWithoutNotificationsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    season_rule?: Prisma.SeasonRuleCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1469,10 +1339,9 @@ export type SeasonUncheckedCreateWithoutNotificationsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
     user_id?: number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedCreateNestedOneWithoutSeasonInput;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1504,9 +1373,8 @@ export type SeasonUpdateWithoutNotificationsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1527,10 +1395,9 @@ export type SeasonUncheckedUpdateWithoutNotificationsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1550,7 +1417,7 @@ export type SeasonCreateManyUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id: number;
 };
 export type SeasonUpdateWithoutUserInput = {
@@ -1566,9 +1433,8 @@ export type SeasonUpdateWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
@@ -1589,9 +1455,8 @@ export type SeasonUncheckedUpdateWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1612,7 +1477,7 @@ export type SeasonUncheckedUpdateManyWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 export type SeasonCreateManyTournamentInput = {
@@ -1629,7 +1494,7 @@ export type SeasonCreateManyTournamentInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
+    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     user_id?: number | null;
 };
 export type SeasonUpdateWithoutTournamentInput = {
@@ -1645,8 +1510,7 @@ export type SeasonUpdateWithoutTournamentInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    season_rule?: Prisma.SeasonRuleUpdateOneWithoutSeasonNestedInput;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1668,9 +1532,8 @@ export type SeasonUncheckedUpdateWithoutTournamentInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    season_rule?: Prisma.SeasonRuleUncheckedUpdateOneWithoutSeasonNestedInput;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1691,7 +1554,7 @@ export type SeasonUncheckedUpdateManyWithoutTournamentInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 /**
@@ -1764,11 +1627,10 @@ export type SeasonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
+    registration_fee?: boolean;
     tournament_id?: boolean;
     user_id?: boolean;
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
-    season_rule?: boolean | Prisma.Season$season_ruleArgs<ExtArgs>;
     phases?: boolean | Prisma.Season$phasesArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Season$season_teamsArgs<ExtArgs>;
     user?: boolean | Prisma.Season$userArgs<ExtArgs>;
@@ -1791,14 +1653,13 @@ export type SeasonSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
+    registration_fee?: boolean;
     tournament_id?: boolean;
     user_id?: boolean;
 };
-export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted" | "tournament_id" | "user_id", ExtArgs["result"]["season"]>;
+export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "registration_fee" | "tournament_id" | "user_id", ExtArgs["result"]["season"]>;
 export type SeasonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
-    season_rule?: boolean | Prisma.Season$season_ruleArgs<ExtArgs>;
     phases?: boolean | Prisma.Season$phasesArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Season$season_teamsArgs<ExtArgs>;
     user?: boolean | Prisma.Season$userArgs<ExtArgs>;
@@ -1811,7 +1672,6 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     name: "Season";
     objects: {
         tournament: Prisma.$TournamentPayload<ExtArgs>;
-        season_rule: Prisma.$SeasonRulePayload<ExtArgs> | null;
         phases: Prisma.$PhasePayload<ExtArgs>[];
         season_teams: Prisma.$SeasonTeamPayload<ExtArgs>[];
         user: Prisma.$UserPayload<ExtArgs> | null;
@@ -1833,7 +1693,7 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
+        registration_fee: runtime.Decimal;
         tournament_id: number;
         user_id: number | null;
     }, ExtArgs["result"]["season"]>;
@@ -2114,7 +1974,6 @@ export interface SeasonDelegate<ExtArgs extends runtime.Types.Extensions.Interna
 export interface Prisma__SeasonClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     tournament<T extends Prisma.TournamentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TournamentDefaultArgs<ExtArgs>>): Prisma.Prisma__TournamentClient<runtime.Types.Result.GetResult<Prisma.$TournamentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
-    season_rule<T extends Prisma.Season$season_ruleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$season_ruleArgs<ExtArgs>>): Prisma.Prisma__SeasonRuleClient<runtime.Types.Result.GetResult<Prisma.$SeasonRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     phases<T extends Prisma.Season$phasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$phasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     season_teams<T extends Prisma.Season$season_teamsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$season_teamsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonTeamPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     user<T extends Prisma.Season$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
@@ -2159,7 +2018,7 @@ export interface SeasonFieldRefs {
     readonly created_at: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"Season", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"Season", 'Boolean'>;
+    readonly registration_fee: Prisma.FieldRef<"Season", 'Decimal'>;
     readonly tournament_id: Prisma.FieldRef<"Season", 'Int'>;
     readonly user_id: Prisma.FieldRef<"Season", 'Int'>;
 }
@@ -2493,24 +2352,6 @@ export type SeasonDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
      * Limit how many Seasons to delete.
      */
     limit?: number;
-};
-/**
- * Season.season_rule
- */
-export type Season$season_ruleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the SeasonRule
-     */
-    select?: Prisma.SeasonRuleSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the SeasonRule
-     */
-    omit?: Prisma.SeasonRuleOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.SeasonRuleInclude<ExtArgs> | null;
-    where?: Prisma.SeasonRuleWhereInput;
 };
 /**
  * Season.phases

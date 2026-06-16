@@ -1,3 +1,4 @@
+import { createAppError } from "../common/app.error.js";
 import { CreateTournamentDto, UpdateTournamentDto } from "../dtos/tournament.schema.js";
 import { PrismaClient, Tournament } from "../generated/prisma/client.js";
 import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
@@ -49,25 +50,6 @@ export class TournamentService {
         });
     }
 
-    findById(id: number): Promise<Tournament | null> {
-        return this.prisma.tournament.findUnique({
-            where: {
-                id
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true
-                    }
-                },
-                seasons: true
-            }
-        });
-    }
-
     async findByIdOrFail(id: number): Promise<Tournament> {
         const tournament = await this.prisma.tournament.findUnique({
             where: { id },
@@ -83,7 +65,7 @@ export class TournamentService {
                 seasons: true
             }
         });
-        if (!tournament) throw new Error(`tournament ${id} not found`);
+        if (!tournament) throw createAppError('NOT_FOUND', `Tournament ${id} not found`);
         return tournament;
     }
 
@@ -103,9 +85,20 @@ export class TournamentService {
 
     async softDelete(id: number): Promise<void> {
         await this.findByIdOrFail(id);
+
+        const activeSeasonCount = await this.prisma.season.count({
+            where: {
+                tournament_id: id,
+                is_deleted: false,
+                status: { in: ['registration_open', 'ongoing'] },
+            },
+        });
+        if (activeSeasonCount > 0)
+            throw createAppError('VALIDATION_ERROR', 'Cannot delete tournament with active seasons');
+
         await this.prisma.tournament.update({
             where: { id },
-            data: { is_active: false },
+            data: { is_active: false, deleted_at: new Date() },
         });
     }
 }

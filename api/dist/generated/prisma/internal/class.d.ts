@@ -173,14 +173,14 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.seasonRule`: Exposes CRUD operations for the **SeasonRule** model.
+     * `prisma.tournamentRule`: Exposes CRUD operations for the **TournamentRule** model.
       * Example usage:
       * ```ts
-      * // Fetch zero or more SeasonRules
-      * const seasonRules = await prisma.seasonRule.findMany()
+      * // Fetch zero or more TournamentRules
+      * const tournamentRules = await prisma.tournamentRule.findMany()
       * ```
       */
-    get seasonRule(): Prisma.SeasonRuleDelegate<ExtArgs, {
+    get tournamentRule(): Prisma.TournamentRuleDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

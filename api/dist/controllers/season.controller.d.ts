@@ -2,7 +2,7 @@ import { Controller } from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & {
     user: {
-        id: number;
+        user_id: number;
     };
 };
 import { SeasonService } from "../services/season.service.js";
