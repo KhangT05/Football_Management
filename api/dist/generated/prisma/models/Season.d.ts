@@ -15,11 +15,13 @@ export type AggregateSeason = {
 };
 export type SeasonAvgAggregateOutputType = {
     id: number | null;
+    max_teams: number | null;
     tournament_id: number | null;
     user_id: number | null;
 };
 export type SeasonSumAggregateOutputType = {
     id: number | null;
+    max_teams: number | null;
     tournament_id: number | null;
     user_id: number | null;
 };
@@ -31,6 +33,7 @@ export type SeasonMinAggregateOutputType = {
     start_date: Date | null;
     end_date: Date | null;
     registration_deadline: Date | null;
+    max_teams: number | null;
     is_registration_open: boolean | null;
     is_active: boolean | null;
     created_at: Date | null;
@@ -48,6 +51,7 @@ export type SeasonMaxAggregateOutputType = {
     start_date: Date | null;
     end_date: Date | null;
     registration_deadline: Date | null;
+    max_teams: number | null;
     is_registration_open: boolean | null;
     is_active: boolean | null;
     created_at: Date | null;
@@ -65,6 +69,7 @@ export type SeasonCountAggregateOutputType = {
     start_date: number;
     end_date: number;
     registration_deadline: number;
+    max_teams: number;
     is_registration_open: number;
     is_active: number;
     created_at: number;
@@ -77,11 +82,13 @@ export type SeasonCountAggregateOutputType = {
 };
 export type SeasonAvgAggregateInputType = {
     id?: true;
+    max_teams?: true;
     tournament_id?: true;
     user_id?: true;
 };
 export type SeasonSumAggregateInputType = {
     id?: true;
+    max_teams?: true;
     tournament_id?: true;
     user_id?: true;
 };
@@ -93,6 +100,7 @@ export type SeasonMinAggregateInputType = {
     start_date?: true;
     end_date?: true;
     registration_deadline?: true;
+    max_teams?: true;
     is_registration_open?: true;
     is_active?: true;
     created_at?: true;
@@ -110,6 +118,7 @@ export type SeasonMaxAggregateInputType = {
     start_date?: true;
     end_date?: true;
     registration_deadline?: true;
+    max_teams?: true;
     is_registration_open?: true;
     is_active?: true;
     created_at?: true;
@@ -127,6 +136,7 @@ export type SeasonCountAggregateInputType = {
     start_date?: true;
     end_date?: true;
     registration_deadline?: true;
+    max_teams?: true;
     is_registration_open?: true;
     is_active?: true;
     created_at?: true;
@@ -221,6 +231,7 @@ export type SeasonGroupByOutputType = {
     start_date: Date;
     end_date: Date;
     registration_deadline: Date;
+    max_teams: number;
     is_registration_open: boolean;
     is_active: boolean;
     created_at: Date;
@@ -249,6 +260,7 @@ export type SeasonWhereInput = {
     start_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     end_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     registration_deadline?: Prisma.DateTimeFilter<"Season"> | Date | string;
+    max_teams?: Prisma.IntFilter<"Season"> | number;
     is_registration_open?: Prisma.BoolFilter<"Season"> | boolean;
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
@@ -274,6 +286,7 @@ export type SeasonOrderByWithRelationInput = {
     start_date?: Prisma.SortOrder;
     end_date?: Prisma.SortOrder;
     registration_deadline?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     is_registration_open?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
@@ -303,6 +316,7 @@ export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     start_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     end_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     registration_deadline?: Prisma.DateTimeFilter<"Season"> | Date | string;
+    max_teams?: Prisma.IntFilter<"Season"> | number;
     is_registration_open?: Prisma.BoolFilter<"Season"> | boolean;
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
@@ -328,6 +342,7 @@ export type SeasonOrderByWithAggregationInput = {
     start_date?: Prisma.SortOrder;
     end_date?: Prisma.SortOrder;
     registration_deadline?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     is_registration_open?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
@@ -353,6 +368,7 @@ export type SeasonScalarWhereWithAggregatesInput = {
     start_date?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
     end_date?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
     registration_deadline?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
+    max_teams?: Prisma.IntWithAggregatesFilter<"Season"> | number;
     is_registration_open?: Prisma.BoolWithAggregatesFilter<"Season"> | boolean;
     is_active?: Prisma.BoolWithAggregatesFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
@@ -369,6 +385,7 @@ export type SeasonCreateInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -392,6 +409,7 @@ export type SeasonUncheckedCreateInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -414,6 +432,7 @@ export type SeasonUpdateInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -437,6 +456,7 @@ export type SeasonUncheckedUpdateInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -460,6 +480,7 @@ export type SeasonCreateManyInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -476,6 +497,7 @@ export type SeasonUpdateManyMutationInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -491,6 +513,7 @@ export type SeasonUncheckedUpdateManyInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -521,6 +544,7 @@ export type SeasonCountOrderByAggregateInput = {
     start_date?: Prisma.SortOrder;
     end_date?: Prisma.SortOrder;
     registration_deadline?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     is_registration_open?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
@@ -532,6 +556,7 @@ export type SeasonCountOrderByAggregateInput = {
 };
 export type SeasonAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -543,6 +568,7 @@ export type SeasonMaxOrderByAggregateInput = {
     start_date?: Prisma.SortOrder;
     end_date?: Prisma.SortOrder;
     registration_deadline?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     is_registration_open?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
@@ -560,6 +586,7 @@ export type SeasonMinOrderByAggregateInput = {
     start_date?: Prisma.SortOrder;
     end_date?: Prisma.SortOrder;
     registration_deadline?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     is_registration_open?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
@@ -571,6 +598,7 @@ export type SeasonMinOrderByAggregateInput = {
 };
 export type SeasonSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    max_teams?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -744,6 +772,7 @@ export type SeasonCreateWithoutUserInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -766,6 +795,7 @@ export type SeasonUncheckedCreateWithoutUserInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -812,6 +842,7 @@ export type SeasonScalarWhereInput = {
     start_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     end_date?: Prisma.DateTimeFilter<"Season"> | Date | string;
     registration_deadline?: Prisma.DateTimeFilter<"Season"> | Date | string;
+    max_teams?: Prisma.IntFilter<"Season"> | number;
     is_registration_open?: Prisma.BoolFilter<"Season"> | boolean;
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
@@ -828,6 +859,7 @@ export type SeasonCreateWithoutTournamentInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -850,6 +882,7 @@ export type SeasonUncheckedCreateWithoutTournamentInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -892,6 +925,7 @@ export type SeasonCreateWithoutSeason_ruleInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -914,6 +948,7 @@ export type SeasonUncheckedCreateWithoutSeason_ruleInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -948,6 +983,7 @@ export type SeasonUpdateWithoutSeason_ruleInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -970,6 +1006,7 @@ export type SeasonUncheckedUpdateWithoutSeason_ruleInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -991,6 +1028,7 @@ export type SeasonCreateWithoutPhasesInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1013,6 +1051,7 @@ export type SeasonUncheckedCreateWithoutPhasesInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1047,6 +1086,7 @@ export type SeasonUpdateWithoutPhasesInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1069,6 +1109,7 @@ export type SeasonUncheckedUpdateWithoutPhasesInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1090,6 +1131,7 @@ export type SeasonCreateWithoutSeason_teamsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1112,6 +1154,7 @@ export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1146,6 +1189,7 @@ export type SeasonUpdateWithoutSeason_teamsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1168,6 +1212,7 @@ export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1189,6 +1234,7 @@ export type SeasonCreateWithoutMatchesInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1211,6 +1257,7 @@ export type SeasonUncheckedCreateWithoutMatchesInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1245,6 +1292,7 @@ export type SeasonUpdateWithoutMatchesInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1267,6 +1315,7 @@ export type SeasonUncheckedUpdateWithoutMatchesInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1288,6 +1337,7 @@ export type SeasonCreateWithoutPlayerStatisticsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1310,6 +1360,7 @@ export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1344,6 +1395,7 @@ export type SeasonUpdateWithoutPlayerStatisticsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1366,6 +1418,7 @@ export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1387,6 +1440,7 @@ export type SeasonCreateWithoutNotificationsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1409,6 +1463,7 @@ export type SeasonUncheckedCreateWithoutNotificationsInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1443,6 +1498,7 @@ export type SeasonUpdateWithoutNotificationsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1465,6 +1521,7 @@ export type SeasonUncheckedUpdateWithoutNotificationsInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1487,6 +1544,7 @@ export type SeasonCreateManyUserInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1502,6 +1560,7 @@ export type SeasonUpdateWithoutUserInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1524,6 +1583,7 @@ export type SeasonUncheckedUpdateWithoutUserInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1546,6 +1606,7 @@ export type SeasonUncheckedUpdateManyWithoutUserInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1562,6 +1623,7 @@ export type SeasonCreateManyTournamentInput = {
     start_date: Date | string;
     end_date: Date | string;
     registration_deadline: Date | string;
+    max_teams: number;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: Date | string;
@@ -1577,6 +1639,7 @@ export type SeasonUpdateWithoutTournamentInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1599,6 +1662,7 @@ export type SeasonUncheckedUpdateWithoutTournamentInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1621,6 +1685,7 @@ export type SeasonUncheckedUpdateManyWithoutTournamentInput = {
     start_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     end_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     registration_deadline?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1693,6 +1758,7 @@ export type SeasonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     start_date?: boolean;
     end_date?: boolean;
     registration_deadline?: boolean;
+    max_teams?: boolean;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: boolean;
@@ -1719,6 +1785,7 @@ export type SeasonSelectScalar = {
     start_date?: boolean;
     end_date?: boolean;
     registration_deadline?: boolean;
+    max_teams?: boolean;
     is_registration_open?: boolean;
     is_active?: boolean;
     created_at?: boolean;
@@ -1728,7 +1795,7 @@ export type SeasonSelectScalar = {
     tournament_id?: boolean;
     user_id?: boolean;
 };
-export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted" | "tournament_id" | "user_id", ExtArgs["result"]["season"]>;
+export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted" | "tournament_id" | "user_id", ExtArgs["result"]["season"]>;
 export type SeasonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
     season_rule?: boolean | Prisma.Season$season_ruleArgs<ExtArgs>;
@@ -1760,6 +1827,7 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
         start_date: Date;
         end_date: Date;
         registration_deadline: Date;
+        max_teams: number;
         is_registration_open: boolean;
         is_active: boolean;
         created_at: Date;
@@ -2085,6 +2153,7 @@ export interface SeasonFieldRefs {
     readonly start_date: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly end_date: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly registration_deadline: Prisma.FieldRef<"Season", 'DateTime'>;
+    readonly max_teams: Prisma.FieldRef<"Season", 'Int'>;
     readonly is_registration_open: Prisma.FieldRef<"Season", 'Boolean'>;
     readonly is_active: Prisma.FieldRef<"Season", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Season", 'DateTime'>;

@@ -92,7 +92,6 @@ export declare const TournamentScalarFieldEnum: {
     readonly name: "name";
     readonly description: "description";
     readonly logo: "logo";
-    readonly max_teams: "max_teams";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -108,6 +107,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly start_date: "start_date";
     readonly end_date: "end_date";
     readonly registration_deadline: "registration_deadline";
+    readonly max_teams: "max_teams";
     readonly is_registration_open: "is_registration_open";
     readonly is_active: "is_active";
     readonly created_at: "created_at";

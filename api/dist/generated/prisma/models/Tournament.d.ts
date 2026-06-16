@@ -14,12 +14,10 @@ export type AggregateTournament = {
 };
 export type TournamentAvgAggregateOutputType = {
     id: number | null;
-    max_teams: number | null;
     user_id: number | null;
 };
 export type TournamentSumAggregateOutputType = {
     id: number | null;
-    max_teams: number | null;
     user_id: number | null;
 };
 export type TournamentMinAggregateOutputType = {
@@ -27,7 +25,6 @@ export type TournamentMinAggregateOutputType = {
     name: string | null;
     description: string | null;
     logo: string | null;
-    max_teams: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -39,7 +36,6 @@ export type TournamentMaxAggregateOutputType = {
     name: string | null;
     description: string | null;
     logo: string | null;
-    max_teams: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -51,7 +47,6 @@ export type TournamentCountAggregateOutputType = {
     name: number;
     description: number;
     logo: number;
-    max_teams: number;
     is_active: number;
     created_at: number;
     updated_at: number;
@@ -61,12 +56,10 @@ export type TournamentCountAggregateOutputType = {
 };
 export type TournamentAvgAggregateInputType = {
     id?: true;
-    max_teams?: true;
     user_id?: true;
 };
 export type TournamentSumAggregateInputType = {
     id?: true;
-    max_teams?: true;
     user_id?: true;
 };
 export type TournamentMinAggregateInputType = {
@@ -74,7 +67,6 @@ export type TournamentMinAggregateInputType = {
     name?: true;
     description?: true;
     logo?: true;
-    max_teams?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -86,7 +78,6 @@ export type TournamentMaxAggregateInputType = {
     name?: true;
     description?: true;
     logo?: true;
-    max_teams?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -98,7 +89,6 @@ export type TournamentCountAggregateInputType = {
     name?: true;
     description?: true;
     logo?: true;
-    max_teams?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -187,7 +177,6 @@ export type TournamentGroupByOutputType = {
     name: string;
     description: string | null;
     logo: string | null;
-    max_teams: number;
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
@@ -210,7 +199,6 @@ export type TournamentWhereInput = {
     name?: Prisma.StringFilter<"Tournament"> | string;
     description?: Prisma.StringNullableFilter<"Tournament"> | string | null;
     logo?: Prisma.StringNullableFilter<"Tournament"> | string | null;
-    max_teams?: Prisma.IntFilter<"Tournament"> | number;
     is_active?: Prisma.BoolFilter<"Tournament"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Tournament"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Tournament"> | Date | string | null;
@@ -224,7 +212,6 @@ export type TournamentOrderByWithRelationInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     logo?: Prisma.SortOrderInput | Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -242,7 +229,6 @@ export type TournamentWhereUniqueInput = Prisma.AtLeast<{
     name?: Prisma.StringFilter<"Tournament"> | string;
     description?: Prisma.StringNullableFilter<"Tournament"> | string | null;
     logo?: Prisma.StringNullableFilter<"Tournament"> | string | null;
-    max_teams?: Prisma.IntFilter<"Tournament"> | number;
     is_active?: Prisma.BoolFilter<"Tournament"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Tournament"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Tournament"> | Date | string | null;
@@ -256,7 +242,6 @@ export type TournamentOrderByWithAggregationInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     logo?: Prisma.SortOrderInput | Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -276,7 +261,6 @@ export type TournamentScalarWhereWithAggregatesInput = {
     name?: Prisma.StringWithAggregatesFilter<"Tournament"> | string;
     description?: Prisma.StringNullableWithAggregatesFilter<"Tournament"> | string | null;
     logo?: Prisma.StringNullableWithAggregatesFilter<"Tournament"> | string | null;
-    max_teams?: Prisma.IntWithAggregatesFilter<"Tournament"> | number;
     is_active?: Prisma.BoolWithAggregatesFilter<"Tournament"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Tournament"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Tournament"> | Date | string | null;
@@ -287,7 +271,6 @@ export type TournamentCreateInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -300,7 +283,6 @@ export type TournamentUncheckedCreateInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -312,7 +294,6 @@ export type TournamentUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -325,7 +306,6 @@ export type TournamentUncheckedUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -338,7 +318,6 @@ export type TournamentCreateManyInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -349,7 +328,6 @@ export type TournamentUpdateManyMutationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -360,7 +338,6 @@ export type TournamentUncheckedUpdateManyInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -385,7 +362,6 @@ export type TournamentCountOrderByAggregateInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     logo?: Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -394,7 +370,6 @@ export type TournamentCountOrderByAggregateInput = {
 };
 export type TournamentAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TournamentMaxOrderByAggregateInput = {
@@ -402,7 +377,6 @@ export type TournamentMaxOrderByAggregateInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     logo?: Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -414,7 +388,6 @@ export type TournamentMinOrderByAggregateInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     logo?: Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -423,7 +396,6 @@ export type TournamentMinOrderByAggregateInput = {
 };
 export type TournamentSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    max_teams?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TournamentScalarRelationFilter = {
@@ -491,7 +463,6 @@ export type TournamentCreateWithoutUserInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -503,7 +474,6 @@ export type TournamentUncheckedCreateWithoutUserInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -539,7 +509,6 @@ export type TournamentScalarWhereInput = {
     name?: Prisma.StringFilter<"Tournament"> | string;
     description?: Prisma.StringNullableFilter<"Tournament"> | string | null;
     logo?: Prisma.StringNullableFilter<"Tournament"> | string | null;
-    max_teams?: Prisma.IntFilter<"Tournament"> | number;
     is_active?: Prisma.BoolFilter<"Tournament"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Tournament"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Tournament"> | Date | string | null;
@@ -550,7 +519,6 @@ export type TournamentCreateWithoutSeasonsInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -562,7 +530,6 @@ export type TournamentUncheckedCreateWithoutSeasonsInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -586,7 +553,6 @@ export type TournamentUpdateWithoutSeasonsInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -598,7 +564,6 @@ export type TournamentUncheckedUpdateWithoutSeasonsInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -610,7 +575,6 @@ export type TournamentCreateManyUserInput = {
     name: string;
     description?: string | null;
     logo?: string | null;
-    max_teams: number;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -620,7 +584,6 @@ export type TournamentUpdateWithoutUserInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -632,7 +595,6 @@ export type TournamentUncheckedUpdateWithoutUserInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -644,7 +606,6 @@ export type TournamentUncheckedUpdateManyWithoutUserInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -679,7 +640,6 @@ export type TournamentSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     name?: boolean;
     description?: boolean;
     logo?: boolean;
-    max_teams?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -694,14 +654,13 @@ export type TournamentSelectScalar = {
     name?: boolean;
     description?: boolean;
     logo?: boolean;
-    max_teams?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
     user_id?: boolean;
 };
-export type TournamentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "max_teams" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id", ExtArgs["result"]["tournament"]>;
+export type TournamentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "logo" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id", ExtArgs["result"]["tournament"]>;
 export type TournamentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     seasons?: boolean | Prisma.Tournament$seasonsArgs<ExtArgs>;
     user?: boolean | Prisma.Tournament$userArgs<ExtArgs>;
@@ -718,7 +677,6 @@ export type $TournamentPayload<ExtArgs extends runtime.Types.Extensions.Internal
         name: string;
         description: string | null;
         logo: string | null;
-        max_teams: number;
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
@@ -1032,7 +990,6 @@ export interface TournamentFieldRefs {
     readonly name: Prisma.FieldRef<"Tournament", 'String'>;
     readonly description: Prisma.FieldRef<"Tournament", 'String'>;
     readonly logo: Prisma.FieldRef<"Tournament", 'String'>;
-    readonly max_teams: Prisma.FieldRef<"Tournament", 'Int'>;
     readonly is_active: Prisma.FieldRef<"Tournament", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Tournament", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Tournament", 'DateTime'>;
