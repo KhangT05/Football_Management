@@ -1,16 +1,11 @@
 import { createAppError } from "../common/app.error.js";
-import { CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
-import { PrismaClient, Season } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
-
+import { Queryable } from "../libs/queryable.js";
 export class SeasonService {
-
-    private readonly query: Queryable<Season>;
-
-    constructor(
-        private readonly prisma: PrismaClient
-    ) {
-        this.query = new Queryable<Season>(prisma.season, {
+    prisma;
+    query;
+    constructor(prisma) {
+        this.prisma = prisma;
+        this.query = new Queryable(prisma.season, {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
@@ -22,8 +17,7 @@ export class SeasonService {
             },
         });
     }
-
-    findAll(req: QueryRequest = {}): Promise<PaginatedResult<Season>> {
+    findAll(req = {}) {
         return this.query.run(req, {
             include: {
                 user: {
@@ -37,8 +31,7 @@ export class SeasonService {
             }
         });
     }
-
-    findById(id: number): Promise<Season | null> {
+    findById(id) {
         return this.prisma.season.findUnique({
             where: {
                 id
@@ -55,8 +48,7 @@ export class SeasonService {
             }
         });
     }
-
-    async findByIdOrFail(id: number): Promise<Season> {
+    async findByIdOrFail(id) {
         const season = await this.prisma.season.findUnique({
             where: { id },
             include: {
@@ -70,25 +62,23 @@ export class SeasonService {
                 }
             }
         });
-        if (!season) throw createAppError('UNAUTHORIZED', `season ${id} not found`);
+        if (!season)
+            throw createAppError('UNAUTHORIZED', `season ${id} not found`);
         return season;
     }
-
-    async create(data: CreateSeasonDto, userId: number): Promise<Season> {
+    async create(data, userId) {
         return this.prisma.season.create({
             data: { ...data, user_id: userId }
         });
     }
-
-    async update(id: number, data: UpdateSeasonDto): Promise<Season> {
+    async update(id, data) {
         await this.findByIdOrFail(id);
         return this.prisma.season.update({
             where: { id },
             data,
         });
     }
-
-    async softDelete(id: number): Promise<void> {
+    async softDelete(id) {
         await this.findByIdOrFail(id);
         await this.prisma.season.update({
             where: { id },
@@ -96,3 +86,4 @@ export class SeasonService {
         });
     }
 }
+//# sourceMappingURL=season.service.js.map

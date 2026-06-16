@@ -10,10 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, UploadedFile, FormField } from "tsoa";
-import { TournamentService } from "../services/tournament.service.js";
-import { storageService } from "../services/storage.service.js";
-let TournamentController = class TournamentController extends Controller {
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import { SeasonService } from "../services/season.service.js";
+let SeasonController = class SeasonController extends Controller {
     service;
     constructor(service) {
         super();
@@ -25,23 +24,9 @@ let TournamentController = class TournamentController extends Controller {
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
-    async create(name, description, logo, req) {
+    async create(body, req) {
         this.setStatus(201);
-        let logo_url;
-        if (logo) {
-            const result = await storageService.upload({
-                namespace: "tournaments",
-                kind: "logo",
-                file: logo,
-            });
-            logo_url = result.url;
-        }
-        return this.service.create({
-            name,
-            description,
-            logo: logo_url,
-            is_active: true,
-        }, req.user.user_id);
+        return this.service.create(body, req.user.id);
     }
     async update(id, body) {
         return this.service.update(id, body);
@@ -61,25 +46,23 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
-], TournamentController.prototype, "findAll", null);
+], SeasonController.prototype, "findAll", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], TournamentController.prototype, "findById", null);
+], SeasonController.prototype, "findById", null);
 __decorate([
     Post("/"),
     SuccessResponse(201, "Created"),
-    __param(0, FormField()),
-    __param(1, FormField()),
-    __param(2, UploadedFile("logo")),
-    __param(3, Request()),
+    __param(0, Body()),
+    __param(1, Request()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object, Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
-], TournamentController.prototype, "create", null);
+], SeasonController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
     __param(0, Path()),
@@ -87,7 +70,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
-], TournamentController.prototype, "update", null);
+], SeasonController.prototype, "update", null);
 __decorate([
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
@@ -95,12 +78,12 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], TournamentController.prototype, "softDelete", null);
-TournamentController = __decorate([
+], SeasonController.prototype, "softDelete", null);
+SeasonController = __decorate([
     Security("jwt"),
-    Route("tournaments"),
-    Tags("Tournaments"),
-    __metadata("design:paramtypes", [TournamentService])
-], TournamentController);
-export { TournamentController };
-//# sourceMappingURL=tournament.controller.js.map
+    Route("seasons"),
+    Tags("Seasons"),
+    __metadata("design:paramtypes", [SeasonService])
+], SeasonController);
+export { SeasonController };
+//# sourceMappingURL=season.controller.js.map

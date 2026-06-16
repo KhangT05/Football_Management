@@ -1,13 +1,11 @@
-import { z } from "zod"
-
+import { z } from "zod";
 export const SeasonStatusSchema = z.enum([
     "upcoming",
     "registration_open",
     "ongoing",
     "finished",
     "cancelled",
-])
-
+]);
 const baseSeasonSchema = z.object({
     name: z.string().min(1).max(255),
     description: z.string().optional(),
@@ -19,10 +17,7 @@ const baseSeasonSchema = z.object({
     is_registration_open: z.boolean().default(false),
     is_active: z.boolean().default(true),
     tournament_id: z.number().int().positive(),
-})
-
-export const createSeasonSchema = baseSeasonSchema
-export const updateSeasonSchema = baseSeasonSchema.partial()
-
-export type CreateSeasonDto = z.infer<typeof createSeasonSchema>
-export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>
+});
+export const createSeasonSchema = baseSeasonSchema;
+export const updateSeasonSchema = baseSeasonSchema.partial();
+//# sourceMappingURL=season.schema.js.map

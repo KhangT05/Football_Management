@@ -271,10 +271,6 @@
                         "type": "number",
                         "format": "double"
                     },
-                    "max_teams": {
-                        "type": "number",
-                        "format": "double"
-                    },
                     "logo": {
                         "type": "string"
                     },
@@ -306,7 +302,6 @@
                 },
                 "required": [
                     "user_id",
-                    "max_teams",
                     "logo",
                     "description",
                     "deleted_at",
@@ -350,10 +345,6 @@
                     "is_active": {
                         "type": "boolean"
                     },
-                    "max_teams": {
-                        "type": "number",
-                        "format": "double"
-                    },
                     "logo": {
                         "type": "string"
                     },
@@ -368,6 +359,235 @@
             },
             "UpdateTournamentDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateTournamentSchema_"
+            },
+            "SeasonStatus": {
+                "type": "string",
+                "enum": [
+                    "upcoming",
+                    "registration_open",
+                    "ongoing",
+                    "finished",
+                    "cancelled"
+                ]
+            },
+            "DefaultSelection__36_SeasonPayload_": {
+                "properties": {
+                    "tournament_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "is_registration_open": {
+                        "type": "boolean"
+                    },
+                    "max_teams": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "registration_deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/SeasonStatus"
+                    },
+                    "user_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "is_deleted": {
+                        "type": "boolean"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "tournament_id",
+                    "is_registration_open",
+                    "max_teams",
+                    "registration_deadline",
+                    "end_date",
+                    "start_date",
+                    "status",
+                    "user_id",
+                    "description",
+                    "is_deleted",
+                    "deleted_at",
+                    "updated_at",
+                    "created_at",
+                    "is_active",
+                    "id",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "SeasonModel": {
+                "$ref": "#/components/schemas/DefaultSelection__36_SeasonPayload_",
+                "description": "Model Season"
+            },
+            "Season": {
+                "$ref": "#/components/schemas/SeasonModel",
+                "description": "Model Season"
+            },
+            "PaginatedResult_Season_": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/Season"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "infer_typeofcreateSeasonSchema_": {
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "tournament_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_registration_open": {
+                        "type": "boolean"
+                    },
+                    "max_teams": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "registration_deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "upcoming",
+                            "registration_open",
+                            "ongoing",
+                            "finished",
+                            "cancelled"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "tournament_id",
+                    "is_active",
+                    "is_registration_open",
+                    "max_teams",
+                    "registration_deadline",
+                    "end_date",
+                    "start_date",
+                    "status",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "CreateSeasonDto": {
+                "$ref": "#/components/schemas/infer_typeofcreateSeasonSchema_"
+            },
+            "infer_typeofupdateSeasonSchema_": {
+                "properties": {
+                    "tournament_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_registration_open": {
+                        "type": "boolean"
+                    },
+                    "max_teams": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "registration_deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "upcoming",
+                            "registration_open",
+                            "ongoing",
+                            "finished",
+                            "cancelled"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateSeasonDto": {
+                "$ref": "#/components/schemas/infer_typeofupdateSeasonSchema_"
             },
             "DefaultSelection__36_RolePayload_": {
                 "properties": {
@@ -1172,9 +1392,6 @@
                                     "description": {
                                         "type": "string"
                                     },
-                                    "max_teams": {
-                                        "type": "string"
-                                    },
                                     "logo": {
                                         "type": "string",
                                         "format": "binary"
@@ -1183,7 +1400,6 @@
                                 "required": [
                                     "name",
                                     "description",
-                                    "max_teams",
                                     "logo"
                                 ]
                             }
@@ -1280,6 +1496,222 @@
                 },
                 "tags": [
                     "Tournaments"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/seasons": {
+            "get": {
+                "operationId": "FindAll",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult_Season_"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Season"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateSeasonDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/seasons/{id}": {
+            "get": {
+                "operationId": "FindById",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Season"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "Update",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Season"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSeasonDto"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "SoftDelete",
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                },
+                "tags": [
+                    "Seasons"
                 ],
                 "security": [
                     {
