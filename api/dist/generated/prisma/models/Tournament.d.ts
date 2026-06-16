@@ -223,10 +223,10 @@ export type TournamentOrderByWithRelationInput = {
 };
 export type TournamentWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    name?: string;
     AND?: Prisma.TournamentWhereInput | Prisma.TournamentWhereInput[];
     OR?: Prisma.TournamentWhereInput[];
     NOT?: Prisma.TournamentWhereInput | Prisma.TournamentWhereInput[];
-    name?: Prisma.StringFilter<"Tournament"> | string;
     description?: Prisma.StringNullableFilter<"Tournament"> | string | null;
     logo?: Prisma.StringNullableFilter<"Tournament"> | string | null;
     is_active?: Prisma.BoolFilter<"Tournament"> | boolean;
@@ -236,7 +236,7 @@ export type TournamentWhereUniqueInput = Prisma.AtLeast<{
     user_id?: Prisma.IntNullableFilter<"Tournament"> | number | null;
     seasons?: Prisma.SeasonListRelationFilter;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
-}, "id">;
+}, "id" | "name">;
 export type TournamentOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;

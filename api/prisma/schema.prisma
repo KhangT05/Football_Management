@@ -70,7 +70,7 @@ model User_Role {
 
 model Tournament {
   id          Int       @id @default(autoincrement())
-  name        String
+  name        String    @unique
   description String?
   logo        String?
   is_active   Boolean   @default(true)
@@ -100,12 +100,12 @@ enum SeasonStatus {
 
 model Season {
   id                    Int          @id @default(autoincrement())
-  name                  String
+  name                  String       @unique
   description           String?
   status                SeasonStatus @default(upcoming)
-  start_date            DateTime
-  end_date              DateTime
-  registration_deadline DateTime
+  start_date            DateTime?
+  end_date              DateTime?
+  registration_deadline DateTime?
   max_teams             Int
   is_registration_open  Boolean      @default(false)
   is_active             Boolean      @default(true)
@@ -578,7 +578,7 @@ model OAuthAccount {
 
 model Venue {
   id         Int       @id @default(autoincrement())
-  name       String
+  name       String    @unique
   address    String?
   is_active  Boolean   @default(true)
   created_at DateTime  @default(now())

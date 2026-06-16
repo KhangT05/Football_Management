@@ -208,10 +208,10 @@ export type VenueOrderByWithRelationInput = {
 };
 export type VenueWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    name?: string;
     AND?: Prisma.VenueWhereInput | Prisma.VenueWhereInput[];
     OR?: Prisma.VenueWhereInput[];
     NOT?: Prisma.VenueWhereInput | Prisma.VenueWhereInput[];
-    name?: Prisma.StringFilter<"Venue"> | string;
     address?: Prisma.StringNullableFilter<"Venue"> | string | null;
     is_active?: Prisma.BoolFilter<"Venue"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Venue"> | Date | string;
@@ -219,7 +219,7 @@ export type VenueWhereUniqueInput = Prisma.AtLeast<{
     deleted_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     is_deleted?: Prisma.BoolFilter<"Venue"> | boolean;
     matches?: Prisma.MatchListRelationFilter;
-}, "id">;
+}, "id" | "name">;
 export type VenueOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;

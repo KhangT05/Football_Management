@@ -12,8 +12,8 @@ export declare const storageConfig: {
     readonly compress: {
         readonly maxWidth: 1920;
         readonly maxHeight: 1080;
-        readonly quality: 85;
-        readonly format: "webp";
+        readonly quality: 100;
+        readonly format: "original";
         readonly stripExif: true;
     };
 };

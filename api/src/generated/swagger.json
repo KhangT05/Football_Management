@@ -480,6 +480,18 @@
 			},
 			"infer_typeofcreateSeasonSchema_": {
 				"properties": {
+					"registration_deadline": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"end_date": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"start_date": {
+						"type": "string",
+						"format": "date-time"
+					},
 					"description": {
 						"type": "string"
 					},
@@ -496,18 +508,6 @@
 					"max_teams": {
 						"type": "number",
 						"format": "double"
-					},
-					"registration_deadline": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"end_date": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"start_date": {
-						"type": "string",
-						"format": "date-time"
 					},
 					"status": {
 						"type": "string",
@@ -528,9 +528,6 @@
 					"is_active",
 					"is_registration_open",
 					"max_teams",
-					"registration_deadline",
-					"end_date",
-					"start_date",
 					"status",
 					"name"
 				],
@@ -541,13 +538,6 @@
 			},
 			"infer_typeofupdateSeasonSchema_": {
 				"properties": {
-					"tournament_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"is_active": {
-						"type": "boolean"
-					},
 					"is_registration_open": {
 						"type": "boolean"
 					},
@@ -580,6 +570,9 @@
 					"description": {
 						"type": "string"
 					},
+					"is_active": {
+						"type": "boolean"
+					},
 					"name": {
 						"type": "string"
 					}
@@ -588,6 +581,30 @@
 			},
 			"UpdateSeasonDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateSeasonSchema_"
+			},
+			"infer_typeofUpdateSeasonStatusSchema_": {
+				"properties": {
+					"cancel_reason": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"upcoming",
+							"registration_open",
+							"ongoing",
+							"finished",
+							"cancelled"
+						]
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object"
+			},
+			"UpdateSeasonStatusDto": {
+				"$ref": "#/components/schemas/infer_typeofUpdateSeasonStatusSchema_"
 			},
 			"DefaultSelection__36_RolePayload_": {
 				"properties": {
@@ -1729,6 +1746,52 @@
 						}
 					}
 				]
+			}
+		},
+		"/seasons/{id}/status": {
+			"patch": {
+				"operationId": "UpdateStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Season"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Seasons"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateSeasonStatusDto"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/roles": {

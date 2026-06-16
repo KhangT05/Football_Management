@@ -45,6 +45,7 @@ export class TournamentService {
                     }
                 }
             }
+
         });
     }
 
@@ -61,7 +62,8 @@ export class TournamentService {
                         email: true,
                         phone: true
                     }
-                }
+                },
+                seasons: true
             }
         });
     }
@@ -77,7 +79,8 @@ export class TournamentService {
                         email: true,
                         phone: true
                     }
-                }
+                },
+                seasons: true
             }
         });
         if (!tournament) throw new Error(`tournament ${id} not found`);

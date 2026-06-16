@@ -15,9 +15,7 @@ export class AuthService {
 
     }
     async login(dto: LoginDto): Promise<AuthTokens> {
-        const user = await this.prisma.user.findUnique({ where: { email: dto.email } }).catch(() => {
-            throw createAppError('UNAUTHORIZED');
-        });
+        const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
         const passwordMatch = user
             ? await bcrypt.compare(dto.password, user.password)
@@ -36,9 +34,7 @@ export class AuthService {
     }
 
     async register(dto: RegisterDto): Promise<AuthTokens> {
-        const exists = await this.prisma.user.findUnique({ where: { email: dto.email } }).catch(() => {
-            throw createAppError('UNAUTHORIZED');
-        });
+        const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
         if (exists) {
             throw createAppError('CONFLICT', `Email already exists: ${dto.email}`, 'Email đã được sử dụng');
@@ -47,11 +43,6 @@ export class AuthService {
         const hashed = await bcrypt.hash(dto.password, 12);
         const user = await this.prisma.user.create({
             data: { email: dto.email, password: hashed, name: dto.name },
-        }).catch((err) => {
-            if (err?.code === 'P2002') {
-                throw createAppError('CONFLICT', 'Email already exists', 'Email đã được sử dụng');
-            }
-            throw createAppError('UNAUTHORIZED');
         });
 
         return this.issueTokens(user.id);
@@ -84,8 +75,6 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({
             where: { id: id },
             select: { id: true, name: true, email: true },
-        }).catch(() => {
-            throw createAppError('UNAUTHORIZED', `this.prisma.user.findUnique failed for id: ${id}`);
         });
 
         if (!user) throw createAppError('NOT_FOUND', `User not found: ${id}`);
