@@ -43,13 +43,13 @@ type WhereClause = Record<string, unknown>;
  * Trả về hàm `query()` gắn vào service.
  * Gọi 1 lần khi khởi tạo service, dùng lại cho mọi request.
  */
-export declare class Queryable<T> {
+export declare class Queryable<T, Delegate extends {
+    findMany: (args: any) => Promise<any[]>;
+    count: (args: any) => Promise<number>;
+} = any> {
     private delegate;
     private baseConfig;
-    constructor(delegate: {
-        findMany: (a: any) => Promise<T[]>;
-        count: (a: any) => Promise<number>;
-    }, baseConfig: QueryableConfig);
+    constructor(delegate: Delegate, baseConfig: QueryableConfig);
     run(req: QueryRequest, overrideConfig?: Partial<QueryableConfig>): Promise<PaginatedResult<T>>;
 }
 export {};

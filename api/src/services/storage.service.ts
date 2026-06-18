@@ -74,6 +74,28 @@ export class StorageService {
         }
         return imageProcessor.reprocess(file.buffer, opts);
     }
+
+    replaceAsset(
+        oldUrl: string | null | undefined,
+        newUrl: string | null | undefined,
+        logger?: { warn: (msg: string, meta?: object) => void }
+    ): void {
+        // null → null: xóa avatar (soft delete case)
+        // same URL: no-op
+        if (!oldUrl || oldUrl === newUrl) return;
+
+        const publicId = StorageService.extractPublicId(oldUrl);
+        if (!publicId) return;
+
+        this.delete(publicId).catch((err) =>
+            (logger ?? console).warn("Failed to delete old asset from Cloudinary", { err, publicId })
+        );
+    }
+
+    static extractPublicId(url: string): string | undefined {
+        const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+        return match ? match[1] : undefined;
+    }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

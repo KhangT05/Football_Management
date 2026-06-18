@@ -2,9 +2,9 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import { VenueService } from "../services/venue.service.js";
 import type { Venue } from "../generated/prisma/client.js";
 import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult } from "../libs/queryable.js";
 
-@Security("jwt")
+@Security("jwt", ['user', 'admin'])
 @Route("venues")
 @Tags("Venues")
 export class VenueController extends Controller {

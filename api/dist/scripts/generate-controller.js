@@ -382,7 +382,7 @@ function controllerTemplate() {
     lines.push(``);
     // ── Class ──
     if (auth)
-        lines.push(`@Security("jwt")`);
+        lines.push(`@Security("jwt",['admin'])`);
     lines.push(`@Route("${routePath}")`);
     lines.push(`@Tags("${entityName}s")`);
     lines.push(`export class ${entityName}Controller extends Controller {`);

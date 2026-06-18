@@ -157,9 +157,12 @@ class QueryBuilder {
  * Trả về hàm `query()` gắn vào service.
  * Gọi 1 lần khi khởi tạo service, dùng lại cho mọi request.
  */
-export class Queryable<T> {
+export class Queryable<T, Delegate extends {
+    findMany: (args: any) => Promise<any[]>;
+    count: (args: any) => Promise<number>;
+} = any> {
     constructor(
-        private delegate: { findMany: (a: any) => Promise<T[]>; count: (a: any) => Promise<number> },
+        private delegate: Delegate,
         private baseConfig: QueryableConfig
     ) { }
 

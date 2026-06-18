@@ -16,6 +16,8 @@ import { SeasonController } from './../controllers/season.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { RoleController } from './../controllers/role.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PlayerController } from './../controllers/player.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AuthController } from './../controllers/auth.controller.js';
 import { expressAuthentication } from './../middleware/auth.middleware.js';
 // @ts-ignore - no great way to install types from subpackage
@@ -251,6 +253,21 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_TeamLeaderPayload_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "team_id": { "dataType": "double", "required": true }, "user_id": { "dataType": "double", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamLeaderModel": {
+        "dataType": "refAlias",
+        "type": { "ref": "DefaultSelection__36_TeamLeaderPayload_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamLeader": {
+        "dataType": "refAlias",
+        "type": { "ref": "TeamLeaderModel", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonStatus": {
         "dataType": "refAlias",
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["upcoming"] }, { "dataType": "enum", "enums": ["registration_open"] }, { "dataType": "enum", "enums": ["ongoing"] }, { "dataType": "enum", "enums": ["finished"] }, { "dataType": "enum", "enums": ["cancelled"] }], "validators": {} },
@@ -359,6 +376,123 @@ const models = {
         "type": { "ref": "infer_typeofupdateRoleSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPosition": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": { "dataType": "double", "required": true },
+            "date_of_birth": { "dataType": "datetime", "required": true },
+            "position": { "ref": "PlayerPosition", "required": true },
+            "height": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "weight": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "nationality": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "avatar": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "is_active": { "dataType": "boolean", "required": true },
+            "created_at": { "dataType": "datetime", "required": true },
+            "updated_at": { "dataType": "union", "subSchemas": [{ "dataType": "datetime" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "user": { "dataType": "union", "subSchemas": [{ "dataType": "nestedObjectLiteral", "nestedProperties": { "phone": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true }, "email": { "dataType": "string", "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } } }, { "dataType": "enum", "enums": [null] }] },
+            "user_id": { "dataType": "double", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofcreatePlayerSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "avatar": { "dataType": "string" }, "nationality": { "dataType": "string" }, "weight": { "dataType": "double" }, "height": { "dataType": "double" }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "required": true }, "date_of_birth": { "dataType": "datetime", "required": true }, "user_id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatePlayerDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofcreatePlayerSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofupdatePlayerSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "avatar": { "dataType": "string" }, "nationality": { "dataType": "string" }, "weight": { "dataType": "double" }, "height": { "dataType": "double" }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }] }, "date_of_birth": { "dataType": "datetime" } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePlayerDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofupdatePlayerSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerRole": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["player"] }, { "dataType": "enum", "enums": ["captain"] }, { "dataType": "enum", "enums": ["vice_captain"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerStatus": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["suspended"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApprovalStatus": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["pending"] }, { "dataType": "enum", "enums": ["approved"] }, { "dataType": "enum", "enums": ["rejected"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamPlayerDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": { "dataType": "double", "required": true },
+            "team_id": { "dataType": "double", "required": true },
+            "player_id": { "dataType": "double", "required": true },
+            "jersey_number": { "dataType": "double", "required": true },
+            "position": { "ref": "PlayerPosition", "required": true },
+            "role": { "ref": "PlayerRole", "required": true },
+            "status": { "ref": "PlayerStatus", "required": true },
+            "approval_status": { "ref": "ApprovalStatus", "required": true },
+            "is_active": { "dataType": "boolean", "required": true },
+            "created_at": { "dataType": "datetime", "required": true },
+            "updated_at": { "dataType": "union", "subSchemas": [{ "dataType": "datetime" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "player": { "dataType": "union", "subSchemas": [{ "ref": "PlayerDto" }, { "dataType": "enum", "enums": [null] }] },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PaginatedResult_TeamPlayerDto_": {
+        "dataType": "refObject",
+        "properties": {
+            "data": { "dataType": "array", "array": { "dataType": "refObject", "ref": "TeamPlayerDto" }, "required": true },
+            "meta": { "ref": "PaginationMeta", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofaddPlayerToTeamSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "role": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["player"] }, { "dataType": "enum", "enums": ["captain"] }, { "dataType": "enum", "enums": ["vice_captain"] }], "required": true }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "required": true }, "jersey_number": { "dataType": "double", "required": true }, "player_id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddPlayerToTeamDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofaddPlayerToTeamSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofupdateTeamPlayerSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "approval_status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["pending"] }, { "dataType": "enum", "enums": ["approved"] }, { "dataType": "enum", "enums": ["rejected"] }] }, "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["suspended"] }] }, "role": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["player"] }, { "dataType": "enum", "enums": ["captain"] }, { "dataType": "enum", "enums": ["vice_captain"] }] }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }] }, "jersey_number": { "dataType": "double" } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTeamPlayerDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofupdateTeamPlayerSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofbulkDeleteSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "ids": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BulkDeleteDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofbulkDeleteSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TokenResponseDto": {
         "dataType": "refObject",
         "properties": {
@@ -438,7 +572,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/venues', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findAll)), async function VenueController_findAll(request, response, next) {
+    app.get('/venues', authenticateMiddleware([{ "jwt": ["user", "admin"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findAll)), async function VenueController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -465,7 +599,7 @@ export function RegisterRoutes(app, opts) {
     const argsVenueController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/venues/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findById)), async function VenueController_findById(request, response, next) {
+    app.get('/venues/:id', authenticateMiddleware([{ "jwt": ["user", "admin"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findById)), async function VenueController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -492,7 +626,7 @@ export function RegisterRoutes(app, opts) {
     const argsVenueController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreateVenueDto" },
     };
-    app.post('/venues', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.create)), async function VenueController_create(request, response, next) {
+    app.post('/venues', authenticateMiddleware([{ "jwt": ["user", "admin"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.create)), async function VenueController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -520,7 +654,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateVenueDto" },
     };
-    app.patch('/venues/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.update)), async function VenueController_update(request, response, next) {
+    app.patch('/venues/:id', authenticateMiddleware([{ "jwt": ["user", "admin"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.update)), async function VenueController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -547,7 +681,7 @@ export function RegisterRoutes(app, opts) {
     const argsVenueController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/venues/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.softDelete)), async function VenueController_softDelete(request, response, next) {
+    app.delete('/venues/:id', authenticateMiddleware([{ "jwt": ["user", "admin"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.softDelete)), async function VenueController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -578,7 +712,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/users', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findAll)), async function UserController_findAll(request, response, next) {
+    app.get('/users', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findAll)), async function UserController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -605,7 +739,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/users/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findById)), async function UserController_findById(request, response, next) {
+    app.get('/users/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findById)), async function UserController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -632,7 +766,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreateUserDto" },
     };
-    app.post('/users', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.create)), async function UserController_create(request, response, next) {
+    app.post('/users', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.create)), async function UserController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -660,7 +794,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateUserDto" },
     };
-    app.patch('/users/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.update)), async function UserController_update(request, response, next) {
+    app.patch('/users/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.update)), async function UserController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -687,7 +821,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/users/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.softDelete)), async function UserController_softDelete(request, response, next) {
+    app.delete('/users/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.softDelete)), async function UserController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1220,6 +1354,62 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsTeamController_getCaptain = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.get('/teams/:id/captain', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.getCaptain)), async function TeamController_getCaptain(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsTeamController_getCaptain, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(TeamController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getCaptain',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsTeamController_assignCaptain = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "user_id": { "dataType": "double", "required": true } } },
+        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+    };
+    app.post('/teams/:id/captain', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.assignCaptain)), async function TeamController_assignCaptain(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsTeamController_assignCaptain, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(TeamController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'assignCaptain',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsSeasonController_findAll = {
         page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
         per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
@@ -1396,7 +1586,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/roles', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.findAll)), async function RoleController_findAll(request, response, next) {
+    app.get('/roles', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.findAll)), async function RoleController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1423,7 +1613,7 @@ export function RegisterRoutes(app, opts) {
     const argsRoleController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/roles/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.findById)), async function RoleController_findById(request, response, next) {
+    app.get('/roles/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.findById)), async function RoleController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1450,7 +1640,7 @@ export function RegisterRoutes(app, opts) {
     const argsRoleController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreateRoleDto" },
     };
-    app.post('/roles', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.create)), async function RoleController_create(request, response, next) {
+    app.post('/roles', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.create)), async function RoleController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1478,7 +1668,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateRoleDto" },
     };
-    app.patch('/roles/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.update)), async function RoleController_update(request, response, next) {
+    app.patch('/roles/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.update)), async function RoleController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1505,7 +1695,7 @@ export function RegisterRoutes(app, opts) {
     const argsRoleController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/roles/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.softDelete)), async function RoleController_softDelete(request, response, next) {
+    app.delete('/roles/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(RoleController)), ...(fetchMiddlewares(RoleController.prototype.softDelete)), async function RoleController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1522,6 +1712,371 @@ export function RegisterRoutes(app, opts) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_findById = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.get('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.findById)), async function PlayerController_findById(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_findById, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'findById',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_create = {
+        body: { "in": "body", "name": "body", "required": true, "ref": "CreatePlayerDto" },
+    };
+    app.post('/players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.create)), async function PlayerController_create(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_create, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'create',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_update = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "UpdatePlayerDto" },
+    };
+    app.patch('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.update)), async function PlayerController_update(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_update, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'update',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_softDelete = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.delete('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.softDelete)), async function PlayerController_softDelete(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_softDelete, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'softDelete',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_listTeamPlayers = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
+        per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
+        sort: { "in": "query", "name": "sort", "dataType": "string" },
+        direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
+        position: { "in": "query", "name": "position", "dataType": "string" },
+        status: { "in": "query", "name": "status", "dataType": "string" },
+        approval_status: { "in": "query", "name": "approval_status", "dataType": "string" },
+    };
+    app.get('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.listTeamPlayers)), async function PlayerController_listTeamPlayers(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_listTeamPlayers, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'listTeamPlayers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_getTeamPlayer = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.get('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.getTeamPlayer)), async function PlayerController_getTeamPlayer(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_getTeamPlayer, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getTeamPlayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_addPlayerToTeam = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "AddPlayerToTeamDto" },
+        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+    };
+    app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_addPlayerToTeam, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'addPlayerToTeam',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_updateTeamPlayer = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTeamPlayerDto" },
+    };
+    app.patch('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.updateTeamPlayer)), async function PlayerController_updateTeamPlayer(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_updateTeamPlayer, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'updateTeamPlayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_approveTeamPlayer = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.post('/players/:team_id/team-players/:id/approve', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.approveTeamPlayer)), async function PlayerController_approveTeamPlayer(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_approveTeamPlayer, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'approveTeamPlayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_rejectTeamPlayer = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.post('/players/:team_id/team-players/:id/reject', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.rejectTeamPlayer)), async function PlayerController_rejectTeamPlayer(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_rejectTeamPlayer, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'rejectTeamPlayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_bulkDeleteTeamPlayers = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "BulkDeleteDto" },
+    };
+    app.delete('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.bulkDeleteTeamPlayers)), async function PlayerController_bulkDeleteTeamPlayers(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_bulkDeleteTeamPlayers, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'bulkDeleteTeamPlayers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_exportTeamPlayers = {
+        team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
+    };
+    app.get('/players/:team_id/team-players/export', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_exportTeamPlayers, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'exportTeamPlayers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_downloadImportTemplate = {};
+    app.get('/players/import-template', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.downloadImportTemplate)), async function PlayerController_downloadImportTemplate(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_downloadImportTemplate, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'downloadImportTemplate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
             });
         }
         catch (err) {

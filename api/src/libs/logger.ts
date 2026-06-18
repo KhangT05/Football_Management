@@ -1,4 +1,3 @@
-// libs/logger.ts
 import pino, { Logger, LoggerOptions } from 'pino';
 
 const isDev = process.env.NODE_ENV !== 'production';

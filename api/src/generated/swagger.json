@@ -760,6 +760,55 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DefaultSelection__36_TeamLeaderPayload_": {
+				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"team_id",
+					"user_id",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id"
+				],
+				"type": "object"
+			},
+			"TeamLeaderModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_TeamLeaderPayload_",
+				"description": "Model TeamLeader"
+			},
+			"TeamLeader": {
+				"$ref": "#/components/schemas/TeamLeaderModel",
+				"description": "Model TeamLeader"
+			},
 			"SeasonStatus": {
 				"type": "string",
 				"enum": [
@@ -1104,6 +1153,399 @@
 			"UpdateRoleDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateRoleSchema_"
 			},
+			"PlayerPosition": {
+				"type": "string",
+				"enum": [
+					"goalkeeper",
+					"defender",
+					"midfielder",
+					"forward"
+				]
+			},
+			"PlayerDto": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"date_of_birth": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"position": {
+						"$ref": "#/components/schemas/PlayerPosition"
+					},
+					"height": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"weight": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"nationality": {
+						"type": "string",
+						"nullable": true
+					},
+					"avatar": {
+						"type": "string",
+						"nullable": true
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"user": {
+						"properties": {
+							"phone": {
+								"type": "string",
+								"nullable": true
+							},
+							"email": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"phone",
+							"email",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"date_of_birth",
+					"position",
+					"height",
+					"weight",
+					"nationality",
+					"avatar",
+					"is_active",
+					"created_at",
+					"updated_at",
+					"user_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"infer_typeofcreatePlayerSchema_": {
+				"properties": {
+					"avatar": {
+						"type": "string"
+					},
+					"nationality": {
+						"type": "string"
+					},
+					"weight": {
+						"type": "number",
+						"format": "double"
+					},
+					"height": {
+						"type": "number",
+						"format": "double"
+					},
+					"position": {
+						"type": "string",
+						"enum": [
+							"goalkeeper",
+							"defender",
+							"midfielder",
+							"forward"
+						]
+					},
+					"date_of_birth": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"position",
+					"date_of_birth",
+					"user_id"
+				],
+				"type": "object"
+			},
+			"CreatePlayerDto": {
+				"$ref": "#/components/schemas/infer_typeofcreatePlayerSchema_"
+			},
+			"infer_typeofupdatePlayerSchema_": {
+				"properties": {
+					"avatar": {
+						"type": "string"
+					},
+					"nationality": {
+						"type": "string"
+					},
+					"weight": {
+						"type": "number",
+						"format": "double"
+					},
+					"height": {
+						"type": "number",
+						"format": "double"
+					},
+					"position": {
+						"type": "string",
+						"enum": [
+							"goalkeeper",
+							"defender",
+							"midfielder",
+							"forward"
+						]
+					},
+					"date_of_birth": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"type": "object"
+			},
+			"UpdatePlayerDto": {
+				"$ref": "#/components/schemas/infer_typeofupdatePlayerSchema_"
+			},
+			"PlayerRole": {
+				"type": "string",
+				"enum": [
+					"player",
+					"captain",
+					"vice_captain"
+				]
+			},
+			"PlayerStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"injured",
+					"suspended"
+				]
+			},
+			"ApprovalStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"approved",
+					"rejected"
+				]
+			},
+			"TeamPlayerDto": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"position": {
+						"$ref": "#/components/schemas/PlayerPosition"
+					},
+					"role": {
+						"$ref": "#/components/schemas/PlayerRole"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PlayerStatus"
+					},
+					"approval_status": {
+						"$ref": "#/components/schemas/ApprovalStatus"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"player": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/PlayerDto"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"team_id",
+					"player_id",
+					"jersey_number",
+					"position",
+					"role",
+					"status",
+					"approval_status",
+					"is_active",
+					"created_at",
+					"updated_at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaginatedResult_TeamPlayerDto_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/TeamPlayerDto"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"infer_typeofaddPlayerToTeamSchema_": {
+				"properties": {
+					"role": {
+						"type": "string",
+						"enum": [
+							"player",
+							"captain",
+							"vice_captain"
+						]
+					},
+					"position": {
+						"type": "string",
+						"enum": [
+							"goalkeeper",
+							"defender",
+							"midfielder",
+							"forward"
+						]
+					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"role",
+					"position",
+					"jersey_number",
+					"player_id"
+				],
+				"type": "object"
+			},
+			"AddPlayerToTeamDto": {
+				"$ref": "#/components/schemas/infer_typeofaddPlayerToTeamSchema_"
+			},
+			"infer_typeofupdateTeamPlayerSchema_": {
+				"properties": {
+					"is_active": {
+						"type": "boolean"
+					},
+					"approval_status": {
+						"type": "string",
+						"enum": [
+							"pending",
+							"approved",
+							"rejected"
+						]
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"active",
+							"injured",
+							"suspended"
+						]
+					},
+					"role": {
+						"type": "string",
+						"enum": [
+							"player",
+							"captain",
+							"vice_captain"
+						]
+					},
+					"position": {
+						"type": "string",
+						"enum": [
+							"goalkeeper",
+							"defender",
+							"midfielder",
+							"forward"
+						]
+					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"type": "object"
+			},
+			"UpdateTeamPlayerDto": {
+				"$ref": "#/components/schemas/infer_typeofupdateTeamPlayerSchema_"
+			},
+			"infer_typeofbulkDeleteSchema_": {
+				"properties": {
+					"ids": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"ids"
+				],
+				"type": "object"
+			},
+			"BulkDeleteDto": {
+				"$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
+			},
 			"TokenResponseDto": {
 				"properties": {
 					"accessToken": {
@@ -1290,7 +1732,10 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"user",
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1363,7 +1808,10 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"user",
+							"admin"
+						]
 					}
 				],
 				"parameters": [],
@@ -1399,7 +1847,10 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"user",
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1433,7 +1884,10 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"user",
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1470,7 +1924,10 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"user",
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1506,7 +1963,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1579,7 +2038,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [],
@@ -1615,7 +2076,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1649,7 +2112,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -1686,7 +2151,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -2465,6 +2932,100 @@
 				]
 			}
 		},
+		"/teams/{id}/captain": {
+			"get": {
+				"operationId": "GetCaptain",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/TeamLeader"
+										}
+									],
+									"nullable": true
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "AssignCaptain",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamLeader"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"user_id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"user_id"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/seasons": {
 			"get": {
 				"operationId": "FindAll",
@@ -2747,7 +3308,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -2820,7 +3383,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [],
@@ -2856,7 +3421,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -2890,7 +3457,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -2927,7 +3496,9 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -2941,6 +3512,655 @@
 						}
 					}
 				]
+			}
+		},
+		"/players/{id}": {
+			"get": {
+				"operationId": "FindById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePlayerDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "SoftDelete",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/players": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePlayerDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/players/{team_id}/team-players": {
+			"get": {
+				"operationId": "ListTeamPlayers",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_TeamPlayerDto_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "position",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "approval_status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "AddPlayerToTeam",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamPlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddPlayerToTeamDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "BulkDeleteTeamPlayers",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"notFound": {
+											"items": {
+												"type": "number",
+												"format": "double"
+											},
+											"type": "array"
+										},
+										"deleted": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"notFound",
+										"deleted"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BulkDeleteDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/players/{team_id}/team-players/{id}": {
+			"get": {
+				"operationId": "GetTeamPlayer",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamPlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "UpdateTeamPlayer",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamPlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTeamPlayerDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/players/{team_id}/team-players/{id}/approve": {
+			"post": {
+				"operationId": "ApproveTeamPlayer",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamPlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/players/{team_id}/team-players/{id}/reject": {
+			"post": {
+				"operationId": "RejectTeamPlayer",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamPlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/players/{team_id}/team-players/export": {
+			"get": {
+				"operationId": "ExportTeamPlayers",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/players/import-template": {
+			"get": {
+				"operationId": "DownloadImportTemplate",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/auth/login": {

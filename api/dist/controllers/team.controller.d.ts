@@ -6,7 +6,7 @@ type AuthRequest = ExRequest & {
     };
 };
 import { TeamService } from "../services/team.service.js";
-import type { Team } from "../generated/prisma/client.js";
+import type { Team, TeamLeader } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../libs/queryable.js";
 export declare class TeamController extends Controller {
     private service;
@@ -16,6 +16,10 @@ export declare class TeamController extends Controller {
     create(name: string, req: AuthRequest, coach_name?: string, description?: string, logo?: Express.Multer.File): Promise<Team>;
     update(id: number, name?: string, coach_name?: string, description?: string, logoFile?: Express.Multer.File): Promise<Team>;
     softDelete(id: number): Promise<void>;
+    getCaptain(id: number): Promise<TeamLeader | null>;
+    assignCaptain(id: number, body: {
+        user_id: number;
+    }, req: AuthRequest): Promise<TeamLeader>;
 }
 export {};
 //# sourceMappingURL=team.controller.d.ts.map

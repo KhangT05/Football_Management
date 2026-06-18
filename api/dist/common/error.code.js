@@ -10,6 +10,7 @@ export const ERROR_REGISTRY = {
     RATE_LIMITED: { httpStatus: 429, expose: 429, isAuthError: false },
     // Server — che hết
     DB_ERROR: { httpStatus: 500, expose: 500, isAuthError: false },
+    INTERNAL_SERVER_ERROR: { httpStatus: 500, expose: 500, isAuthError: false },
     EXTERNAL_API_ERROR: { httpStatus: 502, expose: 500, isAuthError: false }, // đừng leak vendor info
     TIMEOUT: { httpStatus: 504, expose: 500, isAuthError: false },
 };
