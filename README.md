@@ -91,3 +91,17 @@ push to main
 ```
 
 PR chỉ chạy CI, không deploy.
+
+PDF → OCR/Text Extraction → LLM#1 (extract evidence, task hẹp) → Evidence JSON
+                                                                       ↓
+                                                              Rule Engine (deterministic, KHÔNG gọi LLM)
+                                                              - required field check
+                                                              - type coercion chặt
+                                                              - business invariant (win > draw ≥ lose ≥ 0)
+                                                              - dedupe tiebreaker_order
+                                                              - Zod final shape validate
+                                                                       ↓
+                                                              throw → reject, KHÔNG tạo row nào
+                                                              pass  → Final JSON → commit transaction
+                                                                       ↓
+                                                    [transaction] deactivate rule cũ + create rule mới (is_active=true)

@@ -33,7 +33,6 @@ export type SeasonTeamPlayerMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type SeasonTeamPlayerMaxAggregateOutputType = {
     id: number | null;
@@ -44,7 +43,6 @@ export type SeasonTeamPlayerMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type SeasonTeamPlayerCountAggregateOutputType = {
     id: number;
@@ -55,7 +53,6 @@ export type SeasonTeamPlayerCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type SeasonTeamPlayerAvgAggregateInputType = {
@@ -79,7 +76,6 @@ export type SeasonTeamPlayerMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type SeasonTeamPlayerMaxAggregateInputType = {
     id?: true;
@@ -90,7 +86,6 @@ export type SeasonTeamPlayerMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type SeasonTeamPlayerCountAggregateInputType = {
     id?: true;
@@ -101,7 +96,6 @@ export type SeasonTeamPlayerCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type SeasonTeamPlayerAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -189,7 +183,6 @@ export type SeasonTeamPlayerGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: SeasonTeamPlayerCountAggregateOutputType | null;
     _avg: SeasonTeamPlayerAvgAggregateOutputType | null;
     _sum: SeasonTeamPlayerSumAggregateOutputType | null;
@@ -211,7 +204,6 @@ export type SeasonTeamPlayerWhereInput = {
     created_at?: Prisma.DateTimeFilter<"SeasonTeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"SeasonTeamPlayer"> | boolean;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
     team_player?: Prisma.XOR<Prisma.TeamPlayerScalarRelationFilter, Prisma.TeamPlayerWhereInput>;
 };
@@ -224,7 +216,6 @@ export type SeasonTeamPlayerOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     season_team?: Prisma.SeasonTeamOrderByWithRelationInput;
     team_player?: Prisma.TeamPlayerOrderByWithRelationInput;
 };
@@ -241,7 +232,6 @@ export type SeasonTeamPlayerWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"SeasonTeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"SeasonTeamPlayer"> | boolean;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
     team_player?: Prisma.XOR<Prisma.TeamPlayerScalarRelationFilter, Prisma.TeamPlayerWhereInput>;
 }, "id" | "season_team_id_team_player_id">;
@@ -254,7 +244,6 @@ export type SeasonTeamPlayerOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.SeasonTeamPlayerCountOrderByAggregateInput;
     _avg?: Prisma.SeasonTeamPlayerAvgOrderByAggregateInput;
     _max?: Prisma.SeasonTeamPlayerMaxOrderByAggregateInput;
@@ -273,7 +262,6 @@ export type SeasonTeamPlayerScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"SeasonTeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"SeasonTeamPlayer"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"SeasonTeamPlayer"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"SeasonTeamPlayer"> | boolean;
 };
 export type SeasonTeamPlayerCreateInput = {
     jersey_number: number;
@@ -281,7 +269,6 @@ export type SeasonTeamPlayerCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     season_team: Prisma.SeasonTeamCreateNestedOneWithoutSeasonTeamPlayersInput;
     team_player: Prisma.TeamPlayerCreateNestedOneWithoutSeasonTeamPlayersInput;
 };
@@ -294,7 +281,6 @@ export type SeasonTeamPlayerUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerUpdateInput = {
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -302,7 +288,6 @@ export type SeasonTeamPlayerUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutSeasonTeamPlayersNestedInput;
     team_player?: Prisma.TeamPlayerUpdateOneRequiredWithoutSeasonTeamPlayersNestedInput;
 };
@@ -315,7 +300,6 @@ export type SeasonTeamPlayerUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerCreateManyInput = {
     id?: number;
@@ -326,7 +310,6 @@ export type SeasonTeamPlayerCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerUpdateManyMutationInput = {
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -334,7 +317,6 @@ export type SeasonTeamPlayerUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -345,7 +327,6 @@ export type SeasonTeamPlayerUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerListRelationFilter = {
     every?: Prisma.SeasonTeamPlayerWhereInput;
@@ -368,7 +349,6 @@ export type SeasonTeamPlayerCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type SeasonTeamPlayerAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -385,7 +365,6 @@ export type SeasonTeamPlayerMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type SeasonTeamPlayerMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -396,7 +375,6 @@ export type SeasonTeamPlayerMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type SeasonTeamPlayerSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -486,7 +464,6 @@ export type SeasonTeamPlayerCreateWithoutTeam_playerInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     season_team: Prisma.SeasonTeamCreateNestedOneWithoutSeasonTeamPlayersInput;
 };
 export type SeasonTeamPlayerUncheckedCreateWithoutTeam_playerInput = {
@@ -497,7 +474,6 @@ export type SeasonTeamPlayerUncheckedCreateWithoutTeam_playerInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerCreateOrConnectWithoutTeam_playerInput = {
     where: Prisma.SeasonTeamPlayerWhereUniqueInput;
@@ -532,7 +508,6 @@ export type SeasonTeamPlayerScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"SeasonTeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"SeasonTeamPlayer"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"SeasonTeamPlayer"> | boolean;
 };
 export type SeasonTeamPlayerCreateWithoutSeason_teamInput = {
     jersey_number: number;
@@ -540,7 +515,6 @@ export type SeasonTeamPlayerCreateWithoutSeason_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     team_player: Prisma.TeamPlayerCreateNestedOneWithoutSeasonTeamPlayersInput;
 };
 export type SeasonTeamPlayerUncheckedCreateWithoutSeason_teamInput = {
@@ -551,7 +525,6 @@ export type SeasonTeamPlayerUncheckedCreateWithoutSeason_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerCreateOrConnectWithoutSeason_teamInput = {
     where: Prisma.SeasonTeamPlayerWhereUniqueInput;
@@ -582,7 +555,6 @@ export type SeasonTeamPlayerCreateManyTeam_playerInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerUpdateWithoutTeam_playerInput = {
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -590,7 +562,6 @@ export type SeasonTeamPlayerUpdateWithoutTeam_playerInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutSeasonTeamPlayersNestedInput;
 };
 export type SeasonTeamPlayerUncheckedUpdateWithoutTeam_playerInput = {
@@ -601,7 +572,6 @@ export type SeasonTeamPlayerUncheckedUpdateWithoutTeam_playerInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerUncheckedUpdateManyWithoutTeam_playerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -611,7 +581,6 @@ export type SeasonTeamPlayerUncheckedUpdateManyWithoutTeam_playerInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerCreateManySeason_teamInput = {
     id?: number;
@@ -621,7 +590,6 @@ export type SeasonTeamPlayerCreateManySeason_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type SeasonTeamPlayerUpdateWithoutSeason_teamInput = {
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -629,7 +597,6 @@ export type SeasonTeamPlayerUpdateWithoutSeason_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     team_player?: Prisma.TeamPlayerUpdateOneRequiredWithoutSeasonTeamPlayersNestedInput;
 };
 export type SeasonTeamPlayerUncheckedUpdateWithoutSeason_teamInput = {
@@ -640,7 +607,6 @@ export type SeasonTeamPlayerUncheckedUpdateWithoutSeason_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerUncheckedUpdateManyWithoutSeason_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -650,7 +616,6 @@ export type SeasonTeamPlayerUncheckedUpdateManyWithoutSeason_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type SeasonTeamPlayerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -661,7 +626,6 @@ export type SeasonTeamPlayerSelect<ExtArgs extends runtime.Types.Extensions.Inte
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
     team_player?: boolean | Prisma.TeamPlayerDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["seasonTeamPlayer"]>;
@@ -674,9 +638,8 @@ export type SeasonTeamPlayerSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type SeasonTeamPlayerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "team_player_id" | "jersey_number" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["seasonTeamPlayer"]>;
+export type SeasonTeamPlayerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "team_player_id" | "jersey_number" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["seasonTeamPlayer"]>;
 export type SeasonTeamPlayerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
     team_player?: boolean | Prisma.TeamPlayerDefaultArgs<ExtArgs>;
@@ -696,7 +659,6 @@ export type $SeasonTeamPlayerPayload<ExtArgs extends runtime.Types.Extensions.In
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["seasonTeamPlayer"]>;
     composites: {};
 };
@@ -1009,7 +971,6 @@ export interface SeasonTeamPlayerFieldRefs {
     readonly created_at: Prisma.FieldRef<"SeasonTeamPlayer", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"SeasonTeamPlayer", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"SeasonTeamPlayer", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"SeasonTeamPlayer", 'Boolean'>;
 }
 /**
  * SeasonTeamPlayer findUnique

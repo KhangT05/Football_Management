@@ -26,7 +26,6 @@ export type VenueMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type VenueMaxAggregateOutputType = {
     id: number | null;
@@ -36,7 +35,6 @@ export type VenueMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type VenueCountAggregateOutputType = {
     id: number;
@@ -46,7 +44,6 @@ export type VenueCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type VenueAvgAggregateInputType = {
@@ -63,7 +60,6 @@ export type VenueMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type VenueMaxAggregateInputType = {
     id?: true;
@@ -73,7 +69,6 @@ export type VenueMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type VenueCountAggregateInputType = {
     id?: true;
@@ -83,7 +78,6 @@ export type VenueCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type VenueAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -170,7 +164,6 @@ export type VenueGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: VenueCountAggregateOutputType | null;
     _avg: VenueAvgAggregateOutputType | null;
     _sum: VenueSumAggregateOutputType | null;
@@ -191,7 +184,6 @@ export type VenueWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Venue"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Venue"> | boolean;
     matches?: Prisma.MatchListRelationFilter;
 };
 export type VenueOrderByWithRelationInput = {
@@ -202,7 +194,6 @@ export type VenueOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     matches?: Prisma.MatchOrderByRelationAggregateInput;
     _relevance?: Prisma.VenueOrderByRelevanceInput;
 };
@@ -217,7 +208,6 @@ export type VenueWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"Venue"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Venue"> | boolean;
     matches?: Prisma.MatchListRelationFilter;
 }, "id" | "name">;
 export type VenueOrderByWithAggregationInput = {
@@ -228,7 +218,6 @@ export type VenueOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.VenueCountOrderByAggregateInput;
     _avg?: Prisma.VenueAvgOrderByAggregateInput;
     _max?: Prisma.VenueMaxOrderByAggregateInput;
@@ -246,7 +235,6 @@ export type VenueScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Venue"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Venue"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Venue"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"Venue"> | boolean;
 };
 export type VenueCreateInput = {
     name: string;
@@ -255,7 +243,6 @@ export type VenueCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     matches?: Prisma.MatchCreateNestedManyWithoutVenueInput;
 };
 export type VenueUncheckedCreateInput = {
@@ -266,7 +253,6 @@ export type VenueUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutVenueInput;
 };
 export type VenueUpdateInput = {
@@ -276,7 +262,6 @@ export type VenueUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     matches?: Prisma.MatchUpdateManyWithoutVenueNestedInput;
 };
 export type VenueUncheckedUpdateInput = {
@@ -287,7 +272,6 @@ export type VenueUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutVenueNestedInput;
 };
 export type VenueCreateManyInput = {
@@ -298,7 +282,6 @@ export type VenueCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type VenueUpdateManyMutationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -307,7 +290,6 @@ export type VenueUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type VenueUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -317,7 +299,6 @@ export type VenueUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type VenueNullableScalarRelationFilter = {
     is?: Prisma.VenueWhereInput | null;
@@ -336,7 +317,6 @@ export type VenueCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type VenueAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -349,7 +329,6 @@ export type VenueMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type VenueMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -359,7 +338,6 @@ export type VenueMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type VenueSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -385,7 +363,6 @@ export type VenueCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type VenueUncheckedCreateWithoutMatchesInput = {
     id?: number;
@@ -395,7 +372,6 @@ export type VenueUncheckedCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type VenueCreateOrConnectWithoutMatchesInput = {
     where: Prisma.VenueWhereUniqueInput;
@@ -417,7 +393,6 @@ export type VenueUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type VenueUncheckedUpdateWithoutMatchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -427,7 +402,6 @@ export type VenueUncheckedUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 /**
  * Count Type VenueCountOutputType
@@ -461,7 +435,6 @@ export type VenueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     matches?: boolean | Prisma.Venue$matchesArgs<ExtArgs>;
     _count?: boolean | Prisma.VenueCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["venue"]>;
@@ -473,9 +446,8 @@ export type VenueSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type VenueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "address" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["venue"]>;
+export type VenueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "address" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["venue"]>;
 export type VenueInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     matches?: boolean | Prisma.Venue$matchesArgs<ExtArgs>;
     _count?: boolean | Prisma.VenueCountOutputTypeDefaultArgs<ExtArgs>;
@@ -493,7 +465,6 @@ export type $VenuePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["venue"]>;
     composites: {};
 };
@@ -804,7 +775,6 @@ export interface VenueFieldRefs {
     readonly created_at: Prisma.FieldRef<"Venue", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Venue", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"Venue", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"Venue", 'Boolean'>;
 }
 /**
  * Venue findUnique

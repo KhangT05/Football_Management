@@ -54,7 +54,6 @@ export type TeamStandingMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type TeamStandingMaxAggregateOutputType = {
     id: number | null;
@@ -72,7 +71,6 @@ export type TeamStandingMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type TeamStandingCountAggregateOutputType = {
     id: number;
@@ -90,7 +88,6 @@ export type TeamStandingCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type TeamStandingAvgAggregateInputType = {
@@ -135,7 +132,6 @@ export type TeamStandingMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type TeamStandingMaxAggregateInputType = {
     id?: true;
@@ -153,7 +149,6 @@ export type TeamStandingMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type TeamStandingCountAggregateInputType = {
     id?: true;
@@ -171,7 +166,6 @@ export type TeamStandingCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type TeamStandingAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -266,7 +260,6 @@ export type TeamStandingGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: TeamStandingCountAggregateOutputType | null;
     _avg: TeamStandingAvgAggregateOutputType | null;
     _sum: TeamStandingSumAggregateOutputType | null;
@@ -295,7 +288,6 @@ export type TeamStandingWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamStanding"> | boolean;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>;
 };
@@ -315,7 +307,6 @@ export type TeamStandingOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     team?: Prisma.TeamOrderByWithRelationInput;
     group?: Prisma.GroupOrderByWithRelationInput;
 };
@@ -339,7 +330,6 @@ export type TeamStandingWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamStanding"> | boolean;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>;
 }, "id" | "group_id_team_id">;
@@ -359,7 +349,6 @@ export type TeamStandingOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.TeamStandingCountOrderByAggregateInput;
     _avg?: Prisma.TeamStandingAvgOrderByAggregateInput;
     _max?: Prisma.TeamStandingMaxOrderByAggregateInput;
@@ -385,7 +374,6 @@ export type TeamStandingScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamStanding"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"TeamStanding"> | boolean;
 };
 export type TeamStandingCreateInput = {
     position: number;
@@ -400,7 +388,6 @@ export type TeamStandingCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     team: Prisma.TeamCreateNestedOneWithoutTeamStandingsInput;
     group: Prisma.GroupCreateNestedOneWithoutTeamStandingsInput;
 };
@@ -420,7 +407,6 @@ export type TeamStandingUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingUpdateInput = {
     position?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -435,7 +421,6 @@ export type TeamStandingUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamStandingsNestedInput;
     group?: Prisma.GroupUpdateOneRequiredWithoutTeamStandingsNestedInput;
 };
@@ -455,7 +440,6 @@ export type TeamStandingUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingCreateManyInput = {
     id?: number;
@@ -473,7 +457,6 @@ export type TeamStandingCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingUpdateManyMutationInput = {
     position?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -488,7 +471,6 @@ export type TeamStandingUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -506,7 +488,6 @@ export type TeamStandingUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingListRelationFilter = {
     every?: Prisma.TeamStandingWhereInput;
@@ -536,7 +517,6 @@ export type TeamStandingCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamStandingAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -567,7 +547,6 @@ export type TeamStandingMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamStandingMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -585,7 +564,6 @@ export type TeamStandingMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamStandingSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -689,7 +667,6 @@ export type TeamStandingCreateWithoutGroupInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     team: Prisma.TeamCreateNestedOneWithoutTeamStandingsInput;
 };
 export type TeamStandingUncheckedCreateWithoutGroupInput = {
@@ -707,7 +684,6 @@ export type TeamStandingUncheckedCreateWithoutGroupInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingCreateOrConnectWithoutGroupInput = {
     where: Prisma.TeamStandingWhereUniqueInput;
@@ -749,7 +725,6 @@ export type TeamStandingScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamStanding"> | boolean;
 };
 export type TeamStandingCreateWithoutTeamInput = {
     position: number;
@@ -764,7 +739,6 @@ export type TeamStandingCreateWithoutTeamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     group: Prisma.GroupCreateNestedOneWithoutTeamStandingsInput;
 };
 export type TeamStandingUncheckedCreateWithoutTeamInput = {
@@ -782,7 +756,6 @@ export type TeamStandingUncheckedCreateWithoutTeamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingCreateOrConnectWithoutTeamInput = {
     where: Prisma.TeamStandingWhereUniqueInput;
@@ -820,7 +793,6 @@ export type TeamStandingCreateManyGroupInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingUpdateWithoutGroupInput = {
     position?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -835,7 +807,6 @@ export type TeamStandingUpdateWithoutGroupInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamStandingsNestedInput;
 };
 export type TeamStandingUncheckedUpdateWithoutGroupInput = {
@@ -853,7 +824,6 @@ export type TeamStandingUncheckedUpdateWithoutGroupInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingUncheckedUpdateManyWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -870,7 +840,6 @@ export type TeamStandingUncheckedUpdateManyWithoutGroupInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingCreateManyTeamInput = {
     id?: number;
@@ -887,7 +856,6 @@ export type TeamStandingCreateManyTeamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamStandingUpdateWithoutTeamInput = {
     position?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -902,7 +870,6 @@ export type TeamStandingUpdateWithoutTeamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     group?: Prisma.GroupUpdateOneRequiredWithoutTeamStandingsNestedInput;
 };
 export type TeamStandingUncheckedUpdateWithoutTeamInput = {
@@ -920,7 +887,6 @@ export type TeamStandingUncheckedUpdateWithoutTeamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -937,7 +903,6 @@ export type TeamStandingUncheckedUpdateManyWithoutTeamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamStandingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -955,7 +920,6 @@ export type TeamStandingSelect<ExtArgs extends runtime.Types.Extensions.Internal
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["teamStanding"]>;
@@ -975,9 +939,8 @@ export type TeamStandingSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type TeamStandingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "group_id" | "position" | "matches_played" | "wins" | "draws" | "losses" | "goals_for" | "goals_against" | "points" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["teamStanding"]>;
+export type TeamStandingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "group_id" | "position" | "matches_played" | "wins" | "draws" | "losses" | "goals_for" | "goals_against" | "points" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["teamStanding"]>;
 export type TeamStandingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>;
@@ -1004,7 +967,6 @@ export type $TeamStandingPayload<ExtArgs extends runtime.Types.Extensions.Intern
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["teamStanding"]>;
     composites: {};
 };
@@ -1324,7 +1286,6 @@ export interface TeamStandingFieldRefs {
     readonly created_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"TeamStanding", 'Boolean'>;
 }
 /**
  * TeamStanding findUnique
