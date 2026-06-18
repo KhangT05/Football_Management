@@ -760,6 +760,55 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "DefaultSelection__36_TeamLeaderPayload_": {
+                "properties": {
+                    "team_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "user_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "team_id",
+                    "user_id",
+                    "deleted_at",
+                    "updated_at",
+                    "created_at",
+                    "is_active",
+                    "id"
+                ],
+                "type": "object"
+            },
+            "TeamLeaderModel": {
+                "$ref": "#/components/schemas/DefaultSelection__36_TeamLeaderPayload_",
+                "description": "Model TeamLeader"
+            },
+            "TeamLeader": {
+                "$ref": "#/components/schemas/TeamLeaderModel",
+                "description": "Model TeamLeader"
+            },
             "SeasonStatus": {
                 "type": "string",
                 "enum": [
@@ -1290,7 +1339,10 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "user",
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -1363,7 +1415,10 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "user",
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [],
@@ -1399,7 +1454,10 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "user",
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -1433,7 +1491,10 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "user",
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -1470,7 +1531,10 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "user",
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -2463,6 +2527,100 @@
                         }
                     }
                 ]
+            }
+        },
+        "/teams/{id}/captain": {
+            "get": {
+                "operationId": "GetCaptain",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/TeamLeader"
+                                        }
+                                    ],
+                                    "nullable": true
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "AssignCaptain",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamLeader"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "type": "number",
+                                        "format": "double"
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/seasons": {

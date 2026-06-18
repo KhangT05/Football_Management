@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, SuccessResponse, Delete, Query, Security, Request, FormField, UploadedFile } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, FormField, UploadedFile } from "tsoa";
 import { TeamService } from "../services/team.service.js";
 import { storageService } from "../services/storage.service.js";
 let TeamController = class TeamController extends Controller {
@@ -58,6 +58,18 @@ let TeamController = class TeamController extends Controller {
     async softDelete(id) {
         this.setStatus(204);
         return this.service.softDelete(id);
+    }
+    // GET  /teams/{id}/captain
+    async getCaptain(id) {
+        await this.service.findByIdOrFail(id); // validate team exists
+        return this.service.getCaptain(id);
+    }
+    // POST /teams/{id}/captain
+    async assignCaptain(id, body, req) {
+        const requester = req.user;
+        // cần biết requester có phải admin không — lấy từ JWT claim hoặc DB lookup
+        const requesterIsAdmin = req.user.is_admin ?? false;
+        return this.service.assignCaptain(id, body.user_id, requester.user_id, requesterIsAdmin);
     }
 };
 __decorate([
@@ -109,6 +121,23 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "softDelete", null);
+__decorate([
+    Get("{id}/captain"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], TeamController.prototype, "getCaptain", null);
+__decorate([
+    Post("{id}/captain"),
+    SuccessResponse(200, "OK"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __param(2, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TeamController.prototype, "assignCaptain", null);
 TeamController = __decorate([
     Security("jwt"),
     Route("teams"),
