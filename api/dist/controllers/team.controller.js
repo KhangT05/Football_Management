@@ -10,8 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, SuccessResponse, Delete, Query, Security, Request, FormField, UploadedFile } from "tsoa";
 import { TeamService } from "../services/team.service.js";
+import { storageService } from "../services/storage.service.js";
 let TeamController = class TeamController extends Controller {
     service;
     constructor(service) {
@@ -24,12 +25,35 @@ let TeamController = class TeamController extends Controller {
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
-    async create(body, req) {
+    async create(name, req, coach_name, description, logo) {
         this.setStatus(201);
-        return this.service.create(body, req.user.user_id);
+        let logo_url;
+        if (logo) {
+            const result = await storageService.upload({
+                namespace: "teams",
+                kind: "logo",
+                file: logo,
+            });
+            logo_url = result.url; // lưu URL, accept publicId leak khi update
+        }
+        return this.service.create({ name, coach_name, description, logo: logo_url }, req.user.user_id);
     }
-    async update(id, body) {
-        return this.service.update(id, body);
+    async update(id, name, coach_name, description, logoFile) {
+        let logo;
+        if (logoFile) {
+            const result = await storageService.upload({
+                namespace: "teams",
+                kind: "logo",
+                file: logoFile,
+            });
+            logo = result.url;
+        }
+        return this.service.update(id, {
+            ...(name !== undefined && { name }),
+            ...(coach_name !== undefined && { coach_name }),
+            ...(description !== undefined && { description }),
+            ...(logo !== undefined && { logo }),
+        });
     }
     async softDelete(id) {
         this.setStatus(204);
@@ -57,18 +81,24 @@ __decorate([
 __decorate([
     Post("/"),
     SuccessResponse(201, "Created"),
-    __param(0, Body()),
+    __param(0, FormField()),
     __param(1, Request()),
+    __param(2, FormField()),
+    __param(3, FormField()),
+    __param(4, UploadedFile("logo")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [String, Object, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
     __param(0, Path()),
-    __param(1, Body()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, FormField()),
+    __param(4, UploadedFile("logo")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, String, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "update", null);
 __decorate([
