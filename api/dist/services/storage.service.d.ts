@@ -9,6 +9,10 @@ export declare class StorageService {
     deleteMany(publicIds: string[]): Promise<void>;
     buildUrl(publicId: string, transform?: TransformOptions): string;
     reprocess(file: Express.Multer.File, opts: CompressOptions): Promise<ProcessedImage>;
+    replaceAsset(oldUrl: string | null | undefined, newUrl: string | null | undefined, logger?: {
+        warn: (msg: string, meta?: object) => void;
+    }): void;
+    static extractPublicId(url: string): string | undefined;
 }
 export declare class StorageError extends Error {
     readonly code: string;
