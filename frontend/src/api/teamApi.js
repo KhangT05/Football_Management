@@ -6,9 +6,6 @@ import axiosClient from './axiosClient';
  * ============================================================
  * Base: /api/v1/teams
  *
- * ⚠️  Backend chưa có Team controller — endpoints sẽ 404 cho đến
- *     khi backend implement. UI fallback về mock data khi lỗi.
- *
  * Team model (từ Prisma schema):
  * { id, name, coach_name?, logo?, description?,
  *   is_active, user_id?, created_at }
@@ -39,15 +36,6 @@ export const teamApi = {
   getTeamById: (id) => {
     return axiosClient.get(`/teams/${id}`);
   },
-
-  /**
-   * Lấy đội bóng của user hiện tại (leader)
-   * GET /teams/my
-   */
-  getMyTeam: () => {
-    return axiosClient.get('/teams/my');
-  },
-
   /**
    * Đăng ký đội bóng mới
    * POST /teams
@@ -69,11 +57,20 @@ export const teamApi = {
 
   /**
    * Cập nhật thông tin đội bóng
-   * PATCH /teams/{id}
+   * PATCH /teams/{id} — multipart/form-data
    * @param {number} id
-   * @param {{ name?, coach_name?, description?, is_active? }} data
+   * @param {{ name?, coach_name?, description?, logo?(File) }} data
    */
   update: (id, data) => {
+    if (data.logo instanceof File) {
+      const form = new FormData();
+      Object.entries(data).forEach(([k, v]) => {
+        if (v != null) form.append(k, v);
+      });
+      return axiosClient.patch(`/teams/${id}`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
     return axiosClient.patch(`/teams/${id}`, data);
   },
 

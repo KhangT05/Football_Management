@@ -12,9 +12,10 @@
  *   ✅ userApi        — CRUD /users
  *   ✅ tournamentApi  — CRUD /tournaments (có logo upload)
  *   ✅ seasonApi      — CRUD /seasons
- *   ✅ venueApi       — CRUD /venues
- *   ⚠️  teamApi       — Backend chưa có controller (stub, fallback mock)
- *   ⚠️  matchApi      — Backend chưa có controller (stub, fallback mock)
+ *   ✅ venueApi            — CRUD /venues
+ *   ✅ tournamentRuleApi  — CRUD /tournamentrules
+ *   ✅ teamApi            — CRUD /teams (có logo upload)
+ *   ⚠️  matchApi          — Backend chưa có controller (stub, fallback mock)
  * ============================================================
  */
 
@@ -25,6 +26,7 @@ export { seasonApi } from './seasonApi';
 export { venueApi } from './venueApi';
 export { teamApi } from './teamApi';
 export { matchApi } from './matchApi';
+export { tournamentRuleApi } from './tournamentRuleApi';
 
 // Re-export token utilities để dùng ngoài axiosClient nếu cần
 export { setAccessToken, getAccessToken, clearAccessToken } from './axiosClient';

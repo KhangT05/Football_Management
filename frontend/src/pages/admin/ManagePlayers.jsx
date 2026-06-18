@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Search, Filter, Plus, Edit, Trash2, X, UploadCloud,
@@ -6,6 +6,7 @@ import {
   RefreshCw, Phone, Mail, ShieldCheck
 } from 'lucide-react';
 import { userApi } from '../../api';
+import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 
 // ─── Reusable Modal ────────────────────────────────────
@@ -64,150 +65,94 @@ const PAGE_SIZE = 8;
 export default function ManagePlayers() {
   const toast = useToastStore();
 
-  // ── Data State ─────────────────────────────────────────
-  const [users, setUsers] = useState([]);
-  const [meta, setMeta] = useState({ total: 0, page: 1, per_page: PAGE_SIZE, last_page: 1 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
+  // ── Data: Users (useApiQuery) ──────────────────────────
+  const { data: users, meta, isLoading, error: fetchError, fetch: fetchUsers } = useApiQuery(
+    userApi.getAll,
+    { perPage: PAGE_SIZE, autoFetch: false, errorMsg: 'Không thể tải danh sách người dùng.' }
+  );
 
-  // ── UI State ───────────────────────────────────────────
+  // ── Search + Pagination ─────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
-  // ── Modal State ────────────────────────────────────────
-  const [modalMode, setModalMode] = useState(null); // null | 'add' | 'edit'
-  const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [formError, setFormError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const refetchUsers = useCallback((page) => {
+    fetchUsers({ page: page ?? currentPage, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
+  }, [fetchUsers, currentPage, debouncedSearch]);
 
-  // ── Delete Confirm State ───────────────────────────────
-  const [deletingUser, setDeletingUser] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const prevSearchRef = useRef(debouncedSearch);
 
-  // ── Fetch users từ API ─────────────────────────────────
-  const fetchUsers = useCallback(async (page = 1, search = '') => {
-    setIsLoading(true);
-    setFetchError(null);
-    try {
-      const res = await userApi.getAll({
-        page,
-        per_page: PAGE_SIZE,
-        q: search || undefined,
-        sort: 'created_at',
-        direction: 'desc',
-      });
-      // PaginatedResult<SafeUser> → { data: SafeUser[], meta: {...} }
-      setUsers(res.data ?? []);
-      setMeta(res.meta ?? { total: 0, page: 1, per_page: PAGE_SIZE, last_page: 1 });
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Không thể tải danh sách người dùng.';
-      setFetchError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Load khi mount và khi page/search thay đổi
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchUsers(currentPage, searchTerm);
-    }, searchTerm ? 400 : 0); // Debounce 400ms khi search
-    return () => clearTimeout(timer);
-  }, [currentPage, searchTerm, fetchUsers]);
+    let page = currentPage;
+    if (prevSearchRef.current !== debouncedSearch) {
+      page = 1;
+      setCurrentPage(1);
+      prevSearchRef.current = debouncedSearch;
+    }
+    fetchUsers({ page, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
+  }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Handlers ──────────────────────────────────────────
-  const openAdd = () => {
-    setFormData(EMPTY_FORM);
-    setFormError('');
-    setEditingUser(null);
-    setModalMode('add');
-  };
+  // ── CRUD Modal (useCrudModal) ───────────────────────────
+  const crud = useCrudModal({
+    emptyForm: EMPTY_FORM,
+    onSuccess: () => refetchUsers(currentPage),
+  });
 
-  const openEdit = (user) => {
-    setFormData({ name: user.name, phone: user.phone ?? '' });
-    setFormError('');
-    setEditingUser(user);
-    setModalMode('edit');
-  };
-
-  const closeModal = () => {
-    setModalMode(null);
-    setEditingUser(null);
-    setFormData(EMPTY_FORM);
-    setFormError('');
-  };
+  const openAdd = () => crud.openAdd();
+  const openEdit = (user) => crud.openEdit(user, { name: user.name, phone: user.phone ?? '' });
 
   const handleFormChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setFormError('');
+    crud.setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    crud.setFormError('');
   };
 
   const validateForm = () => {
-    if (!formData.name?.trim()) return 'Vui lòng nhập họ tên.';
-    if (modalMode === 'add') {
-      if (!formData.email?.trim()) return 'Vui lòng nhập email.';
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Email không hợp lệ.';
-      if (!formData.password || formData.password.length < 6) return 'Mật khẩu tối thiểu 6 ký tự.';
+    if (!crud.form.name?.trim()) return 'Vui lòng nhập họ tên.';
+    if (crud.modal === 'add') {
+      if (!crud.form.email?.trim()) return 'Vui lòng nhập email.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(crud.form.email)) return 'Email không hợp lệ.';
+      if (!crud.form.password || crud.form.password.length < 6) return 'Mật khẩu tối thiểu 6 ký tự.';
     }
     return '';
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const err = validateForm();
-    if (err) { setFormError(err); return; }
-    setIsSaving(true);
-    try {
-      if (modalMode === 'add') {
-        // POST /users — tạo user mới
+    if (err) { crud.setFormError(err); return; }
+    crud.save(async () => {
+      if (crud.modal === 'add') {
         await userApi.create({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          password: formData.password,
-          phone: formData.phone?.trim() || undefined,
+          name: crud.form.name.trim(),
+          email: crud.form.email.trim(),
+          password: crud.form.password,
+          phone: crud.form.phone?.trim() || undefined,
         });
-        toast.success(`Đã thêm người dùng "${formData.name.trim()}" thành công!`);
+        toast.success(`Đã thêm người dùng "${crud.form.name.trim()}" thành công!`);
       } else {
-        // PATCH /users/{id}
-        await userApi.updateProfile(editingUser.id, {
-          name: formData.name.trim(),
-          phone: formData.phone?.trim() || undefined,
+        await userApi.updateProfile(crud.editing.id, {
+          name: crud.form.name.trim(),
+          phone: crud.form.phone?.trim() || undefined,
         });
-        toast.success(`Đã cập nhật "${formData.name.trim()}" thành công!`);
+        toast.success(`Đã cập nhật "${crud.form.name.trim()}" thành công!`);
       }
-      closeModal();
-      // Reload trang hiện tại
-      fetchUsers(currentPage, searchTerm);
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
-      setFormError(msg);
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
-  const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      // DELETE /users/{id} → soft delete (set is_active = false)
-      await userApi.softDelete(deletingUser.id);
-      toast.success(`Đã vô hiệu hóa tài khoản "${deletingUser.name}".`);
-      setDeletingUser(null);
+  const handleDeleteConfirm = () => {
+    const user = crud.deleting;
+    crud.confirmDelete(async () => {
+      await userApi.softDelete(user.id);
+      toast.success(`Đã vô hiệu hóa tài khoản "${user.name}".`);
       // Nếu xóa hết item trên trang hiện tại → về trang trước
       const newPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
       setCurrentPage(newPage);
-      fetchUsers(newPage, searchTerm);
-    } catch (err) {
+    }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể vô hiệu hóa tài khoản.');
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset về trang 1 khi search
   };
 
   const totalPages = meta.last_page;
@@ -305,7 +250,7 @@ export default function ManagePlayers() {
                         <AlertTriangle className="w-10 h-10 text-red-500/50" />
                         <p className="font-semibold">{fetchError}</p>
                         <button
-                          onClick={() => fetchUsers(currentPage, searchTerm)}
+                          onClick={() => refetchUsers()}
                           className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
                         >
                           Thử lại
@@ -380,7 +325,7 @@ export default function ManagePlayers() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeletingUser(u)}
+                            onClick={() => crud.setDeleting(u)}
                             className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors"
                             title="Vô hiệu hóa"
                           >
@@ -439,31 +384,31 @@ export default function ManagePlayers() {
       </div>
 
       {/* Add/Edit Modal */}
-      {modalMode && (
+      {crud.modal && (
         <Modal
-          title={modalMode === 'add' ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng'}
-          onClose={closeModal}
+          title={crud.modal === 'add' ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng'}
+          onClose={crud.closeModal}
           footer={
             <div className="flex gap-3 justify-end">
-              <button onClick={closeModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl transition-colors border border-navy-light">
+              <button onClick={crud.closeModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl transition-colors border border-navy-light">
                 Hủy
               </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={crud.isSaving}
                 className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70 shadow-md shadow-emerald-500/20"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {modalMode === 'add' ? 'Tạo tài khoản' : 'Lưu thay đổi'}
+                {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {crud.modal === 'add' ? 'Tạo tài khoản' : 'Lưu thay đổi'}
               </button>
             </div>
           }
         >
           <div className="space-y-4">
-            {formError && (
+            {crud.formError && (
               <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                {formError}
+                {crud.formError}
               </div>
             )}
 
@@ -475,7 +420,7 @@ export default function ManagePlayers() {
               <input
                 name="name"
                 type="text"
-                value={formData.name}
+                value={crud.form.name}
                 onChange={handleFormChange}
                 placeholder="Nguyễn Văn A"
                 className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
@@ -483,7 +428,7 @@ export default function ManagePlayers() {
             </div>
 
             {/* Email + Password — only when adding */}
-            {modalMode === 'add' && (
+            {crud.modal === 'add' && (
               <>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
@@ -492,7 +437,7 @@ export default function ManagePlayers() {
                   <input
                     name="email"
                     type="email"
-                    value={formData.email}
+                    value={crud.form.email}
                     onChange={handleFormChange}
                     placeholder="user@example.com"
                     className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
@@ -505,7 +450,7 @@ export default function ManagePlayers() {
                   <input
                     name="password"
                     type="password"
-                    value={formData.password}
+                    value={crud.form.password}
                     onChange={handleFormChange}
                     placeholder="Tối thiểu 6 ký tự"
                     className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
@@ -520,7 +465,7 @@ export default function ManagePlayers() {
               <input
                 name="phone"
                 type="tel"
-                value={formData.phone}
+                value={crud.form.phone}
                 onChange={handleFormChange}
                 placeholder="0901 234 567"
                 className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
@@ -531,12 +476,12 @@ export default function ManagePlayers() {
       )}
 
       {/* Delete Confirm */}
-      {deletingUser && (
+      {crud.deleting && (
         <ConfirmDeleteModal
-          player={deletingUser}
+          player={crud.deleting}
           onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeletingUser(null)}
-          isDeleting={isDeleting}
+          onCancel={() => crud.setDeleting(null)}
+          isDeleting={crud.isDeleting}
         />
       )}
     </AdminLayout>

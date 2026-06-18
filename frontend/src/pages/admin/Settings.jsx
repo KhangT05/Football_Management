@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Settings as SettingsIcon, Trophy, Calendar, MapPin,
   Plus, Edit, Trash2, X, Save, Loader2, AlertTriangle,
   CheckCircle2, RefreshCw, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { tournamentApi, seasonApi, venueApi } from '../../api';
+import { tournamentApi, seasonApi, venueApi, tournamentRuleApi } from '../../api';
+import { useApiQuery, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 
 // ─── Shared Modal ────────────────────────────────────────
@@ -80,66 +81,40 @@ const SEASON_STATUSES = [
 // ════════════════════════════════════════════════════
 function TournamentsSection() {
   const toast = useToastStore();
-  const [items, setItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState(null); // null | 'add' | 'edit'
-  const [editing, setEditing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '' });
-  const [formErr, setFormErr] = useState('');
+  const { data: items, isLoading, fetch } = useApiQuery(
+    (params) => tournamentApi.getAll(params),
+    { perPage: 50, errorMsg: 'Không tải được danh sách giải đấu.' }
+  );
 
-  const fetch = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await tournamentApi.getAll({ per_page: 50 });
-      setItems(res.data ?? []);
-    } catch {
-      toast.error('Không tải được danh sách giải đấu.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const crud = useCrudModal({
+    emptyForm: { name: '', description: '' },
+    onSuccess: () => fetch(),
+  });
 
-  useEffect(() => { fetch(); }, [fetch]);
+  const openAdd = () => crud.openAdd();
+  const openEdit = (item) => crud.openEdit(item, { name: item.name, description: item.description ?? '' });
 
-  const openAdd = () => { setForm({ name: '', description: '' }); setFormErr(''); setEditing(null); setModal('add'); };
-  const openEdit = (item) => { setForm({ name: item.name, description: item.description ?? '' }); setFormErr(''); setEditing(item); setModal('edit'); };
-  const closeModal = () => { setModal(null); setEditing(null); setFormErr(''); };
-
-  const handleSave = async () => {
-    if (!form.name.trim()) { setFormErr('Tên giải đấu không được bỏ trống.'); return; }
-    setIsSaving(true);
-    try {
-      if (modal === 'add') {
-        await tournamentApi.create({ name: form.name.trim(), description: form.description.trim() });
-        toast.success(`Đã tạo giải đấu "${form.name.trim()}"!`);
+  const handleSave = () => {
+    if (!crud.form.name.trim()) { crud.setFormError('Tên giải đấu không được bỏ trống.'); return; }
+    crud.save(async () => {
+      if (crud.modal === 'add') {
+        await tournamentApi.create({ name: crud.form.name.trim(), description: crud.form.description.trim() });
+        toast.success(`Đã tạo giải đấu "${crud.form.name.trim()}"!`);
       } else {
-        await tournamentApi.update(editing.id, { name: form.name.trim(), description: form.description.trim() });
-        toast.success(`Đã cập nhật "${form.name.trim()}"!`);
+        await tournamentApi.update(crud.editing.id, { name: crud.form.name.trim(), description: crud.form.description.trim() });
+        toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
       }
-      closeModal();
-      fetch();
-    } catch (err) {
-      setFormErr(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await tournamentApi.delete(deleting.id);
-      toast.success(`Đã xóa "${deleting.name}".`);
-      setDeleting(null);
-      fetch();
-    } catch (err) {
+  const handleDelete = () => {
+    const item = crud.deleting;
+    crud.confirmDelete(async () => {
+      await tournamentApi.delete(item.id);
+      toast.success(`Đã xóa "${item.name}".`);
+    }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể xóa giải đấu.');
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   return (
@@ -178,36 +153,36 @@ function TournamentsSection() {
                 {item.is_active ? 'Active' : 'Inactive'}
               </span>
               <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/30 transition-colors"><Edit className="w-4 h-4" /></button>
-              <button onClick={() => setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => crud.setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}
       </div>
 
-      {modal && (
+      {crud.modal && (
         <Modal
-          title={modal === 'add' ? 'Thêm giải đấu mới' : 'Chỉnh sửa giải đấu'}
+          title={crud.modal === 'add' ? 'Thêm giải đấu mới' : 'Chỉnh sửa giải đấu'}
           icon={Trophy} iconClass="text-blue-400"
-          onClose={closeModal}
+          onClose={crud.closeModal}
           footer={<>
-            <button onClick={closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
-            <button onClick={handleSave} disabled={isSaving} className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 disabled:opacity-70">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {modal === 'add' ? 'Tạo giải đấu' : 'Lưu thay đổi'}
+            <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
+            <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 disabled:opacity-70">
+              {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {crud.modal === 'add' ? 'Tạo giải đấu' : 'Lưu thay đổi'}
             </button>
           </>}
         >
-          {formErr && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{formErr}</div>}
+          {crud.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{crud.formError}</div>}
           <Field label="Tên giải đấu" required>
-            <input className={INPUT} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: IT Super League 2026" />
+            <input className={INPUT} value={crud.form.name} onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: IT Super League 2026" />
           </Field>
           <Field label="Mô tả">
-            <textarea className={INPUT + ' resize-none'} rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về giải đấu..." />
+            <textarea className={INPUT + ' resize-none'} rows={3} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về giải đấu..." />
           </Field>
         </Modal>
       )}
 
-      {deleting && <ConfirmDelete name={deleting.name} onConfirm={handleDelete} onCancel={() => setDeleting(null)} isLoading={isDeleting} />}
+      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
     </section>
   );
 }
@@ -217,47 +192,30 @@ function TournamentsSection() {
 // ════════════════════════════════════════════════════
 function SeasonsSection() {
   const toast = useToastStore();
-  const [items, setItems] = useState([]);
-  const [tournaments, setTournaments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState(null);
-  const [editing, setEditing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: '', description: '', tournament_id: '',
-    start_date: '', end_date: '', registration_deadline: '',
-    max_teams: 8, status: 'upcoming',
-  });
-  const [formErr, setFormErr] = useState('');
+  const EMPTY_SEASON = { name: '', description: '', tournament_id: '', start_date: '', end_date: '', registration_deadline: '', max_teams: 8, status: 'upcoming' };
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [seasonsRes, tournamentsRes] = await Promise.allSettled([
-        seasonApi.getAll({ per_page: 50 }),
-        tournamentApi.getAll({ per_page: 100 }),
-      ]);
-      if (seasonsRes.status === 'fulfilled') setItems(seasonsRes.value.data ?? []);
-      if (tournamentsRes.status === 'fulfilled') setTournaments(tournamentsRes.value.data ?? []);
-    } catch {
-      toast.error('Không tải được dữ liệu mùa giải.');
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: items, isLoading, fetch: fetchSeasons } = useApiQuery(
+    (params) => seasonApi.getAll(params),
+    { perPage: 50, errorMsg: 'Không tải được dữ liệu mùa giải.' }
+  );
+
+  const [tournaments, setTournaments] = useState([]);
+  useEffect(() => {
+    tournamentApi.getAll({ per_page: 100 }).then(res => {
+      const r = res?.data ?? res;
+      setTournaments(r?.data ?? (Array.isArray(r) ? r : []));
+    }).catch(() => {});
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const crud = useCrudModal({ emptyForm: EMPTY_SEASON, onSuccess: () => fetchSeasons() });
 
   const toDateInput = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
 
   const openAdd = () => {
-    setForm({ name: '', description: '', tournament_id: tournaments[0]?.id ?? '', start_date: '', end_date: '', registration_deadline: '', max_teams: 8, status: 'upcoming' });
-    setFormErr(''); setEditing(null); setModal('add');
+    crud.openAdd({ ...EMPTY_SEASON, tournament_id: tournaments[0]?.id ?? '' });
   };
   const openEdit = (item) => {
-    setForm({
+    crud.openEdit(item, {
       name: item.name, description: item.description ?? '',
       tournament_id: item.tournament_id ?? '',
       start_date: toDateInput(item.start_date),
@@ -265,62 +223,49 @@ function SeasonsSection() {
       registration_deadline: toDateInput(item.registration_deadline),
       max_teams: item.max_teams, status: item.status,
     });
-    setFormErr(''); setEditing(item); setModal('edit');
   };
-  const closeModal = () => { setModal(null); setEditing(null); setFormErr(''); };
 
   const validate = () => {
-    if (!form.name.trim()) return 'Tên mùa giải không được bỏ trống.';
-    if (!form.tournament_id) return 'Vui lòng chọn giải đấu.';
-    if (!form.start_date || !form.end_date) return 'Vui lòng nhập ngày bắt đầu và kết thúc.';
-    if (!form.registration_deadline) return 'Vui lòng nhập hạn đăng ký.';
-    if (new Date(form.start_date) >= new Date(form.end_date)) return 'Ngày kết thúc phải sau ngày bắt đầu.';
+    if (!crud.form.name.trim()) return 'Tên mùa giải không được bỏ trống.';
+    if (!crud.form.tournament_id) return 'Vui lòng chọn giải đấu.';
+    if (!crud.form.start_date || !crud.form.end_date) return 'Vui lòng nhập ngày bắt đầu và kết thúc.';
+    if (!crud.form.registration_deadline) return 'Vui lòng nhập hạn đăng ký.';
+    if (new Date(crud.form.start_date) >= new Date(crud.form.end_date)) return 'Ngày kết thúc phải sau ngày bắt đầu.';
     return '';
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const err = validate();
-    if (err) { setFormErr(err); return; }
-    setIsSaving(true);
-    try {
+    if (err) { crud.setFormError(err); return; }
+    crud.save(async () => {
       const payload = {
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        tournament_id: Number(form.tournament_id),
-        start_date: new Date(form.start_date).toISOString(),
-        end_date: new Date(form.end_date).toISOString(),
-        registration_deadline: new Date(form.registration_deadline).toISOString(),
-        max_teams: Number(form.max_teams),
-        status: form.status,
+        name: crud.form.name.trim(),
+        description: crud.form.description.trim() || undefined,
+        tournament_id: Number(crud.form.tournament_id),
+        start_date: new Date(crud.form.start_date).toISOString(),
+        end_date: new Date(crud.form.end_date).toISOString(),
+        registration_deadline: new Date(crud.form.registration_deadline).toISOString(),
+        max_teams: Number(crud.form.max_teams),
+        status: crud.form.status,
       };
-      if (modal === 'add') {
+      if (crud.modal === 'add') {
         await seasonApi.create(payload);
-        toast.success(`Đã tạo mùa giải "${form.name.trim()}"!`);
+        toast.success(`Đã tạo mùa giải "${crud.form.name.trim()}"!`);
       } else {
-        await seasonApi.update(editing.id, payload);
-        toast.success(`Đã cập nhật "${form.name.trim()}"!`);
+        await seasonApi.update(crud.editing.id, payload);
+        toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
       }
-      closeModal();
-      fetchData();
-    } catch (err) {
-      setFormErr(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await seasonApi.delete(deleting.id);
-      toast.success(`Đã xóa mùa giải "${deleting.name}".`);
-      setDeleting(null);
-      fetchData();
-    } catch (err) {
+  const handleDelete = () => {
+    const item = crud.deleting;
+    crud.confirmDelete(async () => {
+      await seasonApi.delete(item.id);
+      toast.success(`Đã xóa mùa giải "${item.name}".`);
+    }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể xóa mùa giải.');
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   const statusMeta = {
@@ -338,7 +283,7 @@ function SeasonsSection() {
           <Calendar className="w-4 h-4 text-purple-400" /> Mùa giải ({items.length})
         </h3>
         <div className="flex gap-2">
-          <button onClick={fetchData} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
+          <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors">
@@ -370,64 +315,64 @@ function SeasonsSection() {
               <div className="flex items-center gap-2 shrink-0">
                 <span className={`text-xs font-bold px-2 py-0.5 rounded border ${sm.cls}`}>{sm.label}</span>
                 <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/30 transition-colors"><Edit className="w-4 h-4" /></button>
-                <button onClick={() => setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => crud.setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {modal && (
+      {crud.modal && (
         <Modal
-          title={modal === 'add' ? 'Thêm mùa giải mới' : 'Chỉnh sửa mùa giải'}
+          title={crud.modal === 'add' ? 'Thêm mùa giải mới' : 'Chỉnh sửa mùa giải'}
           icon={Calendar} iconClass="text-purple-400"
-          onClose={closeModal}
+          onClose={crud.closeModal}
           footer={<>
-            <button onClick={closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
-            <button onClick={handleSave} disabled={isSaving} className="px-5 py-2 rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 disabled:opacity-70">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {modal === 'add' ? 'Tạo mùa giải' : 'Lưu thay đổi'}
+            <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
+            <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 disabled:opacity-70">
+              {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {crud.modal === 'add' ? 'Tạo mùa giải' : 'Lưu thay đổi'}
             </button>
           </>}
         >
-          {formErr && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{formErr}</div>}
+          {crud.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{crud.formError}</div>}
           <Field label="Tên mùa giải" required>
-            <input className={INPUT} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Mùa giải 2026" />
+            <input className={INPUT} value={crud.form.name} onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Mùa giải 2026" />
           </Field>
           <Field label="Giải đấu" required>
-            <select className={INPUT} value={form.tournament_id} onChange={e => setForm(f => ({ ...f, tournament_id: e.target.value }))}>
+            <select className={INPUT} value={crud.form.tournament_id} onChange={e => crud.setForm(f => ({ ...f, tournament_id: e.target.value }))}>
               <option value="">-- Chọn giải đấu --</option>
               {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Ngày bắt đầu" required>
-              <input type="date" className={INPUT} value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.start_date} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
             </Field>
             <Field label="Ngày kết thúc" required>
-              <input type="date" className={INPUT} value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.end_date} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Hạn đăng ký" required>
-              <input type="date" className={INPUT} value={form.registration_deadline} onChange={e => setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.registration_deadline} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
             </Field>
             <Field label="Tối đa đội">
-              <input type="number" min="2" max="64" className={INPUT} value={form.max_teams} onChange={e => setForm(f => ({ ...f, max_teams: e.target.value }))} />
+              <input type="number" min="2" max="64" className={INPUT} value={crud.form.max_teams} onChange={e => crud.setForm(f => ({ ...f, max_teams: e.target.value }))} />
             </Field>
           </div>
           <Field label="Trạng thái">
-            <select className={INPUT} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+            <select className={INPUT} value={crud.form.status} onChange={e => crud.setForm(f => ({ ...f, status: e.target.value }))}>
               {SEASON_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </Field>
           <Field label="Mô tả">
-            <textarea className={INPUT + ' resize-none'} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
+            <textarea className={INPUT + ' resize-none'} rows={2} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
           </Field>
         </Modal>
       )}
 
-      {deleting && <ConfirmDelete name={deleting.name} onConfirm={handleDelete} onCancel={() => setDeleting(null)} isLoading={isDeleting} />}
+      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
     </section>
   );
 }
@@ -437,66 +382,40 @@ function SeasonsSection() {
 // ════════════════════════════════════════════════════
 function VenuesSection() {
   const toast = useToastStore();
-  const [items, setItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState(null);
-  const [editing, setEditing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', address: '' });
-  const [formErr, setFormErr] = useState('');
+  const { data: items, isLoading, fetch } = useApiQuery(
+    (params) => venueApi.getAll(params),
+    { perPage: 100, errorMsg: 'Không tải được danh sách sân.' }
+  );
 
-  const fetch = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await venueApi.getAll({ per_page: 100 });
-      setItems(res.data ?? []);
-    } catch {
-      toast.error('Không tải được danh sách sân.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const crud = useCrudModal({
+    emptyForm: { name: '', address: '' },
+    onSuccess: () => fetch(),
+  });
 
-  useEffect(() => { fetch(); }, [fetch]);
+  const openAdd = () => crud.openAdd();
+  const openEdit = (item) => crud.openEdit(item, { name: item.name, address: item.address ?? '' });
 
-  const openAdd = () => { setForm({ name: '', address: '' }); setFormErr(''); setEditing(null); setModal('add'); };
-  const openEdit = (item) => { setForm({ name: item.name, address: item.address ?? '' }); setFormErr(''); setEditing(item); setModal('edit'); };
-  const closeModal = () => { setModal(null); setEditing(null); setFormErr(''); };
-
-  const handleSave = async () => {
-    if (!form.name.trim()) { setFormErr('Tên sân không được bỏ trống.'); return; }
-    setIsSaving(true);
-    try {
-      if (modal === 'add') {
-        await venueApi.create({ name: form.name.trim(), address: form.address.trim() || undefined });
-        toast.success(`Đã thêm sân "${form.name.trim()}"!`);
+  const handleSave = () => {
+    if (!crud.form.name.trim()) { crud.setFormError('Tên sân không được bỏ trống.'); return; }
+    crud.save(async () => {
+      if (crud.modal === 'add') {
+        await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined });
+        toast.success(`Đã thêm sân "${crud.form.name.trim()}"!`);
       } else {
-        await venueApi.update(editing.id, { name: form.name.trim(), address: form.address.trim() || undefined });
-        toast.success(`Đã cập nhật sân "${form.name.trim()}"!`);
+        await venueApi.update(crud.editing.id, { name: crud.form.name.trim(), address: crud.form.address.trim() || undefined });
+        toast.success(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
       }
-      closeModal();
-      fetch();
-    } catch (err) {
-      setFormErr(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await venueApi.delete(deleting.id);
-      toast.success(`Đã xóa sân "${deleting.name}".`);
-      setDeleting(null);
-      fetch();
-    } catch (err) {
+  const handleDelete = () => {
+    const item = crud.deleting;
+    crud.confirmDelete(async () => {
+      await venueApi.delete(item.id);
+      toast.success(`Đã xóa sân "${item.name}".`);
+    }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   return (
@@ -535,36 +454,295 @@ function VenuesSection() {
                 {item.is_active ? 'Active' : 'Inactive'}
               </span>
               <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/30 transition-colors"><Edit className="w-4 h-4" /></button>
-              <button onClick={() => setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => crud.setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}
       </div>
 
-      {modal && (
+      {crud.modal && (
         <Modal
-          title={modal === 'add' ? 'Thêm sân thi đấu' : 'Chỉnh sửa sân thi đấu'}
+          title={crud.modal === 'add' ? 'Thêm sân thi đấu' : 'Chỉnh sửa sân thi đấu'}
           icon={MapPin} iconClass="text-emerald-400"
-          onClose={closeModal}
+          onClose={crud.closeModal}
           footer={<>
-            <button onClick={closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
-            <button onClick={handleSave} disabled={isSaving} className="px-5 py-2 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 disabled:opacity-70">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {modal === 'add' ? 'Thêm sân' : 'Lưu thay đổi'}
+            <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
+            <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 disabled:opacity-70">
+              {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {crud.modal === 'add' ? 'Thêm sân' : 'Lưu thay đổi'}
             </button>
           </>}
         >
-          {formErr && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{formErr}</div>}
+          {crud.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{crud.formError}</div>}
           <Field label="Tên sân" required>
-            <input className={INPUT} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Sân Mini Khu A" />
+            <input className={INPUT} value={crud.form.name} onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Sân Mini Khu A" />
           </Field>
           <Field label="Địa chỉ">
-            <input className={INPUT} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="VD: 65 Huỳnh Thúc Kháng, TP.HCM" />
+            <input className={INPUT} value={crud.form.address} onChange={e => crud.setForm(f => ({ ...f, address: e.target.value }))} placeholder="VD: 65 Huỳnh Thúc Kháng, TP.HCM" />
           </Field>
         </Modal>
       )}
 
-      {deleting && <ConfirmDelete name={deleting.name} onConfirm={handleDelete} onCancel={() => setDeleting(null)} isLoading={isDeleting} />}
+      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
+    </section>
+  );
+}
+
+// ════════════════════════════════════════════════════
+// SECTION: TOURNAMENT RULES
+// ════════════════════════════════════════════════════
+const TIEBREAKER_OPTIONS = [
+  { value: 'goal_diff',      label: 'Hiệu số bàn thắng' },
+  { value: 'goals_scored',   label: 'Tổng bàn thắng' },
+  { value: 'head_to_head',   label: 'Đối đầu trực tiếp' },
+  { value: 'goals_conceded', label: 'Bàn thủng' },
+  { value: 'yellow_cards',   label: 'Thẻ vàng' },
+  { value: 'red_cards',      label: 'Thẻ đỏ' },
+];
+
+const DEFAULT_RULE_FORM = {
+  tournament_id: '',
+  points_per_win: 3,
+  points_per_draw: 1,
+  points_per_loss: 0,
+  forfeit_score: 3,
+  yellow_cards_suspension: 3,
+  max_players_per_team: 25,
+  min_players_per_team: 11,
+  teams_advance_per_group: 2,
+  tiebreaker_order: ['goal_diff', 'goals_scored', 'head_to_head'],
+};
+
+function TournamentRulesSection() {
+  const toast = useToastStore();
+  const { data: items, isLoading, fetch: fetchRules } = useApiQuery(
+    () => tournamentRuleApi.getAll(),
+    { perPage: 50, errorMsg: 'Không tải được dữ liệu luật giải.' }
+  );
+
+  const [tournaments, setTournaments] = useState([]);
+  useEffect(() => {
+    tournamentApi.getAll({ per_page: 100 }).then(res => {
+      const r = res?.data ?? res;
+      setTournaments(r?.data ?? (Array.isArray(r) ? r : []));
+    }).catch(() => {});
+  }, []);
+
+  const crud = useCrudModal({ emptyForm: DEFAULT_RULE_FORM, onSuccess: () => fetchRules() });
+
+  const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
+
+  const openAdd = () => {
+    crud.openAdd({ ...DEFAULT_RULE_FORM, tournament_id: tournaments[0]?.id ?? '' });
+  };
+  const openEdit = (item) => {
+    crud.openEdit(item, {
+      tournament_id: item.tournament_id,
+      points_per_win: item.points_per_win,
+      points_per_draw: item.points_per_draw,
+      points_per_loss: item.points_per_loss,
+      forfeit_score: item.forfeit_score,
+      yellow_cards_suspension: item.yellow_cards_suspension,
+      max_players_per_team: item.max_players_per_team,
+      min_players_per_team: item.min_players_per_team,
+      teams_advance_per_group: item.teams_advance_per_group,
+      tiebreaker_order: item.tiebreaker_order ?? DEFAULT_RULE_FORM.tiebreaker_order,
+    });
+  };
+
+  const toggleTiebreaker = (value) => {
+    crud.setForm(f => ({
+      ...f,
+      tiebreaker_order: f.tiebreaker_order.includes(value)
+        ? f.tiebreaker_order.filter(v => v !== value)
+        : [...f.tiebreaker_order, value]
+    }));
+  };
+
+  const handleSave = () => {
+    if (!crud.form.tournament_id) { crud.setFormError('Vui lòng chọn giải đấu.'); return; }
+    if (crud.form.tiebreaker_order.length === 0) { crud.setFormError('Chọn ít nhất 1 tiêu chí phân điểm.'); return; }
+    crud.save(async () => {
+      const payload = {
+        ...crud.form,
+        tournament_id: Number(crud.form.tournament_id),
+        points_per_win: Number(crud.form.points_per_win),
+        points_per_draw: Number(crud.form.points_per_draw),
+        points_per_loss: Number(crud.form.points_per_loss),
+        forfeit_score: Number(crud.form.forfeit_score),
+        yellow_cards_suspension: Number(crud.form.yellow_cards_suspension),
+        max_players_per_team: Number(crud.form.max_players_per_team),
+        min_players_per_team: Number(crud.form.min_players_per_team),
+        teams_advance_per_group: Number(crud.form.teams_advance_per_group),
+      };
+      if (crud.modal === 'add') {
+        await tournamentRuleApi.create(payload);
+        toast.success('Tạo luật giải thành công!');
+      } else {
+        await tournamentRuleApi.update(crud.editing.id, payload);
+        toast.success('Cập nhật luật giải thành công!');
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    const item = crud.deleting;
+    crud.confirmDelete(async () => {
+      await tournamentRuleApi.delete(item.id);
+      toast.success('Xóa luật giải thành công.');
+    }).catch((err) => {
+      toast.error(err?.response?.data?.message || 'Không thể xóa luật giải.');
+    });
+  };
+
+  return (
+    <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
+        <h3 className="font-bold text-white text-base flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-orange-400" /> Luật giải ({items.length})
+        </h3>
+        <div className="flex gap-2">
+          <button onClick={fetchRules} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-sm transition-colors">
+            <Plus className="w-4 h-4" /> Thêm luật
+          </button>
+        </div>
+      </div>
+
+      <div className="divide-y divide-navy-light">
+        {isLoading ? (
+          <div className="p-6 space-y-3">{[1, 2].map(i => <div key={i} className="skeleton h-16 rounded-lg" />)}</div>
+        ) : items.length === 0 ? (
+          <div className="py-10 text-center text-gray-500">
+            <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p>Chưa có luật giải nào. Nhấn "Thêm luật" để bắt đầu.</p>
+          </div>
+        ) : items.map(item => (
+          <div key={item.id} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-navy-light/10 transition-colors">
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-white truncate">{getTournamentName(item.tournament_id)}</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                <span className="text-xs text-gray-400">Thắng: <strong className="text-emerald-400">{item.points_per_win}pts</strong></span>
+                <span className="text-xs text-gray-400">Hòa: <strong className="text-amber-400">{item.points_per_draw}pts</strong></span>
+                <span className="text-xs text-gray-400">Thua: <strong className="text-red-400">{item.points_per_loss}pts</strong></span>
+                <span className="text-xs text-gray-400">Max: <strong className="text-white">{item.max_players_per_team} HV</strong></span>
+                <span className="text-xs text-gray-400">Min: <strong className="text-white">{item.min_players_per_team} HV</strong></span>
+                <span className="text-xs text-gray-400">Thẻ vàng cấm: <strong className="text-amber-300">{item.yellow_cards_suspension}</strong></span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/30 transition-colors">
+                <Edit className="w-4 h-4" />
+              </button>
+              <button onClick={() => crud.setDeleting(item)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add / Edit Modal */}
+      {crud.modal && (
+        <Modal
+          title={crud.modal === 'add' ? 'Thêm luật giải mới' : 'Chỉnh sửa luật giải'}
+          icon={CheckCircle2} iconClass="text-orange-400"
+          onClose={crud.closeModal}
+          footer={<>
+            <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
+            <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-70">
+              {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {crud.modal === 'add' ? 'Tạo luật' : 'Lưu thay đổi'}
+            </button>
+          </>}
+        >
+          {crud.formError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{crud.formError}
+            </div>
+          )}
+
+          <Field label="Giải đấu" required>
+            <select className={INPUT} value={crud.form.tournament_id} onChange={e => crud.setForm(f => ({ ...f, tournament_id: e.target.value }))}>
+              <option value="">-- Chọn giải đấu --</option>
+              {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </Field>
+
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Thắng (pts)">
+              <input type="number" min="0" max="10" className={INPUT} value={crud.form.points_per_win}
+                onChange={e => crud.setForm(f => ({ ...f, points_per_win: e.target.value }))} />
+            </Field>
+            <Field label="Hòa (pts)">
+              <input type="number" min="0" max="10" className={INPUT} value={crud.form.points_per_draw}
+                onChange={e => crud.setForm(f => ({ ...f, points_per_draw: e.target.value }))} />
+            </Field>
+            <Field label="Thua (pts)">
+              <input type="number" min="0" max="10" className={INPUT} value={crud.form.points_per_loss}
+                onChange={e => crud.setForm(f => ({ ...f, points_per_loss: e.target.value }))} />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Max HV/Đội">
+              <input type="number" min="1" max="50" className={INPUT} value={crud.form.max_players_per_team}
+                onChange={e => crud.setForm(f => ({ ...f, max_players_per_team: e.target.value }))} />
+            </Field>
+            <Field label="Min HV/Đội">
+              <input type="number" min="1" max="50" className={INPUT} value={crud.form.min_players_per_team}
+                onChange={e => crud.setForm(f => ({ ...f, min_players_per_team: e.target.value }))} />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Đội đi tiếp/Bảng">
+              <input type="number" min="1" className={INPUT} value={crud.form.teams_advance_per_group}
+                onChange={e => crud.setForm(f => ({ ...f, teams_advance_per_group: e.target.value }))} />
+            </Field>
+            <Field label="Thẻ vàng cấm thi đấu">
+              <input type="number" min="1" max="10" className={INPUT} value={crud.form.yellow_cards_suspension}
+                onChange={e => crud.setForm(f => ({ ...f, yellow_cards_suspension: e.target.value }))} />
+            </Field>
+          </div>
+
+          <Field label="Tiêu chí phân điểm (chọn ít nhất 1)" required>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {TIEBREAKER_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleTiebreaker(opt.value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                    crud.form.tiebreaker_order.includes(opt.value)
+                      ? 'bg-orange-600 border-orange-600 text-white'
+                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {crud.form.tiebreaker_order.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                Thứ tự ưu tiên: {crud.form.tiebreaker_order.map(v => TIEBREAKER_OPTIONS.find(o => o.value === v)?.label ?? v).join(' → ')}
+              </p>
+            )}
+          </Field>
+        </Modal>
+      )}
+
+      {/* Delete Confirm */}
+      {crud.deleting && (
+        <ConfirmDelete
+          name={getTournamentName(crud.deleting.tournament_id)}
+          onConfirm={handleDelete}
+          onCancel={() => crud.setDeleting(null)}
+          isLoading={crud.isDeleting}
+        />
+      )}
     </section>
   );
 }
@@ -582,12 +760,13 @@ export default function Settings() {
           <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
             <SettingsIcon className="w-6 h-6 text-gray-400" /> Cài đặt hệ thống
           </h2>
-          <p className="text-gray-400 text-sm mt-1">Quản lý giải đấu, mùa giải và sân thi đấu trong hệ thống.</p>
+          <p className="text-gray-400 text-sm mt-1">Quản lý giải đấu, mùa giải, sân thi đấu và luật giải trong hệ thống.</p>
         </div>
 
         <TournamentsSection />
         <SeasonsSection />
         <VenuesSection />
+        <TournamentRulesSection />
 
       </div>
     </AdminLayout>
