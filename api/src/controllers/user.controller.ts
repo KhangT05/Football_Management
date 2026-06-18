@@ -3,7 +3,7 @@ import { UserService, type SafeUser } from "../services/user.service.js";
 import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
 import { PaginatedResult } from "../libs/queryable.js";
 
-@Security("jwt")
+@Security("jwt", ['admin'])
 @Route("users")
 @Tags("Users")
 export class UserController extends Controller {

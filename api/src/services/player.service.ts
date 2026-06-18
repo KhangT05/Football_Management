@@ -1,486 +1,480 @@
-// import { PrismaClient, Prisma } from "@prisma/client";
-// import * as XLSX from "xlsx";
-// import {
-//     CreatePlayerDto,
-//     UpdatePlayerDto,
-//     AddPlayerToTeamDto,
-//     UpdateTeamPlayerDto,
-//     BulkDeleteDto,
-//     ImportPlayerRowDto,
-//     importPlayerRowSchema,
-//     PlayerDto,
-//     TeamPlayerDto,
-// } from "./player.schema";
+import * as XLSX from "xlsx";
+import {
+    AddPlayerToTeamDto, BulkDeleteDto,
+    CreatePlayerDto, ImportPlayerRowDto,
+    importPlayerRowSchema,
+    PlayerDto, TeamPlayerDto,
+    UpdatePlayerDto, UpdateTeamPlayerDto
+} from "../dtos/player.schema.js";
+import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { createAppError } from "../common/app.error.js";
+import { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import { storageService } from "./storage.service.js";
+import { logger } from "../libs/logger.js";
 
-// // ============================================================
-// // TYPES
-// // ============================================================
-// export interface ImportResult {
-//     success: number;
-//     failed: number;
-//     errors: { row: number; reason: string }[];
-// }
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// export interface PaginatedResult<T> {
-//     data: T[];
-//     total: number;
-//     page: number;
-//     limit: number;
-// }
+export interface ImportResult {
+    success: number;
+    failed: number;
+    errors: { row: number; reason: string }[];
+}
 
-// export interface ListTeamPlayersQuery {
-//     team_id: number;
-//     page?: number;
-//     limit?: number;
-//     position?: string;
-//     status?: string;
-//     approval_status?: string;
-// }
+export interface ListTeamPlayersQuery extends QueryRequest {
+    team_id: number;
+}
 
-// // ============================================================
-// // SELECTORS
-// // ============================================================
-// const PLAYER_SELECT = {
-//     id: true,
-//     date_of_birth: true,
-//     position: true,
-//     height: true,
-//     weight: true,
-//     nationality: true,
-//     avatar: true,
-//     is_active: true,
-//     created_at: true,
-//     updated_at: true,
-//     user_id: true,
-//     user: {
-//         select: { id: true, name: true, email: true, phone: true },
-//     },
-// } satisfies Prisma.PlayerSelect;
+// ─── Projection ───────────────────────────────────────────────────────────────
+// Định nghĩa relation 1 lần, dùng select.player.user mọi nơi cần tránh N+1.
 
-// const TEAM_PLAYER_SELECT = {
-//     id: true,
-//     team_id: true,
-//     player_id: true,
-//     jersey_number: true,
-//     position: true,
-//     role: true,
-//     status: true,
-//     approval_status: true,
-//     is_active: true,
-//     created_at: true,
-//     updated_at: true,
-//     player: {
-//         select: {
-//             ...PLAYER_SELECT,
-//         },
-//     },
-// } satisfies Prisma.TeamPlayerSelect;
+const PLAYER_SELECT = {
+    id: true,
+    user_id: true,
+    date_of_birth: true,
+    position: true,
+    height: true,
+    weight: true,
+    nationality: true,
+    avatar: true,
+    is_active: true,
+    created_at: true,
+    updated_at: true,
+    user: {
+        select: { id: true, name: true, email: true, phone: true },
+    },
+} satisfies Prisma.PlayerSelect;
 
-// // ============================================================
-// // SERVICE
-// // ============================================================
-// export class PlayerService {
-//     constructor(private readonly db: PrismaClient) { }
+const TEAM_PLAYER_SELECT = {
+    id: true,
+    team_id: true,
+    player_id: true,
+    jersey_number: true,
+    position: true,
+    role: true,
+    status: true,
+    approval_status: true,
+    is_active: true,
+    created_at: true,
+    updated_at: true,
+    player: {
+        select: PLAYER_SELECT,
+    },
+} satisfies Prisma.TeamPlayerSelect;
 
-//     // ----------------------------------------------------------
-//     // PLAYER CRUD
-//     // ----------------------------------------------------------
-//     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
-//         // user_id unique constraint will throw P2002 if duplicate
-//         const player = await this.db.player.create({
-//             data: {
-//                 user_id: dto.user_id,
-//                 date_of_birth: dto.date_of_birth,
-//                 position: dto.position,
-//                 height: dto.height ?? null,
-//                 weight: dto.weight ?? null,
-//                 nationality: dto.nationality ?? null,
-//                 avatar: dto.avatar ?? null,
-//             },
-//             select: PLAYER_SELECT,
-//         });
+type PlayerRow = Prisma.PlayerGetPayload<{ select: typeof PLAYER_SELECT }>;
+type TeamPlayerRow = Prisma.TeamPlayerGetPayload<{ select: typeof TEAM_PLAYER_SELECT }>;
 
-//         return this.mapPlayer(player);
-//     }
+// ─── Service ──────────────────────────────────────────────────────────────────
 
-//     async getPlayerById(id: number): Promise<PlayerDto | null> {
-//         const player = await this.db.player.findFirst({
-//             where: { id, deleted_at: null },
-//             select: PLAYER_SELECT,
-//         });
-//         return player ? this.mapPlayer(player) : null;
-//     }
+export class PlayerService {
+    private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
 
-//     async updatePlayer(id: number, dto: UpdatePlayerDto): Promise<PlayerDto> {
-//         const player = await this.db.player.update({
-//             where: { id },
-//             data: {
-//                 ...(dto.date_of_birth && { date_of_birth: dto.date_of_birth }),
-//                 ...(dto.position && { position: dto.position }),
-//                 ...(dto.height !== undefined && { height: dto.height }),
-//                 ...(dto.weight !== undefined && { weight: dto.weight }),
-//                 ...(dto.nationality !== undefined && { nationality: dto.nationality }),
-//                 ...(dto.avatar !== undefined && { avatar: dto.avatar }),
-//             },
-//             select: PLAYER_SELECT,
-//         });
-//         return this.mapPlayer(player);
-//     }
+    constructor(
+        private readonly prisma: PrismaClient
+    ) {
+        // KHÔNG đặt beforeBuild ở baseConfig: team_id chỉ có tại thời điểm
+        // gọi run(), không có tại constructor. beforeBuild thật sự dùng để
+        // filter team_id + deleted_at được truyền qua overrideConfig trong
+        // listTeamPlayers() — xem comment ở đó.
+        //
+        // searchFields/sortable chỉ support flat field trên TeamPlayer
+        // (QueryBuilder dùng {[field]: value} trực tiếp) — không join qua
+        // player.user. Search theo tên/email phải tự query riêng nếu cần.
+        this.teamPlayerQuery = new Queryable<TeamPlayerRow>(prisma.teamPlayer, {
+            select: TEAM_PLAYER_SELECT,
+            sortable: ["jersey_number", "id", "created_at"],
+            defaultSort: { column: "jersey_number", direction: "asc" },
+            filterable: ["position", "status", "approval_status"],
+            defaultPerPage: 20,
+            maxPerPage: 100,
+        });
+    }
 
-//     async softDeletePlayer(id: number): Promise<void> {
-//         await this.db.player.update({
-//             where: { id },
-//             data: { deleted_at: new Date(), is_active: false },
-//         });
-//     }
+    // ----------------------------------------------------------
+    // PLAYER CRUD
+    // ----------------------------------------------------------
 
-//     // ----------------------------------------------------------
-//     // TEAM PLAYER
-//     // ----------------------------------------------------------
-//     async listTeamPlayers(
-//         query: ListTeamPlayersQuery
-//     ): Promise<PaginatedResult<TeamPlayerDto>> {
-//         const { team_id, page = 1, limit = 20, position, status, approval_status } =
-//             query;
+    async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
+        const player = await this.prisma.player.create({
+            data: dto,
+            select: PLAYER_SELECT,
+        });
+        return this.mapPlayer(player);
+    }
 
-//         const where: Prisma.TeamPlayerWhereInput = {
-//             team_id,
-//             deleted_at: null,
-//             ...(position && { position: position as any }),
-//             ...(status && { status: status as any }),
-//             ...(approval_status && { approval_status: approval_status as any }),
-//         };
+    async getPlayerById(id: number): Promise<PlayerDto | null> {
+        const player = await this.prisma.player.findFirst({
+            where: { id, deleted_at: null },
+            select: PLAYER_SELECT,
+        });
+        return player ? this.mapPlayer(player) : null;
+    }
 
-//         const [data, total] = await this.db.$transaction([
-//             this.db.teamPlayer.findMany({
-//                 where,
-//                 select: TEAM_PLAYER_SELECT,
-//                 skip: (page - 1) * limit,
-//                 take: limit,
-//                 orderBy: { jersey_number: "asc" },
-//             }),
-//             this.db.teamPlayer.count({ where }),
-//         ]);
+    async getPlayerByIdOrFail(id: number): Promise<PlayerDto> {
+        const player = await this.getPlayerById(id);
+        if (!player) throw createAppError("NOT_FOUND", `Player ${id} not found`);
+        return player;
+    }
 
-//         return {
-//             data: data.map(this.mapTeamPlayer),
-//             total,
-//             page,
-//             limit,
-//         };
-//     }
+    async updatePlayer(id: number, dto: UpdatePlayerDto): Promise<PlayerDto> {
+        // getPlayerByIdOrFail thay cho assertPlayerExists — tránh 2 round trip,
+        // vừa validate exists vừa lấy avatar cũ để replaceAsset.
+        const existing = await this.getPlayerByIdOrFail(id);
 
-//     async addPlayerToTeam(
-//         team_id: number,
-//         dto: AddPlayerToTeamDto,
-//         user_id?: number
-//     ): Promise<TeamPlayerDto> {
-//         // P2002 on [team_id, player_id] or [team_id, jersey_number] → surface to caller
-//         const tp = await this.db.teamPlayer.create({
-//             data: {
-//                 team_id,
-//                 player_id: dto.player_id,
-//                 jersey_number: dto.jersey_number,
-//                 position: dto.position,
-//                 role: dto.role,
-//                 ...(user_id && { user_id }),
-//             },
-//             select: TEAM_PLAYER_SELECT,
-//         });
-//         return this.mapTeamPlayer(tp);
-//     }
+        // Fire-and-forget: không block update nếu Cloudinary fail.
+        // existing.avatar là publicId-based URL, StorageService.extractPublicId
+        // parse ra publicId trước khi delete.
+        storageService.replaceAsset(existing.avatar, dto.avatar, logger);
 
-//     async updateTeamPlayer(
-//         id: number,
-//         dto: UpdateTeamPlayerDto
-//     ): Promise<TeamPlayerDto> {
-//         const tp = await this.db.teamPlayer.update({
-//             where: { id },
-//             data: dto,
-//             select: TEAM_PLAYER_SELECT,
-//         });
-//         return this.mapTeamPlayer(tp);
-//     }
+        const player = await this.prisma.player.update({
+            where: { id },
+            data: dto,
+            select: PLAYER_SELECT,
+        });
+        return this.mapPlayer(player);
+    }
 
-//     async approveTeamPlayer(id: number): Promise<TeamPlayerDto> {
-//         return this.updateTeamPlayer(id, { approval_status: "approved" });
-//     }
+    async softDeletePlayer(id: number): Promise<void> {
+        const existing = await this.getPlayerByIdOrFail(id);
 
-//     async rejectTeamPlayer(id: number): Promise<TeamPlayerDto> {
-//         return this.updateTeamPlayer(id, { approval_status: "rejected" });
-//     }
+        // Avatar không còn accessible sau soft delete — cleanup Cloudinary luôn.
+        if (existing.avatar) {
+            storageService.replaceAsset(existing.avatar, null, logger);
+        }
 
-//     // ----------------------------------------------------------
-//     // BULK DELETE
-//     // ----------------------------------------------------------
-//     /**
-//      * Soft-delete team_players by ids.
-//      * Only deletes records belonging to team_id to prevent cross-team tampering.
-//      * Returns count of actually deleted records.
-//      */
-//     async bulkDeleteTeamPlayers(
-//         team_id: number,
-//         dto: BulkDeleteDto
-//     ): Promise<{ deleted: number; notFound: number[] }> {
-//         const now = new Date();
+        await this.prisma.player.update({
+            where: { id },
+            data: { deleted_at: new Date(), is_active: false },
+        });
+    }
+    // ----------------------------------------------------------
+    // TEAM PLAYER
+    // ----------------------------------------------------------
 
-//         // Fetch existing records first to identify notFound ids
-//         const existing = await this.db.teamPlayer.findMany({
-//             where: {
-//                 id: { in: dto.ids },
-//                 team_id,
-//                 deleted_at: null,
-//             },
-//             select: { id: true },
-//         });
+    listTeamPlayers(query: ListTeamPlayersQuery): Promise<PaginatedResult<TeamPlayerDto>> {
+        const { team_id, ...req } = query;
 
-//         const existingIds = existing.map((r) => r.id);
-//         const notFound = dto.ids.filter((id) => !existingIds.includes(id));
+        // overrideConfig REPLACE toàn bộ baseConfig.beforeBuild, không merge —
+        // nên phải tự push đủ điều kiện fixed (team_id + deleted_at) ở đây,
+        // không thể assume base có sẵn deleted_at filter nào khác.
+        return this.teamPlayerQuery
+            .run(req, {
+                beforeBuild: (where) => {
+                    where.push({ team_id, deleted_at: null });
+                },
+            })
+            .then((res) => ({
+                ...res,
+                data: res.data.map((tp) => this.mapTeamPlayer(tp)),
+            }));
+    }
 
-//         if (existingIds.length === 0) {
-//             return { deleted: 0, notFound };
-//         }
+    async getTeamPlayerById(id: number, team_id: number): Promise<TeamPlayerDto | null> {
+        const tp = await this.prisma.teamPlayer.findFirst({
+            where: { id, team_id, deleted_at: null },
+            select: TEAM_PLAYER_SELECT,
+        });
+        return tp ? this.mapTeamPlayer(tp) : null;
+    }
 
-//         await this.db.teamPlayer.updateMany({
-//             where: { id: { in: existingIds }, team_id },
-//             data: { deleted_at: now, is_active: false },
-//         });
+    async addPlayerToTeam(
+        team_id: number,
+        dto: AddPlayerToTeamDto,
+        user_id?: number
+    ): Promise<TeamPlayerDto> {
+        // P2002 trên [team_id, player_id] hoặc [team_id, jersey_number]
+        // — KHÔNG catch ở đây, để caller (controller) map P2002 → 409 Conflict.
+        // Catch + rethrow generic Error ở đây sẽ làm mất prisma error code,
+        // controller không phân biệt được lý do conflict (player vs jersey).
+        const tp = await this.prisma.teamPlayer.create({
+            data: {
+                team_id,
+                player_id: dto.player_id,
+                jersey_number: dto.jersey_number,
+                position: dto.position,
+                role: dto.role,
+                ...(user_id && { user_id }),
+            },
+            select: TEAM_PLAYER_SELECT,
+        });
+        return this.mapTeamPlayer(tp);
+    }
 
-//         return { deleted: existingIds.length, notFound };
-//     }
+    async updateTeamPlayer(id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto> {
+        const exists = await this.prisma.teamPlayer.findFirst({
+            where: { id, deleted_at: null },
+            select: { id: true },
+        });
+        if (!exists) throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found`);
 
-//     /**
-//      * Hard delete — use only for admin/cleanup.
-//      * Cascade in schema handles seasonTeamPlayers.
-//      */
-//     async hardDeleteTeamPlayers(
-//         team_id: number,
-//         dto: BulkDeleteDto
-//     ): Promise<{ deleted: number }> {
-//         const result = await this.db.teamPlayer.deleteMany({
-//             where: { id: { in: dto.ids }, team_id },
-//         });
-//         return { deleted: result.count };
-//     }
+        const tp = await this.prisma.teamPlayer.update({
+            where: { id },
+            data: dto,
+            select: TEAM_PLAYER_SELECT,
+        });
+        return this.mapTeamPlayer(tp);
+    }
 
-//     // ----------------------------------------------------------
-//     // EXPORT EXCEL
-//     // ----------------------------------------------------------
-//     /**
-//      * Returns raw Buffer — caller writes to response or disk.
-//      * Columns: jersey_number, name, email, position, role, status, approval_status, dob, nationality, height, weight
-//      */
-//     async exportTeamPlayersExcel(team_id: number): Promise<Buffer> {
-//         const records = await this.db.teamPlayer.findMany({
-//             where: { team_id, deleted_at: null },
-//             select: TEAM_PLAYER_SELECT,
-//             orderBy: { jersey_number: "asc" },
-//         });
+    approveTeamPlayer(id: number): Promise<TeamPlayerDto> {
+        return this.updateTeamPlayer(id, { approval_status: "approved" });
+    }
 
-//         const rows = records.map((tp) => ({
-//             jersey_number: tp.jersey_number,
-//             name: tp.player?.user?.name ?? "",
-//             email: tp.player?.user?.email ?? "",
-//             position: tp.position,
-//             role: tp.role,
-//             status: tp.status,
-//             approval_status: tp.approval_status,
-//             date_of_birth: tp.player?.date_of_birth
-//                 ? tp.player.date_of_birth.toISOString().split("T")[0]
-//                 : "",
-//             nationality: tp.player?.nationality ?? "",
-//             height: tp.player?.height ? Number(tp.player.height) : "",
-//             weight: tp.player?.weight ? Number(tp.player.weight) : "",
-//         }));
+    rejectTeamPlayer(id: number): Promise<TeamPlayerDto> {
+        return this.updateTeamPlayer(id, { approval_status: "rejected" });
+    }
 
-//         const ws = XLSX.utils.json_to_sheet(rows);
+    // ----------------------------------------------------------
+    // BULK DELETE
+    // ----------------------------------------------------------
 
-//         // Column widths
-//         ws["!cols"] = [
-//             { wch: 6 },  // jersey
-//             { wch: 24 }, // name
-//             { wch: 28 }, // email
-//             { wch: 12 }, // position
-//             { wch: 14 }, // role
-//             { wch: 10 }, // status
-//             { wch: 16 }, // approval
-//             { wch: 12 }, // dob
-//             { wch: 14 }, // nationality
-//             { wch: 8 },  // height
-//             { wch: 8 },  // weight
-//         ];
+    async bulkDeleteTeamPlayers(
+        team_id: number,
+        dto: BulkDeleteDto
+    ): Promise<{ deleted: number; notFound: number[] }> {
+        const now = new Date();
 
-//         const wb = XLSX.utils.book_new();
-//         XLSX.utils.book_append_sheet(wb, ws, "Players");
+        const existing = await this.prisma.teamPlayer.findMany({
+            where: { id: { in: dto.ids }, team_id, deleted_at: null },
+            select: { id: true },
+        });
 
-//         return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-//     }
+        const existingIds = new Set(existing.map((r: any) => r.id));
+        const notFound = dto.ids.filter((id) => !existingIds.has(id));
 
-//     /**
-//      * Export import template (blank with headers + dropdown hints as comments).
-//      */
-//     exportImportTemplate(): Buffer {
-//         const headers = [
-//             {
-//                 jersey_number: 10, user_email: "player@example.com", date_of_birth: "2000-01-15",
-//                 position: "goalkeeper|defender|midfielder|forward", height: 175, weight: 70, nationality: "Vietnam"
-//             },
-//         ];
+        if (existingIds.size === 0) return { deleted: 0, notFound };
 
-//         const ws = XLSX.utils.json_to_sheet(headers);
-//         ws["!cols"] = [
-//             { wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 36 },
-//             { wch: 8 }, { wch: 8 }, { wch: 14 },
-//         ];
+        await this.prisma.teamPlayer.updateMany({
+            where: { id: { in: [...existingIds] }, team_id },
+            data: { deleted_at: now, is_active: false },
+        });
 
-//         const wb = XLSX.utils.book_new();
-//         XLSX.utils.book_append_sheet(wb, ws, "Template");
-//         return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-//     }
+        return { deleted: existingIds.size, notFound };
+    }
 
-//     // ----------------------------------------------------------
-//     // IMPORT EXCEL
-//     // ----------------------------------------------------------
-//     /**
-//      * Import flow:
-//      * 1. Parse sheet → validate each row with Zod
-//      * 2. Lookup user by email (must exist)
-//      * 3. Upsert Player (create if no player row for that user)
-//      * 4. Add to team via addPlayerToTeam (skip if already member)
-//      *
-//      * Transaction per-row → partial success supported.
-//      * jersey_number in sheet is optional; if absent, must be assigned elsewhere.
-//      */
-//     async importTeamPlayersFromExcel(
-//         team_id: number,
-//         fileBuffer: Buffer
-//     ): Promise<ImportResult> {
-//         const wb = XLSX.read(fileBuffer, { type: "buffer", cellDates: true });
-//         const ws = wb.Sheets[wb.SheetNames[0]];
-//         const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, {
-//             defval: null,
-//         });
+    /** Hard delete — admin/cleanup only. Cascade schema xử lý seasonTeamPlayers. */
+    async hardDeleteTeamPlayers(team_id: number, dto: BulkDeleteDto): Promise<{ deleted: number }> {
+        const result = await this.prisma.teamPlayer.deleteMany({
+            where: { id: { in: dto.ids }, team_id },
+        });
+        return { deleted: result.count };
+    }
 
-//         const result: ImportResult = { success: 0, failed: 0, errors: [] };
+    // ----------------------------------------------------------
+    // EXPORT EXCEL
+    // ----------------------------------------------------------
 
-//         for (let i = 0; i < rows.length; i++) {
-//             const rowNum = i + 2; // 1-indexed + header row
-//             const raw = rows[i];
+    async exportTeamPlayersExcel(team_id: number): Promise<Buffer> {
+        const records = await this.prisma.teamPlayer.findMany({
+            where: { team_id, deleted_at: null },
+            select: TEAM_PLAYER_SELECT,
+            orderBy: { jersey_number: "asc" },
+        });
 
-//             // Validate
-//             const parsed = importPlayerRowSchema.safeParse(raw);
-//             if (!parsed.success) {
-//                 result.failed++;
-//                 result.errors.push({
-//                     row: rowNum,
-//                     reason: parsed.error.issues
-//                         .map((e) => `${e.path.join(".")}: ${e.message}`)
-//                         .join("; "),
-//                 });
-//                 continue;
-//             }
+        const rows = records.map((tp: any) => ({
+            jersey_number: tp.jersey_number,
+            name: tp.player?.user?.name ?? "",
+            email: tp.player?.user?.email ?? "",
+            position: tp.position,
+            role: tp.role,
+            status: tp.status,
+            approval_status: tp.approval_status,
+            date_of_birth: tp.player?.date_of_birth
+                ? tp.player.date_of_birth.toISOString().split("T")[0]
+                : "",
+            nationality: tp.player?.nationality ?? "",
+            height: tp.player?.height ? Number(tp.player.height) : "",
+            weight: tp.player?.weight ? Number(tp.player.weight) : "",
+        }));
 
-//             const dto: ImportPlayerRowDto = parsed.data;
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws["!cols"] = [
+            { wch: 6 }, { wch: 24 }, { wch: 28 }, { wch: 12 },
+            { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 12 },
+            { wch: 14 }, { wch: 8 }, { wch: 8 },
+        ];
 
-//             try {
-//                 await this.db.$transaction(async (tx) => {
-//                     // 1. Resolve user
-//                     const user = await tx.user.findFirst({
-//                         where: { email: dto.user_email },
-//                         select: { id: true },
-//                     });
-//                     if (!user) throw new Error(`User not found: ${dto.user_email}`);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Players");
+        return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+    }
 
-//                     // 2. Upsert player
-//                     let player = await tx.player.findFirst({
-//                         where: { user_id: user.id, deleted_at: null },
-//                         select: { id: true },
-//                     });
+    exportImportTemplate(): Buffer {
+        const headers = [
+            {
+                jersey_number: 10, user_email: "player@example.com", date_of_birth: "2000-01-15",
+                position: "goalkeeper|defender|midfielder|forward", height: 175, weight: 70, nationality: "Vietnam",
+            },
+        ];
+        const ws = XLSX.utils.json_to_sheet(headers);
+        ws["!cols"] = [
+            { wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 36 },
+            { wch: 8 }, { wch: 8 }, { wch: 14 },
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+    }
 
-//                     if (!player) {
-//                         player = await tx.player.create({
-//                             data: {
-//                                 user_id: user.id,
-//                                 date_of_birth: dto.date_of_birth,
-//                                 position: dto.position,
-//                                 height: dto.height ?? null,
-//                                 weight: dto.weight ?? null,
-//                                 nationality: dto.nationality ?? null,
-//                             },
-//                             select: { id: true },
-//                         });
-//                     }
+    // ----------------------------------------------------------
+    // IMPORT EXCEL
+    // ----------------------------------------------------------
+    /**
+     * Per-row transaction → partial success. KHÔNG dùng 1 transaction bọc
+     * toàn bộ loop: file lớn (vài trăm row) sẽ giữ transaction mở quá lâu,
+     * tăng lock contention trên teamPlayer/player table. Trade-off: mất
+     * atomicity toàn file, đổi lại import 500 dòng không block ghi khác.
+     */
+    async importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer): Promise<ImportResult> {
+        const wb = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        if (!sheetName) throw createAppError('BAD_REQUEST', 'Excel file has no sheets');
 
-//                     // 3. Check already member
-//                     const existing = await tx.teamPlayer.findFirst({
-//                         where: { team_id, player_id: player.id, deleted_at: null },
-//                         select: { id: true },
-//                     });
-//                     if (existing) throw new Error("Player already in team");
+        const ws = wb.Sheets[sheetName];
+        if (!ws) throw createAppError('BAD_REQUEST', `Sheet "${sheetName}" is empty or corrupted`);
 
-//                     // 4. jersey_number required to add — skip silently if missing
-//                     if (!dto.jersey_number) {
-//                         throw new Error("jersey_number required for team assignment");
-//                     }
+        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
+        const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
-//                     await tx.teamPlayer.create({
-//                         data: {
-//                             team_id,
-//                             player_id: player.id,
-//                             jersey_number: dto.jersey_number,
-//                             position: dto.position,
-//                             role: "player",
-//                         },
-//                     });
-//                 });
+        // ── Phase 1: validate tất cả rows trước, không chạm DB ──────────────────
+        type ValidRow = { rowNum: number; dto: ImportPlayerRowDto };
+        const validRows: ValidRow[] = [];
 
-//                 result.success++;
-//             } catch (err: unknown) {
-//                 result.failed++;
-//                 result.errors.push({
-//                     row: rowNum,
-//                     reason: err instanceof Error ? err.message : "Unknown error",
-//                 });
-//             }
-//         }
+        for (let i = 0; i < raw.length; i++) {
+            const rowNum = i + 2;
+            const parsed = importPlayerRowSchema.safeParse(raw[i]);
+            if (!parsed.success) {
+                result.failed++;
+                result.errors.push({
+                    row: rowNum,
+                    reason: parsed.error.issues
+                        .map((e) => `${e.path.join('.')}: ${e.message}`)
+                        .join('; '),
+                });
+            } else {
+                validRows.push({ rowNum, dto: parsed.data });
+            }
+        }
 
-//         return result;
-//     }
+        if (validRows.length === 0) return result;
 
-//     // ----------------------------------------------------------
-//     // MAPPERS
-//     // ----------------------------------------------------------
-//     private mapPlayer(p: any): PlayerDto {
-//         return {
-//             id: p.id,
-//             date_of_birth: p.date_of_birth,
-//             position: p.position,
-//             height: p.height ? Number(p.height) : null,
-//             weight: p.weight ? Number(p.weight) : null,
-//             nationality: p.nationality,
-//             avatar: p.avatar,
-//             is_active: p.is_active,
-//             created_at: p.created_at,
-//             updated_at: p.updated_at,
-//             user_id: p.user_id,
-//             user: p.user ?? null,
-//         };
-//     }
+        // ── Phase 2: batch pre-fetch snapshot ───────────────────────────────────
+        const emails = [...new Set(validRows.map((r) => r.dto.user_email))];
 
-//     private mapTeamPlayer(tp: any): TeamPlayerDto {
-//         return {
-//             id: tp.id,
-//             team_id: tp.team_id,
-//             player_id: tp.player_id,
-//             jersey_number: tp.jersey_number,
-//             position: tp.position,
-//             role: tp.role,
-//             status: tp.status,
-//             approval_status: tp.approval_status,
-//             is_active: tp.is_active,
-//             created_at: tp.created_at,
-//             updated_at: tp.updated_at,
-//             player: tp.player ? this.mapPlayer(tp.player) : null,
-//         };
-//     }
-// }
+        const [users, existingPlayers, existingTeamPlayers] = await Promise.all([
+            this.prisma.user.findMany({
+                where: { email: { in: emails } },
+                select: { id: true, email: true },
+            }),
+            this.prisma.player.findMany({
+                where: { user_id: { in: [] }, deleted_at: null }, // filled below after user lookup
+                select: { id: true, user_id: true },
+            }),
+            this.prisma.teamPlayer.findMany({
+                where: { team_id, deleted_at: null },
+                select: { player_id: true },
+            }),
+        ]);
+
+        const userByEmail = new Map(users.map((u) => [u.email, u.id]));
+
+        // Re-fetch players after we have user ids
+        const userIds = users.map((u) => u.id);
+        const players = userIds.length
+            ? await this.prisma.player.findMany({
+                where: { user_id: { in: userIds }, deleted_at: null },
+                select: { id: true, user_id: true },
+            })
+            : [];
+
+        const playerByUserId = new Map(players.map((p) => [p.user_id, p.id]));
+        const teamPlayerSet = new Set(existingTeamPlayers.map((tp) => tp.player_id));
+
+        // ── Phase 3: per-row transaction — chỉ còn create, không có lookup ──────
+        for (const { rowNum, dto } of validRows) {
+            const userId = userByEmail.get(dto.user_email);
+            if (!userId) {
+                result.failed++;
+                result.errors.push({ row: rowNum, reason: `User not found: ${dto.user_email}` });
+                continue;
+            }
+
+            try {
+                await this.prisma.$transaction(async (tx) => {
+                    let playerId = playerByUserId.get(userId);
+
+                    if (!playerId) {
+                        const created = await tx.player.create({
+                            data: {
+                                user_id: userId,
+                                date_of_birth: dto.date_of_birth,
+                                position: dto.position,
+                                height: dto.height ?? null,
+                                weight: dto.weight ?? null,
+                                nationality: dto.nationality ?? null,
+                            },
+                            select: { id: true },
+                        });
+                        playerId = created.id;
+                        playerByUserId.set(userId, playerId); // update local snapshot
+                    }
+
+                    if (teamPlayerSet.has(playerId)) {
+                        throw createAppError('CONFLICT', 'Player already in team');
+                    }
+
+                    if (!dto.jersey_number) {
+                        throw createAppError('BAD_REQUEST', 'jersey_number required for team assignment');
+                    }
+
+                    await tx.teamPlayer.create({
+                        data: {
+                            team_id,
+                            player_id: playerId,
+                            jersey_number: dto.jersey_number,
+                            position: dto.position,
+                            role: 'player',
+                        },
+                    });
+
+                    teamPlayerSet.add(playerId); // prevent duplicate trong cùng file
+                });
+
+                result.success++;
+            } catch (err) {
+                result.failed++;
+                result.errors.push({
+                    row: rowNum,
+                    reason: err instanceof Error ? err.message : 'Unknown error',
+                });
+            }
+        }
+
+        return result;
+    }
+
+    // ----------------------------------------------------------
+    // MAPPERS — typed theo select payload, không còn `any`
+    // ----------------------------------------------------------
+
+    /**
+     * Không map field-by-field vì PlayerRow (Prisma payload) đã match
+     * PlayerDto 1:1 nhờ PLAYER_SELECT satisfies Prisma.PlayerSelect.
+     * Chỉ height/weight cần convert Decimal -> number, còn lại spread
+     * thẳng. Nếu PlayerDto thêm field tính toán (vd: age từ date_of_birth)
+     * thì thêm vào đây, không quay lại copy hết field như cũ.
+     */
+    private mapPlayer(p: PlayerRow): PlayerDto {
+        return {
+            ...p,
+            height: p.height ? Number(p.height) : null,
+            weight: p.weight ? Number(p.weight) : null,
+        };
+    }
+
+    private mapTeamPlayer(tp: TeamPlayerRow): TeamPlayerDto {
+        return {
+            ...tp,
+            player: tp.player ? this.mapPlayer(tp.player) : null,
+        };
+    }
+}

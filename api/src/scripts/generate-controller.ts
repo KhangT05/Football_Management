@@ -425,7 +425,7 @@ function controllerTemplate(): string {
 
   // ── Class ──
 
-  if (auth) lines.push(`@Security("jwt")`);
+  if (auth) lines.push(`@Security("jwt",['admin'])`);
   lines.push(`@Route("${routePath}")`);
   lines.push(`@Tags("${entityName}s")`);
   lines.push(`export class ${entityName}Controller extends Controller {`);
