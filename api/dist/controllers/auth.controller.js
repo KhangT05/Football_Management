@@ -13,7 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Controller, Post, Get, Route, Tags, Security, Body, Request, SuccessResponse, Middlewares, Header } from 'tsoa';
 import { AuthService } from '../services/auth.service.js';
 import { makeResponse } from '../common/api.response.js';
-import { authLimiter, originGuard } from '../middleware/auth.middleware.js';
+import { authLimiter, originGuard } from '../middleware/csrf.middleware.js';
 const COOKIE_NAME = 'refresh_token';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IS_PROD = process.env.NODE_ENV === 'production';

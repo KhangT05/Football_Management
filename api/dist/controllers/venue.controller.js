@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], VenueController.prototype, "softDelete", null);
 VenueController = __decorate([
-    Security("jwt"),
+    Security("jwt", ['user', 'admin']),
     Route("venues"),
     Tags("Venues"),
     __metadata("design:paramtypes", [VenueService])

@@ -16,7 +16,7 @@ import { AuthService } from '../services/auth.service.js';
 import type { TokenResponseDto, UserPayload } from '../types/auth.types.js';
 import { ApiResponseShape, makeResponse } from '../common/api.response.js';
 import type { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
-import { authLimiter, originGuard } from '../middleware/auth.middleware.js';
+import { authLimiter, originGuard } from '../middleware/csrf.middleware.js';
 type AuthRequest = ExpressRequest & { user: { user_id: number } };
 
 const COOKIE_NAME = 'refresh_token';

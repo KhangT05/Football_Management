@@ -39,6 +39,11 @@ export declare const ERROR_REGISTRY: {
         readonly expose: 500;
         readonly isAuthError: false;
     };
+    readonly INTERNAL_SERVER_ERROR: {
+        readonly httpStatus: 500;
+        readonly expose: 500;
+        readonly isAuthError: false;
+    };
     readonly EXTERNAL_API_ERROR: {
         readonly httpStatus: 502;
         readonly expose: 500;
@@ -51,5 +56,5 @@ export declare const ERROR_REGISTRY: {
     };
 };
 export type ErrorCode = keyof typeof ERROR_REGISTRY;
-export declare const AUTH_CODE: Set<"UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "BAD_REQUEST" | "CONFLICT" | "VALIDATION_ERROR" | "RATE_LIMITED" | "DB_ERROR" | "EXTERNAL_API_ERROR" | "TIMEOUT">;
+export declare const AUTH_CODE: Set<"UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "BAD_REQUEST" | "CONFLICT" | "VALIDATION_ERROR" | "RATE_LIMITED" | "DB_ERROR" | "INTERNAL_SERVER_ERROR" | "EXTERNAL_API_ERROR" | "TIMEOUT">;
 //# sourceMappingURL=error.code.d.ts.map
