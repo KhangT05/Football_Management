@@ -30,7 +30,6 @@ export type TeamLeaderMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type TeamLeaderMaxAggregateOutputType = {
     id: number | null;
@@ -40,7 +39,6 @@ export type TeamLeaderMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type TeamLeaderCountAggregateOutputType = {
     id: number;
@@ -50,7 +48,6 @@ export type TeamLeaderCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type TeamLeaderAvgAggregateInputType = {
@@ -71,7 +68,6 @@ export type TeamLeaderMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type TeamLeaderMaxAggregateInputType = {
     id?: true;
@@ -81,7 +77,6 @@ export type TeamLeaderMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type TeamLeaderCountAggregateInputType = {
     id?: true;
@@ -91,7 +86,6 @@ export type TeamLeaderCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type TeamLeaderAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -178,7 +172,6 @@ export type TeamLeaderGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: TeamLeaderCountAggregateOutputType | null;
     _avg: TeamLeaderAvgAggregateOutputType | null;
     _sum: TeamLeaderSumAggregateOutputType | null;
@@ -199,7 +192,6 @@ export type TeamLeaderWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TeamLeader"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamLeader"> | boolean;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
 };
@@ -211,7 +203,6 @@ export type TeamLeaderOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     team?: Prisma.TeamOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
 };
@@ -226,7 +217,6 @@ export type TeamLeaderWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"TeamLeader"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamLeader"> | boolean;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
 }, "id">;
@@ -238,7 +228,6 @@ export type TeamLeaderOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.TeamLeaderCountOrderByAggregateInput;
     _avg?: Prisma.TeamLeaderAvgOrderByAggregateInput;
     _max?: Prisma.TeamLeaderMaxOrderByAggregateInput;
@@ -256,14 +245,12 @@ export type TeamLeaderScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"TeamLeader"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamLeader"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamLeader"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"TeamLeader"> | boolean;
 };
 export type TeamLeaderCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     team: Prisma.TeamCreateNestedOneWithoutTeamLeadersInput;
     user: Prisma.UserCreateNestedOneWithoutTeamLeadersInput;
 };
@@ -275,14 +262,12 @@ export type TeamLeaderUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamLeadersNestedInput;
     user?: Prisma.UserUpdateOneRequiredWithoutTeamLeadersNestedInput;
 };
@@ -294,7 +279,6 @@ export type TeamLeaderUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderCreateManyInput = {
     id?: number;
@@ -304,14 +288,12 @@ export type TeamLeaderCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderUpdateManyMutationInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -321,7 +303,6 @@ export type TeamLeaderUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderListRelationFilter = {
     every?: Prisma.TeamLeaderWhereInput;
@@ -339,7 +320,6 @@ export type TeamLeaderCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamLeaderAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -354,7 +334,6 @@ export type TeamLeaderMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamLeaderMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -364,7 +343,6 @@ export type TeamLeaderMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type TeamLeaderSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -452,7 +430,6 @@ export type TeamLeaderCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     team: Prisma.TeamCreateNestedOneWithoutTeamLeadersInput;
 };
 export type TeamLeaderUncheckedCreateWithoutUserInput = {
@@ -462,7 +439,6 @@ export type TeamLeaderUncheckedCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderCreateOrConnectWithoutUserInput = {
     where: Prisma.TeamLeaderWhereUniqueInput;
@@ -496,14 +472,12 @@ export type TeamLeaderScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TeamLeader"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamLeader"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TeamLeader"> | boolean;
 };
 export type TeamLeaderCreateWithoutTeamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     user: Prisma.UserCreateNestedOneWithoutTeamLeadersInput;
 };
 export type TeamLeaderUncheckedCreateWithoutTeamInput = {
@@ -513,7 +487,6 @@ export type TeamLeaderUncheckedCreateWithoutTeamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderCreateOrConnectWithoutTeamInput = {
     where: Prisma.TeamLeaderWhereUniqueInput;
@@ -543,14 +516,12 @@ export type TeamLeaderCreateManyUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamLeadersNestedInput;
 };
 export type TeamLeaderUncheckedUpdateWithoutUserInput = {
@@ -560,7 +531,6 @@ export type TeamLeaderUncheckedUpdateWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -569,7 +539,6 @@ export type TeamLeaderUncheckedUpdateManyWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderCreateManyTeamInput = {
     id?: number;
@@ -578,14 +547,12 @@ export type TeamLeaderCreateManyTeamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type TeamLeaderUpdateWithoutTeamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     user?: Prisma.UserUpdateOneRequiredWithoutTeamLeadersNestedInput;
 };
 export type TeamLeaderUncheckedUpdateWithoutTeamInput = {
@@ -595,7 +562,6 @@ export type TeamLeaderUncheckedUpdateWithoutTeamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -604,7 +570,6 @@ export type TeamLeaderUncheckedUpdateManyWithoutTeamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type TeamLeaderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -614,7 +579,6 @@ export type TeamLeaderSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["teamLeader"]>;
@@ -626,9 +590,8 @@ export type TeamLeaderSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type TeamLeaderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "user_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["teamLeader"]>;
+export type TeamLeaderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "user_id" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["teamLeader"]>;
 export type TeamLeaderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -647,7 +610,6 @@ export type $TeamLeaderPayload<ExtArgs extends runtime.Types.Extensions.Internal
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["teamLeader"]>;
     composites: {};
 };
@@ -959,7 +921,6 @@ export interface TeamLeaderFieldRefs {
     readonly created_at: Prisma.FieldRef<"TeamLeader", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"TeamLeader", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"TeamLeader", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"TeamLeader", 'Boolean'>;
 }
 /**
  * TeamLeader findUnique

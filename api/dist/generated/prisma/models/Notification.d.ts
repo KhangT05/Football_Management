@@ -43,7 +43,6 @@ export type NotificationMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type NotificationMaxAggregateOutputType = {
     id: number | null;
@@ -61,7 +60,6 @@ export type NotificationMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type NotificationCountAggregateOutputType = {
     id: number;
@@ -79,7 +77,6 @@ export type NotificationCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type NotificationAvgAggregateInputType = {
@@ -112,7 +109,6 @@ export type NotificationMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type NotificationMaxAggregateInputType = {
     id?: true;
@@ -130,7 +126,6 @@ export type NotificationMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type NotificationCountAggregateInputType = {
     id?: true;
@@ -148,7 +143,6 @@ export type NotificationCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type NotificationAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -243,7 +237,6 @@ export type NotificationGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: NotificationCountAggregateOutputType | null;
     _avg: NotificationAvgAggregateOutputType | null;
     _sum: NotificationSumAggregateOutputType | null;
@@ -272,7 +265,6 @@ export type NotificationWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Notification"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Notification"> | boolean;
     season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
     target_team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
 };
@@ -292,7 +284,6 @@ export type NotificationOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     season?: Prisma.SeasonOrderByWithRelationInput;
     target_team?: Prisma.TeamOrderByWithRelationInput;
     _relevance?: Prisma.NotificationOrderByRelevanceInput;
@@ -316,7 +307,6 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"Notification"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Notification"> | boolean;
     season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
     target_team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
 }, "id">;
@@ -336,7 +326,6 @@ export type NotificationOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.NotificationCountOrderByAggregateInput;
     _avg?: Prisma.NotificationAvgOrderByAggregateInput;
     _max?: Prisma.NotificationMaxOrderByAggregateInput;
@@ -362,7 +351,6 @@ export type NotificationScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean;
 };
 export type NotificationCreateInput = {
     title: string;
@@ -377,7 +365,6 @@ export type NotificationCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     season?: Prisma.SeasonCreateNestedOneWithoutNotificationsInput;
     target_team?: Prisma.TeamCreateNestedOneWithoutNotificationsInput;
 };
@@ -397,7 +384,6 @@ export type NotificationUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationUpdateInput = {
     title?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -412,7 +398,6 @@ export type NotificationUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     season?: Prisma.SeasonUpdateOneWithoutNotificationsNestedInput;
     target_team?: Prisma.TeamUpdateOneWithoutNotificationsNestedInput;
 };
@@ -432,7 +417,6 @@ export type NotificationUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationCreateManyInput = {
     id?: number;
@@ -450,7 +434,6 @@ export type NotificationCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationUpdateManyMutationInput = {
     title?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -465,7 +448,6 @@ export type NotificationUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -483,7 +465,6 @@ export type NotificationUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationListRelationFilter = {
     every?: Prisma.NotificationWhereInput;
@@ -514,7 +495,6 @@ export type NotificationCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type NotificationAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -539,7 +519,6 @@ export type NotificationMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type NotificationMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -557,7 +536,6 @@ export type NotificationMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type NotificationSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -661,7 +639,6 @@ export type NotificationCreateWithoutSeasonInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     target_team?: Prisma.TeamCreateNestedOneWithoutNotificationsInput;
 };
 export type NotificationUncheckedCreateWithoutSeasonInput = {
@@ -679,7 +656,6 @@ export type NotificationUncheckedCreateWithoutSeasonInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationCreateOrConnectWithoutSeasonInput = {
     where: Prisma.NotificationWhereUniqueInput;
@@ -721,7 +697,6 @@ export type NotificationScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Notification"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"Notification"> | boolean;
 };
 export type NotificationCreateWithoutTarget_teamInput = {
     title: string;
@@ -736,7 +711,6 @@ export type NotificationCreateWithoutTarget_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     season?: Prisma.SeasonCreateNestedOneWithoutNotificationsInput;
 };
 export type NotificationUncheckedCreateWithoutTarget_teamInput = {
@@ -754,7 +728,6 @@ export type NotificationUncheckedCreateWithoutTarget_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationCreateOrConnectWithoutTarget_teamInput = {
     where: Prisma.NotificationWhereUniqueInput;
@@ -792,7 +765,6 @@ export type NotificationCreateManySeasonInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationUpdateWithoutSeasonInput = {
     title?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -807,7 +779,6 @@ export type NotificationUpdateWithoutSeasonInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     target_team?: Prisma.TeamUpdateOneWithoutNotificationsNestedInput;
 };
 export type NotificationUncheckedUpdateWithoutSeasonInput = {
@@ -825,7 +796,6 @@ export type NotificationUncheckedUpdateWithoutSeasonInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationUncheckedUpdateManyWithoutSeasonInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -842,7 +812,6 @@ export type NotificationUncheckedUpdateManyWithoutSeasonInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationCreateManyTarget_teamInput = {
     id?: number;
@@ -859,7 +828,6 @@ export type NotificationCreateManyTarget_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type NotificationUpdateWithoutTarget_teamInput = {
     title?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -874,7 +842,6 @@ export type NotificationUpdateWithoutTarget_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     season?: Prisma.SeasonUpdateOneWithoutNotificationsNestedInput;
 };
 export type NotificationUncheckedUpdateWithoutTarget_teamInput = {
@@ -892,7 +859,6 @@ export type NotificationUncheckedUpdateWithoutTarget_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationUncheckedUpdateManyWithoutTarget_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -909,7 +875,6 @@ export type NotificationUncheckedUpdateManyWithoutTarget_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -927,7 +892,6 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     season?: boolean | Prisma.Notification$seasonArgs<ExtArgs>;
     target_team?: boolean | Prisma.Notification$target_teamArgs<ExtArgs>;
 }, ExtArgs["result"]["notification"]>;
@@ -947,9 +911,8 @@ export type NotificationSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "type" | "source" | "season_id" | "target_team_id" | "recipient_user_id" | "is_read" | "ref_entity_type" | "ref_entity_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["notification"]>;
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "type" | "source" | "season_id" | "target_team_id" | "recipient_user_id" | "is_read" | "ref_entity_type" | "ref_entity_id" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["notification"]>;
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     season?: boolean | Prisma.Notification$seasonArgs<ExtArgs>;
     target_team?: boolean | Prisma.Notification$target_teamArgs<ExtArgs>;
@@ -976,7 +939,6 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["notification"]>;
     composites: {};
 };
@@ -1296,7 +1258,6 @@ export interface NotificationFieldRefs {
     readonly created_at: Prisma.FieldRef<"Notification", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Notification", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"Notification", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"Notification", 'Boolean'>;
 }
 /**
  * Notification findUnique

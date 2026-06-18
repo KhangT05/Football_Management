@@ -162,7 +162,6 @@ export const TournamentRuleScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     points_per_win: 'points_per_win',
     points_per_draw: 'points_per_draw',
     points_per_loss: 'points_per_loss',
@@ -172,6 +171,10 @@ export const TournamentRuleScalarFieldEnum = {
     min_players_per_team: 'min_players_per_team',
     teams_advance_per_group: 'teams_advance_per_group',
     tiebreaker_order: 'tiebreaker_order',
+    source: 'source',
+    source_file_url: 'source_file_url',
+    evidence_json: 'evidence_json',
+    import_note: 'import_note',
     user_id: 'user_id'
 };
 export const PhaseScalarFieldEnum = {
@@ -209,7 +212,6 @@ export const TeamScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     user_id: 'user_id'
 };
 export const PlayerScalarFieldEnum = {
@@ -224,7 +226,6 @@ export const PlayerScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     user_id: 'user_id'
 };
 export const TeamPlayerScalarFieldEnum = {
@@ -240,20 +241,17 @@ export const TeamPlayerScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     user_id: 'user_id'
 };
 export const SeasonTeamScalarFieldEnum = {
     id: 'id',
     season_id: 'season_id',
     team_id: 'team_id',
-    registered_date: 'registered_date',
     status: 'status',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     group_id: 'group_id',
     user_id: 'user_id'
 };
@@ -275,7 +273,6 @@ export const MatchScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted',
     user_id: 'user_id',
     venue_id: 'venue_id',
     is_published: 'is_published',
@@ -329,8 +326,7 @@ export const VenueScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const TeamLeaderScalarFieldEnum = {
     id: 'id',
@@ -339,8 +335,7 @@ export const TeamLeaderScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const TeamStandingScalarFieldEnum = {
     id: 'id',
@@ -357,8 +352,7 @@ export const TeamStandingScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const PlayerStatisticScalarFieldEnum = {
     id: 'id',
@@ -391,8 +385,7 @@ export const NotificationScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const PaymentScalarFieldEnum = {
     id: 'id',
@@ -406,8 +399,7 @@ export const PaymentScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const SeasonTeamPlayerScalarFieldEnum = {
     id: 'id',
@@ -417,8 +409,7 @@ export const SeasonTeamPlayerScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const MatchResultScalarFieldEnum = {
     id: 'id',
@@ -441,14 +432,17 @@ export const MatchResultScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    is_deleted: 'is_deleted'
+    deleted_at: 'deleted_at'
 };
 export const SortOrder = {
     asc: 'asc',
     desc: 'desc'
 };
 export const JsonNullValueInput = {
+    JsonNull: JsonNull
+};
+export const NullableJsonNullValueInput = {
+    DbNull: DbNull,
     JsonNull: JsonNull
 };
 export const NullsOrder = {
@@ -482,6 +476,11 @@ export const JsonNullValueFilter = {
 export const QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
+};
+export const TournamentRuleOrderByRelevanceFieldEnum = {
+    source: 'source',
+    source_file_url: 'source_file_url',
+    import_note: 'import_note'
 };
 export const PhaseOrderByRelevanceFieldEnum = {
     name: 'name'

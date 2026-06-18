@@ -125,7 +125,6 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly points_per_win: "points_per_win";
     readonly points_per_draw: "points_per_draw";
     readonly points_per_loss: "points_per_loss";
@@ -135,6 +134,10 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly min_players_per_team: "min_players_per_team";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
+    readonly source: "source";
+    readonly source_file_url: "source_file_url";
+    readonly evidence_json: "evidence_json";
+    readonly import_note: "import_note";
     readonly user_id: "user_id";
 };
 export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
@@ -176,7 +179,6 @@ export declare const TeamScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly user_id: "user_id";
 };
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
@@ -192,7 +194,6 @@ export declare const PlayerScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly user_id: "user_id";
 };
 export type PlayerScalarFieldEnum = (typeof PlayerScalarFieldEnum)[keyof typeof PlayerScalarFieldEnum];
@@ -209,7 +210,6 @@ export declare const TeamPlayerScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly user_id: "user_id";
 };
 export type TeamPlayerScalarFieldEnum = (typeof TeamPlayerScalarFieldEnum)[keyof typeof TeamPlayerScalarFieldEnum];
@@ -217,13 +217,11 @@ export declare const SeasonTeamScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
     readonly team_id: "team_id";
-    readonly registered_date: "registered_date";
     readonly status: "status";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly group_id: "group_id";
     readonly user_id: "user_id";
 };
@@ -246,7 +244,6 @@ export declare const MatchScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
     readonly user_id: "user_id";
     readonly venue_id: "venue_id";
     readonly is_published: "is_published";
@@ -305,7 +302,6 @@ export declare const VenueScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const TeamLeaderScalarFieldEnum: {
@@ -316,7 +312,6 @@ export declare const TeamLeaderScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type TeamLeaderScalarFieldEnum = (typeof TeamLeaderScalarFieldEnum)[keyof typeof TeamLeaderScalarFieldEnum];
 export declare const TeamStandingScalarFieldEnum: {
@@ -335,7 +330,6 @@ export declare const TeamStandingScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type TeamStandingScalarFieldEnum = (typeof TeamStandingScalarFieldEnum)[keyof typeof TeamStandingScalarFieldEnum];
 export declare const PlayerStatisticScalarFieldEnum: {
@@ -371,7 +365,6 @@ export declare const NotificationScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum];
 export declare const PaymentScalarFieldEnum: {
@@ -387,7 +380,6 @@ export declare const PaymentScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum];
 export declare const SeasonTeamPlayerScalarFieldEnum: {
@@ -399,7 +391,6 @@ export declare const SeasonTeamPlayerScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type SeasonTeamPlayerScalarFieldEnum = (typeof SeasonTeamPlayerScalarFieldEnum)[keyof typeof SeasonTeamPlayerScalarFieldEnum];
 export declare const MatchResultScalarFieldEnum: {
@@ -424,7 +415,6 @@ export declare const MatchResultScalarFieldEnum: {
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
-    readonly is_deleted: "is_deleted";
 };
 export type MatchResultScalarFieldEnum = (typeof MatchResultScalarFieldEnum)[keyof typeof MatchResultScalarFieldEnum];
 export declare const SortOrder: {
@@ -436,6 +426,11 @@ export declare const JsonNullValueInput: {
     readonly JsonNull: import("@prisma/client-runtime-utils").JsonNullClass;
 };
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+export declare const NullableJsonNullValueInput: {
+    readonly DbNull: import("@prisma/client-runtime-utils").DbNullClass;
+    readonly JsonNull: import("@prisma/client-runtime-utils").JsonNullClass;
+};
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 export declare const NullsOrder: {
     readonly first: "first";
     readonly last: "last";
@@ -475,6 +470,12 @@ export declare const QueryMode: {
     readonly insensitive: "insensitive";
 };
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+export declare const TournamentRuleOrderByRelevanceFieldEnum: {
+    readonly source: "source";
+    readonly source_file_url: "source_file_url";
+    readonly import_note: "import_note";
+};
+export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };

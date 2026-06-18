@@ -67,7 +67,6 @@ export type MatchResultMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type MatchResultMaxAggregateOutputType = {
     id: number | null;
@@ -91,7 +90,6 @@ export type MatchResultMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
 };
 export type MatchResultCountAggregateOutputType = {
     id: number;
@@ -115,7 +113,6 @@ export type MatchResultCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     _all: number;
 };
 export type MatchResultAvgAggregateInputType = {
@@ -172,7 +169,6 @@ export type MatchResultMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type MatchResultMaxAggregateInputType = {
     id?: true;
@@ -196,7 +192,6 @@ export type MatchResultMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
 };
 export type MatchResultCountAggregateInputType = {
     id?: true;
@@ -220,7 +215,6 @@ export type MatchResultCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     _all?: true;
 };
 export type MatchResultAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -321,7 +315,6 @@ export type MatchResultGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     _count: MatchResultCountAggregateOutputType | null;
     _avg: MatchResultAvgAggregateOutputType | null;
     _sum: MatchResultSumAggregateOutputType | null;
@@ -356,7 +349,6 @@ export type MatchResultWhereInput = {
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"MatchResult"> | boolean;
     match?: Prisma.XOR<Prisma.MatchScalarRelationFilter, Prisma.MatchWhereInput>;
     winner_team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
 };
@@ -382,7 +374,6 @@ export type MatchResultOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     match?: Prisma.MatchOrderByWithRelationInput;
     winner_team?: Prisma.TeamOrderByWithRelationInput;
     _relevance?: Prisma.MatchResultOrderByRelevanceInput;
@@ -412,7 +403,6 @@ export type MatchResultWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"MatchResult"> | boolean;
     match?: Prisma.XOR<Prisma.MatchScalarRelationFilter, Prisma.MatchWhereInput>;
     winner_team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
 }, "id" | "match_id">;
@@ -438,7 +428,6 @@ export type MatchResultOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     _count?: Prisma.MatchResultCountOrderByAggregateInput;
     _avg?: Prisma.MatchResultAvgOrderByAggregateInput;
     _max?: Prisma.MatchResultMaxOrderByAggregateInput;
@@ -470,7 +459,6 @@ export type MatchResultScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"MatchResult"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"MatchResult"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"MatchResult"> | boolean;
 };
 export type MatchResultCreateInput = {
     home_score?: number;
@@ -491,7 +479,6 @@ export type MatchResultCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     match: Prisma.MatchCreateNestedOneWithoutMatchResultInput;
     winner_team?: Prisma.TeamCreateNestedOneWithoutMatchResultsInput;
 };
@@ -517,7 +504,6 @@ export type MatchResultUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type MatchResultUpdateInput = {
     home_score?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -538,7 +524,6 @@ export type MatchResultUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     match?: Prisma.MatchUpdateOneRequiredWithoutMatchResultNestedInput;
     winner_team?: Prisma.TeamUpdateOneWithoutMatchResultsNestedInput;
 };
@@ -564,7 +549,6 @@ export type MatchResultUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultCreateManyInput = {
     id?: number;
@@ -588,7 +572,6 @@ export type MatchResultCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type MatchResultUpdateManyMutationInput = {
     home_score?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -609,7 +592,6 @@ export type MatchResultUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -633,7 +615,6 @@ export type MatchResultUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultListRelationFilter = {
     every?: Prisma.MatchResultWhereInput;
@@ -674,7 +655,6 @@ export type MatchResultCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type MatchResultAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -714,7 +694,6 @@ export type MatchResultMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type MatchResultMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -738,7 +717,6 @@ export type MatchResultMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
 };
 export type MatchResultSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -847,7 +825,6 @@ export type MatchResultCreateWithoutWinner_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     match: Prisma.MatchCreateNestedOneWithoutMatchResultInput;
 };
 export type MatchResultUncheckedCreateWithoutWinner_teamInput = {
@@ -871,7 +848,6 @@ export type MatchResultUncheckedCreateWithoutWinner_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type MatchResultCreateOrConnectWithoutWinner_teamInput = {
     where: Prisma.MatchResultWhereUniqueInput;
@@ -919,7 +895,6 @@ export type MatchResultScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"MatchResult"> | boolean;
 };
 export type MatchResultCreateWithoutMatchInput = {
     home_score?: number;
@@ -940,7 +915,6 @@ export type MatchResultCreateWithoutMatchInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     winner_team?: Prisma.TeamCreateNestedOneWithoutMatchResultsInput;
 };
 export type MatchResultUncheckedCreateWithoutMatchInput = {
@@ -964,7 +938,6 @@ export type MatchResultUncheckedCreateWithoutMatchInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type MatchResultCreateOrConnectWithoutMatchInput = {
     where: Prisma.MatchResultWhereUniqueInput;
@@ -998,7 +971,6 @@ export type MatchResultUpdateWithoutMatchInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     winner_team?: Prisma.TeamUpdateOneWithoutMatchResultsNestedInput;
 };
 export type MatchResultUncheckedUpdateWithoutMatchInput = {
@@ -1022,7 +994,6 @@ export type MatchResultUncheckedUpdateWithoutMatchInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultCreateManyWinner_teamInput = {
     id?: number;
@@ -1045,7 +1016,6 @@ export type MatchResultCreateManyWinner_teamInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
 };
 export type MatchResultUpdateWithoutWinner_teamInput = {
     home_score?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1066,7 +1036,6 @@ export type MatchResultUpdateWithoutWinner_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     match?: Prisma.MatchUpdateOneRequiredWithoutMatchResultNestedInput;
 };
 export type MatchResultUncheckedUpdateWithoutWinner_teamInput = {
@@ -1090,7 +1059,6 @@ export type MatchResultUncheckedUpdateWithoutWinner_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultUncheckedUpdateManyWithoutWinner_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1113,7 +1081,6 @@ export type MatchResultUncheckedUpdateManyWithoutWinner_teamInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 export type MatchResultSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -1137,7 +1104,6 @@ export type MatchResultSelect<ExtArgs extends runtime.Types.Extensions.InternalA
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
     winner_team?: boolean | Prisma.MatchResult$winner_teamArgs<ExtArgs>;
 }, ExtArgs["result"]["matchResult"]>;
@@ -1163,9 +1129,8 @@ export type MatchResultSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
 };
-export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_score" | "away_score" | "home_half_time_score" | "away_half_time_score" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted", ExtArgs["result"]["matchResult"]>;
+export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_score" | "away_score" | "home_half_time_score" | "away_half_time_score" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["matchResult"]>;
 export type MatchResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
     winner_team?: boolean | Prisma.MatchResult$winner_teamArgs<ExtArgs>;
@@ -1198,7 +1163,6 @@ export type $MatchResultPayload<ExtArgs extends runtime.Types.Extensions.Interna
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
     }, ExtArgs["result"]["matchResult"]>;
     composites: {};
 };
@@ -1524,7 +1488,6 @@ export interface MatchResultFieldRefs {
     readonly created_at: Prisma.FieldRef<"MatchResult", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"MatchResult", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"MatchResult", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"MatchResult", 'Boolean'>;
 }
 /**
  * MatchResult findUnique

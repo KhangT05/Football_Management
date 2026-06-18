@@ -45,7 +45,6 @@ export type TournamentRuleMinAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
@@ -54,6 +53,9 @@ export type TournamentRuleMinAggregateOutputType = {
     max_players_per_team: number | null;
     min_players_per_team: number | null;
     teams_advance_per_group: number | null;
+    source: string | null;
+    source_file_url: string | null;
+    import_note: string | null;
     user_id: number | null;
 };
 export type TournamentRuleMaxAggregateOutputType = {
@@ -63,7 +65,6 @@ export type TournamentRuleMaxAggregateOutputType = {
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean | null;
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
@@ -72,6 +73,9 @@ export type TournamentRuleMaxAggregateOutputType = {
     max_players_per_team: number | null;
     min_players_per_team: number | null;
     teams_advance_per_group: number | null;
+    source: string | null;
+    source_file_url: string | null;
+    import_note: string | null;
     user_id: number | null;
 };
 export type TournamentRuleCountAggregateOutputType = {
@@ -81,7 +85,6 @@ export type TournamentRuleCountAggregateOutputType = {
     created_at: number;
     updated_at: number;
     deleted_at: number;
-    is_deleted: number;
     points_per_win: number;
     points_per_draw: number;
     points_per_loss: number;
@@ -91,6 +94,10 @@ export type TournamentRuleCountAggregateOutputType = {
     min_players_per_team: number;
     teams_advance_per_group: number;
     tiebreaker_order: number;
+    source: number;
+    source_file_url: number;
+    evidence_json: number;
+    import_note: number;
     user_id: number;
     _all: number;
 };
@@ -127,7 +134,6 @@ export type TournamentRuleMinAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
@@ -136,6 +142,9 @@ export type TournamentRuleMinAggregateInputType = {
     max_players_per_team?: true;
     min_players_per_team?: true;
     teams_advance_per_group?: true;
+    source?: true;
+    source_file_url?: true;
+    import_note?: true;
     user_id?: true;
 };
 export type TournamentRuleMaxAggregateInputType = {
@@ -145,7 +154,6 @@ export type TournamentRuleMaxAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
@@ -154,6 +162,9 @@ export type TournamentRuleMaxAggregateInputType = {
     max_players_per_team?: true;
     min_players_per_team?: true;
     teams_advance_per_group?: true;
+    source?: true;
+    source_file_url?: true;
+    import_note?: true;
     user_id?: true;
 };
 export type TournamentRuleCountAggregateInputType = {
@@ -163,7 +174,6 @@ export type TournamentRuleCountAggregateInputType = {
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
-    is_deleted?: true;
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
@@ -173,6 +183,10 @@ export type TournamentRuleCountAggregateInputType = {
     min_players_per_team?: true;
     teams_advance_per_group?: true;
     tiebreaker_order?: true;
+    source?: true;
+    source_file_url?: true;
+    evidence_json?: true;
+    import_note?: true;
     user_id?: true;
     _all?: true;
 };
@@ -259,7 +273,6 @@ export type TournamentRuleGroupByOutputType = {
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
-    is_deleted: boolean;
     points_per_win: number;
     points_per_draw: number;
     points_per_loss: number;
@@ -269,6 +282,10 @@ export type TournamentRuleGroupByOutputType = {
     min_players_per_team: number;
     teams_advance_per_group: number;
     tiebreaker_order: runtime.JsonValue;
+    source: string;
+    source_file_url: string | null;
+    evidence_json: runtime.JsonValue | null;
+    import_note: string | null;
     user_id: number | null;
     _count: TournamentRuleCountAggregateOutputType | null;
     _avg: TournamentRuleAvgAggregateOutputType | null;
@@ -289,7 +306,6 @@ export type TournamentRuleWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TournamentRule"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TournamentRule"> | boolean;
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -299,6 +315,10 @@ export type TournamentRuleWhereInput = {
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
+    source?: Prisma.StringFilter<"TournamentRule"> | string;
+    source_file_url?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
+    evidence_json?: Prisma.JsonNullableFilter<"TournamentRule">;
+    import_note?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
@@ -310,7 +330,6 @@ export type TournamentRuleOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
@@ -320,9 +339,14 @@ export type TournamentRuleOrderByWithRelationInput = {
     min_players_per_team?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
+    source?: Prisma.SortOrder;
+    source_file_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+    evidence_json?: Prisma.SortOrderInput | Prisma.SortOrder;
+    import_note?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament?: Prisma.TournamentOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
+    _relevance?: Prisma.TournamentRuleOrderByRelevanceInput;
 };
 export type TournamentRuleWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
@@ -334,7 +358,6 @@ export type TournamentRuleWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"TournamentRule"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TournamentRule"> | boolean;
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -344,6 +367,10 @@ export type TournamentRuleWhereUniqueInput = Prisma.AtLeast<{
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
+    source?: Prisma.StringFilter<"TournamentRule"> | string;
+    source_file_url?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
+    evidence_json?: Prisma.JsonNullableFilter<"TournamentRule">;
+    import_note?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
@@ -355,7 +382,6 @@ export type TournamentRuleOrderByWithAggregationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
@@ -365,6 +391,10 @@ export type TournamentRuleOrderByWithAggregationInput = {
     min_players_per_team?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
+    source?: Prisma.SortOrder;
+    source_file_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+    evidence_json?: Prisma.SortOrderInput | Prisma.SortOrder;
+    import_note?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.TournamentRuleCountOrderByAggregateInput;
     _avg?: Prisma.TournamentRuleAvgOrderByAggregateInput;
@@ -382,7 +412,6 @@ export type TournamentRuleScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"TournamentRule"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TournamentRule"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TournamentRule"> | Date | string | null;
-    is_deleted?: Prisma.BoolWithAggregatesFilter<"TournamentRule"> | boolean;
     points_per_win?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
@@ -392,6 +421,10 @@ export type TournamentRuleScalarWhereWithAggregatesInput = {
     min_players_per_team?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     teams_advance_per_group?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonWithAggregatesFilter<"TournamentRule">;
+    source?: Prisma.StringWithAggregatesFilter<"TournamentRule"> | string;
+    source_file_url?: Prisma.StringNullableWithAggregatesFilter<"TournamentRule"> | string | null;
+    evidence_json?: Prisma.JsonNullableWithAggregatesFilter<"TournamentRule">;
+    import_note?: Prisma.StringNullableWithAggregatesFilter<"TournamentRule"> | string | null;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"TournamentRule"> | number | null;
 };
 export type TournamentRuleCreateInput = {
@@ -399,7 +432,6 @@ export type TournamentRuleCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -409,6 +441,10 @@ export type TournamentRuleCreateInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     tournament: Prisma.TournamentCreateNestedOneWithoutTournamentRuleInput;
     user?: Prisma.UserCreateNestedOneWithoutTournamentRulesInput;
 };
@@ -419,7 +455,6 @@ export type TournamentRuleUncheckedCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -429,6 +464,10 @@ export type TournamentRuleUncheckedCreateInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     user_id?: number | null;
 };
 export type TournamentRuleUpdateInput = {
@@ -436,7 +475,6 @@ export type TournamentRuleUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -446,6 +484,10 @@ export type TournamentRuleUpdateInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutTournamentRuleNestedInput;
     user?: Prisma.UserUpdateOneWithoutTournamentRulesNestedInput;
 };
@@ -456,7 +498,6 @@ export type TournamentRuleUncheckedUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -466,6 +507,10 @@ export type TournamentRuleUncheckedUpdateInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TournamentRuleCreateManyInput = {
@@ -475,7 +520,6 @@ export type TournamentRuleCreateManyInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -485,6 +529,10 @@ export type TournamentRuleCreateManyInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     user_id?: number | null;
 };
 export type TournamentRuleUpdateManyMutationInput = {
@@ -492,7 +540,6 @@ export type TournamentRuleUpdateManyMutationInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -502,6 +549,10 @@ export type TournamentRuleUpdateManyMutationInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type TournamentRuleUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -510,7 +561,6 @@ export type TournamentRuleUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -520,6 +570,10 @@ export type TournamentRuleUncheckedUpdateManyInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TournamentRuleListRelationFilter = {
@@ -534,6 +588,11 @@ export type TournamentRuleNullableScalarRelationFilter = {
     is?: Prisma.TournamentRuleWhereInput | null;
     isNot?: Prisma.TournamentRuleWhereInput | null;
 };
+export type TournamentRuleOrderByRelevanceInput = {
+    fields: Prisma.TournamentRuleOrderByRelevanceFieldEnum | Prisma.TournamentRuleOrderByRelevanceFieldEnum[];
+    sort: Prisma.SortOrder;
+    search: string;
+};
 export type TournamentRuleCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
@@ -541,7 +600,6 @@ export type TournamentRuleCountOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
@@ -551,6 +609,10 @@ export type TournamentRuleCountOrderByAggregateInput = {
     min_players_per_team?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
+    source?: Prisma.SortOrder;
+    source_file_url?: Prisma.SortOrder;
+    evidence_json?: Prisma.SortOrder;
+    import_note?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TournamentRuleAvgOrderByAggregateInput = {
@@ -573,7 +635,6 @@ export type TournamentRuleMaxOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
@@ -582,6 +643,9 @@ export type TournamentRuleMaxOrderByAggregateInput = {
     max_players_per_team?: Prisma.SortOrder;
     min_players_per_team?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
+    source?: Prisma.SortOrder;
+    source_file_url?: Prisma.SortOrder;
+    import_note?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TournamentRuleMinOrderByAggregateInput = {
@@ -591,7 +655,6 @@ export type TournamentRuleMinOrderByAggregateInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
-    is_deleted?: Prisma.SortOrder;
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
@@ -600,6 +663,9 @@ export type TournamentRuleMinOrderByAggregateInput = {
     max_players_per_team?: Prisma.SortOrder;
     min_players_per_team?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
+    source?: Prisma.SortOrder;
+    source_file_url?: Prisma.SortOrder;
+    import_note?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TournamentRuleSumOrderByAggregateInput = {
@@ -686,7 +752,6 @@ export type TournamentRuleCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -696,6 +761,10 @@ export type TournamentRuleCreateWithoutUserInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     tournament: Prisma.TournamentCreateNestedOneWithoutTournamentRuleInput;
 };
 export type TournamentRuleUncheckedCreateWithoutUserInput = {
@@ -705,7 +774,6 @@ export type TournamentRuleUncheckedCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -715,6 +783,10 @@ export type TournamentRuleUncheckedCreateWithoutUserInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
 };
 export type TournamentRuleCreateOrConnectWithoutUserInput = {
     where: Prisma.TournamentRuleWhereUniqueInput;
@@ -747,7 +819,6 @@ export type TournamentRuleScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"TournamentRule"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TournamentRule"> | Date | string | null;
-    is_deleted?: Prisma.BoolFilter<"TournamentRule"> | boolean;
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -757,6 +828,10 @@ export type TournamentRuleScalarWhereInput = {
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
+    source?: Prisma.StringFilter<"TournamentRule"> | string;
+    source_file_url?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
+    evidence_json?: Prisma.JsonNullableFilter<"TournamentRule">;
+    import_note?: Prisma.StringNullableFilter<"TournamentRule"> | string | null;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
 };
 export type TournamentRuleCreateWithoutTournamentInput = {
@@ -764,7 +839,6 @@ export type TournamentRuleCreateWithoutTournamentInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -774,6 +848,10 @@ export type TournamentRuleCreateWithoutTournamentInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     user?: Prisma.UserCreateNestedOneWithoutTournamentRulesInput;
 };
 export type TournamentRuleUncheckedCreateWithoutTournamentInput = {
@@ -782,7 +860,6 @@ export type TournamentRuleUncheckedCreateWithoutTournamentInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -792,6 +869,10 @@ export type TournamentRuleUncheckedCreateWithoutTournamentInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
     user_id?: number | null;
 };
 export type TournamentRuleCreateOrConnectWithoutTournamentInput = {
@@ -812,7 +893,6 @@ export type TournamentRuleUpdateWithoutTournamentInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -822,6 +902,10 @@ export type TournamentRuleUpdateWithoutTournamentInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user?: Prisma.UserUpdateOneWithoutTournamentRulesNestedInput;
 };
 export type TournamentRuleUncheckedUpdateWithoutTournamentInput = {
@@ -830,7 +914,6 @@ export type TournamentRuleUncheckedUpdateWithoutTournamentInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -840,6 +923,10 @@ export type TournamentRuleUncheckedUpdateWithoutTournamentInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TournamentRuleCreateManyUserInput = {
@@ -849,7 +936,6 @@ export type TournamentRuleCreateManyUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
-    is_deleted?: boolean;
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
@@ -859,13 +945,16 @@ export type TournamentRuleCreateManyUserInput = {
     min_players_per_team?: number;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: string;
+    source_file_url?: string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: string | null;
 };
 export type TournamentRuleUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -875,6 +964,10 @@ export type TournamentRuleUpdateWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutTournamentRuleNestedInput;
 };
 export type TournamentRuleUncheckedUpdateWithoutUserInput = {
@@ -884,7 +977,6 @@ export type TournamentRuleUncheckedUpdateWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -894,6 +986,10 @@ export type TournamentRuleUncheckedUpdateWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type TournamentRuleUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -902,7 +998,6 @@ export type TournamentRuleUncheckedUpdateManyWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_deleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -912,6 +1007,10 @@ export type TournamentRuleUncheckedUpdateManyWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    source?: Prisma.StringFieldUpdateOperationsInput | string;
+    source_file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    evidence_json?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    import_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type TournamentRuleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -920,7 +1019,6 @@ export type TournamentRuleSelect<ExtArgs extends runtime.Types.Extensions.Intern
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     points_per_win?: boolean;
     points_per_draw?: boolean;
     points_per_loss?: boolean;
@@ -930,6 +1028,10 @@ export type TournamentRuleSelect<ExtArgs extends runtime.Types.Extensions.Intern
     min_players_per_team?: boolean;
     teams_advance_per_group?: boolean;
     tiebreaker_order?: boolean;
+    source?: boolean;
+    source_file_url?: boolean;
+    evidence_json?: boolean;
+    import_note?: boolean;
     user_id?: boolean;
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.TournamentRule$userArgs<ExtArgs>;
@@ -941,7 +1043,6 @@ export type TournamentRuleSelectScalar = {
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
-    is_deleted?: boolean;
     points_per_win?: boolean;
     points_per_draw?: boolean;
     points_per_loss?: boolean;
@@ -951,9 +1052,13 @@ export type TournamentRuleSelectScalar = {
     min_players_per_team?: boolean;
     teams_advance_per_group?: boolean;
     tiebreaker_order?: boolean;
+    source?: boolean;
+    source_file_url?: boolean;
+    evidence_json?: boolean;
+    import_note?: boolean;
     user_id?: boolean;
 };
-export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "is_deleted" | "points_per_win" | "points_per_draw" | "points_per_loss" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "teams_advance_per_group" | "tiebreaker_order" | "user_id", ExtArgs["result"]["tournamentRule"]>;
+export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "points_per_win" | "points_per_draw" | "points_per_loss" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "teams_advance_per_group" | "tiebreaker_order" | "source" | "source_file_url" | "evidence_json" | "import_note" | "user_id", ExtArgs["result"]["tournamentRule"]>;
 export type TournamentRuleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.TournamentRule$userArgs<ExtArgs>;
@@ -971,7 +1076,6 @@ export type $TournamentRulePayload<ExtArgs extends runtime.Types.Extensions.Inte
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        is_deleted: boolean;
         points_per_win: number;
         points_per_draw: number;
         points_per_loss: number;
@@ -981,6 +1085,10 @@ export type $TournamentRulePayload<ExtArgs extends runtime.Types.Extensions.Inte
         min_players_per_team: number;
         teams_advance_per_group: number;
         tiebreaker_order: runtime.JsonValue;
+        source: string;
+        source_file_url: string | null;
+        evidence_json: runtime.JsonValue | null;
+        import_note: string | null;
         user_id: number | null;
     }, ExtArgs["result"]["tournamentRule"]>;
     composites: {};
@@ -1292,7 +1400,6 @@ export interface TournamentRuleFieldRefs {
     readonly created_at: Prisma.FieldRef<"TournamentRule", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"TournamentRule", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"TournamentRule", 'DateTime'>;
-    readonly is_deleted: Prisma.FieldRef<"TournamentRule", 'Boolean'>;
     readonly points_per_win: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly points_per_draw: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly points_per_loss: Prisma.FieldRef<"TournamentRule", 'Int'>;
@@ -1302,6 +1409,10 @@ export interface TournamentRuleFieldRefs {
     readonly min_players_per_team: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly teams_advance_per_group: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly tiebreaker_order: Prisma.FieldRef<"TournamentRule", 'Json'>;
+    readonly source: Prisma.FieldRef<"TournamentRule", 'String'>;
+    readonly source_file_url: Prisma.FieldRef<"TournamentRule", 'String'>;
+    readonly evidence_json: Prisma.FieldRef<"TournamentRule", 'Json'>;
+    readonly import_note: Prisma.FieldRef<"TournamentRule", 'String'>;
     readonly user_id: Prisma.FieldRef<"TournamentRule", 'Int'>;
 }
 /**

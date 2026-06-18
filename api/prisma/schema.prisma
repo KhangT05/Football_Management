@@ -25,16 +25,16 @@ model User {
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
 
-  user_roles         User_Role[]
-  tournaments        Tournament[]
-  seasons            Season[]
-  tournamentRules    TournamentRule[]
-  teams              Team[]
-  player             Player?
-  teamPlayers        TeamPlayer[]
-  seasonTeams        SeasonTeam[]
-  matches            Match[]
-  // teams       Team[]
+  user_roles      User_Role[]
+  tournaments     Tournament[]
+  seasons         Season[]
+  tournamentRules TournamentRule[]
+  teams           Team[]
+  player          Player?
+  teamPlayers     TeamPlayer[]
+  seasonTeams     SeasonTeam[]
+  matches         Match[]
+
   passkeyCredentials PasskeyCredential[]
   oauthAccounts      OAuthAccount[]
   teamLeaders        TeamLeader[]
@@ -138,7 +138,6 @@ model TournamentRule {
   created_at    DateTime  @default(now())
   updated_at    DateTime? @updatedAt
   deleted_at    DateTime?
-  is_deleted    Boolean   @default(false)
 
   // Scoring — không apply cho knockout phase
   points_per_win  Int @default(3)
@@ -148,11 +147,16 @@ model TournamentRule {
   // Apply mọi phase format
   forfeit_score           Int  @default(3)
   yellow_cards_suspension Int  @default(3)
-  max_players_per_team    Int  @default(25)
-  min_players_per_team    Int  @default(11)
+  max_players_per_team    Int  @default(11)
+  min_players_per_team    Int  @default(7)
   // Chỉ apply cho round_robin phase
   teams_advance_per_group Int  @default(2)
   tiebreaker_order        Json @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
+
+  source          String  @default("manual") // "manual" | "pdf_import"
+  source_file_url String? // PDF gốc trên storage, null nếu manual
+  evidence_json   Json? // raw LLM#1 output - để debug field sai, KHÔNG lưu raw_text đầy đủ
+  import_note     String? @db.Text // cảnh báo lúc import nếu có (confidence thấp, v.v.)
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
   user       User?      @relation(fields: [user_id], references: [id])
@@ -237,7 +241,7 @@ model GroupTeam {
 
 model Team {
   id          Int       @id @default(autoincrement())
-  name        String
+  name        String    @unique
   coach_name  String?
   logo        String?
   description String?
@@ -246,7 +250,6 @@ model Team {
   updated_at  DateTime? @updatedAt
 
   deleted_at DateTime?
-  is_deleted Boolean   @default(false)
 
   team_players     TeamPlayer[]
   season_teams     SeasonTeam[]
@@ -288,8 +291,6 @@ model Player {
   updated_at    DateTime?      @updatedAt
 
   deleted_at DateTime?
-
-  is_deleted Boolean @default(false)
 
   user_id Int  @unique
   user    User @relation(fields: [user_id], references: [id], onDelete: Restrict)
@@ -337,8 +338,6 @@ model TeamPlayer {
 
   deleted_at DateTime?
 
-  is_deleted Boolean @default(false)
-
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Cascade)
   player Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
 
@@ -363,18 +362,15 @@ enum SeasonTeamStatus {
 }
 
 model SeasonTeam {
-  id              Int              @id @default(autoincrement())
-  season_id       Int
-  team_id         Int
-  registered_date DateTime         @default(now())
-  status          SeasonTeamStatus @default(pending)
-  is_active       Boolean          @default(true)
-  created_at      DateTime         @default(now())
-  updated_at      DateTime?        @updatedAt
+  id         Int              @id @default(autoincrement())
+  season_id  Int
+  team_id    Int
+  status     SeasonTeamStatus @default(pending)
+  is_active  Boolean          @default(true)
+  created_at DateTime         @default(now())
+  updated_at DateTime?        @updatedAt
 
   deleted_at DateTime?
-
-  is_deleted Boolean @default(false)
 
   group_id Int?
 
@@ -422,8 +418,6 @@ model Match {
   updated_at    DateTime?   @updatedAt
 
   deleted_at DateTime?
-
-  is_deleted Boolean @default(false)
 
   phase     Phase  @relation(fields: [phase_id], references: [id])
   group     Group? @relation(fields: [group_id], references: [id])
@@ -581,7 +575,6 @@ model Venue {
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
   deleted_at DateTime?
-  is_deleted Boolean   @default(false)
 
   matches Match[]
 
@@ -596,7 +589,6 @@ model TeamLeader {
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
   deleted_at DateTime?
-  is_deleted Boolean   @default(false)
 
   team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
@@ -620,7 +612,6 @@ model TeamStanding {
   created_at     DateTime  @default(now())
   updated_at     DateTime? @updatedAt
   deleted_at     DateTime?
-  is_deleted     Boolean   @default(false)
 
   team  Team  @relation(fields: [team_id], references: [id], onDelete: Cascade)
   group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
@@ -669,7 +660,6 @@ model Notification {
   created_at        DateTime           @default(now())
   updated_at        DateTime?          @updatedAt
   deleted_at        DateTime?
-  is_deleted        Boolean            @default(false)
 
   season      Season? @relation(fields: [season_id], references: [id], onDelete: SetNull)
   target_team Team?   @relation(fields: [target_team_id], references: [id], onDelete: SetNull)
@@ -690,7 +680,6 @@ model Payment {
   created_at      DateTime      @default(now())
   updated_at      DateTime?     @updatedAt
   deleted_at      DateTime?
-  is_deleted      Boolean       @default(false)
 
   season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
 
@@ -706,7 +695,6 @@ model SeasonTeamPlayer {
   created_at     DateTime  @default(now())
   updated_at     DateTime? @updatedAt
   deleted_at     DateTime?
-  is_deleted     Boolean   @default(false)
 
   season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
   team_player TeamPlayer @relation(fields: [team_player_id], references: [id], onDelete: Cascade)
@@ -737,7 +725,6 @@ model MatchResult {
   created_at            DateTime          @default(now())
   updated_at            DateTime?         @updatedAt
   deleted_at            DateTime?
-  is_deleted            Boolean           @default(false)
 
   match       Match @relation(fields: [match_id], references: [id], onDelete: Cascade)
   winner_team Team? @relation(fields: [winner_team_id], references: [id], onDelete: SetNull)

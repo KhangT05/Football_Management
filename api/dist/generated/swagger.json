@@ -9,9 +9,6 @@
         "schemas": {
             "DefaultSelection__36_VenuePayload_": {
                 "properties": {
-                    "is_deleted": {
-                        "type": "boolean"
-                    },
                     "deleted_at": {
                         "type": "string",
                         "format": "date-time"
@@ -39,7 +36,6 @@
                     }
                 },
                 "required": [
-                    "is_deleted",
                     "deleted_at",
                     "updated_at",
                     "created_at",
@@ -621,6 +617,135 @@
             },
             "UpdateTournamentDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateTournamentSchema_"
+            },
+            "DefaultSelection__36_TeamPayload_": {
+                "properties": {
+                    "coach_name": {
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "logo": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "coach_name",
+                    "user_id",
+                    "logo",
+                    "description",
+                    "deleted_at",
+                    "updated_at",
+                    "created_at",
+                    "is_active",
+                    "id",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "TeamModel": {
+                "$ref": "#/components/schemas/DefaultSelection__36_TeamPayload_",
+                "description": "Model Team"
+            },
+            "Team": {
+                "$ref": "#/components/schemas/TeamModel",
+                "description": "Model Team"
+            },
+            "PaginatedResult_Team_": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/Team"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "infer_typeofcreateTeamSchema_": {
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "logo": {
+                        "type": "string"
+                    },
+                    "coach_name": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "is_active",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "CreateTeamDto": {
+                "$ref": "#/components/schemas/infer_typeofcreateTeamSchema_"
+            },
+            "infer_typeofupdateTeamSchema_": {
+                "properties": {
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "logo": {
+                        "type": "string"
+                    },
+                    "coach_name": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateTeamDto": {
+                "$ref": "#/components/schemas/infer_typeofupdateTeamSchema_"
             },
             "SeasonStatus": {
                 "type": "string",
@@ -1948,6 +2073,222 @@
                 },
                 "tags": [
                     "Tournaments"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/teams": {
+            "get": {
+                "operationId": "FindAll",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult_Team_"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Team"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTeamDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{id}": {
+            "get": {
+                "operationId": "FindById",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Team"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "Update",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Team"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Teams"
+                ],
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTeamDto"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "SoftDelete",
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                },
+                "tags": [
+                    "Teams"
                 ],
                 "security": [
                     {
