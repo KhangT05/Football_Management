@@ -261,6 +261,69 @@
 			"UpdateUserDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateUserSchema_"
 			},
+			"SingleUploadResult": {
+				"properties": {
+					"url": {
+						"type": "string"
+					},
+					"publicId": {
+						"type": "string"
+					},
+					"format": {
+						"type": "string"
+					},
+					"bytes": {
+						"type": "number",
+						"format": "double"
+					},
+					"width": {
+						"type": "number",
+						"format": "double"
+					},
+					"height": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"url",
+					"publicId",
+					"format",
+					"bytes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MultiUploadResult": {
+				"properties": {
+					"files": {
+						"items": {
+							"allOf": [
+								{
+									"$ref": "#/components/schemas/SingleUploadResult"
+								},
+								{
+									"properties": {
+										"originalName": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"originalName"
+									],
+									"type": "object"
+								}
+							]
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"files"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TiebreakerOption": {
 				"type": "string",
 				"enum": [
@@ -696,56 +759,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"infer_typeofcreateTeamSchema_": {
-				"properties": {
-					"description": {
-						"type": "string"
-					},
-					"logo": {
-						"type": "string"
-					},
-					"coach_name": {
-						"type": "string"
-					},
-					"is_active": {
-						"type": "boolean"
-					},
-					"name": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"is_active",
-					"name"
-				],
-				"type": "object"
-			},
-			"CreateTeamDto": {
-				"$ref": "#/components/schemas/infer_typeofcreateTeamSchema_"
-			},
-			"infer_typeofupdateTeamSchema_": {
-				"properties": {
-					"is_active": {
-						"type": "boolean"
-					},
-					"description": {
-						"type": "string"
-					},
-					"logo": {
-						"type": "string"
-					},
-					"coach_name": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					}
-				},
-				"type": "object"
-			},
-			"UpdateTeamDto": {
-				"$ref": "#/components/schemas/infer_typeofupdateTeamSchema_"
 			},
 			"SeasonStatus": {
 				"type": "string",
@@ -1689,6 +1702,117 @@
 				]
 			}
 		},
+		"/upload/single": {
+			"post": {
+				"operationId": "UploadSingle",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SingleUploadResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Upload single file cho bất kỳ entity/field nào.\r\nnamespace = tên table (e.g. \"teams\", \"tournaments\")\r\nkind = tên field (e.g. \"logo\", \"avatar\", \"banner\")",
+				"tags": [
+					"Upload"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"namespace": {
+										"type": "string"
+									},
+									"kind": {
+										"type": "string"
+									},
+									"file": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"namespace",
+									"kind",
+									"file"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/upload/multi": {
+			"post": {
+				"operationId": "UploadMulti",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MultiUploadResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Upload nhiều files cùng lúc.\r\nTrả array theo đúng thứ tự upload.\r\nCaller tự map url vào field tương ứng.",
+				"tags": [
+					"Upload"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"namespace": {
+										"type": "string"
+									},
+									"kind": {
+										"type": "string"
+									},
+									"files": {
+										"items": {
+											"type": "string",
+											"format": "binary"
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"namespace",
+									"kind",
+									"files"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
 		"/tournamentrules": {
 			"get": {
 				"operationId": "FindAll",
@@ -2192,9 +2316,27 @@
 				"requestBody": {
 					"required": true,
 					"content": {
-						"application/json": {
+						"multipart/form-data": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateTeamDto"
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"coach_name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"logo": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"name"
+								]
 							}
 						}
 					}
@@ -2270,11 +2412,26 @@
 					}
 				],
 				"requestBody": {
-					"required": true,
+					"required": false,
 					"content": {
-						"application/json": {
+						"multipart/form-data": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateTeamDto"
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"coach_name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"logo": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
 							}
 						}
 					}

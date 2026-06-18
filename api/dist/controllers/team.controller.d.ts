@@ -7,15 +7,14 @@ type AuthRequest = ExRequest & {
 };
 import { TeamService } from "../services/team.service.js";
 import type { Team } from "../generated/prisma/client.js";
-import { type CreateTeamDto, type UpdateTeamDto } from "../dtos/team.schema.js";
 import { PaginatedResult } from "../libs/queryable.js";
 export declare class TeamController extends Controller {
     private service;
     constructor(service: TeamService);
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Team>>;
     findById(id: number): Promise<Team>;
-    create(body: CreateTeamDto, req: AuthRequest): Promise<Team>;
-    update(id: number, body: UpdateTeamDto): Promise<Team>;
+    create(name: string, req: AuthRequest, coach_name?: string, description?: string, logo?: Express.Multer.File): Promise<Team>;
+    update(id: number, name?: string, coach_name?: string, description?: string, logoFile?: Express.Multer.File): Promise<Team>;
     softDelete(id: number): Promise<void>;
 }
 export {};

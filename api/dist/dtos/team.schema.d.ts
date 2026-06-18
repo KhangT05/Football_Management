@@ -21,15 +21,17 @@ export declare const createTeamSchema: z.ZodObject<{
     coach_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    is_active: z.ZodDefault<z.ZodBoolean>;
 }, z.core.$strip>;
 export declare const updateTeamSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     coach_name: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     logo: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     description: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
-    is_active: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+}, z.core.$strip>;
+export declare const assignCaptainSchema: z.ZodObject<{
+    user_id: z.ZodNumber;
 }, z.core.$strip>;
 export type CreateTeamDto = z.infer<typeof createTeamSchema>;
 export type UpdateTeamDto = z.infer<typeof updateTeamSchema>;
+export type AssignCaptainDto = z.infer<typeof assignCaptainSchema>;
 //# sourceMappingURL=team.schema.d.ts.map

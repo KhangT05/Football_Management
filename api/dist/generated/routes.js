@@ -4,6 +4,8 @@ import { VenueController } from './../controllers/venue.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UserController } from './../controllers/user.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { UploadController } from './../controllers/upload.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TournamentRuleController } from './../controllers/tournamentrule.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TournamentController } from './../controllers/tournament.controller.js';
@@ -122,6 +124,27 @@ const models = {
         "type": { "ref": "infer_typeofupdateUserSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SingleUploadResult": {
+        "dataType": "refObject",
+        "properties": {
+            "url": { "dataType": "string", "required": true },
+            "publicId": { "dataType": "string", "required": true },
+            "format": { "dataType": "string", "required": true },
+            "bytes": { "dataType": "double", "required": true },
+            "width": { "dataType": "double" },
+            "height": { "dataType": "double" },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MultiUploadResult": {
+        "dataType": "refObject",
+        "properties": {
+            "files": { "dataType": "array", "array": { "dataType": "intersection", "subSchemas": [{ "ref": "SingleUploadResult" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "originalName": { "dataType": "string", "required": true } } }] }, "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TiebreakerOption": {
         "dataType": "refAlias",
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goal_diff"] }, { "dataType": "enum", "enums": ["goals_scored"] }, { "dataType": "enum", "enums": ["head_to_head"] }, { "dataType": "enum", "enums": ["goals_conceded"] }, { "dataType": "enum", "enums": ["yellow_cards"] }, { "dataType": "enum", "enums": ["red_cards"] }], "validators": {} },
@@ -226,26 +249,6 @@ const models = {
             "meta": { "ref": "PaginationMeta", "required": true },
         },
         "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofcreateTeamSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "description": { "dataType": "string" }, "logo": { "dataType": "string" }, "coach_name": { "dataType": "string" }, "is_active": { "dataType": "boolean", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateTeamDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofcreateTeamSchema_", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofupdateTeamSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "description": { "dataType": "string" }, "logo": { "dataType": "string" }, "coach_name": { "dataType": "string" }, "name": { "dataType": "string" } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateTeamDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofupdateTeamSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonStatus": {
@@ -708,6 +711,75 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsUploadController_uploadSingle = {
+        namespace: { "in": "formData", "name": "namespace", "required": true, "dataType": "string" },
+        kind: { "in": "formData", "name": "kind", "required": true, "dataType": "string" },
+        file: { "in": "formData", "name": "file", "required": true, "dataType": "file" },
+        _req: { "in": "request", "name": "_req", "required": true, "dataType": "object" },
+    };
+    app.post('/upload/single', authenticateMiddleware([{ "jwt": [] }]), upload.fields([
+        {
+            name: "file",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(UploadController)), ...(fetchMiddlewares(UploadController.prototype.uploadSingle)), async function UploadController_uploadSingle(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsUploadController_uploadSingle, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(UploadController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'uploadSingle',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsUploadController_uploadMulti = {
+        namespace: { "in": "formData", "name": "namespace", "required": true, "dataType": "string" },
+        kind: { "in": "formData", "name": "kind", "required": true, "dataType": "string" },
+        files: { "in": "formData", "name": "files", "required": true, "dataType": "array", "array": { "dataType": "file" } },
+        _req: { "in": "request", "name": "_req", "required": true, "dataType": "object" },
+    };
+    app.post('/upload/multi', authenticateMiddleware([{ "jwt": [] }]), upload.fields([
+        {
+            name: "files",
+        }
+    ]), ...(fetchMiddlewares(UploadController)), ...(fetchMiddlewares(UploadController.prototype.uploadMulti)), async function UploadController_uploadMulti(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsUploadController_uploadMulti, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(UploadController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'uploadMulti',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentRuleController_findAll = {};
     app.get('/tournamentrules', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TournamentRuleController)), ...(fetchMiddlewares(TournamentRuleController.prototype.findAll)), async function TournamentRuleController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -1050,10 +1122,18 @@ export function RegisterRoutes(app, opts) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTeamController_create = {
-        body: { "in": "body", "name": "body", "required": true, "ref": "CreateTeamDto" },
+        name: { "in": "formData", "name": "name", "required": true, "dataType": "string" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+        coach_name: { "in": "formData", "name": "coach_name", "dataType": "string" },
+        description: { "in": "formData", "name": "description", "dataType": "string" },
+        logo: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.post('/teams', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.create)), async function TeamController_create(request, response, next) {
+    app.post('/teams', authenticateMiddleware([{ "jwt": [] }]), upload.fields([
+        {
+            name: "logo",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.create)), async function TeamController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1079,9 +1159,17 @@ export function RegisterRoutes(app, opts) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTeamController_update = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
-        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTeamDto" },
+        name: { "in": "formData", "name": "name", "dataType": "string" },
+        coach_name: { "in": "formData", "name": "coach_name", "dataType": "string" },
+        description: { "in": "formData", "name": "description", "dataType": "string" },
+        logoFile: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.update)), async function TeamController_update(request, response, next) {
+    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": [] }]), upload.fields([
+        {
+            name: "logo",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.update)), async function TeamController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
