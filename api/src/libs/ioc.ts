@@ -1,4 +1,5 @@
 import { AuthController } from "../controllers/auth.controller.js";
+import { GroupController } from "../controllers/group.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
 import { SeasonController } from "../controllers/season.controller.js";
@@ -9,6 +10,7 @@ import { TournamentRuleController } from "../controllers/tournamentrule.controll
 import { UserController } from "../controllers/user.controller.js";
 import { VenueController } from "../controllers/venue.controller.js";
 import { AuthService } from "../services/auth.service.js";
+import { GroupService } from "../services/group.service.js";
 import { PlayerService } from "../services/player.service.js";
 import { RoleService } from "../services/role.service.js";
 import { SeasonService } from "../services/season.service.js";
@@ -32,7 +34,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [TeamController, () => new TeamController(new TeamService(prisma))],
     [PlayerController, () => new PlayerController(new PlayerService(prisma))],
     [SeasonTeamController, () => new SeasonTeamController(new SeasonTeamService(prisma))],
-    // [PlayerController, () => new PlayerController(new PlayerService(prisma))],
+    [GroupController, () => new GroupController(new GroupService(prisma))],
 ]);
 
 export const iocContainer = {

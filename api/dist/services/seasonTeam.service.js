@@ -29,6 +29,12 @@ export class SeasonTeamService {
         return record;
     }
     async selfRegister(data, userId) {
+        const team = await this.prisma.team.findFirst({
+            where: { user_id: userId },
+            select: { id: true },
+        });
+        if (!team)
+            throw createAppError("FORBIDDEN", "You are not a leader of any team");
         return this.prisma.$transaction(async (tx) => {
             // Lock season row — serialize register cùng season, tránh TOCTOU trên
             // assertSlotAvailable (2 request đọc count cùng lúc trước khi cái đầu
@@ -42,7 +48,7 @@ export class SeasonTeamService {
             if (season.registration_deadline && season.registration_deadline < new Date())
                 throw createAppError("FORBIDDEN", "Registration deadline has passed");
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
-            return this.createOrReactivate(tx, data.season_id, data.team_id, userId, SeasonTeamStatus.pending);
+            return this.createOrReactivate(tx, data.season_id, team.id, userId, SeasonTeamStatus.pending);
         });
     }
     async adminAdd(data, userId) {

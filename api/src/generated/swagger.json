@@ -1042,17 +1042,12 @@
 			},
 			"infer_typeofselfRegisterSeasonTeamSchema_": {
 				"properties": {
-					"team_id": {
-						"type": "number",
-						"format": "double"
-					},
 					"season_id": {
 						"type": "number",
 						"format": "double"
 					}
 				},
 				"required": [
-					"team_id",
 					"season_id"
 				],
 				"type": "object"

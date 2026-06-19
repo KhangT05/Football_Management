@@ -1,7 +1,6 @@
 import { z } from "zod";
 export declare const selfRegisterSeasonTeamSchema: z.ZodObject<{
     season_id: z.ZodNumber;
-    team_id: z.ZodNumber;
 }, z.core.$strip>;
 export declare const adminAddSeasonTeamSchema: z.ZodObject<{
     season_id: z.ZodNumber;
