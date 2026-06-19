@@ -35,9 +35,7 @@ model User {
   seasonTeams     SeasonTeam[]
   matches         Match[]
 
-  passkeyCredentials PasskeyCredential[]
-  oauthAccounts      OAuthAccount[]
-  teamLeaders        TeamLeader[]
+  teamLeaders TeamLeader[]
 
   @@map("users")
 }
@@ -152,11 +150,6 @@ model TournamentRule {
   // Chỉ apply cho round_robin phase
   teams_advance_per_group Int  @default(2)
   tiebreaker_order        Json @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
-
-  source          String  @default("manual") // "manual" | "pdf_import"
-  source_file_url String? // PDF gốc trên storage, null nếu manual
-  evidence_json   Json? // raw LLM#1 output - để debug field sai, KHÔNG lưu raw_text đầy đủ
-  import_note     String? @db.Text // cảnh báo lúc import nếu có (confidence thấp, v.v.)
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
   user       User?      @relation(fields: [user_id], references: [id])
@@ -528,43 +521,6 @@ enum PaymentStatus {
   pending
   confirmed
   rejected
-}
-
-model PasskeyCredential {
-  id                 Int       @id @default(autoincrement())
-  user_id            Int
-  device_id          String
-  credential_id      String    @unique
-  public_key         String    @db.Text
-  sign_count         BigInt    @default(0)
-  aaguid             String?
-  is_backup_eligible Boolean   @default(false)
-  is_backed_up       Boolean   @default(false)
-  created_at         DateTime  @default(now())
-  updated_at         DateTime? @updatedAt
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("passkey_credentials")
-}
-
-model OAuthAccount {
-  id               Int       @id @default(autoincrement())
-  user_id          Int
-  provider         String
-  provider_user_id String
-  email            String
-  email_verified   Boolean   @default(false)
-  avatar_url       String?
-  access_token     String?
-  token_expires_at DateTime?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime? @updatedAt
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([provider, provider_user_id])
-  @@map("oauth_accounts")
 }
 
 model Venue {
