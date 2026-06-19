@@ -62,11 +62,6 @@ export type Phase = Prisma.PhaseModel;
  */
 export type Group = Prisma.GroupModel;
 /**
- * Model GroupTeam
- *
- */
-export type GroupTeam = Prisma.GroupTeamModel;
-/**
  * Model Team
  *
  */
@@ -96,16 +91,6 @@ export type Match = Prisma.MatchModel;
  *
  */
 export type MatchEvent = Prisma.MatchEventModel;
-/**
- * Model PasskeyCredential
- *
- */
-export type PasskeyCredential = Prisma.PasskeyCredentialModel;
-/**
- * Model OAuthAccount
- *
- */
-export type OAuthAccount = Prisma.OAuthAccountModel;
 /**
  * Model Venue
  *

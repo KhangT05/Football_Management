@@ -809,6 +809,324 @@
 				"$ref": "#/components/schemas/TeamLeaderModel",
 				"description": "Model TeamLeader"
 			},
+			"SeasonTeamStatus": {
+				"type": "string",
+				"enum": [
+					"approved",
+					"pending",
+					"active",
+					"eliminated",
+					"withdrawn"
+				]
+			},
+			"DefaultSelection__36_SeasonTeamPayload_": {
+				"properties": {
+					"group_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/SeasonTeamStatus"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"group_id",
+					"status",
+					"season_id",
+					"team_id",
+					"user_id",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id"
+				],
+				"type": "object"
+			},
+			"SeasonTeamModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_SeasonTeamPayload_",
+				"description": "Model SeasonTeam"
+			},
+			"SeasonTeam": {
+				"$ref": "#/components/schemas/SeasonTeamModel",
+				"description": "Model SeasonTeam"
+			},
+			"PaginatedResult_SeasonTeam_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/SeasonTeam"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeasonTeamWithRelations": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"status": {
+						"$ref": "#/components/schemas/SeasonTeamStatus"
+					},
+					"group_id": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"season": {
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object"
+					},
+					"team": {
+						"properties": {
+							"logo": {
+								"type": "string",
+								"nullable": true
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"logo",
+							"name",
+							"id"
+						],
+						"type": "object"
+					},
+					"user": {
+						"properties": {
+							"email": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"email",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"group": {
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"season_id",
+					"team_id",
+					"user_id",
+					"status",
+					"group_id",
+					"created_at",
+					"updated_at",
+					"deleted_at",
+					"is_active",
+					"season",
+					"team",
+					"user",
+					"group"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"infer_typeofselfRegisterSeasonTeamSchema_": {
+				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"team_id",
+					"season_id"
+				],
+				"type": "object"
+			},
+			"SelfRegisterSeasonTeamDto": {
+				"$ref": "#/components/schemas/infer_typeofselfRegisterSeasonTeamSchema_"
+			},
+			"infer_typeofadminAddSeasonTeamSchema_": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"approved",
+							"pending",
+							"active",
+							"eliminated",
+							"withdrawn"
+						]
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"status",
+					"team_id",
+					"season_id"
+				],
+				"type": "object"
+			},
+			"AdminAddSeasonTeamDto": {
+				"$ref": "#/components/schemas/infer_typeofadminAddSeasonTeamSchema_"
+			},
+			"infer_typeofupdateSeasonTeamStatusSchema_": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"approved",
+							"pending",
+							"active",
+							"eliminated",
+							"withdrawn"
+						]
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object"
+			},
+			"UpdateSeasonTeamStatusDto": {
+				"$ref": "#/components/schemas/infer_typeofupdateSeasonTeamStatusSchema_"
+			},
+			"infer_typeofassignGroupSchema_": {
+				"properties": {
+					"group_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"group_id"
+				],
+				"type": "object"
+			},
+			"AssignGroupDto": {
+				"$ref": "#/components/schemas/infer_typeofassignGroupSchema_"
+			},
 			"SeasonStatus": {
 				"type": "string",
 				"enum": [
@@ -1350,8 +1668,8 @@
 			"ApprovalStatus": {
 				"type": "string",
 				"enum": [
-					"pending",
 					"approved",
+					"pending",
 					"rejected"
 				]
 			},
@@ -1488,8 +1806,8 @@
 					"approval_status": {
 						"type": "string",
 						"enum": [
-							"pending",
 							"approved",
+							"pending",
 							"rejected"
 						]
 					},
@@ -1545,6 +1863,166 @@
 			},
 			"BulkDeleteDto": {
 				"$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
+			},
+			"DefaultSelection__36_GroupPayload_": {
+				"properties": {
+					"phase_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"phase_id",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id",
+					"name"
+				],
+				"type": "object"
+			},
+			"GroupModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_GroupPayload_",
+				"description": "Model Group"
+			},
+			"Group": {
+				"$ref": "#/components/schemas/GroupModel",
+				"description": "Model Group"
+			},
+			"GroupWithTeams": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Group"
+					},
+					{
+						"properties": {
+							"seasonTeams": {
+								"items": {
+									"properties": {
+										"team": {
+											"properties": {
+												"logo": {
+													"type": "string",
+													"nullable": true
+												},
+												"name": {
+													"type": "string"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												}
+											},
+											"required": [
+												"logo",
+												"name",
+												"id"
+											],
+											"type": "object"
+										},
+										"status": {
+											"type": "string"
+										},
+										"id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"team",
+										"status",
+										"id"
+									],
+									"type": "object"
+								},
+								"type": "array"
+							},
+							"phase": {
+								"properties": {
+									"is_active": {
+										"type": "boolean"
+									},
+									"format": {
+										"type": "string"
+									},
+									"season_id": {
+										"type": "number",
+										"format": "double"
+									},
+									"name": {
+										"type": "string"
+									},
+									"id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"is_active",
+									"format",
+									"season_id",
+									"name",
+									"id"
+								],
+								"type": "object"
+							}
+						},
+						"required": [
+							"seasonTeams",
+							"phase"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"DrawAssignment": {
+				"properties": {
+					"group_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"group_id",
+					"team_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DrawGroupsOptions": {
+				"properties": {
+					"teams_per_group": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"teams_per_group"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"TokenResponseDto": {
 				"properties": {
@@ -3026,6 +3504,323 @@
 				}
 			}
 		},
+		"/seasonteams": {
+			"get": {
+				"operationId": "FindAll",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_SeasonTeam_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "q",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "AdminAdd",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeamWithRelations"
+								}
+							}
+						}
+					}
+				},
+				"description": "Admin add team trực tiếp",
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AdminAddSeasonTeamDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasonteams/{id}": {
+			"get": {
+				"operationId": "FindById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeam"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "SoftDelete",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/seasonteams/register": {
+			"post": {
+				"operationId": "SelfRegister",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeamWithRelations"
+								}
+							}
+						}
+					}
+				},
+				"description": "Team leader tự đăng ký vào season",
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"leader"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SelfRegisterSeasonTeamDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasonteams/{id}/status": {
+			"patch": {
+				"operationId": "UpdateStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeamWithRelations"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateSeasonTeamStatusDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasonteams/{id}/group": {
+			"patch": {
+				"operationId": "AssignGroup",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeamWithRelations"
+								}
+							}
+						}
+					}
+				},
+				"description": "Assign team vào group sau draw",
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AssignGroupDto"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/seasons": {
 			"get": {
 				"operationId": "FindAll",
@@ -4161,6 +4956,125 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/groups/{id}": {
+			"get": {
+				"operationId": "FindByIdWithTeams",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GroupWithTeams"
+								}
+							}
+						}
+					}
+				},
+				"description": "Xem group + list team approved đang thuộc group (kèm phase info)",
+				"tags": [
+					"Groups"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/groups/{phaseId}/draw": {
+			"post": {
+				"operationId": "DrawGroups",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/DrawAssignment"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Groups"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/DrawGroupsOptions"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "ClearDraw",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"tags": [
+					"Groups"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
 			}
 		},
 		"/auth/login": {

@@ -20,6 +20,12 @@ export declare const PhaseFormat: {
     readonly knockout: "knockout";
 };
 export type PhaseFormat = (typeof PhaseFormat)[keyof typeof PhaseFormat];
+export declare const PhaseStatus: {
+    readonly draft: "draft";
+    readonly in_progress: "in_progress";
+    readonly locked: "locked";
+};
+export type PhaseStatus = (typeof PhaseStatus)[keyof typeof PhaseStatus];
 export declare const PlayerPosition: {
     readonly goalkeeper: "goalkeeper";
     readonly defender: "defender";
@@ -46,6 +52,7 @@ export declare const ApprovalStatus: {
 };
 export type ApprovalStatus = (typeof ApprovalStatus)[keyof typeof ApprovalStatus];
 export declare const SeasonTeamStatus: {
+    readonly approved: "approved";
     readonly pending: "pending";
     readonly active: "active";
     readonly eliminated: "eliminated";

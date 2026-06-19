@@ -26,6 +26,11 @@ export const PhaseFormat = {
     round_robin: 'round_robin',
     knockout: 'knockout'
 };
+export const PhaseStatus = {
+    draft: 'draft',
+    in_progress: 'in_progress',
+    locked: 'locked'
+};
 export const PlayerPosition = {
     goalkeeper: 'goalkeeper',
     defender: 'defender',
@@ -48,6 +53,7 @@ export const ApprovalStatus = {
     rejected: 'rejected'
 };
 export const SeasonTeamStatus = {
+    approved: 'approved',
     pending: 'pending',
     active: 'active',
     eliminated: 'eliminated',

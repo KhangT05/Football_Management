@@ -2,6 +2,7 @@ import { AuthController } from "../controllers/auth.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
 import { SeasonController } from "../controllers/season.controller.js";
+import { SeasonTeamController } from "../controllers/seasonteam.controller.js";
 import { TeamController } from "../controllers/team.controller.js";
 import { TournamentController } from "../controllers/tournament.controller.js";
 import { TournamentRuleController } from "../controllers/tournamentrule.controller.js";
@@ -11,6 +12,7 @@ import { AuthService } from "../services/auth.service.js";
 import { PlayerService } from "../services/player.service.js";
 import { RoleService } from "../services/role.service.js";
 import { SeasonService } from "../services/season.service.js";
+import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import { TeamService } from "../services/team.service.js";
 import { TournamentService } from "../services/tournament.service.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
@@ -29,6 +31,8 @@ const controllerFactory = new Map<Function, () => unknown>([
     [TournamentRuleController, () => new TournamentRuleController(new TournamentRuleService(prisma))],
     [TeamController, () => new TeamController(new TeamService(prisma))],
     [PlayerController, () => new PlayerController(new PlayerService(prisma))],
+    [SeasonTeamController, () => new SeasonTeamController(new SeasonTeamService(prisma))],
+    // [PlayerController, () => new PlayerController(new PlayerService(prisma))],
 ]);
 
 export const iocContainer = {

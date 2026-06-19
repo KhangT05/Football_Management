@@ -1,0 +1,1 @@
+{"version":3,"file":"group.schema.d.ts","sourceRoot":"","sources":["../../src/dtos/group.schema.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AAExB;;;;;;GAMG;AACH,eAAO,MAAM,gBAAgB;;iBAE3B,CAAC;AACH,MAAM,MAAM,aAAa,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,gBAAgB,CAAC,CAAC;AAE7D,MAAM,WAAW,mBAAmB;IAChC,QAAQ,EAAE,MAAM,CAAC;IACjB,OAAO,EAAE,MAAM,CAAC;CACnB"}

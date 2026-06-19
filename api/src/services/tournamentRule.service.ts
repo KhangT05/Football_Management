@@ -8,8 +8,6 @@ import {
     UpdateTournamentRuleDto
 } from "../dtos/tournamentRule.schema.js";
 import { Prisma, PrismaClient } from "../generated/prisma/client.js";
-import { extractTextFromPdf } from "../libs/pdf-extract.js";
-import { runRuleEngine } from "../libs/rule-engine.js";
 
 const withRelations = {
     include: {

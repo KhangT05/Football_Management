@@ -34,15 +34,12 @@ export declare const ModelName: {
     readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
     readonly Group: "Group";
-    readonly GroupTeam: "GroupTeam";
     readonly Team: "Team";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
     readonly SeasonTeam: "SeasonTeam";
     readonly Match: "Match";
     readonly MatchEvent: "MatchEvent";
-    readonly PasskeyCredential: "PasskeyCredential";
-    readonly OAuthAccount: "OAuthAccount";
     readonly Venue: "Venue";
     readonly TeamLeader: "TeamLeader";
     readonly TeamStanding: "TeamStanding";
@@ -134,10 +131,6 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly min_players_per_team: "min_players_per_team";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
-    readonly source: "source";
-    readonly source_file_url: "source_file_url";
-    readonly evidence_json: "evidence_json";
-    readonly import_note: "import_note";
     readonly user_id: "user_id";
 };
 export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
@@ -151,6 +144,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly start_date: "start_date";
     readonly end_date: "end_date";
     readonly is_active: "is_active";
+    readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
 };
@@ -164,11 +158,6 @@ export declare const GroupScalarFieldEnum: {
     readonly updated_at: "updated_at";
 };
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum];
-export declare const GroupTeamScalarFieldEnum: {
-    readonly group_id: "group_id";
-    readonly team_id: "team_id";
-};
-export type GroupTeamScalarFieldEnum = (typeof GroupTeamScalarFieldEnum)[keyof typeof GroupTeamScalarFieldEnum];
 export declare const TeamScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -266,34 +255,6 @@ export declare const MatchEventScalarFieldEnum: {
     readonly created_at: "created_at";
 };
 export type MatchEventScalarFieldEnum = (typeof MatchEventScalarFieldEnum)[keyof typeof MatchEventScalarFieldEnum];
-export declare const PasskeyCredentialScalarFieldEnum: {
-    readonly id: "id";
-    readonly user_id: "user_id";
-    readonly device_id: "device_id";
-    readonly credential_id: "credential_id";
-    readonly public_key: "public_key";
-    readonly sign_count: "sign_count";
-    readonly aaguid: "aaguid";
-    readonly is_backup_eligible: "is_backup_eligible";
-    readonly is_backed_up: "is_backed_up";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-};
-export type PasskeyCredentialScalarFieldEnum = (typeof PasskeyCredentialScalarFieldEnum)[keyof typeof PasskeyCredentialScalarFieldEnum];
-export declare const OAuthAccountScalarFieldEnum: {
-    readonly id: "id";
-    readonly user_id: "user_id";
-    readonly provider: "provider";
-    readonly provider_user_id: "provider_user_id";
-    readonly email: "email";
-    readonly email_verified: "email_verified";
-    readonly avatar_url: "avatar_url";
-    readonly access_token: "access_token";
-    readonly token_expires_at: "token_expires_at";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-};
-export type OAuthAccountScalarFieldEnum = (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum];
 export declare const VenueScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -426,11 +387,6 @@ export declare const JsonNullValueInput: {
     readonly JsonNull: import("@prisma/client-runtime-utils").JsonNullClass;
 };
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
-export declare const NullableJsonNullValueInput: {
-    readonly DbNull: import("@prisma/client-runtime-utils").DbNullClass;
-    readonly JsonNull: import("@prisma/client-runtime-utils").JsonNullClass;
-};
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 export declare const NullsOrder: {
     readonly first: "first";
     readonly last: "last";
@@ -470,12 +426,6 @@ export declare const QueryMode: {
     readonly insensitive: "insensitive";
 };
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
-export declare const TournamentRuleOrderByRelevanceFieldEnum: {
-    readonly source: "source";
-    readonly source_file_url: "source_file_url";
-    readonly import_note: "import_note";
-};
-export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
@@ -505,21 +455,6 @@ export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };
 export type MatchEventOrderByRelevanceFieldEnum = (typeof MatchEventOrderByRelevanceFieldEnum)[keyof typeof MatchEventOrderByRelevanceFieldEnum];
-export declare const PasskeyCredentialOrderByRelevanceFieldEnum: {
-    readonly device_id: "device_id";
-    readonly credential_id: "credential_id";
-    readonly public_key: "public_key";
-    readonly aaguid: "aaguid";
-};
-export type PasskeyCredentialOrderByRelevanceFieldEnum = (typeof PasskeyCredentialOrderByRelevanceFieldEnum)[keyof typeof PasskeyCredentialOrderByRelevanceFieldEnum];
-export declare const OAuthAccountOrderByRelevanceFieldEnum: {
-    readonly provider: "provider";
-    readonly provider_user_id: "provider_user_id";
-    readonly email: "email";
-    readonly avatar_url: "avatar_url";
-    readonly access_token: "access_token";
-};
-export type OAuthAccountOrderByRelevanceFieldEnum = (typeof OAuthAccountOrderByRelevanceFieldEnum)[keyof typeof OAuthAccountOrderByRelevanceFieldEnum];
 export declare const VenueOrderByRelevanceFieldEnum: {
     readonly name: "name";
     readonly address: "address";

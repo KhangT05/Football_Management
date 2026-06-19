@@ -176,6 +176,12 @@ enum PhaseFormat {
   knockout
 }
 
+enum PhaseStatus {
+  draft
+  in_progress
+  locked
+}
+
 model Phase {
   id         Int         @id @default(autoincrement())
   season_id  Int
@@ -186,8 +192,10 @@ model Phase {
   start_date DateTime?
   end_date   DateTime?
   is_active  Boolean     @default(true)
-  created_at DateTime    @default(now())
-  updated_at DateTime?   @updatedAt
+  status     PhaseStatus @default(draft)
+
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
 
   season  Season  @relation(fields: [season_id], references: [id], onDelete: Cascade)
   groups  Group[]
@@ -209,23 +217,11 @@ model Group {
   updated_at DateTime? @updatedAt
 
   phase         Phase          @relation(fields: [phase_id], references: [id], onDelete: Cascade)
-  group_teams   GroupTeam[]
   matches       Match[]
   season_teams  SeasonTeam[]
   teamStandings TeamStanding[]
 
   @@map("groups")
-}
-
-model GroupTeam {
-  group_id Int
-  team_id  Int
-
-  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
-  team  Team  @relation(fields: [team_id], references: [id], onDelete: Cascade)
-
-  @@id([group_id, team_id])
-  @@map("group_teams")
 }
 
 // ============================================================
@@ -248,7 +244,6 @@ model Team {
   season_teams     SeasonTeam[]
   home_matches     Match[]           @relation("Match_homeTeam")
   away_matches     Match[]           @relation("Match_awayTeam")
-  group_teams      GroupTeam[]
   user             User?             @relation(fields: [user_id], references: [id])
   user_id          Int?
   teamLeaders      TeamLeader[]
@@ -348,6 +343,7 @@ model TeamPlayer {
 // ============================================================
 
 enum SeasonTeamStatus {
+  approved
   pending
   active
   eliminated

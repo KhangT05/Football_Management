@@ -47,15 +47,12 @@ export const ModelName = {
     TournamentRule: 'TournamentRule',
     Phase: 'Phase',
     Group: 'Group',
-    GroupTeam: 'GroupTeam',
     Team: 'Team',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
     SeasonTeam: 'SeasonTeam',
     Match: 'Match',
     MatchEvent: 'MatchEvent',
-    PasskeyCredential: 'PasskeyCredential',
-    OAuthAccount: 'OAuthAccount',
     Venue: 'Venue',
     TeamLeader: 'TeamLeader',
     TeamStanding: 'TeamStanding',
@@ -143,10 +140,6 @@ export const TournamentRuleScalarFieldEnum = {
     min_players_per_team: 'min_players_per_team',
     teams_advance_per_group: 'teams_advance_per_group',
     tiebreaker_order: 'tiebreaker_order',
-    source: 'source',
-    source_file_url: 'source_file_url',
-    evidence_json: 'evidence_json',
-    import_note: 'import_note',
     user_id: 'user_id'
 };
 export const PhaseScalarFieldEnum = {
@@ -159,6 +152,7 @@ export const PhaseScalarFieldEnum = {
     start_date: 'start_date',
     end_date: 'end_date',
     is_active: 'is_active',
+    status: 'status',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
@@ -169,10 +163,6 @@ export const GroupScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at'
-};
-export const GroupTeamScalarFieldEnum = {
-    group_id: 'group_id',
-    team_id: 'team_id'
 };
 export const TeamScalarFieldEnum = {
     id: 'id',
@@ -264,32 +254,6 @@ export const MatchEventScalarFieldEnum = {
     card_color: 'card_color',
     sub_out_player_id: 'sub_out_player_id',
     created_at: 'created_at'
-};
-export const PasskeyCredentialScalarFieldEnum = {
-    id: 'id',
-    user_id: 'user_id',
-    device_id: 'device_id',
-    credential_id: 'credential_id',
-    public_key: 'public_key',
-    sign_count: 'sign_count',
-    aaguid: 'aaguid',
-    is_backup_eligible: 'is_backup_eligible',
-    is_backed_up: 'is_backed_up',
-    created_at: 'created_at',
-    updated_at: 'updated_at'
-};
-export const OAuthAccountScalarFieldEnum = {
-    id: 'id',
-    user_id: 'user_id',
-    provider: 'provider',
-    provider_user_id: 'provider_user_id',
-    email: 'email',
-    email_verified: 'email_verified',
-    avatar_url: 'avatar_url',
-    access_token: 'access_token',
-    token_expires_at: 'token_expires_at',
-    created_at: 'created_at',
-    updated_at: 'updated_at'
 };
 export const VenueScalarFieldEnum = {
     id: 'id',
@@ -413,10 +377,6 @@ export const SortOrder = {
 export const JsonNullValueInput = {
     JsonNull: JsonNull
 };
-export const NullableJsonNullValueInput = {
-    DbNull: DbNull,
-    JsonNull: JsonNull
-};
 export const NullsOrder = {
     first: 'first',
     last: 'last'
@@ -449,11 +409,6 @@ export const QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
 };
-export const TournamentRuleOrderByRelevanceFieldEnum = {
-    source: 'source',
-    source_file_url: 'source_file_url',
-    import_note: 'import_note'
-};
 export const PhaseOrderByRelevanceFieldEnum = {
     name: 'name'
 };
@@ -476,19 +431,6 @@ export const MatchOrderByRelevanceFieldEnum = {
 };
 export const MatchEventOrderByRelevanceFieldEnum = {
     note: 'note'
-};
-export const PasskeyCredentialOrderByRelevanceFieldEnum = {
-    device_id: 'device_id',
-    credential_id: 'credential_id',
-    public_key: 'public_key',
-    aaguid: 'aaguid'
-};
-export const OAuthAccountOrderByRelevanceFieldEnum = {
-    provider: 'provider',
-    provider_user_id: 'provider_user_id',
-    email: 'email',
-    avatar_url: 'avatar_url',
-    access_token: 'access_token'
 };
 export const VenueOrderByRelevanceFieldEnum = {
     name: 'name',

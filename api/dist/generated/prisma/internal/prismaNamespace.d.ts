@@ -239,15 +239,12 @@ export declare const ModelName: {
     readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
     readonly Group: "Group";
-    readonly GroupTeam: "GroupTeam";
     readonly Team: "Team";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
     readonly SeasonTeam: "SeasonTeam";
     readonly Match: "Match";
     readonly MatchEvent: "MatchEvent";
-    readonly PasskeyCredential: "PasskeyCredential";
-    readonly OAuthAccount: "OAuthAccount";
     readonly Venue: "Venue";
     readonly TeamLeader: "TeamLeader";
     readonly TeamStanding: "TeamStanding";
@@ -268,7 +265,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "season" | "tournamentRule" | "phase" | "group" | "groupTeam" | "team" | "player" | "teamPlayer" | "seasonTeam" | "match" | "matchEvent" | "passkeyCredential" | "oAuthAccount" | "venue" | "teamLeader" | "teamStanding" | "playerStatistic" | "notification" | "payment" | "seasonTeamPlayer" | "matchResult";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "season" | "tournamentRule" | "phase" | "group" | "team" | "player" | "teamPlayer" | "seasonTeam" | "match" | "matchEvent" | "venue" | "teamLeader" | "teamStanding" | "playerStatistic" | "notification" | "payment" | "seasonTeamPlayer" | "matchResult";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -800,72 +797,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
-        GroupTeam: {
-            payload: Prisma.$GroupTeamPayload<ExtArgs>;
-            fields: Prisma.GroupTeamFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.GroupTeamFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.GroupTeamFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                findFirst: {
-                    args: Prisma.GroupTeamFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.GroupTeamFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                findMany: {
-                    args: Prisma.GroupTeamFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>[];
-                };
-                create: {
-                    args: Prisma.GroupTeamCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                createMany: {
-                    args: Prisma.GroupTeamCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                delete: {
-                    args: Prisma.GroupTeamDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                update: {
-                    args: Prisma.GroupTeamUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                deleteMany: {
-                    args: Prisma.GroupTeamDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.GroupTeamUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                upsert: {
-                    args: Prisma.GroupTeamUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupTeamPayload>;
-                };
-                aggregate: {
-                    args: Prisma.GroupTeamAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateGroupTeam>;
-                };
-                groupBy: {
-                    args: Prisma.GroupTeamGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.GroupTeamGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.GroupTeamCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.GroupTeamCountAggregateOutputType> | number;
-                };
-            };
-        };
         Team: {
             payload: Prisma.$TeamPayload<ExtArgs>;
             fields: Prisma.TeamFieldRefs;
@@ -1259,138 +1190,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 count: {
                     args: Prisma.MatchEventCountArgs<ExtArgs>;
                     result: runtime.Types.Utils.Optional<Prisma.MatchEventCountAggregateOutputType> | number;
-                };
-            };
-        };
-        PasskeyCredential: {
-            payload: Prisma.$PasskeyCredentialPayload<ExtArgs>;
-            fields: Prisma.PasskeyCredentialFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.PasskeyCredentialFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.PasskeyCredentialFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                findFirst: {
-                    args: Prisma.PasskeyCredentialFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.PasskeyCredentialFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                findMany: {
-                    args: Prisma.PasskeyCredentialFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>[];
-                };
-                create: {
-                    args: Prisma.PasskeyCredentialCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                createMany: {
-                    args: Prisma.PasskeyCredentialCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                delete: {
-                    args: Prisma.PasskeyCredentialDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                update: {
-                    args: Prisma.PasskeyCredentialUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                deleteMany: {
-                    args: Prisma.PasskeyCredentialDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.PasskeyCredentialUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                upsert: {
-                    args: Prisma.PasskeyCredentialUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$PasskeyCredentialPayload>;
-                };
-                aggregate: {
-                    args: Prisma.PasskeyCredentialAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregatePasskeyCredential>;
-                };
-                groupBy: {
-                    args: Prisma.PasskeyCredentialGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.PasskeyCredentialGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.PasskeyCredentialCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.PasskeyCredentialCountAggregateOutputType> | number;
-                };
-            };
-        };
-        OAuthAccount: {
-            payload: Prisma.$OAuthAccountPayload<ExtArgs>;
-            fields: Prisma.OAuthAccountFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.OAuthAccountFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.OAuthAccountFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                findFirst: {
-                    args: Prisma.OAuthAccountFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.OAuthAccountFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                findMany: {
-                    args: Prisma.OAuthAccountFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>[];
-                };
-                create: {
-                    args: Prisma.OAuthAccountCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                createMany: {
-                    args: Prisma.OAuthAccountCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                delete: {
-                    args: Prisma.OAuthAccountDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                update: {
-                    args: Prisma.OAuthAccountUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                deleteMany: {
-                    args: Prisma.OAuthAccountDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.OAuthAccountUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                upsert: {
-                    args: Prisma.OAuthAccountUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>;
-                };
-                aggregate: {
-                    args: Prisma.OAuthAccountAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateOAuthAccount>;
-                };
-                groupBy: {
-                    args: Prisma.OAuthAccountGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.OAuthAccountGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.OAuthAccountCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.OAuthAccountCountAggregateOutputType> | number;
                 };
             };
         };
@@ -2030,10 +1829,6 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly min_players_per_team: "min_players_per_team";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
-    readonly source: "source";
-    readonly source_file_url: "source_file_url";
-    readonly evidence_json: "evidence_json";
-    readonly import_note: "import_note";
     readonly user_id: "user_id";
 };
 export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
@@ -2047,6 +1842,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly start_date: "start_date";
     readonly end_date: "end_date";
     readonly is_active: "is_active";
+    readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
 };
@@ -2060,11 +1856,6 @@ export declare const GroupScalarFieldEnum: {
     readonly updated_at: "updated_at";
 };
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum];
-export declare const GroupTeamScalarFieldEnum: {
-    readonly group_id: "group_id";
-    readonly team_id: "team_id";
-};
-export type GroupTeamScalarFieldEnum = (typeof GroupTeamScalarFieldEnum)[keyof typeof GroupTeamScalarFieldEnum];
 export declare const TeamScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -2162,34 +1953,6 @@ export declare const MatchEventScalarFieldEnum: {
     readonly created_at: "created_at";
 };
 export type MatchEventScalarFieldEnum = (typeof MatchEventScalarFieldEnum)[keyof typeof MatchEventScalarFieldEnum];
-export declare const PasskeyCredentialScalarFieldEnum: {
-    readonly id: "id";
-    readonly user_id: "user_id";
-    readonly device_id: "device_id";
-    readonly credential_id: "credential_id";
-    readonly public_key: "public_key";
-    readonly sign_count: "sign_count";
-    readonly aaguid: "aaguid";
-    readonly is_backup_eligible: "is_backup_eligible";
-    readonly is_backed_up: "is_backed_up";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-};
-export type PasskeyCredentialScalarFieldEnum = (typeof PasskeyCredentialScalarFieldEnum)[keyof typeof PasskeyCredentialScalarFieldEnum];
-export declare const OAuthAccountScalarFieldEnum: {
-    readonly id: "id";
-    readonly user_id: "user_id";
-    readonly provider: "provider";
-    readonly provider_user_id: "provider_user_id";
-    readonly email: "email";
-    readonly email_verified: "email_verified";
-    readonly avatar_url: "avatar_url";
-    readonly access_token: "access_token";
-    readonly token_expires_at: "token_expires_at";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-};
-export type OAuthAccountScalarFieldEnum = (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum];
 export declare const VenueScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -2322,11 +2085,6 @@ export declare const JsonNullValueInput: {
     readonly JsonNull: runtime.JsonNullClass;
 };
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
-export declare const NullableJsonNullValueInput: {
-    readonly DbNull: runtime.DbNullClass;
-    readonly JsonNull: runtime.JsonNullClass;
-};
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 export declare const NullsOrder: {
     readonly first: "first";
     readonly last: "last";
@@ -2366,12 +2124,6 @@ export declare const QueryMode: {
     readonly insensitive: "insensitive";
 };
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
-export declare const TournamentRuleOrderByRelevanceFieldEnum: {
-    readonly source: "source";
-    readonly source_file_url: "source_file_url";
-    readonly import_note: "import_note";
-};
-export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
@@ -2401,21 +2153,6 @@ export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };
 export type MatchEventOrderByRelevanceFieldEnum = (typeof MatchEventOrderByRelevanceFieldEnum)[keyof typeof MatchEventOrderByRelevanceFieldEnum];
-export declare const PasskeyCredentialOrderByRelevanceFieldEnum: {
-    readonly device_id: "device_id";
-    readonly credential_id: "credential_id";
-    readonly public_key: "public_key";
-    readonly aaguid: "aaguid";
-};
-export type PasskeyCredentialOrderByRelevanceFieldEnum = (typeof PasskeyCredentialOrderByRelevanceFieldEnum)[keyof typeof PasskeyCredentialOrderByRelevanceFieldEnum];
-export declare const OAuthAccountOrderByRelevanceFieldEnum: {
-    readonly provider: "provider";
-    readonly provider_user_id: "provider_user_id";
-    readonly email: "email";
-    readonly avatar_url: "avatar_url";
-    readonly access_token: "access_token";
-};
-export type OAuthAccountOrderByRelevanceFieldEnum = (typeof OAuthAccountOrderByRelevanceFieldEnum)[keyof typeof OAuthAccountOrderByRelevanceFieldEnum];
 export declare const VenueOrderByRelevanceFieldEnum: {
     readonly name: "name";
     readonly address: "address";
@@ -2479,6 +2216,10 @@ export type EnumPhaseTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
  */
 export type EnumPhaseFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PhaseFormat'>;
 /**
+ * Reference to a field of type 'PhaseStatus'
+ */
+export type EnumPhaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PhaseStatus'>;
+/**
  * Reference to a field of type 'PlayerPosition'
  */
 export type EnumPlayerPositionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PlayerPosition'>;
@@ -2514,10 +2255,6 @@ export type EnumMatchPeriodFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'CardColor'
  */
 export type EnumCardColorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CardColor'>;
-/**
- * Reference to a field of type 'BigInt'
- */
-export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>;
 /**
  * Reference to a field of type 'NotificationType'
  */
@@ -2659,15 +2396,12 @@ export type GlobalOmitConfig = {
     tournamentRule?: Prisma.TournamentRuleOmit;
     phase?: Prisma.PhaseOmit;
     group?: Prisma.GroupOmit;
-    groupTeam?: Prisma.GroupTeamOmit;
     team?: Prisma.TeamOmit;
     player?: Prisma.PlayerOmit;
     teamPlayer?: Prisma.TeamPlayerOmit;
     seasonTeam?: Prisma.SeasonTeamOmit;
     match?: Prisma.MatchOmit;
     matchEvent?: Prisma.MatchEventOmit;
-    passkeyCredential?: Prisma.PasskeyCredentialOmit;
-    oAuthAccount?: Prisma.OAuthAccountOmit;
     venue?: Prisma.VenueOmit;
     teamLeader?: Prisma.TeamLeaderOmit;
     teamStanding?: Prisma.TeamStandingOmit;

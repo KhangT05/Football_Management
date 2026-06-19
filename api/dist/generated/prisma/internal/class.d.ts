@@ -206,17 +206,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.groupTeam`: Exposes CRUD operations for the **GroupTeam** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more GroupTeams
-      * const groupTeams = await prisma.groupTeam.findMany()
-      * ```
-      */
-    get groupTeam(): Prisma.GroupTeamDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
      * `prisma.team`: Exposes CRUD operations for the **Team** model.
       * Example usage:
       * ```ts
@@ -280,28 +269,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get matchEvent(): Prisma.MatchEventDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
-     * `prisma.passkeyCredential`: Exposes CRUD operations for the **PasskeyCredential** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more PasskeyCredentials
-      * const passkeyCredentials = await prisma.passkeyCredential.findMany()
-      * ```
-      */
-    get passkeyCredential(): Prisma.PasskeyCredentialDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
-     * `prisma.oAuthAccount`: Exposes CRUD operations for the **OAuthAccount** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more OAuthAccounts
-      * const oAuthAccounts = await prisma.oAuthAccount.findMany()
-      * ```
-      */
-    get oAuthAccount(): Prisma.OAuthAccountDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**
