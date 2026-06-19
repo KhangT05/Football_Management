@@ -87,17 +87,6 @@ export async function seedPhasesAndGroups(
         { groupId: groupB.id, ids: teamIds.slice(4, 8) },
     ];
 
-    for (const { groupId, ids } of groupAssignments) {
-        for (const teamId of ids) {
-            const exists = await db.groupTeam.findUnique({
-                where: { group_id_team_id: { group_id: groupId, team_id: teamId } },
-            });
-            if (!exists) {
-                await db.groupTeam.create({ data: { group_id: groupId, team_id: teamId } });
-            }
-        }
-    }
-
     // Update SeasonTeam.group_id
     for (const { groupId, ids } of groupAssignments) {
         await db.seasonTeam.updateMany({

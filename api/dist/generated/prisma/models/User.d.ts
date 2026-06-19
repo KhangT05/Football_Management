@@ -217,8 +217,6 @@ export type UserWhereInput = {
     teamPlayers?: Prisma.TeamPlayerListRelationFilter;
     seasonTeams?: Prisma.SeasonTeamListRelationFilter;
     matches?: Prisma.MatchListRelationFilter;
-    passkeyCredentials?: Prisma.PasskeyCredentialListRelationFilter;
-    oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
     teamLeaders?: Prisma.TeamLeaderListRelationFilter;
 };
 export type UserOrderByWithRelationInput = {
@@ -241,8 +239,6 @@ export type UserOrderByWithRelationInput = {
     teamPlayers?: Prisma.TeamPlayerOrderByRelationAggregateInput;
     seasonTeams?: Prisma.SeasonTeamOrderByRelationAggregateInput;
     matches?: Prisma.MatchOrderByRelationAggregateInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialOrderByRelationAggregateInput;
-    oauthAccounts?: Prisma.OAuthAccountOrderByRelationAggregateInput;
     teamLeaders?: Prisma.TeamLeaderOrderByRelationAggregateInput;
     _relevance?: Prisma.UserOrderByRelevanceInput;
 };
@@ -269,8 +265,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     teamPlayers?: Prisma.TeamPlayerListRelationFilter;
     seasonTeams?: Prisma.SeasonTeamListRelationFilter;
     matches?: Prisma.MatchListRelationFilter;
-    passkeyCredentials?: Prisma.PasskeyCredentialListRelationFilter;
-    oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
     teamLeaders?: Prisma.TeamLeaderListRelationFilter;
 }, "id" | "email">;
 export type UserOrderByWithAggregationInput = {
@@ -324,8 +318,6 @@ export type UserCreateInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateInput = {
@@ -348,8 +340,6 @@ export type UserUncheckedCreateInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserUpdateInput = {
@@ -371,8 +361,6 @@ export type UserUpdateInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateInput = {
@@ -395,8 +383,6 @@ export type UserUncheckedUpdateInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateManyInput = {
@@ -633,30 +619,6 @@ export type UserUpdateOneWithoutMatchesNestedInput = {
     connect?: Prisma.UserWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMatchesInput, Prisma.UserUpdateWithoutMatchesInput>, Prisma.UserUncheckedUpdateWithoutMatchesInput>;
 };
-export type UserCreateNestedOneWithoutPasskeyCredentialsInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedCreateWithoutPasskeyCredentialsInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasskeyCredentialsInput;
-    connect?: Prisma.UserWhereUniqueInput;
-};
-export type UserUpdateOneRequiredWithoutPasskeyCredentialsNestedInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedCreateWithoutPasskeyCredentialsInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasskeyCredentialsInput;
-    upsert?: Prisma.UserUpsertWithoutPasskeyCredentialsInput;
-    connect?: Prisma.UserWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPasskeyCredentialsInput, Prisma.UserUpdateWithoutPasskeyCredentialsInput>, Prisma.UserUncheckedUpdateWithoutPasskeyCredentialsInput>;
-};
-export type UserCreateNestedOneWithoutOauthAccountsInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutOauthAccountsInput, Prisma.UserUncheckedCreateWithoutOauthAccountsInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthAccountsInput;
-    connect?: Prisma.UserWhereUniqueInput;
-};
-export type UserUpdateOneRequiredWithoutOauthAccountsNestedInput = {
-    create?: Prisma.XOR<Prisma.UserCreateWithoutOauthAccountsInput, Prisma.UserUncheckedCreateWithoutOauthAccountsInput>;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthAccountsInput;
-    upsert?: Prisma.UserUpsertWithoutOauthAccountsInput;
-    connect?: Prisma.UserWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOauthAccountsInput, Prisma.UserUpdateWithoutOauthAccountsInput>, Prisma.UserUncheckedUpdateWithoutOauthAccountsInput>;
-};
 export type UserCreateNestedOneWithoutTeamLeadersInput = {
     create?: Prisma.XOR<Prisma.UserCreateWithoutTeamLeadersInput, Prisma.UserUncheckedCreateWithoutTeamLeadersInput>;
     connectOrCreate?: Prisma.UserCreateOrConnectWithoutTeamLeadersInput;
@@ -687,8 +649,6 @@ export type UserCreateWithoutUser_rolesInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutUser_rolesInput = {
@@ -710,8 +670,6 @@ export type UserUncheckedCreateWithoutUser_rolesInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutUser_rolesInput = {
@@ -745,8 +703,6 @@ export type UserUpdateWithoutUser_rolesInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutUser_rolesInput = {
@@ -768,8 +724,6 @@ export type UserUncheckedUpdateWithoutUser_rolesInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutTournamentsInput = {
@@ -790,8 +744,6 @@ export type UserCreateWithoutTournamentsInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutTournamentsInput = {
@@ -813,8 +765,6 @@ export type UserUncheckedCreateWithoutTournamentsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutTournamentsInput = {
@@ -848,8 +798,6 @@ export type UserUpdateWithoutTournamentsInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutTournamentsInput = {
@@ -871,8 +819,6 @@ export type UserUncheckedUpdateWithoutTournamentsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutSeasonsInput = {
@@ -893,8 +839,6 @@ export type UserCreateWithoutSeasonsInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutSeasonsInput = {
@@ -916,8 +860,6 @@ export type UserUncheckedCreateWithoutSeasonsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutSeasonsInput = {
@@ -951,8 +893,6 @@ export type UserUpdateWithoutSeasonsInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutSeasonsInput = {
@@ -974,8 +914,6 @@ export type UserUncheckedUpdateWithoutSeasonsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutTournamentRulesInput = {
@@ -996,8 +934,6 @@ export type UserCreateWithoutTournamentRulesInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutTournamentRulesInput = {
@@ -1019,8 +955,6 @@ export type UserUncheckedCreateWithoutTournamentRulesInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutTournamentRulesInput = {
@@ -1054,8 +988,6 @@ export type UserUpdateWithoutTournamentRulesInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutTournamentRulesInput = {
@@ -1077,8 +1009,6 @@ export type UserUncheckedUpdateWithoutTournamentRulesInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutTeamsInput = {
@@ -1099,8 +1029,6 @@ export type UserCreateWithoutTeamsInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutTeamsInput = {
@@ -1122,8 +1050,6 @@ export type UserUncheckedCreateWithoutTeamsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutTeamsInput = {
@@ -1157,8 +1083,6 @@ export type UserUpdateWithoutTeamsInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamsInput = {
@@ -1180,8 +1104,6 @@ export type UserUncheckedUpdateWithoutTeamsInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutPlayerInput = {
@@ -1202,8 +1124,6 @@ export type UserCreateWithoutPlayerInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutPlayerInput = {
@@ -1225,8 +1145,6 @@ export type UserUncheckedCreateWithoutPlayerInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutPlayerInput = {
@@ -1260,8 +1178,6 @@ export type UserUpdateWithoutPlayerInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutPlayerInput = {
@@ -1283,8 +1199,6 @@ export type UserUncheckedUpdateWithoutPlayerInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutTeamPlayersInput = {
@@ -1305,8 +1219,6 @@ export type UserCreateWithoutTeamPlayersInput = {
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutTeamPlayersInput = {
@@ -1328,8 +1240,6 @@ export type UserUncheckedCreateWithoutTeamPlayersInput = {
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutTeamPlayersInput = {
@@ -1363,8 +1273,6 @@ export type UserUpdateWithoutTeamPlayersInput = {
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamPlayersInput = {
@@ -1386,8 +1294,6 @@ export type UserUncheckedUpdateWithoutTeamPlayersInput = {
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutSeasonTeamsInput = {
@@ -1408,8 +1314,6 @@ export type UserCreateWithoutSeasonTeamsInput = {
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutSeasonTeamsInput = {
@@ -1431,8 +1335,6 @@ export type UserUncheckedCreateWithoutSeasonTeamsInput = {
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutSeasonTeamsInput = {
@@ -1466,8 +1368,6 @@ export type UserUpdateWithoutSeasonTeamsInput = {
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutSeasonTeamsInput = {
@@ -1489,8 +1389,6 @@ export type UserUncheckedUpdateWithoutSeasonTeamsInput = {
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutMatchesInput = {
@@ -1511,8 +1409,6 @@ export type UserCreateWithoutMatchesInput = {
     player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutMatchesInput = {
@@ -1534,8 +1430,6 @@ export type UserUncheckedCreateWithoutMatchesInput = {
     player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutMatchesInput = {
@@ -1569,8 +1463,6 @@ export type UserUpdateWithoutMatchesInput = {
     player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutMatchesInput = {
@@ -1592,214 +1484,6 @@ export type UserUncheckedUpdateWithoutMatchesInput = {
     player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
-};
-export type UserCreateWithoutPasskeyCredentialsInput = {
-    name: string;
-    email: string;
-    password: string;
-    phone?: string | null;
-    is_active?: boolean;
-    email_verified?: boolean;
-    email_verified_at?: Date | string | null;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
-    tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
-    seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
-    teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
-    player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
-    teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
-    seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
-};
-export type UserUncheckedCreateWithoutPasskeyCredentialsInput = {
-    id?: number;
-    name: string;
-    email: string;
-    password: string;
-    phone?: string | null;
-    is_active?: boolean;
-    email_verified?: boolean;
-    email_verified_at?: Date | string | null;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
-    tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
-    seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
-    teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
-    player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
-    teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
-    seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
-};
-export type UserCreateOrConnectWithoutPasskeyCredentialsInput = {
-    where: Prisma.UserWhereUniqueInput;
-    create: Prisma.XOR<Prisma.UserCreateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedCreateWithoutPasskeyCredentialsInput>;
-};
-export type UserUpsertWithoutPasskeyCredentialsInput = {
-    update: Prisma.XOR<Prisma.UserUpdateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedUpdateWithoutPasskeyCredentialsInput>;
-    create: Prisma.XOR<Prisma.UserCreateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedCreateWithoutPasskeyCredentialsInput>;
-    where?: Prisma.UserWhereInput;
-};
-export type UserUpdateToOneWithWhereWithoutPasskeyCredentialsInput = {
-    where?: Prisma.UserWhereInput;
-    data: Prisma.XOR<Prisma.UserUpdateWithoutPasskeyCredentialsInput, Prisma.UserUncheckedUpdateWithoutPasskeyCredentialsInput>;
-};
-export type UserUpdateWithoutPasskeyCredentialsInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    password?: Prisma.StringFieldUpdateOperationsInput | string;
-    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
-    tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
-    seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
-    teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
-    player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
-    teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
-    seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
-};
-export type UserUncheckedUpdateWithoutPasskeyCredentialsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    password?: Prisma.StringFieldUpdateOperationsInput | string;
-    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
-    tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
-    seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
-    teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
-    player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
-    teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
-    seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
-};
-export type UserCreateWithoutOauthAccountsInput = {
-    name: string;
-    email: string;
-    password: string;
-    phone?: string | null;
-    is_active?: boolean;
-    email_verified?: boolean;
-    email_verified_at?: Date | string | null;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
-    tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
-    seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
-    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
-    teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
-    player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
-    teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
-    seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
-};
-export type UserUncheckedCreateWithoutOauthAccountsInput = {
-    id?: number;
-    name: string;
-    email: string;
-    password: string;
-    phone?: string | null;
-    is_active?: boolean;
-    email_verified?: boolean;
-    email_verified_at?: Date | string | null;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
-    tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
-    seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
-    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
-    teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
-    player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
-    teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
-    seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
-};
-export type UserCreateOrConnectWithoutOauthAccountsInput = {
-    where: Prisma.UserWhereUniqueInput;
-    create: Prisma.XOR<Prisma.UserCreateWithoutOauthAccountsInput, Prisma.UserUncheckedCreateWithoutOauthAccountsInput>;
-};
-export type UserUpsertWithoutOauthAccountsInput = {
-    update: Prisma.XOR<Prisma.UserUpdateWithoutOauthAccountsInput, Prisma.UserUncheckedUpdateWithoutOauthAccountsInput>;
-    create: Prisma.XOR<Prisma.UserCreateWithoutOauthAccountsInput, Prisma.UserUncheckedCreateWithoutOauthAccountsInput>;
-    where?: Prisma.UserWhereInput;
-};
-export type UserUpdateToOneWithWhereWithoutOauthAccountsInput = {
-    where?: Prisma.UserWhereInput;
-    data: Prisma.XOR<Prisma.UserUpdateWithoutOauthAccountsInput, Prisma.UserUncheckedUpdateWithoutOauthAccountsInput>;
-};
-export type UserUpdateWithoutOauthAccountsInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    password?: Prisma.StringFieldUpdateOperationsInput | string;
-    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
-    tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
-    seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
-    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
-    teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
-    player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
-    teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
-    seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
-};
-export type UserUncheckedUpdateWithoutOauthAccountsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    password?: Prisma.StringFieldUpdateOperationsInput | string;
-    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
-    tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
-    seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
-    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
-    teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
-    player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
-    teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
-    seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateWithoutTeamLeadersInput = {
@@ -1821,8 +1505,6 @@ export type UserCreateWithoutTeamLeadersInput = {
     teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateWithoutTeamLeadersInput = {
     id?: number;
@@ -1844,8 +1526,6 @@ export type UserUncheckedCreateWithoutTeamLeadersInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedCreateNestedManyWithoutUserInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserCreateOrConnectWithoutTeamLeadersInput = {
     where: Prisma.UserWhereUniqueInput;
@@ -1879,8 +1559,6 @@ export type UserUpdateWithoutTeamLeadersInput = {
     teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamLeadersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1902,8 +1580,6 @@ export type UserUncheckedUpdateWithoutTeamLeadersInput = {
     teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
-    passkeyCredentials?: Prisma.PasskeyCredentialUncheckedUpdateManyWithoutUserNestedInput;
-    oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
 };
 /**
  * Count Type UserCountOutputType
@@ -1917,8 +1593,6 @@ export type UserCountOutputType = {
     teamPlayers: number;
     seasonTeams: number;
     matches: number;
-    passkeyCredentials: number;
-    oauthAccounts: number;
     teamLeaders: number;
 };
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1930,8 +1604,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
     teamPlayers?: boolean | UserCountOutputTypeCountTeamPlayersArgs;
     seasonTeams?: boolean | UserCountOutputTypeCountSeasonTeamsArgs;
     matches?: boolean | UserCountOutputTypeCountMatchesArgs;
-    passkeyCredentials?: boolean | UserCountOutputTypeCountPasskeyCredentialsArgs;
-    oauthAccounts?: boolean | UserCountOutputTypeCountOauthAccountsArgs;
     teamLeaders?: boolean | UserCountOutputTypeCountTeamLeadersArgs;
 };
 /**
@@ -1994,18 +1666,6 @@ export type UserCountOutputTypeCountMatchesArgs<ExtArgs extends runtime.Types.Ex
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountPasskeyCredentialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    where?: Prisma.PasskeyCredentialWhereInput;
-};
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountOauthAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    where?: Prisma.OAuthAccountWhereInput;
-};
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountTeamLeadersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.TeamLeaderWhereInput;
 };
@@ -2029,8 +1689,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     teamPlayers?: boolean | Prisma.User$teamPlayersArgs<ExtArgs>;
     seasonTeams?: boolean | Prisma.User$seasonTeamsArgs<ExtArgs>;
     matches?: boolean | Prisma.User$matchesArgs<ExtArgs>;
-    passkeyCredentials?: boolean | Prisma.User$passkeyCredentialsArgs<ExtArgs>;
-    oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
     teamLeaders?: boolean | Prisma.User$teamLeadersArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["user"]>;
@@ -2057,8 +1715,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     teamPlayers?: boolean | Prisma.User$teamPlayersArgs<ExtArgs>;
     seasonTeams?: boolean | Prisma.User$seasonTeamsArgs<ExtArgs>;
     matches?: boolean | Prisma.User$matchesArgs<ExtArgs>;
-    passkeyCredentials?: boolean | Prisma.User$passkeyCredentialsArgs<ExtArgs>;
-    oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
     teamLeaders?: boolean | Prisma.User$teamLeadersArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
@@ -2074,8 +1730,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         teamPlayers: Prisma.$TeamPlayerPayload<ExtArgs>[];
         seasonTeams: Prisma.$SeasonTeamPayload<ExtArgs>[];
         matches: Prisma.$MatchPayload<ExtArgs>[];
-        passkeyCredentials: Prisma.$PasskeyCredentialPayload<ExtArgs>[];
-        oauthAccounts: Prisma.$OAuthAccountPayload<ExtArgs>[];
         teamLeaders: Prisma.$TeamLeaderPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2375,8 +2029,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
     teamPlayers<T extends Prisma.User$teamPlayersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teamPlayersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamPlayerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     seasonTeams<T extends Prisma.User$seasonTeamsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$seasonTeamsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonTeamPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     matches<T extends Prisma.User$matchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$matchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
-    passkeyCredentials<T extends Prisma.User$passkeyCredentialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passkeyCredentialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasskeyCredentialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
-    oauthAccounts<T extends Prisma.User$oauthAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$oauthAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OAuthAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     teamLeaders<T extends Prisma.User$teamLeadersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teamLeadersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamLeaderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2946,52 +2598,6 @@ export type User$matchesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
     take?: number;
     skip?: number;
     distinct?: Prisma.MatchScalarFieldEnum | Prisma.MatchScalarFieldEnum[];
-};
-/**
- * User.passkeyCredentials
- */
-export type User$passkeyCredentialsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasskeyCredential
-     */
-    select?: Prisma.PasskeyCredentialSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the PasskeyCredential
-     */
-    omit?: Prisma.PasskeyCredentialOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.PasskeyCredentialInclude<ExtArgs> | null;
-    where?: Prisma.PasskeyCredentialWhereInput;
-    orderBy?: Prisma.PasskeyCredentialOrderByWithRelationInput | Prisma.PasskeyCredentialOrderByWithRelationInput[];
-    cursor?: Prisma.PasskeyCredentialWhereUniqueInput;
-    take?: number;
-    skip?: number;
-    distinct?: Prisma.PasskeyCredentialScalarFieldEnum | Prisma.PasskeyCredentialScalarFieldEnum[];
-};
-/**
- * User.oauthAccounts
- */
-export type User$oauthAccountsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the OAuthAccount
-     */
-    select?: Prisma.OAuthAccountSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the OAuthAccount
-     */
-    omit?: Prisma.OAuthAccountOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.OAuthAccountInclude<ExtArgs> | null;
-    where?: Prisma.OAuthAccountWhereInput;
-    orderBy?: Prisma.OAuthAccountOrderByWithRelationInput | Prisma.OAuthAccountOrderByWithRelationInput[];
-    cursor?: Prisma.OAuthAccountWhereUniqueInput;
-    take?: number;
-    skip?: number;
-    distinct?: Prisma.OAuthAccountScalarFieldEnum | Prisma.OAuthAccountScalarFieldEnum[];
 };
 /**
  * User.teamLeaders

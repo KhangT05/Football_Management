@@ -181,7 +181,6 @@ export type GroupWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Group"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Group"> | Date | string | null;
     phase?: Prisma.XOR<Prisma.PhaseScalarRelationFilter, Prisma.PhaseWhereInput>;
-    group_teams?: Prisma.GroupTeamListRelationFilter;
     matches?: Prisma.MatchListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     teamStandings?: Prisma.TeamStandingListRelationFilter;
@@ -194,7 +193,6 @@ export type GroupOrderByWithRelationInput = {
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     phase?: Prisma.PhaseOrderByWithRelationInput;
-    group_teams?: Prisma.GroupTeamOrderByRelationAggregateInput;
     matches?: Prisma.MatchOrderByRelationAggregateInput;
     season_teams?: Prisma.SeasonTeamOrderByRelationAggregateInput;
     teamStandings?: Prisma.TeamStandingOrderByRelationAggregateInput;
@@ -211,7 +209,6 @@ export type GroupWhereUniqueInput = Prisma.AtLeast<{
     created_at?: Prisma.DateTimeFilter<"Group"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Group"> | Date | string | null;
     phase?: Prisma.XOR<Prisma.PhaseScalarRelationFilter, Prisma.PhaseWhereInput>;
-    group_teams?: Prisma.GroupTeamListRelationFilter;
     matches?: Prisma.MatchListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     teamStandings?: Prisma.TeamStandingListRelationFilter;
@@ -246,7 +243,6 @@ export type GroupCreateInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     phase: Prisma.PhaseCreateNestedOneWithoutGroupsInput;
-    group_teams?: Prisma.GroupTeamCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutGroupInput;
@@ -258,7 +254,6 @@ export type GroupUncheckedCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutGroupInput;
@@ -269,7 +264,6 @@ export type GroupUpdateInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     phase?: Prisma.PhaseUpdateOneRequiredWithoutGroupsNestedInput;
-    group_teams?: Prisma.GroupTeamUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutGroupNestedInput;
@@ -281,7 +275,6 @@ export type GroupUncheckedUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutGroupNestedInput;
@@ -353,13 +346,13 @@ export type GroupSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     phase_id?: Prisma.SortOrder;
 };
-export type GroupScalarRelationFilter = {
-    is?: Prisma.GroupWhereInput;
-    isNot?: Prisma.GroupWhereInput;
-};
 export type GroupNullableScalarRelationFilter = {
     is?: Prisma.GroupWhereInput | null;
     isNot?: Prisma.GroupWhereInput | null;
+};
+export type GroupScalarRelationFilter = {
+    is?: Prisma.GroupWhereInput;
+    isNot?: Prisma.GroupWhereInput;
 };
 export type GroupCreateNestedManyWithoutPhaseInput = {
     create?: Prisma.XOR<Prisma.GroupCreateWithoutPhaseInput, Prisma.GroupUncheckedCreateWithoutPhaseInput> | Prisma.GroupCreateWithoutPhaseInput[] | Prisma.GroupUncheckedCreateWithoutPhaseInput[];
@@ -398,18 +391,6 @@ export type GroupUncheckedUpdateManyWithoutPhaseNestedInput = {
     update?: Prisma.GroupUpdateWithWhereUniqueWithoutPhaseInput | Prisma.GroupUpdateWithWhereUniqueWithoutPhaseInput[];
     updateMany?: Prisma.GroupUpdateManyWithWhereWithoutPhaseInput | Prisma.GroupUpdateManyWithWhereWithoutPhaseInput[];
     deleteMany?: Prisma.GroupScalarWhereInput | Prisma.GroupScalarWhereInput[];
-};
-export type GroupCreateNestedOneWithoutGroup_teamsInput = {
-    create?: Prisma.XOR<Prisma.GroupCreateWithoutGroup_teamsInput, Prisma.GroupUncheckedCreateWithoutGroup_teamsInput>;
-    connectOrCreate?: Prisma.GroupCreateOrConnectWithoutGroup_teamsInput;
-    connect?: Prisma.GroupWhereUniqueInput;
-};
-export type GroupUpdateOneRequiredWithoutGroup_teamsNestedInput = {
-    create?: Prisma.XOR<Prisma.GroupCreateWithoutGroup_teamsInput, Prisma.GroupUncheckedCreateWithoutGroup_teamsInput>;
-    connectOrCreate?: Prisma.GroupCreateOrConnectWithoutGroup_teamsInput;
-    upsert?: Prisma.GroupUpsertWithoutGroup_teamsInput;
-    connect?: Prisma.GroupWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.GroupUpdateToOneWithWhereWithoutGroup_teamsInput, Prisma.GroupUpdateWithoutGroup_teamsInput>, Prisma.GroupUncheckedUpdateWithoutGroup_teamsInput>;
 };
 export type GroupCreateNestedOneWithoutSeason_teamsInput = {
     create?: Prisma.XOR<Prisma.GroupCreateWithoutSeason_teamsInput, Prisma.GroupUncheckedCreateWithoutSeason_teamsInput>;
@@ -456,7 +437,6 @@ export type GroupCreateWithoutPhaseInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutGroupInput;
@@ -467,7 +447,6 @@ export type GroupUncheckedCreateWithoutPhaseInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutGroupInput;
@@ -504,68 +483,12 @@ export type GroupScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"Group"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Group"> | Date | string | null;
 };
-export type GroupCreateWithoutGroup_teamsInput = {
-    name: string;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    phase: Prisma.PhaseCreateNestedOneWithoutGroupsInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutGroupInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutGroupInput;
-    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutGroupInput;
-};
-export type GroupUncheckedCreateWithoutGroup_teamsInput = {
-    id?: number;
-    phase_id: number;
-    name: string;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutGroupInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutGroupInput;
-    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutGroupInput;
-};
-export type GroupCreateOrConnectWithoutGroup_teamsInput = {
-    where: Prisma.GroupWhereUniqueInput;
-    create: Prisma.XOR<Prisma.GroupCreateWithoutGroup_teamsInput, Prisma.GroupUncheckedCreateWithoutGroup_teamsInput>;
-};
-export type GroupUpsertWithoutGroup_teamsInput = {
-    update: Prisma.XOR<Prisma.GroupUpdateWithoutGroup_teamsInput, Prisma.GroupUncheckedUpdateWithoutGroup_teamsInput>;
-    create: Prisma.XOR<Prisma.GroupCreateWithoutGroup_teamsInput, Prisma.GroupUncheckedCreateWithoutGroup_teamsInput>;
-    where?: Prisma.GroupWhereInput;
-};
-export type GroupUpdateToOneWithWhereWithoutGroup_teamsInput = {
-    where?: Prisma.GroupWhereInput;
-    data: Prisma.XOR<Prisma.GroupUpdateWithoutGroup_teamsInput, Prisma.GroupUncheckedUpdateWithoutGroup_teamsInput>;
-};
-export type GroupUpdateWithoutGroup_teamsInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    phase?: Prisma.PhaseUpdateOneRequiredWithoutGroupsNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutGroupNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutGroupNestedInput;
-    teamStandings?: Prisma.TeamStandingUpdateManyWithoutGroupNestedInput;
-};
-export type GroupUncheckedUpdateWithoutGroup_teamsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutGroupNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutGroupNestedInput;
-    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutGroupNestedInput;
-};
 export type GroupCreateWithoutSeason_teamsInput = {
     name: string;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     phase: Prisma.PhaseCreateNestedOneWithoutGroupsInput;
-    group_teams?: Prisma.GroupTeamCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutGroupInput;
 };
@@ -576,7 +499,6 @@ export type GroupUncheckedCreateWithoutSeason_teamsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutGroupInput;
 };
@@ -599,7 +521,6 @@ export type GroupUpdateWithoutSeason_teamsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     phase?: Prisma.PhaseUpdateOneRequiredWithoutGroupsNestedInput;
-    group_teams?: Prisma.GroupTeamUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutGroupNestedInput;
 };
@@ -610,7 +531,6 @@ export type GroupUncheckedUpdateWithoutSeason_teamsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutGroupNestedInput;
 };
@@ -620,7 +540,6 @@ export type GroupCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     phase: Prisma.PhaseCreateNestedOneWithoutGroupsInput;
-    group_teams?: Prisma.GroupTeamCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutGroupInput;
 };
@@ -631,7 +550,6 @@ export type GroupUncheckedCreateWithoutMatchesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutGroupInput;
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutGroupInput;
 };
@@ -654,7 +572,6 @@ export type GroupUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     phase?: Prisma.PhaseUpdateOneRequiredWithoutGroupsNestedInput;
-    group_teams?: Prisma.GroupTeamUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutGroupNestedInput;
 };
@@ -665,7 +582,6 @@ export type GroupUncheckedUpdateWithoutMatchesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutGroupNestedInput;
 };
@@ -675,7 +591,6 @@ export type GroupCreateWithoutTeamStandingsInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     phase: Prisma.PhaseCreateNestedOneWithoutGroupsInput;
-    group_teams?: Prisma.GroupTeamCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutGroupInput;
 };
@@ -686,7 +601,6 @@ export type GroupUncheckedCreateWithoutTeamStandingsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedCreateNestedManyWithoutGroupInput;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutGroupInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutGroupInput;
 };
@@ -709,7 +623,6 @@ export type GroupUpdateWithoutTeamStandingsInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     phase?: Prisma.PhaseUpdateOneRequiredWithoutGroupsNestedInput;
-    group_teams?: Prisma.GroupTeamUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutGroupNestedInput;
 };
@@ -720,7 +633,6 @@ export type GroupUncheckedUpdateWithoutTeamStandingsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutGroupNestedInput;
 };
@@ -736,7 +648,6 @@ export type GroupUpdateWithoutPhaseInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutGroupNestedInput;
@@ -747,7 +658,6 @@ export type GroupUncheckedUpdateWithoutPhaseInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    group_teams?: Prisma.GroupTeamUncheckedUpdateManyWithoutGroupNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutGroupNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutGroupNestedInput;
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutGroupNestedInput;
@@ -763,13 +673,11 @@ export type GroupUncheckedUpdateManyWithoutPhaseInput = {
  * Count Type GroupCountOutputType
  */
 export type GroupCountOutputType = {
-    group_teams: number;
     matches: number;
     season_teams: number;
     teamStandings: number;
 };
 export type GroupCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    group_teams?: boolean | GroupCountOutputTypeCountGroup_teamsArgs;
     matches?: boolean | GroupCountOutputTypeCountMatchesArgs;
     season_teams?: boolean | GroupCountOutputTypeCountSeason_teamsArgs;
     teamStandings?: boolean | GroupCountOutputTypeCountTeamStandingsArgs;
@@ -782,12 +690,6 @@ export type GroupCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
      * Select specific fields to fetch from the GroupCountOutputType
      */
     select?: Prisma.GroupCountOutputTypeSelect<ExtArgs> | null;
-};
-/**
- * GroupCountOutputType without action
- */
-export type GroupCountOutputTypeCountGroup_teamsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    where?: Prisma.GroupTeamWhereInput;
 };
 /**
  * GroupCountOutputType without action
@@ -815,7 +717,6 @@ export type GroupSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     created_at?: boolean;
     updated_at?: boolean;
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
-    group_teams?: boolean | Prisma.Group$group_teamsArgs<ExtArgs>;
     matches?: boolean | Prisma.Group$matchesArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Group$season_teamsArgs<ExtArgs>;
     teamStandings?: boolean | Prisma.Group$teamStandingsArgs<ExtArgs>;
@@ -832,7 +733,6 @@ export type GroupSelectScalar = {
 export type GroupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "name" | "is_active" | "created_at" | "updated_at", ExtArgs["result"]["group"]>;
 export type GroupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
-    group_teams?: boolean | Prisma.Group$group_teamsArgs<ExtArgs>;
     matches?: boolean | Prisma.Group$matchesArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Group$season_teamsArgs<ExtArgs>;
     teamStandings?: boolean | Prisma.Group$teamStandingsArgs<ExtArgs>;
@@ -842,7 +742,6 @@ export type $GroupPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     name: "Group";
     objects: {
         phase: Prisma.$PhasePayload<ExtArgs>;
-        group_teams: Prisma.$GroupTeamPayload<ExtArgs>[];
         matches: Prisma.$MatchPayload<ExtArgs>[];
         season_teams: Prisma.$SeasonTeamPayload<ExtArgs>[];
         teamStandings: Prisma.$TeamStandingPayload<ExtArgs>[];
@@ -1132,7 +1031,6 @@ export interface GroupDelegate<ExtArgs extends runtime.Types.Extensions.Internal
 export interface Prisma__GroupClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     phase<T extends Prisma.PhaseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PhaseDefaultArgs<ExtArgs>>): Prisma.Prisma__PhaseClient<runtime.Types.Result.GetResult<Prisma.$PhasePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
-    group_teams<T extends Prisma.Group$group_teamsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$group_teamsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GroupTeamPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     matches<T extends Prisma.Group$matchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$matchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     season_teams<T extends Prisma.Group$season_teamsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$season_teamsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonTeamPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     teamStandings<T extends Prisma.Group$teamStandingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$teamStandingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamStandingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
@@ -1498,29 +1396,6 @@ export type GroupDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
      * Limit how many Groups to delete.
      */
     limit?: number;
-};
-/**
- * Group.group_teams
- */
-export type Group$group_teamsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the GroupTeam
-     */
-    select?: Prisma.GroupTeamSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the GroupTeam
-     */
-    omit?: Prisma.GroupTeamOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.GroupTeamInclude<ExtArgs> | null;
-    where?: Prisma.GroupTeamWhereInput;
-    orderBy?: Prisma.GroupTeamOrderByWithRelationInput | Prisma.GroupTeamOrderByWithRelationInput[];
-    cursor?: Prisma.GroupTeamWhereUniqueInput;
-    take?: number;
-    skip?: number;
-    distinct?: Prisma.GroupTeamScalarFieldEnum | Prisma.GroupTeamScalarFieldEnum[];
 };
 /**
  * Group.matches
