@@ -413,14 +413,6 @@ export type PhaseUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
-export type PhaseListRelationFilter = {
-    every?: Prisma.PhaseWhereInput;
-    some?: Prisma.PhaseWhereInput;
-    none?: Prisma.PhaseWhereInput;
-};
-export type PhaseOrderByRelationAggregateInput = {
-    _count?: Prisma.SortOrder;
-};
 export type PhaseOrderByRelevanceInput = {
     fields: Prisma.PhaseOrderByRelevanceFieldEnum | Prisma.PhaseOrderByRelevanceFieldEnum[];
     sort: Prisma.SortOrder;
@@ -478,9 +470,26 @@ export type PhaseSumOrderByAggregateInput = {
     season_id?: Prisma.SortOrder;
     order?: Prisma.SortOrder;
 };
+export type PhaseListRelationFilter = {
+    every?: Prisma.PhaseWhereInput;
+    some?: Prisma.PhaseWhereInput;
+    none?: Prisma.PhaseWhereInput;
+};
+export type PhaseOrderByRelationAggregateInput = {
+    _count?: Prisma.SortOrder;
+};
 export type PhaseScalarRelationFilter = {
     is?: Prisma.PhaseWhereInput;
     isNot?: Prisma.PhaseWhereInput;
+};
+export type EnumPhaseTypeFieldUpdateOperationsInput = {
+    set?: $Enums.PhaseType;
+};
+export type EnumPhaseFormatFieldUpdateOperationsInput = {
+    set?: $Enums.PhaseFormat;
+};
+export type EnumPhaseStatusFieldUpdateOperationsInput = {
+    set?: $Enums.PhaseStatus;
 };
 export type PhaseCreateNestedManyWithoutSeasonInput = {
     create?: Prisma.XOR<Prisma.PhaseCreateWithoutSeasonInput, Prisma.PhaseUncheckedCreateWithoutSeasonInput> | Prisma.PhaseCreateWithoutSeasonInput[] | Prisma.PhaseUncheckedCreateWithoutSeasonInput[];
@@ -519,15 +528,6 @@ export type PhaseUncheckedUpdateManyWithoutSeasonNestedInput = {
     update?: Prisma.PhaseUpdateWithWhereUniqueWithoutSeasonInput | Prisma.PhaseUpdateWithWhereUniqueWithoutSeasonInput[];
     updateMany?: Prisma.PhaseUpdateManyWithWhereWithoutSeasonInput | Prisma.PhaseUpdateManyWithWhereWithoutSeasonInput[];
     deleteMany?: Prisma.PhaseScalarWhereInput | Prisma.PhaseScalarWhereInput[];
-};
-export type EnumPhaseTypeFieldUpdateOperationsInput = {
-    set?: $Enums.PhaseType;
-};
-export type EnumPhaseFormatFieldUpdateOperationsInput = {
-    set?: $Enums.PhaseFormat;
-};
-export type EnumPhaseStatusFieldUpdateOperationsInput = {
-    set?: $Enums.PhaseStatus;
 };
 export type PhaseCreateNestedOneWithoutGroupsInput = {
     create?: Prisma.XOR<Prisma.PhaseCreateWithoutGroupsInput, Prisma.PhaseUncheckedCreateWithoutGroupsInput>;

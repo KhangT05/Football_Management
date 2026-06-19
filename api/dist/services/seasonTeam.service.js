@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { PhaseFormat, SeasonTeamStatus } from "../generated/prisma/client.js";
+import { PhaseFormat, SeasonTeamStatus, SeasonStatus } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { withRelations } from "../types/seasonTeam.type.js";
 export class SeasonTeamService {
@@ -43,7 +43,7 @@ export class SeasonTeamService {
             const season = await tx.season.findUnique({ where: { id: data.season_id } });
             if (!season)
                 throw createAppError("NOT_FOUND", `Season ${data.season_id} not found`);
-            if (!season.is_registration_open)
+            if (season.status !== SeasonStatus.registration_open)
                 throw createAppError("FORBIDDEN", "Season is not open for registration");
             if (season.registration_deadline && season.registration_deadline < new Date())
                 throw createAppError("FORBIDDEN", "Registration deadline has passed");
@@ -57,6 +57,8 @@ export class SeasonTeamService {
             const season = await tx.season.findUnique({ where: { id: data.season_id } });
             if (!season)
                 throw createAppError("NOT_FOUND", `Season ${data.season_id} not found`);
+            if (season.status !== SeasonStatus.registration_open)
+                throw createAppError("FORBIDDEN", "Season is not open for registration");
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
             return this.createOrReactivate(tx, data.season_id, data.team_id, userId, data.status ?? SeasonTeamStatus.approved);
         });

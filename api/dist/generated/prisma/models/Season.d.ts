@@ -528,6 +528,10 @@ export type SeasonListRelationFilter = {
 export type SeasonOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
+export type SeasonScalarRelationFilter = {
+    is?: Prisma.SeasonWhereInput;
+    isNot?: Prisma.SeasonWhereInput;
+};
 export type SeasonOrderByRelevanceInput = {
     fields: Prisma.SeasonOrderByRelevanceFieldEnum | Prisma.SeasonOrderByRelevanceFieldEnum[];
     sort: Prisma.SortOrder;
@@ -600,10 +604,6 @@ export type SeasonSumOrderByAggregateInput = {
     registration_fee?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
-};
-export type SeasonScalarRelationFilter = {
-    is?: Prisma.SeasonWhereInput;
-    isNot?: Prisma.SeasonWhereInput;
 };
 export type SeasonNullableScalarRelationFilter = {
     is?: Prisma.SeasonWhereInput | null;
@@ -685,16 +685,6 @@ export type SeasonUncheckedUpdateManyWithoutTournamentNestedInput = {
     updateMany?: Prisma.SeasonUpdateManyWithWhereWithoutTournamentInput | Prisma.SeasonUpdateManyWithWhereWithoutTournamentInput[];
     deleteMany?: Prisma.SeasonScalarWhereInput | Prisma.SeasonScalarWhereInput[];
 };
-export type EnumSeasonStatusFieldUpdateOperationsInput = {
-    set?: $Enums.SeasonStatus;
-};
-export type DecimalFieldUpdateOperationsInput = {
-    set?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    increment?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-};
 export type SeasonCreateNestedOneWithoutPhasesInput = {
     create?: Prisma.XOR<Prisma.SeasonCreateWithoutPhasesInput, Prisma.SeasonUncheckedCreateWithoutPhasesInput>;
     connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutPhasesInput;
@@ -706,6 +696,16 @@ export type SeasonUpdateOneRequiredWithoutPhasesNestedInput = {
     upsert?: Prisma.SeasonUpsertWithoutPhasesInput;
     connect?: Prisma.SeasonWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.SeasonUpdateToOneWithWhereWithoutPhasesInput, Prisma.SeasonUpdateWithoutPhasesInput>, Prisma.SeasonUncheckedUpdateWithoutPhasesInput>;
+};
+export type EnumSeasonStatusFieldUpdateOperationsInput = {
+    set?: $Enums.SeasonStatus;
+};
+export type DecimalFieldUpdateOperationsInput = {
+    set?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    increment?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
 export type SeasonCreateNestedOneWithoutSeason_teamsInput = {
     create?: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_teamsInput, Prisma.SeasonUncheckedCreateWithoutSeason_teamsInput>;

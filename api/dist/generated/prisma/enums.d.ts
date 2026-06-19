@@ -1,11 +1,3 @@
-export declare const SeasonStatus: {
-    readonly upcoming: "upcoming";
-    readonly registration_open: "registration_open";
-    readonly ongoing: "ongoing";
-    readonly finished: "finished";
-    readonly cancelled: "cancelled";
-};
-export type SeasonStatus = (typeof SeasonStatus)[keyof typeof SeasonStatus];
 export declare const PhaseType: {
     readonly group_stage: "group_stage";
     readonly round_of_16: "round_of_16";
@@ -26,6 +18,14 @@ export declare const PhaseStatus: {
     readonly locked: "locked";
 };
 export type PhaseStatus = (typeof PhaseStatus)[keyof typeof PhaseStatus];
+export declare const SeasonStatus: {
+    readonly upcoming: "upcoming";
+    readonly registration_open: "registration_open";
+    readonly ongoing: "ongoing";
+    readonly finished: "finished";
+    readonly cancelled: "cancelled";
+};
+export type SeasonStatus = (typeof SeasonStatus)[keyof typeof SeasonStatus];
 export declare const PlayerPosition: {
     readonly goalkeeper: "goalkeeper";
     readonly defender: "defender";

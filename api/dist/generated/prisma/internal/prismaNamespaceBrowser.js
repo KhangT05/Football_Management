@@ -43,23 +43,22 @@ export const ModelName = {
     Role: 'Role',
     User_Role: 'User_Role',
     Tournament: 'Tournament',
-    Season: 'Season',
     TournamentRule: 'TournamentRule',
     Phase: 'Phase',
+    Season: 'Season',
     Group: 'Group',
     Team: 'Team',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
     SeasonTeam: 'SeasonTeam',
     Match: 'Match',
-    MatchEvent: 'MatchEvent',
     Venue: 'Venue',
     TeamLeader: 'TeamLeader',
+    MatchEvent: 'MatchEvent',
     TeamStanding: 'TeamStanding',
     PlayerStatistic: 'PlayerStatistic',
     Notification: 'Notification',
     Payment: 'Payment',
-    SeasonTeamPlayer: 'SeasonTeamPlayer',
     MatchResult: 'MatchResult'
 };
 /*
@@ -106,24 +105,6 @@ export const TournamentScalarFieldEnum = {
     deleted_at: 'deleted_at',
     user_id: 'user_id'
 };
-export const SeasonScalarFieldEnum = {
-    id: 'id',
-    name: 'name',
-    description: 'description',
-    status: 'status',
-    start_date: 'start_date',
-    end_date: 'end_date',
-    registration_deadline: 'registration_deadline',
-    max_teams: 'max_teams',
-    is_registration_open: 'is_registration_open',
-    is_active: 'is_active',
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
-    registration_fee: 'registration_fee',
-    tournament_id: 'tournament_id',
-    user_id: 'user_id'
-};
 export const TournamentRuleScalarFieldEnum = {
     id: 'id',
     tournament_id: 'tournament_id',
@@ -155,6 +136,24 @@ export const PhaseScalarFieldEnum = {
     status: 'status',
     created_at: 'created_at',
     updated_at: 'updated_at'
+};
+export const SeasonScalarFieldEnum = {
+    id: 'id',
+    name: 'name',
+    description: 'description',
+    status: 'status',
+    start_date: 'start_date',
+    end_date: 'end_date',
+    registration_deadline: 'registration_deadline',
+    max_teams: 'max_teams',
+    is_registration_open: 'is_registration_open',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+    deleted_at: 'deleted_at',
+    registration_fee: 'registration_fee',
+    tournament_id: 'tournament_id',
+    user_id: 'user_id'
 };
 export const GroupScalarFieldEnum = {
     id: 'id',
@@ -241,20 +240,6 @@ export const MatchScalarFieldEnum = {
     referee: 'referee',
     season_id: 'season_id'
 };
-export const MatchEventScalarFieldEnum = {
-    id: 'id',
-    match_id: 'match_id',
-    player_id: 'player_id',
-    team_id: 'team_id',
-    type: 'type',
-    minute: 'minute',
-    note: 'note',
-    period: 'period',
-    added_minute: 'added_minute',
-    card_color: 'card_color',
-    sub_out_player_id: 'sub_out_player_id',
-    created_at: 'created_at'
-};
 export const VenueScalarFieldEnum = {
     id: 'id',
     name: 'name',
@@ -272,6 +257,20 @@ export const TeamLeaderScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at'
+};
+export const MatchEventScalarFieldEnum = {
+    id: 'id',
+    match_id: 'match_id',
+    player_id: 'player_id',
+    team_id: 'team_id',
+    type: 'type',
+    minute: 'minute',
+    note: 'note',
+    period: 'period',
+    added_minute: 'added_minute',
+    card_color: 'card_color',
+    sub_out_player_id: 'sub_out_player_id',
+    created_at: 'created_at'
 };
 export const TeamStandingScalarFieldEnum = {
     id: 'id',
@@ -337,16 +336,6 @@ export const PaymentScalarFieldEnum = {
     updated_at: 'updated_at',
     deleted_at: 'deleted_at'
 };
-export const SeasonTeamPlayerScalarFieldEnum = {
-    id: 'id',
-    season_team_id: 'season_team_id',
-    team_player_id: 'team_player_id',
-    jersey_number: 'jersey_number',
-    is_active: 'is_active',
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-    deleted_at: 'deleted_at'
-};
 export const MatchResultScalarFieldEnum = {
     id: 'id',
     match_id: 'match_id',
@@ -396,10 +385,6 @@ export const TournamentOrderByRelevanceFieldEnum = {
     description: 'description',
     logo: 'logo'
 };
-export const SeasonOrderByRelevanceFieldEnum = {
-    name: 'name',
-    description: 'description'
-};
 export const JsonNullValueFilter = {
     DbNull: DbNull,
     JsonNull: JsonNull,
@@ -411,6 +396,10 @@ export const QueryMode = {
 };
 export const PhaseOrderByRelevanceFieldEnum = {
     name: 'name'
+};
+export const SeasonOrderByRelevanceFieldEnum = {
+    name: 'name',
+    description: 'description'
 };
 export const GroupOrderByRelevanceFieldEnum = {
     name: 'name'
@@ -429,12 +418,12 @@ export const MatchOrderByRelevanceFieldEnum = {
     round: 'round',
     referee: 'referee'
 };
-export const MatchEventOrderByRelevanceFieldEnum = {
-    note: 'note'
-};
 export const VenueOrderByRelevanceFieldEnum = {
     name: 'name',
     address: 'address'
+};
+export const MatchEventOrderByRelevanceFieldEnum = {
+    note: 'note'
 };
 export const NotificationOrderByRelevanceFieldEnum = {
     title: 'title',

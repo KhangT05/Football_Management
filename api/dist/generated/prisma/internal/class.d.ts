@@ -162,17 +162,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.season`: Exposes CRUD operations for the **Season** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more Seasons
-      * const seasons = await prisma.season.findMany()
-      * ```
-      */
-    get season(): Prisma.SeasonDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
      * `prisma.tournamentRule`: Exposes CRUD operations for the **TournamentRule** model.
       * Example usage:
       * ```ts
@@ -192,6 +181,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get phase(): Prisma.PhaseDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.season`: Exposes CRUD operations for the **Season** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Seasons
+      * const seasons = await prisma.season.findMany()
+      * ```
+      */
+    get season(): Prisma.SeasonDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**
@@ -261,17 +261,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.matchEvent`: Exposes CRUD operations for the **MatchEvent** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more MatchEvents
-      * const matchEvents = await prisma.matchEvent.findMany()
-      * ```
-      */
-    get matchEvent(): Prisma.MatchEventDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
      * `prisma.venue`: Exposes CRUD operations for the **Venue** model.
       * Example usage:
       * ```ts
@@ -291,6 +280,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get teamLeader(): Prisma.TeamLeaderDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.matchEvent`: Exposes CRUD operations for the **MatchEvent** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more MatchEvents
+      * const matchEvents = await prisma.matchEvent.findMany()
+      * ```
+      */
+    get matchEvent(): Prisma.MatchEventDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**
@@ -335,17 +335,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get payment(): Prisma.PaymentDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
-     * `prisma.seasonTeamPlayer`: Exposes CRUD operations for the **SeasonTeamPlayer** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more SeasonTeamPlayers
-      * const seasonTeamPlayers = await prisma.seasonTeamPlayer.findMany()
-      * ```
-      */
-    get seasonTeamPlayer(): Prisma.SeasonTeamPlayerDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

@@ -7,13 +7,6 @@
 *
 * 🟢 You can import this file directly.
 */
-export const SeasonStatus = {
-    upcoming: 'upcoming',
-    registration_open: 'registration_open',
-    ongoing: 'ongoing',
-    finished: 'finished',
-    cancelled: 'cancelled'
-};
 export const PhaseType = {
     group_stage: 'group_stage',
     round_of_16: 'round_of_16',
@@ -30,6 +23,13 @@ export const PhaseStatus = {
     draft: 'draft',
     in_progress: 'in_progress',
     locked: 'locked'
+};
+export const SeasonStatus = {
+    upcoming: 'upcoming',
+    registration_open: 'registration_open',
+    ongoing: 'ongoing',
+    finished: 'finished',
+    cancelled: 'cancelled'
 };
 export const PlayerPosition = {
     goalkeeper: 'goalkeeper',
