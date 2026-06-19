@@ -85,50 +85,6 @@ model Tournament {
   @@map("tournaments")
 }
 
-// ============================================================
-// SEASON
-// ============================================================
-
-enum SeasonStatus {
-  upcoming
-  registration_open
-  ongoing
-  finished
-  cancelled
-}
-
-model Season {
-  id                    Int          @id @default(autoincrement())
-  name                  String       @unique
-  description           String?
-  status                SeasonStatus @default(upcoming)
-  start_date            DateTime?
-  end_date              DateTime?
-  registration_deadline DateTime?
-  max_teams             Int
-  is_registration_open  Boolean      @default(false)
-  is_active             Boolean      @default(true)
-  created_at            DateTime     @default(now())
-  updated_at            DateTime?    @updatedAt
-
-  deleted_at       DateTime?
-  registration_fee Decimal   @default(0) @db.Decimal(10, 2)
-
-  tournament_id Int
-
-  tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
-
-  phases           Phase[]
-  season_teams     SeasonTeam[]
-  user             User?             @relation(fields: [user_id], references: [id])
-  user_id          Int?
-  playerStatistics PlayerStatistic[]
-  notifications    Notification[]
-  matches          Match[]
-
-  @@map("seasons")
-}
-
 model TournamentRule {
   id            Int       @id @default(autoincrement())
   tournament_id Int       @unique
@@ -202,6 +158,50 @@ model Phase {
   matches Match[]
 
   @@map("phases")
+}
+
+// ============================================================
+// SEASON
+// ============================================================
+
+enum SeasonStatus {
+  upcoming
+  registration_open
+  ongoing
+  finished
+  cancelled
+}
+
+model Season {
+  id                    Int          @id @default(autoincrement())
+  name                  String       @unique
+  description           String?
+  status                SeasonStatus @default(upcoming)
+  start_date            DateTime?
+  end_date              DateTime?
+  registration_deadline DateTime?
+  max_teams             Int
+  is_registration_open  Boolean      @default(false)
+  is_active             Boolean      @default(true)
+  created_at            DateTime     @default(now())
+  updated_at            DateTime?    @updatedAt
+
+  deleted_at       DateTime?
+  registration_fee Decimal   @default(0) @db.Decimal(10, 2)
+
+  tournament_id Int
+
+  tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
+
+  phases           Phase[]
+  season_teams     SeasonTeam[]
+  user             User?             @relation(fields: [user_id], references: [id])
+  user_id          Int?
+  playerStatistics PlayerStatistic[]
+  notifications    Notification[]
+  matches          Match[]
+
+  @@map("seasons")
 }
 
 // ============================================================
@@ -329,9 +329,8 @@ model TeamPlayer {
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Cascade)
   player Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
 
-  user              User?              @relation(fields: [user_id], references: [id])
-  user_id           Int?
-  seasonTeamPlayers SeasonTeamPlayer[]
+  user    User? @relation(fields: [user_id], references: [id])
+  user_id Int?
 
   @@unique([team_id, jersey_number])
   @@unique([team_id, player_id])
@@ -367,10 +366,9 @@ model SeasonTeam {
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Restrict)
   group  Group? @relation(fields: [group_id], references: [id], onDelete: SetNull)
 
-  user              User?              @relation(fields: [user_id], references: [id])
-  user_id           Int?
-  payments          Payment[]
-  seasonTeamPlayers SeasonTeamPlayer[]
+  user     User?     @relation(fields: [user_id], references: [id])
+  user_id  Int?
+  payments Payment[]
 
   @@unique([season_id, team_id])
   @@map("season_teams")
@@ -429,6 +427,35 @@ model Match {
   season       Season?      @relation(fields: [season_id], references: [id])
 
   @@map("matches")
+}
+
+model Venue {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  address    String?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  matches Match[]
+
+  @@map("venues")
+}
+
+model TeamLeader {
+  id         Int       @id @default(autoincrement())
+  team_id    Int
+  user_id    Int
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@map("team_leaders")
 }
 
 // ============================================================
@@ -519,35 +546,6 @@ enum PaymentStatus {
   rejected
 }
 
-model Venue {
-  id         Int       @id @default(autoincrement())
-  name       String    @unique
-  address    String?
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
-  deleted_at DateTime?
-
-  matches Match[]
-
-  @@map("venues")
-}
-
-model TeamLeader {
-  id         Int       @id @default(autoincrement())
-  team_id    Int
-  user_id    Int
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
-  deleted_at DateTime?
-
-  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
-
-  @@map("team_leaders")
-}
-
 model TeamStanding {
   id             Int       @id @default(autoincrement())
   team_id        Int
@@ -636,23 +634,6 @@ model Payment {
   season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
 
   @@map("payments")
-}
-
-model SeasonTeamPlayer {
-  id             Int       @id @default(autoincrement())
-  season_team_id Int
-  team_player_id Int
-  jersey_number  Int
-  is_active      Boolean   @default(true)
-  created_at     DateTime  @default(now())
-  updated_at     DateTime? @updatedAt
-  deleted_at     DateTime?
-
-  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
-  team_player TeamPlayer @relation(fields: [team_player_id], references: [id], onDelete: Cascade)
-
-  @@unique([season_team_id, team_player_id])
-  @@map("season_team_players")
 }
 
 model MatchResult {
