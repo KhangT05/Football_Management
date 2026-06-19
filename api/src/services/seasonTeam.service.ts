@@ -37,6 +37,13 @@ export class SeasonTeamService {
     }
 
     async selfRegister(data: SelfRegisterSeasonTeamDto, userId: number): Promise<SeasonTeamWithRelations> {
+
+        const team = await this.prisma.team.findFirst({
+            where: { user_id: userId },
+            select: { id: true },
+        });
+        if (!team) throw createAppError("FORBIDDEN", "You are not a leader of any team");
+
         return this.prisma.$transaction(async (tx) => {
             // Lock season row — serialize register cùng season, tránh TOCTOU trên
             // assertSlotAvailable (2 request đọc count cùng lúc trước khi cái đầu
@@ -44,14 +51,17 @@ export class SeasonTeamService {
             await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${data.season_id} FOR UPDATE`;
 
             const season = await tx.season.findUnique({ where: { id: data.season_id } });
+
             if (!season) throw createAppError("NOT_FOUND", `Season ${data.season_id} not found`);
+
             if (!season.is_registration_open)
                 throw createAppError("FORBIDDEN", "Season is not open for registration");
+
             if (season.registration_deadline && season.registration_deadline < new Date())
                 throw createAppError("FORBIDDEN", "Registration deadline has passed");
 
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
-            return this.createOrReactivate(tx, data.season_id, data.team_id, userId, SeasonTeamStatus.pending);
+            return this.createOrReactivate(tx, data.season_id, team.id, userId, SeasonTeamStatus.pending);
         });
     }
 
