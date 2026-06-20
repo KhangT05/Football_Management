@@ -179,26 +179,6 @@ export async function seedTeams(db, adminUserId, seasonId) {
         const teamPlayers = await db.teamPlayer.findMany({
             where: { team_id: team.id, approval_status: "approved" },
         });
-        for (const tp of teamPlayers) {
-            const exists = await db.seasonTeamPlayer.findUnique({
-                where: {
-                    season_team_id_team_player_id: {
-                        season_team_id: seasonTeam.id,
-                        team_player_id: tp.id,
-                    },
-                },
-            });
-            if (!exists) {
-                await db.seasonTeamPlayer.create({
-                    data: {
-                        season_team_id: seasonTeam.id,
-                        team_player_id: tp.id,
-                        jersey_number: tp.jersey_number,
-                        is_active: true,
-                    },
-                });
-            }
-        }
         results.push({
             teamId: team.id,
             teamName: team.name,

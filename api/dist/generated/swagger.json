@@ -1859,11 +1859,27 @@
             "BulkDeleteDto": {
                 "$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
             },
+            "GroupStatus": {
+                "type": "string",
+                "enum": [
+                    "DRAFT",
+                    "LOCKED",
+                    "SCHEDULED",
+                    "SCHEDULE_FAILED"
+                ]
+            },
             "DefaultSelection__36_GroupPayload_": {
                 "properties": {
+                    "scheduleGeneratedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
                     "phase_id": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/GroupStatus"
                     },
                     "updated_at": {
                         "type": "string",
@@ -1885,7 +1901,9 @@
                     }
                 },
                 "required": [
+                    "scheduleGeneratedAt",
                     "phase_id",
+                    "status",
                     "updated_at",
                     "created_at",
                     "is_active",

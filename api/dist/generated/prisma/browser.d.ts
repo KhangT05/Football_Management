@@ -23,11 +23,6 @@ export type User_Role = Prisma.User_RoleModel;
  */
 export type Tournament = Prisma.TournamentModel;
 /**
- * Model Season
- *
- */
-export type Season = Prisma.SeasonModel;
-/**
  * Model TournamentRule
  *
  */
@@ -37,6 +32,11 @@ export type TournamentRule = Prisma.TournamentRuleModel;
  *
  */
 export type Phase = Prisma.PhaseModel;
+/**
+ * Model Season
+ *
+ */
+export type Season = Prisma.SeasonModel;
 /**
  * Model Group
  *
@@ -58,6 +58,11 @@ export type Player = Prisma.PlayerModel;
  */
 export type TeamPlayer = Prisma.TeamPlayerModel;
 /**
+ * Model TeamLeader
+ *
+ */
+export type TeamLeader = Prisma.TeamLeaderModel;
+/**
  * Model SeasonTeam
  *
  */
@@ -68,20 +73,15 @@ export type SeasonTeam = Prisma.SeasonTeamModel;
  */
 export type Match = Prisma.MatchModel;
 /**
- * Model MatchEvent
- *
- */
-export type MatchEvent = Prisma.MatchEventModel;
-/**
  * Model Venue
  *
  */
 export type Venue = Prisma.VenueModel;
 /**
- * Model TeamLeader
+ * Model MatchEvent
  *
  */
-export type TeamLeader = Prisma.TeamLeaderModel;
+export type MatchEvent = Prisma.MatchEventModel;
 /**
  * Model TeamStanding
  *
@@ -93,6 +93,11 @@ export type TeamStanding = Prisma.TeamStandingModel;
  */
 export type PlayerStatistic = Prisma.PlayerStatisticModel;
 /**
+ * Model MatchResult
+ *
+ */
+export type MatchResult = Prisma.MatchResultModel;
+/**
  * Model Notification
  *
  */
@@ -103,13 +108,18 @@ export type Notification = Prisma.NotificationModel;
  */
 export type Payment = Prisma.PaymentModel;
 /**
- * Model SeasonTeamPlayer
+ * Model Article
  *
  */
-export type SeasonTeamPlayer = Prisma.SeasonTeamPlayerModel;
+export type Article = Prisma.ArticleModel;
 /**
- * Model MatchResult
+ * Model ArticleTag
  *
  */
-export type MatchResult = Prisma.MatchResultModel;
+export type ArticleTag = Prisma.ArticleTagModel;
+/**
+ * Model ArticleMedia
+ *
+ */
+export type ArticleMedia = Prisma.ArticleMediaModel;
 //# sourceMappingURL=browser.d.ts.map

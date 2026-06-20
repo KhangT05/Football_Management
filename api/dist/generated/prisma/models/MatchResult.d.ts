@@ -63,6 +63,8 @@ export type MatchResultMinAggregateOutputType = {
     status: $Enums.MatchResultStatus | null;
     duration: number | null;
     notes: string | null;
+    appeal_reason: string | null;
+    appeal_note: string | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -86,6 +88,8 @@ export type MatchResultMaxAggregateOutputType = {
     status: $Enums.MatchResultStatus | null;
     duration: number | null;
     notes: string | null;
+    appeal_reason: string | null;
+    appeal_note: string | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -109,6 +113,8 @@ export type MatchResultCountAggregateOutputType = {
     status: number;
     duration: number;
     notes: number;
+    appeal_reason: number;
+    appeal_note: number;
     is_active: number;
     created_at: number;
     updated_at: number;
@@ -165,6 +171,8 @@ export type MatchResultMinAggregateInputType = {
     status?: true;
     duration?: true;
     notes?: true;
+    appeal_reason?: true;
+    appeal_note?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -188,6 +196,8 @@ export type MatchResultMaxAggregateInputType = {
     status?: true;
     duration?: true;
     notes?: true;
+    appeal_reason?: true;
+    appeal_note?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -211,6 +221,8 @@ export type MatchResultCountAggregateInputType = {
     status?: true;
     duration?: true;
     notes?: true;
+    appeal_reason?: true;
+    appeal_note?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -311,6 +323,8 @@ export type MatchResultGroupByOutputType = {
     status: $Enums.MatchResultStatus;
     duration: number | null;
     notes: string | null;
+    appeal_reason: string | null;
+    appeal_note: string | null;
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
@@ -345,6 +359,8 @@ export type MatchResultWhereInput = {
     status?: Prisma.EnumMatchResultStatusFilter<"MatchResult"> | $Enums.MatchResultStatus;
     duration?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     notes?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_reason?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_note?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
     is_active?: Prisma.BoolFilter<"MatchResult"> | boolean;
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
@@ -370,6 +386,8 @@ export type MatchResultOrderByWithRelationInput = {
     status?: Prisma.SortOrder;
     duration?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
+    appeal_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    appeal_note?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -399,6 +417,8 @@ export type MatchResultWhereUniqueInput = Prisma.AtLeast<{
     status?: Prisma.EnumMatchResultStatusFilter<"MatchResult"> | $Enums.MatchResultStatus;
     duration?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     notes?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_reason?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_note?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
     is_active?: Prisma.BoolFilter<"MatchResult"> | boolean;
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
@@ -424,6 +444,8 @@ export type MatchResultOrderByWithAggregationInput = {
     status?: Prisma.SortOrder;
     duration?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
+    appeal_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    appeal_note?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -455,6 +477,8 @@ export type MatchResultScalarWhereWithAggregatesInput = {
     status?: Prisma.EnumMatchResultStatusWithAggregatesFilter<"MatchResult"> | $Enums.MatchResultStatus;
     duration?: Prisma.IntNullableWithAggregatesFilter<"MatchResult"> | number | null;
     notes?: Prisma.StringNullableWithAggregatesFilter<"MatchResult"> | string | null;
+    appeal_reason?: Prisma.StringNullableWithAggregatesFilter<"MatchResult"> | string | null;
+    appeal_note?: Prisma.StringNullableWithAggregatesFilter<"MatchResult"> | string | null;
     is_active?: Prisma.BoolWithAggregatesFilter<"MatchResult"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"MatchResult"> | Date | string | null;
@@ -475,6 +499,8 @@ export type MatchResultCreateInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -500,6 +526,8 @@ export type MatchResultUncheckedCreateInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -520,6 +548,8 @@ export type MatchResultUpdateInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -545,6 +575,8 @@ export type MatchResultUncheckedUpdateInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -568,6 +600,8 @@ export type MatchResultCreateManyInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -588,6 +622,8 @@ export type MatchResultUpdateManyMutationInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -611,6 +647,8 @@ export type MatchResultUncheckedUpdateManyInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -651,6 +689,8 @@ export type MatchResultCountOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     duration?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
+    appeal_reason?: Prisma.SortOrder;
+    appeal_note?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -690,6 +730,8 @@ export type MatchResultMaxOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     duration?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
+    appeal_reason?: Prisma.SortOrder;
+    appeal_note?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -713,6 +755,8 @@ export type MatchResultMinOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     duration?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
+    appeal_reason?: Prisma.SortOrder;
+    appeal_note?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -821,6 +865,8 @@ export type MatchResultCreateWithoutWinner_teamInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -844,6 +890,8 @@ export type MatchResultUncheckedCreateWithoutWinner_teamInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -891,6 +939,8 @@ export type MatchResultScalarWhereInput = {
     status?: Prisma.EnumMatchResultStatusFilter<"MatchResult"> | $Enums.MatchResultStatus;
     duration?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     notes?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_reason?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
+    appeal_note?: Prisma.StringNullableFilter<"MatchResult"> | string | null;
     is_active?: Prisma.BoolFilter<"MatchResult"> | boolean;
     created_at?: Prisma.DateTimeFilter<"MatchResult"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
@@ -911,6 +961,8 @@ export type MatchResultCreateWithoutMatchInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -934,6 +986,8 @@ export type MatchResultUncheckedCreateWithoutMatchInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -967,6 +1021,8 @@ export type MatchResultUpdateWithoutMatchInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -990,6 +1046,8 @@ export type MatchResultUncheckedUpdateWithoutMatchInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1012,6 +1070,8 @@ export type MatchResultCreateManyWinner_teamInput = {
     status?: $Enums.MatchResultStatus;
     duration?: number | null;
     notes?: string | null;
+    appeal_reason?: string | null;
+    appeal_note?: string | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1032,6 +1092,8 @@ export type MatchResultUpdateWithoutWinner_teamInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1055,6 +1117,8 @@ export type MatchResultUncheckedUpdateWithoutWinner_teamInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1077,6 +1141,8 @@ export type MatchResultUncheckedUpdateManyWithoutWinner_teamInput = {
     status?: Prisma.EnumMatchResultStatusFieldUpdateOperationsInput | $Enums.MatchResultStatus;
     duration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    appeal_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1100,6 +1166,8 @@ export type MatchResultSelect<ExtArgs extends runtime.Types.Extensions.InternalA
     status?: boolean;
     duration?: boolean;
     notes?: boolean;
+    appeal_reason?: boolean;
+    appeal_note?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -1125,12 +1193,14 @@ export type MatchResultSelectScalar = {
     status?: boolean;
     duration?: boolean;
     notes?: boolean;
+    appeal_reason?: boolean;
+    appeal_note?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
 };
-export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_score" | "away_score" | "home_half_time_score" | "away_half_time_score" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["matchResult"]>;
+export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_score" | "away_score" | "home_half_time_score" | "away_half_time_score" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "appeal_reason" | "appeal_note" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["matchResult"]>;
 export type MatchResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
     winner_team?: boolean | Prisma.MatchResult$winner_teamArgs<ExtArgs>;
@@ -1159,6 +1229,8 @@ export type $MatchResultPayload<ExtArgs extends runtime.Types.Extensions.Interna
         status: $Enums.MatchResultStatus;
         duration: number | null;
         notes: string | null;
+        appeal_reason: string | null;
+        appeal_note: string | null;
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
@@ -1484,6 +1556,8 @@ export interface MatchResultFieldRefs {
     readonly status: Prisma.FieldRef<"MatchResult", 'MatchResultStatus'>;
     readonly duration: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly notes: Prisma.FieldRef<"MatchResult", 'String'>;
+    readonly appeal_reason: Prisma.FieldRef<"MatchResult", 'String'>;
+    readonly appeal_note: Prisma.FieldRef<"MatchResult", 'String'>;
     readonly is_active: Prisma.FieldRef<"MatchResult", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"MatchResult", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"MatchResult", 'DateTime'>;
