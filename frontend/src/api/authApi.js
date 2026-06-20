@@ -4,24 +4,25 @@ import axiosClient from './axiosClient';
  * ============================================================
  * authApi - Các hàm gọi API liên quan đến xác thực người dùng
  * ============================================================
- * Base URL được cấu hình trong axiosClient (VITE_API_URL)
- * Tất cả response được unwrap bởi interceptor → trả về object { status, message, data, timestamp }
+ * Base URL: /api/v1 (qua Vite proxy → backend port 3000)
+ *
+ * Response shape chuẩn từ backend (sau khi axiosClient interceptor unwrap):
+ *   { status, message, data: { accessToken, csrfToken, ... }, timestamp }
+ *
+ * axiosClient interceptor trả về object đó trực tiếp (response.data của axios).
+ * Tức là: const res = await authApi.login() → res.data = { accessToken, ... }
  * ============================================================
  */
 export const authApi = {
 
   /**
-   * Đăng nhập người dùng
+   * Đăng nhập
    * POST /auth/login
-   *
-   * @param {{ email: string, password: string }} data - Thông tin đăng nhập
+   * @param {{ email: string, password: string }} data
    * @returns {{ status, message, data: { accessToken, tokenType, expiresIn, csrfToken } }}
    *
-   * Backend sẽ:
-   * 1. Kiểm tra email + password
-   * 2. Tạo access token (JWT, 15 phút) + refresh token UUID
-   * 3. Set httpOnly cookie 'refresh_token' (30 ngày, path=/api/v1/auth/refresh)
-   * 4. Trả accessToken + csrfToken trong body
+   * Backend set httpOnly cookie refresh_token tự động.
+   * Cookie có path=/api/v1/auth/refresh → chỉ gửi khi gọi /refresh.
    */
   login: (data) => {
     return axiosClient.post('/auth/login', data);
@@ -30,29 +31,26 @@ export const authApi = {
   /**
    * Đăng ký tài khoản mới
    * POST /auth/register
-   *
    * @param {{ name: string, email: string, password: string }} data
    * @returns {{ status, message, data: { accessToken, tokenType, expiresIn, csrfToken } }}
    *
-   * Backend trả về 201 Created + tự động login luôn (trả token tương tự login)
-   * Frontend map: { ten, email, password } → { name, email, password }
+   * Backend map: name (min 1), email, password (min 8 chars)
+   * Tự động login sau register — trả token giống login (201 Created)
    */
   register: (data) => {
     return axiosClient.post('/auth/register', {
-      name: data.ten,      // Backend dùng 'name', form dùng 'ten'
+      name: data.ten ?? data.name,  // form dùng 'ten', backend dùng 'name'
       email: data.email,
       password: data.password,
     });
   },
 
   /**
-   * Lấy thông tin profile người dùng đang đăng nhập
+   * Lấy thông tin profile user hiện tại
    * GET /auth/me
+   * @returns {{ status, message, data: { id, name, email } }}
    *
-   * Cần gửi kèm Authorization: Bearer <accessToken>
-   * axiosClient.interceptors sẽ tự gắn header này từ biến in-memory
-   *
-   * @returns {{ status, message, data: { id, name, email, role, ... } }}
+   * axiosClient interceptor tự gắn Authorization: Bearer <accessToken>
    */
   getProfile: () => {
     return axiosClient.get('/auth/me');
@@ -62,11 +60,11 @@ export const authApi = {
    * Làm mới access token khi hết hạn
    * POST /auth/refresh
    *
-   * Được gọi TỰ ĐỘNG bởi axiosClient response interceptor khi nhận 401
-   * - Cookie refresh_token: trình duyệt tự gửi (httpOnly, withCredentials: true)
-   * - Header X-CSRF-TOKEN: gửi từ localStorage để chống CSRF attack
+   * Được gọi TỰ ĐỘNG bởi axiosClient response interceptor khi nhận 401.
+   * - Cookie refresh_token: browser tự gửi (httpOnly, path=/api/v1/auth/refresh)
+   * - Header X-CSRF-TOKEN: gửi từ localStorage để chống CSRF
    *
-   * @param {string} csrfToken - CSRF token lấy từ localStorage
+   * @param {string} csrfToken - CSRF token từ localStorage
    * @returns {{ status, message, data: { accessToken, csrfToken, ... } }}
    */
   refreshToken: (csrfToken) => {
@@ -74,47 +72,33 @@ export const authApi = {
       '/auth/refresh',
       {},
       {
-        // Gửi CSRF token trong header để backend xác thực
         headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {},
       }
     );
   },
 
   /**
-   * Đăng xuất người dùng
+   * Đăng xuất
    * POST /auth/logout
+   * @returns void — Backend trả 204 No Content
    *
-   * Cần Authorization: Bearer <accessToken> (Security('jwt') trong backend)
-   * Backend sẽ:
-   * 1. Xóa session Redis (invalidate refresh token)
-   * 2. Clear httpOnly cookie 'refresh_token'
-   * Frontend cần xóa: accessToken (memory) + csrfToken (localStorage)
-   *
-   * @returns {void} - Backend trả 204 No Content
+   * Backend: xóa Redis session + clear httpOnly cookie
+   * Frontend: axiosClient gửi Authorization header tự động
    */
   logout: () => {
     return axiosClient.post('/auth/logout');
   },
 
   /**
-   * Đăng nhập qua mạng xã hội (Google / Github)
-   * [CHƯA ĐƯỢC BACKEND IMPLEMENT]
+   * Đăng nhập bằng mạng xã hội (Google / GitHub)
+   * [Backend chưa implement OAuth — stub để không crash UI]
    *
-   * @param {'google'|'github'} provider - Nhà cung cấp OAuth
-   * @returns {Promise} - Mock reject với thông báo
+   * Khi backend implement sẽ redirect sang provider OAuth flow.
+   * @param {'google'|'github'} provider
    */
   socialLogin: (provider) => {
-    // Mock: giả lập độ trễ API và trả về lỗi thông báo chưa hỗ trợ
-    return new Promise((_, reject) => {
-      setTimeout(() => {
-        reject({
-          response: {
-            data: {
-              message: `Tính năng kết nối ${provider === 'google' ? 'Google' : 'Github'} đang được Backend phát triển.`,
-            },
-          },
-        });
-      }, 1000);
-    });
+    // TODO: Implement khi backend có OAuth endpoints
+    // return axiosClient.get(`/auth/oauth/${provider}`);
+    return Promise.reject(new Error(`Đăng nhập ${provider} chưa được hỗ trợ.`));
   },
 };

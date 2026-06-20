@@ -72,8 +72,8 @@ export default function RegisterTeam() {
 
       await teamApi.registerTeam(payload);
       setIsSuccess(true);
-      toast.success('Đăng ký đội bóng thành công! BTC sẽ xem xét và phê duyệt sớm nhất. 🎉', 5000);
-      setTimeout(() => navigate('/doi-cua-toi'), 2500);
+      toast.success('Đăng ký đội bóng thành công! Vui lòng chờ Admin duyệt. Sau khi được duyệt, bạn sẽ thanh toán lệ phí để chính thức tham gia giải.', 6000);
+      setTimeout(() => navigate('/doi-cua-toi'), 3500);
 
     } catch (error) {
       const msg = error?.response?.data?.message;

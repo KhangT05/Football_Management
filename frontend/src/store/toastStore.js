@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 
+const MAX_TOASTS = 5; // Giới hạn toast tối đa → ngăn stack overflow khi lỗi liên tiếp
 let _toastId = 0;
+const _timeoutMap = new Map(); // Lưu timeout reference để cleanup khi remove sớm
 
-const useToastStore = create((set) => ({
+const useToastStore = create((set, get) => ({
   toasts: [],
 
   /**
@@ -11,22 +13,47 @@ const useToastStore = create((set) => ({
    */
   addToast: ({ message, type = 'info', duration = 3500 }) => {
     const id = ++_toastId;
-    set((state) => ({
-      toasts: [...state.toasts, { id, message, type, duration }],
-    }));
+
+    set((state) => {
+      let toasts = [...state.toasts, { id, message, type, duration }];
+
+      // Nếu vượt quá giới hạn → xóa toast cũ nhất (FIFO)
+      while (toasts.length > MAX_TOASTS) {
+        const removed = toasts.shift();
+        // Cleanup timeout của toast bị xóa sớm
+        const tid = _timeoutMap.get(removed.id);
+        if (tid) {
+          clearTimeout(tid);
+          _timeoutMap.delete(removed.id);
+        }
+      }
+
+      return { toasts };
+    });
+
     // Tự xóa sau `duration` ms
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
+      _timeoutMap.delete(id);
       set((state) => ({
         toasts: state.toasts.filter((t) => t.id !== id),
       }));
     }, duration);
+
+    _timeoutMap.set(id, timeoutId);
     return id;
   },
 
-  removeToast: (id) =>
+  removeToast: (id) => {
+    // Cleanup timeout khi user đóng toast thủ công
+    const tid = _timeoutMap.get(id);
+    if (tid) {
+      clearTimeout(tid);
+      _timeoutMap.delete(id);
+    }
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
-    })),
+    }));
+  },
 
   // Shorthand helpers
   success: (message, duration) =>

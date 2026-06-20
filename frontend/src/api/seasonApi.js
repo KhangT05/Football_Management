@@ -1,0 +1,71 @@
+import axiosClient from './axiosClient';
+
+/**
+ * ============================================================
+ * seasonApi - API calls cho Seasons
+ * ============================================================
+ * Base: /api/v1/seasons
+ * Cần JWT. Response unwrapped bởi axiosClient interceptor.
+ *
+ * Season gồm: tournament_id (FK), start/end dates, status, max_teams...
+ * ============================================================
+ */
+export const seasonApi = {
+
+  /**
+   * Lấy danh sách mùa giải (có phân trang, kèm user info)
+   * GET /seasons
+   * @param {{ page?, per_page?, q?, sort?, direction? }} params
+   */
+  getAll: (params = {}) => {
+    return axiosClient.get('/seasons', { params });
+  },
+
+  /**
+   * Lấy chi tiết một mùa giải (kèm user info)
+   * GET /seasons/{id}
+   * @param {number} id
+   */
+  getById: (id) => {
+    return axiosClient.get(`/seasons/${id}`);
+  },
+
+  /**
+   * Tạo mùa giải mới
+   * POST /seasons
+   * @param {{
+   *   name: string,
+   *   description?: string,
+   *   status?: 'upcoming'|'registration_open'|'ongoing'|'finished'|'cancelled',
+   *   start_date: string|Date,
+   *   end_date: string|Date,
+   *   registration_deadline: string|Date,
+   *   max_teams: number,
+   *   is_registration_open?: boolean,
+   *   is_active?: boolean,
+   *   tournament_id: number
+   * }} data
+   */
+  create: (data) => {
+    return axiosClient.post('/seasons', data);
+  },
+
+  /**
+   * Cập nhật mùa giải
+   * PATCH /seasons/{id}
+   * @param {number} id
+   * @param {Partial<CreateSeasonDto>} data
+   */
+  update: (id, data) => {
+    return axiosClient.patch(`/seasons/${id}`, data);
+  },
+
+  /**
+   * Xóa mềm mùa giải
+   * DELETE /seasons/{id}
+   * @param {number} id
+   */
+  delete: (id) => {
+    return axiosClient.delete(`/seasons/${id}`);
+  },
+};

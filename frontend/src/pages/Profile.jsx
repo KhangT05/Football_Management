@@ -2,7 +2,7 @@ import { User, Mail, Shield, Camera, Save, Phone, Loader2, CheckCircle2 } from '
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import { useState, useEffect } from 'react';
-import { userApi } from '../api/userApi';
+import { userApi } from '../api';
 
 export default function Profile() {
   const { user, setUser } = useAuthStore();
