@@ -18,7 +18,6 @@ export const generateScheduleSchema = z.object({
     minGroupSize: z.number().int().min(2),
     maxGroupSize: z.number().int().min(2),
     venueIds: venueIdsField,
-    startDate: isoDatetime('startDate'),
     matchTimes: matchTimesField,
     doubleRound: z.boolean().optional().default(true),
     minRestDaysPerTeam: z.number().int().min(1).optional(),
@@ -26,7 +25,6 @@ export const generateScheduleSchema = z.object({
 
 export const autoScheduleSchema = z.object({
     venueIds: venueIdsField,
-    startDate: isoDatetime('startDate'),
     matchTimes: matchTimesField,
 });
 
