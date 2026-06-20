@@ -1,50 +1,12 @@
-// ─── Core Types ───────────────────────────────────────────────────────────────
-
-export type SortDir = "asc" | "desc";
-
-export interface PaginationMeta {
-    total: number;
-    page: number;
-    per_page: number;
-    last_page: number;
-    has_next: boolean;
-}
-
-export interface PaginatedResult<T> {
-    data: T[];
-    meta: PaginationMeta;
-}
-
-/** Request query đến từ controller — raw, chưa validate */
-export interface QueryRequest {
-    q?: string;
-    sort?: string;
-    direction?: SortDir;
-    page?: string | number;
-    per_page?: string | number;
-    filter?: Record<string, Record<string, unknown>>;  // complexFilter
-    [key: string]: unknown;                             // simple filter fields
-}
-
-/** Config khai báo 1 lần ở service — không thay đổi theo request */
-export interface QueryableConfig<TInclude = object, TSelect = object> {
-    searchFields?: string[];
-    sortable?: string[];
-    defaultSort?: { column: string; direction: SortDir };
-    filterable?: string[];          // whitelist simple filter fields
-    defaultPerPage?: number;
-    maxPerPage?: number;
-    include?: TInclude;
-    select?: TSelect;
-    /** Hook chạy trước khi build — thêm where cố định (soft delete, tenant, ...) */
-    beforeBuild?: (where: WhereClause[]) => void;
-    /** Hook transform data sau khi query */
-    afterFetch?: <T>(data: T[]) => T[];
-}
-
-type WhereClause = Record<string, unknown>;
-
 // ─── Builder ──────────────────────────────────────────────────────────────────
+
+import {
+    CursorPage,
+    CursorQueryRequest,
+    PaginatedResult, PaginationMeta,
+    QueryableConfig, QueryRequest, SortDir,
+    WhereClause
+} from "../types/queryable.type.js";
 
 class QueryBuilder {
     private wheres: WhereClause[] = [];
@@ -52,6 +14,8 @@ class QueryBuilder {
     private skip = 0;
     private take: number;
     private page = 1;
+    private cursorColumn = "id";
+    private cursorDir: SortDir = "asc";
 
     constructor(private config: QueryableConfig) {
         this.take = config.defaultPerPage ?? 15;
@@ -132,6 +96,38 @@ class QueryBuilder {
         this.skip = (this.page - 1) * this.take;
         return this;
     }
+    applyScrollSort(column?: string, direction?: SortDir): this {
+        const { sortable = [], defaultSort } = this.config;
+        const dir: SortDir = direction === "desc" ? "desc" : "asc";
+        const col = column && sortable.includes(column) ? column : defaultSort?.column ?? "id";
+        this.cursorColumn = col;
+        this.cursorDir = dir;
+        this.orderBy = col === "id" ? [{ id: dir }] : [{ [col]: dir }, { id: dir }];
+        return this;
+    }
+
+    applyCursor(cursor?: string): this {
+        if (!cursor) return this;
+        const { v, id } = decodeCursor(cursor);
+        const op = this.cursorDir === "asc" ? "gt" : "lt";
+        this.wheres.push(
+            this.cursorColumn === "id"
+                ? { id: { [op]: id } }
+                : { OR: [{ [this.cursorColumn]: { [op]: v } }, { [this.cursorColumn]: v, id: { [op]: id } }] }
+        );
+        return this;
+    }
+
+    getCursorColumn(): string { return this.cursorColumn; }
+
+    buildScroll(limit: number) {
+        this.config.beforeBuild?.(this.wheres);
+        return {
+            where: this.wheres.length ? { AND: this.wheres } : {},
+            orderBy: this.orderBy,
+            take: limit + 1, // +1 để biết hasMore mà không cần COUNT
+        };
+    }
 
     build(): { where: object; orderBy: object[]; skip: number; take: number } {
         // beforeBuild hook — thêm fixed where (deleted_at, tenant_id, ...)
@@ -149,6 +145,7 @@ class QueryBuilder {
         const last_page = Math.ceil(total / this.take) || 1;
         return { total, page: this.page, per_page: this.take, last_page, has_next: this.page < last_page };
     }
+
 }
 
 // ─── Queryable Factory ────────────────────────────────────────────────────────
@@ -192,10 +189,52 @@ export class Queryable<T, Delegate extends {
         const data = config.afterFetch ? config.afterFetch(raw) : raw;
         return { data, meta: builder.buildMeta(total) };
     }
+
+    async runScroll(req: CursorQueryRequest, overrideConfig?: Partial<QueryableConfig>): Promise<CursorPage<T>> {
+        const config = overrideConfig ? { ...this.baseConfig, ...overrideConfig } : this.baseConfig;
+        const builder = new QueryBuilder(config);
+        const limit = Math.min(Math.max(1, Number(req.limit) || config.defaultPerPage || 20), config.maxPerPage ?? 100);
+
+        const args = builder
+            .applySimpleFilter(req)
+            .applyComplexFilter(req.filter)
+            .applySearch(req.q)
+            .applyScrollSort(req.sort, req.direction)
+            .applyCursor(req.cursor)
+            .buildScroll(limit);
+
+        // ép id + cursorColumn luôn có trong select, không thì cursor kế tiếp bị undefined
+        const select = config.select
+            ? { ...config.select, id: true, [builder.getCursorColumn()]: true }
+            : undefined;
+
+        const rows = await this.delegate.findMany({
+            ...args,
+            ...(config.include && { include: config.include }),
+            ...(select && { select }),
+        });
+
+        const hasMore = rows.length > limit;
+        const page = hasMore ? rows.slice(0, limit) : rows;
+        const data = config.afterFetch ? config.afterFetch(page) : page;
+        const last = page[page.length - 1];
+
+        return {
+            data,
+            hasMore,
+            nextCursor: hasMore && last ? encodeCursor(last[builder.getCursorColumn()], last.id) : null,
+        };
+    }
 }
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
 function toArray(value: unknown): unknown[] {
     if (Array.isArray(value)) return value;
     return String(value).split(",").map((v) => v.trim());
+}
+function encodeCursor(v: unknown, id: number): string {
+    return Buffer.from(JSON.stringify({ v, id })).toString("base64url");
+}
+function decodeCursor(cursor: string): { v: unknown; id: number } {
+    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf-8"));
 }

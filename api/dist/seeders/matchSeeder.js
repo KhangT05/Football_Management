@@ -1,4 +1,43 @@
-// Tạo tất cả cặp round-robin trong 1 group (C(n,2))
+// ============================================================
+// DATE UTILS — timezone-safe
+// ============================================================
+/**
+ * Tạo Date object tại midnight UTC+7 (Asia/Ho_Chi_Minh).
+ * Dùng explicit offset thay vì new Date(string) để tránh
+ * parser ambiguity (ISO string → UTC, local string → local TZ).
+ *
+ * MariaDB DATETIME không lưu timezone → luôn truyền vào giờ
+ * nhất quán (UTC hoặc UTC+7). Chọn UTC+7 vì app ở VN.
+ *
+ * UTC+7 midnight = UTC 17:00 hôm trước
+ */
+function makeMatchDate(year, month, day, hour = 15) {
+    // month là 1-based
+    // Tạo theo UTC, offset -7h để ra "15:00 UTC = 22:00 UTC+7"
+    // hoặc dùng 08:00 UTC = 15:00 UTC+7 (giờ đá bóng hợp lý)
+    return new Date(Date.UTC(year, month - 1, day, hour - 7 < 0 ? hour + 17 : hour - 7, 0, 0));
+    // Ví dụ: 15:00 UTC+7 = 08:00 UTC
+}
+/**
+ * Thêm N ngày vào một Date (không mutation).
+ */
+function addDays(date, days) {
+    return new Date(date.getTime() + days * 86_400_000);
+}
+/**
+ * Thêm N ngày vào date, đồng thời offset thêm theo slotIndex
+ * để các match trong cùng 1 vòng không trùng venue+time.
+ *
+ * Nếu có nhiều venue thì rotate venue thay vì chỉ offset ngày.
+ * Seeder này dùng 1 venue → offset ngày là đủ.
+ */
+function matchDateForSlot(base, dayOffset, slotIndex) {
+    // Mỗi slot cách nhau 1 ngày nếu cùng venue
+    return addDays(base, dayOffset + slotIndex);
+}
+// ============================================================
+// HELPERS (giữ nguyên từ bản gốc)
+// ============================================================
 function roundRobinPairs(teamIds) {
     const pairs = [];
     for (let i = 0; i < teamIds.length; i++) {
@@ -8,7 +47,6 @@ function roundRobinPairs(teamIds) {
     }
     return pairs;
 }
-// Random score (1-0 weighted toward low scores, realistic)
 function randomScore() {
     const options = [
         [1, 0], [2, 0], [3, 0], [1, 1], [2, 1],
@@ -18,9 +56,7 @@ function randomScore() {
     ];
     return options[Math.floor(Math.random() * options.length)];
 }
-// Build match events cho 1 match (goals + cards)
 async function createMatchEvents(db, matchId, homeTeamId, awayTeamId, homeScore, awayScore, homePlayerIds, awayPlayerIds) {
-    // Goals
     const goalMinutes = Array.from({ length: homeScore + awayScore }, () => Math.floor(Math.random() * 90) + 1).sort((a, b) => a - b);
     let hGoals = 0;
     let aGoals = 0;
@@ -46,7 +82,6 @@ async function createMatchEvents(db, matchId, homeTeamId, awayTeamId, homeScore,
             },
         });
     }
-    // Yellow cards (1-3 per match, random)
     const numYellows = Math.floor(Math.random() * 4);
     for (let i = 0; i < numYellows; i++) {
         const isHome = Math.random() > 0.5;
@@ -69,7 +104,6 @@ async function createMatchEvents(db, matchId, homeTeamId, awayTeamId, homeScore,
         });
     }
 }
-// Update TeamStanding sau mỗi match
 async function updateStanding(db, groupId, teamId, goalsFor, goalsAgainst, result) {
     const standing = await db.teamStanding.findUnique({
         where: { group_id_team_id: { group_id: groupId, team_id: teamId } },
@@ -91,7 +125,6 @@ async function updateStanding(db, groupId, teamId, goalsFor, goalsAgainst, resul
         },
     });
 }
-// Update player statistics
 async function updatePlayerStat(db, playerId, teamId, seasonId, goals, yellowCards) {
     const existing = await db.playerStatistic.findUnique({
         where: { player_id_team_id_season_id: { player_id: playerId, team_id: teamId, season_id: seasonId } },
@@ -125,35 +158,85 @@ async function updatePlayerStat(db, playerId, teamId, seasonId, goals, yellowCar
         });
     }
 }
+// ============================================================
+// KNOCKOUT HELPER — tránh lặp code
+// ============================================================
+async function createKnockoutMatch(db, params) {
+    const { phaseId, homeId, awayId, scheduledAt, seasonId, venueId, adminUserId } = params;
+    const [hs, as_] = randomScore();
+    const isExtraTime = hs === as_;
+    const finalHomeWin = isExtraTime ? Math.random() > 0.5 : hs > as_;
+    const winnerId = finalHomeWin ? homeId : awayId;
+    const loserId = finalHomeWin ? awayId : homeId;
+    const match = await db.match.create({
+        data: {
+            phase_id: phaseId,
+            home_team_id: homeId,
+            away_team_id: awayId,
+            scheduled_at: scheduledAt,
+            played_at: scheduledAt,
+            home_score: hs,
+            away_score: as_,
+            status: "finished",
+            season_id: seasonId,
+            venue_id: venueId,
+            is_published: true,
+            user_id: adminUserId,
+        },
+    });
+    await db.matchResult.create({
+        data: {
+            match_id: match.id,
+            winner_team_id: winnerId,
+            home_score: hs,
+            away_score: as_,
+            home_half_time_score: Math.floor(hs / 2),
+            away_half_time_score: Math.floor(as_ / 2),
+            home_final_score: hs,
+            away_final_score: as_,
+            home_penalty_score: isExtraTime ? (finalHomeWin ? 5 : 4) : null,
+            away_penalty_score: isExtraTime ? (finalHomeWin ? 4 : 5) : null,
+            result_type: isExtraTime ? "penalty" : "full_time",
+            status: "official",
+            duration: isExtraTime ? 120 : 90,
+        },
+    });
+    return { matchId: match.id, winnerId, loserId, isExtraTime };
+}
+// ============================================================
+// MAIN SEEDER
+// ============================================================
 export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adminUserId) {
     console.log("[MatchSeeder] seeding group stage matches...");
     const { groupStagePhaseId, knockoutPhaseIds, groupIds } = phaseResult;
     const [groupAId, groupBId] = groupIds;
-    // teams[0..3] = Group A, teams[4..7] = Group B
     const groupATeams = teams.slice(0, 4);
     const groupBTeams = teams.slice(4, 8);
     const groupConfig = [
-        { groupId: groupAId, groupTeams: groupATeams },
-        { groupId: groupBId, groupTeams: groupBTeams },
+        { groupId: groupAId, groupTeams: groupATeams, baseDate: makeMatchDate(2024, 3, 1) },
+        { groupId: groupBId, groupTeams: groupBTeams, baseDate: makeMatchDate(2024, 3, 2) },
+        // Group B bắt đầu lệch 1 ngày để không trùng venue+date với Group A
     ];
-    // Track standings: 1st/2nd per group → quarter final
     const groupWinners = {};
-    for (const { groupId, groupTeams } of groupConfig) {
+    for (const { groupId, groupTeams, baseDate } of groupConfig) {
         const pairs = roundRobinPairs(groupTeams.map((t) => t.teamId));
-        let matchDate = new Date("2024-03-01");
-        for (const [homeTeamId, awayTeamId] of pairs) {
-            const [homeScore, awayScore] = randomScore();
+        for (let pairIdx = 0; pairIdx < pairs.length; pairIdx++) {
+            const [homeTeamId, awayTeamId] = pairs[pairIdx];
+            // Mỗi cặp match cách nhau 3 ngày, đảm bảo không trùng venue+scheduled_at
+            // Với venue đơn: mỗi match = 1 ngày riêng
+            const scheduledAt = addDays(baseDate, pairIdx * 3);
+            const homeScore = randomScore()[0];
+            const awayScore = randomScore()[1];
             const homeTeam = groupTeams.find((t) => t.teamId === homeTeamId);
             const awayTeam = groupTeams.find((t) => t.teamId === awayTeamId);
-            // Match
             const match = await db.match.create({
                 data: {
                     phase_id: groupStagePhaseId,
                     group_id: groupId,
                     home_team_id: homeTeamId,
                     away_team_id: awayTeamId,
-                    scheduled_at: new Date(matchDate),
-                    played_at: new Date(matchDate),
+                    scheduled_at: scheduledAt,
+                    played_at: scheduledAt,
                     home_score: homeScore,
                     away_score: awayScore,
                     status: "finished",
@@ -163,9 +246,7 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                     user_id: adminUserId,
                 },
             });
-            // Events
             await createMatchEvents(db, match.id, homeTeamId, awayTeamId, homeScore, awayScore, homeTeam.playerIds, awayTeam.playerIds);
-            // MatchResult
             const winnerId = homeScore > awayScore ? homeTeamId : awayScore > homeScore ? awayTeamId : null;
             await db.matchResult.create({
                 data: {
@@ -182,7 +263,6 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                     duration: 90,
                 },
             });
-            // Update standings
             if (homeScore > awayScore) {
                 await updateStanding(db, groupId, homeTeamId, homeScore, awayScore, "win");
                 await updateStanding(db, groupId, awayTeamId, awayScore, homeScore, "loss");
@@ -195,7 +275,6 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                 await updateStanding(db, groupId, homeTeamId, homeScore, awayScore, "draw");
                 await updateStanding(db, groupId, awayTeamId, awayScore, homeScore, "draw");
             }
-            // Update player stats from events
             const events = await db.matchEvent.findMany({ where: { match_id: match.id } });
             const allTeamPlayers = [
                 ...homeTeam.playerIds.map((pid) => ({ playerId: pid, teamId: homeTeamId })),
@@ -208,17 +287,11 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                     await updatePlayerStat(db, playerId, teamId, seasonId, goals, yellows);
                 }
             }
-            matchDate = new Date(matchDate.getTime() + 3 * 24 * 60 * 60 * 1000); // +3 ngày
         }
-        // Compute group winners (top 2 by points)
         const standings = await db.teamStanding.findMany({
             where: { group_id: groupId },
-            orderBy: [
-                { points: "desc" },
-                { goals_for: "desc" },
-            ],
+            orderBy: [{ points: "desc" }, { goals_for: "desc" }],
         });
-        // Update position
         for (let i = 0; i < standings.length; i++) {
             await db.teamStanding.update({
                 where: { id: standings[i].id },
@@ -229,7 +302,7 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
         console.log(`  → Group #${groupId} top 2:`, groupWinners[groupId]);
     }
     // ============================================================
-    // KNOCKOUT PHASE
+    // KNOCKOUT — mỗi match đặt ngày riêng biệt, không trùng venue
     // ============================================================
     console.log("[MatchSeeder] seeding knockout matches...");
     const groupAWinners = groupWinners[groupAId];
@@ -246,105 +319,49 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
     if (!qfPhaseId || !sfPhaseId || !thirdPlacePhaseId || !finalPhaseId) {
         throw new Error("Missing one or more knockout phase IDs");
     }
-    // Quarter finals: A1 vs B2, B1 vs A2 (cross pairing)
-    const qfPairs = [
-        [a1, b2],
-        [b1, a2],
-    ];
-    // Track knockout winners
+    // Quarter finals — QF1 và QF2 đặt cách nhau 3 ngày (khác ngày = không trùng venue)
+    const qfBaseDate = makeMatchDate(2024, 4, 20);
+    const qfPairs = [[a1, b2], [b1, a2]];
     const sfTeams = [];
-    for (const [homeId, awayId] of qfPairs) {
-        const [hs, as_] = randomScore();
-        // Knockout: nếu draw → penalty
-        const isExtraTime = hs === as_;
-        const finalHomeWin = isExtraTime ? Math.random() > 0.5 : hs > as_;
-        const winnerId = finalHomeWin ? homeId : awayId;
+    for (let i = 0; i < qfPairs.length; i++) {
+        const [homeId, awayId] = qfPairs[i];
+        const scheduledAt = addDays(qfBaseDate, i * 3); // QF1: Apr 20, QF2: Apr 23
+        const { winnerId } = await createKnockoutMatch(db, {
+            phaseId: qfPhaseId,
+            homeId,
+            awayId,
+            scheduledAt,
+            seasonId,
+            venueId,
+            adminUserId,
+        });
         sfTeams.push(winnerId);
-        const match = await db.match.create({
-            data: {
-                phase_id: qfPhaseId,
-                home_team_id: homeId,
-                away_team_id: awayId,
-                scheduled_at: new Date("2024-04-20"),
-                played_at: new Date("2024-04-20"),
-                home_score: hs,
-                away_score: as_,
-                status: "finished",
-                season_id: seasonId,
-                venue_id: venueId,
-                is_published: true,
-                user_id: adminUserId,
-            },
-        });
-        await db.matchResult.create({
-            data: {
-                match_id: match.id,
-                winner_team_id: winnerId,
-                home_score: hs,
-                away_score: as_,
-                home_half_time_score: Math.floor(hs / 2),
-                away_half_time_score: Math.floor(as_ / 2),
-                home_final_score: hs,
-                away_final_score: as_,
-                home_penalty_score: isExtraTime ? (finalHomeWin ? 5 : 4) : null,
-                away_penalty_score: isExtraTime ? (finalHomeWin ? 4 : 5) : null,
-                result_type: isExtraTime ? "penalty" : "full_time",
-                status: "official",
-                duration: isExtraTime ? 120 : 90,
-            },
-        });
     }
-    // Semi finals
+    // Semi finals — sau QF ít nhất 10 ngày, mỗi SF cách 3 ngày
+    const sfBaseDate = makeMatchDate(2024, 5, 5);
     const finalists = [];
     const thirdPlaceTeams = [];
     for (let i = 0; i + 1 < sfTeams.length; i += 2) {
         const homeId = sfTeams[i];
         const awayId = sfTeams[i + 1];
-        const [hs, as_] = randomScore();
-        const isExtraTime = hs === as_;
-        const finalHomeWin = isExtraTime ? Math.random() > 0.5 : hs > as_;
-        const winnerId = finalHomeWin ? homeId : awayId;
-        const loserId = finalHomeWin ? awayId : homeId;
+        const scheduledAt = addDays(sfBaseDate, i * 3); // SF1: May 5, SF2: May 8
+        const { winnerId, loserId } = await createKnockoutMatch(db, {
+            phaseId: sfPhaseId,
+            homeId,
+            awayId,
+            scheduledAt,
+            seasonId,
+            venueId,
+            adminUserId,
+        });
         finalists.push(winnerId);
         thirdPlaceTeams.push(loserId);
-        const match = await db.match.create({
-            data: {
-                phase_id: sfPhaseId,
-                home_team_id: homeId,
-                away_team_id: awayId,
-                scheduled_at: new Date("2024-05-05"),
-                played_at: new Date("2024-05-05"),
-                home_score: hs,
-                away_score: as_,
-                status: "finished",
-                season_id: seasonId,
-                venue_id: venueId,
-                is_published: true,
-                user_id: adminUserId,
-            },
-        });
-        await db.matchResult.create({
-            data: {
-                match_id: match.id,
-                winner_team_id: winnerId,
-                home_score: hs,
-                away_score: as_,
-                home_half_time_score: Math.floor(hs / 2),
-                away_half_time_score: Math.floor(as_ / 2),
-                home_final_score: hs,
-                away_final_score: as_,
-                home_penalty_score: isExtraTime ? (finalHomeWin ? 5 : 4) : null,
-                away_penalty_score: isExtraTime ? (finalHomeWin ? 4 : 5) : null,
-                result_type: isExtraTime ? "penalty" : "full_time",
-                status: "official",
-                duration: isExtraTime ? 120 : 90,
-            },
-        });
     }
-    // Third place match
+    // Third place — Jun 25
     const thirdHome = thirdPlaceTeams[0];
     const thirdAway = thirdPlaceTeams[1];
     if (thirdHome !== undefined && thirdAway !== undefined) {
+        const scheduledAt = makeMatchDate(2024, 6, 25);
         const [hs, as_] = randomScore();
         const winnerId = hs >= as_ ? thirdHome : thirdAway;
         const match = await db.match.create({
@@ -352,8 +369,8 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                 phase_id: thirdPlacePhaseId,
                 home_team_id: thirdHome,
                 away_team_id: thirdAway,
-                scheduled_at: new Date("2024-06-25"),
-                played_at: new Date("2024-06-25"),
+                scheduled_at: scheduledAt,
+                played_at: scheduledAt,
                 home_score: hs,
                 away_score: as_,
                 status: "finished",
@@ -378,51 +395,23 @@ export async function seedMatches(db, seasonId, phaseResult, teams, venueId, adm
                 duration: 90,
             },
         });
-        console.log(`  → 3rd place match: Team #${thirdHome} vs #${thirdAway}, winner: #${winnerId}`);
+        console.log(`  → 3rd place: Team #${thirdHome} vs #${thirdAway}, winner: #${winnerId}`);
     }
-    // Final
+    // Final — Jun 30 (khác ngày third place → không trùng venue)
     const finalist0 = finalists[0];
     const finalist1 = finalists[1];
     if (finalist0 !== undefined && finalist1 !== undefined) {
-        const [hs, as_] = randomScore();
-        const isExtraTime = hs === as_;
-        const finalHomeWin = isExtraTime ? Math.random() > 0.5 : hs > as_;
-        const champion = finalHomeWin ? finalist0 : finalist1;
-        const match = await db.match.create({
-            data: {
-                phase_id: finalPhaseId,
-                home_team_id: finalist0,
-                away_team_id: finalist1,
-                scheduled_at: new Date("2024-06-30"),
-                played_at: new Date("2024-06-30"),
-                home_score: hs,
-                away_score: as_,
-                status: "finished",
-                season_id: seasonId,
-                venue_id: venueId,
-                is_published: true,
-                user_id: adminUserId,
-            },
-        });
-        await db.matchResult.create({
-            data: {
-                match_id: match.id,
-                winner_team_id: champion,
-                home_score: hs,
-                away_score: as_,
-                home_half_time_score: Math.floor(hs / 2),
-                away_half_time_score: Math.floor(as_ / 2),
-                home_final_score: hs,
-                away_final_score: as_,
-                home_penalty_score: isExtraTime ? (finalHomeWin ? 5 : 4) : null,
-                away_penalty_score: isExtraTime ? (finalHomeWin ? 4 : 5) : null,
-                result_type: isExtraTime ? "penalty" : "full_time",
-                status: "official",
-                duration: isExtraTime ? 120 : 90,
-            },
+        const scheduledAt = makeMatchDate(2024, 6, 30);
+        const { winnerId: champion } = await createKnockoutMatch(db, {
+            phaseId: finalPhaseId,
+            homeId: finalist0,
+            awayId: finalist1,
+            scheduledAt,
+            seasonId,
+            venueId,
+            adminUserId,
         });
         console.log(`  → CHAMPION: Team #${champion}`);
-        // Notification cho đội vô địch
         await db.notification.create({
             data: {
                 title: "🏆 Chúc mừng Vô Địch!",

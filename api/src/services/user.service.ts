@@ -1,12 +1,11 @@
 // services/user.service.ts
 import bcrypt from "bcrypt";
 import { PrismaClient, Role, User } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { Queryable } from "../libs/queryable.js";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.schema.js";
 import { createAppError } from "../common/app.error.js";
 import { RelationService } from "../libs/relation.service.js";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 export type SafeUser = Omit<User, "password">;
 

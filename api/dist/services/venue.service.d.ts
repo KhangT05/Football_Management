@@ -1,6 +1,6 @@
 import { CreateVenueDto, UpdateVenueDto } from "../dtos/venue.schema.js";
 import { PrismaClient, Venue } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class VenueService {
     private readonly prisma;
     private readonly query;

@@ -1,4 +1,3 @@
-// ─── Core Types ───────────────────────────────────────────────────────────────
 // ─── Builder ──────────────────────────────────────────────────────────────────
 class QueryBuilder {
     config;
@@ -7,6 +6,8 @@ class QueryBuilder {
     skip = 0;
     take;
     page = 1;
+    cursorColumn = "id";
+    cursorDir = "asc";
     constructor(config) {
         this.config = config;
         this.take = config.defaultPerPage ?? 15;
@@ -108,6 +109,34 @@ class QueryBuilder {
         this.skip = (this.page - 1) * this.take;
         return this;
     }
+    applyScrollSort(column, direction) {
+        const { sortable = [], defaultSort } = this.config;
+        const dir = direction === "desc" ? "desc" : "asc";
+        const col = column && sortable.includes(column) ? column : defaultSort?.column ?? "id";
+        this.cursorColumn = col;
+        this.cursorDir = dir;
+        this.orderBy = col === "id" ? [{ id: dir }] : [{ [col]: dir }, { id: dir }];
+        return this;
+    }
+    applyCursor(cursor) {
+        if (!cursor)
+            return this;
+        const { v, id } = decodeCursor(cursor);
+        const op = this.cursorDir === "asc" ? "gt" : "lt";
+        this.wheres.push(this.cursorColumn === "id"
+            ? { id: { [op]: id } }
+            : { OR: [{ [this.cursorColumn]: { [op]: v } }, { [this.cursorColumn]: v, id: { [op]: id } }] });
+        return this;
+    }
+    getCursorColumn() { return this.cursorColumn; }
+    buildScroll(limit) {
+        this.config.beforeBuild?.(this.wheres);
+        return {
+            where: this.wheres.length ? { AND: this.wheres } : {},
+            orderBy: this.orderBy,
+            take: limit + 1, // +1 để biết hasMore mà không cần COUNT
+        };
+    }
     build() {
         // beforeBuild hook — thêm fixed where (deleted_at, tenant_id, ...)
         this.config.beforeBuild?.(this.wheres);
@@ -157,11 +186,47 @@ export class Queryable {
         const data = config.afterFetch ? config.afterFetch(raw) : raw;
         return { data, meta: builder.buildMeta(total) };
     }
+    async runScroll(req, overrideConfig) {
+        const config = overrideConfig ? { ...this.baseConfig, ...overrideConfig } : this.baseConfig;
+        const builder = new QueryBuilder(config);
+        const limit = Math.min(Math.max(1, Number(req.limit) || config.defaultPerPage || 20), config.maxPerPage ?? 100);
+        const args = builder
+            .applySimpleFilter(req)
+            .applyComplexFilter(req.filter)
+            .applySearch(req.q)
+            .applyScrollSort(req.sort, req.direction)
+            .applyCursor(req.cursor)
+            .buildScroll(limit);
+        // ép id + cursorColumn luôn có trong select, không thì cursor kế tiếp bị undefined
+        const select = config.select
+            ? { ...config.select, id: true, [builder.getCursorColumn()]: true }
+            : undefined;
+        const rows = await this.delegate.findMany({
+            ...args,
+            ...(config.include && { include: config.include }),
+            ...(select && { select }),
+        });
+        const hasMore = rows.length > limit;
+        const page = hasMore ? rows.slice(0, limit) : rows;
+        const data = config.afterFetch ? config.afterFetch(page) : page;
+        const last = page[page.length - 1];
+        return {
+            data,
+            hasMore,
+            nextCursor: hasMore && last ? encodeCursor(last[builder.getCursorColumn()], last.id) : null,
+        };
+    }
 }
 // ─── Utils ────────────────────────────────────────────────────────────────────
 function toArray(value) {
     if (Array.isArray(value))
         return value;
     return String(value).split(",").map((v) => v.trim());
+}
+function encodeCursor(v, id) {
+    return Buffer.from(JSON.stringify({ v, id })).toString("base64url");
+}
+function decodeCursor(cursor) {
+    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf-8"));
 }
 //# sourceMappingURL=queryable.js.map

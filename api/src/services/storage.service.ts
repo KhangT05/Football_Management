@@ -3,7 +3,10 @@ import pLimit from "p-limit";
 import { cloudinaryProvider } from "../storage/processors/cloudinary.provider.js";
 import { storageConfig } from "../storage/storage.config.js";
 import { imageProcessor } from "../storage/processors/image.processor.js";
-import { CompressOptions, IStorageProvider, ProcessedImage, TransformOptions, UploadInput, UploadResult } from "../storage/types.js";
+import {
+    CompressOptions, IStorageProvider, ProcessedImage,
+    TransformOptions, UploadInput, UploadResult
+} from "../storage/types.js";
 
 export class StorageService {
     private readonly concurrency = pLimit(3);

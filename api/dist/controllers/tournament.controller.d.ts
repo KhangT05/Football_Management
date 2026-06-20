@@ -8,7 +8,7 @@ type AuthRequest = ExRequest & {
 import { TournamentService } from "../services/tournament.service.js";
 import type { Tournament } from "../generated/prisma/client.js";
 import { type UpdateTournamentDto } from "../dtos/tournament.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class TournamentController extends Controller {
     private service;
     constructor(service: TournamentService);

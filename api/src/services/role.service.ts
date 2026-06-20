@@ -1,7 +1,8 @@
 import { createAppError } from "../common/app.error.js";
 import { CreateRoleDto, UpdateRoleDto } from "../dtos/role.schema.js";
 import { PrismaClient, Role } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { Queryable } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 export class RoleService {
 

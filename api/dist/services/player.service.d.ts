@@ -1,17 +1,7 @@
 import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, PlayerDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
 import { PrismaClient } from "../generated/prisma/client.js";
-export interface ImportResult {
-    success: number;
-    failed: number;
-    errors: {
-        row: number;
-        reason: string;
-    }[];
-}
-export interface ListTeamPlayersQuery extends QueryRequest {
-    team_id: number;
-}
+import { PaginatedResult } from "../types/queryable.type.js";
+import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
 export declare class PlayerService {
     private readonly prisma;
     private readonly teamPlayerQuery;

@@ -1,5 +1,6 @@
 import { createAppError } from "../common/app.error.js";
 import { Prisma, PhaseFormat, PrismaClient, SeasonTeamStatus } from "../generated/prisma/client.js";
+import { shuffle } from "../libs/array.utils.js";
 import { DrawAssignment, DrawGroupsOptions } from "../types/group.type.js";
 
 export class GroupService {
@@ -140,13 +141,4 @@ export class GroupService {
         if (!group) throw createAppError("NOT_FOUND", `Group ${id} not found`);
         return group;
     }
-}
-
-function shuffle<T>(arr: T[]): T[] {
-    const result = [...arr];
-    for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[i]!, result[j]!];
-    }
-    return result;
 }

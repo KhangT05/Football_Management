@@ -2,8 +2,8 @@
 import { createAppError } from "../common/app.error.js";
 import { CreateTeamDto, UpdateTeamDto } from "../dtos/team.schema.js";
 import { PrismaClient, Team, TeamLeader } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
-import { storageService } from "./storage.service.js";
+import { Queryable } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 // ─── Projections ──────────────────────────────────────────────────────────────
 

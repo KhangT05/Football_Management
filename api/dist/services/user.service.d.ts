@@ -1,6 +1,6 @@
 import { PrismaClient, Role, User } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
 import { CreateUserDto, UpdateUserDto } from "../dtos/user.schema.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export type SafeUser = Omit<User, "password">;
 export declare class UserService {
     private readonly prisma;

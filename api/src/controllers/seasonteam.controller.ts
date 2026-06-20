@@ -2,10 +2,10 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
-import { PaginatedResult } from "../libs/queryable.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeam } from "../generated/prisma/client.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 
 @Security("jwt", ['admin'])
 @Route("seasonteams")

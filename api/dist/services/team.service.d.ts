@@ -1,6 +1,6 @@
 import { CreateTeamDto, UpdateTeamDto } from "../dtos/team.schema.js";
 import { PrismaClient, Team, TeamLeader } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class TeamService {
     private readonly prisma;
     private readonly query;

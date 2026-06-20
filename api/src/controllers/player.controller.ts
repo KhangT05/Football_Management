@@ -16,8 +16,8 @@ import {
   type UpdateTeamPlayerDto,
   type BulkDeleteDto,
 } from "../dtos/player.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
-import type { ImportResult, ListTeamPlayersQuery } from "../services/player.service.js";
+import { PaginatedResult } from "../types/queryable.type.js";
+import { ListTeamPlayersQuery } from "../types/player.type.js";
 
 @Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("players")

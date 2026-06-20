@@ -1,7 +1,8 @@
 import { createAppError } from "../common/app.error.js";
 import { CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
 import { PrismaClient, Season, SeasonStatus } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { Queryable } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 const STATUS_TRANSITIONS: Partial<Record<SeasonStatus, SeasonStatus[]>> = {
     [SeasonStatus.upcoming]: [SeasonStatus.registration_open, SeasonStatus.cancelled],

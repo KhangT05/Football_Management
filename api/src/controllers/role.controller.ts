@@ -2,7 +2,8 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import { RoleService } from "../services/role.service.js";
 import type { Role } from "../generated/prisma/client.js";
 import { type CreateRoleDto, type UpdateRoleDto } from "../dtos/role.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
+
 
 @Security("jwt", ['admin'])
 @Route("roles")

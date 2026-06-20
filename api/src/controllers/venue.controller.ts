@@ -2,7 +2,8 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import { VenueService } from "../services/venue.service.js";
 import type { Venue } from "../generated/prisma/client.js";
 import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
+
 
 @Security("jwt", ['user', 'admin'])
 @Route("venues")

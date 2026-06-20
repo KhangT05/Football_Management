@@ -1371,6 +1371,394 @@
 			"UpdateSeasonStatusDto": {
 				"$ref": "#/components/schemas/infer_typeofUpdateSeasonStatusSchema_"
 			},
+			"GenerateResult": {
+				"properties": {
+					"warnings": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"failedMatchIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"matchesScheduled": {
+						"type": "number",
+						"format": "double"
+					},
+					"groupIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"groupCount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"warnings",
+					"failedMatchIds",
+					"matchesScheduled",
+					"groupIds",
+					"groupCount"
+				],
+				"type": "object"
+			},
+			"infer_typeofgenerateScheduleSchema_": {
+				"properties": {
+					"minRestDaysPerTeam": {
+						"type": "number",
+						"format": "double"
+					},
+					"startDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"doubleRound": {
+						"type": "boolean"
+					},
+					"matchTimes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"maxGroupSize": {
+						"type": "number",
+						"format": "double"
+					},
+					"minGroupSize": {
+						"type": "number",
+						"format": "double"
+					},
+					"desiredGroupCount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"doubleRound",
+					"matchTimes",
+					"venueIds",
+					"maxGroupSize",
+					"minGroupSize",
+					"desiredGroupCount"
+				],
+				"type": "object"
+			},
+			"GenerateScheduleDto": {
+				"$ref": "#/components/schemas/infer_typeofgenerateScheduleSchema_"
+			},
+			"infer_typeofautoScheduleSchema_": {
+				"properties": {
+					"startDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"matchTimes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"matchTimes",
+					"venueIds"
+				],
+				"type": "object"
+			},
+			"AutoScheduleDto": {
+				"$ref": "#/components/schemas/infer_typeofautoScheduleSchema_"
+			},
+			"infer_typeofrescheduleMatchSchema_": {
+				"properties": {
+					"scheduledAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"venueId": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"venueId"
+				],
+				"type": "object"
+			},
+			"RescheduleMatchDto": {
+				"$ref": "#/components/schemas/infer_typeofrescheduleMatchSchema_"
+			},
+			"MatchStatus": {
+				"type": "string",
+				"enum": [
+					"ongoing",
+					"finished",
+					"cancelled",
+					"scheduled",
+					"forfeited",
+					"postponed",
+					"bye",
+					"abandoned"
+				]
+			},
+			"MatchPeriod": {
+				"type": "string",
+				"enum": [
+					"first_half",
+					"second_half",
+					"extra_time_first",
+					"extra_time_second",
+					"penalty_shootout"
+				]
+			},
+			"DefaultSelection__36_MatchPayload_": {
+				"properties": {
+					"referee": {
+						"type": "string"
+					},
+					"is_published": {
+						"type": "boolean"
+					},
+					"venue_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"abandoned_minute": {
+						"type": "number",
+						"format": "double"
+					},
+					"replay_of_match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"postponed_reason": {
+						"type": "string"
+					},
+					"postponed_from": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"current_period": {
+						"$ref": "#/components/schemas/MatchPeriod"
+					},
+					"next_match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"leg": {
+						"type": "number",
+						"format": "double"
+					},
+					"round": {
+						"type": "string"
+					},
+					"away_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"home_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"played_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"scheduled_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"away_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"home_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"phase_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"group_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/MatchStatus"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"referee",
+					"is_published",
+					"venue_id",
+					"abandoned_minute",
+					"replay_of_match_id",
+					"postponed_reason",
+					"postponed_from",
+					"current_period",
+					"next_match_id",
+					"leg",
+					"round",
+					"away_score",
+					"home_score",
+					"played_at",
+					"scheduled_at",
+					"away_team_id",
+					"home_team_id",
+					"phase_id",
+					"group_id",
+					"status",
+					"season_id",
+					"user_id",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id"
+				],
+				"type": "object"
+			},
+			"MatchModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_MatchPayload_",
+				"description": "Model Match"
+			},
+			"Match": {
+				"$ref": "#/components/schemas/MatchModel",
+				"description": "Model Match"
+			},
+			"PaginatedResult_Match_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/Match"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Pick_Match.id-or-round-or-home_team_id-or-away_team_id-or-scheduled_at-or-venue_id-or-status_": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/MatchStatus"
+					},
+					"home_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"away_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"scheduled_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"round": {
+						"type": "string"
+					},
+					"venue_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"status",
+					"home_team_id",
+					"away_team_id",
+					"scheduled_at",
+					"round",
+					"venue_id"
+				],
+				"type": "object",
+				"description": "From T, pick a set of properties whose keys are in the union K"
+			},
+			"MatchByTeamRow": {
+				"$ref": "#/components/schemas/Pick_Match.id-or-round-or-home_team_id-or-away_team_id-or-scheduled_at-or-venue_id-or-status_"
+			},
+			"PaginatedResult_MatchByTeamRow_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/MatchByTeamRow"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DefaultSelection__36_RolePayload_": {
 				"properties": {
 					"description": {
@@ -4094,6 +4482,315 @@
 						}
 					}
 				}
+			}
+		},
+		"/schedules/seasons/{seasonId}/generate": {
+			"post": {
+				"operationId": "GenerateSchedule",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenerateResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GenerateScheduleDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/schedules/seasons/{seasonId}/schedule": {
+			"post": {
+				"operationId": "AutoSchedule",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"failedMatchIds": {
+											"items": {
+												"type": "number",
+												"format": "double"
+											},
+											"type": "array"
+										},
+										"matchesScheduled": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"failedMatchIds",
+										"matchesScheduled"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AutoScheduleDto"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "GetSchedule",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_Match_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					}
+				]
+			}
+		},
+		"/schedules/matches/{matchId}/reschedule": {
+			"patch": {
+				"operationId": "RescheduleMatch",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "matchId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RescheduleMatchDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/schedules/seasons/{seasonId}/teams/{teamId}/schedule": {
+			"get": {
+				"operationId": "GetTeamSchedule",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_MatchByTeamRow_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"round",
+								"scheduled_at"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					}
+				]
 			}
 		},
 		"/roles": {

@@ -1,5 +1,6 @@
 import { createAppError } from "../common/app.error.js";
 import { PhaseFormat, SeasonTeamStatus } from "../generated/prisma/client.js";
+import { shuffle } from "../libs/array.utils.js";
 export class GroupService {
     prisma;
     constructor(prisma) {
@@ -113,13 +114,5 @@ export class GroupService {
             throw createAppError("NOT_FOUND", `Group ${id} not found`);
         return group;
     }
-}
-function shuffle(arr) {
-    const result = [...arr];
-    for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[i], result[j]];
-    }
-    return result;
 }
 //# sourceMappingURL=group.service.js.map
