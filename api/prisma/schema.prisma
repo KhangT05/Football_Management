@@ -36,6 +36,7 @@ model User {
   matches         Match[]
 
   teamLeaders TeamLeader[]
+  articles    Article[]
 
   @@map("users")
 }
@@ -139,16 +140,17 @@ enum PhaseStatus {
 }
 
 model Phase {
-  id         Int         @id @default(autoincrement())
-  season_id  Int
-  name       String
-  type       PhaseType
-  format     PhaseFormat
-  order      Int
-  start_date DateTime?
-  end_date   DateTime?
-  is_active  Boolean     @default(true)
-  status     PhaseStatus @default(draft)
+  id                     Int         @id @default(autoincrement())
+  season_id              Int
+  name                   String
+  type                   PhaseType
+  format                 PhaseFormat
+  order                  Int
+  start_date             DateTime?
+  end_date               DateTime?
+  min_rest_days_per_team Int         @default(3)
+  is_active              Boolean     @default(true)
+  status                 PhaseStatus @default(draft)
 
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
@@ -200,6 +202,7 @@ model Season {
   playerStatistics PlayerStatistic[]
   notifications    Notification[]
   matches          Match[]
+  articles         Article[]
 
   @@map("seasons")
 }
@@ -207,19 +210,26 @@ model Season {
 // ============================================================
 // GROUP (chỉ dùng khi phase.format = round_robin)
 // ============================================================
+enum GroupStatus {
+  DRAFT
+  LOCKED
+  SCHEDULED
+  SCHEDULE_FAILED
+}
 
 model Group {
-  id         Int       @id @default(autoincrement())
-  phase_id   Int
-  name       String // "Bảng A", "Bảng B"
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
-
-  phase         Phase          @relation(fields: [phase_id], references: [id], onDelete: Cascade)
-  matches       Match[]
-  season_teams  SeasonTeam[]
-  teamStandings TeamStanding[]
+  id                  Int            @id @default(autoincrement())
+  phase_id            Int
+  name                String // "Bảng A", "Bảng B"
+  is_active           Boolean        @default(true)
+  created_at          DateTime       @default(now())
+  updated_at          DateTime?      @updatedAt
+  scheduleGeneratedAt DateTime?
+  status              GroupStatus    @default(DRAFT)
+  phase               Phase          @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  matches             Match[]
+  season_teams        SeasonTeam[]
+  teamStandings       TeamStanding[]
 
   @@map("groups")
 }
@@ -251,6 +261,7 @@ model Team {
   playerStatistics PlayerStatistic[]
   notifications    Notification[]
   matchResults     MatchResult[]
+  articles         Article[]
 
   @@map("teams")
 }
@@ -337,6 +348,21 @@ model TeamPlayer {
   @@map("team_players")
 }
 
+model TeamLeader {
+  id         Int       @id @default(autoincrement())
+  team_id    Int
+  user_id    Int
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@map("team_leaders")
+}
+
 // ============================================================
 // SEASON TEAM
 // ============================================================
@@ -384,25 +410,33 @@ enum MatchStatus {
   finished
   cancelled
   forfeited
+  postponed
+  bye
+  abandoned
 }
 
 model Match {
-  id            Int         @id @default(autoincrement())
-  phase_id      Int
-  group_id      Int? // null = knockout
-  home_team_id  Int
-  away_team_id  Int
-  scheduled_at  DateTime?
-  played_at     DateTime?
-  home_score    Int?
-  away_score    Int?
-  status        MatchStatus @default(scheduled)
-  round         String?
-  leg           Int? // 1 hoặc 2 nếu two-legged (knockout)
-  next_match_id Int? // winner tiến vào trận nào (knockout bracket)
-  is_active     Boolean     @default(true)
-  created_at    DateTime    @default(now())
-  updated_at    DateTime?   @updatedAt
+  id                 Int          @id @default(autoincrement())
+  phase_id           Int
+  group_id           Int? // null = knockout
+  home_team_id       Int
+  away_team_id       Int
+  scheduled_at       DateTime?
+  played_at          DateTime?
+  home_score         Int?
+  away_score         Int?
+  status             MatchStatus  @default(scheduled)
+  round              String?
+  leg                Int? // 1 hoặc 2 nếu two-legged (knockout)
+  next_match_id      Int? // winner tiến vào trận nào (knockout bracket)
+  current_period     MatchPeriod? // sub-state khi ongoing: extra_time_first, penalty_shootout...
+  postponed_from     DateTime? // original scheduled_at
+  postponed_reason   String?
+  replay_of_match_id Int? // self-ref: trận này là replay của trận nào
+  abandoned_minute   Int? // abandoned tại phút mấy
+  is_active          Boolean      @default(true)
+  created_at         DateTime     @default(now())
+  updated_at         DateTime?    @updatedAt
 
   deleted_at DateTime?
 
@@ -425,7 +459,9 @@ model Match {
   referee      String?
   season_id    Int?
   season       Season?      @relation(fields: [season_id], references: [id])
+  articles     Article[]
 
+  @@unique([venue_id, scheduled_at])
   @@map("matches")
 }
 
@@ -443,21 +479,6 @@ model Venue {
   @@map("venues")
 }
 
-model TeamLeader {
-  id         Int       @id @default(autoincrement())
-  team_id    Int
-  user_id    Int
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
-  deleted_at DateTime?
-
-  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
-
-  @@map("team_leaders")
-}
-
 // ============================================================
 // MATCH EVENT
 // ============================================================
@@ -472,6 +493,8 @@ enum MatchEventType {
   substitution_out
   penalty_scored
   penalty_missed
+  card_rescinded
+  goal_disallowed
 }
 
 model MatchEvent {
@@ -510,6 +533,7 @@ enum MatchResultStatus {
   official
   protested
   overturned
+  under_review
 }
 
 enum MatchResultType {
@@ -594,6 +618,37 @@ model PlayerStatistic {
   @@map("player_statistics")
 }
 
+model MatchResult {
+  id                    Int               @id @default(autoincrement())
+  match_id              Int               @unique
+  winner_team_id        Int?
+  home_score            Int               @default(0)
+  away_score            Int               @default(0)
+  home_half_time_score  Int               @default(0)
+  away_half_time_score  Int               @default(0)
+  home_extra_time_score Int?
+  away_extra_time_score Int?
+  home_penalty_score    Int?
+  away_penalty_score    Int?
+  home_final_score      Int               @default(0)
+  away_final_score      Int               @default(0)
+  result_type           MatchResultType
+  status                MatchResultStatus @default(official)
+  duration              Int?
+  notes                 String?           @db.Text
+  appeal_reason         String?           @db.Text // + lý do protest
+  appeal_note           String?           @db.Text // + resolution note (admin)
+  is_active             Boolean           @default(true)
+  created_at            DateTime          @default(now())
+  updated_at            DateTime?         @updatedAt
+  deleted_at            DateTime?
+
+  match       Match @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  winner_team Team? @relation(fields: [winner_team_id], references: [id], onDelete: SetNull)
+
+  @@map("match_results")
+}
+
 model Notification {
   id                Int                @id @default(autoincrement())
   title             String
@@ -636,31 +691,72 @@ model Payment {
   @@map("payments")
 }
 
-model MatchResult {
-  id                    Int               @id @default(autoincrement())
-  match_id              Int               @unique
-  winner_team_id        Int?
-  home_score            Int               @default(0)
-  away_score            Int               @default(0)
-  home_half_time_score  Int               @default(0)
-  away_half_time_score  Int               @default(0)
-  home_extra_time_score Int?
-  away_extra_time_score Int?
-  home_penalty_score    Int?
-  away_penalty_score    Int?
-  home_final_score      Int               @default(0)
-  away_final_score      Int               @default(0)
-  result_type           MatchResultType
-  status                MatchResultStatus @default(official)
-  duration              Int?
-  notes                 String?           @db.Text
-  is_active             Boolean           @default(true)
-  created_at            DateTime          @default(now())
-  updated_at            DateTime?         @updatedAt
-  deleted_at            DateTime?
+// Bảng 1: Bài viết
+model Article {
+  id          Int           @id @default(autoincrement())
+  title       String
+  slug        String        @unique
+  content     String        @db.Text // CKEditor HTML output
+  cover_image String? // Cloudinary URL
+  status      ArticleStatus @default(draft)
+  user_id     Int
 
-  match       Match @relation(fields: [match_id], references: [id], onDelete: Cascade)
-  winner_team Team? @relation(fields: [winner_team_id], references: [id], onDelete: SetNull)
+  // Gắn với entity nào (optional)
+  season_id Int?
+  match_id  Int?
+  team_id   Int?
 
-  @@map("match_results")
+  published_at DateTime?
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  user   User    @relation(fields: [user_id], references: [id])
+  season Season? @relation(fields: [season_id], references: [id])
+  match  Match?  @relation(fields: [match_id], references: [id])
+  team   Team?   @relation(fields: [team_id], references: [id])
+
+  tags  ArticleTag[]
+  media ArticleMedia[]
+
+  @@map("articles")
+}
+
+enum ArticleStatus {
+  draft
+  published
+  archived
+}
+
+// Bảng 2: Tags
+model ArticleTag {
+  id         Int    @id @default(autoincrement())
+  article_id Int
+  tag        String
+
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+
+  @@unique([article_id, tag])
+  @@map("article_tags")
+}
+
+// Bảng 3: Media attachments
+model ArticleMedia {
+  id         Int       @id @default(autoincrement())
+  article_id Int
+  type       MediaType
+  url        String // Cloudinary URL (ảnh) | TBD (video)
+  caption    String?
+  order      Int       @default(0)
+  created_at DateTime  @default(now())
+
+  article Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+
+  @@map("article_media")
+}
+
+enum MediaType {
+  image
+  video
 }

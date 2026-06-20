@@ -26,6 +26,13 @@ export declare const SeasonStatus: {
     readonly cancelled: "cancelled";
 };
 export type SeasonStatus = (typeof SeasonStatus)[keyof typeof SeasonStatus];
+export declare const GroupStatus: {
+    readonly DRAFT: "DRAFT";
+    readonly LOCKED: "LOCKED";
+    readonly SCHEDULED: "SCHEDULED";
+    readonly SCHEDULE_FAILED: "SCHEDULE_FAILED";
+};
+export type GroupStatus = (typeof GroupStatus)[keyof typeof GroupStatus];
 export declare const PlayerPosition: {
     readonly goalkeeper: "goalkeeper";
     readonly defender: "defender";
@@ -65,6 +72,9 @@ export declare const MatchStatus: {
     readonly finished: "finished";
     readonly cancelled: "cancelled";
     readonly forfeited: "forfeited";
+    readonly postponed: "postponed";
+    readonly bye: "bye";
+    readonly abandoned: "abandoned";
 };
 export type MatchStatus = (typeof MatchStatus)[keyof typeof MatchStatus];
 export declare const MatchEventType: {
@@ -77,6 +87,8 @@ export declare const MatchEventType: {
     readonly substitution_out: "substitution_out";
     readonly penalty_scored: "penalty_scored";
     readonly penalty_missed: "penalty_missed";
+    readonly card_rescinded: "card_rescinded";
+    readonly goal_disallowed: "goal_disallowed";
 };
 export type MatchEventType = (typeof MatchEventType)[keyof typeof MatchEventType];
 export declare const CardColor: {
@@ -96,6 +108,7 @@ export declare const MatchResultStatus: {
     readonly official: "official";
     readonly protested: "protested";
     readonly overturned: "overturned";
+    readonly under_review: "under_review";
 };
 export type MatchResultStatus = (typeof MatchResultStatus)[keyof typeof MatchResultStatus];
 export declare const MatchResultType: {
@@ -132,4 +145,15 @@ export declare const PaymentStatus: {
     readonly rejected: "rejected";
 };
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+export declare const ArticleStatus: {
+    readonly draft: "draft";
+    readonly published: "published";
+    readonly archived: "archived";
+};
+export type ArticleStatus = (typeof ArticleStatus)[keyof typeof ArticleStatus];
+export declare const MediaType: {
+    readonly image: "image";
+    readonly video: "video";
+};
+export type MediaType = (typeof MediaType)[keyof typeof MediaType];
 //# sourceMappingURL=enums.d.ts.map

@@ -77,6 +77,11 @@ export type Player = Prisma.PlayerModel;
  */
 export type TeamPlayer = Prisma.TeamPlayerModel;
 /**
+ * Model TeamLeader
+ *
+ */
+export type TeamLeader = Prisma.TeamLeaderModel;
+/**
  * Model SeasonTeam
  *
  */
@@ -91,11 +96,6 @@ export type Match = Prisma.MatchModel;
  *
  */
 export type Venue = Prisma.VenueModel;
-/**
- * Model TeamLeader
- *
- */
-export type TeamLeader = Prisma.TeamLeaderModel;
 /**
  * Model MatchEvent
  *
@@ -112,6 +112,11 @@ export type TeamStanding = Prisma.TeamStandingModel;
  */
 export type PlayerStatistic = Prisma.PlayerStatisticModel;
 /**
+ * Model MatchResult
+ *
+ */
+export type MatchResult = Prisma.MatchResultModel;
+/**
  * Model Notification
  *
  */
@@ -122,8 +127,18 @@ export type Notification = Prisma.NotificationModel;
  */
 export type Payment = Prisma.PaymentModel;
 /**
- * Model MatchResult
+ * Model Article
  *
  */
-export type MatchResult = Prisma.MatchResultModel;
+export type Article = Prisma.ArticleModel;
+/**
+ * Model ArticleTag
+ *
+ */
+export type ArticleTag = Prisma.ArticleTagModel;
+/**
+ * Model ArticleMedia
+ *
+ */
+export type ArticleMedia = Prisma.ArticleMediaModel;
 //# sourceMappingURL=client.d.ts.map

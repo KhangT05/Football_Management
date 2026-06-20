@@ -78,16 +78,19 @@ export const ModelName = {
     Team: 'Team',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
+    TeamLeader: 'TeamLeader',
     SeasonTeam: 'SeasonTeam',
     Match: 'Match',
     Venue: 'Venue',
-    TeamLeader: 'TeamLeader',
     MatchEvent: 'MatchEvent',
     TeamStanding: 'TeamStanding',
     PlayerStatistic: 'PlayerStatistic',
+    MatchResult: 'MatchResult',
     Notification: 'Notification',
     Payment: 'Payment',
-    MatchResult: 'MatchResult'
+    Article: 'Article',
+    ArticleTag: 'ArticleTag',
+    ArticleMedia: 'ArticleMedia'
 };
 /**
  * Enums
@@ -160,6 +163,7 @@ export const PhaseScalarFieldEnum = {
     order: 'order',
     start_date: 'start_date',
     end_date: 'end_date',
+    min_rest_days_per_team: 'min_rest_days_per_team',
     is_active: 'is_active',
     status: 'status',
     created_at: 'created_at',
@@ -189,7 +193,9 @@ export const GroupScalarFieldEnum = {
     name: 'name',
     is_active: 'is_active',
     created_at: 'created_at',
-    updated_at: 'updated_at'
+    updated_at: 'updated_at',
+    scheduleGeneratedAt: 'scheduleGeneratedAt',
+    status: 'status'
 };
 export const TeamScalarFieldEnum = {
     id: 'id',
@@ -232,6 +238,15 @@ export const TeamPlayerScalarFieldEnum = {
     deleted_at: 'deleted_at',
     user_id: 'user_id'
 };
+export const TeamLeaderScalarFieldEnum = {
+    id: 'id',
+    team_id: 'team_id',
+    user_id: 'user_id',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+    deleted_at: 'deleted_at'
+};
 export const SeasonTeamScalarFieldEnum = {
     id: 'id',
     season_id: 'season_id',
@@ -258,6 +273,11 @@ export const MatchScalarFieldEnum = {
     round: 'round',
     leg: 'leg',
     next_match_id: 'next_match_id',
+    current_period: 'current_period',
+    postponed_from: 'postponed_from',
+    postponed_reason: 'postponed_reason',
+    replay_of_match_id: 'replay_of_match_id',
+    abandoned_minute: 'abandoned_minute',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -272,15 +292,6 @@ export const VenueScalarFieldEnum = {
     id: 'id',
     name: 'name',
     address: 'address',
-    is_active: 'is_active',
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-    deleted_at: 'deleted_at'
-};
-export const TeamLeaderScalarFieldEnum = {
-    id: 'id',
-    team_id: 'team_id',
-    user_id: 'user_id',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -333,6 +344,31 @@ export const PlayerStatisticScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
+export const MatchResultScalarFieldEnum = {
+    id: 'id',
+    match_id: 'match_id',
+    winner_team_id: 'winner_team_id',
+    home_score: 'home_score',
+    away_score: 'away_score',
+    home_half_time_score: 'home_half_time_score',
+    away_half_time_score: 'away_half_time_score',
+    home_extra_time_score: 'home_extra_time_score',
+    away_extra_time_score: 'away_extra_time_score',
+    home_penalty_score: 'home_penalty_score',
+    away_penalty_score: 'away_penalty_score',
+    home_final_score: 'home_final_score',
+    away_final_score: 'away_final_score',
+    result_type: 'result_type',
+    status: 'status',
+    duration: 'duration',
+    notes: 'notes',
+    appeal_reason: 'appeal_reason',
+    appeal_note: 'appeal_note',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+    deleted_at: 'deleted_at'
+};
 export const NotificationScalarFieldEnum = {
     id: 'id',
     title: 'title',
@@ -364,28 +400,36 @@ export const PaymentScalarFieldEnum = {
     updated_at: 'updated_at',
     deleted_at: 'deleted_at'
 };
-export const MatchResultScalarFieldEnum = {
+export const ArticleScalarFieldEnum = {
     id: 'id',
-    match_id: 'match_id',
-    winner_team_id: 'winner_team_id',
-    home_score: 'home_score',
-    away_score: 'away_score',
-    home_half_time_score: 'home_half_time_score',
-    away_half_time_score: 'away_half_time_score',
-    home_extra_time_score: 'home_extra_time_score',
-    away_extra_time_score: 'away_extra_time_score',
-    home_penalty_score: 'home_penalty_score',
-    away_penalty_score: 'away_penalty_score',
-    home_final_score: 'home_final_score',
-    away_final_score: 'away_final_score',
-    result_type: 'result_type',
+    title: 'title',
+    slug: 'slug',
+    content: 'content',
+    cover_image: 'cover_image',
     status: 'status',
-    duration: 'duration',
-    notes: 'notes',
+    user_id: 'user_id',
+    season_id: 'season_id',
+    match_id: 'match_id',
+    team_id: 'team_id',
+    published_at: 'published_at',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at'
+};
+export const ArticleTagScalarFieldEnum = {
+    id: 'id',
+    article_id: 'article_id',
+    tag: 'tag'
+};
+export const ArticleMediaScalarFieldEnum = {
+    id: 'id',
+    article_id: 'article_id',
+    type: 'type',
+    url: 'url',
+    caption: 'caption',
+    order: 'order',
+    created_at: 'created_at'
 };
 export const SortOrder = {
     asc: 'asc',
@@ -444,6 +488,7 @@ export const PlayerOrderByRelevanceFieldEnum = {
 };
 export const MatchOrderByRelevanceFieldEnum = {
     round: 'round',
+    postponed_reason: 'postponed_reason',
     referee: 'referee'
 };
 export const VenueOrderByRelevanceFieldEnum = {
@@ -453,6 +498,11 @@ export const VenueOrderByRelevanceFieldEnum = {
 export const MatchEventOrderByRelevanceFieldEnum = {
     note: 'note'
 };
+export const MatchResultOrderByRelevanceFieldEnum = {
+    notes: 'notes',
+    appeal_reason: 'appeal_reason',
+    appeal_note: 'appeal_note'
+};
 export const NotificationOrderByRelevanceFieldEnum = {
     title: 'title',
     content: 'content',
@@ -461,8 +511,18 @@ export const NotificationOrderByRelevanceFieldEnum = {
 export const PaymentOrderByRelevanceFieldEnum = {
     transaction_ref: 'transaction_ref'
 };
-export const MatchResultOrderByRelevanceFieldEnum = {
-    notes: 'notes'
+export const ArticleOrderByRelevanceFieldEnum = {
+    title: 'title',
+    slug: 'slug',
+    content: 'content',
+    cover_image: 'cover_image'
+};
+export const ArticleTagOrderByRelevanceFieldEnum = {
+    tag: 'tag'
+};
+export const ArticleMediaOrderByRelevanceFieldEnum = {
+    url: 'url',
+    caption: 'caption'
 };
 export const defineExtension = runtime.Extensions.defineExtension;
 //# sourceMappingURL=prismaNamespace.js.map

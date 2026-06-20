@@ -242,16 +242,19 @@ export declare const ModelName: {
     readonly Team: "Team";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
+    readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
     readonly Match: "Match";
     readonly Venue: "Venue";
-    readonly TeamLeader: "TeamLeader";
     readonly MatchEvent: "MatchEvent";
     readonly TeamStanding: "TeamStanding";
     readonly PlayerStatistic: "PlayerStatistic";
+    readonly MatchResult: "MatchResult";
     readonly Notification: "Notification";
     readonly Payment: "Payment";
-    readonly MatchResult: "MatchResult";
+    readonly Article: "Article";
+    readonly ArticleTag: "ArticleTag";
+    readonly ArticleMedia: "ArticleMedia";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export interface TypeMapCb<GlobalOmitOptions = {}> extends runtime.Types.Utils.Fn<{
@@ -264,7 +267,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "season" | "group" | "team" | "player" | "teamPlayer" | "seasonTeam" | "match" | "venue" | "teamLeader" | "matchEvent" | "teamStanding" | "playerStatistic" | "notification" | "payment" | "matchResult";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "season" | "group" | "team" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "match" | "venue" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -994,6 +997,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        TeamLeader: {
+            payload: Prisma.$TeamLeaderPayload<ExtArgs>;
+            fields: Prisma.TeamLeaderFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.TeamLeaderFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.TeamLeaderFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                findFirst: {
+                    args: Prisma.TeamLeaderFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.TeamLeaderFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                findMany: {
+                    args: Prisma.TeamLeaderFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>[];
+                };
+                create: {
+                    args: Prisma.TeamLeaderCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                createMany: {
+                    args: Prisma.TeamLeaderCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.TeamLeaderDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                update: {
+                    args: Prisma.TeamLeaderUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.TeamLeaderDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.TeamLeaderUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.TeamLeaderUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
+                };
+                aggregate: {
+                    args: Prisma.TeamLeaderAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamLeader>;
+                };
+                groupBy: {
+                    args: Prisma.TeamLeaderGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TeamLeaderGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.TeamLeaderCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TeamLeaderCountAggregateOutputType> | number;
+                };
+            };
+        };
         SeasonTeam: {
             payload: Prisma.$SeasonTeamPayload<ExtArgs>;
             fields: Prisma.SeasonTeamFieldRefs;
@@ -1189,72 +1258,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 count: {
                     args: Prisma.VenueCountArgs<ExtArgs>;
                     result: runtime.Types.Utils.Optional<Prisma.VenueCountAggregateOutputType> | number;
-                };
-            };
-        };
-        TeamLeader: {
-            payload: Prisma.$TeamLeaderPayload<ExtArgs>;
-            fields: Prisma.TeamLeaderFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.TeamLeaderFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.TeamLeaderFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                findFirst: {
-                    args: Prisma.TeamLeaderFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.TeamLeaderFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                findMany: {
-                    args: Prisma.TeamLeaderFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>[];
-                };
-                create: {
-                    args: Prisma.TeamLeaderCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                createMany: {
-                    args: Prisma.TeamLeaderCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                delete: {
-                    args: Prisma.TeamLeaderDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                update: {
-                    args: Prisma.TeamLeaderUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                deleteMany: {
-                    args: Prisma.TeamLeaderDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.TeamLeaderUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                upsert: {
-                    args: Prisma.TeamLeaderUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamLeaderPayload>;
-                };
-                aggregate: {
-                    args: Prisma.TeamLeaderAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamLeader>;
-                };
-                groupBy: {
-                    args: Prisma.TeamLeaderGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.TeamLeaderGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.TeamLeaderCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.TeamLeaderCountAggregateOutputType> | number;
                 };
             };
         };
@@ -1456,6 +1459,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        MatchResult: {
+            payload: Prisma.$MatchResultPayload<ExtArgs>;
+            fields: Prisma.MatchResultFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.MatchResultFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.MatchResultFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                findFirst: {
+                    args: Prisma.MatchResultFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.MatchResultFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                findMany: {
+                    args: Prisma.MatchResultFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>[];
+                };
+                create: {
+                    args: Prisma.MatchResultCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                createMany: {
+                    args: Prisma.MatchResultCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.MatchResultDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                update: {
+                    args: Prisma.MatchResultUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.MatchResultDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.MatchResultUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.MatchResultUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                };
+                aggregate: {
+                    args: Prisma.MatchResultAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateMatchResult>;
+                };
+                groupBy: {
+                    args: Prisma.MatchResultGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.MatchResultGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.MatchResultCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.MatchResultCountAggregateOutputType> | number;
+                };
+            };
+        };
         Notification: {
             payload: Prisma.$NotificationPayload<ExtArgs>;
             fields: Prisma.NotificationFieldRefs;
@@ -1588,69 +1657,201 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
-        MatchResult: {
-            payload: Prisma.$MatchResultPayload<ExtArgs>;
-            fields: Prisma.MatchResultFieldRefs;
+        Article: {
+            payload: Prisma.$ArticlePayload<ExtArgs>;
+            fields: Prisma.ArticleFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.MatchResultFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload> | null;
+                    args: Prisma.ArticleFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.MatchResultFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 findFirst: {
-                    args: Prisma.MatchResultFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload> | null;
+                    args: Prisma.ArticleFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.MatchResultFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 findMany: {
-                    args: Prisma.MatchResultFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>[];
+                    args: Prisma.ArticleFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>[];
                 };
                 create: {
-                    args: Prisma.MatchResultCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 createMany: {
-                    args: Prisma.MatchResultCreateManyArgs<ExtArgs>;
+                    args: Prisma.ArticleCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 delete: {
-                    args: Prisma.MatchResultDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 update: {
-                    args: Prisma.MatchResultUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 deleteMany: {
-                    args: Prisma.MatchResultDeleteManyArgs<ExtArgs>;
+                    args: Prisma.ArticleDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.MatchResultUpdateManyArgs<ExtArgs>;
+                    args: Prisma.ArticleUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 upsert: {
-                    args: Prisma.MatchResultUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$MatchResultPayload>;
+                    args: Prisma.ArticleUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticlePayload>;
                 };
                 aggregate: {
-                    args: Prisma.MatchResultAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateMatchResult>;
+                    args: Prisma.ArticleAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateArticle>;
                 };
                 groupBy: {
-                    args: Prisma.MatchResultGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.MatchResultGroupByOutputType>[];
+                    args: Prisma.ArticleGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.MatchResultCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.MatchResultCountAggregateOutputType> | number;
+                    args: Prisma.ArticleCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleCountAggregateOutputType> | number;
+                };
+            };
+        };
+        ArticleTag: {
+            payload: Prisma.$ArticleTagPayload<ExtArgs>;
+            fields: Prisma.ArticleTagFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.ArticleTagFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.ArticleTagFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                findFirst: {
+                    args: Prisma.ArticleTagFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.ArticleTagFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                findMany: {
+                    args: Prisma.ArticleTagFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>[];
+                };
+                create: {
+                    args: Prisma.ArticleTagCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                createMany: {
+                    args: Prisma.ArticleTagCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.ArticleTagDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                update: {
+                    args: Prisma.ArticleTagUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.ArticleTagDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.ArticleTagUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.ArticleTagUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleTagPayload>;
+                };
+                aggregate: {
+                    args: Prisma.ArticleTagAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateArticleTag>;
+                };
+                groupBy: {
+                    args: Prisma.ArticleTagGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleTagGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.ArticleTagCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleTagCountAggregateOutputType> | number;
+                };
+            };
+        };
+        ArticleMedia: {
+            payload: Prisma.$ArticleMediaPayload<ExtArgs>;
+            fields: Prisma.ArticleMediaFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.ArticleMediaFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.ArticleMediaFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                findFirst: {
+                    args: Prisma.ArticleMediaFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.ArticleMediaFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                findMany: {
+                    args: Prisma.ArticleMediaFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>[];
+                };
+                create: {
+                    args: Prisma.ArticleMediaCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                createMany: {
+                    args: Prisma.ArticleMediaCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.ArticleMediaDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                update: {
+                    args: Prisma.ArticleMediaUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.ArticleMediaDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.ArticleMediaUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.ArticleMediaUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ArticleMediaPayload>;
+                };
+                aggregate: {
+                    args: Prisma.ArticleMediaAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateArticleMedia>;
+                };
+                groupBy: {
+                    args: Prisma.ArticleMediaGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleMediaGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.ArticleMediaCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ArticleMediaCountAggregateOutputType> | number;
                 };
             };
         };
@@ -1755,6 +1956,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly order: "order";
     readonly start_date: "start_date";
     readonly end_date: "end_date";
+    readonly min_rest_days_per_team: "min_rest_days_per_team";
     readonly is_active: "is_active";
     readonly status: "status";
     readonly created_at: "created_at";
@@ -1787,6 +1989,8 @@ export declare const GroupScalarFieldEnum: {
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly scheduleGeneratedAt: "scheduleGeneratedAt";
+    readonly status: "status";
 };
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum];
 export declare const TeamScalarFieldEnum: {
@@ -1833,6 +2037,16 @@ export declare const TeamPlayerScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TeamPlayerScalarFieldEnum = (typeof TeamPlayerScalarFieldEnum)[keyof typeof TeamPlayerScalarFieldEnum];
+export declare const TeamLeaderScalarFieldEnum: {
+    readonly id: "id";
+    readonly team_id: "team_id";
+    readonly user_id: "user_id";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type TeamLeaderScalarFieldEnum = (typeof TeamLeaderScalarFieldEnum)[keyof typeof TeamLeaderScalarFieldEnum];
 export declare const SeasonTeamScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
@@ -1860,6 +2074,11 @@ export declare const MatchScalarFieldEnum: {
     readonly round: "round";
     readonly leg: "leg";
     readonly next_match_id: "next_match_id";
+    readonly current_period: "current_period";
+    readonly postponed_from: "postponed_from";
+    readonly postponed_reason: "postponed_reason";
+    readonly replay_of_match_id: "replay_of_match_id";
+    readonly abandoned_minute: "abandoned_minute";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -1881,16 +2100,6 @@ export declare const VenueScalarFieldEnum: {
     readonly deleted_at: "deleted_at";
 };
 export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
-export declare const TeamLeaderScalarFieldEnum: {
-    readonly id: "id";
-    readonly team_id: "team_id";
-    readonly user_id: "user_id";
-    readonly is_active: "is_active";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
-};
-export type TeamLeaderScalarFieldEnum = (typeof TeamLeaderScalarFieldEnum)[keyof typeof TeamLeaderScalarFieldEnum];
 export declare const MatchEventScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -1941,6 +2150,32 @@ export declare const PlayerStatisticScalarFieldEnum: {
     readonly updated_at: "updated_at";
 };
 export type PlayerStatisticScalarFieldEnum = (typeof PlayerStatisticScalarFieldEnum)[keyof typeof PlayerStatisticScalarFieldEnum];
+export declare const MatchResultScalarFieldEnum: {
+    readonly id: "id";
+    readonly match_id: "match_id";
+    readonly winner_team_id: "winner_team_id";
+    readonly home_score: "home_score";
+    readonly away_score: "away_score";
+    readonly home_half_time_score: "home_half_time_score";
+    readonly away_half_time_score: "away_half_time_score";
+    readonly home_extra_time_score: "home_extra_time_score";
+    readonly away_extra_time_score: "away_extra_time_score";
+    readonly home_penalty_score: "home_penalty_score";
+    readonly away_penalty_score: "away_penalty_score";
+    readonly home_final_score: "home_final_score";
+    readonly away_final_score: "away_final_score";
+    readonly result_type: "result_type";
+    readonly status: "status";
+    readonly duration: "duration";
+    readonly notes: "notes";
+    readonly appeal_reason: "appeal_reason";
+    readonly appeal_note: "appeal_note";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type MatchResultScalarFieldEnum = (typeof MatchResultScalarFieldEnum)[keyof typeof MatchResultScalarFieldEnum];
 export declare const NotificationScalarFieldEnum: {
     readonly id: "id";
     readonly title: "title";
@@ -1974,30 +2209,40 @@ export declare const PaymentScalarFieldEnum: {
     readonly deleted_at: "deleted_at";
 };
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum];
-export declare const MatchResultScalarFieldEnum: {
+export declare const ArticleScalarFieldEnum: {
     readonly id: "id";
-    readonly match_id: "match_id";
-    readonly winner_team_id: "winner_team_id";
-    readonly home_score: "home_score";
-    readonly away_score: "away_score";
-    readonly home_half_time_score: "home_half_time_score";
-    readonly away_half_time_score: "away_half_time_score";
-    readonly home_extra_time_score: "home_extra_time_score";
-    readonly away_extra_time_score: "away_extra_time_score";
-    readonly home_penalty_score: "home_penalty_score";
-    readonly away_penalty_score: "away_penalty_score";
-    readonly home_final_score: "home_final_score";
-    readonly away_final_score: "away_final_score";
-    readonly result_type: "result_type";
+    readonly title: "title";
+    readonly slug: "slug";
+    readonly content: "content";
+    readonly cover_image: "cover_image";
     readonly status: "status";
-    readonly duration: "duration";
-    readonly notes: "notes";
+    readonly user_id: "user_id";
+    readonly season_id: "season_id";
+    readonly match_id: "match_id";
+    readonly team_id: "team_id";
+    readonly published_at: "published_at";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
 };
-export type MatchResultScalarFieldEnum = (typeof MatchResultScalarFieldEnum)[keyof typeof MatchResultScalarFieldEnum];
+export type ArticleScalarFieldEnum = (typeof ArticleScalarFieldEnum)[keyof typeof ArticleScalarFieldEnum];
+export declare const ArticleTagScalarFieldEnum: {
+    readonly id: "id";
+    readonly article_id: "article_id";
+    readonly tag: "tag";
+};
+export type ArticleTagScalarFieldEnum = (typeof ArticleTagScalarFieldEnum)[keyof typeof ArticleTagScalarFieldEnum];
+export declare const ArticleMediaScalarFieldEnum: {
+    readonly id: "id";
+    readonly article_id: "article_id";
+    readonly type: "type";
+    readonly url: "url";
+    readonly caption: "caption";
+    readonly order: "order";
+    readonly created_at: "created_at";
+};
+export type ArticleMediaScalarFieldEnum = (typeof ArticleMediaScalarFieldEnum)[keyof typeof ArticleMediaScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
@@ -2068,6 +2313,7 @@ export declare const PlayerOrderByRelevanceFieldEnum: {
 export type PlayerOrderByRelevanceFieldEnum = (typeof PlayerOrderByRelevanceFieldEnum)[keyof typeof PlayerOrderByRelevanceFieldEnum];
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
+    readonly postponed_reason: "postponed_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];
@@ -2080,6 +2326,12 @@ export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };
 export type MatchEventOrderByRelevanceFieldEnum = (typeof MatchEventOrderByRelevanceFieldEnum)[keyof typeof MatchEventOrderByRelevanceFieldEnum];
+export declare const MatchResultOrderByRelevanceFieldEnum: {
+    readonly notes: "notes";
+    readonly appeal_reason: "appeal_reason";
+    readonly appeal_note: "appeal_note";
+};
+export type MatchResultOrderByRelevanceFieldEnum = (typeof MatchResultOrderByRelevanceFieldEnum)[keyof typeof MatchResultOrderByRelevanceFieldEnum];
 export declare const NotificationOrderByRelevanceFieldEnum: {
     readonly title: "title";
     readonly content: "content";
@@ -2090,10 +2342,22 @@ export declare const PaymentOrderByRelevanceFieldEnum: {
     readonly transaction_ref: "transaction_ref";
 };
 export type PaymentOrderByRelevanceFieldEnum = (typeof PaymentOrderByRelevanceFieldEnum)[keyof typeof PaymentOrderByRelevanceFieldEnum];
-export declare const MatchResultOrderByRelevanceFieldEnum: {
-    readonly notes: "notes";
+export declare const ArticleOrderByRelevanceFieldEnum: {
+    readonly title: "title";
+    readonly slug: "slug";
+    readonly content: "content";
+    readonly cover_image: "cover_image";
 };
-export type MatchResultOrderByRelevanceFieldEnum = (typeof MatchResultOrderByRelevanceFieldEnum)[keyof typeof MatchResultOrderByRelevanceFieldEnum];
+export type ArticleOrderByRelevanceFieldEnum = (typeof ArticleOrderByRelevanceFieldEnum)[keyof typeof ArticleOrderByRelevanceFieldEnum];
+export declare const ArticleTagOrderByRelevanceFieldEnum: {
+    readonly tag: "tag";
+};
+export type ArticleTagOrderByRelevanceFieldEnum = (typeof ArticleTagOrderByRelevanceFieldEnum)[keyof typeof ArticleTagOrderByRelevanceFieldEnum];
+export declare const ArticleMediaOrderByRelevanceFieldEnum: {
+    readonly url: "url";
+    readonly caption: "caption";
+};
+export type ArticleMediaOrderByRelevanceFieldEnum = (typeof ArticleMediaOrderByRelevanceFieldEnum)[keyof typeof ArticleMediaOrderByRelevanceFieldEnum];
 /**
  * Field references
  */
@@ -2142,6 +2406,10 @@ export type EnumSeasonStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  */
 export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>;
 /**
+ * Reference to a field of type 'GroupStatus'
+ */
+export type EnumGroupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GroupStatus'>;
+/**
  * Reference to a field of type 'PlayerPosition'
  */
 export type EnumPlayerPositionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PlayerPosition'>;
@@ -2166,17 +2434,25 @@ export type EnumSeasonTeamStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
  */
 export type EnumMatchStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchStatus'>;
 /**
- * Reference to a field of type 'MatchEventType'
- */
-export type EnumMatchEventTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchEventType'>;
-/**
  * Reference to a field of type 'MatchPeriod'
  */
 export type EnumMatchPeriodFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchPeriod'>;
 /**
+ * Reference to a field of type 'MatchEventType'
+ */
+export type EnumMatchEventTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchEventType'>;
+/**
  * Reference to a field of type 'CardColor'
  */
 export type EnumCardColorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CardColor'>;
+/**
+ * Reference to a field of type 'MatchResultType'
+ */
+export type EnumMatchResultTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchResultType'>;
+/**
+ * Reference to a field of type 'MatchResultStatus'
+ */
+export type EnumMatchResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchResultStatus'>;
 /**
  * Reference to a field of type 'NotificationType'
  */
@@ -2190,13 +2466,13 @@ export type EnumNotificationSourceFieldRefInput<$PrismaModel> = FieldRefInputTyp
  */
 export type EnumPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentStatus'>;
 /**
- * Reference to a field of type 'MatchResultType'
+ * Reference to a field of type 'ArticleStatus'
  */
-export type EnumMatchResultTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchResultType'>;
+export type EnumArticleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ArticleStatus'>;
 /**
- * Reference to a field of type 'MatchResultStatus'
+ * Reference to a field of type 'MediaType'
  */
-export type EnumMatchResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchResultStatus'>;
+export type EnumMediaTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MediaType'>;
 /**
  * Reference to a field of type 'Float'
  */
@@ -2321,16 +2597,19 @@ export type GlobalOmitConfig = {
     team?: Prisma.TeamOmit;
     player?: Prisma.PlayerOmit;
     teamPlayer?: Prisma.TeamPlayerOmit;
+    teamLeader?: Prisma.TeamLeaderOmit;
     seasonTeam?: Prisma.SeasonTeamOmit;
     match?: Prisma.MatchOmit;
     venue?: Prisma.VenueOmit;
-    teamLeader?: Prisma.TeamLeaderOmit;
     matchEvent?: Prisma.MatchEventOmit;
     teamStanding?: Prisma.TeamStandingOmit;
     playerStatistic?: Prisma.PlayerStatisticOmit;
+    matchResult?: Prisma.MatchResultOmit;
     notification?: Prisma.NotificationOmit;
     payment?: Prisma.PaymentOmit;
-    matchResult?: Prisma.MatchResultOmit;
+    article?: Prisma.ArticleOmit;
+    articleTag?: Prisma.ArticleTagOmit;
+    articleMedia?: Prisma.ArticleMediaOmit;
 };
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 export type LogDefinition = {

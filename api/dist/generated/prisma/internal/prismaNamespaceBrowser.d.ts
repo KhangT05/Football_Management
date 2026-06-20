@@ -37,16 +37,19 @@ export declare const ModelName: {
     readonly Team: "Team";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
+    readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
     readonly Match: "Match";
     readonly Venue: "Venue";
-    readonly TeamLeader: "TeamLeader";
     readonly MatchEvent: "MatchEvent";
     readonly TeamStanding: "TeamStanding";
     readonly PlayerStatistic: "PlayerStatistic";
+    readonly MatchResult: "MatchResult";
     readonly Notification: "Notification";
     readonly Payment: "Payment";
-    readonly MatchResult: "MatchResult";
+    readonly Article: "Article";
+    readonly ArticleTag: "ArticleTag";
+    readonly ArticleMedia: "ArticleMedia";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const TransactionIsolationLevel: {
@@ -123,6 +126,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly order: "order";
     readonly start_date: "start_date";
     readonly end_date: "end_date";
+    readonly min_rest_days_per_team: "min_rest_days_per_team";
     readonly is_active: "is_active";
     readonly status: "status";
     readonly created_at: "created_at";
@@ -155,6 +159,8 @@ export declare const GroupScalarFieldEnum: {
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly scheduleGeneratedAt: "scheduleGeneratedAt";
+    readonly status: "status";
 };
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum];
 export declare const TeamScalarFieldEnum: {
@@ -201,6 +207,16 @@ export declare const TeamPlayerScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TeamPlayerScalarFieldEnum = (typeof TeamPlayerScalarFieldEnum)[keyof typeof TeamPlayerScalarFieldEnum];
+export declare const TeamLeaderScalarFieldEnum: {
+    readonly id: "id";
+    readonly team_id: "team_id";
+    readonly user_id: "user_id";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type TeamLeaderScalarFieldEnum = (typeof TeamLeaderScalarFieldEnum)[keyof typeof TeamLeaderScalarFieldEnum];
 export declare const SeasonTeamScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
@@ -228,6 +244,11 @@ export declare const MatchScalarFieldEnum: {
     readonly round: "round";
     readonly leg: "leg";
     readonly next_match_id: "next_match_id";
+    readonly current_period: "current_period";
+    readonly postponed_from: "postponed_from";
+    readonly postponed_reason: "postponed_reason";
+    readonly replay_of_match_id: "replay_of_match_id";
+    readonly abandoned_minute: "abandoned_minute";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -249,16 +270,6 @@ export declare const VenueScalarFieldEnum: {
     readonly deleted_at: "deleted_at";
 };
 export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
-export declare const TeamLeaderScalarFieldEnum: {
-    readonly id: "id";
-    readonly team_id: "team_id";
-    readonly user_id: "user_id";
-    readonly is_active: "is_active";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
-};
-export type TeamLeaderScalarFieldEnum = (typeof TeamLeaderScalarFieldEnum)[keyof typeof TeamLeaderScalarFieldEnum];
 export declare const MatchEventScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -309,6 +320,32 @@ export declare const PlayerStatisticScalarFieldEnum: {
     readonly updated_at: "updated_at";
 };
 export type PlayerStatisticScalarFieldEnum = (typeof PlayerStatisticScalarFieldEnum)[keyof typeof PlayerStatisticScalarFieldEnum];
+export declare const MatchResultScalarFieldEnum: {
+    readonly id: "id";
+    readonly match_id: "match_id";
+    readonly winner_team_id: "winner_team_id";
+    readonly home_score: "home_score";
+    readonly away_score: "away_score";
+    readonly home_half_time_score: "home_half_time_score";
+    readonly away_half_time_score: "away_half_time_score";
+    readonly home_extra_time_score: "home_extra_time_score";
+    readonly away_extra_time_score: "away_extra_time_score";
+    readonly home_penalty_score: "home_penalty_score";
+    readonly away_penalty_score: "away_penalty_score";
+    readonly home_final_score: "home_final_score";
+    readonly away_final_score: "away_final_score";
+    readonly result_type: "result_type";
+    readonly status: "status";
+    readonly duration: "duration";
+    readonly notes: "notes";
+    readonly appeal_reason: "appeal_reason";
+    readonly appeal_note: "appeal_note";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type MatchResultScalarFieldEnum = (typeof MatchResultScalarFieldEnum)[keyof typeof MatchResultScalarFieldEnum];
 export declare const NotificationScalarFieldEnum: {
     readonly id: "id";
     readonly title: "title";
@@ -342,30 +379,40 @@ export declare const PaymentScalarFieldEnum: {
     readonly deleted_at: "deleted_at";
 };
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum];
-export declare const MatchResultScalarFieldEnum: {
+export declare const ArticleScalarFieldEnum: {
     readonly id: "id";
-    readonly match_id: "match_id";
-    readonly winner_team_id: "winner_team_id";
-    readonly home_score: "home_score";
-    readonly away_score: "away_score";
-    readonly home_half_time_score: "home_half_time_score";
-    readonly away_half_time_score: "away_half_time_score";
-    readonly home_extra_time_score: "home_extra_time_score";
-    readonly away_extra_time_score: "away_extra_time_score";
-    readonly home_penalty_score: "home_penalty_score";
-    readonly away_penalty_score: "away_penalty_score";
-    readonly home_final_score: "home_final_score";
-    readonly away_final_score: "away_final_score";
-    readonly result_type: "result_type";
+    readonly title: "title";
+    readonly slug: "slug";
+    readonly content: "content";
+    readonly cover_image: "cover_image";
     readonly status: "status";
-    readonly duration: "duration";
-    readonly notes: "notes";
+    readonly user_id: "user_id";
+    readonly season_id: "season_id";
+    readonly match_id: "match_id";
+    readonly team_id: "team_id";
+    readonly published_at: "published_at";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
 };
-export type MatchResultScalarFieldEnum = (typeof MatchResultScalarFieldEnum)[keyof typeof MatchResultScalarFieldEnum];
+export type ArticleScalarFieldEnum = (typeof ArticleScalarFieldEnum)[keyof typeof ArticleScalarFieldEnum];
+export declare const ArticleTagScalarFieldEnum: {
+    readonly id: "id";
+    readonly article_id: "article_id";
+    readonly tag: "tag";
+};
+export type ArticleTagScalarFieldEnum = (typeof ArticleTagScalarFieldEnum)[keyof typeof ArticleTagScalarFieldEnum];
+export declare const ArticleMediaScalarFieldEnum: {
+    readonly id: "id";
+    readonly article_id: "article_id";
+    readonly type: "type";
+    readonly url: "url";
+    readonly caption: "caption";
+    readonly order: "order";
+    readonly created_at: "created_at";
+};
+export type ArticleMediaScalarFieldEnum = (typeof ArticleMediaScalarFieldEnum)[keyof typeof ArticleMediaScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
@@ -436,6 +483,7 @@ export declare const PlayerOrderByRelevanceFieldEnum: {
 export type PlayerOrderByRelevanceFieldEnum = (typeof PlayerOrderByRelevanceFieldEnum)[keyof typeof PlayerOrderByRelevanceFieldEnum];
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
+    readonly postponed_reason: "postponed_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];
@@ -448,6 +496,12 @@ export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };
 export type MatchEventOrderByRelevanceFieldEnum = (typeof MatchEventOrderByRelevanceFieldEnum)[keyof typeof MatchEventOrderByRelevanceFieldEnum];
+export declare const MatchResultOrderByRelevanceFieldEnum: {
+    readonly notes: "notes";
+    readonly appeal_reason: "appeal_reason";
+    readonly appeal_note: "appeal_note";
+};
+export type MatchResultOrderByRelevanceFieldEnum = (typeof MatchResultOrderByRelevanceFieldEnum)[keyof typeof MatchResultOrderByRelevanceFieldEnum];
 export declare const NotificationOrderByRelevanceFieldEnum: {
     readonly title: "title";
     readonly content: "content";
@@ -458,8 +512,20 @@ export declare const PaymentOrderByRelevanceFieldEnum: {
     readonly transaction_ref: "transaction_ref";
 };
 export type PaymentOrderByRelevanceFieldEnum = (typeof PaymentOrderByRelevanceFieldEnum)[keyof typeof PaymentOrderByRelevanceFieldEnum];
-export declare const MatchResultOrderByRelevanceFieldEnum: {
-    readonly notes: "notes";
+export declare const ArticleOrderByRelevanceFieldEnum: {
+    readonly title: "title";
+    readonly slug: "slug";
+    readonly content: "content";
+    readonly cover_image: "cover_image";
 };
-export type MatchResultOrderByRelevanceFieldEnum = (typeof MatchResultOrderByRelevanceFieldEnum)[keyof typeof MatchResultOrderByRelevanceFieldEnum];
+export type ArticleOrderByRelevanceFieldEnum = (typeof ArticleOrderByRelevanceFieldEnum)[keyof typeof ArticleOrderByRelevanceFieldEnum];
+export declare const ArticleTagOrderByRelevanceFieldEnum: {
+    readonly tag: "tag";
+};
+export type ArticleTagOrderByRelevanceFieldEnum = (typeof ArticleTagOrderByRelevanceFieldEnum)[keyof typeof ArticleTagOrderByRelevanceFieldEnum];
+export declare const ArticleMediaOrderByRelevanceFieldEnum: {
+    readonly url: "url";
+    readonly caption: "caption";
+};
+export type ArticleMediaOrderByRelevanceFieldEnum = (typeof ArticleMediaOrderByRelevanceFieldEnum)[keyof typeof ArticleMediaOrderByRelevanceFieldEnum];
 //# sourceMappingURL=prismaNamespaceBrowser.d.ts.map

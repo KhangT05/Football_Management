@@ -222,6 +222,7 @@ export type TeamWhereInput = {
     playerStatistics?: Prisma.PlayerStatisticListRelationFilter;
     notifications?: Prisma.NotificationListRelationFilter;
     matchResults?: Prisma.MatchResultListRelationFilter;
+    articles?: Prisma.ArticleListRelationFilter;
 };
 export type TeamOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -244,6 +245,7 @@ export type TeamOrderByWithRelationInput = {
     playerStatistics?: Prisma.PlayerStatisticOrderByRelationAggregateInput;
     notifications?: Prisma.NotificationOrderByRelationAggregateInput;
     matchResults?: Prisma.MatchResultOrderByRelationAggregateInput;
+    articles?: Prisma.ArticleOrderByRelationAggregateInput;
     _relevance?: Prisma.TeamOrderByRelevanceInput;
 };
 export type TeamWhereUniqueInput = Prisma.AtLeast<{
@@ -270,6 +272,7 @@ export type TeamWhereUniqueInput = Prisma.AtLeast<{
     playerStatistics?: Prisma.PlayerStatisticListRelationFilter;
     notifications?: Prisma.NotificationListRelationFilter;
     matchResults?: Prisma.MatchResultListRelationFilter;
+    articles?: Prisma.ArticleListRelationFilter;
 }, "id" | "name">;
 export type TeamOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -322,6 +325,7 @@ export type TeamCreateInput = {
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateInput = {
     id?: number;
@@ -343,6 +347,7 @@ export type TeamUncheckedCreateInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -363,6 +368,7 @@ export type TeamUpdateInput = {
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -384,6 +390,7 @@ export type TeamUncheckedUpdateInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamCreateManyInput = {
     id?: number;
@@ -534,6 +541,18 @@ export type TeamUpdateOneRequiredWithoutTeam_playersNestedInput = {
     connect?: Prisma.TeamWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutTeam_playersInput, Prisma.TeamUpdateWithoutTeam_playersInput>, Prisma.TeamUncheckedUpdateWithoutTeam_playersInput>;
 };
+export type TeamCreateNestedOneWithoutTeamLeadersInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutTeamLeadersInput, Prisma.TeamUncheckedCreateWithoutTeamLeadersInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutTeamLeadersInput;
+    connect?: Prisma.TeamWhereUniqueInput;
+};
+export type TeamUpdateOneRequiredWithoutTeamLeadersNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutTeamLeadersInput, Prisma.TeamUncheckedCreateWithoutTeamLeadersInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutTeamLeadersInput;
+    upsert?: Prisma.TeamUpsertWithoutTeamLeadersInput;
+    connect?: Prisma.TeamWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutTeamLeadersInput, Prisma.TeamUpdateWithoutTeamLeadersInput>, Prisma.TeamUncheckedUpdateWithoutTeamLeadersInput>;
+};
 export type TeamCreateNestedOneWithoutSeason_teamsInput = {
     create?: Prisma.XOR<Prisma.TeamCreateWithoutSeason_teamsInput, Prisma.TeamUncheckedCreateWithoutSeason_teamsInput>;
     connectOrCreate?: Prisma.TeamCreateOrConnectWithoutSeason_teamsInput;
@@ -570,18 +589,6 @@ export type TeamUpdateOneRequiredWithoutAway_matchesNestedInput = {
     connect?: Prisma.TeamWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutAway_matchesInput, Prisma.TeamUpdateWithoutAway_matchesInput>, Prisma.TeamUncheckedUpdateWithoutAway_matchesInput>;
 };
-export type TeamCreateNestedOneWithoutTeamLeadersInput = {
-    create?: Prisma.XOR<Prisma.TeamCreateWithoutTeamLeadersInput, Prisma.TeamUncheckedCreateWithoutTeamLeadersInput>;
-    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutTeamLeadersInput;
-    connect?: Prisma.TeamWhereUniqueInput;
-};
-export type TeamUpdateOneRequiredWithoutTeamLeadersNestedInput = {
-    create?: Prisma.XOR<Prisma.TeamCreateWithoutTeamLeadersInput, Prisma.TeamUncheckedCreateWithoutTeamLeadersInput>;
-    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutTeamLeadersInput;
-    upsert?: Prisma.TeamUpsertWithoutTeamLeadersInput;
-    connect?: Prisma.TeamWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutTeamLeadersInput, Prisma.TeamUpdateWithoutTeamLeadersInput>, Prisma.TeamUncheckedUpdateWithoutTeamLeadersInput>;
-};
 export type TeamCreateNestedOneWithoutTeamStandingsInput = {
     create?: Prisma.XOR<Prisma.TeamCreateWithoutTeamStandingsInput, Prisma.TeamUncheckedCreateWithoutTeamStandingsInput>;
     connectOrCreate?: Prisma.TeamCreateOrConnectWithoutTeamStandingsInput;
@@ -606,6 +613,20 @@ export type TeamUpdateOneRequiredWithoutPlayerStatisticsNestedInput = {
     connect?: Prisma.TeamWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutPlayerStatisticsInput, Prisma.TeamUpdateWithoutPlayerStatisticsInput>, Prisma.TeamUncheckedUpdateWithoutPlayerStatisticsInput>;
 };
+export type TeamCreateNestedOneWithoutMatchResultsInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutMatchResultsInput, Prisma.TeamUncheckedCreateWithoutMatchResultsInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutMatchResultsInput;
+    connect?: Prisma.TeamWhereUniqueInput;
+};
+export type TeamUpdateOneWithoutMatchResultsNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutMatchResultsInput, Prisma.TeamUncheckedCreateWithoutMatchResultsInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutMatchResultsInput;
+    upsert?: Prisma.TeamUpsertWithoutMatchResultsInput;
+    disconnect?: Prisma.TeamWhereInput | boolean;
+    delete?: Prisma.TeamWhereInput | boolean;
+    connect?: Prisma.TeamWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutMatchResultsInput, Prisma.TeamUpdateWithoutMatchResultsInput>, Prisma.TeamUncheckedUpdateWithoutMatchResultsInput>;
+};
 export type TeamCreateNestedOneWithoutNotificationsInput = {
     create?: Prisma.XOR<Prisma.TeamCreateWithoutNotificationsInput, Prisma.TeamUncheckedCreateWithoutNotificationsInput>;
     connectOrCreate?: Prisma.TeamCreateOrConnectWithoutNotificationsInput;
@@ -620,19 +641,19 @@ export type TeamUpdateOneWithoutNotificationsNestedInput = {
     connect?: Prisma.TeamWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutNotificationsInput, Prisma.TeamUpdateWithoutNotificationsInput>, Prisma.TeamUncheckedUpdateWithoutNotificationsInput>;
 };
-export type TeamCreateNestedOneWithoutMatchResultsInput = {
-    create?: Prisma.XOR<Prisma.TeamCreateWithoutMatchResultsInput, Prisma.TeamUncheckedCreateWithoutMatchResultsInput>;
-    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutMatchResultsInput;
+export type TeamCreateNestedOneWithoutArticlesInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutArticlesInput, Prisma.TeamUncheckedCreateWithoutArticlesInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutArticlesInput;
     connect?: Prisma.TeamWhereUniqueInput;
 };
-export type TeamUpdateOneWithoutMatchResultsNestedInput = {
-    create?: Prisma.XOR<Prisma.TeamCreateWithoutMatchResultsInput, Prisma.TeamUncheckedCreateWithoutMatchResultsInput>;
-    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutMatchResultsInput;
-    upsert?: Prisma.TeamUpsertWithoutMatchResultsInput;
+export type TeamUpdateOneWithoutArticlesNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutArticlesInput, Prisma.TeamUncheckedCreateWithoutArticlesInput>;
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutArticlesInput;
+    upsert?: Prisma.TeamUpsertWithoutArticlesInput;
     disconnect?: Prisma.TeamWhereInput | boolean;
     delete?: Prisma.TeamWhereInput | boolean;
     connect?: Prisma.TeamWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutMatchResultsInput, Prisma.TeamUpdateWithoutMatchResultsInput>, Prisma.TeamUncheckedUpdateWithoutMatchResultsInput>;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutArticlesInput, Prisma.TeamUpdateWithoutArticlesInput>, Prisma.TeamUncheckedUpdateWithoutArticlesInput>;
 };
 export type TeamCreateWithoutUserInput = {
     name: string;
@@ -652,6 +673,7 @@ export type TeamCreateWithoutUserInput = {
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutUserInput = {
     id?: number;
@@ -672,6 +694,7 @@ export type TeamUncheckedCreateWithoutUserInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutUserInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -727,6 +750,7 @@ export type TeamCreateWithoutTeam_playersInput = {
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutTeam_playersInput = {
     id?: number;
@@ -747,6 +771,7 @@ export type TeamUncheckedCreateWithoutTeam_playersInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutTeam_playersInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -779,6 +804,7 @@ export type TeamUpdateWithoutTeam_playersInput = {
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeam_playersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -799,279 +825,7 @@ export type TeamUncheckedUpdateWithoutTeam_playersInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamCreateWithoutSeason_teamsInput = {
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
-    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
-    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamUncheckedCreateWithoutSeason_teamsInput = {
-    id?: number;
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
-    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamCreateOrConnectWithoutSeason_teamsInput = {
-    where: Prisma.TeamWhereUniqueInput;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutSeason_teamsInput, Prisma.TeamUncheckedCreateWithoutSeason_teamsInput>;
-};
-export type TeamUpsertWithoutSeason_teamsInput = {
-    update: Prisma.XOR<Prisma.TeamUpdateWithoutSeason_teamsInput, Prisma.TeamUncheckedUpdateWithoutSeason_teamsInput>;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutSeason_teamsInput, Prisma.TeamUncheckedCreateWithoutSeason_teamsInput>;
-    where?: Prisma.TeamWhereInput;
-};
-export type TeamUpdateToOneWithWhereWithoutSeason_teamsInput = {
-    where?: Prisma.TeamWhereInput;
-    data: Prisma.XOR<Prisma.TeamUpdateWithoutSeason_teamsInput, Prisma.TeamUncheckedUpdateWithoutSeason_teamsInput>;
-};
-export type TeamUpdateWithoutSeason_teamsInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
-    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
-    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamUncheckedUpdateWithoutSeason_teamsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
-    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamCreateWithoutHome_matchesInput = {
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
-    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
-    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamUncheckedCreateWithoutHome_matchesInput = {
-    id?: number;
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
-    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamCreateOrConnectWithoutHome_matchesInput = {
-    where: Prisma.TeamWhereUniqueInput;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutHome_matchesInput, Prisma.TeamUncheckedCreateWithoutHome_matchesInput>;
-};
-export type TeamCreateWithoutAway_matchesInput = {
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
-    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamUncheckedCreateWithoutAway_matchesInput = {
-    id?: number;
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
-    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
-    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamCreateOrConnectWithoutAway_matchesInput = {
-    where: Prisma.TeamWhereUniqueInput;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutAway_matchesInput, Prisma.TeamUncheckedCreateWithoutAway_matchesInput>;
-};
-export type TeamUpsertWithoutHome_matchesInput = {
-    update: Prisma.XOR<Prisma.TeamUpdateWithoutHome_matchesInput, Prisma.TeamUncheckedUpdateWithoutHome_matchesInput>;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutHome_matchesInput, Prisma.TeamUncheckedCreateWithoutHome_matchesInput>;
-    where?: Prisma.TeamWhereInput;
-};
-export type TeamUpdateToOneWithWhereWithoutHome_matchesInput = {
-    where?: Prisma.TeamWhereInput;
-    data: Prisma.XOR<Prisma.TeamUpdateWithoutHome_matchesInput, Prisma.TeamUncheckedUpdateWithoutHome_matchesInput>;
-};
-export type TeamUpdateWithoutHome_matchesInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
-    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
-    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamUncheckedUpdateWithoutHome_matchesInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
-    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamUpsertWithoutAway_matchesInput = {
-    update: Prisma.XOR<Prisma.TeamUpdateWithoutAway_matchesInput, Prisma.TeamUncheckedUpdateWithoutAway_matchesInput>;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutAway_matchesInput, Prisma.TeamUncheckedCreateWithoutAway_matchesInput>;
-    where?: Prisma.TeamWhereInput;
-};
-export type TeamUpdateToOneWithWhereWithoutAway_matchesInput = {
-    where?: Prisma.TeamWhereInput;
-    data: Prisma.XOR<Prisma.TeamUpdateWithoutAway_matchesInput, Prisma.TeamUncheckedUpdateWithoutAway_matchesInput>;
-};
-export type TeamUpdateWithoutAway_matchesInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
-    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamUncheckedUpdateWithoutAway_matchesInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
-    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
-    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamCreateWithoutTeamLeadersInput = {
     name: string;
@@ -1091,6 +845,7 @@ export type TeamCreateWithoutTeamLeadersInput = {
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutTeamLeadersInput = {
     id?: number;
@@ -1111,6 +866,7 @@ export type TeamUncheckedCreateWithoutTeamLeadersInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutTeamLeadersInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -1143,6 +899,7 @@ export type TeamUpdateWithoutTeamLeadersInput = {
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeamLeadersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1163,6 +920,292 @@ export type TeamUncheckedUpdateWithoutTeamLeadersInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamCreateWithoutSeason_teamsInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
+};
+export type TeamUncheckedCreateWithoutSeason_teamsInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
+};
+export type TeamCreateOrConnectWithoutSeason_teamsInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutSeason_teamsInput, Prisma.TeamUncheckedCreateWithoutSeason_teamsInput>;
+};
+export type TeamUpsertWithoutSeason_teamsInput = {
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutSeason_teamsInput, Prisma.TeamUncheckedUpdateWithoutSeason_teamsInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutSeason_teamsInput, Prisma.TeamUncheckedCreateWithoutSeason_teamsInput>;
+    where?: Prisma.TeamWhereInput;
+};
+export type TeamUpdateToOneWithWhereWithoutSeason_teamsInput = {
+    where?: Prisma.TeamWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutSeason_teamsInput, Prisma.TeamUncheckedUpdateWithoutSeason_teamsInput>;
+};
+export type TeamUpdateWithoutSeason_teamsInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutSeason_teamsInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamCreateWithoutHome_matchesInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
+    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
+};
+export type TeamUncheckedCreateWithoutHome_matchesInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
+    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
+};
+export type TeamCreateOrConnectWithoutHome_matchesInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutHome_matchesInput, Prisma.TeamUncheckedCreateWithoutHome_matchesInput>;
+};
+export type TeamCreateWithoutAway_matchesInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
+};
+export type TeamUncheckedCreateWithoutAway_matchesInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
+};
+export type TeamCreateOrConnectWithoutAway_matchesInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutAway_matchesInput, Prisma.TeamUncheckedCreateWithoutAway_matchesInput>;
+};
+export type TeamUpsertWithoutHome_matchesInput = {
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutHome_matchesInput, Prisma.TeamUncheckedUpdateWithoutHome_matchesInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutHome_matchesInput, Prisma.TeamUncheckedCreateWithoutHome_matchesInput>;
+    where?: Prisma.TeamWhereInput;
+};
+export type TeamUpdateToOneWithWhereWithoutHome_matchesInput = {
+    where?: Prisma.TeamWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutHome_matchesInput, Prisma.TeamUncheckedUpdateWithoutHome_matchesInput>;
+};
+export type TeamUpdateWithoutHome_matchesInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
+    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutHome_matchesInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
+    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUpsertWithoutAway_matchesInput = {
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutAway_matchesInput, Prisma.TeamUncheckedUpdateWithoutAway_matchesInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutAway_matchesInput, Prisma.TeamUncheckedCreateWithoutAway_matchesInput>;
+    where?: Prisma.TeamWhereInput;
+};
+export type TeamUpdateToOneWithWhereWithoutAway_matchesInput = {
+    where?: Prisma.TeamWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutAway_matchesInput, Prisma.TeamUncheckedUpdateWithoutAway_matchesInput>;
+};
+export type TeamUpdateWithoutAway_matchesInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutAway_matchesInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamCreateWithoutTeamStandingsInput = {
     name: string;
@@ -1182,6 +1225,7 @@ export type TeamCreateWithoutTeamStandingsInput = {
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutTeamStandingsInput = {
     id?: number;
@@ -1202,6 +1246,7 @@ export type TeamUncheckedCreateWithoutTeamStandingsInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutTeamStandingsInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -1234,6 +1279,7 @@ export type TeamUpdateWithoutTeamStandingsInput = {
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeamStandingsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1254,6 +1300,7 @@ export type TeamUncheckedUpdateWithoutTeamStandingsInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamCreateWithoutPlayerStatisticsInput = {
     name: string;
@@ -1273,6 +1320,7 @@ export type TeamCreateWithoutPlayerStatisticsInput = {
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutPlayerStatisticsInput = {
     id?: number;
@@ -1293,6 +1341,7 @@ export type TeamUncheckedCreateWithoutPlayerStatisticsInput = {
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
     matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutPlayerStatisticsInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -1325,6 +1374,7 @@ export type TeamUpdateWithoutPlayerStatisticsInput = {
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutPlayerStatisticsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1345,97 +1395,7 @@ export type TeamUncheckedUpdateWithoutPlayerStatisticsInput = {
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamCreateWithoutNotificationsInput = {
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
-    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
-    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
-    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
-    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamUncheckedCreateWithoutNotificationsInput = {
-    id?: number;
-    name: string;
-    coach_name?: string | null;
-    logo?: string | null;
-    description?: string | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
-    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
-    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
-    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
-    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
-};
-export type TeamCreateOrConnectWithoutNotificationsInput = {
-    where: Prisma.TeamWhereUniqueInput;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutNotificationsInput, Prisma.TeamUncheckedCreateWithoutNotificationsInput>;
-};
-export type TeamUpsertWithoutNotificationsInput = {
-    update: Prisma.XOR<Prisma.TeamUpdateWithoutNotificationsInput, Prisma.TeamUncheckedUpdateWithoutNotificationsInput>;
-    create: Prisma.XOR<Prisma.TeamCreateWithoutNotificationsInput, Prisma.TeamUncheckedCreateWithoutNotificationsInput>;
-    where?: Prisma.TeamWhereInput;
-};
-export type TeamUpdateToOneWithWhereWithoutNotificationsInput = {
-    where?: Prisma.TeamWhereInput;
-    data: Prisma.XOR<Prisma.TeamUpdateWithoutNotificationsInput, Prisma.TeamUncheckedUpdateWithoutNotificationsInput>;
-};
-export type TeamUpdateWithoutNotificationsInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
-    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
-    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
-    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
-};
-export type TeamUncheckedUpdateWithoutNotificationsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
-    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
-    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
-    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
-    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
-    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamCreateWithoutMatchResultsInput = {
     name: string;
@@ -1455,6 +1415,7 @@ export type TeamCreateWithoutMatchResultsInput = {
     teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
 };
 export type TeamUncheckedCreateWithoutMatchResultsInput = {
     id?: number;
@@ -1475,6 +1436,7 @@ export type TeamUncheckedCreateWithoutMatchResultsInput = {
     teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
 };
 export type TeamCreateOrConnectWithoutMatchResultsInput = {
     where: Prisma.TeamWhereUniqueInput;
@@ -1507,6 +1469,7 @@ export type TeamUpdateWithoutMatchResultsInput = {
     teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutMatchResultsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1527,6 +1490,197 @@ export type TeamUncheckedUpdateWithoutMatchResultsInput = {
     teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamCreateWithoutNotificationsInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
+};
+export type TeamUncheckedCreateWithoutNotificationsInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
+};
+export type TeamCreateOrConnectWithoutNotificationsInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutNotificationsInput, Prisma.TeamUncheckedCreateWithoutNotificationsInput>;
+};
+export type TeamUpsertWithoutNotificationsInput = {
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutNotificationsInput, Prisma.TeamUncheckedUpdateWithoutNotificationsInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutNotificationsInput, Prisma.TeamUncheckedCreateWithoutNotificationsInput>;
+    where?: Prisma.TeamWhereInput;
+};
+export type TeamUpdateToOneWithWhereWithoutNotificationsInput = {
+    where?: Prisma.TeamWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutNotificationsInput, Prisma.TeamUncheckedUpdateWithoutNotificationsInput>;
+};
+export type TeamUpdateWithoutNotificationsInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutNotificationsInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamCreateWithoutArticlesInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+};
+export type TeamUncheckedCreateWithoutArticlesInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+};
+export type TeamCreateOrConnectWithoutArticlesInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutArticlesInput, Prisma.TeamUncheckedCreateWithoutArticlesInput>;
+};
+export type TeamUpsertWithoutArticlesInput = {
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutArticlesInput, Prisma.TeamUncheckedUpdateWithoutArticlesInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutArticlesInput, Prisma.TeamUncheckedCreateWithoutArticlesInput>;
+    where?: Prisma.TeamWhereInput;
+};
+export type TeamUpdateToOneWithWhereWithoutArticlesInput = {
+    where?: Prisma.TeamWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutArticlesInput, Prisma.TeamUncheckedUpdateWithoutArticlesInput>;
+};
+export type TeamUpdateWithoutArticlesInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutArticlesInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
 };
 export type TeamCreateManyUserInput = {
     id?: number;
@@ -1557,6 +1711,7 @@ export type TeamUpdateWithoutUserInput = {
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1577,6 +1732,7 @@ export type TeamUncheckedUpdateWithoutUserInput = {
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
     matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
 };
 export type TeamUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1602,6 +1758,7 @@ export type TeamCountOutputType = {
     playerStatistics: number;
     notifications: number;
     matchResults: number;
+    articles: number;
 };
 export type TeamCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     team_players?: boolean | TeamCountOutputTypeCountTeam_playersArgs;
@@ -1613,6 +1770,7 @@ export type TeamCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
     playerStatistics?: boolean | TeamCountOutputTypeCountPlayerStatisticsArgs;
     notifications?: boolean | TeamCountOutputTypeCountNotificationsArgs;
     matchResults?: boolean | TeamCountOutputTypeCountMatchResultsArgs;
+    articles?: boolean | TeamCountOutputTypeCountArticlesArgs;
 };
 /**
  * TeamCountOutputType without action
@@ -1677,6 +1835,12 @@ export type TeamCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Ty
 export type TeamCountOutputTypeCountMatchResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.MatchResultWhereInput;
 };
+/**
+ * TeamCountOutputType without action
+ */
+export type TeamCountOutputTypeCountArticlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.ArticleWhereInput;
+};
 export type TeamSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     name?: boolean;
@@ -1698,6 +1862,7 @@ export type TeamSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     playerStatistics?: boolean | Prisma.Team$playerStatisticsArgs<ExtArgs>;
     notifications?: boolean | Prisma.Team$notificationsArgs<ExtArgs>;
     matchResults?: boolean | Prisma.Team$matchResultsArgs<ExtArgs>;
+    articles?: boolean | Prisma.Team$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.TeamCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["team"]>;
 export type TeamSelectScalar = {
@@ -1724,6 +1889,7 @@ export type TeamInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     playerStatistics?: boolean | Prisma.Team$playerStatisticsArgs<ExtArgs>;
     notifications?: boolean | Prisma.Team$notificationsArgs<ExtArgs>;
     matchResults?: boolean | Prisma.Team$matchResultsArgs<ExtArgs>;
+    articles?: boolean | Prisma.Team$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.TeamCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1739,6 +1905,7 @@ export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         playerStatistics: Prisma.$PlayerStatisticPayload<ExtArgs>[];
         notifications: Prisma.$NotificationPayload<ExtArgs>[];
         matchResults: Prisma.$MatchResultPayload<ExtArgs>[];
+        articles: Prisma.$ArticlePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -2038,6 +2205,7 @@ export interface Prisma__TeamClient<T, Null = never, ExtArgs extends runtime.Typ
     playerStatistics<T extends Prisma.Team$playerStatisticsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$playerStatisticsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlayerStatisticPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     notifications<T extends Prisma.Team$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     matchResults<T extends Prisma.Team$matchResultsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$matchResultsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    articles<T extends Prisma.Team$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2629,6 +2797,29 @@ export type Team$matchResultsArgs<ExtArgs extends runtime.Types.Extensions.Inter
     take?: number;
     skip?: number;
     distinct?: Prisma.MatchResultScalarFieldEnum | Prisma.MatchResultScalarFieldEnum[];
+};
+/**
+ * Team.articles
+ */
+export type Team$articlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Article
+     */
+    select?: Prisma.ArticleSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Article
+     */
+    omit?: Prisma.ArticleOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.ArticleInclude<ExtArgs> | null;
+    where?: Prisma.ArticleWhereInput;
+    orderBy?: Prisma.ArticleOrderByWithRelationInput | Prisma.ArticleOrderByWithRelationInput[];
+    cursor?: Prisma.ArticleWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.ArticleScalarFieldEnum | Prisma.ArticleScalarFieldEnum[];
 };
 /**
  * Team without action
