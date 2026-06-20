@@ -138,8 +138,6 @@ export class ScheduleService {
             throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
         if (options.matchTimes.length === 0)
             throw createAppError('VALIDATION_ERROR', 'matchTimes không được rỗng');
-        if (options.startDate < new Date())
-            warnings.push('startDate đã qua — slot pool có thể không đủ');
 
         const { groupCount, groupIds } = await this.prisma.$transaction(
             async tx => {
@@ -254,22 +252,36 @@ export class ScheduleService {
 
         if (matches.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
 
-        const phase = await this.prisma.phase.findFirst({
-            where: { season_id: seasonId, type: 'group_stage' },
-            select: { min_rest_days_per_team: true },
-        });
+        const [phase, season] = await Promise.all([
+            this.prisma.phase.findFirst({
+                where: { season_id: seasonId, type: PhaseType.group_stage },
+                select: { min_rest_days_per_team: true },
+            }),
+            this.prisma.season.findUnique({
+                where: { id: seasonId },
+                select: { start_date: true },
+            }),
+        ]);
 
         if (!phase)
             throw createAppError('NOT_FOUND', `Không tìm thấy group_stage phase cho season ${seasonId}`);
+        if (!season)
+            throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (!season.start_date)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date`);
 
-        // FIX (CRITICAL #3 latent risk): null * ms = 0 → rest constraint bị tắt âm thầm
         const minRestDays = phase.min_rest_days_per_team ?? 3;
+        const startDate = season.start_date; // UTC Date từ DB — dùng trực tiếp
 
-        const rangeEnd = new Date(options.startDate);
+        if (startDate < new Date())
+            // log warning nhưng không throw — vẫn schedule được, chỉ pool nhỏ hơn
+            console.warn(`[autoSchedule] season ${seasonId} start_date đã qua: ${startDate.toISOString()}`);
+
+        const rangeEnd = new Date(startDate);
         rangeEnd.setMonth(rangeEnd.getMonth() + 6);
 
-        const takenSet = await this.loadTakenSlots(options.venueIds, options.startDate, rangeEnd);
-        const pool = this.buildSlotPool(options.venueIds, options.startDate, rangeEnd, options.matchTimes, takenSet);
+        const takenSet = await this.loadTakenSlots(options.venueIds, startDate, rangeEnd);
+        const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
 
         if (pool.length < matches.length) {
             throw createAppError(
@@ -311,6 +323,7 @@ export class ScheduleService {
                 updates.push({ id: match.id, scheduledAt, venueId: slot.venue_id });
             }
         }
+
 
         const failedFromCollision = await this.writeScheduleBatch(updates);
         unscheduled.push(...failedFromCollision);
