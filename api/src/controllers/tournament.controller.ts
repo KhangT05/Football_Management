@@ -3,8 +3,8 @@ import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentService } from "../services/tournament.service.js";
 import type { Tournament } from "../generated/prisma/client.js";
-import { type CreateTournamentDto, type UpdateTournamentDto } from "../dtos/tournament.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { type UpdateTournamentDto } from "../dtos/tournament.schema.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
 @Security("jwt")

@@ -4,7 +4,8 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 import { SeasonService } from "../services/season.service.js";
 import type { Season } from "../generated/prisma/client.js";
 import * as seasonSchema from "../dtos/season.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
+
 
 @Security("jwt")
 @Route("seasons")

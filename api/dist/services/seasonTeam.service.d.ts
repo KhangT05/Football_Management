@@ -1,7 +1,7 @@
 import { PrismaClient } from "../generated/prisma/client.js";
 import { AdminAddSeasonTeamDto, AssignGroupDto, SelfRegisterSeasonTeamDto, UpdateSeasonTeamStatusDto } from "../dtos/seasonTeam.schema.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class SeasonTeamService {
     private readonly prisma;
     private readonly query;

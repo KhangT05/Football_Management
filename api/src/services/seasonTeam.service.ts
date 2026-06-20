@@ -6,8 +6,9 @@ import {
     SelfRegisterSeasonTeamDto,
     UpdateSeasonTeamStatusDto,
 } from "../dtos/seasonTeam.schema.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { Queryable } from "../libs/queryable.js";
 import { SeasonTeamWithRelations, withRelations } from "../types/seasonTeam.type.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 export class SeasonTeamService {
     private readonly query: Queryable<SeasonTeamWithRelations>;

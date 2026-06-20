@@ -1,6 +1,6 @@
 import { CreateRoleDto, UpdateRoleDto } from "../dtos/role.schema.js";
 import { PrismaClient, Role } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class RoleService {
     private readonly prisma;
     private readonly query;

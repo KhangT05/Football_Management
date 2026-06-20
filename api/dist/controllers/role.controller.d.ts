@@ -2,7 +2,7 @@ import { Controller } from "tsoa";
 import { RoleService } from "../services/role.service.js";
 import type { Role } from "../generated/prisma/client.js";
 import { type CreateRoleDto, type UpdateRoleDto } from "../dtos/role.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class RoleController extends Controller {
     private service;
     constructor(service: RoleService);

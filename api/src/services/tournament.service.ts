@@ -1,7 +1,9 @@
 import { createAppError } from "../common/app.error.js";
 import { CreateTournamentDto, UpdateTournamentDto } from "../dtos/tournament.schema.js";
 import { PrismaClient, Tournament } from "../generated/prisma/client.js";
-import { PaginatedResult, Queryable, QueryRequest } from "../libs/queryable.js";
+import { Queryable } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
+
 /**
  * Upload logo → lưu url + publicId vào DB trong cùng 1 flow.
  *

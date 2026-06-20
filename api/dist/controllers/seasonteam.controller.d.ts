@@ -6,10 +6,10 @@ type AuthRequest = ExRequest & {
     };
 };
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
-import { PaginatedResult } from "../libs/queryable.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeam } from "../generated/prisma/client.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class SeasonTeamController extends Controller {
     private service;
     constructor(service: SeasonTeamService);

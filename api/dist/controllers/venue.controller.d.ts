@@ -2,7 +2,7 @@ import { Controller } from "tsoa";
 import { VenueService } from "../services/venue.service.js";
 import type { Venue } from "../generated/prisma/client.js";
 import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class VenueController extends Controller {
     private service;
     constructor(service: VenueService);

@@ -8,7 +8,7 @@ type AuthRequest = ExRequest & {
 import { SeasonService } from "../services/season.service.js";
 import type { Season } from "../generated/prisma/client.js";
 import * as seasonSchema from "../dtos/season.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class SeasonController extends Controller {
     private service;
     constructor(service: SeasonService);

@@ -1,7 +1,8 @@
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
 import { UserService, type SafeUser } from "../services/user.service.js";
 import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
+
 
 @Security("jwt", ['admin'])
 @Route("users")

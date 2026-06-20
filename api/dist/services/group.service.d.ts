@@ -27,8 +27,8 @@ export declare class GroupService {
     } & {
         name: string;
         is_active: boolean;
-        created_at: Date;
         id: number;
+        created_at: Date;
         updated_at: Date | null;
         status: import("../generated/prisma/enums.js").GroupStatus;
         phase_id: number;

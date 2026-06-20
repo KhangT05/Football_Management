@@ -2,42 +2,10 @@ import * as XLSX from "xlsx";
 import { importPlayerRowSchema } from "../dtos/player.schema.js";
 import { Queryable } from "../libs/queryable.js";
 import { createAppError } from "../common/app.error.js";
+import { ApprovalStatus } from "../generated/prisma/client.js";
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
-// ─── Projection ───────────────────────────────────────────────────────────────
-// Định nghĩa relation 1 lần, dùng select.player.user mọi nơi cần tránh N+1.
-const PLAYER_SELECT = {
-    id: true,
-    user_id: true,
-    date_of_birth: true,
-    position: true,
-    height: true,
-    weight: true,
-    nationality: true,
-    avatar: true,
-    is_active: true,
-    created_at: true,
-    updated_at: true,
-    user: {
-        select: { id: true, name: true, email: true, phone: true },
-    },
-};
-const TEAM_PLAYER_SELECT = {
-    id: true,
-    team_id: true,
-    player_id: true,
-    jersey_number: true,
-    position: true,
-    role: true,
-    status: true,
-    approval_status: true,
-    is_active: true,
-    created_at: true,
-    updated_at: true,
-    player: {
-        select: PLAYER_SELECT,
-    },
-};
+import { PLAYER_SELECT, TEAM_PLAYER_SELECT } from "../types/player.type.js";
 // ─── Service ──────────────────────────────────────────────────────────────────
 export class PlayerService {
     prisma;
@@ -169,10 +137,10 @@ export class PlayerService {
         return this.mapTeamPlayer(tp);
     }
     approveTeamPlayer(id) {
-        return this.updateTeamPlayer(id, { approval_status: "approved" });
+        return this.updateTeamPlayer(id, { approval_status: ApprovalStatus.approved });
     }
     rejectTeamPlayer(id) {
-        return this.updateTeamPlayer(id, { approval_status: "rejected" });
+        return this.updateTeamPlayer(id, { approval_status: ApprovalStatus.rejected });
     }
     // ----------------------------------------------------------
     // BULK DELETE
@@ -290,29 +258,25 @@ export class PlayerService {
             return result;
         // ── Phase 2: batch pre-fetch snapshot ───────────────────────────────────
         const emails = [...new Set(validRows.map((r) => r.dto.user_email))];
-        const [users, existingPlayers, existingTeamPlayers] = await Promise.all([
-            this.prisma.user.findMany({
-                where: { email: { in: emails } },
-                select: { id: true, email: true },
-            }),
-            this.prisma.player.findMany({
-                where: { user_id: { in: [] }, deleted_at: null }, // filled below after user lookup
-                select: { id: true, user_id: true },
-            }),
+        const users = await this.prisma.user.findMany({
+            where: { email: { in: emails } },
+            select: { id: true, email: true },
+        });
+        const userByEmail = new Map(users.map((u) => [u.email, u.id]));
+        // Re-fetch players after we have user ids
+        const userIds = users.map(u => u.id);
+        const [players, existingTeamPlayers] = await Promise.all([
+            userIds.length
+                ? this.prisma.player.findMany({
+                    where: { user_id: { in: userIds }, deleted_at: null },
+                    select: { id: true, user_id: true },
+                })
+                : Promise.resolve([]),
             this.prisma.teamPlayer.findMany({
                 where: { team_id, deleted_at: null },
                 select: { player_id: true },
             }),
         ]);
-        const userByEmail = new Map(users.map((u) => [u.email, u.id]));
-        // Re-fetch players after we have user ids
-        const userIds = users.map((u) => u.id);
-        const players = userIds.length
-            ? await this.prisma.player.findMany({
-                where: { user_id: { in: userIds }, deleted_at: null },
-                select: { id: true, user_id: true },
-            })
-            : [];
         const playerByUserId = new Map(players.map((p) => [p.user_id, p.id]));
         const teamPlayerSet = new Set(existingTeamPlayers.map((tp) => tp.player_id));
         // ── Phase 3: per-row transaction — chỉ còn create, không có lookup ──────

@@ -3,7 +3,7 @@ import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TeamService } from "../services/team.service.js";
 import type { Team, TeamLeader } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
 @Security("jwt")

@@ -7,7 +7,7 @@ type AuthRequest = ExRequest & {
 };
 import { PlayerService } from "../services/player.service.js";
 import { type CreatePlayerDto, type UpdatePlayerDto, type PlayerDto, type TeamPlayerDto, type AddPlayerToTeamDto, type UpdateTeamPlayerDto, type BulkDeleteDto } from "../dtos/player.schema.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class PlayerController extends Controller {
     private readonly service;
     constructor(service: PlayerService);

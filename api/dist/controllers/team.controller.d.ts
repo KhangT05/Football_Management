@@ -7,7 +7,7 @@ type AuthRequest = ExRequest & {
 };
 import { TeamService } from "../services/team.service.js";
 import type { Team, TeamLeader } from "../generated/prisma/client.js";
-import { PaginatedResult } from "../libs/queryable.js";
+import { PaginatedResult } from "../types/queryable.type.js";
 export declare class TeamController extends Controller {
     private service;
     constructor(service: TeamService);
