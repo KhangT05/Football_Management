@@ -7,13 +7,6 @@
 *
 * 🟢 You can import this file directly.
 */
-export const SeasonStatus = {
-    upcoming: 'upcoming',
-    registration_open: 'registration_open',
-    ongoing: 'ongoing',
-    finished: 'finished',
-    cancelled: 'cancelled'
-};
 export const PhaseType = {
     group_stage: 'group_stage',
     round_of_16: 'round_of_16',
@@ -30,6 +23,19 @@ export const PhaseStatus = {
     draft: 'draft',
     in_progress: 'in_progress',
     locked: 'locked'
+};
+export const SeasonStatus = {
+    upcoming: 'upcoming',
+    registration_open: 'registration_open',
+    ongoing: 'ongoing',
+    finished: 'finished',
+    cancelled: 'cancelled'
+};
+export const GroupStatus = {
+    DRAFT: 'DRAFT',
+    LOCKED: 'LOCKED',
+    SCHEDULED: 'SCHEDULED',
+    SCHEDULE_FAILED: 'SCHEDULE_FAILED'
 };
 export const PlayerPosition = {
     goalkeeper: 'goalkeeper',
@@ -64,7 +70,10 @@ export const MatchStatus = {
     ongoing: 'ongoing',
     finished: 'finished',
     cancelled: 'cancelled',
-    forfeited: 'forfeited'
+    forfeited: 'forfeited',
+    postponed: 'postponed',
+    bye: 'bye',
+    abandoned: 'abandoned'
 };
 export const MatchEventType = {
     goal: 'goal',
@@ -75,7 +84,9 @@ export const MatchEventType = {
     substitution_in: 'substitution_in',
     substitution_out: 'substitution_out',
     penalty_scored: 'penalty_scored',
-    penalty_missed: 'penalty_missed'
+    penalty_missed: 'penalty_missed',
+    card_rescinded: 'card_rescinded',
+    goal_disallowed: 'goal_disallowed'
 };
 export const CardColor = {
     yellow: 'yellow',
@@ -91,7 +102,8 @@ export const MatchPeriod = {
 export const MatchResultStatus = {
     official: 'official',
     protested: 'protested',
-    overturned: 'overturned'
+    overturned: 'overturned',
+    under_review: 'under_review'
 };
 export const MatchResultType = {
     full_time: 'full_time',
@@ -122,5 +134,14 @@ export const PaymentStatus = {
     pending: 'pending',
     confirmed: 'confirmed',
     rejected: 'rejected'
+};
+export const ArticleStatus = {
+    draft: 'draft',
+    published: 'published',
+    archived: 'archived'
+};
+export const MediaType = {
+    image: 'image',
+    video: 'video'
 };
 //# sourceMappingURL=enums.js.map

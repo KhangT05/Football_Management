@@ -30,7 +30,9 @@ export declare class GroupService {
         created_at: Date;
         id: number;
         updated_at: Date | null;
+        status: import("../generated/prisma/enums.js").GroupStatus;
         phase_id: number;
+        scheduleGeneratedAt: Date | null;
     }>;
 }
 //# sourceMappingURL=group.service.d.ts.map

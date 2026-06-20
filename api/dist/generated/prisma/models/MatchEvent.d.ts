@@ -529,9 +529,6 @@ export type MatchEventUncheckedUpdateManyWithoutMatchNestedInput = {
 export type EnumMatchEventTypeFieldUpdateOperationsInput = {
     set?: $Enums.MatchEventType;
 };
-export type NullableEnumMatchPeriodFieldUpdateOperationsInput = {
-    set?: $Enums.MatchPeriod | null;
-};
 export type NullableEnumCardColorFieldUpdateOperationsInput = {
     set?: $Enums.CardColor | null;
 };

@@ -23,6 +23,8 @@ export type MatchAvgAggregateOutputType = {
     away_score: number | null;
     leg: number | null;
     next_match_id: number | null;
+    replay_of_match_id: number | null;
+    abandoned_minute: number | null;
     user_id: number | null;
     venue_id: number | null;
     season_id: number | null;
@@ -37,6 +39,8 @@ export type MatchSumAggregateOutputType = {
     away_score: number | null;
     leg: number | null;
     next_match_id: number | null;
+    replay_of_match_id: number | null;
+    abandoned_minute: number | null;
     user_id: number | null;
     venue_id: number | null;
     season_id: number | null;
@@ -55,6 +59,11 @@ export type MatchMinAggregateOutputType = {
     round: string | null;
     leg: number | null;
     next_match_id: number | null;
+    current_period: $Enums.MatchPeriod | null;
+    postponed_from: Date | null;
+    postponed_reason: string | null;
+    replay_of_match_id: number | null;
+    abandoned_minute: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -79,6 +88,11 @@ export type MatchMaxAggregateOutputType = {
     round: string | null;
     leg: number | null;
     next_match_id: number | null;
+    current_period: $Enums.MatchPeriod | null;
+    postponed_from: Date | null;
+    postponed_reason: string | null;
+    replay_of_match_id: number | null;
+    abandoned_minute: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -103,6 +117,11 @@ export type MatchCountAggregateOutputType = {
     round: number;
     leg: number;
     next_match_id: number;
+    current_period: number;
+    postponed_from: number;
+    postponed_reason: number;
+    replay_of_match_id: number;
+    abandoned_minute: number;
     is_active: number;
     created_at: number;
     updated_at: number;
@@ -124,6 +143,8 @@ export type MatchAvgAggregateInputType = {
     away_score?: true;
     leg?: true;
     next_match_id?: true;
+    replay_of_match_id?: true;
+    abandoned_minute?: true;
     user_id?: true;
     venue_id?: true;
     season_id?: true;
@@ -138,6 +159,8 @@ export type MatchSumAggregateInputType = {
     away_score?: true;
     leg?: true;
     next_match_id?: true;
+    replay_of_match_id?: true;
+    abandoned_minute?: true;
     user_id?: true;
     venue_id?: true;
     season_id?: true;
@@ -156,6 +179,11 @@ export type MatchMinAggregateInputType = {
     round?: true;
     leg?: true;
     next_match_id?: true;
+    current_period?: true;
+    postponed_from?: true;
+    postponed_reason?: true;
+    replay_of_match_id?: true;
+    abandoned_minute?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -180,6 +208,11 @@ export type MatchMaxAggregateInputType = {
     round?: true;
     leg?: true;
     next_match_id?: true;
+    current_period?: true;
+    postponed_from?: true;
+    postponed_reason?: true;
+    replay_of_match_id?: true;
+    abandoned_minute?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -204,6 +237,11 @@ export type MatchCountAggregateInputType = {
     round?: true;
     leg?: true;
     next_match_id?: true;
+    current_period?: true;
+    postponed_from?: true;
+    postponed_reason?: true;
+    replay_of_match_id?: true;
+    abandoned_minute?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -305,6 +343,11 @@ export type MatchGroupByOutputType = {
     round: string | null;
     leg: number | null;
     next_match_id: number | null;
+    current_period: $Enums.MatchPeriod | null;
+    postponed_from: Date | null;
+    postponed_reason: string | null;
+    replay_of_match_id: number | null;
+    abandoned_minute: number | null;
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
@@ -340,6 +383,11 @@ export type MatchWhereInput = {
     round?: Prisma.StringNullableFilter<"Match"> | string | null;
     leg?: Prisma.IntNullableFilter<"Match"> | number | null;
     next_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    current_period?: Prisma.EnumMatchPeriodNullableFilter<"Match"> | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -360,6 +408,7 @@ export type MatchWhereInput = {
     matchResult?: Prisma.XOR<Prisma.MatchResultNullableScalarRelationFilter, Prisma.MatchResultWhereInput> | null;
     venue?: Prisma.XOR<Prisma.VenueNullableScalarRelationFilter, Prisma.VenueWhereInput> | null;
     season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
+    articles?: Prisma.ArticleListRelationFilter;
 };
 export type MatchOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -375,6 +424,11 @@ export type MatchOrderByWithRelationInput = {
     round?: Prisma.SortOrderInput | Prisma.SortOrder;
     leg?: Prisma.SortOrderInput | Prisma.SortOrder;
     next_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    current_period?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postponed_from?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postponed_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -395,10 +449,12 @@ export type MatchOrderByWithRelationInput = {
     matchResult?: Prisma.MatchResultOrderByWithRelationInput;
     venue?: Prisma.VenueOrderByWithRelationInput;
     season?: Prisma.SeasonOrderByWithRelationInput;
+    articles?: Prisma.ArticleOrderByRelationAggregateInput;
     _relevance?: Prisma.MatchOrderByRelevanceInput;
 };
 export type MatchWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    venue_id_scheduled_at?: Prisma.MatchVenue_idScheduled_atCompoundUniqueInput;
     AND?: Prisma.MatchWhereInput | Prisma.MatchWhereInput[];
     OR?: Prisma.MatchWhereInput[];
     NOT?: Prisma.MatchWhereInput | Prisma.MatchWhereInput[];
@@ -414,6 +470,11 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     round?: Prisma.StringNullableFilter<"Match"> | string | null;
     leg?: Prisma.IntNullableFilter<"Match"> | number | null;
     next_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    current_period?: Prisma.EnumMatchPeriodNullableFilter<"Match"> | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -434,7 +495,8 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     matchResult?: Prisma.XOR<Prisma.MatchResultNullableScalarRelationFilter, Prisma.MatchResultWhereInput> | null;
     venue?: Prisma.XOR<Prisma.VenueNullableScalarRelationFilter, Prisma.VenueWhereInput> | null;
     season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
-}, "id">;
+    articles?: Prisma.ArticleListRelationFilter;
+}, "id" | "venue_id_scheduled_at">;
 export type MatchOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     phase_id?: Prisma.SortOrder;
@@ -449,6 +511,11 @@ export type MatchOrderByWithAggregationInput = {
     round?: Prisma.SortOrderInput | Prisma.SortOrder;
     leg?: Prisma.SortOrderInput | Prisma.SortOrder;
     next_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    current_period?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postponed_from?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postponed_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -481,6 +548,11 @@ export type MatchScalarWhereWithAggregatesInput = {
     round?: Prisma.StringNullableWithAggregatesFilter<"Match"> | string | null;
     leg?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     next_match_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    current_period?: Prisma.EnumMatchPeriodNullableWithAggregatesFilter<"Match"> | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
+    postponed_reason?: Prisma.StringNullableWithAggregatesFilter<"Match"> | string | null;
+    replay_of_match_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    abandoned_minute?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     is_active?: Prisma.BoolWithAggregatesFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
@@ -499,6 +571,11 @@ export type MatchCreateInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -516,6 +593,7 @@ export type MatchCreateInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateInput = {
     id?: number;
@@ -531,6 +609,11 @@ export type MatchUncheckedCreateInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -543,6 +626,7 @@ export type MatchUncheckedCreateInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchUpdateInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -552,6 +636,11 @@ export type MatchUpdateInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -569,6 +658,7 @@ export type MatchUpdateInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -584,6 +674,11 @@ export type MatchUncheckedUpdateInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -596,6 +691,7 @@ export type MatchUncheckedUpdateInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchCreateManyInput = {
     id?: number;
@@ -611,6 +707,11 @@ export type MatchCreateManyInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -629,6 +730,11 @@ export type MatchUpdateManyMutationInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -650,6 +756,11 @@ export type MatchUncheckedUpdateManyInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -677,6 +788,10 @@ export type MatchOrderByRelevanceInput = {
     sort: Prisma.SortOrder;
     search: string;
 };
+export type MatchVenue_idScheduled_atCompoundUniqueInput = {
+    venue_id: number;
+    scheduled_at: Date | string;
+};
 export type MatchCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     phase_id?: Prisma.SortOrder;
@@ -691,6 +806,11 @@ export type MatchCountOrderByAggregateInput = {
     round?: Prisma.SortOrder;
     leg?: Prisma.SortOrder;
     next_match_id?: Prisma.SortOrder;
+    current_period?: Prisma.SortOrder;
+    postponed_from?: Prisma.SortOrder;
+    postponed_reason?: Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -711,6 +831,8 @@ export type MatchAvgOrderByAggregateInput = {
     away_score?: Prisma.SortOrder;
     leg?: Prisma.SortOrder;
     next_match_id?: Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
     season_id?: Prisma.SortOrder;
@@ -729,6 +851,11 @@ export type MatchMaxOrderByAggregateInput = {
     round?: Prisma.SortOrder;
     leg?: Prisma.SortOrder;
     next_match_id?: Prisma.SortOrder;
+    current_period?: Prisma.SortOrder;
+    postponed_from?: Prisma.SortOrder;
+    postponed_reason?: Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -753,6 +880,11 @@ export type MatchMinOrderByAggregateInput = {
     round?: Prisma.SortOrder;
     leg?: Prisma.SortOrder;
     next_match_id?: Prisma.SortOrder;
+    current_period?: Prisma.SortOrder;
+    postponed_from?: Prisma.SortOrder;
+    postponed_reason?: Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -773,6 +905,8 @@ export type MatchSumOrderByAggregateInput = {
     away_score?: Prisma.SortOrder;
     leg?: Prisma.SortOrder;
     next_match_id?: Prisma.SortOrder;
+    replay_of_match_id?: Prisma.SortOrder;
+    abandoned_minute?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
     season_id?: Prisma.SortOrder;
@@ -819,44 +953,6 @@ export type MatchUncheckedUpdateManyWithoutUserNestedInput = {
     updateMany?: Prisma.MatchUpdateManyWithWhereWithoutUserInput | Prisma.MatchUpdateManyWithWhereWithoutUserInput[];
     deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
 };
-export type MatchCreateNestedManyWithoutSeasonInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-};
-export type MatchUncheckedCreateNestedManyWithoutSeasonInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-};
-export type MatchUpdateManyWithoutSeasonNestedInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
-    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
-    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
-};
-export type MatchUncheckedUpdateManyWithoutSeasonNestedInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
-    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
-    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
-};
 export type MatchCreateNestedManyWithoutPhaseInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutPhaseInput, Prisma.MatchUncheckedCreateWithoutPhaseInput> | Prisma.MatchCreateWithoutPhaseInput[] | Prisma.MatchUncheckedCreateWithoutPhaseInput[];
     connectOrCreate?: Prisma.MatchCreateOrConnectWithoutPhaseInput | Prisma.MatchCreateOrConnectWithoutPhaseInput[];
@@ -893,6 +989,44 @@ export type MatchUncheckedUpdateManyWithoutPhaseNestedInput = {
     connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
     update?: Prisma.MatchUpdateWithWhereUniqueWithoutPhaseInput | Prisma.MatchUpdateWithWhereUniqueWithoutPhaseInput[];
     updateMany?: Prisma.MatchUpdateManyWithWhereWithoutPhaseInput | Prisma.MatchUpdateManyWithWhereWithoutPhaseInput[];
+    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
+};
+export type MatchCreateNestedManyWithoutSeasonInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
+    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
+    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+};
+export type MatchUncheckedCreateNestedManyWithoutSeasonInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
+    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
+    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+};
+export type MatchUpdateManyWithoutSeasonNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
+    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
+    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
+    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
+    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
+    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
+};
+export type MatchUncheckedUpdateManyWithoutSeasonNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
+    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
+    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
+    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
+    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
+    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
     deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
 };
 export type MatchCreateNestedManyWithoutGroupInput = {
@@ -1029,6 +1163,9 @@ export type MatchUncheckedCreateNestedManyWithoutNext_matchInput = {
 export type EnumMatchStatusFieldUpdateOperationsInput = {
     set?: $Enums.MatchStatus;
 };
+export type NullableEnumMatchPeriodFieldUpdateOperationsInput = {
+    set?: $Enums.MatchPeriod | null;
+};
 export type MatchUpdateOneWithoutPrev_matchesNestedInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutPrev_matchesInput, Prisma.MatchUncheckedCreateWithoutPrev_matchesInput>;
     connectOrCreate?: Prisma.MatchCreateOrConnectWithoutPrev_matchesInput;
@@ -1063,18 +1200,6 @@ export type MatchUncheckedUpdateManyWithoutNext_matchNestedInput = {
     update?: Prisma.MatchUpdateWithWhereUniqueWithoutNext_matchInput | Prisma.MatchUpdateWithWhereUniqueWithoutNext_matchInput[];
     updateMany?: Prisma.MatchUpdateManyWithWhereWithoutNext_matchInput | Prisma.MatchUpdateManyWithWhereWithoutNext_matchInput[];
     deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
-};
-export type MatchCreateNestedOneWithoutEventsInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutEventsInput;
-    connect?: Prisma.MatchWhereUniqueInput;
-};
-export type MatchUpdateOneRequiredWithoutEventsNestedInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutEventsInput;
-    upsert?: Prisma.MatchUpsertWithoutEventsInput;
-    connect?: Prisma.MatchWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutEventsInput, Prisma.MatchUpdateWithoutEventsInput>, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
 };
 export type MatchCreateNestedManyWithoutVenueInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutVenueInput, Prisma.MatchUncheckedCreateWithoutVenueInput> | Prisma.MatchCreateWithoutVenueInput[] | Prisma.MatchUncheckedCreateWithoutVenueInput[];
@@ -1114,6 +1239,18 @@ export type MatchUncheckedUpdateManyWithoutVenueNestedInput = {
     updateMany?: Prisma.MatchUpdateManyWithWhereWithoutVenueInput | Prisma.MatchUpdateManyWithWhereWithoutVenueInput[];
     deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
 };
+export type MatchCreateNestedOneWithoutEventsInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutEventsInput;
+    connect?: Prisma.MatchWhereUniqueInput;
+};
+export type MatchUpdateOneRequiredWithoutEventsNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutEventsInput;
+    upsert?: Prisma.MatchUpsertWithoutEventsInput;
+    connect?: Prisma.MatchWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutEventsInput, Prisma.MatchUpdateWithoutEventsInput>, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
+};
 export type MatchCreateNestedOneWithoutMatchResultInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutMatchResultInput, Prisma.MatchUncheckedCreateWithoutMatchResultInput>;
     connectOrCreate?: Prisma.MatchCreateOrConnectWithoutMatchResultInput;
@@ -1126,6 +1263,20 @@ export type MatchUpdateOneRequiredWithoutMatchResultNestedInput = {
     connect?: Prisma.MatchWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutMatchResultInput, Prisma.MatchUpdateWithoutMatchResultInput>, Prisma.MatchUncheckedUpdateWithoutMatchResultInput>;
 };
+export type MatchCreateNestedOneWithoutArticlesInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutArticlesInput, Prisma.MatchUncheckedCreateWithoutArticlesInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutArticlesInput;
+    connect?: Prisma.MatchWhereUniqueInput;
+};
+export type MatchUpdateOneWithoutArticlesNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutArticlesInput, Prisma.MatchUncheckedCreateWithoutArticlesInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutArticlesInput;
+    upsert?: Prisma.MatchUpsertWithoutArticlesInput;
+    disconnect?: Prisma.MatchWhereInput | boolean;
+    delete?: Prisma.MatchWhereInput | boolean;
+    connect?: Prisma.MatchWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutArticlesInput, Prisma.MatchUpdateWithoutArticlesInput>, Prisma.MatchUncheckedUpdateWithoutArticlesInput>;
+};
 export type MatchCreateWithoutUserInput = {
     scheduled_at?: Date | string | null;
     played_at?: Date | string | null;
@@ -1134,6 +1285,11 @@ export type MatchCreateWithoutUserInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1150,6 +1306,7 @@ export type MatchCreateWithoutUserInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutUserInput = {
     id?: number;
@@ -1165,6 +1322,11 @@ export type MatchUncheckedCreateWithoutUserInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1176,6 +1338,7 @@ export type MatchUncheckedCreateWithoutUserInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutUserInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1215,6 +1378,11 @@ export type MatchScalarWhereInput = {
     round?: Prisma.StringNullableFilter<"Match"> | string | null;
     leg?: Prisma.IntNullableFilter<"Match"> | number | null;
     next_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    current_period?: Prisma.EnumMatchPeriodNullableFilter<"Match"> | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -1225,78 +1393,6 @@ export type MatchScalarWhereInput = {
     referee?: Prisma.StringNullableFilter<"Match"> | string | null;
     season_id?: Prisma.IntNullableFilter<"Match"> | number | null;
 };
-export type MatchCreateWithoutSeasonInput = {
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    is_published?: boolean;
-    referee?: string | null;
-    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
-    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
-    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
-    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
-    next_match?: Prisma.MatchCreateNestedOneWithoutPrev_matchesInput;
-    prev_matches?: Prisma.MatchCreateNestedManyWithoutNext_matchInput;
-    events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
-    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
-    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
-    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-};
-export type MatchUncheckedCreateWithoutSeasonInput = {
-    id?: number;
-    phase_id: number;
-    group_id?: number | null;
-    home_team_id: number;
-    away_team_id: number;
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    next_match_id?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    venue_id?: number | null;
-    is_published?: boolean;
-    referee?: string | null;
-    prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
-    events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
-    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
-};
-export type MatchCreateOrConnectWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
-};
-export type MatchCreateManySeasonInputEnvelope = {
-    data: Prisma.MatchCreateManySeasonInput | Prisma.MatchCreateManySeasonInput[];
-    skipDuplicates?: boolean;
-};
-export type MatchUpsertWithWhereUniqueWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    update: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
-};
-export type MatchUpdateWithWhereUniqueWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    data: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
-};
-export type MatchUpdateManyWithWhereWithoutSeasonInput = {
-    where: Prisma.MatchScalarWhereInput;
-    data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutSeasonInput>;
-};
 export type MatchCreateWithoutPhaseInput = {
     scheduled_at?: Date | string | null;
     played_at?: Date | string | null;
@@ -1305,6 +1401,11 @@ export type MatchCreateWithoutPhaseInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1321,6 +1422,7 @@ export type MatchCreateWithoutPhaseInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutPhaseInput = {
     id?: number;
@@ -1335,6 +1437,11 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1347,6 +1454,7 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutPhaseInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1369,6 +1477,90 @@ export type MatchUpdateManyWithWhereWithoutPhaseInput = {
     where: Prisma.MatchScalarWhereInput;
     data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutPhaseInput>;
 };
+export type MatchCreateWithoutSeasonInput = {
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    is_published?: boolean;
+    referee?: string | null;
+    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
+    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
+    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
+    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
+    next_match?: Prisma.MatchCreateNestedOneWithoutPrev_matchesInput;
+    prev_matches?: Prisma.MatchCreateNestedManyWithoutNext_matchInput;
+    events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
+    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
+    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
+    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
+};
+export type MatchUncheckedCreateWithoutSeasonInput = {
+    id?: number;
+    phase_id: number;
+    group_id?: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    venue_id?: number | null;
+    is_published?: boolean;
+    referee?: string | null;
+    prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
+    events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
+    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
+};
+export type MatchCreateOrConnectWithoutSeasonInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
+};
+export type MatchCreateManySeasonInputEnvelope = {
+    data: Prisma.MatchCreateManySeasonInput | Prisma.MatchCreateManySeasonInput[];
+    skipDuplicates?: boolean;
+};
+export type MatchUpsertWithWhereUniqueWithoutSeasonInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    update: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
+};
+export type MatchUpdateWithWhereUniqueWithoutSeasonInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    data: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
+};
+export type MatchUpdateManyWithWhereWithoutSeasonInput = {
+    where: Prisma.MatchScalarWhereInput;
+    data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutSeasonInput>;
+};
 export type MatchCreateWithoutGroupInput = {
     scheduled_at?: Date | string | null;
     played_at?: Date | string | null;
@@ -1377,6 +1569,11 @@ export type MatchCreateWithoutGroupInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1393,6 +1590,7 @@ export type MatchCreateWithoutGroupInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutGroupInput = {
     id?: number;
@@ -1407,6 +1605,11 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1419,6 +1622,7 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutGroupInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1449,6 +1653,11 @@ export type MatchCreateWithoutHome_teamInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1465,6 +1674,7 @@ export type MatchCreateWithoutHome_teamInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutHome_teamInput = {
     id?: number;
@@ -1479,6 +1689,11 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1491,6 +1706,7 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutHome_teamInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1508,6 +1724,11 @@ export type MatchCreateWithoutAway_teamInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1524,6 +1745,7 @@ export type MatchCreateWithoutAway_teamInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutAway_teamInput = {
     id?: number;
@@ -1538,6 +1760,11 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1550,6 +1777,7 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutAway_teamInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1593,6 +1821,11 @@ export type MatchCreateWithoutPrev_matchesInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1609,6 +1842,7 @@ export type MatchCreateWithoutPrev_matchesInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutPrev_matchesInput = {
     id?: number;
@@ -1624,6 +1858,11 @@ export type MatchUncheckedCreateWithoutPrev_matchesInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1635,6 +1874,7 @@ export type MatchUncheckedCreateWithoutPrev_matchesInput = {
     season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutPrev_matchesInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1648,6 +1888,11 @@ export type MatchCreateWithoutNext_matchInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1664,6 +1909,7 @@ export type MatchCreateWithoutNext_matchInput = {
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutNext_matchInput = {
     id?: number;
@@ -1678,6 +1924,11 @@ export type MatchUncheckedCreateWithoutNext_matchInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1690,6 +1941,7 @@ export type MatchUncheckedCreateWithoutNext_matchInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutNext_matchInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1716,6 +1968,11 @@ export type MatchUpdateWithoutPrev_matchesInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1732,6 +1989,7 @@ export type MatchUpdateWithoutPrev_matchesInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutPrev_matchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1747,6 +2005,11 @@ export type MatchUncheckedUpdateWithoutPrev_matchesInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1758,6 +2021,7 @@ export type MatchUncheckedUpdateWithoutPrev_matchesInput = {
     season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUpsertWithWhereUniqueWithoutNext_matchInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1772,121 +2036,6 @@ export type MatchUpdateManyWithWhereWithoutNext_matchInput = {
     where: Prisma.MatchScalarWhereInput;
     data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutNext_matchInput>;
 };
-export type MatchCreateWithoutEventsInput = {
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    is_published?: boolean;
-    referee?: string | null;
-    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
-    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
-    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
-    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
-    next_match?: Prisma.MatchCreateNestedOneWithoutPrev_matchesInput;
-    prev_matches?: Prisma.MatchCreateNestedManyWithoutNext_matchInput;
-    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
-    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
-    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
-};
-export type MatchUncheckedCreateWithoutEventsInput = {
-    id?: number;
-    phase_id: number;
-    group_id?: number | null;
-    home_team_id: number;
-    away_team_id: number;
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    next_match_id?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    venue_id?: number | null;
-    is_published?: boolean;
-    referee?: string | null;
-    season_id?: number | null;
-    prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
-    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
-};
-export type MatchCreateOrConnectWithoutEventsInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
-};
-export type MatchUpsertWithoutEventsInput = {
-    update: Prisma.XOR<Prisma.MatchUpdateWithoutEventsInput, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
-    where?: Prisma.MatchWhereInput;
-};
-export type MatchUpdateToOneWithWhereWithoutEventsInput = {
-    where?: Prisma.MatchWhereInput;
-    data: Prisma.XOR<Prisma.MatchUpdateWithoutEventsInput, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
-};
-export type MatchUpdateWithoutEventsInput = {
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    phase?: Prisma.PhaseUpdateOneRequiredWithoutMatchesNestedInput;
-    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
-    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
-    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
-    next_match?: Prisma.MatchUpdateOneWithoutPrev_matchesNestedInput;
-    prev_matches?: Prisma.MatchUpdateManyWithoutNext_matchNestedInput;
-    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
-    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
-    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
-};
-export type MatchUncheckedUpdateWithoutEventsInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
-    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
-};
 export type MatchCreateWithoutVenueInput = {
     scheduled_at?: Date | string | null;
     played_at?: Date | string | null;
@@ -1895,6 +2044,11 @@ export type MatchCreateWithoutVenueInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1911,6 +2065,7 @@ export type MatchCreateWithoutVenueInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutVenueInput = {
     id?: number;
@@ -1926,6 +2081,11 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1937,6 +2097,7 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutVenueInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1959,6 +2120,145 @@ export type MatchUpdateManyWithWhereWithoutVenueInput = {
     where: Prisma.MatchScalarWhereInput;
     data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutVenueInput>;
 };
+export type MatchCreateWithoutEventsInput = {
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    is_published?: boolean;
+    referee?: string | null;
+    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
+    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
+    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
+    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
+    next_match?: Prisma.MatchCreateNestedOneWithoutPrev_matchesInput;
+    prev_matches?: Prisma.MatchCreateNestedManyWithoutNext_matchInput;
+    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
+    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
+    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
+    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
+};
+export type MatchUncheckedCreateWithoutEventsInput = {
+    id?: number;
+    phase_id: number;
+    group_id?: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    venue_id?: number | null;
+    is_published?: boolean;
+    referee?: string | null;
+    season_id?: number | null;
+    prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
+    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
+};
+export type MatchCreateOrConnectWithoutEventsInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
+};
+export type MatchUpsertWithoutEventsInput = {
+    update: Prisma.XOR<Prisma.MatchUpdateWithoutEventsInput, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutEventsInput, Prisma.MatchUncheckedCreateWithoutEventsInput>;
+    where?: Prisma.MatchWhereInput;
+};
+export type MatchUpdateToOneWithWhereWithoutEventsInput = {
+    where?: Prisma.MatchWhereInput;
+    data: Prisma.XOR<Prisma.MatchUpdateWithoutEventsInput, Prisma.MatchUncheckedUpdateWithoutEventsInput>;
+};
+export type MatchUpdateWithoutEventsInput = {
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phase?: Prisma.PhaseUpdateOneRequiredWithoutMatchesNestedInput;
+    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
+    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
+    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
+    next_match?: Prisma.MatchUpdateOneWithoutPrev_matchesNestedInput;
+    prev_matches?: Prisma.MatchUpdateManyWithoutNext_matchNestedInput;
+    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
+    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
+    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
+};
+export type MatchUncheckedUpdateWithoutEventsInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
+    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
+};
 export type MatchCreateWithoutMatchResultInput = {
     scheduled_at?: Date | string | null;
     played_at?: Date | string | null;
@@ -1967,6 +2267,11 @@ export type MatchCreateWithoutMatchResultInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1983,6 +2288,7 @@ export type MatchCreateWithoutMatchResultInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutMatchResultInput = {
     id?: number;
@@ -1998,6 +2304,11 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2009,6 +2320,7 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     season_id?: number | null;
     prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutMatchResultInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2031,6 +2343,11 @@ export type MatchUpdateWithoutMatchResultInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2047,6 +2364,7 @@ export type MatchUpdateWithoutMatchResultInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutMatchResultInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2062,6 +2380,11 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2073,6 +2396,146 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
+};
+export type MatchCreateWithoutArticlesInput = {
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    is_published?: boolean;
+    referee?: string | null;
+    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
+    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
+    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
+    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
+    next_match?: Prisma.MatchCreateNestedOneWithoutPrev_matchesInput;
+    prev_matches?: Prisma.MatchCreateNestedManyWithoutNext_matchInput;
+    events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
+    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
+    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
+    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
+    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
+};
+export type MatchUncheckedCreateWithoutArticlesInput = {
+    id?: number;
+    phase_id: number;
+    group_id?: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    venue_id?: number | null;
+    is_published?: boolean;
+    referee?: string | null;
+    season_id?: number | null;
+    prev_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutNext_matchInput;
+    events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
+    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+};
+export type MatchCreateOrConnectWithoutArticlesInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutArticlesInput, Prisma.MatchUncheckedCreateWithoutArticlesInput>;
+};
+export type MatchUpsertWithoutArticlesInput = {
+    update: Prisma.XOR<Prisma.MatchUpdateWithoutArticlesInput, Prisma.MatchUncheckedUpdateWithoutArticlesInput>;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutArticlesInput, Prisma.MatchUncheckedCreateWithoutArticlesInput>;
+    where?: Prisma.MatchWhereInput;
+};
+export type MatchUpdateToOneWithWhereWithoutArticlesInput = {
+    where?: Prisma.MatchWhereInput;
+    data: Prisma.XOR<Prisma.MatchUpdateWithoutArticlesInput, Prisma.MatchUncheckedUpdateWithoutArticlesInput>;
+};
+export type MatchUpdateWithoutArticlesInput = {
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phase?: Prisma.PhaseUpdateOneRequiredWithoutMatchesNestedInput;
+    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
+    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
+    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
+    next_match?: Prisma.MatchUpdateOneWithoutPrev_matchesNestedInput;
+    prev_matches?: Prisma.MatchUpdateManyWithoutNext_matchNestedInput;
+    events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
+    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
+    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
+    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+};
+export type MatchUncheckedUpdateWithoutArticlesInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
+    events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
+    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateManyUserInput = {
     id?: number;
@@ -2088,6 +2551,11 @@ export type MatchCreateManyUserInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2105,6 +2573,11 @@ export type MatchUpdateWithoutUserInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2121,6 +2594,7 @@ export type MatchUpdateWithoutUserInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2136,6 +2610,11 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2147,6 +2626,7 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2162,10 +2642,134 @@ export type MatchUncheckedUpdateManyWithoutUserInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+};
+export type MatchCreateManyPhaseInput = {
+    id?: number;
+    group_id?: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    venue_id?: number | null;
+    is_published?: boolean;
+    referee?: string | null;
+    season_id?: number | null;
+};
+export type MatchUpdateWithoutPhaseInput = {
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
+    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
+    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
+    next_match?: Prisma.MatchUpdateOneWithoutPrev_matchesNestedInput;
+    prev_matches?: Prisma.MatchUpdateManyWithoutNext_matchNestedInput;
+    events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
+    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
+    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
+    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
+};
+export type MatchUncheckedUpdateWithoutPhaseInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
+    events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
+    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
+};
+export type MatchUncheckedUpdateManyWithoutPhaseInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2185,6 +2789,11 @@ export type MatchCreateManySeasonInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2202,6 +2811,11 @@ export type MatchUpdateWithoutSeasonInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2218,6 +2832,7 @@ export type MatchUpdateWithoutSeasonInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutSeasonInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2233,6 +2848,11 @@ export type MatchUncheckedUpdateWithoutSeasonInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2244,6 +2864,7 @@ export type MatchUncheckedUpdateWithoutSeasonInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutSeasonInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2259,6 +2880,11 @@ export type MatchUncheckedUpdateManyWithoutSeasonInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2267,103 +2893,6 @@ export type MatchUncheckedUpdateManyWithoutSeasonInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-};
-export type MatchCreateManyPhaseInput = {
-    id?: number;
-    group_id?: number | null;
-    home_team_id: number;
-    away_team_id: number;
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    next_match_id?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    venue_id?: number | null;
-    is_published?: boolean;
-    referee?: string | null;
-    season_id?: number | null;
-};
-export type MatchUpdateWithoutPhaseInput = {
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
-    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
-    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
-    next_match?: Prisma.MatchUpdateOneWithoutPrev_matchesNestedInput;
-    prev_matches?: Prisma.MatchUpdateManyWithoutNext_matchNestedInput;
-    events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
-    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
-    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
-    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
-};
-export type MatchUncheckedUpdateWithoutPhaseInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
-    events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
-    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
-};
-export type MatchUncheckedUpdateManyWithoutPhaseInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchCreateManyGroupInput = {
     id?: number;
@@ -2378,6 +2907,11 @@ export type MatchCreateManyGroupInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2396,6 +2930,11 @@ export type MatchUpdateWithoutGroupInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2412,6 +2951,7 @@ export type MatchUpdateWithoutGroupInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2426,6 +2966,11 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2438,6 +2983,7 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2452,6 +2998,11 @@ export type MatchUncheckedUpdateManyWithoutGroupInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2475,6 +3026,11 @@ export type MatchCreateManyHome_teamInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2498,6 +3054,11 @@ export type MatchCreateManyAway_teamInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2516,6 +3077,11 @@ export type MatchUpdateWithoutHome_teamInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2532,6 +3098,7 @@ export type MatchUpdateWithoutHome_teamInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutHome_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2546,6 +3113,11 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2558,6 +3130,7 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2572,6 +3145,11 @@ export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2590,6 +3168,11 @@ export type MatchUpdateWithoutAway_teamInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2606,6 +3189,7 @@ export type MatchUpdateWithoutAway_teamInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutAway_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2620,6 +3204,11 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2632,6 +3221,7 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2646,6 +3236,11 @@ export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2669,6 +3264,11 @@ export type MatchCreateManyNext_matchInput = {
     status?: $Enums.MatchStatus;
     round?: string | null;
     leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2687,6 +3287,11 @@ export type MatchUpdateWithoutNext_matchInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2703,6 +3308,7 @@ export type MatchUpdateWithoutNext_matchInput = {
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutNext_matchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2717,6 +3323,11 @@ export type MatchUncheckedUpdateWithoutNext_matchInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2729,6 +3340,7 @@ export type MatchUncheckedUpdateWithoutNext_matchInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutNext_matchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2743,6 +3355,11 @@ export type MatchUncheckedUpdateManyWithoutNext_matchInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2767,6 +3384,11 @@ export type MatchCreateManyVenueInput = {
     round?: string | null;
     leg?: number | null;
     next_match_id?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2784,6 +3406,11 @@ export type MatchUpdateWithoutVenueInput = {
     status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2800,6 +3427,7 @@ export type MatchUpdateWithoutVenueInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutVenueInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2815,6 +3443,11 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2826,6 +3459,7 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     prev_matches?: Prisma.MatchUncheckedUpdateManyWithoutNext_matchNestedInput;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutVenueInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2841,6 +3475,11 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
     round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     next_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2856,10 +3495,12 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
 export type MatchCountOutputType = {
     prev_matches: number;
     events: number;
+    articles: number;
 };
 export type MatchCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     prev_matches?: boolean | MatchCountOutputTypeCountPrev_matchesArgs;
     events?: boolean | MatchCountOutputTypeCountEventsArgs;
+    articles?: boolean | MatchCountOutputTypeCountArticlesArgs;
 };
 /**
  * MatchCountOutputType without action
@@ -2882,6 +3523,12 @@ export type MatchCountOutputTypeCountPrev_matchesArgs<ExtArgs extends runtime.Ty
 export type MatchCountOutputTypeCountEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.MatchEventWhereInput;
 };
+/**
+ * MatchCountOutputType without action
+ */
+export type MatchCountOutputTypeCountArticlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.ArticleWhereInput;
+};
 export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     phase_id?: boolean;
@@ -2896,6 +3543,11 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     round?: boolean;
     leg?: boolean;
     next_match_id?: boolean;
+    current_period?: boolean;
+    postponed_from?: boolean;
+    postponed_reason?: boolean;
+    replay_of_match_id?: boolean;
+    abandoned_minute?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -2916,6 +3568,7 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     matchResult?: boolean | Prisma.Match$matchResultArgs<ExtArgs>;
     venue?: boolean | Prisma.Match$venueArgs<ExtArgs>;
     season?: boolean | Prisma.Match$seasonArgs<ExtArgs>;
+    articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["match"]>;
 export type MatchSelectScalar = {
@@ -2932,6 +3585,11 @@ export type MatchSelectScalar = {
     round?: boolean;
     leg?: boolean;
     next_match_id?: boolean;
+    current_period?: boolean;
+    postponed_from?: boolean;
+    postponed_reason?: boolean;
+    replay_of_match_id?: boolean;
+    abandoned_minute?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -2942,7 +3600,7 @@ export type MatchSelectScalar = {
     referee?: boolean;
     season_id?: boolean;
 };
-export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "next_match_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee" | "season_id", ExtArgs["result"]["match"]>;
+export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "next_match_id" | "current_period" | "postponed_from" | "postponed_reason" | "replay_of_match_id" | "abandoned_minute" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee" | "season_id", ExtArgs["result"]["match"]>;
 export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.Match$groupArgs<ExtArgs>;
@@ -2955,6 +3613,7 @@ export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     matchResult?: boolean | Prisma.Match$matchResultArgs<ExtArgs>;
     venue?: boolean | Prisma.Match$venueArgs<ExtArgs>;
     season?: boolean | Prisma.Match$seasonArgs<ExtArgs>;
+    articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2971,6 +3630,7 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         matchResult: Prisma.$MatchResultPayload<ExtArgs> | null;
         venue: Prisma.$VenuePayload<ExtArgs> | null;
         season: Prisma.$SeasonPayload<ExtArgs> | null;
+        articles: Prisma.$ArticlePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -2986,6 +3646,11 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         round: string | null;
         leg: number | null;
         next_match_id: number | null;
+        current_period: $Enums.MatchPeriod | null;
+        postponed_from: Date | null;
+        postponed_reason: string | null;
+        replay_of_match_id: number | null;
+        abandoned_minute: number | null;
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
@@ -3283,6 +3948,7 @@ export interface Prisma__MatchClient<T, Null = never, ExtArgs extends runtime.Ty
     matchResult<T extends Prisma.Match$matchResultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$matchResultArgs<ExtArgs>>): Prisma.Prisma__MatchResultClient<runtime.Types.Result.GetResult<Prisma.$MatchResultPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     venue<T extends Prisma.Match$venueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$venueArgs<ExtArgs>>): Prisma.Prisma__VenueClient<runtime.Types.Result.GetResult<Prisma.$VenuePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     season<T extends Prisma.Match$seasonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$seasonArgs<ExtArgs>>): Prisma.Prisma__SeasonClient<runtime.Types.Result.GetResult<Prisma.$SeasonPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    articles<T extends Prisma.Match$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3321,6 +3987,11 @@ export interface MatchFieldRefs {
     readonly round: Prisma.FieldRef<"Match", 'String'>;
     readonly leg: Prisma.FieldRef<"Match", 'Int'>;
     readonly next_match_id: Prisma.FieldRef<"Match", 'Int'>;
+    readonly current_period: Prisma.FieldRef<"Match", 'MatchPeriod'>;
+    readonly postponed_from: Prisma.FieldRef<"Match", 'DateTime'>;
+    readonly postponed_reason: Prisma.FieldRef<"Match", 'String'>;
+    readonly replay_of_match_id: Prisma.FieldRef<"Match", 'Int'>;
+    readonly abandoned_minute: Prisma.FieldRef<"Match", 'Int'>;
     readonly is_active: Prisma.FieldRef<"Match", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Match", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Match", 'DateTime'>;
@@ -3815,6 +4486,29 @@ export type Match$seasonArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
      */
     include?: Prisma.SeasonInclude<ExtArgs> | null;
     where?: Prisma.SeasonWhereInput;
+};
+/**
+ * Match.articles
+ */
+export type Match$articlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Article
+     */
+    select?: Prisma.ArticleSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Article
+     */
+    omit?: Prisma.ArticleOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.ArticleInclude<ExtArgs> | null;
+    where?: Prisma.ArticleWhereInput;
+    orderBy?: Prisma.ArticleOrderByWithRelationInput | Prisma.ArticleOrderByWithRelationInput[];
+    cursor?: Prisma.ArticleWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.ArticleScalarFieldEnum | Prisma.ArticleScalarFieldEnum[];
 };
 /**
  * Match without action
