@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   ShieldOff, ArrowRight, X, Loader2, AlertTriangle,
-  CheckCircle2, Camera, Search, ArrowUpDown
+  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { initialPlayers } from '../data/data';
@@ -232,6 +232,68 @@ function PosBadge({ pos }) {
   );
 }
 
+// ─── Payment Modal (Mock UI) ───────────────────────────────
+function PaymentModal({ teamName, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-lg animate-slide-up overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
+          <h3 className="text-lg font-black text-white flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-neon" /> Thanh toán Lệ phí giải
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6 overflow-y-auto">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3">
+            <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="text-emerald-300 font-bold mb-1">Đội bóng của bạn đã được duyệt!</p>
+              <p className="text-gray-300">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-navy-light bg-navy-dark rounded-xl p-5 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1">
+                <QrCode className="w-full h-full text-black" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Chuyển khoản Online</p>
+                <p className="text-xs text-gray-400 mt-1">Quét mã QR qua ứng dụng ngân hàng hoặc Momo</p>
+              </div>
+              <div className="mt-2 text-xs font-mono bg-navy px-3 py-1.5 rounded text-gray-300 w-full">
+                ND: {teamName} LE PHI
+              </div>
+            </div>
+            
+            <div className="border border-navy-light bg-navy-dark rounded-xl p-5 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 bg-navy rounded-full border border-navy-light flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Thanh toán trực tiếp</p>
+                <p className="text-xs text-gray-400 mt-1">Gặp BTC tại Văn phòng Khoa CNTT (Phòng E3.1)</p>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-center text-xs text-gray-500 italic">
+            * Sau khi thanh toán, vui lòng liên hệ Admin qua Fanpage để được xác nhận.
+          </p>
+        </div>
+        <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end shrink-0">
+          <button onClick={onClose} className="px-6 py-2.5 font-bold bg-navy-light text-white rounded-xl hover:bg-gray-700 transition-colors">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────
 export default function MyTeam() {
   const { user } = useAuthStore();
@@ -244,6 +306,7 @@ export default function MyTeam() {
   // UI State
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('number');
+  const [showPayment, setShowPayment] = useState(false);
 
   // Modal State
   const [playerModal, setPlayerModal] = useState(null); // null | 'add' | 'edit'
@@ -373,6 +436,35 @@ export default function MyTeam() {
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12">
       <div className="container mx-auto px-4 max-w-6xl animate-fade-in">
 
+        {/* ─── Status Banners ─────────────────────────────── */}
+        {!isLoading && team.status === 'pending' && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl mb-6 flex items-start gap-3 animate-fade-in">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-yellow-400 font-bold text-sm mb-1">Đội bóng đang chờ duyệt</p>
+              <p className="text-yellow-200/70 text-sm">Hồ sơ đăng ký của bạn đã được gửi. Vui lòng chờ Admin xác nhận. Trong thời gian này, bạn vẫn có thể chuẩn bị nhân sự.</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && team.status === 'approved' && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl mb-6 flex sm:items-center justify-between gap-4 flex-col sm:flex-row animate-fade-in">
+            <div className="flex items-start sm:items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
+              <div>
+                <p className="text-emerald-400 font-bold text-sm mb-1">Đăng ký thành công!</p>
+                <p className="text-emerald-200/70 text-sm">Đội bóng đã được duyệt. Hãy thanh toán lệ phí để tham gia bốc thăm chia bảng.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowPayment(true)}
+              className="px-5 py-2.5 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
+            >
+              <CreditCard className="w-4 h-4" /> Thanh toán lệ phí
+            </button>
+          </div>
+        )}
+
         {/* ─── Team Header ─────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-slide-up">
           <div className="flex items-center gap-4">
@@ -394,7 +486,7 @@ export default function MyTeam() {
                     <h1 className="text-3xl font-extrabold text-white uppercase italic tracking-wider">{team.name}</h1>
                     {team.status === 'approved' && (
                       <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                        Đã Duyệt
+                        Chờ Thanh Toán
                       </span>
                     )}
                     {team.status === 'pending' && (
@@ -702,6 +794,14 @@ export default function MyTeam() {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeletingPlayer(null)}
           isDeleting={isDeleting}
+        />
+      )}
+
+      {/* ─── Payment Modal ────────────────────────────────── */}
+      {showPayment && team && (
+        <PaymentModal 
+          teamName={team.name} 
+          onClose={() => setShowPayment(false)} 
         />
       )}
     </div>

@@ -10,6 +10,7 @@ export const navItems = [
   { name: 'Dashboard', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
   { name: 'Manage Teams', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
   { name: 'Manage Players', path: '/quan-ly-giai-dau/cau-thu', icon: UserPlus },
+  { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
   { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Update Results', path: '/quan-ly-giai-dau/ket-qua', icon: CheckSquare },
   { name: 'Tournament Settings', path: '/quan-ly-giai-dau/cai-dat', icon: Settings },

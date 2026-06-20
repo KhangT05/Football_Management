@@ -25,6 +25,7 @@ const ManagePlayers = lazy(() => import("./pages/admin/ManagePlayers"));
 const UpdateResults = lazy(() => import("./pages/admin/UpdateResults"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
+const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
 
 // ── Loading Fallback ───────────────────────────────────────
 function PageLoader() {
@@ -84,6 +85,7 @@ function App() {
           <Route path="/quan-ly-giai-dau/ket-qua" element={<UpdateResults />} />
           <Route path="/quan-ly-giai-dau/doi-bong" element={<ManageTeams />} />
           <Route path="/quan-ly-giai-dau/cau-thu" element={<ManagePlayers />} />
+          <Route path="/quan-ly-giai-dau/dang-ky-giai" element={<ManageSeasonTeams />} />
           <Route path="/quan-ly-giai-dau/cai-dat" element={<Settings />} />
         </Routes>
       </Suspense>
