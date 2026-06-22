@@ -140,7 +140,7 @@ enum PhaseStatus {
 }
 
 model Phase {
-  id                     Int         @id @default(autoincrement())
+  id                     Int           @id @default(autoincrement())
   season_id              Int
   name                   String
   type                   PhaseType
@@ -148,9 +148,11 @@ model Phase {
   order                  Int
   start_date             DateTime?
   end_date               DateTime?
-  min_rest_days_per_team Int         @default(3)
-  is_active              Boolean     @default(true)
-  status                 PhaseStatus @default(draft)
+  min_rest_days_per_team Int           @default(3)
+  is_active              Boolean       @default(true)
+  legs                   Int           @default(1) // 1 = single-leg, 2 = two-legged
+  bracket_slots          BracketSlot[]
+  status                 PhaseStatus   @default(draft)
 
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
@@ -160,6 +162,36 @@ model Phase {
   matches Match[]
 
   @@map("phases")
+}
+
+model BracketSlot {
+  id          Int  @id @default(autoincrement())
+  phase_id    Int
+  round       Int // 1 = first knockout round (R16/QF/...), max = log2(n)
+  slot_number Int // 1-based position in round (determines pairing)
+  match_id    Int? @unique // null until match is created (round 2+), or bye
+
+  // Source slots: winner of source_a → home_team, winner of source_b → away_team
+  // null = seeded team assigned directly (round 1), or bye slot
+  source_a_slot_id Int?
+  source_b_slot_id Int?
+
+  // Seeded team IDs for round 1 slots (or bye slots)
+  // Set at bracket generation time. null = not yet known (round 2+)
+  seeded_home_team_id Int?
+  seeded_away_team_id Int?
+
+  is_bye Boolean @default(false) // true = one team advances automatically
+
+  phase    Phase         @relation(fields: [phase_id], references: [id])
+  match    Match?        @relation(fields: [match_id], references: [id])
+  source_a BracketSlot?  @relation("SlotFeed_A", fields: [source_a_slot_id], references: [id])
+  source_b BracketSlot?  @relation("SlotFeed_B", fields: [source_b_slot_id], references: [id])
+  fed_as_a BracketSlot[] @relation("SlotFeed_A")
+  fed_as_b BracketSlot[] @relation("SlotFeed_B")
+
+  @@unique([phase_id, round, slot_number])
+  @@map("bracket_slots")
 }
 
 // ============================================================
@@ -428,7 +460,6 @@ model Match {
   status             MatchStatus  @default(scheduled)
   round              String?
   leg                Int? // 1 hoặc 2 nếu two-legged (knockout)
-  next_match_id      Int? // winner tiến vào trận nào (knockout bracket)
   current_period     MatchPeriod? // sub-state khi ongoing: extra_time_first, penalty_shootout...
   postponed_from     DateTime? // original scheduled_at
   postponed_reason   String?
@@ -445,10 +476,6 @@ model Match {
   home_team Team   @relation("Match_homeTeam", fields: [home_team_id], references: [id])
   away_team Team   @relation("Match_awayTeam", fields: [away_team_id], references: [id])
 
-  // Self-relation cho knockout progression
-  next_match   Match?  @relation("Match_progression", fields: [next_match_id], references: [id])
-  prev_matches Match[] @relation("Match_progression")
-
   events       MatchEvent[]
   user         User?        @relation(fields: [user_id], references: [id])
   user_id      Int?
@@ -460,6 +487,7 @@ model Match {
   season_id    Int?
   season       Season?      @relation(fields: [season_id], references: [id])
   articles     Article[]
+  bracketSlot  BracketSlot?
 
   @@unique([venue_id, scheduled_at])
   @@map("matches")

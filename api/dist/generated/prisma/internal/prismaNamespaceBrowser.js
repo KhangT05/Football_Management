@@ -45,6 +45,7 @@ export const ModelName = {
     Tournament: 'Tournament',
     TournamentRule: 'TournamentRule',
     Phase: 'Phase',
+    BracketSlot: 'BracketSlot',
     Season: 'Season',
     Group: 'Group',
     Team: 'Team',
@@ -137,9 +138,22 @@ export const PhaseScalarFieldEnum = {
     end_date: 'end_date',
     min_rest_days_per_team: 'min_rest_days_per_team',
     is_active: 'is_active',
+    legs: 'legs',
     status: 'status',
     created_at: 'created_at',
     updated_at: 'updated_at'
+};
+export const BracketSlotScalarFieldEnum = {
+    id: 'id',
+    phase_id: 'phase_id',
+    round: 'round',
+    slot_number: 'slot_number',
+    match_id: 'match_id',
+    source_a_slot_id: 'source_a_slot_id',
+    source_b_slot_id: 'source_b_slot_id',
+    seeded_home_team_id: 'seeded_home_team_id',
+    seeded_away_team_id: 'seeded_away_team_id',
+    is_bye: 'is_bye'
 };
 export const SeasonScalarFieldEnum = {
     id: 'id',
@@ -244,7 +258,6 @@ export const MatchScalarFieldEnum = {
     status: 'status',
     round: 'round',
     leg: 'leg',
-    next_match_id: 'next_match_id',
     current_period: 'current_period',
     postponed_from: 'postponed_from',
     postponed_reason: 'postponed_reason',

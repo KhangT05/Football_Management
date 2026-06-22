@@ -1,17 +1,11 @@
 import { z } from 'zod';
 
-const vnTimeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+import { venueIdsField, matchTimesField, vnTimeRegex } from '../dtos/fields.schema.js';
+
 
 const isoDatetime = (fieldName: string) =>
     z.string().datetime().transform(s => new Date(s));
 
-const venueIdsField = z
-    .array(z.number().int().positive())
-    .min(1);
-
-const matchTimesField = z
-    .array(z.string().regex(vnTimeRegex))
-    .min(1);
 
 export const generateScheduleSchema = z.object({
     desiredGroupCount: z.number().int().min(1),
