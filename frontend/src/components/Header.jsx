@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Information } from '../data/data';
 import useAuthStore from '../store/authStore';
+import ThemeSwitcher from './ThemeSwitcher';
 import {
   User, ChevronDown, LogOut, UserCircle, Shield, Trophy,
   Menu, X, CalendarDays, BarChart3, Home
@@ -28,7 +29,15 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-navy border-b border-navy-light shadow-lg shadow-black/20 text-white">
+    <header
+      className="sticky top-0 z-50 border-b shadow-lg text-white"
+      style={{
+        backgroundColor: 'var(--color-bg-header)',
+        borderColor: 'var(--color-border)',
+        boxShadow: 'var(--shadow-header)',
+        color: 'var(--color-text-primary)',
+      }}
+    >
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
@@ -65,7 +74,7 @@ export default function Header() {
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-4 relative">
+          <div className="hidden md:flex items-center gap-3 relative">
             {!isAuthenticated ? (
               <>
                 <Link
@@ -127,6 +136,10 @@ export default function Header() {
                 </div>
               </div>
             )}
+            
+            {/* Divider */}
+            <div className="hidden lg:block h-6 w-px bg-gray-600/50 mx-1" style={{ backgroundColor: 'var(--color-border)' }}></div>
+            <ThemeSwitcher />
           </div>
 
           {/* Mobile: Hamburger */}
@@ -146,7 +159,13 @@ export default function Header() {
           mobileOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="border-t border-navy-light bg-navy-dark px-4 py-4 space-y-1">
+        <div
+          className="border-t px-4 py-4 space-y-1"
+          style={{
+            backgroundColor: 'var(--color-bg-base)',
+            borderColor: 'var(--color-border)',
+          }}
+        >
           {/* Nav links */}
           {navLinks.map(({ to, label, icon: Icon }) => (
             <Link
@@ -164,7 +183,13 @@ export default function Header() {
             </Link>
           ))}
 
-          <div className="border-t border-navy-light pt-3 mt-3">
+          {/* Theme Switcher in mobile */}
+          <div className="flex items-center justify-between px-4 py-3 mb-1">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Giao diện</span>
+            <ThemeSwitcher />
+          </div>
+
+          <div className="border-t border-navy-light pt-3 mt-1">
             {!isAuthenticated ? (
               <div className="flex flex-col gap-2">
                 <Link

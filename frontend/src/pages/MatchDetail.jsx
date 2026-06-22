@@ -170,7 +170,7 @@ export default function MatchDetail() {
               <div className="flex justify-center items-center gap-4 md:gap-16">
                 {/* Home */}
                 <div className="flex flex-col items-center flex-1 max-w-[200px]">
-                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-gradient-to-br from-blue-700 to-cyan-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-blue-900/30 hover:border-blue-400 transition-colors duration-300">
+                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-linear-to-br from-blue-700 to-cyan-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-blue-900/30 hover:border-blue-400 transition-colors duration-300">
                     {getInitials(homeName)}
                   </div>
                   <h2 className="mt-4 text-center font-black text-lg md:text-2xl text-white tracking-widest uppercase line-clamp-2">
@@ -198,7 +198,7 @@ export default function MatchDetail() {
 
                 {/* Away */}
                 <div className="flex flex-col items-center flex-1 max-w-[200px]">
-                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-gradient-to-br from-amber-700 to-orange-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-amber-900/30 hover:border-amber-400 transition-colors duration-300">
+                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-linear-to-br from-amber-700 to-orange-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-amber-900/30 hover:border-amber-400 transition-colors duration-300">
                     {getInitials(awayName)}
                   </div>
                   <h2 className="mt-4 text-center font-black text-lg md:text-2xl text-white tracking-widest uppercase line-clamp-2">
@@ -257,7 +257,7 @@ export default function MatchDetail() {
               {/* Home */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white text-xs font-black">
+                  <div className="w-5 h-5 rounded bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white text-xs font-black">
                     {getInitials(homeName)[0]}
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
@@ -275,7 +275,7 @@ export default function MatchDetail() {
               {/* Away */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white text-xs font-black">
+                  <div className="w-5 h-5 rounded bg-linear-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white text-xs font-black">
                     {getInitials(awayName)[0]}
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>

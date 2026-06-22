@@ -92,7 +92,7 @@ function StandingRow({ row, idx, teams }) {
       </td>
       <td className="py-4 px-6">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-sm text-white shadow-md shrink-0`}>
+          <div className={`w-9 h-9 rounded-xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-sm text-white shadow-md shrink-0`}>
             {initial}
           </div>
           <div className="min-w-0">
@@ -132,7 +132,7 @@ function TeamCard({ team, idx }) {
     >
       {/* Header */}
       <div className="flex items-start gap-4 mb-5">
-        <div className={`w-16 h-16 shrink-0 rounded-2xl bg-gradient-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-2xl text-white shadow-lg group-hover:scale-105 transition-transform duration-300`}>
+        <div className={`w-16 h-16 shrink-0 rounded-2xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-2xl text-white shadow-lg group-hover:scale-105 transition-transform duration-300`}>
           {initial}
         </div>
         <div className="min-w-0">

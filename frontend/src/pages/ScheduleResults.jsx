@@ -66,7 +66,7 @@ function MatchCard({ match, idx }) {
       <div className="flex items-center justify-between gap-3">
         {/* Home */}
         <div className="flex flex-col items-center gap-2 flex-1">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center font-black text-white text-xl shadow-md shadow-blue-900/30">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center font-black text-white text-xl shadow-md shadow-blue-900/30">
             {homeInitial}
           </div>
           <span className="font-bold text-white text-sm text-center line-clamp-2">{homeName}</span>
@@ -89,7 +89,7 @@ function MatchCard({ match, idx }) {
 
         {/* Away */}
         <div className="flex flex-col items-center gap-2 flex-1">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center font-black text-white text-xl shadow-md shadow-amber-900/30">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-amber-600 to-orange-700 flex items-center justify-center font-black text-white text-xl shadow-md shadow-amber-900/30">
             {awayInitial}
           </div>
           <span className="font-bold text-white text-sm text-center line-clamp-2">{awayName}</span>

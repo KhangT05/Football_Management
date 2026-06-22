@@ -81,7 +81,7 @@ function PlayerCard({ tp, idx }) {
     >
       <div className="flex items-center gap-3">
         {/* Avatar */}
-        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative`}>
+        <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative`}>
           {initial}
           {isCaptain && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow">
@@ -185,7 +185,7 @@ export default function TeamDetail() {
 
       {/* Hero Header */}
       <section className="relative mt-6 mb-12 bg-navy border-b border-navy-light shadow-lg shadow-black/20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-transparent to-cyan-900/5 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-br from-blue-900/10 via-transparent to-cyan-900/5 pointer-events-none" />
         <div className="container relative z-10 mx-auto px-4 lg:px-8 py-12 md:py-20 animate-slide-up">
           {isLoading ? (
             <HeaderSkeleton />
@@ -197,7 +197,7 @@ export default function TeamDetail() {
           ) : (
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
               {/* Avatar */}
-              <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-2xl shadow-blue-900/30 shrink-0 border-4 border-white/10 animate-fade-in`}>
+              <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-2xl shadow-blue-900/30 shrink-0 border-4 border-white/10 animate-fade-in`}>
                 {initial}
               </div>
 
