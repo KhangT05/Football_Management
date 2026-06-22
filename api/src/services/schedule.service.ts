@@ -1,5 +1,5 @@
 import { createAppError } from '../common/app.error.js';
-import { Match, MatchStatus, PhaseFormat, PhaseStatus, PhaseType, Prisma, PrismaClient, SeasonStatus, SeasonTeamStatus } from '../generated/prisma/client.js';
+import { Match, MatchStatus, PhaseFormat, PhaseStatus, PhaseType, PrismaClient, SeasonStatus, SeasonTeamStatus } from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
 import { shuffle } from "../libs/array.utils.js";
 import {
@@ -10,17 +10,15 @@ import {
     RescheduleInput,
     ScheduleOptions,
     SeasonSchedule,
-    Slot,
 } from '../types/schedule.type.js';
-import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { PaginatedResult, QueryRequest, SortDir } from '../types/queryable.type.js';
-
-export class ScheduleService {
+import { ScheduleEngine } from '../libs/schedule.engine.js';
+export class ScheduleService extends ScheduleEngine {
 
     private readonly query: Queryable<Match>;
 
     constructor(
-        private readonly prisma: PrismaClient
+        prisma: PrismaClient
     ) {
         // FIX: bỏ 'round' khỏi sortable. Cột `round` là String (generateRoundRobin
         // lưu round: String(d.round)) → orderBy DB-level sort lexicographic
@@ -28,6 +26,7 @@ export class ScheduleService {
         // đã chạm mức này: numRounds*2 = (n-1)*2). Muốn sort theo round đúng nghĩa
         // số phải migrate cột sang Int, hoặc sort ở application layer (xem
         // findMatchesByTeam — vẫn chưa migrate nên tạm chặn ở Queryable).
+        super(prisma);
 
         this.query = new Queryable<Match>(prisma.match, {
             filterable: ['season_id', 'status', 'venue_id', 'round'],
@@ -245,8 +244,13 @@ export class ScheduleService {
         options: ScheduleOptions,
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
         const matches = await this.prisma.match.findMany({
-            // FIX (CRITICAL #2): match chưa có giờ phải là draft, không phải scheduled
-            where: { season_id: seasonId, scheduled_at: null, status: MatchStatus.scheduled },
+
+            where: {
+                season_id: seasonId,
+                scheduled_at: null,
+                status: MatchStatus.scheduled,
+                group_id: { not: null },
+            },
             orderBy: [{ round: 'asc' }, { id: 'asc' }],
         });
 
@@ -406,103 +410,6 @@ export class ScheduleService {
     }
 
 
-
-    private async loadTakenSlots(venueIds: number[], startDate: Date, rangeEnd: Date): Promise<Set<string>> {
-        const taken = await this.prisma.match.findMany({
-            where: {
-                venue_id: { in: venueIds },
-                scheduled_at: { not: null, gte: startDate, lte: rangeEnd },
-                status: { not: MatchStatus.cancelled },
-            },
-            select: { venue_id: true, scheduled_at: true },
-        });
-        return new Set(taken.map(m => `${m.venue_id}_${m.scheduled_at!.toISOString()}`));
-    }
-
-    private async writeScheduleBatch(
-        updates: { id: number; scheduledAt: Date; venueId: number }[],
-    ): Promise<number[]> {
-        if (updates.length === 0) return [];
-
-        try {
-            const scheduledCases = updates.map(u => Prisma.sql`WHEN ${u.id} THEN ${u.scheduledAt}`);
-            const venueCases = updates.map(u => Prisma.sql`WHEN ${u.id} THEN ${u.venueId}`);
-            const ids = updates.map(u => u.id);
-
-            await this.prisma.$executeRaw`
-                UPDATE matches
-                SET scheduled_at = CASE id ${Prisma.join(scheduledCases, ' ')} END,
-                    venue_id     = CASE id ${Prisma.join(venueCases, ' ')} END
-                WHERE id IN (${Prisma.join(ids)})
-            `;
-            return [];
-        } catch {
-            // Bulk fail → fallback per-row để isolate conflict
-            const failed: number[] = [];
-            for (const u of updates) {
-                try {
-                    await this.prisma.match.update({
-                        where: { id: u.id },
-                        data: { scheduled_at: u.scheduledAt, venue_id: u.venueId },
-                    });
-                } catch {
-                    failed.push(u.id);
-                }
-            }
-            return failed;
-        }
-    }
-
-    private buildSlotPool(
-        venueIds: number[],
-        startDate: Date,
-        rangeEnd: Date,
-        matchTimes: string[],
-        takenSet: Set<string>,
-    ): Slot[] {
-        const slots: Slot[] = [];
-        const cursor = new Date(startDate);
-
-        while (cursor <= rangeEnd) {
-            for (const venueId of venueIds) {
-                for (const time of matchTimes) {
-                    const dt = this.vnTimeToUtc(cursor, time);
-                    if (!takenSet.has(`${venueId}_${dt.toISOString()}`)) {
-                        slots.push({ venue_id: venueId, date: new Date(cursor), time });
-                    }
-                }
-            }
-            cursor.setUTCDate(cursor.getUTCDate() + 1);
-        }
-
-        return slots.sort((a, b) => {
-            const d = a.date.getTime() - b.date.getTime();
-            return d !== 0 ? d : a.time.localeCompare(b.time);
-        });
-    }
-
-    private findEarliestValidSlot(
-        pool: Slot[],
-        usedSlotIdx: Set<number>,
-        homeTeamId: number,
-        awayTeamId: number,
-        lastPlayedAt: Map<number, number>,
-        minRestDays: number,
-    ): number {
-        const minRestMs = minRestDays * 24 * 60 * 60 * 1000;
-
-        for (let i = 0; i < pool.length; i++) {
-            if (usedSlotIdx.has(i)) continue;
-            const slotTime = pool[i]!.date.getTime();
-            const homeLast = lastPlayedAt.get(homeTeamId);
-            const awayLast = lastPlayedAt.get(awayTeamId);
-            if (homeLast !== undefined && slotTime - homeLast < minRestMs) continue;
-            if (awayLast !== undefined && slotTime - awayLast < minRestMs) continue;
-            return i;
-        }
-        return -1;
-    }
-
     private resolveGroupCount(totalTeams: number, desiredGroups: number, minGroupSize: number): number {
         let g = Math.min(desiredGroups, totalTeams);
         while (g > 1) {
@@ -549,10 +456,6 @@ export class ScheduleService {
                 const a = current[i];
                 const b = current[n - 1 - i];
                 if (a === null || a === undefined || b === null || b === undefined) {
-                    const realTeam = a ?? b;
-                    if (realTeam !== null && realTeam !== undefined) {
-                        drafts.push({ round: round + 1, home: realTeam, away: -1 });
-                    }
                     continue;
                 }
                 const [home, away] = round % 2 === 0 ? [a, b] : [b, a];
@@ -576,13 +479,6 @@ export class ScheduleService {
             round: String(d.round),
             status: MatchStatus.scheduled,
         }));
-    }
-
-    private vnTimeToUtc(date: Date, vnTime: string): Date {
-        const [h, m] = vnTime.split(':').map(Number);
-        const vnDateStr = formatInTimeZone(date, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
-        const localStr = `${vnDateStr}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-        return fromZonedTime(localStr, 'Asia/Ho_Chi_Minh');
     }
 
     private rotate<T>(arr: T[]): T[] {

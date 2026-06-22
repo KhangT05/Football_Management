@@ -32,6 +32,7 @@ export declare const ModelName: {
     readonly Tournament: "Tournament";
     readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
+    readonly BracketSlot: "BracketSlot";
     readonly Season: "Season";
     readonly Group: "Group";
     readonly Team: "Team";
@@ -128,11 +129,25 @@ export declare const PhaseScalarFieldEnum: {
     readonly end_date: "end_date";
     readonly min_rest_days_per_team: "min_rest_days_per_team";
     readonly is_active: "is_active";
+    readonly legs: "legs";
     readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
 };
 export type PhaseScalarFieldEnum = (typeof PhaseScalarFieldEnum)[keyof typeof PhaseScalarFieldEnum];
+export declare const BracketSlotScalarFieldEnum: {
+    readonly id: "id";
+    readonly phase_id: "phase_id";
+    readonly round: "round";
+    readonly slot_number: "slot_number";
+    readonly match_id: "match_id";
+    readonly source_a_slot_id: "source_a_slot_id";
+    readonly source_b_slot_id: "source_b_slot_id";
+    readonly seeded_home_team_id: "seeded_home_team_id";
+    readonly seeded_away_team_id: "seeded_away_team_id";
+    readonly is_bye: "is_bye";
+};
+export type BracketSlotScalarFieldEnum = (typeof BracketSlotScalarFieldEnum)[keyof typeof BracketSlotScalarFieldEnum];
 export declare const SeasonScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -243,7 +258,6 @@ export declare const MatchScalarFieldEnum: {
     readonly status: "status";
     readonly round: "round";
     readonly leg: "leg";
-    readonly next_match_id: "next_match_id";
     readonly current_period: "current_period";
     readonly postponed_from: "postponed_from";
     readonly postponed_reason: "postponed_reason";

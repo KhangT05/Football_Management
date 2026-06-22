@@ -237,6 +237,7 @@ export declare const ModelName: {
     readonly Tournament: "Tournament";
     readonly TournamentRule: "TournamentRule";
     readonly Phase: "Phase";
+    readonly BracketSlot: "BracketSlot";
     readonly Season: "Season";
     readonly Group: "Group";
     readonly Team: "Team";
@@ -267,7 +268,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "season" | "group" | "team" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "match" | "venue" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "bracketSlot" | "season" | "group" | "team" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "match" | "venue" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -664,6 +665,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 count: {
                     args: Prisma.PhaseCountArgs<ExtArgs>;
                     result: runtime.Types.Utils.Optional<Prisma.PhaseCountAggregateOutputType> | number;
+                };
+            };
+        };
+        BracketSlot: {
+            payload: Prisma.$BracketSlotPayload<ExtArgs>;
+            fields: Prisma.BracketSlotFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.BracketSlotFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.BracketSlotFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                findFirst: {
+                    args: Prisma.BracketSlotFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.BracketSlotFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                findMany: {
+                    args: Prisma.BracketSlotFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>[];
+                };
+                create: {
+                    args: Prisma.BracketSlotCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                createMany: {
+                    args: Prisma.BracketSlotCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.BracketSlotDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                update: {
+                    args: Prisma.BracketSlotUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.BracketSlotDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.BracketSlotUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.BracketSlotUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$BracketSlotPayload>;
+                };
+                aggregate: {
+                    args: Prisma.BracketSlotAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateBracketSlot>;
+                };
+                groupBy: {
+                    args: Prisma.BracketSlotGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.BracketSlotGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.BracketSlotCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.BracketSlotCountAggregateOutputType> | number;
                 };
             };
         };
@@ -1958,11 +2025,25 @@ export declare const PhaseScalarFieldEnum: {
     readonly end_date: "end_date";
     readonly min_rest_days_per_team: "min_rest_days_per_team";
     readonly is_active: "is_active";
+    readonly legs: "legs";
     readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
 };
 export type PhaseScalarFieldEnum = (typeof PhaseScalarFieldEnum)[keyof typeof PhaseScalarFieldEnum];
+export declare const BracketSlotScalarFieldEnum: {
+    readonly id: "id";
+    readonly phase_id: "phase_id";
+    readonly round: "round";
+    readonly slot_number: "slot_number";
+    readonly match_id: "match_id";
+    readonly source_a_slot_id: "source_a_slot_id";
+    readonly source_b_slot_id: "source_b_slot_id";
+    readonly seeded_home_team_id: "seeded_home_team_id";
+    readonly seeded_away_team_id: "seeded_away_team_id";
+    readonly is_bye: "is_bye";
+};
+export type BracketSlotScalarFieldEnum = (typeof BracketSlotScalarFieldEnum)[keyof typeof BracketSlotScalarFieldEnum];
 export declare const SeasonScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
@@ -2073,7 +2154,6 @@ export declare const MatchScalarFieldEnum: {
     readonly status: "status";
     readonly round: "round";
     readonly leg: "leg";
-    readonly next_match_id: "next_match_id";
     readonly current_period: "current_period";
     readonly postponed_from: "postponed_from";
     readonly postponed_reason: "postponed_reason";
@@ -2592,6 +2672,7 @@ export type GlobalOmitConfig = {
     tournament?: Prisma.TournamentOmit;
     tournamentRule?: Prisma.TournamentRuleOmit;
     phase?: Prisma.PhaseOmit;
+    bracketSlot?: Prisma.BracketSlotOmit;
     season?: Prisma.SeasonOmit;
     group?: Prisma.GroupOmit;
     team?: Prisma.TeamOmit;

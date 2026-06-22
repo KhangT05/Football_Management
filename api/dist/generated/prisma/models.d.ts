@@ -4,6 +4,7 @@ export type * from './models/User_Role.js';
 export type * from './models/Tournament.js';
 export type * from './models/TournamentRule.js';
 export type * from './models/Phase.js';
+export type * from './models/BracketSlot.js';
 export type * from './models/Season.js';
 export type * from './models/Group.js';
 export type * from './models/Team.js';

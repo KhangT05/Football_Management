@@ -33,6 +33,11 @@ export type TournamentRule = Prisma.TournamentRuleModel;
  */
 export type Phase = Prisma.PhaseModel;
 /**
+ * Model BracketSlot
+ *
+ */
+export type BracketSlot = Prisma.BracketSlotModel;
+/**
  * Model Season
  *
  */
