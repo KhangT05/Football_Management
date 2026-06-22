@@ -18,12 +18,11 @@ export type GenerateOptions = {
     minGroupSize: number;
     maxGroupSize: number;
     venueIds: number[];
-    startDate: Date;
     matchTimes: string[];
     doubleRound?: boolean;
     minRestDaysPerTeam?: number;
 };
-export type ScheduleOptions = Pick<GenerateOptions, 'venueIds' | 'startDate' | 'matchTimes'>;
+export type ScheduleOptions = Pick<GenerateOptions, 'venueIds' | 'matchTimes'>;
 export type GenerateResult = {
     groupCount: number;
     groupIds: number[];

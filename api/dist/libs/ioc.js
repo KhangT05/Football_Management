@@ -1,5 +1,6 @@
 import { AuthController } from "../controllers/auth.controller.js";
 import { GroupController } from "../controllers/group.controller.js";
+import { KnockoutController } from "../controllers/knockout.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
 import { ScheduleController } from "../controllers/schedule.controller.js";
@@ -12,6 +13,7 @@ import { UserController } from "../controllers/user.controller.js";
 import { VenueController } from "../controllers/venue.controller.js";
 import { AuthService } from "../services/auth.service.js";
 import { GroupService } from "../services/group.service.js";
+import { KnockoutService } from "../services/knockout.service.js";
 import { PlayerService } from "../services/player.service.js";
 import { RoleService } from "../services/role.service.js";
 import { ScheduleService } from "../services/schedule.service.js";
@@ -37,6 +39,7 @@ const controllerFactory = new Map([
     [SeasonTeamController, () => new SeasonTeamController(new SeasonTeamService(prisma))],
     [GroupController, () => new GroupController(new GroupService(prisma))],
     [ScheduleController, () => new ScheduleController(new ScheduleService(prisma))],
+    [KnockoutController, () => new KnockoutController(new KnockoutService(prisma))],
 ]);
 export const iocContainer = {
     get(controller) {

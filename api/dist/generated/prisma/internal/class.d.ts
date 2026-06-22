@@ -184,6 +184,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.bracketSlot`: Exposes CRUD operations for the **BracketSlot** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more BracketSlots
+      * const bracketSlots = await prisma.bracketSlot.findMany()
+      * ```
+      */
+    get bracketSlot(): Prisma.BracketSlotDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.season`: Exposes CRUD operations for the **Season** model.
       * Example usage:
       * ```ts

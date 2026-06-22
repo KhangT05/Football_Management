@@ -1417,10 +1417,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"startDate": {
-						"type": "string",
-						"format": "date-time"
-					},
 					"doubleRound": {
 						"type": "boolean"
 					},
@@ -1465,10 +1461,6 @@
 			},
 			"infer_typeofautoScheduleSchema_": {
 				"properties": {
-					"startDate": {
-						"type": "string",
-						"format": "date-time"
-					},
 					"matchTimes": {
 						"items": {
 							"type": "string"
@@ -1564,10 +1556,6 @@
 					"current_period": {
 						"$ref": "#/components/schemas/MatchPeriod"
 					},
-					"next_match_id": {
-						"type": "number",
-						"format": "double"
-					},
 					"leg": {
 						"type": "number",
 						"format": "double"
@@ -1647,7 +1635,6 @@
 					"postponed_reason",
 					"postponed_from",
 					"current_period",
-					"next_match_id",
 					"leg",
 					"round",
 					"away_score",
@@ -2246,6 +2233,168 @@
 			},
 			"BulkDeleteDto": {
 				"$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
+			},
+			"KnockoutGenerateResult": {
+				"properties": {
+					"totalSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"round1Matches": {
+						"type": "number",
+						"format": "double"
+					},
+					"byeSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"warnings": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"totalSlots",
+					"round1Matches",
+					"byeSlots",
+					"warnings"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"infer_typeofgenerateKnockoutRequestSchema_": {
+				"properties": {
+					"legs": {
+						"type": "number",
+						"enum": [
+							1,
+							2
+						]
+					},
+					"seededTeamIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"matchTimes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"seededTeamIds",
+					"matchTimes",
+					"venueIds"
+				],
+				"type": "object"
+			},
+			"GenerateKnockoutRequestDto": {
+				"$ref": "#/components/schemas/infer_typeofgenerateKnockoutRequestSchema_"
+			},
+			"infer_typeofadvanceWinnerRequestSchema_": {
+				"properties": {
+					"matchTimes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"winnerTeamId": {
+						"type": "number",
+						"format": "double"
+					},
+					"matchId": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"matchTimes",
+					"venueIds",
+					"winnerTeamId",
+					"matchId"
+				],
+				"type": "object"
+			},
+			"AdvanceWinnerRequestDto": {
+				"$ref": "#/components/schemas/infer_typeofadvanceWinnerRequestSchema_"
+			},
+			"BracketSlotNode": {
+				"properties": {
+					"slotId": {
+						"type": "number",
+						"format": "double"
+					},
+					"round": {
+						"type": "number",
+						"format": "double"
+					},
+					"slotNumber": {
+						"type": "number",
+						"format": "double"
+					},
+					"matchId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"isBye": {
+						"type": "boolean"
+					},
+					"seededHomeTeamId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"seededAwayTeamId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"sourceASlotId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"sourceBSlotId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					}
+				},
+				"required": [
+					"slotId",
+					"round",
+					"slotNumber",
+					"matchId",
+					"isBye",
+					"seededHomeTeamId",
+					"seededAwayTeamId",
+					"sourceASlotId",
+					"sourceBSlotId"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"GroupStatus": {
 				"type": "string",
@@ -5666,6 +5815,169 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/seasons/{seasonId}/phases/{phaseId}/knockout/generate": {
+			"post": {
+				"operationId": "GenerateKnockoutBracket",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/KnockoutGenerateResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —\r\ntránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object\r\nrồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)\r\nlàm invariant check cuối, body schema con chỉ là contract cho OpenAPI.",
+				"tags": [
+					"Knockout"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GenerateKnockoutRequestDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/{seasonId}/phases/{phaseId}/knockout/advance": {
+			"post": {
+				"operationId": "AdvanceWinner",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"newMatchId": {
+											"type": "number",
+											"format": "double"
+										},
+										"matchCreated": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"matchCreated"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Action-style mutation (không idempotent, không phải partial update của\r\nresource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.\r\nvenueIds/matchTimes trong body là ScheduleOptions cho match round sau\r\nvừa được tạo ra (nếu advance làm xong 1 cặp slot).",
+				"tags": [
+					"Knockout"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AdvanceWinnerRequestDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/phases/{phaseId}/knockout/bracket": {
+			"get": {
+				"operationId": "GetBracket",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/BracketSlotNode"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Knockout"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
 			}
 		},
 		"/groups/{id}": {

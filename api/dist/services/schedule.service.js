@@ -1,10 +1,9 @@
 import { createAppError } from '../common/app.error.js';
-import { MatchStatus, PhaseFormat, PhaseStatus, PhaseType, Prisma, SeasonStatus, SeasonTeamStatus } from '../generated/prisma/client.js';
+import { MatchStatus, PhaseFormat, PhaseStatus, PhaseType, SeasonStatus, SeasonTeamStatus } from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
 import { shuffle } from "../libs/array.utils.js";
-import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
-export class ScheduleService {
-    prisma;
+import { ScheduleEngine } from '../libs/schedule.engine.js';
+export class ScheduleService extends ScheduleEngine {
     query;
     constructor(prisma) {
         // FIX: bỏ 'round' khỏi sortable. Cột `round` là String (generateRoundRobin
@@ -13,7 +12,7 @@ export class ScheduleService {
         // đã chạm mức này: numRounds*2 = (n-1)*2). Muốn sort theo round đúng nghĩa
         // số phải migrate cột sang Int, hoặc sort ở application layer (xem
         // findMatchesByTeam — vẫn chưa migrate nên tạm chặn ở Queryable).
-        this.prisma = prisma;
+        super(prisma);
         this.query = new Queryable(prisma.match, {
             filterable: ['season_id', 'status', 'venue_id', 'round'],
             sortable: ['scheduled_at'],
@@ -103,8 +102,6 @@ export class ScheduleService {
             throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
         if (options.matchTimes.length === 0)
             throw createAppError('VALIDATION_ERROR', 'matchTimes không được rỗng');
-        if (options.startDate < new Date())
-            warnings.push('startDate đã qua — slot pool có thể không đủ');
         const { groupCount, groupIds } = await this.prisma.$transaction(async (tx) => {
             await tx.$executeRaw `SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
             const season = await tx.season.findUnique({
@@ -175,24 +172,41 @@ export class ScheduleService {
     }
     async autoScheduleMatches(seasonId, options) {
         const matches = await this.prisma.match.findMany({
-            // FIX (CRITICAL #2): match chưa có giờ phải là draft, không phải scheduled
-            where: { season_id: seasonId, scheduled_at: null, status: MatchStatus.scheduled },
+            where: {
+                season_id: seasonId,
+                scheduled_at: null,
+                status: MatchStatus.scheduled,
+                group_id: { not: null },
+            },
             orderBy: [{ round: 'asc' }, { id: 'asc' }],
         });
         if (matches.length === 0)
             return { matchesScheduled: 0, failedMatchIds: [] };
-        const phase = await this.prisma.phase.findFirst({
-            where: { season_id: seasonId, type: 'group_stage' },
-            select: { min_rest_days_per_team: true },
-        });
+        const [phase, season] = await Promise.all([
+            this.prisma.phase.findFirst({
+                where: { season_id: seasonId, type: PhaseType.group_stage },
+                select: { min_rest_days_per_team: true },
+            }),
+            this.prisma.season.findUnique({
+                where: { id: seasonId },
+                select: { start_date: true },
+            }),
+        ]);
         if (!phase)
             throw createAppError('NOT_FOUND', `Không tìm thấy group_stage phase cho season ${seasonId}`);
-        // FIX (CRITICAL #3 latent risk): null * ms = 0 → rest constraint bị tắt âm thầm
+        if (!season)
+            throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (!season.start_date)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date`);
         const minRestDays = phase.min_rest_days_per_team ?? 3;
-        const rangeEnd = new Date(options.startDate);
+        const startDate = season.start_date; // UTC Date từ DB — dùng trực tiếp
+        if (startDate < new Date())
+            // log warning nhưng không throw — vẫn schedule được, chỉ pool nhỏ hơn
+            console.warn(`[autoSchedule] season ${seasonId} start_date đã qua: ${startDate.toISOString()}`);
+        const rangeEnd = new Date(startDate);
         rangeEnd.setMonth(rangeEnd.getMonth() + 6);
-        const takenSet = await this.loadTakenSlots(options.venueIds, options.startDate, rangeEnd);
-        const pool = this.buildSlotPool(options.venueIds, options.startDate, rangeEnd, options.matchTimes, takenSet);
+        const takenSet = await this.loadTakenSlots(options.venueIds, startDate, rangeEnd);
+        const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
         if (pool.length < matches.length) {
             throw createAppError('VALIDATION_ERROR', `Không đủ slot: cần ${matches.length}, chỉ có ${pool.length}. ` +
                 `Thêm venueId / matchTime hoặc đẩy startDate sớm hơn.`);
@@ -290,84 +304,6 @@ export class ScheduleService {
             })),
         };
     }
-    async loadTakenSlots(venueIds, startDate, rangeEnd) {
-        const taken = await this.prisma.match.findMany({
-            where: {
-                venue_id: { in: venueIds },
-                scheduled_at: { not: null, gte: startDate, lte: rangeEnd },
-                status: { not: MatchStatus.cancelled },
-            },
-            select: { venue_id: true, scheduled_at: true },
-        });
-        return new Set(taken.map(m => `${m.venue_id}_${m.scheduled_at.toISOString()}`));
-    }
-    async writeScheduleBatch(updates) {
-        if (updates.length === 0)
-            return [];
-        try {
-            const scheduledCases = updates.map(u => Prisma.sql `WHEN ${u.id} THEN ${u.scheduledAt}`);
-            const venueCases = updates.map(u => Prisma.sql `WHEN ${u.id} THEN ${u.venueId}`);
-            const ids = updates.map(u => u.id);
-            await this.prisma.$executeRaw `
-                UPDATE matches
-                SET scheduled_at = CASE id ${Prisma.join(scheduledCases, ' ')} END,
-                    venue_id     = CASE id ${Prisma.join(venueCases, ' ')} END
-                WHERE id IN (${Prisma.join(ids)})
-            `;
-            return [];
-        }
-        catch {
-            // Bulk fail → fallback per-row để isolate conflict
-            const failed = [];
-            for (const u of updates) {
-                try {
-                    await this.prisma.match.update({
-                        where: { id: u.id },
-                        data: { scheduled_at: u.scheduledAt, venue_id: u.venueId },
-                    });
-                }
-                catch {
-                    failed.push(u.id);
-                }
-            }
-            return failed;
-        }
-    }
-    buildSlotPool(venueIds, startDate, rangeEnd, matchTimes, takenSet) {
-        const slots = [];
-        const cursor = new Date(startDate);
-        while (cursor <= rangeEnd) {
-            for (const venueId of venueIds) {
-                for (const time of matchTimes) {
-                    const dt = this.vnTimeToUtc(cursor, time);
-                    if (!takenSet.has(`${venueId}_${dt.toISOString()}`)) {
-                        slots.push({ venue_id: venueId, date: new Date(cursor), time });
-                    }
-                }
-            }
-            cursor.setUTCDate(cursor.getUTCDate() + 1);
-        }
-        return slots.sort((a, b) => {
-            const d = a.date.getTime() - b.date.getTime();
-            return d !== 0 ? d : a.time.localeCompare(b.time);
-        });
-    }
-    findEarliestValidSlot(pool, usedSlotIdx, homeTeamId, awayTeamId, lastPlayedAt, minRestDays) {
-        const minRestMs = minRestDays * 24 * 60 * 60 * 1000;
-        for (let i = 0; i < pool.length; i++) {
-            if (usedSlotIdx.has(i))
-                continue;
-            const slotTime = pool[i].date.getTime();
-            const homeLast = lastPlayedAt.get(homeTeamId);
-            const awayLast = lastPlayedAt.get(awayTeamId);
-            if (homeLast !== undefined && slotTime - homeLast < minRestMs)
-                continue;
-            if (awayLast !== undefined && slotTime - awayLast < minRestMs)
-                continue;
-            return i;
-        }
-        return -1;
-    }
     resolveGroupCount(totalTeams, desiredGroups, minGroupSize) {
         let g = Math.min(desiredGroups, totalTeams);
         while (g > 1) {
@@ -411,10 +347,6 @@ export class ScheduleService {
                 const a = current[i];
                 const b = current[n - 1 - i];
                 if (a === null || a === undefined || b === null || b === undefined) {
-                    const realTeam = a ?? b;
-                    if (realTeam !== null && realTeam !== undefined) {
-                        drafts.push({ round: round + 1, home: realTeam, away: -1 });
-                    }
                     continue;
                 }
                 const [home, away] = round % 2 === 0 ? [a, b] : [b, a];
@@ -434,12 +366,6 @@ export class ScheduleService {
             round: String(d.round),
             status: MatchStatus.scheduled,
         }));
-    }
-    vnTimeToUtc(date, vnTime) {
-        const [h, m] = vnTime.split(':').map(Number);
-        const vnDateStr = formatInTimeZone(date, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
-        const localStr = `${vnDateStr}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-        return fromZonedTime(localStr, 'Asia/Ho_Chi_Minh');
     }
     rotate(arr) {
         if (arr.length <= 2)
