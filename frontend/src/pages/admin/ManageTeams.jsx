@@ -5,9 +5,9 @@ import {
   ChevronDown, ChevronUp, AlertTriangle, Loader2, CheckCircle2,
   UserPlus, RefreshCw, Search
 } from 'lucide-react';
-import { teamApi } from '../../api';
-import { useApiQuery, useCrudModal, useDebouncedValue, useApiMutation } from '../../hooks';
+import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import useTeamStore from '../../store/teamStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 
 const POSITIONS = [
@@ -23,19 +23,24 @@ const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
 export default function ManageTeams() {
   const toast = useToastStore();
 
-  // ── Data: Teams (useApiQuery) ──────────────────────────
-  const { data: teams, meta, isLoading, error: fetchError, fetch: fetchTeams } = useApiQuery(
-    teamApi.getTeams,
-    { perPage: 20, autoFetch: false, errorMsg: 'Không thể tải danh sách đội bóng.' }
-  );
+  // ── Zustand store ──────────────────────────────────────────────
+  const {
+    teams, meta, isLoading, error: fetchError,
+    fetchAll: fetchTeamsStore,
+    create: createTeam,
+    update: updateTeam,
+    softDelete: deleteTeam,
+    fetchPlayers, getPlayersFromCache, playersLoading,
+    addNewPlayerToTeam, removePlayers,
+  } = useTeamStore();
 
   // ── Debounced search ──────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   const refetchTeams = useCallback(() => {
-    fetchTeams({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
-  }, [fetchTeams, debouncedSearch]);
+    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc', force: !!debouncedSearch });
+  }, [fetchTeamsStore, debouncedSearch]);
 
   useEffect(() => { refetchTeams(); }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -82,10 +87,10 @@ export default function ManageTeams() {
     };
     teamCrud.save(async () => {
       if (teamCrud.modal === 'add') {
-        await teamApi.registerTeam(payload);
+        await createTeam(payload);
         toast.success(`Đã tạo đội "${payload.name}" thành công!`);
       } else {
-        await teamApi.update(teamCrud.editing.id, payload);
+        await updateTeam(teamCrud.editing.id, payload);
         toast.success(`Đã cập nhật thông tin đội "${payload.name}".`);
       }
     });
@@ -94,7 +99,7 @@ export default function ManageTeams() {
   const handleDeleteTeam = () => {
     const team = teamCrud.deleting;
     teamCrud.confirmDelete(async () => {
-      await teamApi.delete(team.id);
+      await deleteTeam(team.id);
       if (expandedTeamId === team.id) setExpandedTeamId(null);
       toast.success(`Đã xóa đội "${team.name}".`);
     }).catch((err) => {
@@ -104,34 +109,13 @@ export default function ManageTeams() {
 
   // ── Expand: Team Roster ────────────────────────────────
   const [expandedTeamId, setExpandedTeamId] = useState(null);
-  const [teamPlayers, setTeamPlayers] = useState({});
-  const [loadingPlayers, setLoadingPlayers] = useState({});
-
-  const fetchPlayers = async (teamId) => {
-    setLoadingPlayers(prev => ({ ...prev, [teamId]: true }));
-    try {
-      const res = await teamApi.getPlayers(teamId, { per_page: 50 });
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      const players = Array.isArray(payload?.data) ? payload.data
-                    : Array.isArray(payload) ? payload : [];
-      setTeamPlayers(prev => ({
-        ...prev,
-        [teamId]: players
-      }));
-    } catch {
-      toast.error('Không thể tải danh sách cầu thủ.');
-      setTeamPlayers(prev => ({ ...prev, [teamId]: [] }));
-    } finally {
-      setLoadingPlayers(prev => ({ ...prev, [teamId]: false }));
-    }
-  };
 
   const toggleTeamExpand = (teamId) => {
     if (expandedTeamId === teamId) {
       setExpandedTeamId(null);
     } else {
       setExpandedTeamId(teamId);
-      if (!teamPlayers[teamId]) fetchPlayers(teamId);
+      fetchPlayers(teamId); // dùng cache nếu còn hợp lệ
     }
   };
 
@@ -139,7 +123,7 @@ export default function ManageTeams() {
   const [playerTargetTeamId, setPlayerTargetTeamId] = useState(null);
   const playerCrud = useCrudModal({
     emptyForm: EMPTY_PLAYER,
-    onSuccess: () => { if (playerTargetTeamId) fetchPlayers(playerTargetTeamId); },
+    onSuccess: () => { if (playerTargetTeamId) fetchPlayers(playerTargetTeamId, { force: true }); },
   });
 
   const openAddPlayer = (teamId) => {
@@ -151,36 +135,37 @@ export default function ManageTeams() {
     if (!playerCrud.form.name.trim()) { playerCrud.setFormError('Vui lòng nhập tên cầu thủ.'); return; }
     if (!playerCrud.form.number || isNaN(playerCrud.form.number)) { playerCrud.setFormError('Vui lòng nhập số áo hợp lệ.'); return; }
     playerCrud.save(async () => {
-      if (playerCrud.modal === 'add') {
-        await teamApi.addPlayer(playerTargetTeamId, {
-          player_id: null,
-          jersey_number: parseInt(playerCrud.form.number),
-          position: playerCrud.form.position,
-        });
-        toast.success(`Đã thêm cầu thủ "${playerCrud.form.name.trim()}" vào đội!`);
-      } else {
-        toast.info('Chỉnh sửa cầu thủ chưa được hỗ trợ qua API này.');
-      }
+      // Dùng addNewPlayerToTeam từ teamStore (2 bước: tạo Player + addToTeam)
+      await addNewPlayerToTeam(playerTargetTeamId, {
+        name: playerCrud.form.name.trim(),
+        jersey_number: parseInt(playerCrud.form.number),
+        position: playerCrud.form.position,
+      });
+      toast.success(`Đã thêm cầu thủ "${playerCrud.form.name.trim()}" vào đội!`);
     });
   };
 
   // ── Delete Player ──────────────────────────────────────
-  const [deletePlayer, setDeletePlayer] = useState(null);
-  const deletePlayerMutation = useApiMutation();
+  const [deletePlayerState, setDeletePlayerState] = useState(null);
+  const [isDeletingPlayer, setIsDeletingPlayer] = useState(false);
 
-  const handleDeletePlayer = () => {
-    const { player, teamId } = deletePlayer;
-    deletePlayerMutation.mutate(async () => {
-      await teamApi.removePlayer(teamId, player.player_id ?? player.id);
+  const handleDeletePlayer = async () => {
+    const { player, teamId } = deletePlayerState;
+    setIsDeletingPlayer(true);
+    try {
+      // Dùng removePlayers từ teamStore (bulk delete đúng route)
+      await removePlayers(teamId, [player.id]);
       toast.success('Đã xóa cầu thủ khỏi đội.');
-      setDeletePlayer(null);
-      fetchPlayers(teamId);
-    }).catch((err) => {
+      setDeletePlayerState(null);
+      fetchPlayers(teamId, { force: true });
+    } catch (err) {
       toast.error(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
-    });
+    } finally {
+      setIsDeletingPlayer(false);
+    }
   };
 
-  const getTeamRoster = (team) => teamPlayers[team.id] ?? [];
+  const getTeamRoster = (team) => getPlayersFromCache(team.id);
 
   return (
     <AdminLayout>
@@ -283,7 +268,7 @@ export default function ManageTeams() {
                           {team.logo ? (
                             <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover mx-auto border border-navy-light" />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
+                        <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
                               {team.name?.[0]?.toUpperCase()}
                             </div>
                           )}
@@ -336,7 +321,7 @@ export default function ManageTeams() {
                                   <Users className="w-4 h-4 text-neon" />
                                   Danh sách cầu thủ – {team.name}
                                   <span className="ml-2 bg-navy-light px-2 py-0.5 rounded text-xs text-gray-400 font-normal">
-                                    {loadingPlayers[team.id] ? '...' : `${getTeamRoster(team).length} TV`}
+                                {playersLoading[team.id] ? '...' : `${getTeamRoster(team).length} TV`}
                                   </span>
                                 </h4>
                                 <button
@@ -347,7 +332,7 @@ export default function ManageTeams() {
                                 </button>
                               </div>
 
-                              {loadingPlayers[team.id] ? (
+                               {playersLoading[team.id] ? (
                                 <div className="space-y-2">
                                   {[1, 2, 3].map(i => <div key={i} className="skeleton h-10 rounded-lg" />)}
                                 </div>
@@ -396,7 +381,7 @@ export default function ManageTeams() {
                                           <td className="py-3 px-4 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                               <button
-                                                onClick={() => setDeletePlayer({ player, teamId: team.id })}
+                                                onClick={() => setDeletePlayerState({ player, teamId: team.id })}
                                                 className="p-1.5 rounded text-red-400 hover:bg-red-500/10 transition-colors"
                                                 title="Xóa cầu thủ"
                                               >
@@ -570,13 +555,13 @@ export default function ManageTeams() {
       )}
 
       {/* Delete Confirm – Player */}
-      {deletePlayer && (
+      {deletePlayerState && (
         <ConfirmDeleteModal
           title="Xóa cầu thủ?"
-          message={<>Xóa cầu thủ <strong className="text-white">{deletePlayer.player?.player?.name ?? deletePlayer.player?.name ?? 'Cầu thủ'}</strong> khỏi đội?</>}
+          message={<>Xóa cầu thủ <strong className="text-white">{deletePlayerState.player?.player?.name ?? deletePlayerState.player?.name ?? 'Cầu thủ'}</strong> khỏi đội?</>}
           onConfirm={handleDeletePlayer}
-          onCancel={() => setDeletePlayer(null)}
-          isDeleting={deletePlayerMutation.isLoading}
+          onCancel={() => setDeletePlayerState(null)}
+          isDeleting={isDeletingPlayer}
         />
       )}
     </AdminLayout>

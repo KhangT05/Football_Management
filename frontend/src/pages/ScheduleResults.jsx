@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CalendarDays, Trophy, WifiOff, Clock, MapPin, RefreshCw, Construction } from 'lucide-react';
-import { matchApi } from '../api';
+import { useState, useEffect, useMemo } from 'react';
+import { CalendarDays, Trophy, WifiOff, Clock, MapPin, RefreshCw, ChevronDown } from 'lucide-react';
+import useScheduleStore from '../store/scheduleStore';
+import useSeasonStore from '../store/seasonStore';
 
 // ── Skeleton ─────────────────────────────────────────────────
 function MatchRowSkeleton() {
@@ -110,41 +111,47 @@ function MatchCard({ match, idx }) {
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
-  const [upcoming, setUpcoming] = useState([]);
-  const [results, setResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [apiUnavailable, setApiUnavailable] = useState(false);
 
-  const parsePage = (res) => {
-    const payload = (typeof res?.status === 'boolean') ? res.data : res;
-    return Array.isArray(payload?.data) ? payload.data : [];
-  };
+  // ── Zustand stores ─────────────────────────────────────────
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
+  const {
+    getMatchesFromCache, isSeasonLoading,
+    fetchBySeason, error: scheduleError,
+  } = useScheduleStore();
 
-  const fetchMatches = useCallback(async () => {
-    setIsLoading(true);
-    setHasError(false);
-    setApiUnavailable(false);
-    try {
-      const [upcomingRes, resultsRes] = await Promise.allSettled([
-        matchApi.getMatches({ status: 'scheduled,ongoing', per_page: 20, sort: 'scheduled_at', direction: 'asc' }),
-        matchApi.getMatches({ status: 'finished', per_page: 20, sort: 'scheduled_at', direction: 'desc' }),
-      ]);
-      if (upcomingRes.status === 'fulfilled') setUpcoming(parsePage(upcomingRes.value));
-      if (resultsRes.status === 'fulfilled') setResults(parsePage(resultsRes.value));
+  // Derive auto-selected season mà không cần setState trong effect
+  const autoSeasonId = useMemo(() => {
+    if (seasons.length === 0) return '';
+    const ongoing = seasons.find(s => s.status === 'ongoing');
+    return String(ongoing?.id ?? seasons[0].id);
+  }, [seasons]);
 
-      // Nếu cả 2 đều bị từ chối → API chưa có
-      if (upcomingRes.status === 'rejected' && resultsRes.status === 'rejected') {
-        setApiUnavailable(true);
-      }
-    } catch {
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
+  // ID thực tế: dùng lựa chọn thủ công nếu có, ngược lại dùng auto
+  const effectiveSeasonId = selectedSeasonId || autoSeasonId;
+
+  const allMatches = effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : [];
+  const isLoading = seasonsLoading || (effectiveSeasonId ? isSeasonLoading(Number(effectiveSeasonId)) : false);
+
+  // Tách lịch theo tab
+  const upcoming = allMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing')
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+  const results = allMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited')
+    .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
+
+  useEffect(() => {
+    fetchSeasons();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch lịch khi effectiveSeasonId thay đổi
+  useEffect(() => {
+    if (effectiveSeasonId) {
+      fetchBySeason(Number(effectiveSeasonId));
     }
-  }, []);
+  }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { fetchMatches(); }, [fetchMatches]);
+  const handleRefresh = () => {
+    if (effectiveSeasonId) fetchBySeason(Number(effectiveSeasonId), { force: true });
+  };
 
   const currentData = activeTab === 'upcoming' ? upcoming : results;
 
@@ -154,7 +161,7 @@ export default function ScheduleResults() {
         <div className="max-w-4xl mx-auto">
 
           {/* Title */}
-          <div className="text-center mb-10 md:mb-16 animate-slide-up">
+          <div className="text-center mb-8 md:mb-12 animate-slide-up">
             <h1 className="text-3xl md:text-5xl font-black text-neon uppercase italic tracking-tight mb-4">
               Lịch thi đấu & <span className="text-white">Kết quả</span>
             </h1>
@@ -163,15 +170,26 @@ export default function ScheduleResults() {
             </p>
           </div>
 
-          {/* API Unavailable Banner */}
-          {apiUnavailable && (
-            <div className="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
-              <Construction className="w-5 h-5 text-amber-400 shrink-0" />
-              <p className="text-amber-400 text-sm font-medium">
-                Match API chưa được triển khai. Dữ liệu sẽ xuất hiện khi backend hoàn thiện.
-              </p>
+          {/* Season Selector */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-8 animate-fade-in">
+            <label className="text-sm font-bold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-purple-400" />
+              Mùa giải:
+            </label>
+            <div className="relative w-full max-w-xs">
+              <select
+                value={effectiveSeasonId}
+                onChange={e => setSelectedSeasonId(e.target.value)}
+                className="w-full pl-4 pr-10 py-2.5 bg-navy border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm appearance-none"
+              >
+                <option value="">-- Chọn mùa giải --</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
-          )}
+          </div>
 
           {/* Tab switcher */}
           <div className="flex bg-navy p-1.5 rounded-xl border border-navy-light max-w-md mx-auto mb-10 md:mb-12 shadow-lg shadow-black/20 animate-fade-in">
@@ -208,8 +226,8 @@ export default function ScheduleResults() {
           {/* Refresh */}
           <div className="flex justify-end mb-4">
             <button
-              onClick={fetchMatches}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={isLoading || !effectiveSeasonId}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -219,15 +237,20 @@ export default function ScheduleResults() {
 
           {/* Content */}
           <div className="space-y-4 md:space-y-5">
-            {isLoading ? (
+            {!effectiveSeasonId && !seasonsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400 animate-fade-in">
+                <CalendarDays className="w-12 h-12 text-gray-600" />
+                <p className="font-semibold">Chọn mùa giải để xem lịch thi đấu.</p>
+              </div>
+            ) : isLoading ? (
               <>
                 <MatchRowSkeleton /><MatchRowSkeleton /><MatchRowSkeleton /><MatchRowSkeleton />
               </>
-            ) : hasError ? (
+            ) : scheduleError ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-400 animate-fade-in">
                 <WifiOff className="w-12 h-12 text-gray-600" />
                 <p className="font-semibold">Không thể tải dữ liệu. Vui lòng thử lại.</p>
-                <button onClick={fetchMatches} className="px-4 py-2 bg-navy-light border border-navy-light rounded-lg text-sm font-bold hover:bg-navy transition-colors">
+                <button onClick={handleRefresh} className="px-4 py-2 bg-navy-light border border-navy-light rounded-lg text-sm font-bold hover:bg-navy transition-colors">
                   Thử lại
                 </button>
               </div>

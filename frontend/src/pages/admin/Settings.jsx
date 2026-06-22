@@ -8,6 +8,9 @@ import {
 import { tournamentApi, seasonApi, venueApi, tournamentRuleApi } from '../../api';
 import { useApiQuery, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import useTournamentStore from '../../store/tournamentStore';
+import useSeasonStore from '../../store/seasonStore';
+import useVenueStore from '../../store/venueStore';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 
@@ -38,6 +41,7 @@ const SEASON_STATUSES = [
 // ════════════════════════════════════════════════════
 function TournamentsSection() {
   const toast = useToastStore();
+  const { invalidate: invalidateTournamentStore } = useTournamentStore();
   const { data: items, isLoading, fetch } = useApiQuery(
     (params) => tournamentApi.getAll(params),
     { perPage: 50, errorMsg: 'Không tải được danh sách giải đấu.' }
@@ -45,7 +49,7 @@ function TournamentsSection() {
 
   const crud = useCrudModal({
     emptyForm: { name: '', description: '' },
-    onSuccess: () => fetch(),
+    onSuccess: () => { fetch(); invalidateTournamentStore(); },
   });
 
   const openAdd = () => crud.openAdd();
@@ -174,7 +178,8 @@ function SeasonsSection() {
     }).catch(() => {});
   }, []);
 
-  const crud = useCrudModal({ emptyForm: EMPTY_SEASON, onSuccess: () => fetchSeasons() });
+  const { invalidate: invalidateSeasonStore } = useSeasonStore();
+  const crud = useCrudModal({ emptyForm: EMPTY_SEASON, onSuccess: () => { fetchSeasons(); invalidateSeasonStore(); } });
 
   const toDateInput = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
 
@@ -290,7 +295,7 @@ function SeasonsSection() {
       </div>
 
       {crud.modal && (
-        <Modal
+        <AdminModal
           title={crud.modal === 'add' ? 'Thêm mùa giải mới' : 'Chỉnh sửa mùa giải'}
           icon={Calendar} iconClass="text-purple-400"
           onClose={crud.closeModal}
@@ -336,10 +341,10 @@ function SeasonsSection() {
           <Field label="Mô tả">
             <textarea className={INPUT + ' resize-none'} rows={2} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
           </Field>
-        </Modal>
+        </AdminModal>
       )}
 
-      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
+      {crud.deleting && <ConfirmDeleteModal title="Xóa mùa giải?" message={`Xóa "${crud.deleting.name}" khỏi hệ thống. Hành động này không thể hoàn tác.`} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isDeleting={crud.isDeleting} />}
     </section>
   );
 }
@@ -354,9 +359,10 @@ function VenuesSection() {
     { perPage: 100, errorMsg: 'Không tải được danh sách sân.' }
   );
 
+  const { invalidate: invalidateVenueStore } = useVenueStore();
   const crud = useCrudModal({
     emptyForm: { name: '', address: '' },
-    onSuccess: () => fetch(),
+    onSuccess: () => { fetch(); invalidateVenueStore(); },
   });
 
   const openAdd = () => crud.openAdd();
@@ -428,7 +434,7 @@ function VenuesSection() {
       </div>
 
       {crud.modal && (
-        <Modal
+        <AdminModal
           title={crud.modal === 'add' ? 'Thêm sân thi đấu' : 'Chỉnh sửa sân thi đấu'}
           icon={MapPin} iconClass="text-emerald-400"
           onClose={crud.closeModal}
@@ -447,10 +453,10 @@ function VenuesSection() {
           <Field label="Địa chỉ">
             <input className={INPUT} value={crud.form.address} onChange={e => crud.setForm(f => ({ ...f, address: e.target.value }))} placeholder="VD: 65 Huỳnh Thúc Kháng, TP.HCM" />
           </Field>
-        </Modal>
+        </AdminModal>
       )}
 
-      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
+      {crud.deleting && <ConfirmDeleteModal title="Xóa sân thi đấu?" message={`Xóa sân "${crud.deleting.name}" khỏi hệ thống. Hành động này không thể hoàn tác.`} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isDeleting={crud.isDeleting} />}
     </section>
   );
 }
@@ -615,7 +621,7 @@ function TournamentRulesSection() {
 
       {/* Add / Edit Modal */}
       {crud.modal && (
-        <Modal
+        <AdminModal
           title={crud.modal === 'add' ? 'Thêm luật giải mới' : 'Chỉnh sửa luật giải'}
           icon={CheckCircle2} iconClass="text-orange-400"
           onClose={crud.closeModal}
@@ -700,16 +706,17 @@ function TournamentRulesSection() {
               </p>
             )}
           </Field>
-        </Modal>
+        </AdminModal>
       )}
 
       {/* Delete Confirm */}
       {crud.deleting && (
-        <ConfirmDelete
-          name={getTournamentName(crud.deleting.tournament_id)}
+        <ConfirmDeleteModal
+          title="Xóa luật giải?"
+          message={`Xóa luật giải của "${getTournamentName(crud.deleting.tournament_id)}"? Hành động này không thể hoàn tác.`}
           onConfirm={handleDelete}
           onCancel={() => crud.setDeleting(null)}
-          isLoading={crud.isDeleting}
+          isDeleting={crud.isDeleting}
         />
       )}
     </section>

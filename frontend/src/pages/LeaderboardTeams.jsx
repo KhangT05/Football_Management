@@ -1,14 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Trophy, Users, WifiOff, RefreshCw, ArrowRight, Shield } from 'lucide-react';
+import { useEffect } from 'react';
+import { Trophy, Users, WifiOff, RefreshCw, ArrowRight, Shield, Construction } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { teamApi, seasonApi } from '../api';
+import useTeamStore from '../store/teamStore';
+import useSeasonStore from '../store/seasonStore';
 
 // ── Helpers ───────────────────────────────────────────────────
-const parsePage = (res) => {
-  const payload = (typeof res?.status === 'boolean') ? res.data : res;
-  return Array.isArray(payload?.data) ? payload.data : [];
-};
-
 const getInitials = (name) =>
   name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
 
@@ -172,54 +168,29 @@ function TeamCard({ team, idx }) {
 
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [standings, setStandings] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [hasError, setHasError] = useState(false);
-  const [activeSeason, setActiveSeason] = useState(null);
+  // ── Zustand stores ─────────────────────────────────────────
+  const {
+    teams, isLoading: teamsLoading,
+    fetchAll: fetchTeams,
+  } = useTeamStore();
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setHasError(false);
-    try {
-      const [teamsRes, seasonsRes] = await Promise.allSettled([
-        teamApi.getTeams({ per_page: 50, sort: 'name', direction: 'asc' }),
-        seasonApi.getAll({ status: 'ongoing', per_page: 5 }),
-      ]);
+  const {
+    seasons, isLoading: seasonsLoading,
+    fetchAll: fetchSeasons,
+  } = useSeasonStore();
 
-      if (teamsRes.status === 'fulfilled') {
-        setTeams(parsePage(teamsRes.value));
-      }
+  const isLoading = teamsLoading || seasonsLoading;
+  const activeSeason = seasons.find(s => s.status === 'ongoing') ?? seasons[0] ?? null;
 
-      if (seasonsRes.status === 'fulfilled') {
-        const seasonList = parsePage(seasonsRes.value);
-        const ongoingSeason = seasonList[0] ?? null;
-        setActiveSeason(ongoingSeason);
+  useEffect(() => {
+    fetchTeams({ sort: 'name', direction: 'asc' });
+    fetchSeasons();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-        // Nếu có mùa giải → lấy standings, ngược lại standings trống
-        if (ongoingSeason?.id) {
-          try {
-            const standRes = await seasonApi.getStandings?.(ongoingSeason.id) ?? null;
-            if (standRes) {
-              const payload = (typeof standRes?.status === 'boolean') ? standRes.data : standRes;
-              setStandings(Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []);
-            }
-          } catch {
-            // standings API chưa có → để trống
-            setStandings([]);
-          }
-        } else {
-          setStandings([]);
-        }
-      }
-    } catch {
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const handleRefresh = () => {
+    fetchTeams({ sort: 'name', direction: 'asc', force: true });
+    fetchSeasons({ force: true });
+  };
 
   return (
     <div className="py-8 lg:py-12 bg-navy-dark min-h-screen">
@@ -242,7 +213,7 @@ export default function LeaderboardTeams() {
               </div>
             </div>
             <button
-              onClick={fetchData}
+              onClick={handleRefresh}
               disabled={isLoading}
               className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 bg-navy border border-navy-light px-3 py-2 rounded-lg"
             >
@@ -271,31 +242,25 @@ export default function LeaderboardTeams() {
                 <tbody className="divide-y divide-navy-light">
                   {isLoading ? (
                     <LeaderboardSkeleton />
-                  ) : hasError ? (
-                    <tr>
-                      <td colSpan={10} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-3 text-gray-400">
-                          <WifiOff className="w-10 h-10 text-gray-600" />
-                          <p className="font-semibold">Không thể tải bảng xếp hạng.</p>
-                          <button onClick={fetchData} className="px-4 py-2 bg-navy-light rounded-lg text-sm hover:bg-navy transition-colors">Thử lại</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : standings.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-3 text-gray-400">
-                          <Trophy className="w-10 h-10 text-gray-600" />
-                          <p className="font-semibold">
-                            {activeSeason ? 'Chưa có bảng xếp hạng cho mùa giải này.' : 'Chưa có mùa giải đang diễn ra.'}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
                   ) : (
-                    standings.map((row, idx) => (
-                      <StandingRow key={row.team_id ?? idx} row={row} idx={idx} teams={teams} />
-                    ))
+                    <tr>
+                      <td colSpan={10} className="py-12 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                            <Construction className="w-7 h-7 text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-amber-400 mb-1">Standings API đang phát triển</p>
+                            <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                              Bảng xếp hạng sẽ hiển thị khi backend triển khai <code className="text-neon bg-neon/10 px-1.5 py-0.5 rounded text-xs">GET /seasons/&#123;id&#125;/standings</code>
+                            </p>
+                          </div>
+                          {activeSeason && (
+                            <p className="text-xs text-gray-600">Mùa giải: <strong className="text-white">{activeSeason.name}</strong></p>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>

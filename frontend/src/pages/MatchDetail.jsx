@@ -75,15 +75,16 @@ export default function MatchDetail() {
   const { id } = useParams();
   const matchId = parseInt(id) || null;
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Khởi tạo state từ matchId để tránh setState synchronous trong effect
+  const [isLoading, setIsLoading] = useState(!!matchId);
   const [match, setMatch] = useState(null);
   const [homePlayers, setHomePlayers] = useState([]);
   const [awayPlayers, setAwayPlayers] = useState([]);
-  const [hasError, setHasError] = useState(false);
+  const [hasError, setHasError] = useState(!matchId);
   const [matchApiError, setMatchApiError] = useState(null);
 
   useEffect(() => {
-    if (!matchId) { setHasError(true); setIsLoading(false); return; }
+    if (!matchId) return; // Không có matchId → hasError đã = true từ useState initial
     let cancelled = false;
     setIsLoading(true);
     setHasError(false);
@@ -150,7 +151,7 @@ export default function MatchDetail() {
 
       {/* Match Header */}
       <section className="relative mt-6 mb-12 bg-navy border-b border-navy-light shadow-lg shadow-black/20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-b from-blue-900/10 to-transparent pointer-events-none" />
         <div className="container mx-auto px-4 lg:px-8 py-12 md:py-20 relative z-10">
 
           {isLoading ? (

@@ -122,13 +122,14 @@ export default function TeamDetail() {
   const { id } = useParams();
   const teamId = parseInt(id) || null;
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Khởi tạo state từ teamId để tránh setState synchronous trong effect
+  const [isLoading, setIsLoading] = useState(!!teamId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [hasError, setHasError] = useState(false);
+  const [hasError, setHasError] = useState(!teamId);
 
   useEffect(() => {
-    if (!teamId) { setHasError(true); setIsLoading(false); return; }
+    if (!teamId) return; // Không có teamId → hasError đã = true từ useState initial
     let cancelled = false;
     setIsLoading(true);
     setHasError(false);

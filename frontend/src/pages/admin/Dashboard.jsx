@@ -1,72 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
-  Users, UserPlus, CalendarCheck, CalendarClock,
-  Trophy, Loader2, RefreshCw, Globe, ListChecks
+  Users, CalendarCheck, CalendarClock,
+  Trophy, Globe, ListChecks
 } from 'lucide-react';
 import StatCard from '../../components/StatCard';
-import { userApi, tournamentApi, seasonApi } from '../../api';
 import useAuthStore from '../../store/authStore';
+import useTournamentStore from '../../store/tournamentStore';
+import useSeasonStore from '../../store/seasonStore';
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ users: 0, tournaments: 0, seasons: 0 });
-  const [tournaments, setTournaments] = useState([]);
-  const [seasons, setSeasons] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // ── Zustand stores ─────────────────────────────────────────
+  const {
+    tournaments,
+    meta: tMeta,
+    isLoading: tLoading,
+    fetchAll: fetchTournaments,
+  } = useTournamentStore();
+
+  const {
+    seasons,
+    meta: sMeta,
+    isLoading: sLoading,
+    fetchAll: fetchSeasons,
+  } = useSeasonStore();
+
+  const isLoading = tLoading || sLoading;
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setIsLoading(true);
-      try {
-        // Parallel fetch: users count, tournaments, seasons
-        const [usersRes, tournamentsRes, seasonsRes] = await Promise.allSettled([
-          userApi.getAll({ per_page: 1 }),
-          tournamentApi.getAll({ per_page: 5 }),
-          seasonApi.getAll({ per_page: 5 }),
-        ]);
-
-        /**
-         * axiosClient interceptor trả về response.data (body HTTP).
-         *
-         * Chỉ auth.controller dùng makeResponse → body = { status, message, data: PaginatedResult, timestamp }
-         * Tất cả controller còn lại trả PaginatedResult trực tiếp → body = { data: T[], meta: {...} }
-         *
-         * parsePage() xử lý cả hai trường hợp:
-         *  - Nếu có `.status` (boolean) → là ApiResponseShape → lấy `.data`
-         *  - Ngược lại → là PaginatedResult trực tiếp
-         */
-        const parsePage = (res) => {
-          if (!res) return { items: [], total: 0 };
-          // ApiResponseShape: { status: boolean, message, data: PaginatedResult, timestamp }
-          const payload = (typeof res.status === 'boolean') ? res.data : res;
-          const items = Array.isArray(payload?.data) ? payload.data : [];
-          const total = payload?.meta?.total ?? 0;
-          return { items, total };
-        };
-
-        if (usersRes.status === 'fulfilled') {
-          const { total } = parsePage(usersRes.value);
-          setStats(prev => ({ ...prev, users: total }));
-        }
-        if (tournamentsRes.status === 'fulfilled') {
-          const { items, total } = parsePage(tournamentsRes.value);
-          setStats(prev => ({ ...prev, tournaments: total }));
-          setTournaments(items);
-        }
-        if (seasonsRes.status === 'fulfilled') {
-          const { items, total } = parsePage(seasonsRes.value);
-          setStats(prev => ({ ...prev, seasons: total }));
-          setSeasons(items);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
+    fetchTournaments();
+    fetchSeasons();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Status badge helper
   const statusMeta = {
@@ -76,6 +44,10 @@ export default function Dashboard() {
     finished:          { label: 'Đã kết thúc',     cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30' },
     cancelled:         { label: 'Đã hủy',          cls: 'bg-red-400/10 text-red-400 border-red-400/30' },
   };
+
+  // Chỉ hiển thị 5 item gần nhất trên Dashboard
+  const recentTournaments = tournaments.slice(0, 5);
+  const recentSeasons     = seasons.slice(0, 5);
 
   return (
     <AdminLayout>
@@ -97,22 +69,22 @@ export default function Dashboard() {
         {/* Statistics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
-            title="Người dùng"
-            value={isLoading ? '—' : stats.users.toString()}
-            icon={Users}
-            colorClass="border-navy-light text-neon"
-          />
-          <StatCard
             title="Giải đấu"
-            value={isLoading ? '—' : stats.tournaments.toString()}
+            value={isLoading ? '—' : tMeta.total.toString()}
             icon={Trophy}
             colorClass="border-navy-light text-blue-400"
           />
           <StatCard
             title="Mùa giải"
-            value={isLoading ? '—' : stats.seasons.toString()}
+            value={isLoading ? '—' : sMeta.total.toString()}
             icon={ListChecks}
             colorClass="border-navy-light text-purple-400"
+          />
+          <StatCard
+            title="Mùa đang diễn ra"
+            value={isLoading ? '—' : seasons.filter(s => s.status === 'ongoing').length.toString()}
+            icon={Users}
+            colorClass="border-navy-light text-neon"
           />
         </div>
 
@@ -138,14 +110,14 @@ export default function Dashboard() {
                 <div className="p-6 space-y-3">
                   {[1, 2, 3].map(i => <div key={i} className="skeleton h-14 rounded-xl" />)}
                 </div>
-              ) : tournaments.length === 0 ? (
+              ) : recentTournaments.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <Trophy className="w-10 h-10 mx-auto mb-2 opacity-30" />
                   <p>Chưa có giải đấu nào</p>
                 </div>
               ) : (
                 <div className="divide-y divide-navy-light">
-                  {tournaments.map(t => (
+                  {recentTournaments.map(t => (
                     <div key={t.id} className="px-6 py-4 flex items-center gap-4 hover:bg-navy-light/20 transition-colors">
                       {/* Logo */}
                       <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-md">
@@ -184,14 +156,14 @@ export default function Dashboard() {
                 <div className="p-6 space-y-3">
                   {[1, 2, 3].map(i => <div key={i} className="skeleton h-14 rounded-xl" />)}
                 </div>
-              ) : seasons.length === 0 ? (
+              ) : recentSeasons.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <CalendarCheck className="w-10 h-10 mx-auto mb-2 opacity-30" />
                   <p>Chưa có mùa giải nào</p>
                 </div>
               ) : (
                 <div className="divide-y divide-navy-light">
-                  {seasons.map(s => {
+                  {recentSeasons.map(s => {
                     const sm = statusMeta[s.status] ?? statusMeta.upcoming;
                     return (
                       <div key={s.id} className="px-6 py-4 flex items-center gap-4 hover:bg-navy-light/20 transition-colors">
