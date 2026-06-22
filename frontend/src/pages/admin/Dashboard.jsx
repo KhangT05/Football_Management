@@ -28,16 +28,38 @@ export default function Dashboard() {
           seasonApi.getAll({ per_page: 5 }),
         ]);
 
+        /**
+         * axiosClient interceptor trả về response.data (body HTTP).
+         *
+         * Chỉ auth.controller dùng makeResponse → body = { status, message, data: PaginatedResult, timestamp }
+         * Tất cả controller còn lại trả PaginatedResult trực tiếp → body = { data: T[], meta: {...} }
+         *
+         * parsePage() xử lý cả hai trường hợp:
+         *  - Nếu có `.status` (boolean) → là ApiResponseShape → lấy `.data`
+         *  - Ngược lại → là PaginatedResult trực tiếp
+         */
+        const parsePage = (res) => {
+          if (!res) return { items: [], total: 0 };
+          // ApiResponseShape: { status: boolean, message, data: PaginatedResult, timestamp }
+          const payload = (typeof res.status === 'boolean') ? res.data : res;
+          const items = Array.isArray(payload?.data) ? payload.data : [];
+          const total = payload?.meta?.total ?? 0;
+          return { items, total };
+        };
+
         if (usersRes.status === 'fulfilled') {
-          setStats(prev => ({ ...prev, users: usersRes.value.meta?.total ?? 0 }));
+          const { total } = parsePage(usersRes.value);
+          setStats(prev => ({ ...prev, users: total }));
         }
         if (tournamentsRes.status === 'fulfilled') {
-          setStats(prev => ({ ...prev, tournaments: tournamentsRes.value.meta?.total ?? 0 }));
-          setTournaments(tournamentsRes.value.data ?? []);
+          const { items, total } = parsePage(tournamentsRes.value);
+          setStats(prev => ({ ...prev, tournaments: total }));
+          setTournaments(items);
         }
         if (seasonsRes.status === 'fulfilled') {
-          setStats(prev => ({ ...prev, seasons: seasonsRes.value.meta?.total ?? 0 }));
-          setSeasons(seasonsRes.value.data ?? []);
+          const { items, total } = parsePage(seasonsRes.value);
+          setStats(prev => ({ ...prev, seasons: total }));
+          setSeasons(items);
         }
       } finally {
         setIsLoading(false);

@@ -67,7 +67,8 @@ export default function ManageSeasonTeams() {
   useEffect(() => {
     seasonApi.getAll({ per_page: 100, sort: 'id', direction: 'desc' })
       .then(res => {
-        const data = res?.data?.data || res?.data || [];
+        const payload = (typeof res?.status === 'boolean') ? res.data : res;
+        const data = Array.isArray(payload?.data) ? payload.data : [];
         setSeasons(data);
         if (data.length > 0) setSelectedSeason(data[0].id.toString());
       })
@@ -117,7 +118,8 @@ export default function ManageSeasonTeams() {
   const openAddTeam = () => {
     if (allTeams.length === 0) {
       teamApi.getTeams({ per_page: 200 }).then(res => {
-        setAllTeams(res?.data?.data || res?.data || []);
+        const payload = (typeof res?.status === 'boolean') ? res.data : res;
+        setAllTeams(Array.isArray(payload?.data) ? payload.data : []);
       });
     }
     addTeamModal.openAdd();

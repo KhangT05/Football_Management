@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, X, Save, Loader2,
@@ -7,6 +7,7 @@ import {
 import { matchApi, teamApi, venueApi, seasonApi } from '../../api';
 import { useApiQuery, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 
 // ─── Status Badge ────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -28,35 +29,6 @@ function StatusBadge({ status }) {
     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${map[status] || map.scheduled}`}>
       {labels[status] || status}
     </span>
-  );
-}
-
-// ─── Delete Confirm ───────────────────────────────────────
-function ConfirmDeleteModal({ match, onConfirm, onCancel, isDeleting, teams }) {
-  const homeName = teams.find(t => t.id === match?.home_team_id)?.name ?? `#${match?.home_team_id}`;
-  const awayName = teams.find(t => t.id === match?.away_team_id)?.name ?? `#${match?.away_team_id}`;
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-navy border border-red-500/30 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 animate-slide-up">
-        <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-          <AlertTriangle className="w-7 h-7 text-red-400" />
-        </div>
-        <div className="text-center">
-          <h4 className="text-lg font-black text-white mb-1">Xóa trận đấu?</h4>
-          <p className="text-sm text-gray-400">
-            Xóa trận <strong className="text-white">{homeName} vs {awayName}</strong>? Hành động này không thể hoàn tác.
-          </p>
-        </div>
-        <div className="flex gap-3 w-full">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl font-bold bg-navy-light text-gray-300 border border-navy-light hover:text-white transition-colors">Hủy</button>
-          <button onClick={onConfirm} disabled={isDeleting} className="flex-1 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-70 transition-colors">
-            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -91,27 +63,26 @@ export default function ManageMatches() {
   const [venues, setVenues] = useState([]);
   const [seasons, setSeasons] = useState([]);
 
-  const fetchSupportData = useCallback(async () => {
-    const [teamsRes, venuesRes, seasonsRes] = await Promise.allSettled([
-      teamApi.getTeams({ per_page: 100 }),
-      venueApi.getAll({ per_page: 100 }),
-      seasonApi.getAll({ per_page: 50 }),
-    ]);
-    if (teamsRes.status === 'fulfilled') {
-      const r = teamsRes.value?.data ?? teamsRes.value;
-      setTeams(r?.data ?? (Array.isArray(r) ? r : []));
-    }
-    if (venuesRes.status === 'fulfilled') {
-      const r = venuesRes.value?.data ?? venuesRes.value;
-      setVenues(r?.data ?? (Array.isArray(r) ? r : []));
-    }
-    if (seasonsRes.status === 'fulfilled') {
-      const r = seasonsRes.value?.data ?? seasonsRes.value;
-      setSeasons(r?.data ?? (Array.isArray(r) ? r : []));
-    }
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const [teamsRes, venuesRes, seasonsRes] = await Promise.allSettled([
+        teamApi.getTeams({ per_page: 100 }),
+        venueApi.getAll({ per_page: 100 }),
+        seasonApi.getAll({ per_page: 50 }),
+      ]);
+      if (cancelled) return;
+      const parsePage = (res) => {
+        const payload = (typeof res?.status === 'boolean') ? res.data : res;
+        return Array.isArray(payload?.data) ? payload.data : [];
+      };
+      if (teamsRes.status === 'fulfilled') setTeams(parsePage(teamsRes.value));
+      if (venuesRes.status === 'fulfilled') setVenues(parsePage(venuesRes.value));
+      if (seasonsRes.status === 'fulfilled') setSeasons(parsePage(seasonsRes.value));
+    };
+    run();
+    return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => { fetchSupportData(); }, [fetchSupportData]);
 
   // ── CRUD Modal (useCrudModal) ─────────────────────────
   const crud = useCrudModal({
@@ -220,7 +191,9 @@ export default function ManageMatches() {
             </button>
             <button
               onClick={openAdd}
-              className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all"
+              disabled={!!fetchError}
+              title={fetchError ? 'Match API chưa khả dụng từ backend' : undefined}
+              className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all"
             >
               <Plus className="w-5 h-5" /> Tạo trận đấu mới
             </button>
@@ -433,8 +406,17 @@ export default function ManageMatches() {
       {/* Delete Confirm */}
       {crud.deleting && (
         <ConfirmDeleteModal
-          match={crud.deleting}
-          teams={teams}
+          title="Xóa trận đấu?"
+          message={
+            <>
+              Xóa trận{' '}
+              <strong className="text-white">
+                {teams.find(t => t.id === crud.deleting?.home_team_id)?.name ?? `#${crud.deleting?.home_team_id}`}
+                {' vs '}
+                {teams.find(t => t.id === crud.deleting?.away_team_id)?.name ?? `#${crud.deleting?.away_team_id}`}
+              </strong>? Hành động này không thể hoàn tác.
+            </>
+          }
           onConfirm={handleDeleteConfirm}
           onCancel={() => crud.setDeleting(null)}
           isDeleting={crud.isDeleting}

@@ -2,58 +2,15 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Settings as SettingsIcon, Trophy, Calendar, MapPin,
-  Plus, Edit, Trash2, X, Save, Loader2, AlertTriangle,
+  Plus, Edit, Trash2, Save, Loader2, AlertTriangle,
   CheckCircle2, RefreshCw, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { tournamentApi, seasonApi, venueApi, tournamentRuleApi } from '../../api';
 import { useApiQuery, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import AdminModal from '../../components/admin/AdminModal';
+import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 
-// ─── Shared Modal ────────────────────────────────────────
-function Modal({ title, icon: Icon, iconClass, onClose, children, footer }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-slide-up overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
-          <h3 className="text-lg font-black text-white flex items-center gap-2">
-            {Icon && <Icon className={`w-5 h-5 ${iconClass}`} />}
-            {title}
-          </h3>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-navy-light bg-navy-dark shrink-0 flex gap-3 justify-end">{footer}</div>}
-      </div>
-    </div>
-  );
-}
-
-function ConfirmDelete({ name, onConfirm, onCancel, isLoading }) {
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-navy border border-red-500/30 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-          <AlertTriangle className="w-7 h-7 text-red-400" />
-        </div>
-        <div className="text-center">
-          <h4 className="text-lg font-black text-white mb-1">Xác nhận xóa?</h4>
-          <p className="text-sm text-gray-400">Xóa <strong className="text-white">"{name}"</strong> khỏi hệ thống. Hành động này không thể hoàn tác.</p>
-        </div>
-        <div className="flex gap-3 w-full">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl font-bold bg-navy-light text-gray-300 hover:text-white border border-navy-light transition-colors">Hủy</button>
-          <button onClick={onConfirm} disabled={isLoading} className="flex-1 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-70">
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Generic field ─────────────────────────────────────────
 function Field({ label, required, children }) {
@@ -160,17 +117,19 @@ function TournamentsSection() {
       </div>
 
       {crud.modal && (
-        <Modal
+        <AdminModal
           title={crud.modal === 'add' ? 'Thêm giải đấu mới' : 'Chỉnh sửa giải đấu'}
           icon={Trophy} iconClass="text-blue-400"
           onClose={crud.closeModal}
-          footer={<>
-            <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
-            <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 disabled:opacity-70">
-              {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {crud.modal === 'add' ? 'Tạo giải đấu' : 'Lưu thay đổi'}
-            </button>
-          </>}
+          footer={
+            <>
+              <button onClick={crud.closeModal} className="px-4 py-2 rounded-xl font-bold text-gray-400 hover:text-white bg-navy-light border border-navy-light">Hủy</button>
+              <button onClick={handleSave} disabled={crud.isSaving} className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 disabled:opacity-70">
+                {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {crud.modal === 'add' ? 'Tạo giải đấu' : 'Lưu thay đổi'}
+              </button>
+            </>
+          }
         >
           {crud.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{crud.formError}</div>}
           <Field label="Tên giải đấu" required>
@@ -179,10 +138,16 @@ function TournamentsSection() {
           <Field label="Mô tả">
             <textarea className={INPUT + ' resize-none'} rows={3} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về giải đấu..." />
           </Field>
-        </Modal>
+        </AdminModal>
       )}
 
-      {crud.deleting && <ConfirmDelete name={crud.deleting.name} onConfirm={handleDelete} onCancel={() => crud.setDeleting(null)} isLoading={crud.isDeleting} />}
+      {crud.deleting && <ConfirmDeleteModal
+        title="Xóa giải đấu?"
+        message={`Xóa "${crud.deleting.name}" khỏi hệ thống. Hành động này không thể hoàn tác.`}
+        onConfirm={handleDelete}
+        onCancel={() => crud.setDeleting(null)}
+        isDeleting={crud.isDeleting}
+      />}
     </section>
   );
 }
@@ -202,8 +167,10 @@ function SeasonsSection() {
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
-      const r = res?.data ?? res;
-      setTournaments(r?.data ?? (Array.isArray(r) ? r : []));
+      // PaginatedResult trực tiếp: { data: T[], meta: {...} }
+      // Có thể wrapped: { status, message, data: PaginatedResult, ... }
+      const payload = (typeof res?.status === 'boolean') ? res.data : res;
+      setTournaments(Array.isArray(payload?.data) ? payload.data : []);
     }).catch(() => {});
   }, []);
 
@@ -523,8 +490,10 @@ function TournamentRulesSection() {
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
-      const r = res?.data ?? res;
-      setTournaments(r?.data ?? (Array.isArray(r) ? r : []));
+      // PaginatedResult trực tiếp: { data: T[], meta: {...} }
+      // Có thể wrapped: { status, message, data: PaginatedResult, ... }
+      const payload = (typeof res?.status === 'boolean') ? res.data : res;
+      setTournaments(Array.isArray(payload?.data) ? payload.data : []);
     }).catch(() => {});
   }, []);
 
