@@ -1,160 +1,200 @@
-// import { createAppError } from '../common/app.error.js';
-// import { MatchResultStatus, MatchStatus, PrismaClient, TournamentRule } from '../generated/prisma/client.js';
+// import { MatchStatus, PrismaClient } from '../generated/prisma/client.js';
 
-// type Acc = { played: number; win: number; draw: number; loss: number; gf: number; ga: number; points: number };
-// const emptyAcc = (): Acc => ({ played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, points: 0 });
-
-// interface MatchForStandings {
-//     home_team_id: number;
-//     away_team_id: number;
-//     matchResult: { home_final_score: number; away_final_score: number } | null;
-// }
-
+// /**
+//  * Nơi DUY NHẤT tính/ghi TeamStanding. Trước đây logic này bị duplicate giữa
+//  * MatchLifecycleService (gọi standingsService.recomputeGroupStandings) và
+//  * MatchResultService (tự viết lại _recalculateGroupStanding riêng) — 2 bản tiebreaker
+//  * có thể drift khi sửa rule. Giờ MatchResultService.confirmResult cũng gọi method này.
+//  *
+//  * Nếu class StandingsService gốc của bạn đã có method khác tên/signature khác, merge
+//  * phần body recomputeGroupStandings dưới đây vào, đừng giữ 2 implementation song song.
+//  */
 // export class StandingsService {
 //     constructor(private readonly prisma: PrismaClient) { }
 
 //     async recomputeGroupStandings(groupId: number): Promise<void> {
-//         const lockKey = `standings_${groupId}`;
-//         await this.prisma.$executeRaw`SELECT GET_LOCK(${lockKey}, 10)`;
-//         try {
-//             const group = await this.prisma.group.findUniqueOrThrow({
-//                 where: { id: groupId },
-//                 include: { phase: { include: { season: { include: { tournament: { include: { tournamentRule: true } } } } } } },
-//             });
-//             const rule = group.phase.season.tournament.tournamentRule;
-//             if (!rule) throw createAppError('NOT_FOUND', 'Thiếu TournamentRule');
-
-//             // status official: loại match đang protested/under_review/overturned-chưa-resolve.
-//             // abandoned/cancelled/postponed/scheduled/ongoing không nằm trong [finished, forfeited]
-//             // nên tự động bị loại, không cần thêm điều kiện riêng.
-//             const matches = (await this.prisma.match.findMany({
-//                 where: {
-//                     group_id: groupId,
-//                     status: { in: [MatchStatus.finished, MatchStatus.forfeited] },
-//                     matchResult: { status: MatchResultStatus.official },
+//         const group = await this.prisma.group.findUniqueOrThrow({
+//             where: { id: groupId },
+//             select: {
+//                 phase: {
+//                     select: {
+//                         season: {
+//                             select: {
+//                                 tournament: {
+//                                     select: {
+//                                         tournamentRule: {
+//                                             select: {
+//                                                 points_per_win: true,
+//                                                 points_per_draw: true,
+//                                                 points_per_loss: true,
+//                                                 tiebreaker_order: true,
+//                                             },
+//                                         },
+//                                     },
+//                                 },
+//                             },
+//                         },
+//                     },
 //                 },
-//                 select: {
-//                     home_team_id: true,
-//                     away_team_id: true,
-//                     matchResult: { select: { home_final_score: true, away_final_score: true } },
+//             },
+//         });
+
+//         const rule = group.phase.season?.tournament?.tournamentRule;
+//         const pointsWin = rule?.points_per_win ?? 3;
+//         const pointsDraw = rule?.points_per_draw ?? 1;
+//         const pointsLoss = rule?.points_per_loss ?? 0;
+//         const tiebreakerOrder = (rule?.tiebreaker_order as string[]) ?? ['goal_diff', 'goals_scored', 'head_to_head'];
+
+//         // Chỉ tính trên match status=finished — match forfeited/abandoned/under_review
+//         // có chính sách riêng (forfeit_score thay vì score thật, under_review bị loại
+//         // tạm cho tới khi appeal resolve — xem comment trong fileAppeal).
+//         const matches = await this.prisma.match.findMany({
+//             where: { group_id: groupId, status: MatchStatus.finished, is_active: true },
+//             select: {
+//                 id: true,
+//                 home_team_id: true,
+//                 away_team_id: true,
+//                 matchResult: {
+//                     select: { home_final_score: true, away_final_score: true, winner_team_id: true, status: true },
 //                 },
-//             })) as MatchForStandings[];
+//             },
+//         });
 
-//             const teamIds = (
-//                 await this.prisma.seasonTeam.findMany({
-//                     where: { group_id: groupId, status: { not: 'withdrawn' } },
-//                     select: { team_id: true },
-//                 })
-//             ).map(t => t.team_id);
+//         const seasonTeams = await this.prisma.seasonTeam.findMany({
+//             where: { group_id: groupId },
+//             select: { team_id: true },
+//         });
+//         const teamIds = seasonTeams.map(st => st.team_id);
 
-//             const acc = new Map<number, Acc>(teamIds.map(id => [id, emptyAcc()]));
-//             for (const m of matches) {
-//                 if (!m.matchResult) continue;
-//                 this.applyResult(acc, m.home_team_id, m.away_team_id, m.matchResult.home_final_score, m.matchResult.away_final_score, rule);
-//             }
-
-//             const ranked = this.rankWithTiebreak([...acc.entries()], rule.tiebreaker_order as string[], matches);
-
-//             await this.prisma.$transaction(
-//                 ranked.map(([teamId, s], i) =>
-//                     this.prisma.teamStanding.upsert({
-//                         where: { group_id_team_id: { group_id: groupId, team_id: teamId } },
-//                         update: { ...this.toRow(s), position: i + 1 },
-//                         create: { group_id: groupId, team_id: teamId, ...this.toRow(s), position: i + 1 },
-//                     }),
-//                 ),
-//             );
-//         } finally {
-//             await this.prisma.$executeRaw`SELECT RELEASE_LOCK(${lockKey})`;
-//         }
-//     }
-
-//     private applyResult(acc: Map<number, Acc>, homeId: number, awayId: number, hs: number, as: number, rule: TournamentRule) {
-//         const home = acc.get(homeId);
-//         const away = acc.get(awayId);
-//         if (!home || !away) return; // team không thuộc group (đã rời/withdrawn) — bỏ qua, không crash cả batch
-
-//         home.played++;
-//         away.played++;
-//         home.gf += hs;
-//         home.ga += as;
-//         away.gf += as;
-//         away.ga += hs;
-
-//         if (hs > as) {
-//             home.win++;
-//             away.loss++;
-//             home.points += rule.points_per_win;
-//             away.points += rule.points_per_loss;
-//         } else if (hs < as) {
-//             away.win++;
-//             home.loss++;
-//             away.points += rule.points_per_win;
-//             home.points += rule.points_per_loss;
-//         } else {
-//             home.draw++;
-//             away.draw++;
-//             home.points += rule.points_per_draw;
-//             away.points += rule.points_per_draw;
-//         }
-//     }
-
-//     private rankWithTiebreak(entries: [number, Acc][], order: string[], matches: MatchForStandings[]): [number, Acc][] {
-//         const byPoints = new Map<number, [number, Acc][]>();
-//         for (const e of entries) byPoints.set(e[1].points, [...(byPoints.get(e[1].points) ?? []), e]);
-
-//         const result: [number, Acc][] = [];
-//         for (const points of [...byPoints.keys()].sort((a, b) => b - a)) {
-//             result.push(...this.resolveTieGroup(byPoints.get(points)!, order, matches));
-//         }
-//         return result;
-//     }
-
-//     private resolveTieGroup(group: [number, Acc][], order: string[], matches: MatchForStandings[]): [number, Acc][] {
-//         if (group.length === 1) return group;
-
-//         for (const criterion of order) {
-//             if (criterion === 'head_to_head') {
-//                 const ids = new Set(group.map(([id]) => id));
-//                 const subMatches = matches.filter(m => ids.has(m.home_team_id) && ids.has(m.away_team_id) && m.matchResult);
-//                 if (subMatches.length === 0) continue;
-
-//                 const mini = new Map<number, Acc>(group.map(([id]) => [id, emptyAcc()]));
-//                 const fakeRule = { points_per_win: 3, points_per_draw: 1, points_per_loss: 0 } as TournamentRule;
-//                 for (const m of subMatches) {
-//                     this.applyResult(mini, m.home_team_id, m.away_team_id, m.matchResult!.home_final_score, m.matchResult!.away_final_score, fakeRule);
-//                 }
-//                 const sorted = [...group].sort((a, b) => mini.get(b[0])!.points - mini.get(a[0])!.points);
-//                 const stillTied = new Set(sorted.map(([id]) => mini.get(id)!.points)).size < sorted.length;
-//                 if (!stillTied) return sorted;
-//                 continue; // 3-way cycle hoặc mini-league vẫn tie — fallback criterion kế
-//             }
-
-//             const sorted = [...group].sort((a, b) => this.compare(b[1], a[1], criterion));
-//             const stillTied = sorted.some((s, i) => i > 0 && this.compare(s[1], sorted[i - 1][1], criterion) === 0);
-//             if (!stillTied) return sorted;
-//         }
-//         // Hết criterion vẫn tie (3-way cycle A>B>C>A) — giữ nguyên order input, KHÔNG tự quyết
-//         // định thứ tự. TODO: thêm field needs_manual_review trên Group để UI cảnh báo, tránh
-//         // âm thầm trả thứ tự sai mà không ai biết.
-//         return group;
-//     }
-
-//     private compare(a: Acc, b: Acc, criterion: string): number {
-//         if (criterion === 'goal_diff') return a.gf - a.ga - (b.gf - b.ga);
-//         if (criterion === 'goals_scored') return a.gf - b.gf;
-//         return 0;
-//     }
-
-//     private toRow(s: Acc) {
-//         return {
-//             matches_played: s.played,
-//             wins: s.win,
-//             draws: s.draw,
-//             losses: s.loss,
-//             goals_for: s.gf,
-//             goals_against: s.ga,
-//             points: s.points,
+//         type StandingAccum = {
+//             teamId: number;
+//             played: number;
+//             wins: number;
+//             draws: number;
+//             losses: number;
+//             goalsFor: number;
+//             goalsAgainst: number;
+//             points: number;
 //         };
+
+//         const standings = new Map<number, StandingAccum>(
+//             teamIds.map(tid => [tid, {
+//                 teamId: tid, played: 0, wins: 0, draws: 0, losses: 0,
+//                 goalsFor: 0, goalsAgainst: 0, points: 0,
+//             }]),
+//         );
+
+//         // under_review/protested bị loại — chỉ tính match có result chính thức.
+//         const officialMatches = matches.filter(m => m.matchResult?.status === 'official');
+
+//         for (const m of officialMatches) {
+//             const r = m.matchResult!;
+//             const home = standings.get(m.home_team_id);
+//             const away = standings.get(m.away_team_id);
+//             if (!home || !away) continue;
+
+//             const hg = r.home_final_score;
+//             const ag = r.away_final_score;
+
+//             home.played++; away.played++;
+//             home.goalsFor += hg; home.goalsAgainst += ag;
+//             away.goalsFor += ag; away.goalsAgainst += hg;
+
+//             if (hg > ag) {
+//                 home.wins++; home.points += pointsWin;
+//                 away.losses++; away.points += pointsLoss;
+//             } else if (ag > hg) {
+//                 away.wins++; away.points += pointsWin;
+//                 home.losses++; home.points += pointsLoss;
+//             } else {
+//                 home.draws++; home.points += pointsDraw;
+//                 away.draws++; away.points += pointsDraw;
+//             }
+//         }
+
+//         // Build head_to_head map nếu cần — O(n²) nhưng group size ≤ 8 nên trivial.
+//         const h2h = new Map<string, { goalsFor: number; goalsAgainst: number; points: number }>();
+//         if (tiebreakerOrder.includes('head_to_head')) {
+//             const k = (a: number, b: number) => `${a}:${b}`;
+//             for (const m of officialMatches) {
+//                 const r = m.matchResult!;
+//                 const hg = r.home_final_score;
+//                 const ag = r.away_final_score;
+
+//                 const homeH2H = h2h.get(k(m.home_team_id, m.away_team_id)) ?? { goalsFor: 0, goalsAgainst: 0, points: 0 };
+//                 const awayH2H = h2h.get(k(m.away_team_id, m.home_team_id)) ?? { goalsFor: 0, goalsAgainst: 0, points: 0 };
+
+//                 homeH2H.goalsFor += hg; homeH2H.goalsAgainst += ag;
+//                 awayH2H.goalsFor += ag; awayH2H.goalsAgainst += hg;
+
+//                 if (hg > ag) homeH2H.points += pointsWin;
+//                 else if (ag > hg) awayH2H.points += pointsWin;
+//                 else { homeH2H.points += pointsDraw; awayH2H.points += pointsDraw; }
+
+//                 h2h.set(k(m.home_team_id, m.away_team_id), homeH2H);
+//                 h2h.set(k(m.away_team_id, m.home_team_id), awayH2H);
+//             }
+//         }
+
+//         const sorted = [...standings.values()].sort((a, b) => {
+//             if (b.points !== a.points) return b.points - a.points;
+
+//             for (const criterion of tiebreakerOrder) {
+//                 switch (criterion) {
+//                     case 'goal_diff': {
+//                         const diff = (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst);
+//                         if (diff !== 0) return diff;
+//                         break;
+//                     }
+//                     case 'goals_scored': {
+//                         const diff = b.goalsFor - a.goalsFor;
+//                         if (diff !== 0) return diff;
+//                         break;
+//                     }
+//                     case 'head_to_head': {
+//                         const aH2H = h2h.get(`${a.teamId}:${b.teamId}`);
+//                         const bH2H = h2h.get(`${b.teamId}:${a.teamId}`);
+//                         const ptsDiff = (bH2H?.points ?? 0) - (aH2H?.points ?? 0);
+//                         if (ptsDiff !== 0) return ptsDiff;
+//                         const gdDiff = ((bH2H?.goalsFor ?? 0) - (bH2H?.goalsAgainst ?? 0))
+//                             - ((aH2H?.goalsFor ?? 0) - (aH2H?.goalsAgainst ?? 0));
+//                         if (gdDiff !== 0) return gdDiff;
+//                         break;
+//                     }
+//                 }
+//             }
+//             return 0; // vẫn bằng nhau → giữ nguyên thứ tự (draw lot ngoài system)
+//         });
+
+//         // MySQL không có createMany + update nên dùng upsert theo unique(group_id, team_id).
+//         await this.prisma.$transaction(
+//             sorted.map((s, idx) =>
+//                 this.prisma.teamStanding.upsert({
+//                     where: { group_id_team_id: { group_id: groupId, team_id: s.teamId } },
+//                     create: {
+//                         group_id: groupId,
+//                         team_id: s.teamId,
+//                         position: idx + 1,
+//                         matches_played: s.played,
+//                         wins: s.wins,
+//                         draws: s.draws,
+//                         losses: s.losses,
+//                         goals_for: s.goalsFor,
+//                         goals_against: s.goalsAgainst,
+//                         points: s.points,
+//                     },
+//                     update: {
+//                         position: idx + 1,
+//                         matches_played: s.played,
+//                         wins: s.wins,
+//                         draws: s.draws,
+//                         losses: s.losses,
+//                         goals_for: s.goalsFor,
+//                         goals_against: s.goalsAgainst,
+//                         points: s.points,
+//                     },
+//                 }),
+//             ),
+//         );
 //     }
 // }

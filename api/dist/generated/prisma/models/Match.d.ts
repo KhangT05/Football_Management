@@ -24,9 +24,14 @@ export type MatchAvgAggregateOutputType = {
     leg: number | null;
     replay_of_match_id: number | null;
     abandoned_minute: number | null;
+    finalize_home_half_time: number | null;
+    finalize_away_half_time: number | null;
+    finalize_home_penalty: number | null;
+    finalize_away_penalty: number | null;
+    manual_home_score: number | null;
+    manual_away_score: number | null;
     user_id: number | null;
     venue_id: number | null;
-    season_id: number | null;
 };
 export type MatchSumAggregateOutputType = {
     id: number | null;
@@ -39,9 +44,14 @@ export type MatchSumAggregateOutputType = {
     leg: number | null;
     replay_of_match_id: number | null;
     abandoned_minute: number | null;
+    finalize_home_half_time: number | null;
+    finalize_away_half_time: number | null;
+    finalize_home_penalty: number | null;
+    finalize_away_penalty: number | null;
+    manual_home_score: number | null;
+    manual_away_score: number | null;
     user_id: number | null;
     venue_id: number | null;
-    season_id: number | null;
 };
 export type MatchMinAggregateOutputType = {
     id: number | null;
@@ -61,6 +71,14 @@ export type MatchMinAggregateOutputType = {
     postponed_reason: string | null;
     replay_of_match_id: number | null;
     abandoned_minute: number | null;
+    pending_official_at: Date | null;
+    finalize_result_type: $Enums.MatchResultType | null;
+    finalize_home_half_time: number | null;
+    finalize_away_half_time: number | null;
+    finalize_home_penalty: number | null;
+    finalize_away_penalty: number | null;
+    manual_home_score: number | null;
+    manual_away_score: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -69,7 +87,6 @@ export type MatchMinAggregateOutputType = {
     venue_id: number | null;
     is_published: boolean | null;
     referee: string | null;
-    season_id: number | null;
 };
 export type MatchMaxAggregateOutputType = {
     id: number | null;
@@ -89,6 +106,14 @@ export type MatchMaxAggregateOutputType = {
     postponed_reason: string | null;
     replay_of_match_id: number | null;
     abandoned_minute: number | null;
+    pending_official_at: Date | null;
+    finalize_result_type: $Enums.MatchResultType | null;
+    finalize_home_half_time: number | null;
+    finalize_away_half_time: number | null;
+    finalize_home_penalty: number | null;
+    finalize_away_penalty: number | null;
+    manual_home_score: number | null;
+    manual_away_score: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -97,7 +122,6 @@ export type MatchMaxAggregateOutputType = {
     venue_id: number | null;
     is_published: boolean | null;
     referee: string | null;
-    season_id: number | null;
 };
 export type MatchCountAggregateOutputType = {
     id: number;
@@ -117,6 +141,14 @@ export type MatchCountAggregateOutputType = {
     postponed_reason: number;
     replay_of_match_id: number;
     abandoned_minute: number;
+    pending_official_at: number;
+    finalize_result_type: number;
+    finalize_home_half_time: number;
+    finalize_away_half_time: number;
+    finalize_home_penalty: number;
+    finalize_away_penalty: number;
+    manual_home_score: number;
+    manual_away_score: number;
     is_active: number;
     created_at: number;
     updated_at: number;
@@ -125,7 +157,6 @@ export type MatchCountAggregateOutputType = {
     venue_id: number;
     is_published: number;
     referee: number;
-    season_id: number;
     _all: number;
 };
 export type MatchAvgAggregateInputType = {
@@ -139,9 +170,14 @@ export type MatchAvgAggregateInputType = {
     leg?: true;
     replay_of_match_id?: true;
     abandoned_minute?: true;
+    finalize_home_half_time?: true;
+    finalize_away_half_time?: true;
+    finalize_home_penalty?: true;
+    finalize_away_penalty?: true;
+    manual_home_score?: true;
+    manual_away_score?: true;
     user_id?: true;
     venue_id?: true;
-    season_id?: true;
 };
 export type MatchSumAggregateInputType = {
     id?: true;
@@ -154,9 +190,14 @@ export type MatchSumAggregateInputType = {
     leg?: true;
     replay_of_match_id?: true;
     abandoned_minute?: true;
+    finalize_home_half_time?: true;
+    finalize_away_half_time?: true;
+    finalize_home_penalty?: true;
+    finalize_away_penalty?: true;
+    manual_home_score?: true;
+    manual_away_score?: true;
     user_id?: true;
     venue_id?: true;
-    season_id?: true;
 };
 export type MatchMinAggregateInputType = {
     id?: true;
@@ -176,6 +217,14 @@ export type MatchMinAggregateInputType = {
     postponed_reason?: true;
     replay_of_match_id?: true;
     abandoned_minute?: true;
+    pending_official_at?: true;
+    finalize_result_type?: true;
+    finalize_home_half_time?: true;
+    finalize_away_half_time?: true;
+    finalize_home_penalty?: true;
+    finalize_away_penalty?: true;
+    manual_home_score?: true;
+    manual_away_score?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -184,7 +233,6 @@ export type MatchMinAggregateInputType = {
     venue_id?: true;
     is_published?: true;
     referee?: true;
-    season_id?: true;
 };
 export type MatchMaxAggregateInputType = {
     id?: true;
@@ -204,6 +252,14 @@ export type MatchMaxAggregateInputType = {
     postponed_reason?: true;
     replay_of_match_id?: true;
     abandoned_minute?: true;
+    pending_official_at?: true;
+    finalize_result_type?: true;
+    finalize_home_half_time?: true;
+    finalize_away_half_time?: true;
+    finalize_home_penalty?: true;
+    finalize_away_penalty?: true;
+    manual_home_score?: true;
+    manual_away_score?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -212,7 +268,6 @@ export type MatchMaxAggregateInputType = {
     venue_id?: true;
     is_published?: true;
     referee?: true;
-    season_id?: true;
 };
 export type MatchCountAggregateInputType = {
     id?: true;
@@ -232,6 +287,14 @@ export type MatchCountAggregateInputType = {
     postponed_reason?: true;
     replay_of_match_id?: true;
     abandoned_minute?: true;
+    pending_official_at?: true;
+    finalize_result_type?: true;
+    finalize_home_half_time?: true;
+    finalize_away_half_time?: true;
+    finalize_home_penalty?: true;
+    finalize_away_penalty?: true;
+    manual_home_score?: true;
+    manual_away_score?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -240,7 +303,6 @@ export type MatchCountAggregateInputType = {
     venue_id?: true;
     is_published?: true;
     referee?: true;
-    season_id?: true;
     _all?: true;
 };
 export type MatchAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -337,6 +399,14 @@ export type MatchGroupByOutputType = {
     postponed_reason: string | null;
     replay_of_match_id: number | null;
     abandoned_minute: number | null;
+    pending_official_at: Date | null;
+    finalize_result_type: $Enums.MatchResultType | null;
+    finalize_home_half_time: number | null;
+    finalize_away_half_time: number | null;
+    finalize_home_penalty: number | null;
+    finalize_away_penalty: number | null;
+    manual_home_score: number | null;
+    manual_away_score: number | null;
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
@@ -345,7 +415,6 @@ export type MatchGroupByOutputType = {
     venue_id: number | null;
     is_published: boolean;
     referee: string | null;
-    season_id: number | null;
     _count: MatchCountAggregateOutputType | null;
     _avg: MatchAvgAggregateOutputType | null;
     _sum: MatchSumAggregateOutputType | null;
@@ -376,6 +445,14 @@ export type MatchWhereInput = {
     postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
     replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
+    pending_official_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_away_score?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -384,7 +461,6 @@ export type MatchWhereInput = {
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_published?: Prisma.BoolFilter<"Match"> | boolean;
     referee?: Prisma.StringNullableFilter<"Match"> | string | null;
-    season_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     phase?: Prisma.XOR<Prisma.PhaseScalarRelationFilter, Prisma.PhaseWhereInput>;
     group?: Prisma.XOR<Prisma.GroupNullableScalarRelationFilter, Prisma.GroupWhereInput> | null;
     home_team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
@@ -393,7 +469,6 @@ export type MatchWhereInput = {
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     matchResult?: Prisma.XOR<Prisma.MatchResultNullableScalarRelationFilter, Prisma.MatchResultWhereInput> | null;
     venue?: Prisma.XOR<Prisma.VenueNullableScalarRelationFilter, Prisma.VenueWhereInput> | null;
-    season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
     articles?: Prisma.ArticleListRelationFilter;
     bracketSlot?: Prisma.XOR<Prisma.BracketSlotNullableScalarRelationFilter, Prisma.BracketSlotWhereInput> | null;
 };
@@ -415,6 +490,14 @@ export type MatchOrderByWithRelationInput = {
     postponed_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
+    pending_official_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_result_type?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrderInput | Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -423,7 +506,6 @@ export type MatchOrderByWithRelationInput = {
     venue_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_published?: Prisma.SortOrder;
     referee?: Prisma.SortOrderInput | Prisma.SortOrder;
-    season_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     phase?: Prisma.PhaseOrderByWithRelationInput;
     group?: Prisma.GroupOrderByWithRelationInput;
     home_team?: Prisma.TeamOrderByWithRelationInput;
@@ -432,7 +514,6 @@ export type MatchOrderByWithRelationInput = {
     user?: Prisma.UserOrderByWithRelationInput;
     matchResult?: Prisma.MatchResultOrderByWithRelationInput;
     venue?: Prisma.VenueOrderByWithRelationInput;
-    season?: Prisma.SeasonOrderByWithRelationInput;
     articles?: Prisma.ArticleOrderByRelationAggregateInput;
     bracketSlot?: Prisma.BracketSlotOrderByWithRelationInput;
     _relevance?: Prisma.MatchOrderByRelevanceInput;
@@ -459,6 +540,14 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
     replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
+    pending_official_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_away_score?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -467,7 +556,6 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_published?: Prisma.BoolFilter<"Match"> | boolean;
     referee?: Prisma.StringNullableFilter<"Match"> | string | null;
-    season_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     phase?: Prisma.XOR<Prisma.PhaseScalarRelationFilter, Prisma.PhaseWhereInput>;
     group?: Prisma.XOR<Prisma.GroupNullableScalarRelationFilter, Prisma.GroupWhereInput> | null;
     home_team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
@@ -476,7 +564,6 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     matchResult?: Prisma.XOR<Prisma.MatchResultNullableScalarRelationFilter, Prisma.MatchResultWhereInput> | null;
     venue?: Prisma.XOR<Prisma.VenueNullableScalarRelationFilter, Prisma.VenueWhereInput> | null;
-    season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
     articles?: Prisma.ArticleListRelationFilter;
     bracketSlot?: Prisma.XOR<Prisma.BracketSlotNullableScalarRelationFilter, Prisma.BracketSlotWhereInput> | null;
 }, "id" | "venue_id_scheduled_at">;
@@ -498,6 +585,14 @@ export type MatchOrderByWithAggregationInput = {
     postponed_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
+    pending_official_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_result_type?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrderInput | Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -506,7 +601,6 @@ export type MatchOrderByWithAggregationInput = {
     venue_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_published?: Prisma.SortOrder;
     referee?: Prisma.SortOrderInput | Prisma.SortOrder;
-    season_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.MatchCountOrderByAggregateInput;
     _avg?: Prisma.MatchAvgOrderByAggregateInput;
     _max?: Prisma.MatchMaxOrderByAggregateInput;
@@ -534,6 +628,14 @@ export type MatchScalarWhereWithAggregatesInput = {
     postponed_reason?: Prisma.StringNullableWithAggregatesFilter<"Match"> | string | null;
     replay_of_match_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     abandoned_minute?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    pending_official_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
+    finalize_result_type?: Prisma.EnumMatchResultTypeNullableWithAggregatesFilter<"Match"> | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    finalize_away_half_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    finalize_home_penalty?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    finalize_away_penalty?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    manual_home_score?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    manual_away_score?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     is_active?: Prisma.BoolWithAggregatesFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
@@ -542,7 +644,6 @@ export type MatchScalarWhereWithAggregatesInput = {
     venue_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     is_published?: Prisma.BoolWithAggregatesFilter<"Match"> | boolean;
     referee?: Prisma.StringNullableWithAggregatesFilter<"Match"> | string | null;
-    season_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
 };
 export type MatchCreateInput = {
     scheduled_at?: Date | string | null;
@@ -557,6 +658,14 @@ export type MatchCreateInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -571,7 +680,6 @@ export type MatchCreateInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -593,6 +701,14 @@ export type MatchUncheckedCreateInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -601,7 +717,6 @@ export type MatchUncheckedCreateInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -620,6 +735,14 @@ export type MatchUpdateInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -634,7 +757,6 @@ export type MatchUpdateInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -656,6 +778,14 @@ export type MatchUncheckedUpdateInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -664,7 +794,6 @@ export type MatchUncheckedUpdateInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -688,6 +817,14 @@ export type MatchCreateManyInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -696,7 +833,6 @@ export type MatchCreateManyInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateManyMutationInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -711,6 +847,14 @@ export type MatchUpdateManyMutationInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -736,6 +880,14 @@ export type MatchUncheckedUpdateManyInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -744,7 +896,6 @@ export type MatchUncheckedUpdateManyInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchListRelationFilter = {
     every?: Prisma.MatchWhereInput;
@@ -785,6 +936,14 @@ export type MatchCountOrderByAggregateInput = {
     postponed_reason?: Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrder;
+    pending_official_at?: Prisma.SortOrder;
+    finalize_result_type?: Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -793,7 +952,6 @@ export type MatchCountOrderByAggregateInput = {
     venue_id?: Prisma.SortOrder;
     is_published?: Prisma.SortOrder;
     referee?: Prisma.SortOrder;
-    season_id?: Prisma.SortOrder;
 };
 export type MatchAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -806,9 +964,14 @@ export type MatchAvgOrderByAggregateInput = {
     leg?: Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
-    season_id?: Prisma.SortOrder;
 };
 export type MatchMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -828,6 +991,14 @@ export type MatchMaxOrderByAggregateInput = {
     postponed_reason?: Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrder;
+    pending_official_at?: Prisma.SortOrder;
+    finalize_result_type?: Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -836,7 +1007,6 @@ export type MatchMaxOrderByAggregateInput = {
     venue_id?: Prisma.SortOrder;
     is_published?: Prisma.SortOrder;
     referee?: Prisma.SortOrder;
-    season_id?: Prisma.SortOrder;
 };
 export type MatchMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -856,6 +1026,14 @@ export type MatchMinOrderByAggregateInput = {
     postponed_reason?: Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrder;
+    pending_official_at?: Prisma.SortOrder;
+    finalize_result_type?: Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -864,7 +1042,6 @@ export type MatchMinOrderByAggregateInput = {
     venue_id?: Prisma.SortOrder;
     is_published?: Prisma.SortOrder;
     referee?: Prisma.SortOrder;
-    season_id?: Prisma.SortOrder;
 };
 export type MatchSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -877,9 +1054,14 @@ export type MatchSumOrderByAggregateInput = {
     leg?: Prisma.SortOrder;
     replay_of_match_id?: Prisma.SortOrder;
     abandoned_minute?: Prisma.SortOrder;
+    finalize_home_half_time?: Prisma.SortOrder;
+    finalize_away_half_time?: Prisma.SortOrder;
+    finalize_home_penalty?: Prisma.SortOrder;
+    finalize_away_penalty?: Prisma.SortOrder;
+    manual_home_score?: Prisma.SortOrder;
+    manual_away_score?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
-    season_id?: Prisma.SortOrder;
 };
 export type MatchScalarRelationFilter = {
     is?: Prisma.MatchWhereInput;
@@ -974,44 +1156,6 @@ export type MatchUpdateOneWithoutBracketSlotNestedInput = {
     delete?: Prisma.MatchWhereInput | boolean;
     connect?: Prisma.MatchWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutBracketSlotInput, Prisma.MatchUpdateWithoutBracketSlotInput>, Prisma.MatchUncheckedUpdateWithoutBracketSlotInput>;
-};
-export type MatchCreateNestedManyWithoutSeasonInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-};
-export type MatchUncheckedCreateNestedManyWithoutSeasonInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-};
-export type MatchUpdateManyWithoutSeasonNestedInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
-    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
-    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
-};
-export type MatchUncheckedUpdateManyWithoutSeasonNestedInput = {
-    create?: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput> | Prisma.MatchCreateWithoutSeasonInput[] | Prisma.MatchUncheckedCreateWithoutSeasonInput[];
-    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutSeasonInput | Prisma.MatchCreateOrConnectWithoutSeasonInput[];
-    upsert?: Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpsertWithWhereUniqueWithoutSeasonInput[];
-    createMany?: Prisma.MatchCreateManySeasonInputEnvelope;
-    set?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    disconnect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    delete?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    connect?: Prisma.MatchWhereUniqueInput | Prisma.MatchWhereUniqueInput[];
-    update?: Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput | Prisma.MatchUpdateWithWhereUniqueWithoutSeasonInput[];
-    updateMany?: Prisma.MatchUpdateManyWithWhereWithoutSeasonInput | Prisma.MatchUpdateManyWithWhereWithoutSeasonInput[];
-    deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
 };
 export type MatchCreateNestedManyWithoutGroupInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutGroupInput, Prisma.MatchUncheckedCreateWithoutGroupInput> | Prisma.MatchCreateWithoutGroupInput[] | Prisma.MatchUncheckedCreateWithoutGroupInput[];
@@ -1133,6 +1277,9 @@ export type EnumMatchStatusFieldUpdateOperationsInput = {
 export type NullableEnumMatchPeriodFieldUpdateOperationsInput = {
     set?: $Enums.MatchPeriod | null;
 };
+export type NullableEnumMatchResultTypeFieldUpdateOperationsInput = {
+    set?: $Enums.MatchResultType | null;
+};
 export type MatchCreateNestedManyWithoutVenueInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutVenueInput, Prisma.MatchUncheckedCreateWithoutVenueInput> | Prisma.MatchCreateWithoutVenueInput[] | Prisma.MatchUncheckedCreateWithoutVenueInput[];
     connectOrCreate?: Prisma.MatchCreateOrConnectWithoutVenueInput | Prisma.MatchCreateOrConnectWithoutVenueInput[];
@@ -1222,6 +1369,14 @@ export type MatchCreateWithoutUserInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1235,7 +1390,6 @@ export type MatchCreateWithoutUserInput = {
     events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1257,6 +1411,14 @@ export type MatchUncheckedCreateWithoutUserInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1264,7 +1426,6 @@ export type MatchUncheckedCreateWithoutUserInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1312,6 +1473,14 @@ export type MatchScalarWhereInput = {
     postponed_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
     replay_of_match_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     abandoned_minute?: Prisma.IntNullableFilter<"Match"> | number | null;
+    pending_official_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
+    manual_away_score?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
@@ -1320,7 +1489,6 @@ export type MatchScalarWhereInput = {
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     is_published?: Prisma.BoolFilter<"Match"> | boolean;
     referee?: Prisma.StringNullableFilter<"Match"> | string | null;
-    season_id?: Prisma.IntNullableFilter<"Match"> | number | null;
 };
 export type MatchCreateWithoutPhaseInput = {
     scheduled_at?: Date | string | null;
@@ -1335,6 +1503,14 @@ export type MatchCreateWithoutPhaseInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1348,7 +1524,6 @@ export type MatchCreateWithoutPhaseInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1369,6 +1544,14 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1377,7 +1560,6 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1417,6 +1599,14 @@ export type MatchCreateWithoutBracketSlotInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1431,7 +1621,6 @@ export type MatchCreateWithoutBracketSlotInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutBracketSlotInput = {
@@ -1452,6 +1641,14 @@ export type MatchUncheckedCreateWithoutBracketSlotInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1460,7 +1657,6 @@ export type MatchUncheckedCreateWithoutBracketSlotInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1491,6 +1687,14 @@ export type MatchUpdateWithoutBracketSlotInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1505,7 +1709,6 @@ export type MatchUpdateWithoutBracketSlotInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutBracketSlotInput = {
@@ -1526,6 +1729,14 @@ export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1534,92 +1745,9 @@ export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
-};
-export type MatchCreateWithoutSeasonInput = {
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    current_period?: $Enums.MatchPeriod | null;
-    postponed_from?: Date | string | null;
-    postponed_reason?: string | null;
-    replay_of_match_id?: number | null;
-    abandoned_minute?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    is_published?: boolean;
-    referee?: string | null;
-    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
-    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
-    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
-    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
-    events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
-    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
-    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
-    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
-    bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
-};
-export type MatchUncheckedCreateWithoutSeasonInput = {
-    id?: number;
-    phase_id: number;
-    group_id?: number | null;
-    home_team_id: number;
-    away_team_id: number;
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    current_period?: $Enums.MatchPeriod | null;
-    postponed_from?: Date | string | null;
-    postponed_reason?: string | null;
-    replay_of_match_id?: number | null;
-    abandoned_minute?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    venue_id?: number | null;
-    is_published?: boolean;
-    referee?: string | null;
-    events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
-    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
-    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
-    bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
-};
-export type MatchCreateOrConnectWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
-};
-export type MatchCreateManySeasonInputEnvelope = {
-    data: Prisma.MatchCreateManySeasonInput | Prisma.MatchCreateManySeasonInput[];
-    skipDuplicates?: boolean;
-};
-export type MatchUpsertWithWhereUniqueWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    update: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
-    create: Prisma.XOR<Prisma.MatchCreateWithoutSeasonInput, Prisma.MatchUncheckedCreateWithoutSeasonInput>;
-};
-export type MatchUpdateWithWhereUniqueWithoutSeasonInput = {
-    where: Prisma.MatchWhereUniqueInput;
-    data: Prisma.XOR<Prisma.MatchUpdateWithoutSeasonInput, Prisma.MatchUncheckedUpdateWithoutSeasonInput>;
-};
-export type MatchUpdateManyWithWhereWithoutSeasonInput = {
-    where: Prisma.MatchScalarWhereInput;
-    data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutSeasonInput>;
 };
 export type MatchCreateWithoutGroupInput = {
     scheduled_at?: Date | string | null;
@@ -1634,6 +1762,14 @@ export type MatchCreateWithoutGroupInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1647,7 +1783,6 @@ export type MatchCreateWithoutGroupInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1668,6 +1803,14 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1676,7 +1819,6 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1716,6 +1858,14 @@ export type MatchCreateWithoutHome_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1729,7 +1879,6 @@ export type MatchCreateWithoutHome_teamInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1750,6 +1899,14 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1758,7 +1915,6 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1785,6 +1941,14 @@ export type MatchCreateWithoutAway_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1798,7 +1962,6 @@ export type MatchCreateWithoutAway_teamInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1819,6 +1982,14 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1827,7 +1998,6 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1880,6 +2050,14 @@ export type MatchCreateWithoutVenueInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1893,7 +2071,6 @@ export type MatchCreateWithoutVenueInput = {
     events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1915,6 +2092,14 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1922,7 +2107,6 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     user_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
@@ -1962,6 +2146,14 @@ export type MatchCreateWithoutEventsInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1975,7 +2167,6 @@ export type MatchCreateWithoutEventsInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -1997,6 +2188,14 @@ export type MatchUncheckedCreateWithoutEventsInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2005,7 +2204,6 @@ export type MatchUncheckedCreateWithoutEventsInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
@@ -2036,6 +2234,14 @@ export type MatchUpdateWithoutEventsInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2049,7 +2255,6 @@ export type MatchUpdateWithoutEventsInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2071,6 +2276,14 @@ export type MatchUncheckedUpdateWithoutEventsInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2079,7 +2292,6 @@ export type MatchUncheckedUpdateWithoutEventsInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
@@ -2097,6 +2309,14 @@ export type MatchCreateWithoutMatchResultInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2110,7 +2330,6 @@ export type MatchCreateWithoutMatchResultInput = {
     events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
@@ -2132,6 +2351,14 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2140,7 +2367,6 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
@@ -2171,6 +2397,14 @@ export type MatchUpdateWithoutMatchResultInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2184,7 +2418,6 @@ export type MatchUpdateWithoutMatchResultInput = {
     events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2206,6 +2439,14 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2214,7 +2455,6 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
@@ -2232,6 +2472,14 @@ export type MatchCreateWithoutArticlesInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2246,7 +2494,6 @@ export type MatchCreateWithoutArticlesInput = {
     user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
     matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
-    season?: Prisma.SeasonCreateNestedOneWithoutMatchesInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutArticlesInput = {
@@ -2267,6 +2514,14 @@ export type MatchUncheckedCreateWithoutArticlesInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2275,7 +2530,6 @@ export type MatchUncheckedCreateWithoutArticlesInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
     events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
@@ -2306,6 +2560,14 @@ export type MatchUpdateWithoutArticlesInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2320,7 +2582,6 @@ export type MatchUpdateWithoutArticlesInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutArticlesInput = {
@@ -2341,6 +2602,14 @@ export type MatchUncheckedUpdateWithoutArticlesInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2349,7 +2618,6 @@ export type MatchUncheckedUpdateWithoutArticlesInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
@@ -2372,6 +2640,14 @@ export type MatchCreateManyUserInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2379,7 +2655,6 @@ export type MatchCreateManyUserInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateWithoutUserInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2394,6 +2669,14 @@ export type MatchUpdateWithoutUserInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2407,7 +2690,6 @@ export type MatchUpdateWithoutUserInput = {
     events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2429,6 +2711,14 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2436,7 +2726,6 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -2460,6 +2749,14 @@ export type MatchUncheckedUpdateManyWithoutUserInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2467,7 +2764,6 @@ export type MatchUncheckedUpdateManyWithoutUserInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchCreateManyPhaseInput = {
     id?: number;
@@ -2486,6 +2782,14 @@ export type MatchCreateManyPhaseInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2494,7 +2798,6 @@ export type MatchCreateManyPhaseInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateWithoutPhaseInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2509,6 +2812,14 @@ export type MatchUpdateWithoutPhaseInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2522,7 +2833,6 @@ export type MatchUpdateWithoutPhaseInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2543,6 +2853,14 @@ export type MatchUncheckedUpdateWithoutPhaseInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2551,7 +2869,6 @@ export type MatchUncheckedUpdateWithoutPhaseInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -2574,122 +2891,14 @@ export type MatchUncheckedUpdateManyWithoutPhaseInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-};
-export type MatchCreateManySeasonInput = {
-    id?: number;
-    phase_id: number;
-    group_id?: number | null;
-    home_team_id: number;
-    away_team_id: number;
-    scheduled_at?: Date | string | null;
-    played_at?: Date | string | null;
-    home_score?: number | null;
-    away_score?: number | null;
-    status?: $Enums.MatchStatus;
-    round?: string | null;
-    leg?: number | null;
-    current_period?: $Enums.MatchPeriod | null;
-    postponed_from?: Date | string | null;
-    postponed_reason?: string | null;
-    replay_of_match_id?: number | null;
-    abandoned_minute?: number | null;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-    venue_id?: number | null;
-    is_published?: boolean;
-    referee?: string | null;
-};
-export type MatchUpdateWithoutSeasonInput = {
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
-    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    phase?: Prisma.PhaseUpdateOneRequiredWithoutMatchesNestedInput;
-    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
-    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
-    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
-    events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
-    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
-    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
-    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
-    bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
-};
-export type MatchUncheckedUpdateWithoutSeasonInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
-    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
-    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
-    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
-    bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
-};
-export type MatchUncheckedUpdateManyWithoutSeasonInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
-    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
-    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2716,6 +2925,14 @@ export type MatchCreateManyGroupInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2724,7 +2941,6 @@ export type MatchCreateManyGroupInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateWithoutGroupInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2739,6 +2955,14 @@ export type MatchUpdateWithoutGroupInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2752,7 +2976,6 @@ export type MatchUpdateWithoutGroupInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2773,6 +2996,14 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2781,7 +3012,6 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -2804,6 +3034,14 @@ export type MatchUncheckedUpdateManyWithoutGroupInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2812,7 +3050,6 @@ export type MatchUncheckedUpdateManyWithoutGroupInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchCreateManyHome_teamInput = {
     id?: number;
@@ -2831,6 +3068,14 @@ export type MatchCreateManyHome_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2839,7 +3084,6 @@ export type MatchCreateManyHome_teamInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchCreateManyAway_teamInput = {
     id?: number;
@@ -2858,6 +3102,14 @@ export type MatchCreateManyAway_teamInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -2866,7 +3118,6 @@ export type MatchCreateManyAway_teamInput = {
     venue_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateWithoutHome_teamInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2881,6 +3132,14 @@ export type MatchUpdateWithoutHome_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2894,7 +3153,6 @@ export type MatchUpdateWithoutHome_teamInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -2915,6 +3173,14 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2923,7 +3189,6 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -2946,6 +3211,14 @@ export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2954,7 +3227,6 @@ export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchUpdateWithoutAway_teamInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2969,6 +3241,14 @@ export type MatchUpdateWithoutAway_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -2982,7 +3262,6 @@ export type MatchUpdateWithoutAway_teamInput = {
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -3003,6 +3282,14 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3011,7 +3298,6 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -3034,6 +3320,14 @@ export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3042,7 +3336,6 @@ export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type MatchCreateManyVenueInput = {
     id?: number;
@@ -3062,6 +3355,14 @@ export type MatchCreateManyVenueInput = {
     postponed_reason?: string | null;
     replay_of_match_id?: number | null;
     abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -3069,7 +3370,6 @@ export type MatchCreateManyVenueInput = {
     user_id?: number | null;
     is_published?: boolean;
     referee?: string | null;
-    season_id?: number | null;
 };
 export type MatchUpdateWithoutVenueInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3084,6 +3384,14 @@ export type MatchUpdateWithoutVenueInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3097,7 +3405,6 @@ export type MatchUpdateWithoutVenueInput = {
     events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
     user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
     matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
-    season?: Prisma.SeasonUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
 };
@@ -3119,6 +3426,14 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3126,7 +3441,6 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
@@ -3150,6 +3464,14 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
     postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -3157,7 +3479,6 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 /**
  * Count Type MatchCountOutputType
@@ -3209,6 +3530,14 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     postponed_reason?: boolean;
     replay_of_match_id?: boolean;
     abandoned_minute?: boolean;
+    pending_official_at?: boolean;
+    finalize_result_type?: boolean;
+    finalize_home_half_time?: boolean;
+    finalize_away_half_time?: boolean;
+    finalize_home_penalty?: boolean;
+    finalize_away_penalty?: boolean;
+    manual_home_score?: boolean;
+    manual_away_score?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -3217,7 +3546,6 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     venue_id?: boolean;
     is_published?: boolean;
     referee?: boolean;
-    season_id?: boolean;
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.Match$groupArgs<ExtArgs>;
     home_team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
@@ -3226,7 +3554,6 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     user?: boolean | Prisma.Match$userArgs<ExtArgs>;
     matchResult?: boolean | Prisma.Match$matchResultArgs<ExtArgs>;
     venue?: boolean | Prisma.Match$venueArgs<ExtArgs>;
-    season?: boolean | Prisma.Match$seasonArgs<ExtArgs>;
     articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     bracketSlot?: boolean | Prisma.Match$bracketSlotArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
@@ -3249,6 +3576,14 @@ export type MatchSelectScalar = {
     postponed_reason?: boolean;
     replay_of_match_id?: boolean;
     abandoned_minute?: boolean;
+    pending_official_at?: boolean;
+    finalize_result_type?: boolean;
+    finalize_home_half_time?: boolean;
+    finalize_away_half_time?: boolean;
+    finalize_home_penalty?: boolean;
+    finalize_away_penalty?: boolean;
+    manual_home_score?: boolean;
+    manual_away_score?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -3257,9 +3592,8 @@ export type MatchSelectScalar = {
     venue_id?: boolean;
     is_published?: boolean;
     referee?: boolean;
-    season_id?: boolean;
 };
-export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "replay_of_match_id" | "abandoned_minute" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee" | "season_id", ExtArgs["result"]["match"]>;
+export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "replay_of_match_id" | "abandoned_minute" | "pending_official_at" | "finalize_result_type" | "finalize_home_half_time" | "finalize_away_half_time" | "finalize_home_penalty" | "finalize_away_penalty" | "manual_home_score" | "manual_away_score" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee", ExtArgs["result"]["match"]>;
 export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.Match$groupArgs<ExtArgs>;
@@ -3269,7 +3603,6 @@ export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     user?: boolean | Prisma.Match$userArgs<ExtArgs>;
     matchResult?: boolean | Prisma.Match$matchResultArgs<ExtArgs>;
     venue?: boolean | Prisma.Match$venueArgs<ExtArgs>;
-    season?: boolean | Prisma.Match$seasonArgs<ExtArgs>;
     articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     bracketSlot?: boolean | Prisma.Match$bracketSlotArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
@@ -3285,7 +3618,6 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         user: Prisma.$UserPayload<ExtArgs> | null;
         matchResult: Prisma.$MatchResultPayload<ExtArgs> | null;
         venue: Prisma.$VenuePayload<ExtArgs> | null;
-        season: Prisma.$SeasonPayload<ExtArgs> | null;
         articles: Prisma.$ArticlePayload<ExtArgs>[];
         bracketSlot: Prisma.$BracketSlotPayload<ExtArgs> | null;
     };
@@ -3307,6 +3639,14 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         postponed_reason: string | null;
         replay_of_match_id: number | null;
         abandoned_minute: number | null;
+        pending_official_at: Date | null;
+        finalize_result_type: $Enums.MatchResultType | null;
+        finalize_home_half_time: number | null;
+        finalize_away_half_time: number | null;
+        finalize_home_penalty: number | null;
+        finalize_away_penalty: number | null;
+        manual_home_score: number | null;
+        manual_away_score: number | null;
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
@@ -3315,7 +3655,6 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         venue_id: number | null;
         is_published: boolean;
         referee: string | null;
-        season_id: number | null;
     }, ExtArgs["result"]["match"]>;
     composites: {};
 };
@@ -3601,7 +3940,6 @@ export interface Prisma__MatchClient<T, Null = never, ExtArgs extends runtime.Ty
     user<T extends Prisma.Match$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     matchResult<T extends Prisma.Match$matchResultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$matchResultArgs<ExtArgs>>): Prisma.Prisma__MatchResultClient<runtime.Types.Result.GetResult<Prisma.$MatchResultPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     venue<T extends Prisma.Match$venueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$venueArgs<ExtArgs>>): Prisma.Prisma__VenueClient<runtime.Types.Result.GetResult<Prisma.$VenuePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
-    season<T extends Prisma.Match$seasonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$seasonArgs<ExtArgs>>): Prisma.Prisma__SeasonClient<runtime.Types.Result.GetResult<Prisma.$SeasonPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     articles<T extends Prisma.Match$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     bracketSlot<T extends Prisma.Match$bracketSlotArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$bracketSlotArgs<ExtArgs>>): Prisma.Prisma__BracketSlotClient<runtime.Types.Result.GetResult<Prisma.$BracketSlotPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
@@ -3646,6 +3984,14 @@ export interface MatchFieldRefs {
     readonly postponed_reason: Prisma.FieldRef<"Match", 'String'>;
     readonly replay_of_match_id: Prisma.FieldRef<"Match", 'Int'>;
     readonly abandoned_minute: Prisma.FieldRef<"Match", 'Int'>;
+    readonly pending_official_at: Prisma.FieldRef<"Match", 'DateTime'>;
+    readonly finalize_result_type: Prisma.FieldRef<"Match", 'MatchResultType'>;
+    readonly finalize_home_half_time: Prisma.FieldRef<"Match", 'Int'>;
+    readonly finalize_away_half_time: Prisma.FieldRef<"Match", 'Int'>;
+    readonly finalize_home_penalty: Prisma.FieldRef<"Match", 'Int'>;
+    readonly finalize_away_penalty: Prisma.FieldRef<"Match", 'Int'>;
+    readonly manual_home_score: Prisma.FieldRef<"Match", 'Int'>;
+    readonly manual_away_score: Prisma.FieldRef<"Match", 'Int'>;
     readonly is_active: Prisma.FieldRef<"Match", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Match", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Match", 'DateTime'>;
@@ -3654,7 +4000,6 @@ export interface MatchFieldRefs {
     readonly venue_id: Prisma.FieldRef<"Match", 'Int'>;
     readonly is_published: Prisma.FieldRef<"Match", 'Boolean'>;
     readonly referee: Prisma.FieldRef<"Match", 'String'>;
-    readonly season_id: Prisma.FieldRef<"Match", 'Int'>;
 }
 /**
  * Match findUnique
@@ -4081,24 +4426,6 @@ export type Match$venueArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
      */
     include?: Prisma.VenueInclude<ExtArgs> | null;
     where?: Prisma.VenueWhereInput;
-};
-/**
- * Match.season
- */
-export type Match$seasonArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Season
-     */
-    select?: Prisma.SeasonSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the Season
-     */
-    omit?: Prisma.SeasonOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.SeasonInclude<ExtArgs> | null;
-    where?: Prisma.SeasonWhereInput;
 };
 /**
  * Match.articles

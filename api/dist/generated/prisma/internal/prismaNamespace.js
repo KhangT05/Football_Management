@@ -266,6 +266,7 @@ export const SeasonTeamScalarFieldEnum = {
     season_id: 'season_id',
     team_id: 'team_id',
     status: 'status',
+    seed: 'seed',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -291,6 +292,14 @@ export const MatchScalarFieldEnum = {
     postponed_reason: 'postponed_reason',
     replay_of_match_id: 'replay_of_match_id',
     abandoned_minute: 'abandoned_minute',
+    pending_official_at: 'pending_official_at',
+    finalize_result_type: 'finalize_result_type',
+    finalize_home_half_time: 'finalize_home_half_time',
+    finalize_away_half_time: 'finalize_away_half_time',
+    finalize_home_penalty: 'finalize_home_penalty',
+    finalize_away_penalty: 'finalize_away_penalty',
+    manual_home_score: 'manual_home_score',
+    manual_away_score: 'manual_away_score',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -298,8 +307,7 @@ export const MatchScalarFieldEnum = {
     user_id: 'user_id',
     venue_id: 'venue_id',
     is_published: 'is_published',
-    referee: 'referee',
-    season_id: 'season_id'
+    referee: 'referee'
 };
 export const VenueScalarFieldEnum = {
     id: 'id',

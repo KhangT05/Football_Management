@@ -217,7 +217,7 @@ export class KnockoutService extends ScheduleEngine {
 
         // ── Step 6: Auto-schedule round 1 matches (ngoài TX) ─────────────────
         const scheduleResult = await this.scheduleMatchBatch(
-            result.round1MatchIds, options.seasonId, options,
+            result.round1MatchIds, options.seasonId, options.phaseId, options,
         );
 
         if (scheduleResult.failedMatchIds.length > 0)
@@ -312,6 +312,13 @@ export class KnockoutService extends ScheduleEngine {
     async getBracket(phaseId: number): Promise<BracketSlotNode[]> {
         // select tường minh (compose từ building-block ở đầu file) thay vì
         // fetch full row rồi map — tránh kéo dư cột không dùng qua network.
+        const phase = await this.prisma.phase.findUnique({
+            where: { id: phaseId },
+            select: { id: true },
+        });
+        if (!phase)
+            throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
+
         const slots = await this.prisma.bracketSlot.findMany({
             where: { phase_id: phaseId },
             select: bracketSlotNodeSelect,
@@ -406,7 +413,7 @@ export class KnockoutService extends ScheduleEngine {
         // Fire-and-forget — guaranteed delivery cần job queue (BullMQ/pg-boss)
         setImmediate(async () => {
             try {
-                await this.scheduleMatchBatch(newMatchIds, seasonId, scheduleOptions);
+                await this.scheduleMatchBatch(newMatchIds, phaseId, seasonId, scheduleOptions);
             } catch (err) {
                 console.error(`[KnockoutService] schedule failed for matches ${newMatchIds}:`, err);
             }
@@ -450,7 +457,6 @@ export class KnockoutService extends ScheduleEngine {
 
             matchCreateData.push({
                 phase_id: phaseId,
-                season_id: seasonId,
                 home_team_id: homeId,
                 away_team_id: awayId,
                 status: MatchStatus.scheduled,
@@ -462,7 +468,6 @@ export class KnockoutService extends ScheduleEngine {
             if (legs === 2) {
                 matchCreateData.push({
                     phase_id: phaseId,
-                    season_id: seasonId,
                     home_team_id: awayId,
                     away_team_id: homeId,
                     status: MatchStatus.scheduled,
@@ -507,6 +512,7 @@ export class KnockoutService extends ScheduleEngine {
     private async scheduleMatchBatch(
         matchIds: number[],
         seasonId: number,
+        phasesId: number,
         options: ScheduleOptions,
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
         if (matchIds.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
@@ -516,10 +522,9 @@ export class KnockoutService extends ScheduleEngine {
                 where: { id: { in: matchIds }, is_active: true },
                 select: { id: true, home_team_id: true, away_team_id: true },
             }),
-            this.prisma.phase.findFirst({
-                where: { season_id: seasonId, type: { in: [...KNOCKOUT_PHASE_TYPES] } },
+            this.prisma.phase.findUnique({
+                where: { id: phasesId, },
                 select: { min_rest_days_per_team: true },
-                orderBy: { order: 'desc' }, // lấy phase knockout hiện tại
             }),
         ]);
 

@@ -75,6 +75,8 @@ export declare const MatchStatus: {
     readonly postponed: "postponed";
     readonly bye: "bye";
     readonly abandoned: "abandoned";
+    readonly pending_official: "pending_official";
+    readonly needs_review: "needs_review";
 };
 export type MatchStatus = (typeof MatchStatus)[keyof typeof MatchStatus];
 export declare const MatchEventType: {

@@ -279,7 +279,6 @@ export type SeasonWhereInput = {
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     playerStatistics?: Prisma.PlayerStatisticListRelationFilter;
     notifications?: Prisma.NotificationListRelationFilter;
-    matches?: Prisma.MatchListRelationFilter;
     articles?: Prisma.ArticleListRelationFilter;
 };
 export type SeasonOrderByWithRelationInput = {
@@ -305,7 +304,6 @@ export type SeasonOrderByWithRelationInput = {
     user?: Prisma.UserOrderByWithRelationInput;
     playerStatistics?: Prisma.PlayerStatisticOrderByRelationAggregateInput;
     notifications?: Prisma.NotificationOrderByRelationAggregateInput;
-    matches?: Prisma.MatchOrderByRelationAggregateInput;
     articles?: Prisma.ArticleOrderByRelationAggregateInput;
     _relevance?: Prisma.SeasonOrderByRelevanceInput;
 };
@@ -335,7 +333,6 @@ export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     playerStatistics?: Prisma.PlayerStatisticListRelationFilter;
     notifications?: Prisma.NotificationListRelationFilter;
-    matches?: Prisma.MatchListRelationFilter;
     articles?: Prisma.ArticleListRelationFilter;
 }, "id" | "name">;
 export type SeasonOrderByWithAggregationInput = {
@@ -402,7 +399,6 @@ export type SeasonCreateInput = {
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateInput = {
@@ -426,7 +422,6 @@ export type SeasonUncheckedCreateInput = {
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUpdateInput = {
@@ -449,7 +444,6 @@ export type SeasonUpdateInput = {
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateInput = {
@@ -473,7 +467,6 @@ export type SeasonUncheckedUpdateInput = {
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonCreateManyInput = {
@@ -726,20 +719,6 @@ export type SeasonUpdateOneRequiredWithoutSeason_teamsNestedInput = {
     connect?: Prisma.SeasonWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.SeasonUpdateToOneWithWhereWithoutSeason_teamsInput, Prisma.SeasonUpdateWithoutSeason_teamsInput>, Prisma.SeasonUncheckedUpdateWithoutSeason_teamsInput>;
 };
-export type SeasonCreateNestedOneWithoutMatchesInput = {
-    create?: Prisma.XOR<Prisma.SeasonCreateWithoutMatchesInput, Prisma.SeasonUncheckedCreateWithoutMatchesInput>;
-    connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutMatchesInput;
-    connect?: Prisma.SeasonWhereUniqueInput;
-};
-export type SeasonUpdateOneWithoutMatchesNestedInput = {
-    create?: Prisma.XOR<Prisma.SeasonCreateWithoutMatchesInput, Prisma.SeasonUncheckedCreateWithoutMatchesInput>;
-    connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutMatchesInput;
-    upsert?: Prisma.SeasonUpsertWithoutMatchesInput;
-    disconnect?: Prisma.SeasonWhereInput | boolean;
-    delete?: Prisma.SeasonWhereInput | boolean;
-    connect?: Prisma.SeasonWhereUniqueInput;
-    update?: Prisma.XOR<Prisma.XOR<Prisma.SeasonUpdateToOneWithWhereWithoutMatchesInput, Prisma.SeasonUpdateWithoutMatchesInput>, Prisma.SeasonUncheckedUpdateWithoutMatchesInput>;
-};
 export type SeasonCreateNestedOneWithoutPlayerStatisticsInput = {
     create?: Prisma.XOR<Prisma.SeasonCreateWithoutPlayerStatisticsInput, Prisma.SeasonUncheckedCreateWithoutPlayerStatisticsInput>;
     connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutPlayerStatisticsInput;
@@ -799,7 +778,6 @@ export type SeasonCreateWithoutUserInput = {
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutUserInput = {
@@ -822,7 +800,6 @@ export type SeasonUncheckedCreateWithoutUserInput = {
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutUserInput = {
@@ -886,7 +863,6 @@ export type SeasonCreateWithoutTournamentInput = {
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutTournamentInput = {
@@ -909,7 +885,6 @@ export type SeasonUncheckedCreateWithoutTournamentInput = {
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutTournamentInput = {
@@ -952,7 +927,6 @@ export type SeasonCreateWithoutPhasesInput = {
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutPhasesInput = {
@@ -975,7 +949,6 @@ export type SeasonUncheckedCreateWithoutPhasesInput = {
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutPhasesInput = {
@@ -1010,7 +983,6 @@ export type SeasonUpdateWithoutPhasesInput = {
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutPhasesInput = {
@@ -1033,7 +1005,6 @@ export type SeasonUncheckedUpdateWithoutPhasesInput = {
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonCreateWithoutSeason_teamsInput = {
@@ -1055,7 +1026,6 @@ export type SeasonCreateWithoutSeason_teamsInput = {
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
@@ -1078,7 +1048,6 @@ export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutSeason_teamsInput = {
@@ -1113,7 +1082,6 @@ export type SeasonUpdateWithoutSeason_teamsInput = {
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
@@ -1134,110 +1102,6 @@ export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
-    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
-    articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
-};
-export type SeasonCreateWithoutMatchesInput = {
-    name: string;
-    description?: string | null;
-    status?: $Enums.SeasonStatus;
-    start_date?: Date | string | null;
-    end_date?: Date | string | null;
-    registration_deadline?: Date | string | null;
-    max_teams: number;
-    is_registration_open?: boolean;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
-    phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
-    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
-    user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
-    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
-    notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
-};
-export type SeasonUncheckedCreateWithoutMatchesInput = {
-    id?: number;
-    name: string;
-    description?: string | null;
-    status?: $Enums.SeasonStatus;
-    start_date?: Date | string | null;
-    end_date?: Date | string | null;
-    registration_deadline?: Date | string | null;
-    max_teams: number;
-    is_registration_open?: boolean;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
-    tournament_id: number;
-    user_id?: number | null;
-    phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
-    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
-    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
-    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
-};
-export type SeasonCreateOrConnectWithoutMatchesInput = {
-    where: Prisma.SeasonWhereUniqueInput;
-    create: Prisma.XOR<Prisma.SeasonCreateWithoutMatchesInput, Prisma.SeasonUncheckedCreateWithoutMatchesInput>;
-};
-export type SeasonUpsertWithoutMatchesInput = {
-    update: Prisma.XOR<Prisma.SeasonUpdateWithoutMatchesInput, Prisma.SeasonUncheckedUpdateWithoutMatchesInput>;
-    create: Prisma.XOR<Prisma.SeasonCreateWithoutMatchesInput, Prisma.SeasonUncheckedCreateWithoutMatchesInput>;
-    where?: Prisma.SeasonWhereInput;
-};
-export type SeasonUpdateToOneWithWhereWithoutMatchesInput = {
-    where?: Prisma.SeasonWhereInput;
-    data: Prisma.XOR<Prisma.SeasonUpdateWithoutMatchesInput, Prisma.SeasonUncheckedUpdateWithoutMatchesInput>;
-};
-export type SeasonUpdateWithoutMatchesInput = {
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    status?: Prisma.EnumSeasonStatusFieldUpdateOperationsInput | $Enums.SeasonStatus;
-    start_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    end_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_deadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
-    tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
-    phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
-    season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
-    user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
-    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
-    notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
-};
-export type SeasonUncheckedUpdateWithoutMatchesInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    status?: Prisma.EnumSeasonStatusFieldUpdateOperationsInput | $Enums.SeasonStatus;
-    start_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    end_date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_deadline?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    max_teams?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_registration_open?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
-    tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
-    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1261,7 +1125,6 @@ export type SeasonCreateWithoutPlayerStatisticsInput = {
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
@@ -1284,7 +1147,6 @@ export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutPlayerStatisticsInput = {
@@ -1319,7 +1181,6 @@ export type SeasonUpdateWithoutPlayerStatisticsInput = {
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
@@ -1342,7 +1203,6 @@ export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonCreateWithoutNotificationsInput = {
@@ -1364,7 +1224,6 @@ export type SeasonCreateWithoutNotificationsInput = {
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutNotificationsInput = {
@@ -1387,7 +1246,6 @@ export type SeasonUncheckedCreateWithoutNotificationsInput = {
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutNotificationsInput = {
@@ -1422,7 +1280,6 @@ export type SeasonUpdateWithoutNotificationsInput = {
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutNotificationsInput = {
@@ -1445,7 +1302,6 @@ export type SeasonUncheckedUpdateWithoutNotificationsInput = {
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonCreateWithoutArticlesInput = {
@@ -1468,7 +1324,6 @@ export type SeasonCreateWithoutArticlesInput = {
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
     playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonUncheckedCreateWithoutArticlesInput = {
     id?: number;
@@ -1491,7 +1346,6 @@ export type SeasonUncheckedCreateWithoutArticlesInput = {
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutSeasonInput;
     notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutSeasonInput;
-    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutSeasonInput;
 };
 export type SeasonCreateOrConnectWithoutArticlesInput = {
     where: Prisma.SeasonWhereUniqueInput;
@@ -1526,7 +1380,6 @@ export type SeasonUpdateWithoutArticlesInput = {
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutArticlesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1549,7 +1402,6 @@ export type SeasonUncheckedUpdateWithoutArticlesInput = {
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonCreateManyUserInput = {
     id?: number;
@@ -1587,7 +1439,6 @@ export type SeasonUpdateWithoutUserInput = {
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutUserInput = {
@@ -1610,7 +1461,6 @@ export type SeasonUncheckedUpdateWithoutUserInput = {
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateManyWithoutUserInput = {
@@ -1666,7 +1516,6 @@ export type SeasonUpdateWithoutTournamentInput = {
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateWithoutTournamentInput = {
@@ -1689,7 +1538,6 @@ export type SeasonUncheckedUpdateWithoutTournamentInput = {
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
     playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutSeasonNestedInput;
     notifications?: Prisma.NotificationUncheckedUpdateManyWithoutSeasonNestedInput;
-    matches?: Prisma.MatchUncheckedUpdateManyWithoutSeasonNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutSeasonNestedInput;
 };
 export type SeasonUncheckedUpdateManyWithoutTournamentInput = {
@@ -1717,7 +1565,6 @@ export type SeasonCountOutputType = {
     season_teams: number;
     playerStatistics: number;
     notifications: number;
-    matches: number;
     articles: number;
 };
 export type SeasonCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1725,7 +1572,6 @@ export type SeasonCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
     season_teams?: boolean | SeasonCountOutputTypeCountSeason_teamsArgs;
     playerStatistics?: boolean | SeasonCountOutputTypeCountPlayerStatisticsArgs;
     notifications?: boolean | SeasonCountOutputTypeCountNotificationsArgs;
-    matches?: boolean | SeasonCountOutputTypeCountMatchesArgs;
     articles?: boolean | SeasonCountOutputTypeCountArticlesArgs;
 };
 /**
@@ -1764,12 +1610,6 @@ export type SeasonCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.
 /**
  * SeasonCountOutputType without action
  */
-export type SeasonCountOutputTypeCountMatchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    where?: Prisma.MatchWhereInput;
-};
-/**
- * SeasonCountOutputType without action
- */
 export type SeasonCountOutputTypeCountArticlesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.ArticleWhereInput;
 };
@@ -1796,7 +1636,6 @@ export type SeasonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     user?: boolean | Prisma.Season$userArgs<ExtArgs>;
     playerStatistics?: boolean | Prisma.Season$playerStatisticsArgs<ExtArgs>;
     notifications?: boolean | Prisma.Season$notificationsArgs<ExtArgs>;
-    matches?: boolean | Prisma.Season$matchesArgs<ExtArgs>;
     articles?: boolean | Prisma.Season$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.SeasonCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["season"]>;
@@ -1826,7 +1665,6 @@ export type SeasonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     user?: boolean | Prisma.Season$userArgs<ExtArgs>;
     playerStatistics?: boolean | Prisma.Season$playerStatisticsArgs<ExtArgs>;
     notifications?: boolean | Prisma.Season$notificationsArgs<ExtArgs>;
-    matches?: boolean | Prisma.Season$matchesArgs<ExtArgs>;
     articles?: boolean | Prisma.Season$articlesArgs<ExtArgs>;
     _count?: boolean | Prisma.SeasonCountOutputTypeDefaultArgs<ExtArgs>;
 };
@@ -1839,7 +1677,6 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
         user: Prisma.$UserPayload<ExtArgs> | null;
         playerStatistics: Prisma.$PlayerStatisticPayload<ExtArgs>[];
         notifications: Prisma.$NotificationPayload<ExtArgs>[];
-        matches: Prisma.$MatchPayload<ExtArgs>[];
         articles: Prisma.$ArticlePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2142,7 +1979,6 @@ export interface Prisma__SeasonClient<T, Null = never, ExtArgs extends runtime.T
     user<T extends Prisma.Season$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     playerStatistics<T extends Prisma.Season$playerStatisticsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$playerStatisticsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlayerStatisticPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     notifications<T extends Prisma.Season$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
-    matches<T extends Prisma.Season$matchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$matchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     articles<T extends Prisma.Season$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Season$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2626,29 +2462,6 @@ export type Season$notificationsArgs<ExtArgs extends runtime.Types.Extensions.In
     take?: number;
     skip?: number;
     distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[];
-};
-/**
- * Season.matches
- */
-export type Season$matchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Match
-     */
-    select?: Prisma.MatchSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the Match
-     */
-    omit?: Prisma.MatchOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.MatchInclude<ExtArgs> | null;
-    where?: Prisma.MatchWhereInput;
-    orderBy?: Prisma.MatchOrderByWithRelationInput | Prisma.MatchOrderByWithRelationInput[];
-    cursor?: Prisma.MatchWhereUniqueInput;
-    take?: number;
-    skip?: number;
-    distinct?: Prisma.MatchScalarFieldEnum | Prisma.MatchScalarFieldEnum[];
 };
 /**
  * Season.articles

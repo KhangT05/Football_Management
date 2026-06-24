@@ -73,7 +73,9 @@ export const MatchStatus = {
     forfeited: 'forfeited',
     postponed: 'postponed',
     bye: 'bye',
-    abandoned: 'abandoned'
+    abandoned: 'abandoned',
+    pending_official: 'pending_official',
+    needs_review: 'needs_review'
 };
 export const MatchEventType = {
     goal: 'goal',
