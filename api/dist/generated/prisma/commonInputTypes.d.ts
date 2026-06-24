@@ -423,6 +423,12 @@ export type EnumMatchPeriodNullableFilter<$PrismaModel = never> = {
     notIn?: $Enums.MatchPeriod[] | null;
     not?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel> | $Enums.MatchPeriod | null;
 };
+export type EnumMatchResultTypeNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchResultType | Prisma.EnumMatchResultTypeFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.MatchResultType[] | null;
+    notIn?: $Enums.MatchResultType[] | null;
+    not?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel> | $Enums.MatchResultType | null;
+};
 export type EnumMatchStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchStatus | Prisma.EnumMatchStatusFieldRefInput<$PrismaModel>;
     in?: $Enums.MatchStatus[];
@@ -440,6 +446,15 @@ export type EnumMatchPeriodNullableWithAggregatesFilter<$PrismaModel = never> = 
     _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel>;
+};
+export type EnumMatchResultTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchResultType | Prisma.EnumMatchResultTypeFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.MatchResultType[] | null;
+    notIn?: $Enums.MatchResultType[] | null;
+    not?: Prisma.NestedEnumMatchResultTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.MatchResultType | null;
+    _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel>;
 };
 export type EnumMatchEventTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchEventType | Prisma.EnumMatchEventTypeFieldRefInput<$PrismaModel>;
@@ -994,6 +1009,12 @@ export type NestedEnumMatchPeriodNullableFilter<$PrismaModel = never> = {
     notIn?: $Enums.MatchPeriod[] | null;
     not?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel> | $Enums.MatchPeriod | null;
 };
+export type NestedEnumMatchResultTypeNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchResultType | Prisma.EnumMatchResultTypeFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.MatchResultType[] | null;
+    notIn?: $Enums.MatchResultType[] | null;
+    not?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel> | $Enums.MatchResultType | null;
+};
 export type NestedEnumMatchStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchStatus | Prisma.EnumMatchStatusFieldRefInput<$PrismaModel>;
     in?: $Enums.MatchStatus[];
@@ -1011,6 +1032,15 @@ export type NestedEnumMatchPeriodNullableWithAggregatesFilter<$PrismaModel = nev
     _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumMatchPeriodNullableFilter<$PrismaModel>;
+};
+export type NestedEnumMatchResultTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchResultType | Prisma.EnumMatchResultTypeFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.MatchResultType[] | null;
+    notIn?: $Enums.MatchResultType[] | null;
+    not?: Prisma.NestedEnumMatchResultTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.MatchResultType | null;
+    _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumMatchResultTypeNullableFilter<$PrismaModel>;
 };
 export type NestedEnumMatchEventTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchEventType | Prisma.EnumMatchEventTypeFieldRefInput<$PrismaModel>;

@@ -17,6 +17,7 @@ export type SeasonTeamAvgAggregateOutputType = {
     id: number | null;
     season_id: number | null;
     team_id: number | null;
+    seed: number | null;
     group_id: number | null;
     user_id: number | null;
 };
@@ -24,6 +25,7 @@ export type SeasonTeamSumAggregateOutputType = {
     id: number | null;
     season_id: number | null;
     team_id: number | null;
+    seed: number | null;
     group_id: number | null;
     user_id: number | null;
 };
@@ -32,6 +34,7 @@ export type SeasonTeamMinAggregateOutputType = {
     season_id: number | null;
     team_id: number | null;
     status: $Enums.SeasonTeamStatus | null;
+    seed: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -44,6 +47,7 @@ export type SeasonTeamMaxAggregateOutputType = {
     season_id: number | null;
     team_id: number | null;
     status: $Enums.SeasonTeamStatus | null;
+    seed: number | null;
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -56,6 +60,7 @@ export type SeasonTeamCountAggregateOutputType = {
     season_id: number;
     team_id: number;
     status: number;
+    seed: number;
     is_active: number;
     created_at: number;
     updated_at: number;
@@ -68,6 +73,7 @@ export type SeasonTeamAvgAggregateInputType = {
     id?: true;
     season_id?: true;
     team_id?: true;
+    seed?: true;
     group_id?: true;
     user_id?: true;
 };
@@ -75,6 +81,7 @@ export type SeasonTeamSumAggregateInputType = {
     id?: true;
     season_id?: true;
     team_id?: true;
+    seed?: true;
     group_id?: true;
     user_id?: true;
 };
@@ -83,6 +90,7 @@ export type SeasonTeamMinAggregateInputType = {
     season_id?: true;
     team_id?: true;
     status?: true;
+    seed?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -95,6 +103,7 @@ export type SeasonTeamMaxAggregateInputType = {
     season_id?: true;
     team_id?: true;
     status?: true;
+    seed?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -107,6 +116,7 @@ export type SeasonTeamCountAggregateInputType = {
     season_id?: true;
     team_id?: true;
     status?: true;
+    seed?: true;
     is_active?: true;
     created_at?: true;
     updated_at?: true;
@@ -196,6 +206,7 @@ export type SeasonTeamGroupByOutputType = {
     season_id: number;
     team_id: number;
     status: $Enums.SeasonTeamStatus;
+    seed: number | null;
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
@@ -219,6 +230,7 @@ export type SeasonTeamWhereInput = {
     season_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     team_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     status?: Prisma.EnumSeasonTeamStatusFilter<"SeasonTeam"> | $Enums.SeasonTeamStatus;
+    seed?: Prisma.IntNullableFilter<"SeasonTeam"> | number | null;
     is_active?: Prisma.BoolFilter<"SeasonTeam"> | boolean;
     created_at?: Prisma.DateTimeFilter<"SeasonTeam"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeam"> | Date | string | null;
@@ -236,6 +248,7 @@ export type SeasonTeamOrderByWithRelationInput = {
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    seed?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -257,6 +270,7 @@ export type SeasonTeamWhereUniqueInput = Prisma.AtLeast<{
     season_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     team_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     status?: Prisma.EnumSeasonTeamStatusFilter<"SeasonTeam"> | $Enums.SeasonTeamStatus;
+    seed?: Prisma.IntNullableFilter<"SeasonTeam"> | number | null;
     is_active?: Prisma.BoolFilter<"SeasonTeam"> | boolean;
     created_at?: Prisma.DateTimeFilter<"SeasonTeam"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeam"> | Date | string | null;
@@ -274,6 +288,7 @@ export type SeasonTeamOrderByWithAggregationInput = {
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    seed?: Prisma.SortOrderInput | Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -294,6 +309,7 @@ export type SeasonTeamScalarWhereWithAggregatesInput = {
     season_id?: Prisma.IntWithAggregatesFilter<"SeasonTeam"> | number;
     team_id?: Prisma.IntWithAggregatesFilter<"SeasonTeam"> | number;
     status?: Prisma.EnumSeasonTeamStatusWithAggregatesFilter<"SeasonTeam"> | $Enums.SeasonTeamStatus;
+    seed?: Prisma.IntNullableWithAggregatesFilter<"SeasonTeam"> | number | null;
     is_active?: Prisma.BoolWithAggregatesFilter<"SeasonTeam"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"SeasonTeam"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"SeasonTeam"> | Date | string | null;
@@ -303,6 +319,7 @@ export type SeasonTeamScalarWhereWithAggregatesInput = {
 };
 export type SeasonTeamCreateInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -318,6 +335,7 @@ export type SeasonTeamUncheckedCreateInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -328,6 +346,7 @@ export type SeasonTeamUncheckedCreateInput = {
 };
 export type SeasonTeamUpdateInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -343,6 +362,7 @@ export type SeasonTeamUncheckedUpdateInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -356,6 +376,7 @@ export type SeasonTeamCreateManyInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -365,6 +386,7 @@ export type SeasonTeamCreateManyInput = {
 };
 export type SeasonTeamUpdateManyMutationInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -375,6 +397,7 @@ export type SeasonTeamUncheckedUpdateManyInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -399,6 +422,7 @@ export type SeasonTeamCountOrderByAggregateInput = {
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    seed?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -410,6 +434,7 @@ export type SeasonTeamAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
+    seed?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -418,6 +443,7 @@ export type SeasonTeamMaxOrderByAggregateInput = {
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    seed?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -430,6 +456,7 @@ export type SeasonTeamMinOrderByAggregateInput = {
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    seed?: Prisma.SortOrder;
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -441,6 +468,7 @@ export type SeasonTeamSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     season_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
+    seed?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
@@ -617,6 +645,7 @@ export type SeasonTeamUpdateOneRequiredWithoutPaymentsNestedInput = {
 };
 export type SeasonTeamCreateWithoutUserInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -631,6 +660,7 @@ export type SeasonTeamUncheckedCreateWithoutUserInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -667,6 +697,7 @@ export type SeasonTeamScalarWhereInput = {
     season_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     team_id?: Prisma.IntFilter<"SeasonTeam"> | number;
     status?: Prisma.EnumSeasonTeamStatusFilter<"SeasonTeam"> | $Enums.SeasonTeamStatus;
+    seed?: Prisma.IntNullableFilter<"SeasonTeam"> | number | null;
     is_active?: Prisma.BoolFilter<"SeasonTeam"> | boolean;
     created_at?: Prisma.DateTimeFilter<"SeasonTeam"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"SeasonTeam"> | Date | string | null;
@@ -676,6 +707,7 @@ export type SeasonTeamScalarWhereInput = {
 };
 export type SeasonTeamCreateWithoutSeasonInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -689,6 +721,7 @@ export type SeasonTeamUncheckedCreateWithoutSeasonInput = {
     id?: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -720,6 +753,7 @@ export type SeasonTeamUpdateManyWithWhereWithoutSeasonInput = {
 };
 export type SeasonTeamCreateWithoutGroupInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -734,6 +768,7 @@ export type SeasonTeamUncheckedCreateWithoutGroupInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -764,6 +799,7 @@ export type SeasonTeamUpdateManyWithWhereWithoutGroupInput = {
 };
 export type SeasonTeamCreateWithoutTeamInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -777,6 +813,7 @@ export type SeasonTeamUncheckedCreateWithoutTeamInput = {
     id?: number;
     season_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -808,6 +845,7 @@ export type SeasonTeamUpdateManyWithWhereWithoutTeamInput = {
 };
 export type SeasonTeamCreateWithoutPaymentsInput = {
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -822,6 +860,7 @@ export type SeasonTeamUncheckedCreateWithoutPaymentsInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -844,6 +883,7 @@ export type SeasonTeamUpdateToOneWithWhereWithoutPaymentsInput = {
 };
 export type SeasonTeamUpdateWithoutPaymentsInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -858,6 +898,7 @@ export type SeasonTeamUncheckedUpdateWithoutPaymentsInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -870,6 +911,7 @@ export type SeasonTeamCreateManyUserInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -878,6 +920,7 @@ export type SeasonTeamCreateManyUserInput = {
 };
 export type SeasonTeamUpdateWithoutUserInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -892,6 +935,7 @@ export type SeasonTeamUncheckedUpdateWithoutUserInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -904,6 +948,7 @@ export type SeasonTeamUncheckedUpdateManyWithoutUserInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -914,6 +959,7 @@ export type SeasonTeamCreateManySeasonInput = {
     id?: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -923,6 +969,7 @@ export type SeasonTeamCreateManySeasonInput = {
 };
 export type SeasonTeamUpdateWithoutSeasonInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -936,6 +983,7 @@ export type SeasonTeamUncheckedUpdateWithoutSeasonInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -948,6 +996,7 @@ export type SeasonTeamUncheckedUpdateManyWithoutSeasonInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -960,6 +1009,7 @@ export type SeasonTeamCreateManyGroupInput = {
     season_id: number;
     team_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -968,6 +1018,7 @@ export type SeasonTeamCreateManyGroupInput = {
 };
 export type SeasonTeamUpdateWithoutGroupInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -982,6 +1033,7 @@ export type SeasonTeamUncheckedUpdateWithoutGroupInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -994,6 +1046,7 @@ export type SeasonTeamUncheckedUpdateManyWithoutGroupInput = {
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1004,6 +1057,7 @@ export type SeasonTeamCreateManyTeamInput = {
     id?: number;
     season_id: number;
     status?: $Enums.SeasonTeamStatus;
+    seed?: number | null;
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1013,6 +1067,7 @@ export type SeasonTeamCreateManyTeamInput = {
 };
 export type SeasonTeamUpdateWithoutTeamInput = {
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1026,6 +1081,7 @@ export type SeasonTeamUncheckedUpdateWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1038,6 +1094,7 @@ export type SeasonTeamUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     season_id?: Prisma.IntFieldUpdateOperationsInput | number;
     status?: Prisma.EnumSeasonTeamStatusFieldUpdateOperationsInput | $Enums.SeasonTeamStatus;
+    seed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1074,6 +1131,7 @@ export type SeasonTeamSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     season_id?: boolean;
     team_id?: boolean;
     status?: boolean;
+    seed?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -1092,6 +1150,7 @@ export type SeasonTeamSelectScalar = {
     season_id?: boolean;
     team_id?: boolean;
     status?: boolean;
+    seed?: boolean;
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -1099,7 +1158,7 @@ export type SeasonTeamSelectScalar = {
     group_id?: boolean;
     user_id?: boolean;
 };
-export type SeasonTeamOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_id" | "team_id" | "status" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "group_id" | "user_id", ExtArgs["result"]["seasonTeam"]>;
+export type SeasonTeamOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_id" | "team_id" | "status" | "seed" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "group_id" | "user_id", ExtArgs["result"]["seasonTeam"]>;
 export type SeasonTeamInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     season?: boolean | Prisma.SeasonDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
@@ -1122,6 +1181,7 @@ export type $SeasonTeamPayload<ExtArgs extends runtime.Types.Extensions.Internal
         season_id: number;
         team_id: number;
         status: $Enums.SeasonTeamStatus;
+        seed: number | null;
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
@@ -1439,6 +1499,7 @@ export interface SeasonTeamFieldRefs {
     readonly season_id: Prisma.FieldRef<"SeasonTeam", 'Int'>;
     readonly team_id: Prisma.FieldRef<"SeasonTeam", 'Int'>;
     readonly status: Prisma.FieldRef<"SeasonTeam", 'SeasonTeamStatus'>;
+    readonly seed: Prisma.FieldRef<"SeasonTeam", 'Int'>;
     readonly is_active: Prisma.FieldRef<"SeasonTeam", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"SeasonTeam", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"SeasonTeam", 'DateTime'>;

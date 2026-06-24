@@ -2,7 +2,6 @@ import { Match, MatchStatus, Prisma } from "../generated/prisma/client.js";
 export type MatchDraft = {
     phase_id: number;
     group_id: number;
-    season_id: number;
     home_team_id: number;
     away_team_id: number;
     round: string;

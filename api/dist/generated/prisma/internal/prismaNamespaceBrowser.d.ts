@@ -237,6 +237,7 @@ export declare const SeasonTeamScalarFieldEnum: {
     readonly season_id: "season_id";
     readonly team_id: "team_id";
     readonly status: "status";
+    readonly seed: "seed";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -263,6 +264,14 @@ export declare const MatchScalarFieldEnum: {
     readonly postponed_reason: "postponed_reason";
     readonly replay_of_match_id: "replay_of_match_id";
     readonly abandoned_minute: "abandoned_minute";
+    readonly pending_official_at: "pending_official_at";
+    readonly finalize_result_type: "finalize_result_type";
+    readonly finalize_home_half_time: "finalize_home_half_time";
+    readonly finalize_away_half_time: "finalize_away_half_time";
+    readonly finalize_home_penalty: "finalize_home_penalty";
+    readonly finalize_away_penalty: "finalize_away_penalty";
+    readonly manual_home_score: "manual_home_score";
+    readonly manual_away_score: "manual_away_score";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -271,7 +280,6 @@ export declare const MatchScalarFieldEnum: {
     readonly venue_id: "venue_id";
     readonly is_published: "is_published";
     readonly referee: "referee";
-    readonly season_id: "season_id";
 };
 export type MatchScalarFieldEnum = (typeof MatchScalarFieldEnum)[keyof typeof MatchScalarFieldEnum];
 export declare const VenueScalarFieldEnum: {

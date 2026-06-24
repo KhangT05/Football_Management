@@ -283,7 +283,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_SeasonTeamPayload_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "group_id": { "dataType": "double", "required": true }, "status": { "ref": "SeasonTeamStatus", "required": true }, "season_id": { "dataType": "double", "required": true }, "team_id": { "dataType": "double", "required": true }, "user_id": { "dataType": "double", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "group_id": { "dataType": "double", "required": true }, "seed": { "dataType": "double", "required": true }, "status": { "ref": "SeasonTeamStatus", "required": true }, "season_id": { "dataType": "double", "required": true }, "team_id": { "dataType": "double", "required": true }, "user_id": { "dataType": "double", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonTeamModel": {
@@ -318,6 +318,7 @@ const models = {
             "updated_at": { "dataType": "union", "subSchemas": [{ "dataType": "datetime" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "deleted_at": { "dataType": "union", "subSchemas": [{ "dataType": "datetime" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "is_active": { "dataType": "boolean", "required": true },
+            "seed": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "season": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true },
             "team": { "dataType": "nestedObjectLiteral", "nestedProperties": { "logo": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true },
             "user": { "dataType": "union", "subSchemas": [{ "dataType": "nestedObjectLiteral", "nestedProperties": { "email": { "dataType": "string", "required": true }, "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } } }, { "dataType": "enum", "enums": [null] }], "required": true },
@@ -467,7 +468,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchStatus": {
         "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["ongoing"] }, { "dataType": "enum", "enums": ["finished"] }, { "dataType": "enum", "enums": ["cancelled"] }, { "dataType": "enum", "enums": ["scheduled"] }, { "dataType": "enum", "enums": ["forfeited"] }, { "dataType": "enum", "enums": ["postponed"] }, { "dataType": "enum", "enums": ["bye"] }, { "dataType": "enum", "enums": ["abandoned"] }], "validators": {} },
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["ongoing"] }, { "dataType": "enum", "enums": ["finished"] }, { "dataType": "enum", "enums": ["cancelled"] }, { "dataType": "enum", "enums": ["scheduled"] }, { "dataType": "enum", "enums": ["forfeited"] }, { "dataType": "enum", "enums": ["postponed"] }, { "dataType": "enum", "enums": ["bye"] }, { "dataType": "enum", "enums": ["abandoned"] }, { "dataType": "enum", "enums": ["pending_official"] }, { "dataType": "enum", "enums": ["needs_review"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchPeriod": {
@@ -475,9 +476,14 @@ const models = {
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["first_half"] }, { "dataType": "enum", "enums": ["second_half"] }, { "dataType": "enum", "enums": ["extra_time_first"] }, { "dataType": "enum", "enums": ["extra_time_second"] }, { "dataType": "enum", "enums": ["penalty_shootout"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MatchResultType": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["full_time"] }, { "dataType": "enum", "enums": ["extra_time"] }, { "dataType": "enum", "enums": ["penalty"] }, { "dataType": "enum", "enums": ["forfeit"] }, { "dataType": "enum", "enums": ["walkover"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_MatchPayload_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "referee": { "dataType": "string", "required": true }, "is_published": { "dataType": "boolean", "required": true }, "venue_id": { "dataType": "double", "required": true }, "abandoned_minute": { "dataType": "double", "required": true }, "replay_of_match_id": { "dataType": "double", "required": true }, "postponed_reason": { "dataType": "string", "required": true }, "postponed_from": { "dataType": "datetime", "required": true }, "current_period": { "ref": "MatchPeriod", "required": true }, "leg": { "dataType": "double", "required": true }, "round": { "dataType": "string", "required": true }, "away_score": { "dataType": "double", "required": true }, "home_score": { "dataType": "double", "required": true }, "played_at": { "dataType": "datetime", "required": true }, "scheduled_at": { "dataType": "datetime", "required": true }, "away_team_id": { "dataType": "double", "required": true }, "home_team_id": { "dataType": "double", "required": true }, "phase_id": { "dataType": "double", "required": true }, "group_id": { "dataType": "double", "required": true }, "status": { "ref": "MatchStatus", "required": true }, "season_id": { "dataType": "double", "required": true }, "user_id": { "dataType": "double", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "referee": { "dataType": "string", "required": true }, "is_published": { "dataType": "boolean", "required": true }, "venue_id": { "dataType": "double", "required": true }, "manual_away_score": { "dataType": "double", "required": true }, "manual_home_score": { "dataType": "double", "required": true }, "finalize_away_penalty": { "dataType": "double", "required": true }, "finalize_home_penalty": { "dataType": "double", "required": true }, "finalize_away_half_time": { "dataType": "double", "required": true }, "finalize_home_half_time": { "dataType": "double", "required": true }, "finalize_result_type": { "ref": "MatchResultType", "required": true }, "pending_official_at": { "dataType": "datetime", "required": true }, "abandoned_minute": { "dataType": "double", "required": true }, "replay_of_match_id": { "dataType": "double", "required": true }, "postponed_reason": { "dataType": "string", "required": true }, "postponed_from": { "dataType": "datetime", "required": true }, "current_period": { "ref": "MatchPeriod", "required": true }, "leg": { "dataType": "double", "required": true }, "round": { "dataType": "string", "required": true }, "away_score": { "dataType": "double", "required": true }, "home_score": { "dataType": "double", "required": true }, "played_at": { "dataType": "datetime", "required": true }, "scheduled_at": { "dataType": "datetime", "required": true }, "away_team_id": { "dataType": "double", "required": true }, "home_team_id": { "dataType": "double", "required": true }, "phase_id": { "dataType": "double", "required": true }, "group_id": { "dataType": "double", "required": true }, "status": { "ref": "MatchStatus", "required": true }, "user_id": { "dataType": "double", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchModel": {
@@ -764,6 +770,24 @@ const models = {
         "dataType": "refObject",
         "properties": {
             "teams_per_group": { "dataType": "double", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AssignTeamToGroupBody": {
+        "dataType": "refObject",
+        "properties": {
+            "season_team_id": { "dataType": "double", "required": true },
+            "group_id": { "dataType": "double", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SwapTeamsBody": {
+        "dataType": "refObject",
+        "properties": {
+            "season_team_id_a": { "dataType": "double", "required": true },
+            "season_team_id_b": { "dataType": "double", "required": true },
         },
         "additionalProperties": false,
     },
@@ -2791,7 +2815,7 @@ export function RegisterRoutes(app, opts) {
     const argsGroupController_findByIdWithTeams = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/groups/:id', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(GroupController)), ...(fetchMiddlewares(GroupController.prototype.findByIdWithTeams)), async function GroupController_findByIdWithTeams(request, response, next) {
+    app.get('/groups/:id', ...(fetchMiddlewares(GroupController)), ...(fetchMiddlewares(GroupController.prototype.findByIdWithTeams)), async function GroupController_findByIdWithTeams(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2843,6 +2867,34 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsGroupController_drawGroupsSeeded = {
+        phaseId: { "in": "path", "name": "phaseId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "dataType": "intersection", "subSchemas": [{ "ref": "DrawGroupsOptions" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "num_pots": { "dataType": "double", "required": true } } }] },
+    };
+    app.post('/groups/:phaseId/draw/seeded', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(GroupController)), ...(fetchMiddlewares(GroupController.prototype.drawGroupsSeeded)), async function GroupController_drawGroupsSeeded(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_drawGroupsSeeded, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(GroupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'drawGroupsSeeded',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsGroupController_clearDraw = {
         phaseId: { "in": "path", "name": "phaseId", "required": true, "dataType": "double" },
     };
@@ -2858,6 +2910,60 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'clearDraw',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsGroupController_assignTeamToGroup = {
+        body: { "in": "body", "name": "body", "required": true, "ref": "AssignTeamToGroupBody" },
+    };
+    app.put('/groups/assign', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(GroupController)), ...(fetchMiddlewares(GroupController.prototype.assignTeamToGroup)), async function GroupController_assignTeamToGroup(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_assignTeamToGroup, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(GroupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'assignTeamToGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsGroupController_swapTeams = {
+        body: { "in": "body", "name": "body", "required": true, "ref": "SwapTeamsBody" },
+    };
+    app.put('/groups/swap', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(GroupController)), ...(fetchMiddlewares(GroupController.prototype.swapTeams)), async function GroupController_swapTeams(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_swapTeams, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(GroupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'swapTeams',
                 controller,
                 response,
                 next,

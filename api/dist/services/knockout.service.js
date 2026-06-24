@@ -2,7 +2,6 @@ import { createAppError } from '../common/app.error.js';
 import { Prisma, MatchStatus, } from '../generated/prisma/client.js';
 import { bracketSlotNodeSelect, byeSlotSelect, KNOCKOUT_PHASE_TYPE_SET, slotWithParentLinksSelect, } from '../types/knockout.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
-import { KNOCKOUT_PHASE_TYPES } from '../dtos/knockout.schema.js';
 // Set cho O(1) lookup — KNOCKOUT_PHASE_TYPES (tuple) là source of truth dùng chung
 // với validation layer (knockout.schema.ts)
 // ── Building-block select — compose bằng spread thay vì lặp field list ──────
@@ -166,7 +165,7 @@ export class KnockoutService extends ScheduleEngine {
             };
         }, { timeout: 30_000 });
         // ── Step 6: Auto-schedule round 1 matches (ngoài TX) ─────────────────
-        const scheduleResult = await this.scheduleMatchBatch(result.round1MatchIds, options.seasonId, options);
+        const scheduleResult = await this.scheduleMatchBatch(result.round1MatchIds, options.seasonId, options.phaseId, options);
         if (scheduleResult.failedMatchIds.length > 0)
             warnings.push(`${scheduleResult.failedMatchIds.length} match chưa xếp được lịch: ` +
                 `IDs [${scheduleResult.failedMatchIds.join(', ')}]`);
@@ -244,6 +243,12 @@ export class KnockoutService extends ScheduleEngine {
     async getBracket(phaseId) {
         // select tường minh (compose từ building-block ở đầu file) thay vì
         // fetch full row rồi map — tránh kéo dư cột không dùng qua network.
+        const phase = await this.prisma.phase.findUnique({
+            where: { id: phaseId },
+            select: { id: true },
+        });
+        if (!phase)
+            throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
         const slots = await this.prisma.bracketSlot.findMany({
             where: { phase_id: phaseId },
             select: bracketSlotNodeSelect,
@@ -318,7 +323,7 @@ export class KnockoutService extends ScheduleEngine {
         // Fire-and-forget — guaranteed delivery cần job queue (BullMQ/pg-boss)
         setImmediate(async () => {
             try {
-                await this.scheduleMatchBatch(newMatchIds, seasonId, scheduleOptions);
+                await this.scheduleMatchBatch(newMatchIds, phaseId, seasonId, scheduleOptions);
             }
             catch (err) {
                 console.error(`[KnockoutService] schedule failed for matches ${newMatchIds}:`, err);
@@ -351,7 +356,6 @@ export class KnockoutService extends ScheduleEngine {
             const awayId = slot.seeded_away_team_id;
             matchCreateData.push({
                 phase_id: phaseId,
-                season_id: seasonId,
                 home_team_id: homeId,
                 away_team_id: awayId,
                 status: MatchStatus.scheduled,
@@ -362,7 +366,6 @@ export class KnockoutService extends ScheduleEngine {
             if (legs === 2) {
                 matchCreateData.push({
                     phase_id: phaseId,
-                    season_id: seasonId,
                     home_team_id: awayId,
                     away_team_id: homeId,
                     status: MatchStatus.scheduled,
@@ -395,7 +398,7 @@ export class KnockoutService extends ScheduleEngine {
     // ─────────────────────────────────────────────────────────────────────────────
     // PRIVATE — SCHEDULING
     // ─────────────────────────────────────────────────────────────────────────────
-    async scheduleMatchBatch(matchIds, seasonId, options) {
+    async scheduleMatchBatch(matchIds, seasonId, phasesId, options) {
         if (matchIds.length === 0)
             return { matchesScheduled: 0, failedMatchIds: [] };
         const [matches, phase] = await Promise.all([
@@ -403,10 +406,9 @@ export class KnockoutService extends ScheduleEngine {
                 where: { id: { in: matchIds }, is_active: true },
                 select: { id: true, home_team_id: true, away_team_id: true },
             }),
-            this.prisma.phase.findFirst({
-                where: { season_id: seasonId, type: { in: [...KNOCKOUT_PHASE_TYPES] } },
+            this.prisma.phase.findUnique({
+                where: { id: phasesId, },
                 select: { min_rest_days_per_team: true },
-                orderBy: { order: 'desc' }, // lấy phase knockout hiện tại
             }),
         ]);
         const minRestDays = phase?.min_rest_days_per_team ?? 3;
