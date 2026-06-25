@@ -1,168 +1,330 @@
-// import {
-//     Controller, Route, Tags,
-//     Post, Get, Path, Body, Query,
-//     Security, SuccessResponse,
-// } from 'tsoa';
-// import { MatchLifecycleService } from '../services/match.service.js';
-// import * as matchSchema from '../dtos/match.schema.js';
-// import { ConfirmResultOutput } from '../types/matchResult.type.js';
-// import { MatchDetail, MatchList } from '../types/match.queries.js';
-// import { PaginatedResult } from '../types/queryable.type.js';
-export {};
-// @Route('')
-// @Tags('Match')
-// export class MatchController extends Controller {
-//     constructor(private service: MatchLifecycleService) {
-//         super();
-//     }
-//     // ─── Read — guest, không cần jwt ─────────────────────────────────────────
-//     /**
-//      * List matches theo phase — dùng cho lịch thi đấu, bracket display.
-//      * Filter theo status/groupId nếu cần (round_robin group view, knockout round).
-//      */
-//     @Get('phases/{phaseId}/matches')
-//     async listByPhase(
-//         @Path() phaseId: number,
-//         @Query() page = 1,
-//         @Query() per_page = 20,
-//         @Query() status?: string,
-//         @Query() groupId?: number,
-//     ): Promise<PaginatedResult<MatchList>> {
-//         return this.service.listByPhase(phaseId, { page, per_page, status, groupId });
-//     }
-//     /**
-//      * Match detail — full events, result, lineup.
-//      * Dùng cho referee app, spectator, live score polling.
-//      */
-//     @Get('matches/{matchId}')
-//     async findById(
-//         @Path() matchId: number,
-//     ): Promise<MatchDetail> {
-//         return this.service.findByIdOrFail(matchId);
-//     }
-//     // ─── Lifecycle — referee + admin ──────────────────────────────────────────
-//     /**
-//      * Bắt đầu trận: scheduled → ongoing.
-//      * Init home_score = away_score = 0, current_period = first_half.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/start')
-//     @SuccessResponse(204, 'Started')
-//     async startMatch(
-//         @Path() matchId: number,
-//     ): Promise<void> {
-//         this.setStatus(204);
-//         await this.service.startMatch(matchId);
-//     }
-//     /**
-//      * Chuyển period (second_half, extra_time_first, extra_time_second, penalty_shootout).
-//      * Transition không hợp lệ bị reject bởi PERIOD_TRANSITIONS guard.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/period')
-//     @SuccessResponse(204, 'Period transitioned')
-//     async transitionPeriod(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.TransitionPeriodDto,
-//     ): Promise<void> {
-//         const { period } = matchSchema.TransitionPeriodSchema.parse(body);
-//         this.setStatus(204);
-//         await this.service.transitionPeriod(matchId, period);
-//     }
-//     /**
-//      * Nhập event (goal, thẻ, thay người...).
-//      * Available khi ongoing (live score update) và pending_official (grace period, chỉ lưu event).
-//      * second_yellow guard: reject nếu player đã có yellow — phải dùng type 'second_yellow'.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/events')
-//     @SuccessResponse(204, 'Event recorded')
-//     async recordEvent(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.RecordEventDto,
-//     ): Promise<void> {
-//         const input = matchSchema.RecordEventSchema.parse(body);
-//         this.setStatus(204);
-//         await this.service.recordEvent(matchId, input);
-//     }
-//     /**
-//      * Referee bấm còi kết thúc: ongoing → pending_official (grace period 15p).
-//      * KHÔNG tạo MatchResult — referee còn 15p để bổ sung events bị sót.
-//      * Knockout draw ở full_time bị reject tại đây (sớm, không chờ đến confirm).
-//      * Half-time score nhập ở đây để lưu snapshot display.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/finalize')
-//     @SuccessResponse(204, 'Finalized — grace period started')
-//     async finalizeMatch(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.FinalizeMatchDto,
-//     ): Promise<void> {
-//         const input = matchSchema.FinalizeMatchSchema.parse(body);
-//         this.setStatus(204);
-//         await this.service.finalizeMatch(matchId, input, {});
-//     }
-//     /**
-//      * Fallback khi referee không nhập events realtime (giải nhỏ, không có app).
-//      * Bị reject nếu match đã có events — phải dùng finalizeMatch() thay thế.
-//      * Sau grace period timeout: flag needs_review thay vì auto-official.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/manual-score')
-//     @SuccessResponse(204, 'Manual score submitted — grace period started')
-//     async submitManualScore(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.ManualScoreDto,
-//     ): Promise<void> {
-//         const input = matchSchema.ManualScoreSchema.parse(body);
-//         this.setStatus(204);
-//         await this.service.submitManualScore(matchId, input, {});
-//     }
-//     /**
-//      * Referee xác nhận kết quả sau grace period: pending_official/needs_review → finished.
-//      * Đây là nơi DUY NHẤT tạo MatchResult.
-//      * Event path: compute score từ toàn bộ events (kể cả events nhập trong grace period).
-//      * Manual path: dùng manual_home_score đã lưu lúc submitManualScore.
-//      * venueIds/matchTimes: schedule options cho match tiếp theo nếu là knockout advance.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/confirm-official')
-//     async confirmOfficial(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.ConfirmOfficialDto,
-//     ): Promise<ConfirmResultOutput> {
-//         const { venueIds, matchTimes } = matchSchema.ConfirmOfficialSchema.parse(body);
-//         return this.service.confirmOfficial(matchId, { venueIds, matchTimes });
-//     }
-//     /**
-//      * BTC quyết định forfeit/walkover — bypass grace period, tạo MatchResult ngay.
-//      * walkover: match chưa diễn ra (scheduled), team không xuất hiện.
-//      * forfeit:  match đang/đã diễn ra, team vi phạm hoặc bỏ cuộc.
-//      * venueIds/matchTimes: knockout advance nếu cần.
-//      */
-//     @Security('jwt', ['admin'])
-//     @Post('matches/{matchId}/forfeit')
-//     async forfeitMatch(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.ForfeitMatchDto,
-//     ): Promise<ConfirmResultOutput> {
-//         const { forfeitingTeamId, venueIds, matchTimes } = matchSchema.ForfeitMatchSchema.parse(body);
-//         return this.service.forfeitMatch(matchId, forfeitingTeamId, { venueIds, matchTimes });
-//     }
-//     /**
-//      * Dừng trận giữa chừng (thời tiết, bạo lực, sự cố sân...).
-//      * Match → abandoned. BTC quyết định sau: replay hoặc walkover cho team vi phạm.
-//      */
-//     @Security('jwt', ['admin', 'referee'])
-//     @Post('matches/{matchId}/abandon')
-//     @SuccessResponse(204, 'Abandoned')
-//     async abandonMatch(
-//         @Path() matchId: number,
-//         @Body() body: matchSchema.AbandonMatchDto,
-//     ): Promise<void> {
-//         const { minute, reason } = matchSchema.AbandonMatchSchema.parse(body);
-//         this.setStatus(204);
-//         await this.service.abandonMatch(matchId, minute, reason);
-//     }
-// }
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, } from "tsoa";
+import { MatchLifecycleService } from "../services/match.service.js";
+import { MatchResultService } from "../services/matchresult.service.js";
+// ─── Controller ───────────────────────────────────────────────────────────────
+// Route: /matches/:id/*
+//
+// Auth phân tầng:
+//   GET (xem kết quả, events)   → không cần JWT (guest)
+//   referee operations          → jwt [organizing]  (startMatch, recordEvent, finalize, transitionPeriod)
+//   admin operations            → jwt [admin]        (confirmOfficial, forfeit, abandon, resolveAppeal, correction)
+//   appeal / protest            → jwt [user, leader] (fileAppeal, fileProtest — team có thể tự file)
+//
+// handleGracePeriodTimeout KHÔNG expose qua HTTP — gọi từ cron/worker nội bộ.
+// confirmOfficial expose để admin có thể trigger thủ công (ngoài auto-timeout).
+let MatchController = class MatchController extends Controller {
+    lifecycleService;
+    matchResultService;
+    constructor(lifecycleService, matchResultService) {
+        super();
+        this.lifecycleService = lifecycleService;
+        this.matchResultService = matchResultService;
+    }
+    // ─── State machine ────────────────────────────────────────────────────────
+    /**
+     * Bắt đầu trận đấu — chuyển scheduled → ongoing.
+     * Khởi tạo home_score/away_score = 0, current_period = first_half.
+     */
+    async startMatch(id) {
+        this.setStatus(204);
+        return this.lifecycleService.startMatch(id);
+    }
+    /**
+     * Chuyển period (first_half → second_half → extra_time_first...).
+     * Validate transition hợp lệ theo PERIOD_TRANSITIONS map.
+     */
+    async transitionPeriod(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.transitionPeriod(id, body.period);
+    }
+    /**
+     * Ghi nhận event trong trận (goal, thẻ, thay người...).
+     * Cho phép nhập khi ongoing hoặc pending_official (grace period 15p).
+     */
+    async recordEvent(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.recordEvent(id, body);
+    }
+    /**
+     * Referee bấm kết thúc trận — chuyển ongoing → pending_official (grace period 15p).
+     * KHÔNG tạo MatchResult. MatchResult chỉ tạo tại confirmOfficial.
+     * Lưu referee input (resultType, penalty, half-time) để dùng lại khi confirm.
+     */
+    async finalizeMatch(id, body) {
+        this.setStatus(204);
+        const { scheduleOptions, ...finalizeInput } = body;
+        return this.lifecycleService.finalizeMatch(id, finalizeInput, scheduleOptions);
+    }
+    /**
+     * Nhập tay kết quả — fallback khi referee không dùng app (giải nhỏ).
+     * Reject nếu match đã có events. Manual path → needs_review sau timeout.
+     */
+    async submitManualScore(id, body) {
+        this.setStatus(204);
+        const { scheduleOptions, ...manualInput } = body;
+        return this.lifecycleService.submitManualScore(id, manualInput, scheduleOptions);
+    }
+    /**
+     * Xác nhận kết quả chính thức sau grace period.
+     * Event path: compute score từ toàn bộ events.
+     * Manual path: dùng manual_home_score / manual_away_score.
+     * Tạo MatchResult, update standings, advance knockout bracket nếu có.
+     */
+    async confirmOfficial(id, body) {
+        return this.lifecycleService.confirmOfficial(id, body);
+    }
+    // ─── Special match outcomes ───────────────────────────────────────────────
+    /**
+     * Xử phạt thua cuộc (forfeit / walkover) — BTC quyết định.
+     * Bypass grace period, tạo MatchResult trực tiếp.
+     * walkover = scheduled + team không xuất hiện.
+     * forfeit  = ongoing/finished + team bỏ cuộc / vi phạm.
+     */
+    async forfeitMatch(id, body) {
+        return this.lifecycleService.forfeitMatch(id, body.forfeitingTeamId, body.scheduleOptions);
+    }
+    /**
+     * Dừng trận giữa chừng (thời tiết, bạo lực...).
+     * Match chuyển sang abandoned, không tạo MatchResult.
+     */
+    async abandonMatch(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.abandonMatch(id, body.minute, body.reason);
+    }
+    // ─── Appeal / protest ─────────────────────────────────────────────────────
+    /**
+     * File khiếu nại — chỉ khi MatchResult.status = official.
+     * Chuyển → under_review.
+     */
+    async fileAppeal(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.fileAppeal(id, body.reason);
+    }
+    /**
+     * File phản đối chính thức — chỉ khi MatchResult.status = official.
+     * Chuyển → protested.
+     */
+    async fileProtest(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.fileProtest(id, body.reason);
+    }
+    /**
+     * Giải quyết khiếu nại / phản đối.
+     * uphold   = giữ nguyên kết quả → official.
+     * overturn = đảo ngược kết quả → overturned + recompute standings.
+     * Knockout overturn chưa hỗ trợ tự động (bracket đã advance).
+     */
+    async resolveAppeal(id, body) {
+        this.setStatus(204);
+        return this.lifecycleService.resolveAppeal(id, body);
+    }
+    // ─── Correction window (admin only, 15p sau finished) ────────────────────
+    /**
+     * Thêm event bị sót sau khi match finished.
+     * Chỉ trong 15p kể từ played_at. period bắt buộc.
+     * Tự recompute MatchResult sau khi thêm.
+     */
+    async addEvent(id, body) {
+        this.setStatus(204);
+        const { scheduleOptions, ...eventInput } = body;
+        return this.lifecycleService.addEvent(id, eventInput, scheduleOptions);
+    }
+    /**
+     * Xóa event nhập sai sau khi match finished.
+     * Chỉ trong 15p kể từ played_at.
+     * Tự recompute MatchResult sau khi xóa.
+     */
+    async deleteEvent(id, eventId, body) {
+        this.setStatus(204);
+        return this.lifecycleService.deleteEvent(id, eventId, body);
+    }
+    /**
+     * Sửa event (minute, type, player, period, note) sau khi match finished.
+     * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
+     * Tự recompute MatchResult sau khi sửa.
+     */
+    async editEvent(id, eventId, body) {
+        this.setStatus(204);
+        const { scheduleOptions, ...editInput } = body;
+        return this.lifecycleService.editEvent(id, eventId, editInput, scheduleOptions);
+    }
+    /**
+     * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
+     * Chỉ trong 15p kể từ played_at.
+     * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
+     */
+    async editScore(id, body) {
+        this.setStatus(204);
+        const { scheduleOptions, ...scoreInput } = body;
+        return this.lifecycleService.editScore(id, scoreInput, scheduleOptions);
+    }
+};
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/start"),
+    SuccessResponse(204, "Started"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "startMatch", null);
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/period"),
+    SuccessResponse(204, "Period transitioned"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "transitionPeriod", null);
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/events"),
+    SuccessResponse(204, "Event recorded"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "recordEvent", null);
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/finalize"),
+    SuccessResponse(204, "Finalized"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "finalizeMatch", null);
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/manual-score"),
+    SuccessResponse(204, "Manual score submitted"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "submitManualScore", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("{id}/confirm"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "confirmOfficial", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("{id}/forfeit"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "forfeitMatch", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("{id}/abandon"),
+    SuccessResponse(204, "Abandoned"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "abandonMatch", null);
+__decorate([
+    Security("jwt", ["admin", "organizing", "user", "leader"]),
+    Post("{id}/appeal"),
+    SuccessResponse(204, "Appeal filed"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "fileAppeal", null);
+__decorate([
+    Security("jwt", ["admin", "organizing", "user", "leader"]),
+    Post("{id}/protest"),
+    SuccessResponse(204, "Protest filed"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "fileProtest", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("{id}/resolve-appeal"),
+    SuccessResponse(204, "Appeal resolved"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "resolveAppeal", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("{id}/correction/events"),
+    SuccessResponse(204, "Event added"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "addEvent", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Delete("{id}/correction/events/{eventId}"),
+    SuccessResponse(204, "Event deleted"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "deleteEvent", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Patch("{id}/correction/events/{eventId}"),
+    SuccessResponse(204, "Event edited"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "editEvent", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Patch("{id}/correction/score"),
+    SuccessResponse(204, "Score corrected"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "editScore", null);
+MatchController = __decorate([
+    Route("matches"),
+    Tags("Match"),
+    __metadata("design:paramtypes", [MatchLifecycleService,
+        MatchResultService])
+], MatchController);
+export { MatchController };
 //# sourceMappingURL=match.controller.js.map

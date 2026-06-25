@@ -472,6 +472,20 @@ model SeasonTeamJersey {
   @@map("season_team_jerseys")
 }
 
+model Venue {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  address    String?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+
+  matches Match[]
+
+  @@map("venues")
+}
+
 // ============================================================
 // MATCH
 // ============================================================
@@ -580,20 +594,6 @@ model Match {
 
   @@unique([venue_id, scheduled_at])
   @@map("matches")
-}
-
-model Venue {
-  id         Int       @id @default(autoincrement())
-  name       String    @unique
-  address    String?
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt
-  deleted_at DateTime?
-
-  matches Match[]
-
-  @@map("venues")
 }
 
 // ============================================================

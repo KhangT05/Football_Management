@@ -294,6 +294,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.venue`: Exposes CRUD operations for the **Venue** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Venues
+      * const venues = await prisma.venue.findMany()
+      * ```
+      */
+    get venue(): Prisma.VenueDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.matchLineup`: Exposes CRUD operations for the **MatchLineup** model.
       * Example usage:
       * ```ts
@@ -313,17 +324,6 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get match(): Prisma.MatchDelegate<ExtArgs, {
-        omit: OmitOpts;
-    }>;
-    /**
-     * `prisma.venue`: Exposes CRUD operations for the **Venue** model.
-      * Example usage:
-      * ```ts
-      * // Fetch zero or more Venues
-      * const venues = await prisma.venue.findMany()
-      * ```
-      */
-    get venue(): Prisma.VenueDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

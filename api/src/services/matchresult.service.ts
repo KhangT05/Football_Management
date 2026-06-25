@@ -1,443 +1,772 @@
-// import { MatchEventType, MatchPeriod, MatchResultType, MatchStatus, PhaseFormat, Prisma, PrismaClient } from '../generated/prisma/client.js';
-// import { createAppError } from '../common/app.error.js';
-// import {
-//     ConfirmResultInput,
-//     ConfirmResultOutput,
-//     STATUS_BY_RESULT_TYPE,
-//     WinnerResolution,
-// } from '../types/matchResult.type.js';
-// import { ScheduleOptions } from '../types/schedule.type.js';
-// import { KnockoutService } from './knockout.service.js';
-// import { StandingsService } from './standing.service.js';
+import { MatchEventType, MatchPeriod, MatchResultType, MatchStatus, PhaseFormat, Prisma, PrismaClient } from '../generated/prisma/client.js';
+import { createAppError } from '../common/app.error.js';
+import {
+    ConfirmResultInput,
+    ConfirmResultOutput,
+    STATUS_BY_RESULT_TYPE,
+    WinnerResolution,
+} from '../types/matchResult.type.js';
+import { ScheduleOptions } from '../types/schedule.type.js';
+import { KnockoutService } from './knockout.service.js';
+import { StandingsService } from './standing.service.js';
+import { EditScoreInput } from './match.service.js';
 
-// // ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// type MatchForConfirmFull = Prisma.MatchGetPayload<{
-//     select: typeof matchForConfirmSelect;
-// }>;
+type MatchForConfirmFull = Prisma.MatchGetPayload<{
+    select: typeof matchForConfirmSelect;
+}>;
 
-// type StatDelta = {
-//     goals: number;
-//     yellowCards: number;
-//     redCards: number;
-// };
+type StatDelta = {
+    goals: number;
+    yellowCards: number;
+    redCards: number;
+};
 
-// // ─── Internal select — chỉ dùng trong service này ─────────────────────────────
-// // Không import từ match.queries để tránh circular dependency nếu queries import service types.
+// ─── Internal select — chỉ dùng trong service này ─────────────────────────────
+// Không import từ match.queries để tránh circular dependency nếu queries import service types.
 
-// const matchForConfirmSelect = {
-//     id: true,
-//     status: true,
-//     home_team_id: true,
-//     away_team_id: true,
-//     group_id: true,
-//     season_id: true,
-//     phase_id: true,
-//     phase: {
-//         select: {
-//             format: true,
-//             season: {
-//                 select: {
-//                     id: true,
-//                     tournament: {
-//                         select: {
-//                             tournamentRule: {
-//                                 select: { yellow_cards_suspension: true, forfeit_score: true },
-//                             },
-//                         },
-//                     },
-//                 },
-//             },
-//         },
-//     },
-//     matchResult: { select: { id: true } },
-// } satisfies Prisma.MatchSelect;
+const matchForConfirmSelect = {
+    id: true,
+    status: true,
+    home_team_id: true,
+    away_team_id: true,
+    group_id: true,
+    phase_id: true,
+    phase: {
+        select: {
+            format: true,
+            season: {
+                select: {
+                    id: true,
+                    tournament: {
+                        select: {
+                            tournamentRule: {
+                                select: { yellow_cards_suspension: true, forfeit_score: true },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    matchResult: { select: { id: true } },
+} satisfies Prisma.MatchSelect;
 
-// // ─── Mapper helpers ───────────────────────────────────────────────────────────
-// // Tách ra để _guardConfirm và confirmResult không làm việc với raw Prisma shape.
+// ─── Mapper helpers ───────────────────────────────────────────────────────────
+// Tách ra để _guardConfirm và confirmResult không làm việc với raw Prisma shape.
 
-// function toMatchResultCreateInput(
-//     matchId: number,
-//     input: ConfirmResultInput,
-//     resolution: WinnerResolution,
-//     matchStatus: MatchStatus,
-// ): Prisma.MatchResultCreateInput {
-//     return {
-//         match: { connect: { id: matchId } },
-//         winner_team: resolution.winnerTeamId
-//             ? { connect: { id: resolution.winnerTeamId } }
-//             : undefined,
+function toMatchResultCreateInput(
+    matchId: number,
+    input: ConfirmResultInput,
+    resolution: WinnerResolution,
+    matchStatus: MatchStatus,
+): Prisma.MatchResultCreateInput {
+    return {
+        match: { connect: { id: matchId } },
+        winner_team: resolution.winnerTeamId
+            ? { connect: { id: resolution.winnerTeamId } }
+            : undefined,
 
-//         // 90p score — source of truth cho standings/stats
-//         home_score: input.homeScore,
-//         away_score: input.awayScore,
+        // ET score — cumulative (90+ET), undefined nếu không có ET
+        home_extra_time_score: input.homeExtraTime ?? null,
+        away_extra_time_score: input.awayExtraTime ?? null,
 
-//         // Half-time snapshot — chỉ dùng cho display, không ảnh hưởng winner
-//         home_half_time_score: input.homeHalfTimeScore ?? 0,
-//         away_half_time_score: input.awayHalfTimeScore ?? 0,
+        // Penalty tiebreaker
+        home_penalty_score: input.homePenalty ?? null,
+        away_penalty_score: input.awayPenalty ?? null,
 
-//         // ET score — cumulative (90+ET), undefined nếu không có ET
-//         home_extra_time_score: input.homeExtraTime ?? null,
-//         away_extra_time_score: input.awayExtraTime ?? null,
+        // Final score — dùng cho display và standings
+        // = ET score nếu có ET, ngược lại = 90p score
+        home_final_score: resolution.homeFinal,
+        away_final_score: resolution.awayFinal,
 
-//         // Penalty tiebreaker
-//         home_penalty_score: input.homePenalty ?? null,
-//         away_penalty_score: input.awayPenalty ?? null,
+        result_type: input.resultType,
+        // MatchResult.status luôn = official sau khi tạo.
+        // Match.status (finished/forfeited) được set riêng ở toMatchUpdateOnConfirm.
+        status: 'official',
 
-//         // Final score — dùng cho display và standings
-//         // = ET score nếu có ET, ngược lại = 90p score
-//         home_final_score: resolution.homeFinal,
-//         away_final_score: resolution.awayFinal,
+        notes: input.notes ?? null,
+    };
+}
 
-//         result_type: input.resultType,
-//         // MatchResult.status luôn = official sau khi tạo.
-//         // Match.status (finished/forfeited) được set riêng ở toMatchUpdateOnConfirm.
-//         status: 'official',
+function toMatchUpdateOnConfirm(
+    input: ConfirmResultInput,
+    resolution: WinnerResolution,
+    targetMatchStatus: MatchStatus,
+): Prisma.MatchUpdateInput {
+    return {
+        status: targetMatchStatus,
+        played_at: new Date(),
+        // Mirror final score lên Match để query list không cần join MatchResult
+        home_score: resolution.homeFinal,
+        away_score: resolution.awayFinal,
+        // Clear grace-period fields sau khi confirm — không cần giữ lại
+        pending_official_at: null,
+        manual_home_score: null,
+        manual_away_score: null,
+        finalize_result_type: null,
+        finalize_home_half_time: null,
+        finalize_away_half_time: null,
+        finalize_home_penalty: null,
+        finalize_away_penalty: null,
+    };
+}
 
-//         notes: input.notes ?? null,
-//     };
-// }
+// ─── Appeal / dispute mapper helpers ─────────────────────────────────────────
+// Dùng trong MatchLifecycleService.resolveAppeal() — tách ra để service không
+// làm việc trực tiếp với Prisma.MatchResultUpdateInput shape.
 
-// function toMatchUpdateOnConfirm(
-//     input: ConfirmResultInput,
-//     resolution: WinnerResolution,
-//     targetMatchStatus: MatchStatus,
-// ): Prisma.MatchUpdateInput {
-//     return {
-//         status: targetMatchStatus,
-//         played_at: new Date(),
-//         // Mirror final score lên Match để query list không cần join MatchResult
-//         home_score: resolution.homeFinal,
-//         away_score: resolution.awayFinal,
-//         // Clear grace-period fields sau khi confirm — không cần giữ lại
-//         pending_official_at: null,
-//         manual_home_score: null,
-//         manual_away_score: null,
-//         finalize_result_type: null,
-//         finalize_home_half_time: null,
-//         finalize_away_half_time: null,
-//         finalize_home_penalty: null,
-//         finalize_away_penalty: null,
-//     };
-// }
+export function toMatchResultUpdateOnUphold(note?: string): Prisma.MatchResultUpdateInput {
+    return {
+        status: 'official',
+        appeal_note: note ?? null,
+    };
+}
 
-// // ─── Service ──────────────────────────────────────────────────────────────────
+export function toMatchResultUpdateOnOverturn(
+    newHomeScore: number,
+    newAwayScore: number,
+    newWinnerTeamId: number | null,
+    note?: string,
+): Prisma.MatchResultUpdateInput {
+    return {
+        home_final_score: newHomeScore,
+        away_final_score: newAwayScore,
+        winner_team: newWinnerTeamId
+            ? { connect: { id: newWinnerTeamId } }
+            : { disconnect: true },
+        status: 'overturned',
+        appeal_note: note ?? null,
+    };
+}
 
-// export class MatchResultService {
-//     constructor(
-//         private readonly prisma: PrismaClient,
-//         private readonly knockoutService: KnockoutService,
-//         private readonly standingsService: StandingsService,
-//     ) { }
+export function toMatchUpdateOnOverturn(
+    newHomeScore: number,
+    newAwayScore: number,
+): Prisma.MatchUpdateInput {
+    // Mirror final score lên Match sau overturn — query list không cần join MatchResult
+    return {
+        home_score: newHomeScore,
+        away_score: newAwayScore,
+    };
+}
 
-//     // ─── Public entry point ───────────────────────────────────────────────────
-//     // SINGLE SOURCE OF TRUTH cho mọi path dẫn đến "match có kết quả":
-//     //   - confirmOfficial()  (referee confirm sau grace period)
-//     //   - forfeitMatch()     (BTC quyết, bypass grace period)
-//     //   - walkover/seed fixture (bypass)
-//     //
-//     // Không có caller nào được tự tạo MatchResult hoặc set status=finished ngoài đây.
+// ─── Service ──────────────────────────────────────────────────────────────────
 
-//     async confirmResult(
-//         matchId: number,
-//         input: ConfirmResultInput,
-//         scheduleOptions: ScheduleOptions,
-//     ): Promise<ConfirmResultOutput> {
-//         const match = await this.prisma.match.findUnique({
-//             where: { id: matchId },
-//             select: matchForConfirmSelect,
-//         });
+export class MatchResultService {
+    constructor(
+        private readonly prisma: PrismaClient,
+        private readonly knockoutService: KnockoutService,
+        private readonly standingsService: StandingsService,
+    ) { }
 
-//         if (!match)
-//             throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+    // ─── Public entry point ───────────────────────────────────────────────────
+    // SINGLE SOURCE OF TRUTH cho mọi path dẫn đến "match có kết quả":
+    //   - confirmOfficial()  (referee confirm sau grace period)
+    //   - forfeitMatch()     (BTC quyết, bypass grace period)
+    //   - walkover/seed fixture (bypass)
+    //
+    // Không có caller nào được tự tạo MatchResult hoặc set status=finished ngoài đây.
 
-//         this._guardConfirm(match, input);
+    async confirmResult(
+        matchId: number,
+        input: ConfirmResultInput,
+        scheduleOptions: ScheduleOptions,
+    ): Promise<ConfirmResultOutput> {
+        const match = await this.prisma.match.findUnique({
+            where: { id: matchId },
+            select: matchForConfirmSelect,
+        });
 
-//         const isKnockout = match.phase.format === PhaseFormat.knockout;
-//         const seasonId = match.phase.season.id;
-//         const yellowSuspension =
-//             match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
+        if (!match)
+            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
 
-//         const resolution = this._resolveWinner(match.home_team_id, match.away_team_id, input);
+        this._guardConfirm(match, input);
 
-//         // Match.status sau confirm — forfeited cho forfeit/walkover, finished cho normal
-//         const targetMatchStatus = STATUS_BY_RESULT_TYPE[input.resultType] ?? MatchStatus.finished;
+        const isKnockout = match.phase.format === PhaseFormat.knockout;
+        const seasonId = match.phase.season.id;
+        const yellowSuspension =
+            match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
 
-//         const matchResultId = await this.prisma.$transaction(async tx => {
-//             const result = await tx.matchResult.create({
-//                 data: toMatchResultCreateInput(matchId, input, resolution, targetMatchStatus),
-//                 select: { id: true },
-//             });
+        const resolution = this._resolveWinner(match.home_team_id, match.away_team_id, input);
 
-//             await tx.match.update({
-//                 where: { id: matchId },
-//                 data: toMatchUpdateOnConfirm(input, resolution, targetMatchStatus),
-//             });
+        // Match.status sau confirm — forfeited cho forfeit/walkover, finished cho normal
+        const targetMatchStatus = STATUS_BY_RESULT_TYPE[input.resultType] ?? MatchStatus.finished;
 
-//             // Player stats update trong cùng TX để đảm bảo atomicity:
-//             // nếu stats fail → MatchResult cũng rollback.
-//             // Trade-off: TX dài hơn, nhưng đây là operation quan trọng, không chấp nhận partial commit.
-//             await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
+        const matchResultId = await this.prisma.$transaction(async tx => {
+            const result = await tx.matchResult.create({
+                data: toMatchResultCreateInput(matchId, input, resolution, targetMatchStatus),
+                select: { id: true },
+            });
 
-//             return result.id;
-//         });
+            await tx.match.update({
+                where: { id: matchId },
+                data: toMatchUpdateOnConfirm(input, resolution, targetMatchStatus),
+            });
 
-//         // Standings + knockout ngoài TX:
-//         // Recompute standings đọc nhiều rows + có thể gọi service khác.
-//         // Nếu fail ở đây, MatchResult đã committed — cần idempotent retry hoặc background job.
-//         // TODO: wrap trong job queue nếu tournament có nhiều group (N groups × M matches).
-//         const standingUpdated = await this._tryRecomputeStandings(isKnockout, match.group_id);
+            // Player stats update trong cùng TX để đảm bảo atomicity:
+            // nếu stats fail → MatchResult cũng rollback.
+            // Trade-off: TX dài hơn, nhưng đây là operation quan trọng, không chấp nhận partial commit.
+            await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
 
-//         let knockoutAdvanced = false;
-//         let newMatchId: number | undefined;
+            return result.id;
+        });
 
-//         if (isKnockout && resolution.winnerTeamId) {
-//             // advanceWinner tạo match tiếp theo trong bracket nếu cả 2 slot đã có winner.
-//             // Không call nếu draw (winnerTeamId = null) — knockout không có draw.
-//             const advance = await this.knockoutService.advanceWinner(
-//                 match.phase_id,
-//                 seasonId,
-//                 { matchId, winnerTeamId: resolution.winnerTeamId },
-//                 scheduleOptions,
-//             );
-//             knockoutAdvanced = advance.matchCreated;
-//             newMatchId = advance.newMatchId;
-//         }
+        // Standings + knockout ngoài TX:
+        // Recompute standings đọc nhiều rows + có thể gọi service khác.
+        // Nếu fail ở đây, MatchResult đã committed — cần idempotent retry hoặc background job.
+        // TODO: wrap trong job queue nếu tournament có nhiều group (N groups × M matches).
+        const standingUpdated = await this._tryRecomputeStandings(isKnockout, match.group_id);
 
-//         return {
-//             matchResultId,
-//             winnerTeamId: resolution.winnerTeamId,
-//             standingUpdated,
-//             knockoutAdvanced,
-//             newMatchId,
-//         };
-//     }
+        let knockoutAdvanced = false;
+        let newMatchId: number | undefined;
 
-//     // Expose cho resolveAppeal (không tạo MatchResult mới, chỉ recompute sau overturn).
-//     async recomputeStandingsFor(groupId: number): Promise<void> {
-//         await this.standingsService.recomputeGroupStandings(groupId);
-//     }
+        if (isKnockout && resolution.winnerTeamId) {
+            // advanceWinner tạo match tiếp theo trong bracket nếu cả 2 slot đã có winner.
+            // Không call nếu draw (winnerTeamId = null) — knockout không có draw.
+            const advance = await this.knockoutService.advanceWinner(
+                match.phase_id,
+                seasonId,
+                { matchId, winnerTeamId: resolution.winnerTeamId },
+                scheduleOptions,
+            );
+            knockoutAdvanced = advance.matchCreated;
+            newMatchId = advance.newMatchId;
+        }
 
-//     // ─── Guards ───────────────────────────────────────────────────────────────
+        return {
+            matchResultId,
+            winnerTeamId: resolution.winnerTeamId,
+            standingUpdated,
+            knockoutAdvanced,
+            newMatchId,
+        };
+    }
 
-//     private _guardConfirm(match: MatchForConfirmFull, input: ConfirmResultInput): void {
-//         // finished/cancelled → terminal, không confirm được
-//         if (
-//             match.status === MatchStatus.finished ||
-//             match.status === MatchStatus.cancelled
-//         )
-//             throw createAppError('CONFLICT', `Match ${match.id} đã ở status '${match.status}'`);
+    // ─── overrideResult (correction — manual path only) ──────────────────────
+    // Gọi bởi MatchLifecycleService.editScore() — chỉ khi match không có events.
+    // Update MatchResult trực tiếp từ input thay vì recompute từ events.
+    //
+    // Không tạo MatchResult mới — chỉ update existing record.
+    // Recompute standings sau khi update.
+    // Player stats bỏ qua — manual path không có events để compute.
 
-//         // Guard duplicate — chỉ 1 MatchResult per match (unique constraint ở DB cũng cover,
-//         // nhưng throw ở đây sớm hơn và có message rõ hơn constraint violation)
-//         if (match.matchResult)
-//             throw createAppError('CONFLICT', `Match ${match.id} đã có MatchResult`);
+    async overrideResult(
+        matchId: number,
+        input: EditScoreInput,
+        scheduleOptions: ScheduleOptions,
+    ): Promise<void> {
+        const match = await this.prisma.match.findUniqueOrThrow({
+            where: { id: matchId },
+            select: {
+                home_team_id: true,
+                away_team_id: true,
+                group_id: true,
+                phase: { select: { format: true } },
+                matchResult: {
+                    select: {
+                        id: true,
+                        result_type: true,
+                    },
+                },
+            },
+        });
 
-//         // Knockout không cho draw ở full_time — phải có extra_time hoặc penalty
-//         const isKnockout = match.phase.format === PhaseFormat.knockout;
-//         if (isKnockout && input.resultType === MatchResultType.full_time) {
-//             if (input.homeScore === input.awayScore)
-//                 throw createAppError(
-//                     'VALIDATION_ERROR',
-//                     `Match ${match.id}: knockout draw ở full_time — cần extra_time hoặc penalty`,
-//                 );
-//         }
+        if (!match.matchResult)
+            throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
 
-//         // Validate penalty input
-//         if (input.resultType === MatchResultType.penalty) {
-//             if (input.homePenalty === undefined || input.awayPenalty === undefined)
-//                 throw createAppError(
-//                     'VALIDATION_ERROR',
-//                     `Match ${match.id}: resultType=penalty cần homePenalty + awayPenalty`,
-//                 );
-//             if (input.homePenalty === input.awayPenalty)
-//                 throw createAppError(
-//                     'VALIDATION_ERROR',
-//                     `Match ${match.id}: penalty không được hoà — ${input.homePenalty}-${input.awayPenalty}`,
-//                 );
-//         }
-//     }
+        const resultType = input.resultType ?? match.matchResult.result_type;
 
-//     // ─── Winner resolution ────────────────────────────────────────────────────
-//     // homeFinal / awayFinal = score dùng cho home_final_score (display) và standings.
-//     // Cho penalty: final = ET score (không cộng penalty goals).
+        // Validate penalty input nếu resultType = penalty
+        if (resultType === MatchResultType.penalty) {
+            if (input.homePenalty === undefined || input.awayPenalty === undefined)
+                throw createAppError(
+                    'VALIDATION_ERROR',
+                    `editScore: resultType=penalty cần homePenalty + awayPenalty`,
+                );
+            if (input.homePenalty === input.awayPenalty)
+                throw createAppError(
+                    'VALIDATION_ERROR',
+                    `editScore: penalty không được hoà — ${input.homePenalty}-${input.awayPenalty}`,
+                );
+        }
 
-//     private _resolveWinner(
-//         homeTeamId: number,
-//         awayTeamId: number,
-//         input: ConfirmResultInput,
-//     ): WinnerResolution {
-//         switch (input.resultType) {
-//             case MatchResultType.full_time: {
-//                 const winnerTeamId =
-//                     input.homeScore > input.awayScore ? homeTeamId
-//                         : input.awayScore > input.homeScore ? awayTeamId
-//                             : null; // round_robin có thể hoà
-//                 return {
-//                     winnerTeamId,
-//                     homeFinal: input.homeScore,
-//                     awayFinal: input.awayScore,
-//                 };
-//             }
+        // Winner resolution từ input score
+        const resolution = this._resolveWinner(
+            match.home_team_id,
+            match.away_team_id,
+            {
+                homeScore: input.homeScore,
+                awayScore: input.awayScore,
+                homeExtraTime: input.homeExtraTime,
+                awayExtraTime: input.awayExtraTime,
+                homePenalty: input.homePenalty,
+                awayPenalty: input.awayPenalty,
+                resultType,
+            },
+        );
 
-//             case MatchResultType.extra_time: {
-//                 // homeExtraTime = cumulative (90+ET) — bắt buộc ở ET path
-//                 const h = input.homeExtraTime ?? input.homeScore;
-//                 const a = input.awayExtraTime ?? input.awayScore;
-//                 const winnerTeamId = h > a ? homeTeamId : a > h ? awayTeamId : null;
-//                 return { winnerTeamId, homeFinal: h, awayFinal: a };
-//             }
+        await this.prisma.$transaction(async tx => {
+            await tx.matchResult.update({
+                where: { match_id: matchId },
+                data: {
+                    home_score: input.homeScore,
+                    away_score: input.awayScore,
+                    home_extra_time_score: input.homeExtraTime ?? null,
+                    away_extra_time_score: input.awayExtraTime ?? null,
+                    home_penalty_score: input.homePenalty ?? null,
+                    away_penalty_score: input.awayPenalty ?? null,
+                    home_half_time_score: input.homeHalfTime ?? undefined, // giữ nguyên nếu không truyền
+                    away_half_time_score: input.awayHalfTime ?? undefined,
+                    home_final_score: resolution.homeFinal,
+                    away_final_score: resolution.awayFinal,
+                    winner_team_id: resolution.winnerTeamId,
+                    result_type: resultType,
+                    notes: input.notes ?? undefined,
+                    updated_at: new Date(),
+                },
+            });
 
-//             case MatchResultType.penalty: {
-//                 // homePenalty/awayPenalty đã được validate ở _guardConfirm
-//                 const winnerTeamId =
-//                     input.homePenalty! > input.awayPenalty! ? homeTeamId : awayTeamId;
-//                 // final score = ET score, không cộng penalty
-//                 const h = input.homeExtraTime ?? input.homeScore;
-//                 const a = input.awayExtraTime ?? input.awayScore;
-//                 return { winnerTeamId, homeFinal: h, awayFinal: a };
-//             }
+            // Mirror lên Match
+            await tx.match.update({
+                where: { id: matchId },
+                data: {
+                    home_score: resolution.homeFinal,
+                    away_score: resolution.awayFinal,
+                    updated_at: new Date(),
+                },
+            });
+        });
 
-//             case MatchResultType.forfeit:
-//             case MatchResultType.walkover: {
-//                 const winnerTeamId =
-//                     input.homeScore > input.awayScore ? homeTeamId : awayTeamId;
-//                 return {
-//                     winnerTeamId,
-//                     homeFinal: input.homeScore,
-//                     awayFinal: input.awayScore,
-//                 };
-//             }
-//         }
-//     }
+        // Standings recompute — chỉ group phase
+        if (match.phase.format !== PhaseFormat.knockout && match.group_id) {
+            await this.standingsService.recomputeGroupStandings(match.group_id);
+        }
 
-//     // ─── Player statistics ────────────────────────────────────────────────────
-//     // Gọi trong TX của confirmResult — phải complete trước khi commit.
-//     //
-//     // Logic:
-//     //   1. Single-pass qua events → build delta map (goals, yellowCards, redCards)
-//     //   2. Batch-fetch accumulated_yellow_cards để tính suspension
-//     //   3. Upsert từng player — N rows (~22-30 per match)
-//     //
-//     // Scale note: Prisma không support bulk upsert với arithmetic increment.
-//     // Nếu N > 50 hoặc cần performance, dùng raw SQL ON CONFLICT DO UPDATE.
+        // Knockout bracket correction sau override không tự động —
+        // winner có thể đã advance, cần admin xử lý thủ công.
+        // TODO: flag match để admin review nếu knockout và winner đã thay đổi.
+    }
 
-//     private async _updatePlayerStatistics(
-//         tx: Prisma.TransactionClient,
-//         matchId: number,
-//         seasonId: number,
-//         yellowSuspension: number,
-//     ): Promise<void> {
-//         const events = await tx.matchEvent.findMany({
-//             where: { match_id: matchId },
-//             select: { player_id: true, team_id: true, type: true },
-//         });
+    // ─── recomputePlayerStats (correction) ────────────────────────────────────
+    // Full recompute player stats từ toàn bộ events hiện tại của match.
+    // Gọi sau addEvent / deleteEvent / editEvent để đồng bộ stats.
+    //
+    // Strategy: reset stats của trận này về 0, rồi apply lại toàn bộ events.
+    // Không dùng increment/decrement vì sửa event có thể thay đổi cả player lẫn type.
+    //
+    // Implementation:
+    //   1. Fetch tất cả events của match
+    //   2. Xác định set players bị ảnh hưởng (player_id × team_id × season_id)
+    //   3. Subtract stats cũ của trận này (rollback)
+    //   4. Recompute từ events mới (apply)
+    //
+    // Trade-off: 2 pass qua events + N upserts — acceptable cho ~22-30 players.
+    // Nếu scale lên (nhiều correction đồng thời), cần queue serialization per-match.
 
-//         if (events.length === 0) return;
+    async recomputePlayerStats(
+        matchId: number,
+        _scheduleOptions: ScheduleOptions,
+    ): Promise<void> {
+        const match = await this.prisma.match.findUniqueOrThrow({
+            where: { id: matchId },
+            select: {
+                season_id: true,
+                phase: {
+                    select: {
+                        season: {
+                            select: {
+                                tournament: {
+                                    select: {
+                                        tournamentRule: {
+                                            select: { yellow_cards_suspension: true },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
 
-//         // Build deltas — single pass qua events
-//         const played = new Set<string>();
-//         const deltas = new Map<string, StatDelta>();
-//         const key = (pid: number, tid: number) => `${pid}:${tid}`;
+        const seasonId = match.season_id;
+        const yellowSuspension =
+            match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
 
-//         for (const ev of events) {
-//             if (!ev.player_id || !ev.team_id) continue;
+        const events = await this.prisma.matchEvent.findMany({
+            where: { match_id: matchId },
+            select: { player_id: true, team_id: true, type: true },
+        });
 
-//             const k = key(ev.player_id, ev.team_id);
-//             played.add(k);
+        // Build new deltas từ events hiện tại
+        const played = new Set<string>();
+        const newDeltas = new Map<string, StatDelta>();
+        const key = (pid: number, tid: number) => `${pid}:${tid}`;
 
-//             const d = deltas.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0 };
+        for (const ev of events) {
+            if (!ev.player_id || !ev.team_id) continue;
+            const k = key(ev.player_id, ev.team_id);
+            played.add(k);
 
-//             switch (ev.type as MatchEventType) {
-//                 case MatchEventType.goal:
-//                 case MatchEventType.penalty_scored:
-//                     d.goals++;
-//                     break;
-//                 case MatchEventType.yellow_card:
-//                     d.yellowCards++;
-//                     break;
-//                 case MatchEventType.red_card:
-//                 case MatchEventType.second_yellow:
-//                     d.redCards++;
-//                     break;
-//                 // own_goal → goals_against cho team đối thủ (TeamStanding), bỏ qua ở player stats
-//                 // substitution, card_rescinded, goal_disallowed → không tác động stats cá nhân
-//             }
+            const d = newDeltas.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0 };
+            switch (ev.type as MatchEventType) {
+                case MatchEventType.goal:
+                case MatchEventType.penalty_scored:
+                    d.goals++;
+                    break;
+                case MatchEventType.yellow_card:
+                    d.yellowCards++;
+                    break;
+                case MatchEventType.red_card:
+                case MatchEventType.second_yellow:
+                    d.redCards++;
+                    break;
+            }
+            newDeltas.set(k, d);
+        }
 
-//             deltas.set(k, d);
-//         }
+        if (played.size === 0) return;
 
-//         if (played.size === 0) return;
+        // Fetch existing stats để biết old deltas của trận này trước khi correction
+        // ASSUMPTION: PlayerStatistic lưu cumulative — cần biết contribution của match này.
+        // LIMITATION: không có per-match snapshot → dùng approach subtract-old/add-new
+        // yêu cầu lưu old delta trước khi correction.
+        //
+        // Current design lưu accumulated stats (không có per-match breakdown).
+        // → Không thể subtract chính xác contribution của match này mà không có snapshot.
+        //
+        // Workaround hiện tại: full recompute tất cả matches của player trong season.
+        // Cost: O(matches × players) — chấp nhận được cho tournament nhỏ (~50 matches).
+        // TODO: nếu scale lên, thêm MatchPlayerStat table để lưu per-match contribution.
 
-//         // Batch-fetch accumulated yellow cards — 1 query thay vì N findUnique trong loop
-//         const playerKeys = [...played].map(k => {
-//             const [pid, tid] = k.split(':').map(Number);
-//             return { player_id: pid, team_id: tid, season_id: seasonId };
-//         });
+        // split(':').map(Number) inferred as number[] — cast explicit để tránh ts(2345)
+        const playerKeys: { player_id: number; team_id: number }[] = [...played].map(k => {
+            const parts = k.split(':');
+            return { player_id: Number(parts[0]), team_id: Number(parts[1]) };
+        });
 
-//         const existingStats = await tx.playerStatistic.findMany({
-//             where: { OR: playerKeys },
-//             select: { player_id: true, team_id: true, accumulated_yellow_cards: true },
-//         });
+        // Full recompute từ đầu mùa cho các players bị ảnh hưởng
+        await this._recomputeStatsForPlayers(playerKeys, seasonId, yellowSuspension);
+    }
 
-//         const accumMap = new Map<string, number>();
-//         for (const s of existingStats) {
-//             accumMap.set(key(s.player_id, s.team_id), s.accumulated_yellow_cards);
-//         }
+    // ─── _recomputeStatsForPlayers ────────────────────────────────────────────
+    // Full recompute PlayerStatistic cho danh sách players trong season.
+    // Đọc toàn bộ events của player trong season → compute lại từ đầu.
+    //
+    // Atomic per-player: mỗi player upsert trong TX riêng.
+    // Không batch trong 1 TX lớn — tránh deadlock khi N players lớn.
 
-//         // Upsert từng player — N rows, parallel Promise.all
-//         // Suspension trigger: accumulated yellows >= threshold HOẶC có red/second_yellow trong trận này
-//         await Promise.all(
-//             [...played].map(async k => {
-//                 const [playerIdStr, teamIdStr] = k.split(':');
-//                 const playerId = Number(playerIdStr);
-//                 const teamId = Number(teamIdStr);
-//                 const d = deltas.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0 };
+    private async _recomputeStatsForPlayers(
+        players: { player_id: number; team_id: number }[],
+        seasonId: number,
+        yellowSuspension: number,
+    ): Promise<void> {
+        // Single query với match_id để deduplicate matches_played
+        // (allEvents đã bỏ — duplicate, thiếu match_id)
+        const allEventsWithMatch = await this.prisma.matchEvent.findMany({
+            where: {
+                player_id: { in: players.map(p => p.player_id) },
+            },
+            select: { player_id: true, team_id: true, type: true, match_id: true },
+        });
 
-//                 const prevAccum = accumMap.get(k) ?? 0;
-//                 const newAccumYellow = prevAccum + d.yellowCards;
-//                 const isSuspended = newAccumYellow >= yellowSuspension || d.redCards > 0;
+        // Group events theo player × team
+        const statsMap = new Map<string, StatDelta & { matchesPlayed: number }>();
+        const key = (pid: number, tid: number) => `${pid}:${tid}`;
+        const matchesPlayedMap = new Map<string, Set<number>>();
 
-//                 await tx.playerStatistic.upsert({
-//                     where: {
-//                         player_id_team_id_season_id: {
-//                             player_id: playerId,
-//                             team_id: teamId,
-//                             season_id: seasonId,
-//                         },
-//                     },
-//                     create: {
-//                         player_id: playerId,
-//                         team_id: teamId,
-//                         season_id: seasonId,
-//                         matches_played: 1,
-//                         goals_scored: d.goals,
-//                         yellow_cards: d.yellowCards,
-//                         red_cards: d.redCards,
-//                         accumulated_yellow_cards: newAccumYellow,
-//                         is_suspended: isSuspended,
-//                     },
-//                     update: {
-//                         matches_played: { increment: 1 },
-//                         goals_scored: { increment: d.goals },
-//                         yellow_cards: { increment: d.yellowCards },
-//                         red_cards: { increment: d.redCards },
-//                         accumulated_yellow_cards: newAccumYellow,  // set, không increment — đã cộng prevAccum
-//                         is_suspended: isSuspended,
-//                     },
-//                 });
-//             }),
-//         );
-//     }
+        for (const ev of allEventsWithMatch) {
+            if (!ev.player_id || !ev.team_id) continue;
+            const k = key(ev.player_id, ev.team_id);
 
-//     // ─── Helpers ──────────────────────────────────────────────────────────────
+            // Track unique matches
+            const matchSet = matchesPlayedMap.get(k) ?? new Set<number>();
+            matchSet.add(ev.match_id);
+            matchesPlayedMap.set(k, matchSet);
 
-//     private async _tryRecomputeStandings(
-//         isKnockout: boolean,
-//         groupId: number | null,
-//     ): Promise<boolean> {
-//         if (isKnockout || !groupId) return false;
-//         await this.standingsService.recomputeGroupStandings(groupId);
-//         return true;
-//     }
-// }
+            const d = statsMap.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0, matchesPlayed: 0 };
+            switch (ev.type as MatchEventType) {
+                case MatchEventType.goal:
+                case MatchEventType.penalty_scored:
+                    d.goals++;
+                    break;
+                case MatchEventType.yellow_card:
+                    d.yellowCards++;
+                    break;
+                case MatchEventType.red_card:
+                case MatchEventType.second_yellow:
+                    d.redCards++;
+                    break;
+            }
+            statsMap.set(k, d);
+        }
+
+        // Upsert từng player với stats đã recompute
+        await Promise.all(
+            players.map(async ({ player_id, team_id }) => {
+                const k = key(player_id, team_id);
+                const d = statsMap.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0, matchesPlayed: 0 };
+                const matchesPlayed = matchesPlayedMap.get(k)?.size ?? 0;
+
+                // accumulated_yellow_cards = total yellow cards trong season
+                // is_suspended = accumulated >= threshold HOẶC có red card
+                const isSuspended = d.yellowCards >= yellowSuspension || d.redCards > 0;
+
+                await this.prisma.playerStatistic.upsert({
+                    where: {
+                        player_id_team_id_season_id: { player_id, team_id, season_id: seasonId },
+                    },
+                    create: {
+                        player_id,
+                        team_id,
+                        season_id: seasonId,
+                        matches_played: matchesPlayed,
+                        goals_scored: d.goals,
+                        yellow_cards: d.yellowCards,
+                        red_cards: d.redCards,
+                        accumulated_yellow_cards: d.yellowCards,
+                        is_suspended: isSuspended,
+                    },
+                    update: {
+                        matches_played: matchesPlayed,
+                        goals_scored: d.goals,
+                        yellow_cards: d.yellowCards,
+                        red_cards: d.redCards,
+                        accumulated_yellow_cards: d.yellowCards,
+                        is_suspended: isSuspended,
+                    },
+                });
+            }),
+        );
+    }
+
+    // Expose cho resolveAppeal (không tạo MatchResult mới, chỉ recompute sau overturn).
+    async recomputeStandingsFor(groupId: number): Promise<void> {
+        await this.standingsService.recomputeGroupStandings(groupId);
+    }
+
+    // ─── Guards ───────────────────────────────────────────────────────────────
+
+    private _guardConfirm(match: MatchForConfirmFull, input: ConfirmResultInput): void {
+        // finished/cancelled → terminal, không confirm được
+        if (
+            match.status === MatchStatus.finished ||
+            match.status === MatchStatus.cancelled
+        )
+            throw createAppError('CONFLICT', `Match ${match.id} đã ở status '${match.status}'`);
+
+        // Guard duplicate — chỉ 1 MatchResult per match (unique constraint ở DB cũng cover,
+        // nhưng throw ở đây sớm hơn và có message rõ hơn constraint violation)
+        if (match.matchResult)
+            throw createAppError('CONFLICT', `Match ${match.id} đã có MatchResult`);
+
+        // Knockout không cho draw ở full_time — phải có extra_time hoặc penalty
+        const isKnockout = match.phase.format === PhaseFormat.knockout;
+        if (isKnockout && input.resultType === MatchResultType.full_time) {
+            if (input.homeScore === input.awayScore)
+                throw createAppError(
+                    'VALIDATION_ERROR',
+                    `Match ${match.id}: knockout draw ở full_time — cần extra_time hoặc penalty`,
+                );
+        }
+
+        // Validate penalty input
+        if (input.resultType === MatchResultType.penalty) {
+            if (input.homePenalty === undefined || input.awayPenalty === undefined)
+                throw createAppError(
+                    'VALIDATION_ERROR',
+                    `Match ${match.id}: resultType=penalty cần homePenalty + awayPenalty`,
+                );
+            if (input.homePenalty === input.awayPenalty)
+                throw createAppError(
+                    'VALIDATION_ERROR',
+                    `Match ${match.id}: penalty không được hoà — ${input.homePenalty}-${input.awayPenalty}`,
+                );
+        }
+    }
+
+    // ─── Winner resolution ────────────────────────────────────────────────────
+    // homeFinal / awayFinal = score dùng cho home_final_score (display) và standings.
+    // Cho penalty: final = ET score (không cộng penalty goals).
+
+    private _resolveWinner(
+        homeTeamId: number,
+        awayTeamId: number,
+        input: ConfirmResultInput,
+    ): WinnerResolution {
+        switch (input.resultType) {
+            case MatchResultType.full_time: {
+                const winnerTeamId =
+                    input.homeScore > input.awayScore ? homeTeamId
+                        : input.awayScore > input.homeScore ? awayTeamId
+                            : null; // round_robin có thể hoà
+                return {
+                    winnerTeamId,
+                    homeFinal: input.homeScore,
+                    awayFinal: input.awayScore,
+                };
+            }
+
+            case MatchResultType.extra_time: {
+                // homeExtraTime = cumulative (90+ET) — bắt buộc ở ET path
+                const h = input.homeExtraTime ?? input.homeScore;
+                const a = input.awayExtraTime ?? input.awayScore;
+                const winnerTeamId = h > a ? homeTeamId : a > h ? awayTeamId : null;
+                return { winnerTeamId, homeFinal: h, awayFinal: a };
+            }
+
+            case MatchResultType.penalty: {
+                // homePenalty/awayPenalty đã được validate ở _guardConfirm
+                const winnerTeamId =
+                    input.homePenalty! > input.awayPenalty! ? homeTeamId : awayTeamId;
+                // final score = ET score, không cộng penalty
+                const h = input.homeExtraTime ?? input.homeScore;
+                const a = input.awayExtraTime ?? input.awayScore;
+                return { winnerTeamId, homeFinal: h, awayFinal: a };
+            }
+
+            case MatchResultType.forfeit:
+            case MatchResultType.walkover: {
+                const winnerTeamId =
+                    input.homeScore > input.awayScore ? homeTeamId : awayTeamId;
+                return {
+                    winnerTeamId,
+                    homeFinal: input.homeScore,
+                    awayFinal: input.awayScore,
+                };
+            }
+        }
+    }
+
+    // ─── Player statistics ────────────────────────────────────────────────────
+    // Gọi trong TX của confirmResult — phải complete trước khi commit.
+    //
+    // Logic:
+    //   1. Single-pass qua events → build delta map (goals, yellowCards, redCards)
+    //   2. Batch-fetch accumulated_yellow_cards để tính suspension
+    //   3. Upsert từng player — N rows (~22-30 per match)
+    //
+    // Scale note: Prisma không support bulk upsert với arithmetic increment.
+    // Nếu N > 50 hoặc cần performance, dùng raw SQL ON CONFLICT DO UPDATE.
+
+    private async _updatePlayerStatistics(
+        tx: Prisma.TransactionClient,
+        matchId: number,
+        seasonId: number,
+        yellowSuspension: number,
+    ): Promise<void> {
+        const events = await tx.matchEvent.findMany({
+            where: { match_id: matchId },
+            select: { player_id: true, team_id: true, type: true },
+        });
+
+        if (events.length === 0) return;
+
+        // Build deltas — single pass qua events
+        const played = new Set<string>();
+        const deltas = new Map<string, StatDelta>();
+        const key = (pid: number, tid: number) => `${pid}:${tid}`;
+
+        for (const ev of events) {
+            if (!ev.player_id || !ev.team_id) continue;
+
+            const k = key(ev.player_id, ev.team_id);
+            played.add(k);
+
+            const d = deltas.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0 };
+
+            switch (ev.type as MatchEventType) {
+                case MatchEventType.goal:
+                case MatchEventType.penalty_scored:
+                    d.goals++;
+                    break;
+                case MatchEventType.yellow_card:
+                    d.yellowCards++;
+                    break;
+                case MatchEventType.red_card:
+                case MatchEventType.second_yellow:
+                    d.redCards++;
+                    break;
+                // own_goal → goals_against cho team đối thủ (TeamStanding), bỏ qua ở player stats
+                // substitution, card_rescinded, goal_disallowed → không tác động stats cá nhân
+            }
+
+            deltas.set(k, d);
+        }
+
+        if (played.size === 0) return;
+
+        // Batch-fetch accumulated yellow cards — 1 query thay vì N findUnique trong loop
+        const playerKeys = [...played].map(k => {
+            const [pid, tid] = k.split(':').map(Number);
+            return { player_id: pid, team_id: tid, season_id: seasonId };
+        });
+
+        const existingStats = await tx.playerStatistic.findMany({
+            where: { OR: playerKeys },
+            select: { player_id: true, team_id: true, accumulated_yellow_cards: true },
+        });
+
+        const accumMap = new Map<string, number>();
+        for (const s of existingStats) {
+            accumMap.set(key(s.player_id, s.team_id), s.accumulated_yellow_cards);
+        }
+
+        // Upsert từng player — N rows, parallel Promise.all
+        // Suspension trigger: accumulated yellows >= threshold HOẶC có red/second_yellow trong trận này
+        await Promise.all(
+            [...played].map(async k => {
+                const [playerIdStr, teamIdStr] = k.split(':');
+                const playerId = Number(playerIdStr);
+                const teamId = Number(teamIdStr);
+                const d = deltas.get(k) ?? { goals: 0, yellowCards: 0, redCards: 0 };
+
+                const prevAccum = accumMap.get(k) ?? 0;
+                const newAccumYellow = prevAccum + d.yellowCards;
+                const isSuspended = newAccumYellow >= yellowSuspension || d.redCards > 0;
+
+                await tx.playerStatistic.upsert({
+                    where: {
+                        player_id_team_id_season_id: {
+                            player_id: playerId,
+                            team_id: teamId,
+                            season_id: seasonId,
+                        },
+                    },
+                    create: {
+                        player_id: playerId,
+                        team_id: teamId,
+                        season_id: seasonId,
+                        matches_played: 1,
+                        goals_scored: d.goals,
+                        yellow_cards: d.yellowCards,
+                        red_cards: d.redCards,
+                        accumulated_yellow_cards: newAccumYellow,
+                        is_suspended: isSuspended,
+                    },
+                    update: {
+                        matches_played: { increment: 1 },
+                        goals_scored: { increment: d.goals },
+                        yellow_cards: { increment: d.yellowCards },
+                        red_cards: { increment: d.redCards },
+                        accumulated_yellow_cards: newAccumYellow,  // set, không increment — đã cộng prevAccum
+                        is_suspended: isSuspended,
+                    },
+                });
+            }),
+        );
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private async _tryRecomputeStandings(
+        isKnockout: boolean,
+        groupId: number | null,
+    ): Promise<boolean> {
+        if (isKnockout || !groupId) return false;
+        await this.standingsService.recomputeGroupStandings(groupId);
+        return true;
+    }
+}

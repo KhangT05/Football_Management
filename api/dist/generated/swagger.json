@@ -2291,6 +2291,473 @@
             "BulkDeleteDto": {
                 "$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
             },
+            "MatchResultStatus": {
+                "type": "string",
+                "enum": [
+                    "official",
+                    "protested",
+                    "overturned",
+                    "under_review"
+                ]
+            },
+            "MatchEventType": {
+                "type": "string",
+                "enum": [
+                    "goal",
+                    "own_goal",
+                    "yellow_card",
+                    "red_card",
+                    "second_yellow",
+                    "substitution_in",
+                    "substitution_out",
+                    "penalty_scored",
+                    "penalty_missed",
+                    "card_rescinded",
+                    "goal_disallowed"
+                ]
+            },
+            "CardColor": {
+                "type": "string",
+                "enum": [
+                    "yellow",
+                    "red"
+                ]
+            },
+            "Prisma__Pick_MatchEventGroupByOutputType.MaybeTupleToUnion__40_type-or-team_id-or-player_id_41_-Array__": {
+                "properties": {},
+                "type": "object",
+                "description": "From T, pick a set of properties whose keys are in the union K"
+            },
+            "PickEnumerable_MatchEventGroupByOutputType._40_type-or-team_id-or-player_id_41_-Array_": {
+                "$ref": "#/components/schemas/Prisma__Pick_MatchEventGroupByOutputType.MaybeTupleToUnion__40_type-or-team_id-or-player_id_41_-Array__",
+                "description": "Like `Pick`, but additionally can also accept an array of keys"
+            },
+            "TransitionPeriodBody": {
+                "properties": {
+                    "period": {
+                        "$ref": "#/components/schemas/MatchPeriod"
+                    }
+                },
+                "required": [
+                    "period"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RecordEventBody": {
+                "properties": {
+                    "playerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "teamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/MatchEventType"
+                    },
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "addedMinute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "subOutPlayerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "wasOwnGoal": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "type"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "FinalizeMatchBody": {
+                "properties": {
+                    "resultType": {
+                        "$ref": "#/components/schemas/MatchResultType"
+                    },
+                    "homeHalfTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayHalfTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homePenaltyScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayPenaltyScore": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "Pick_GenerateOptions.venueIds-or-matchTimes_": {
+                "properties": {
+                    "venueIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    },
+                    "matchTimes": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "venueIds",
+                    "matchTimes"
+                ],
+                "type": "object",
+                "description": "From T, pick a set of properties whose keys are in the union K"
+            },
+            "ScheduleOptions": {
+                "$ref": "#/components/schemas/Pick_GenerateOptions.venueIds-or-matchTimes_"
+            },
+            "ManualScoreBody": {
+                "properties": {
+                    "homeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "resultType": {
+                        "$ref": "#/components/schemas/MatchResultType"
+                    },
+                    "homePenalty": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayPenalty": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "homeScore",
+                    "awayScore",
+                    "resultType"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ConfirmResultOutput": {
+                "properties": {
+                    "matchResultId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "winnerTeamId": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "standingUpdated": {
+                        "type": "boolean"
+                    },
+                    "knockoutAdvanced": {
+                        "type": "boolean"
+                    },
+                    "newMatchId": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "matchResultId",
+                    "winnerTeamId",
+                    "standingUpdated",
+                    "knockoutAdvanced"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ScheduleOptionsBody": {
+                "properties": {
+                    "venueIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    },
+                    "matchTimes": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "venueIds",
+                    "matchTimes"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ForfeitMatchBody": {
+                "properties": {
+                    "forfeitingTeamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "scheduleOptions": {
+                        "$ref": "#/components/schemas/ScheduleOptions"
+                    }
+                },
+                "required": [
+                    "forfeitingTeamId",
+                    "scheduleOptions"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AbandonMatchBody": {
+                "properties": {
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "reason": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "minute"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "FileDisputeBody": {
+                "properties": {
+                    "reason": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ResolveAppealBody": {
+                "properties": {
+                    "resolution": {
+                        "type": "string",
+                        "enum": [
+                            "uphold",
+                            "overturn"
+                        ]
+                    },
+                    "newHomeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "newAwayScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "note": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "resolution",
+                    "note"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RecordEventInput": {
+                "properties": {
+                    "playerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "teamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/MatchEventType"
+                    },
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "addedMinute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "subOutPlayerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "wasOwnGoal": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "type"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AddEventBody": {
+                "properties": {
+                    "playerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "teamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/MatchEventType"
+                    },
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "addedMinute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "subOutPlayerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "wasOwnGoal": {
+                        "type": "boolean"
+                    },
+                    "period": {
+                        "$ref": "#/components/schemas/MatchPeriod"
+                    }
+                },
+                "required": [
+                    "type",
+                    "period"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "Partial_RecordEventInput_": {
+                "properties": {
+                    "playerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "teamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/MatchEventType"
+                    },
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "addedMinute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "subOutPlayerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "wasOwnGoal": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object",
+                "description": "Make all properties in T optional"
+            },
+            "EditEventBody": {
+                "properties": {},
+                "type": "object",
+                "additionalProperties": false
+            },
+            "EditScoreBody": {
+                "properties": {
+                    "notes": {
+                        "type": "string"
+                    },
+                    "resultType": {
+                        "$ref": "#/components/schemas/MatchResultType"
+                    },
+                    "awayHalfTime": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homeHalfTime": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayExtraTime": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homeExtraTime": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayPenalty": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homePenalty": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homeScore": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "awayScore",
+                    "homeScore"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "KnockoutGenerateResult": {
                 "properties": {
                     "totalSlots": {
@@ -5908,6 +6375,1095 @@
                     }
                 ],
                 "parameters": []
+            }
+        },
+        "/matches/{id}/result": {
+            "get": {
+                "operationId": "GetMatchResult",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "properties": {
+                                                "winner_team": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "name"
+                                                    ],
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "required": [
+                                                "winner_team"
+                                            ],
+                                            "type": "object"
+                                        },
+                                        {
+                                            "properties": {
+                                                "appeal_note": {
+                                                    "type": "string"
+                                                },
+                                                "appeal_reason": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": "string"
+                                                },
+                                                "duration": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "result_type": {
+                                                    "$ref": "#/components/schemas/MatchResultType"
+                                                },
+                                                "away_final_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "home_final_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "away_penalty_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "home_penalty_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "away_extra_time_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "home_extra_time_score": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "winner_team_id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "match_id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "status": {
+                                                    "$ref": "#/components/schemas/MatchResultStatus"
+                                                },
+                                                "deleted_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean"
+                                                },
+                                                "id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                }
+                                            },
+                                            "required": [
+                                                "appeal_note",
+                                                "appeal_reason",
+                                                "notes",
+                                                "duration",
+                                                "result_type",
+                                                "away_final_score",
+                                                "home_final_score",
+                                                "away_penalty_score",
+                                                "home_penalty_score",
+                                                "away_extra_time_score",
+                                                "home_extra_time_score",
+                                                "winner_team_id",
+                                                "match_id",
+                                                "status",
+                                                "deleted_at",
+                                                "updated_at",
+                                                "created_at",
+                                                "is_active",
+                                                "id"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Xem kết quả chính thức của trận đấu.\r\nTrả về score 90p, ET, penalty, winner, result_type, status (official/protested...).",
+                "tags": [
+                    "Match Result"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/matches/{id}/events": {
+            "get": {
+                "operationId": "GetMatchEvents",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "allOf": [
+                                            {
+                                                "properties": {
+                                                    "match": {
+                                                        "properties": {
+                                                            "away_team_id": {
+                                                                "type": "number",
+                                                                "format": "double"
+                                                            },
+                                                            "home_team_id": {
+                                                                "type": "number",
+                                                                "format": "double"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "away_team_id",
+                                                            "home_team_id"
+                                                        ],
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "match"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            {
+                                                "properties": {
+                                                    "sub_out_player_id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "card_color": {
+                                                        "$ref": "#/components/schemas/CardColor"
+                                                    },
+                                                    "added_minute": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "period": {
+                                                        "$ref": "#/components/schemas/MatchPeriod"
+                                                    },
+                                                    "note": {
+                                                        "type": "string"
+                                                    },
+                                                    "minute": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "match_id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "player_id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "team_id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "type": {
+                                                        "$ref": "#/components/schemas/MatchEventType"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "sub_out_player_id",
+                                                    "card_color",
+                                                    "added_minute",
+                                                    "period",
+                                                    "note",
+                                                    "minute",
+                                                    "match_id",
+                                                    "player_id",
+                                                    "team_id",
+                                                    "type",
+                                                    "created_at",
+                                                    "id"
+                                                ],
+                                                "type": "object"
+                                            }
+                                        ]
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "List toàn bộ events của trận (goal, thẻ, thay người...).\r\nHỗ trợ filter theo type và period.",
+                "tags": [
+                    "Match Result"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "type",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "RecordEvent",
+                "responses": {
+                    "204": {
+                        "description": "Event recorded"
+                    }
+                },
+                "description": "Ghi nhận event trong trận (goal, thẻ, thay người...).\r\nCho phép nhập khi ongoing hoặc pending_official (grace period 15p).",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RecordEventBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/result/stats": {
+            "get": {
+                "operationId": "GetMatchPlayerStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "allOf": [
+                                            {
+                                                "$ref": "#/components/schemas/PickEnumerable_MatchEventGroupByOutputType._40_type-or-team_id-or-player_id_41_-Array_"
+                                            },
+                                            {
+                                                "properties": {
+                                                    "_count": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "number",
+                                                                "format": "double"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type"
+                                                        ],
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "_count"
+                                                ],
+                                                "type": "object"
+                                            }
+                                        ]
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Thống kê cầu thủ của 1 trận cụ thể (goals, cards per player).\r\nAggregate từ match_events — không phải PlayerStatistic (đó là season-level).",
+                "tags": [
+                    "Match Result"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/matches/{id}/start": {
+            "post": {
+                "operationId": "StartMatch",
+                "responses": {
+                    "204": {
+                        "description": "Started"
+                    }
+                },
+                "description": "Bắt đầu trận đấu — chuyển scheduled → ongoing.\r\nKhởi tạo home_score/away_score = 0, current_period = first_half.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/matches/{id}/period": {
+            "post": {
+                "operationId": "TransitionPeriod",
+                "responses": {
+                    "204": {
+                        "description": "Period transitioned"
+                    }
+                },
+                "description": "Chuyển period (first_half → second_half → extra_time_first...).\r\nValidate transition hợp lệ theo PERIOD_TRANSITIONS map.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TransitionPeriodBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/finalize": {
+            "post": {
+                "operationId": "FinalizeMatch",
+                "responses": {
+                    "204": {
+                        "description": "Finalized"
+                    }
+                },
+                "description": "Referee bấm kết thúc trận — chuyển ongoing → pending_official (grace period 15p).\r\nKHÔNG tạo MatchResult. MatchResult chỉ tạo tại confirmOfficial.\r\nLưu referee input (resultType, penalty, half-time) để dùng lại khi confirm.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/FinalizeMatchBody"
+                                    },
+                                    {
+                                        "properties": {
+                                            "scheduleOptions": {
+                                                "$ref": "#/components/schemas/ScheduleOptions"
+                                            }
+                                        },
+                                        "required": [
+                                            "scheduleOptions"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/manual-score": {
+            "post": {
+                "operationId": "SubmitManualScore",
+                "responses": {
+                    "204": {
+                        "description": "Manual score submitted"
+                    }
+                },
+                "description": "Nhập tay kết quả — fallback khi referee không dùng app (giải nhỏ).\r\nReject nếu match đã có events. Manual path → needs_review sau timeout.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/ManualScoreBody"
+                                    },
+                                    {
+                                        "properties": {
+                                            "scheduleOptions": {
+                                                "$ref": "#/components/schemas/ScheduleOptions"
+                                            }
+                                        },
+                                        "required": [
+                                            "scheduleOptions"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/confirm": {
+            "post": {
+                "operationId": "ConfirmOfficial",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConfirmResultOutput"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Xác nhận kết quả chính thức sau grace period.\r\nEvent path: compute score từ toàn bộ events.\r\nManual path: dùng manual_home_score / manual_away_score.\r\nTạo MatchResult, update standings, advance knockout bracket nếu có.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScheduleOptionsBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/forfeit": {
+            "post": {
+                "operationId": "ForfeitMatch",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConfirmResultOutput"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Xử phạt thua cuộc (forfeit / walkover) — BTC quyết định.\r\nBypass grace period, tạo MatchResult trực tiếp.\r\nwalkover = scheduled + team không xuất hiện.\r\nforfeit  = ongoing/finished + team bỏ cuộc / vi phạm.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ForfeitMatchBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/abandon": {
+            "post": {
+                "operationId": "AbandonMatch",
+                "responses": {
+                    "204": {
+                        "description": "Abandoned"
+                    }
+                },
+                "description": "Dừng trận giữa chừng (thời tiết, bạo lực...).\r\nMatch chuyển sang abandoned, không tạo MatchResult.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AbandonMatchBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/appeal": {
+            "post": {
+                "operationId": "FileAppeal",
+                "responses": {
+                    "204": {
+                        "description": "Appeal filed"
+                    }
+                },
+                "description": "File khiếu nại — chỉ khi MatchResult.status = official.\r\nChuyển → under_review.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing",
+                            "user",
+                            "leader"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileDisputeBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/protest": {
+            "post": {
+                "operationId": "FileProtest",
+                "responses": {
+                    "204": {
+                        "description": "Protest filed"
+                    }
+                },
+                "description": "File phản đối chính thức — chỉ khi MatchResult.status = official.\r\nChuyển → protested.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing",
+                            "user",
+                            "leader"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileDisputeBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/resolve-appeal": {
+            "post": {
+                "operationId": "ResolveAppeal",
+                "responses": {
+                    "204": {
+                        "description": "Appeal resolved"
+                    }
+                },
+                "description": "Giải quyết khiếu nại / phản đối.\r\nuphold   = giữ nguyên kết quả → official.\r\noverturn = đảo ngược kết quả → overturned + recompute standings.\r\nKnockout overturn chưa hỗ trợ tự động (bracket đã advance).",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResolveAppealBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/correction/events": {
+            "post": {
+                "operationId": "AddEvent",
+                "responses": {
+                    "204": {
+                        "description": "Event added"
+                    }
+                },
+                "description": "Thêm event bị sót sau khi match finished.\r\nChỉ trong 15p kể từ played_at. period bắt buộc.\r\nTự recompute MatchResult sau khi thêm.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/AddEventBody"
+                                    },
+                                    {
+                                        "properties": {
+                                            "scheduleOptions": {
+                                                "$ref": "#/components/schemas/ScheduleOptions"
+                                            }
+                                        },
+                                        "required": [
+                                            "scheduleOptions"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/correction/events/{eventId}": {
+            "delete": {
+                "operationId": "DeleteEvent",
+                "responses": {
+                    "204": {
+                        "description": "Event deleted"
+                    }
+                },
+                "description": "Xóa event nhập sai sau khi match finished.\r\nChỉ trong 15p kể từ played_at.\r\nTự recompute MatchResult sau khi xóa.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "eventId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScheduleOptionsBody"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "EditEvent",
+                "responses": {
+                    "204": {
+                        "description": "Event edited"
+                    }
+                },
+                "description": "Sửa event (minute, type, player, period, note) sau khi match finished.\r\nChỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.\r\nTự recompute MatchResult sau khi sửa.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "eventId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/EditEventBody"
+                                    },
+                                    {
+                                        "properties": {
+                                            "scheduleOptions": {
+                                                "$ref": "#/components/schemas/ScheduleOptions"
+                                            }
+                                        },
+                                        "required": [
+                                            "scheduleOptions"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/correction/score": {
+            "patch": {
+                "operationId": "EditScore",
+                "responses": {
+                    "204": {
+                        "description": "Score corrected"
+                    }
+                },
+                "description": "Override score trực tiếp — chỉ dùng cho manual path (match không có events).\r\nChỉ trong 15p kể từ played_at.\r\nReject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/EditScoreBody"
+                                    },
+                                    {
+                                        "properties": {
+                                            "scheduleOptions": {
+                                                "$ref": "#/components/schemas/ScheduleOptions"
+                                            }
+                                        },
+                                        "required": [
+                                            "scheduleOptions"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
             }
         },
         "/seasons/{seasonId}/phases/{phaseId}/knockout/generate": {

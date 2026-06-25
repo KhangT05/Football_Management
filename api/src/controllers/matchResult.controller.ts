@@ -1,19 +1,26 @@
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-import { Controller, Get, Path, Tags, Route, Query, } from "tsoa";
+import {
+    Controller,
+    Get,
+    Path,
+    Tags,
+    Route,
+    Post,
+    Body,
+    Security,
+    Query,
+} from "tsoa";
+
 import { MatchResultService } from "../services/matchresult.service.js";
 import { MatchLifecycleService } from "../services/match.service.js";
 import { PrismaClient } from "../generated/prisma/client.js";
+import { ScheduleOptions } from "../types/schedule.type.js";
+
+// ─── Inline DTOs ──────────────────────────────────────────────────────────────
+
+interface ConfirmOfficialBody {
+    scheduleOptions: ScheduleOptions;
+}
+
 // ─── Controller ───────────────────────────────────────────────────────────────
 // KHÔNG đặt @Security ở class level — GET endpoints là public (guest xem được).
 // Các write endpoints tự annotate @Security riêng.
@@ -24,22 +31,26 @@ import { PrismaClient } from "../generated/prisma/client.js";
 //   GET /matches/:id/result/stats    → player stats của trận
 //   GET /seasons/:seasonId/standings → bảng xếp hạng theo group
 //   GET /seasons/:seasonId/stats     → thống kê cầu thủ trong season
-let MatchResultController = class MatchResultController extends Controller {
-    matchResultService;
-    lifecycleService;
-    prisma;
-    constructor(matchResultService, lifecycleService, prisma) {
+
+@Route("matches")
+@Tags("Match Result")
+export class MatchResultController extends Controller {
+    constructor(
+        private readonly matchResultService: MatchResultService,
+        private readonly lifecycleService: MatchLifecycleService,
+        private readonly prisma: PrismaClient,
+    ) {
         super();
-        this.matchResultService = matchResultService;
-        this.lifecycleService = lifecycleService;
-        this.prisma = prisma;
     }
+
     // ─── GET — public (không cần JWT) ─────────────────────────────────────────
+
     /**
      * Xem kết quả chính thức của trận đấu.
      * Trả về score 90p, ET, penalty, winner, result_type, status (official/protested...).
      */
-    async getMatchResult(id) {
+    @Get("{id}/result")
+    async getMatchResult(@Path() id: number) {
         const result = await this.prisma.matchResult.findUnique({
             where: { match_id: id },
             include: {
@@ -52,16 +63,22 @@ let MatchResultController = class MatchResultController extends Controller {
         }
         return result;
     }
+
     /**
      * List toàn bộ events của trận (goal, thẻ, thay người...).
      * Hỗ trợ filter theo type và period.
      */
-    async getMatchEvents(id, type, period) {
+    @Get("{id}/events")
+    async getMatchEvents(
+        @Path() id: number,
+        @Query() type?: string,
+        @Query() period?: string,
+    ) {
         return this.prisma.matchEvent.findMany({
             where: {
                 match_id: id,
-                ...(type && { type: type }),
-                ...(period && { period: period }),
+                ...(type && { type: type as any }),
+                ...(period && { period: period as any }),
             },
             orderBy: [{ period: "asc" }, { minute: "asc" }, { added_minute: "asc" }],
             include: {
@@ -69,11 +86,13 @@ let MatchResultController = class MatchResultController extends Controller {
             },
         });
     }
+
     /**
      * Thống kê cầu thủ của 1 trận cụ thể (goals, cards per player).
      * Aggregate từ match_events — không phải PlayerStatistic (đó là season-level).
      */
-    async getMatchPlayerStats(id) {
+    @Get("{id}/result/stats")
+    async getMatchPlayerStats(@Path() id: number) {
         return this.prisma.matchEvent.groupBy({
             by: ["player_id", "team_id", "type"],
             where: {
@@ -83,46 +102,18 @@ let MatchResultController = class MatchResultController extends Controller {
             _count: { type: true },
         });
     }
-};
-__decorate([
-    Get("{id}/result"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], MatchResultController.prototype, "getMatchResult", null);
-__decorate([
-    Get("{id}/events"),
-    __param(0, Path()),
-    __param(1, Query()),
-    __param(2, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String, String]),
-    __metadata("design:returntype", Promise)
-], MatchResultController.prototype, "getMatchEvents", null);
-__decorate([
-    Get("{id}/result/stats"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], MatchResultController.prototype, "getMatchPlayerStats", null);
-MatchResultController = __decorate([
-    Route("matches"),
-    Tags("Match Result"),
-    __metadata("design:paramtypes", [MatchResultService,
-        MatchLifecycleService,
-        PrismaClient])
-], MatchResultController);
-export { MatchResultController };
+}
+
 // // ─── Season-level read endpoints ──────────────────────────────────────────────
 // // Tách route riêng vì prefix là /seasons thay vì /matches.
+
 // @Route("seasons")
 // @Tags("Match Result")
 // export class SeasonStatsController extends Controller {
 //     constructor(private readonly prisma: PrismaClient) {
 //         super();
 //     }
+
 //     /**
 //      * Bảng xếp hạng tất cả groups trong season.
 //      * Hỗ trợ filter theo group_id cụ thể.
@@ -150,6 +141,7 @@ export { MatchResultController };
 //             },
 //         });
 //     }
+
 //     /**
 //      * Thống kê cầu thủ trong season.
 //      * Hỗ trợ sort theo goals_scored, yellow_cards, red_cards.
@@ -165,6 +157,7 @@ export { MatchResultController };
 //         @Query() teamId?: number,
 //     ) {
 //         const skip = (page - 1) * per_page;
+
 //         const [data, total] = await Promise.all([
 //             this.prisma.playerStatistic.findMany({
 //                 where: {
@@ -186,11 +179,13 @@ export { MatchResultController };
 //                 },
 //             }),
 //         ]);
+
 //         return {
 //             data,
 //             meta: { total, page, per_page, total_pages: Math.ceil(total / per_page) },
 //         };
 //     }
+
 //     /**
 //      * Danh sách cầu thủ đang bị treo giò trong season.
 //      */
@@ -206,4 +201,3 @@ export { MatchResultController };
 //         });
 //     }
 // }
-//# sourceMappingURL=matchResult.controller.js.map
