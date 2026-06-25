@@ -42,14 +42,41 @@ export const TransitionPeriodSchema = z.object({
 export const FinalizeMatchSchema = z
     .object({
     resultType: z.nativeEnum(MatchResultType).optional().default(MatchResultType.full_time),
+    // Half-time snapshot — chỉ dùng cho display, không ảnh hưởng winner logic
+    homeHalfTimeScore: z.coerce.number().int().nonnegative().optional(),
+    awayHalfTimeScore: z.coerce.number().int().nonnegative().optional(),
     homePenaltyScore: z.coerce.number().int().nonnegative().optional(),
     awayPenaltyScore: z.coerce.number().int().nonnegative().optional(),
 })
     .refine(d => d.resultType !== MatchResultType.penalty
-    || (d.homePenaltyScore !== undefined && d.awayPenaltyScore !== undefined), { path: ['homePenaltyScore'] });
+    || (d.homePenaltyScore !== undefined && d.awayPenaltyScore !== undefined), { path: ['homePenaltyScore'], message: 'homePenaltyScore + awayPenaltyScore bắt buộc khi resultType = penalty' });
+// ─── Manual score (fallback khi không nhập events realtime) ──────────────────
+// Bị reject nếu match đã có events — phải dùng finalizeMatch() thay thế.
+export const ManualScoreSchema = z
+    .object({
+    homeScore: z.coerce.number().int().nonnegative(),
+    awayScore: z.coerce.number().int().nonnegative(),
+    resultType: z.nativeEnum(MatchResultType),
+    homePenalty: z.coerce.number().int().nonnegative().optional(),
+    awayPenalty: z.coerce.number().int().nonnegative().optional(),
+})
+    .refine(d => d.resultType !== MatchResultType.penalty
+    || (d.homePenalty !== undefined && d.awayPenalty !== undefined), { path: ['homePenalty'], message: 'homePenalty + awayPenalty bắt buộc khi resultType = penalty' })
+    .refine(d => d.resultType !== MatchResultType.penalty
+    || d.homePenalty !== d.awayPenalty, { path: ['homePenalty'], message: 'Penalty không được hoà' });
+// ─── Confirm official ─────────────────────────────────────────────────────────
+// Body rỗng về data match — mọi data đã lưu lúc finalize/manual-score.
+// venueIds/matchTimes cho knockout advance match tiếp theo nếu cần.
+export const ConfirmOfficialSchema = z.object({
+    venueIds: z.array(z.coerce.number().int().positive()).optional(),
+    matchTimes: z.array(z.string().datetime()).optional(),
+});
 // ─── Forfeit ──────────────────────────────────────────────────────────────────
 export const ForfeitMatchSchema = z.object({
     forfeitingTeamId: z.coerce.number().int().positive(),
+    // Schedule options cho knockout advance sau forfeit
+    venueIds: z.array(z.coerce.number().int().positive()).optional(),
+    matchTimes: z.array(z.string().datetime()).optional(),
 });
 // ─── Abandon ─────────────────────────────────────────────────────────────────
 export const AbandonMatchSchema = z.object({
@@ -64,12 +91,10 @@ export const ResolveAppealSchema = z
     .object({
     // 'uphold'/'overturn' là input action của admin — không phải MatchResultStatus trong DB.
     // MatchResultStatus.overturned là trạng thái ghi DB SAU KHI admin chọn 'overturn'.
-    // Enum Prisma không dùng được ở đây vì shape không khớp (protested/official/under_review
-    // không phải lựa chọn hợp lệ cho admin action này).
     resolution: z.enum(['uphold', 'overturn']),
     newHomeScore: z.coerce.number().int().nonnegative().optional(),
     newAwayScore: z.coerce.number().int().nonnegative().optional(),
     note: z.string().min(1).max(1000),
 })
-    .refine(d => d.resolution !== 'overturn' || (d.newHomeScore !== undefined && d.newAwayScore !== undefined), { path: ['newHomeScore'] });
+    .refine(d => d.resolution !== 'overturn' || (d.newHomeScore !== undefined && d.newAwayScore !== undefined), { path: ['newHomeScore'], message: 'newHomeScore + newAwayScore bắt buộc khi resolution = overturn' });
 //# sourceMappingURL=match.schema.js.map

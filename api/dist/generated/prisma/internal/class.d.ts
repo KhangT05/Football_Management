@@ -228,6 +228,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.teamJersey`: Exposes CRUD operations for the **TeamJersey** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more TeamJerseys
+      * const teamJerseys = await prisma.teamJersey.findMany()
+      * ```
+      */
+    get teamJersey(): Prisma.TeamJerseyDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.player`: Exposes CRUD operations for the **Player** model.
       * Example usage:
       * ```ts
@@ -269,6 +280,28 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get seasonTeam(): Prisma.SeasonTeamDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.seasonTeamJersey`: Exposes CRUD operations for the **SeasonTeamJersey** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more SeasonTeamJerseys
+      * const seasonTeamJerseys = await prisma.seasonTeamJersey.findMany()
+      * ```
+      */
+    get seasonTeamJersey(): Prisma.SeasonTeamJerseyDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.matchLineup`: Exposes CRUD operations for the **MatchLineup** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more MatchLineups
+      * const matchLineups = await prisma.matchLineup.findMany()
+      * ```
+      */
+    get matchLineup(): Prisma.MatchLineupDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

@@ -293,8 +293,29 @@ model Team {
   notifications    Notification[]
   matchResults     MatchResult[]
   articles         Article[]
+  jerseys          TeamJersey[]
+  matchLineups     MatchLineup[]
 
   @@map("teams")
+}
+
+model TeamJersey {
+  id              Int        @id @default(autoincrement())
+  team_id         Int
+  type            JerseyType
+  primary_color   String
+  secondary_color String?
+  team            Team       @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, type])
+  @@map("team_jerseys")
+}
+
+enum JerseyType {
+  home
+  away
+  third
+  goalkeeper
 }
 
 // ============================================================
@@ -327,6 +348,7 @@ model Player {
 
   team_players     TeamPlayer[]
   playerStatistics PlayerStatistic[]
+  matchLineups     MatchLineup[]
 
   @@map("players")
 }
@@ -407,14 +429,15 @@ enum SeasonTeamStatus {
 }
 
 model SeasonTeam {
-  id         Int              @id @default(autoincrement())
+  id         Int                @id @default(autoincrement())
   season_id  Int
   team_id    Int
-  status     SeasonTeamStatus @default(pending)
+  status     SeasonTeamStatus   @default(pending)
   seed       Int?
-  is_active  Boolean          @default(true)
-  created_at DateTime         @default(now())
-  updated_at DateTime?        @updatedAt
+  is_active  Boolean            @default(true)
+  created_at DateTime           @default(now())
+  jerseys    SeasonTeamJersey[]
+  updated_at DateTime?          @updatedAt
 
   deleted_at DateTime?
 
@@ -432,9 +455,66 @@ model SeasonTeam {
   @@map("season_teams")
 }
 
+model SeasonTeamJersey {
+  id             Int @id @default(autoincrement())
+  season_team_id Int
+
+  type JerseyType
+
+  primary_color   String
+  secondary_color String?
+
+  image_url String?
+
+  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+
+  @@unique([season_team_id, type])
+  @@map("season_team_jerseys")
+}
+
 // ============================================================
 // MATCH
 // ============================================================
+enum LineupType {
+  starter
+  substitute
+}
+
+enum MatchPlayerStatus {
+  available
+  injured
+  suspended
+  absent
+}
+
+model MatchLineup {
+  id Int @id @default(autoincrement())
+
+  match_id  Int
+  team_id   Int
+  player_id Int
+
+  jersey_number Int
+  position      PlayerPosition
+
+  lineup_type LineupType @default(starter)
+
+  is_captain Boolean @default(false)
+
+  minute_in  Int?
+  minute_out Int?
+
+  status MatchPlayerStatus @default(available)
+
+  created_at DateTime @default(now())
+
+  match  Match  @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [team_id], references: [id])
+  player Player @relation(fields: [player_id], references: [id])
+
+  @@unique([match_id, player_id])
+  @@map("match_lineups")
+}
 
 enum MatchStatus {
   scheduled
@@ -487,15 +567,16 @@ model Match {
   away_team Team   @relation("Match_awayTeam", fields: [away_team_id], references: [id])
 
   events       MatchEvent[]
-  user         User?        @relation(fields: [user_id], references: [id])
+  user         User?         @relation(fields: [user_id], references: [id])
   user_id      Int?
   venue_id     Int?
   matchResult  MatchResult?
-  venue        Venue?       @relation(fields: [venue_id], references: [id])
-  is_published Boolean      @default(false)
+  venue        Venue?        @relation(fields: [venue_id], references: [id])
+  is_published Boolean       @default(false)
   referee      String?
   articles     Article[]
   bracketSlot  BracketSlot?
+  matchLineups MatchLineup[]
 
   @@unique([venue_id, scheduled_at])
   @@map("matches")
@@ -572,40 +653,6 @@ enum MatchResultStatus {
   under_review
 }
 
-enum MatchResultType {
-  full_time
-  extra_time
-  penalty
-  forfeit
-  walkover
-}
-
-enum NotificationSource {
-  manual
-  system
-}
-
-enum NotificationType {
-  match_schedule
-  match_result
-  standing_updated
-  registration_deadline
-  team_advanced
-  payment_confirmed
-  payment_rejected
-  player_approved
-  player_rejected
-  team_approved
-  team_rejected
-  general
-}
-
-enum PaymentStatus {
-  pending
-  confirmed
-  rejected
-}
-
 model TeamStanding {
   id             Int       @id @default(autoincrement())
   team_id        Int
@@ -658,10 +705,6 @@ model MatchResult {
   id                    Int               @id @default(autoincrement())
   match_id              Int               @unique
   winner_team_id        Int?
-  home_score            Int               @default(0)
-  away_score            Int               @default(0)
-  home_half_time_score  Int               @default(0)
-  away_half_time_score  Int               @default(0)
   home_extra_time_score Int?
   away_extra_time_score Int?
   home_penalty_score    Int?
@@ -725,6 +768,40 @@ model Payment {
   season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+enum MatchResultType {
+  full_time
+  extra_time
+  penalty
+  forfeit
+  walkover
+}
+
+enum NotificationSource {
+  manual
+  system
+}
+
+enum NotificationType {
+  match_schedule
+  match_result
+  standing_updated
+  registration_deadline
+  team_advanced
+  payment_confirmed
+  payment_rejected
+  player_approved
+  player_rejected
+  team_approved
+  team_rejected
+  general
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  rejected
 }
 
 // Bảng 1: Bài viết

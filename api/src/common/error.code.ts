@@ -15,6 +15,7 @@ export const ERROR_REGISTRY = {
     INTERNAL_SERVER_ERROR: { httpStatus: 500, expose: 500, isAuthError: false },
     EXTERNAL_API_ERROR: { httpStatus: 502, expose: 500, isAuthError: false }, // đừng leak vendor info
     TIMEOUT: { httpStatus: 504, expose: 500, isAuthError: false },
+    NOT_IMPLEMENTED: { httpStatus: 501, expose: 500, isAuthError: false },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_REGISTRY;
