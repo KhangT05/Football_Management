@@ -41,6 +41,7 @@ export interface SeasonTeamWithRelations {
     updated_at: Date | null;
     deleted_at: Date | null;
     is_active: boolean;
+    seed: number | null;
     season: {
         id: number;
         name: string;

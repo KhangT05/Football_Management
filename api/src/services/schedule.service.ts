@@ -29,7 +29,7 @@ export class ScheduleService extends ScheduleEngine {
         super(prisma);
 
         this.query = new Queryable<Match>(prisma.match, {
-            filterable: ['season_id', 'status', 'venue_id', 'round'],
+            filterable: ['status', 'venue_id', 'round'],
             sortable: ['scheduled_at'],
             defaultSort: { column: 'scheduled_at', direction: 'asc' },
             searchFields: [],
@@ -65,7 +65,7 @@ export class ScheduleService extends ScheduleEngine {
             : 'asc';
 
         const where = {
-            season_id: seasonId,
+            phase: { season_id: seasonId },
             is_active: true,
             OR: [{ home_team_id: teamId }, { away_team_id: teamId }],
         };
@@ -213,7 +213,7 @@ export class ScheduleService extends ScheduleEngine {
                     }
 
                     const matches = this.generateRoundRobin(
-                        teamsInGroup, group.id, seasonId, phase.id, options.doubleRound ?? true
+                        teamsInGroup, group.id, phase.id, options.doubleRound ?? true
                     );
                     allMatches.push(...matches);
                     createdGroupIds.push(group.id);
@@ -246,10 +246,17 @@ export class ScheduleService extends ScheduleEngine {
         const matches = await this.prisma.match.findMany({
 
             where: {
-                season_id: seasonId,
+                phase: { season_id: seasonId },
                 scheduled_at: null,
                 status: MatchStatus.scheduled,
                 group_id: { not: null },
+            },
+            select: {
+                id: true,
+                home_team_id: true,
+                away_team_id: true,
+                round: true,
+                group_id: true,
             },
             orderBy: [{ round: 'asc' }, { id: 'asc' }],
         });
@@ -258,7 +265,10 @@ export class ScheduleService extends ScheduleEngine {
 
         const [phase, season] = await Promise.all([
             this.prisma.phase.findFirst({
-                where: { season_id: seasonId, type: PhaseType.group_stage },
+                where: {
+                    season_id: seasonId,
+                    type: PhaseType.group_stage
+                },
                 select: { min_rest_days_per_team: true },
             }),
             this.prisma.season.findUnique({
@@ -437,7 +447,6 @@ export class ScheduleService extends ScheduleEngine {
     private generateRoundRobin(
         teamIds: number[],
         groupId: number,
-        seasonId: number,
         phaseId: number,
         doubleRound = true,
     ): MatchDraft[] {
@@ -473,7 +482,6 @@ export class ScheduleService extends ScheduleEngine {
         return drafts.map(d => ({
             phase_id: phaseId,
             group_id: groupId,
-            season_id: seasonId,
             home_team_id: d.home,
             away_team_id: d.away,
             round: String(d.round),

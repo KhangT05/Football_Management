@@ -825,6 +825,10 @@
                         "type": "number",
                         "format": "double"
                     },
+                    "seed": {
+                        "type": "number",
+                        "format": "double"
+                    },
                     "status": {
                         "$ref": "#/components/schemas/SeasonTeamStatus"
                     },
@@ -862,6 +866,7 @@
                 },
                 "required": [
                     "group_id",
+                    "seed",
                     "status",
                     "season_id",
                     "team_id",
@@ -944,6 +949,11 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "seed": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
                     },
                     "season": {
                         "properties": {
@@ -1032,6 +1042,7 @@
                     "updated_at",
                     "deleted_at",
                     "is_active",
+                    "seed",
                     "season",
                     "team",
                     "user",
@@ -1513,7 +1524,9 @@
                     "forfeited",
                     "postponed",
                     "bye",
-                    "abandoned"
+                    "abandoned",
+                    "pending_official",
+                    "needs_review"
                 ]
             },
             "MatchPeriod": {
@@ -1524,6 +1537,16 @@
                     "extra_time_first",
                     "extra_time_second",
                     "penalty_shootout"
+                ]
+            },
+            "MatchResultType": {
+                "type": "string",
+                "enum": [
+                    "full_time",
+                    "extra_time",
+                    "penalty",
+                    "forfeit",
+                    "walkover"
                 ]
             },
             "DefaultSelection__36_MatchPayload_": {
@@ -1537,6 +1560,37 @@
                     "venue_id": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "manual_away_score": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "manual_home_score": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "finalize_away_penalty": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "finalize_home_penalty": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "finalize_away_half_time": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "finalize_home_half_time": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "finalize_result_type": {
+                        "$ref": "#/components/schemas/MatchResultType"
+                    },
+                    "pending_official_at": {
+                        "type": "string",
+                        "format": "date-time"
                     },
                     "abandoned_minute": {
                         "type": "number",
@@ -1598,10 +1652,6 @@
                     "status": {
                         "$ref": "#/components/schemas/MatchStatus"
                     },
-                    "season_id": {
-                        "type": "number",
-                        "format": "double"
-                    },
                     "user_id": {
                         "type": "number",
                         "format": "double"
@@ -1630,6 +1680,14 @@
                     "referee",
                     "is_published",
                     "venue_id",
+                    "manual_away_score",
+                    "manual_home_score",
+                    "finalize_away_penalty",
+                    "finalize_home_penalty",
+                    "finalize_away_half_time",
+                    "finalize_home_half_time",
+                    "finalize_result_type",
+                    "pending_official_at",
                     "abandoned_minute",
                     "replay_of_match_id",
                     "postponed_reason",
@@ -1646,7 +1704,6 @@
                     "phase_id",
                     "group_id",
                     "status",
-                    "season_id",
                     "user_id",
                     "deleted_at",
                     "updated_at",
@@ -2570,6 +2627,42 @@
                 },
                 "required": [
                     "teams_per_group"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AssignTeamToGroupBody": {
+                "properties": {
+                    "season_team_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "group_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "season_team_id",
+                    "group_id"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "SwapTeamsBody": {
+                "properties": {
+                    "season_team_id_a": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_team_id_b": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "season_team_id_a",
+                    "season_team_id_b"
                 ],
                 "type": "object",
                 "additionalProperties": false
@@ -5995,17 +6088,11 @@
                         }
                     }
                 },
-                "description": "Xem group + list team approved đang thuộc group (kèm phase info)",
+                "description": "Public: xem group + list team approved đang thuộc group (kèm phase info)",
                 "tags": [
                     "Groups"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -6037,6 +6124,7 @@
                         }
                     }
                 },
+                "description": "Admin: random draw toàn bộ approved team vào các group của phase",
                 "tags": [
                     "Groups"
                 ],
@@ -6076,6 +6164,7 @@
                         "description": "No content"
                     }
                 },
+                "description": "Admin: xoá toàn bộ kết quả draw của phase (reset group_id về null)",
                 "tags": [
                     "Groups"
                 ],
@@ -6097,6 +6186,138 @@
                         }
                     }
                 ]
+            }
+        },
+        "/groups/{phaseId}/draw/seeded": {
+            "post": {
+                "operationId": "DrawGroupsSeeded",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/DrawAssignment"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Admin: seeded draw theo pot (UEFA-style)",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "phaseId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/DrawGroupsOptions"
+                                    },
+                                    {
+                                        "properties": {
+                                            "num_pots": {
+                                                "type": "number",
+                                                "format": "double"
+                                            }
+                                        },
+                                        "required": [
+                                            "num_pots"
+                                        ],
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/assign": {
+            "put": {
+                "operationId": "AssignTeamToGroup",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                },
+                "description": "Admin: assign thủ công 1 team vào 1 group",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignTeamToGroupBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/swap": {
+            "put": {
+                "operationId": "SwapTeams",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                },
+                "description": "Admin: swap group giữa 2 team trong cùng phase",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SwapTeamsBody"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/auth/login": {

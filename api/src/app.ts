@@ -43,7 +43,7 @@ async function bootstrap() {
 
     await prisma.$connect();
 
-    await runSeeders(prisma);
+    // await runSeeders(prisma);
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });

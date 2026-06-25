@@ -1,0 +1,164 @@
+// ═══════════════════════════════════════════════════════════════
+// ATOMIC SELECTS — compose lên trên, không dùng trực tiếp
+// ═══════════════════════════════════════════════════════════════
+const venueSelect = {
+    select: { id: true, name: true, address: true },
+};
+const teamSelect = {
+    select: { id: true, name: true, logo: true },
+};
+const phaseSelect = {
+    select: { id: true, name: true, format: true },
+};
+const matchResultSelect = {
+    select: {
+        id: true,
+        winner_team_id: true,
+        home_score: true,
+        away_score: true,
+        home_half_time_score: true,
+        away_half_time_score: true,
+        home_extra_time_score: true,
+        away_extra_time_score: true,
+        home_penalty_score: true,
+        away_penalty_score: true,
+        home_final_score: true,
+        away_final_score: true,
+        result_type: true,
+        status: true,
+        notes: true,
+    },
+};
+const tournamentRuleSuspensionSelect = {
+    select: { yellow_cards_suspension: true, forfeit_score: true },
+};
+// phase + tournamentRule — dùng cho confirm/forfeit cần business rule
+const phaseWithRuleSelect = {
+    select: {
+        format: true,
+        season: {
+            select: {
+                id: true,
+                tournament: {
+                    select: {
+                        tournamentRule: tournamentRuleSuspensionSelect,
+                    },
+                },
+            },
+        },
+    },
+};
+// ═══════════════════════════════════════════════════════════════
+// COMPOSED SELECTS — 1 use-case = 1 select object
+// ═══════════════════════════════════════════════════════════════
+// ── 1. List / schedule view ───────────────────────────────────
+// GET /matches, calendar, bracket display
+// Cần: teams, venue, score, status — KHÔNG cần events/result detail
+export const matchListSelect = {
+    id: true,
+    status: true,
+    round: true,
+    leg: true,
+    scheduled_at: true,
+    played_at: true,
+    home_score: true,
+    away_score: true,
+    current_period: true,
+    is_published: true,
+    referee: true,
+    phase_id: true,
+    group_id: true,
+    home_team_id: true,
+    away_team_id: true,
+    home_team: teamSelect,
+    away_team: teamSelect,
+    venue: venueSelect,
+    phase: phaseSelect,
+    matchResult: {
+        select: {
+            result_type: true,
+            status: true,
+            home_final_score: true,
+            away_final_score: true,
+        },
+    },
+};
+// ── 2. Detail / live view ─────────────────────────────────────
+// GET /matches/:id — referee app, spectator, live score polling
+// Cần: full matchResult + events
+export const matchDetailSelect = {
+    ...matchListSelect,
+    postponed_from: true,
+    postponed_reason: true,
+    abandoned_minute: true,
+    replay_of_match_id: true,
+    matchResult: matchResultSelect,
+    events: {
+        select: {
+            id: true,
+            type: true,
+            minute: true,
+            added_minute: true,
+            period: true,
+            team_id: true,
+            player_id: true,
+            card_color: true,
+            note: true,
+        },
+        orderBy: [{ minute: 'asc' }, { id: 'asc' }],
+    },
+};
+// ── 3. Confirm result (internal — MatchResultService) ─────────
+// confirmResult() cần: status guard, phase.format, tournamentRule, matchResult existence check
+export const matchForConfirmSelect = {
+    id: true,
+    status: true,
+    home_team_id: true,
+    away_team_id: true,
+    group_id: true,
+    phase_id: true,
+    phase: phaseWithRuleSelect,
+    matchResult: { select: { id: true } },
+};
+// ── 4. Finalize (internal — MatchLifecycleService) ───────────
+// finalizeMatch() cần: status, phase.format, home_team_id để compute score from events
+export const matchForFinalizeSelect = {
+    id: true,
+    status: true,
+    home_team_id: true,
+    group_id: true,
+    phase: {
+        select: { format: true },
+    },
+};
+// ── 5. Forfeit (internal — MatchLifecycleService) ────────────
+// forfeitMatch() cần: status, team ids, forfeit_score từ tournamentRule
+export const matchForForfeitSelect = {
+    id: true,
+    status: true,
+    home_team_id: true,
+    away_team_id: true,
+    phase: phaseWithRuleSelect,
+};
+// ── 6. Admin / management ─────────────────────────────────────
+// Admin panel: full audit fields + appeal info + article links
+export const matchAdminSelect = {
+    ...matchDetailSelect,
+    is_active: true,
+    created_at: true,
+    updated_at: true,
+    deleted_at: true,
+    user_id: true,
+    matchResult: {
+        select: {
+            ...matchResultSelect.select,
+            appeal_reason: true,
+            appeal_note: true,
+            duration: true,
+            is_active: true,
+            created_at: true,
+            updated_at: true,
+        },
+    },
+};
+//# sourceMappingURL=match.queries.js.map
