@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Information } from '../data/data';
 import useAuthStore from '../store/authStore';
+import ThemeSwitcher from './ThemeSwitcher';
 import {
   User, ChevronDown, LogOut, UserCircle, Shield, Trophy,
   Menu, X, CalendarDays, BarChart3, Home
@@ -28,7 +29,15 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-navy border-b border-navy-light shadow-lg shadow-black/20 text-white">
+    <header
+      className="sticky top-0 z-50 border-b shadow-lg text-white"
+      style={{
+        backgroundColor: 'var(--color-bg-header)',
+        borderColor: 'var(--color-border)',
+        boxShadow: 'var(--shadow-header)',
+        color: 'var(--color-text-primary)',
+      }}
+    >
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
@@ -65,7 +74,7 @@ export default function Header() {
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-4 relative">
+          <div className="hidden md:flex items-center gap-3 relative">
             {!isAuthenticated ? (
               <>
                 <Link
@@ -92,33 +101,59 @@ export default function Header() {
                 </button>
 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-64 bg-navy-dark border border-navy-light rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-2 z-50">
-                  <div className="p-4 border-b border-navy-light">
-                    <p className="text-sm font-bold text-white">{user?.name || 'Quản trị viên'}</p>
-                    <p className="text-xs text-gray-400 truncate">{user?.email || 'admin@example.com'}</p>
+                <div className="absolute right-0 mt-3 w-72 bg-navy/90 backdrop-blur-2xl border border-navy-light rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-3 z-50 overflow-hidden">
+                  
+                  {/* Dropdown Header */}
+                  <div className="p-5 border-b border-navy-light bg-linear-to-br from-navy-dark via-navy to-blue-900/20 relative">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-900/50">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-base font-black text-white truncate">{user?.name || 'Thành Viên'}</p>
+                        <p className="text-xs text-blue-300/80 truncate font-medium">{user?.email || 'Chưa cập nhật email'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-2 flex flex-col gap-1">
-                    <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                      <UserCircle className="w-4 h-4 text-emerald-400" />
+
+                  {/* Dropdown Body */}
+                  <div className="p-3 flex flex-col gap-1.5 bg-navy-dark/50">
+                    <Link to="/profile" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gray-300 hover:text-white hover:bg-blue-500/10 rounded-xl transition-all border border-transparent hover:border-blue-500/20">
+                      <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-blue-500/20 transition-colors">
+                        <UserCircle className="w-4 h-4 text-emerald-400" />
+                      </div>
                       Thông tin cá nhân
                     </Link>
-                    <Link to="/dang-ky-doi-bong" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                      <Trophy className="w-4 h-4 text-yellow-400" />
+                    <Link to="/dang-ky-doi-bong" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gray-300 hover:text-white hover:bg-yellow-500/10 rounded-xl transition-all border border-transparent hover:border-yellow-500/20">
+                      <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-yellow-500/20 transition-colors">
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                      </div>
                       Đăng ký đội thi đấu
                     </Link>
-                    <Link to="/doi-cua-toi" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                      <Shield className="w-4 h-4 text-purple-400" />
+                    <Link to="/doi-cua-toi" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gray-300 hover:text-white hover:bg-purple-500/10 rounded-xl transition-all border border-transparent hover:border-purple-500/20">
+                      <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-purple-500/20 transition-colors">
+                        <Shield className="w-4 h-4 text-purple-400" />
+                      </div>
                       Đội bóng của tôi
                     </Link>
-                    <Link to="/quan-ly-giai-dau" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-navy-light rounded-lg transition-colors">
-                      <Shield className="w-4 h-4 text-blue-400" />
-                      Trang quản trị (Admin)
-                    </Link>
+                    
+                    <>
+                      <div className="h-px bg-navy-light my-1 mx-2"></div>
+                      <Link to="/quan-ly-giai-dau" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 rounded-xl transition-all border border-transparent hover:border-blue-600/20">
+                        <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-blue-600/20 transition-colors">
+                          <Shield className="w-4 h-4" />
+                        </div>
+                        Trang quản trị (Admin)
+                      </Link>
+                    </>
                   </div>
-                  <div className="p-2 border-t border-navy-light">
+
+                  {/* Dropdown Footer */}
+                  <div className="p-3 border-t border-navy-light bg-navy-dark/80">
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 rounded-xl transition-all border border-red-500/20 hover:border-red-500 shadow-sm"
                     >
                       <LogOut className="w-4 h-4" />
                       Đăng xuất
@@ -127,6 +162,10 @@ export default function Header() {
                 </div>
               </div>
             )}
+            
+            {/* Divider */}
+            <div className="hidden lg:block h-6 w-px bg-gray-600/50 mx-1" style={{ backgroundColor: 'var(--color-border)' }}></div>
+            <ThemeSwitcher />
           </div>
 
           {/* Mobile: Hamburger */}
@@ -146,7 +185,13 @@ export default function Header() {
           mobileOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="border-t border-navy-light bg-navy-dark px-4 py-4 space-y-1">
+        <div
+          className="border-t px-4 py-4 space-y-1"
+          style={{
+            backgroundColor: 'var(--color-bg-base)',
+            borderColor: 'var(--color-border)',
+          }}
+        >
           {/* Nav links */}
           {navLinks.map(({ to, label, icon: Icon }) => (
             <Link
@@ -164,7 +209,13 @@ export default function Header() {
             </Link>
           ))}
 
-          <div className="border-t border-navy-light pt-3 mt-3">
+          {/* Theme Switcher in mobile */}
+          <div className="flex items-center justify-between px-4 py-3 mb-1">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Giao diện</span>
+            <ThemeSwitcher />
+          </div>
+
+          <div className="border-t border-navy-light pt-3 mt-1">
             {!isAuthenticated ? (
               <div className="flex flex-col gap-2">
                 <Link
@@ -203,6 +254,10 @@ export default function Header() {
                 </Link>
                 <Link to="/doi-cua-toi" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-navy-light hover:text-white transition-colors">
                   <Shield className="w-4 h-4 text-purple-400" /> Đội bóng của tôi
+                </Link>
+                <div className="h-px bg-navy-light my-1 mx-4"></div>
+                <Link to="/quan-ly-giai-dau" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 transition-colors">
+                  <Shield className="w-4 h-4" /> Trang quản trị (Admin)
                 </Link>
                 <button
                   onClick={handleLogout}

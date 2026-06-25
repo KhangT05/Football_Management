@@ -1,38 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
-  Plus, Edit, Trash2, Users, X, Save, UploadCloud,
-  ChevronDown, ChevronUp, AlertTriangle, Loader2, CheckCircle2,
+  Plus, Edit, Trash2, Users,
+  ChevronDown, ChevronUp, AlertTriangle, Loader2,
   UserPlus, RefreshCw, Search
 } from 'lucide-react';
-import { teamApi } from '../../api';
-import { useApiQuery, useCrudModal, useDebouncedValue, useApiMutation } from '../../hooks';
+import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
-
-// ─── Delete Confirm Modal ───────────────────────────────
-function ConfirmDeleteModal({ name, type = 'team', onConfirm, onCancel, isDeleting }) {
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-navy border border-red-500/30 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 animate-slide-up">
-        <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-          <AlertTriangle className="w-7 h-7 text-red-400" />
-        </div>
-        <div className="text-center">
-          <h4 className="text-lg font-black text-white mb-1">Xóa {type === 'team' ? 'đội bóng' : 'cầu thủ'}?</h4>
-          <p className="text-sm text-gray-400">Xóa <strong className="text-white">{name}</strong>? Hành động này không thể hoàn tác.</p>
-        </div>
-        <div className="flex gap-3 w-full">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl font-bold bg-navy-light text-gray-300 border border-navy-light hover:text-white transition-colors">Hủy</button>
-          <button onClick={onConfirm} disabled={isDeleting} className="flex-1 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2 transition-colors disabled:opacity-70">
-            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import useTeamStore from '../../store/teamStore';
+import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
+import TeamFormModal from '../../components/admin/TeamFormModal';
+import PlayerFormModal from '../../components/admin/PlayerFormModal';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -47,19 +25,24 @@ const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
 export default function ManageTeams() {
   const toast = useToastStore();
 
-  // ── Data: Teams (useApiQuery) ──────────────────────────
-  const { data: teams, meta, isLoading, error: fetchError, fetch: fetchTeams } = useApiQuery(
-    teamApi.getTeams,
-    { perPage: 20, autoFetch: false, errorMsg: 'Không thể tải danh sách đội bóng.' }
-  );
+  // ── Zustand store ──────────────────────────────────────────────
+  const {
+    teams, meta, isLoading, error: fetchError,
+    fetchAll: fetchTeamsStore,
+    create: createTeam,
+    update: updateTeam,
+    softDelete: deleteTeam,
+    fetchPlayers, getPlayersFromCache, playersLoading,
+    addNewPlayerToTeam, removePlayers,
+  } = useTeamStore();
 
   // ── Debounced search ──────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   const refetchTeams = useCallback(() => {
-    fetchTeams({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
-  }, [fetchTeams, debouncedSearch]);
+    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc', force: !!debouncedSearch });
+  }, [fetchTeamsStore, debouncedSearch]);
 
   useEffect(() => { refetchTeams(); }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -106,10 +89,10 @@ export default function ManageTeams() {
     };
     teamCrud.save(async () => {
       if (teamCrud.modal === 'add') {
-        await teamApi.registerTeam(payload);
+        await createTeam(payload);
         toast.success(`Đã tạo đội "${payload.name}" thành công!`);
       } else {
-        await teamApi.update(teamCrud.editing.id, payload);
+        await updateTeam(teamCrud.editing.id, payload);
         toast.success(`Đã cập nhật thông tin đội "${payload.name}".`);
       }
     });
@@ -118,7 +101,7 @@ export default function ManageTeams() {
   const handleDeleteTeam = () => {
     const team = teamCrud.deleting;
     teamCrud.confirmDelete(async () => {
-      await teamApi.delete(team.id);
+      await deleteTeam(team.id);
       if (expandedTeamId === team.id) setExpandedTeamId(null);
       toast.success(`Đã xóa đội "${team.name}".`);
     }).catch((err) => {
@@ -128,32 +111,13 @@ export default function ManageTeams() {
 
   // ── Expand: Team Roster ────────────────────────────────
   const [expandedTeamId, setExpandedTeamId] = useState(null);
-  const [teamPlayers, setTeamPlayers] = useState({});
-  const [loadingPlayers, setLoadingPlayers] = useState({});
-
-  const fetchPlayers = async (teamId) => {
-    setLoadingPlayers(prev => ({ ...prev, [teamId]: true }));
-    try {
-      const res = await teamApi.getPlayers(teamId, { per_page: 50 });
-      const result = res?.data ?? res;
-      setTeamPlayers(prev => ({
-        ...prev,
-        [teamId]: result?.data ?? (Array.isArray(result) ? result : [])
-      }));
-    } catch {
-      toast.error('Không thể tải danh sách cầu thủ.');
-      setTeamPlayers(prev => ({ ...prev, [teamId]: [] }));
-    } finally {
-      setLoadingPlayers(prev => ({ ...prev, [teamId]: false }));
-    }
-  };
 
   const toggleTeamExpand = (teamId) => {
     if (expandedTeamId === teamId) {
       setExpandedTeamId(null);
     } else {
       setExpandedTeamId(teamId);
-      if (!teamPlayers[teamId]) fetchPlayers(teamId);
+      fetchPlayers(teamId); // dùng cache nếu còn hợp lệ
     }
   };
 
@@ -161,7 +125,7 @@ export default function ManageTeams() {
   const [playerTargetTeamId, setPlayerTargetTeamId] = useState(null);
   const playerCrud = useCrudModal({
     emptyForm: EMPTY_PLAYER,
-    onSuccess: () => { if (playerTargetTeamId) fetchPlayers(playerTargetTeamId); },
+    onSuccess: () => { if (playerTargetTeamId) fetchPlayers(playerTargetTeamId, { force: true }); },
   });
 
   const openAddPlayer = (teamId) => {
@@ -173,36 +137,37 @@ export default function ManageTeams() {
     if (!playerCrud.form.name.trim()) { playerCrud.setFormError('Vui lòng nhập tên cầu thủ.'); return; }
     if (!playerCrud.form.number || isNaN(playerCrud.form.number)) { playerCrud.setFormError('Vui lòng nhập số áo hợp lệ.'); return; }
     playerCrud.save(async () => {
-      if (playerCrud.modal === 'add') {
-        await teamApi.addPlayer(playerTargetTeamId, {
-          player_id: null,
-          jersey_number: parseInt(playerCrud.form.number),
-          position: playerCrud.form.position,
-        });
-        toast.success(`Đã thêm cầu thủ "${playerCrud.form.name.trim()}" vào đội!`);
-      } else {
-        toast.info('Chỉnh sửa cầu thủ chưa được hỗ trợ qua API này.');
-      }
+      // Dùng addNewPlayerToTeam từ teamStore (2 bước: tạo Player + addToTeam)
+      await addNewPlayerToTeam(playerTargetTeamId, {
+        name: playerCrud.form.name.trim(),
+        jersey_number: parseInt(playerCrud.form.number),
+        position: playerCrud.form.position,
+      });
+      toast.success(`Đã thêm cầu thủ "${playerCrud.form.name.trim()}" vào đội!`);
     });
   };
 
   // ── Delete Player ──────────────────────────────────────
-  const [deletePlayer, setDeletePlayer] = useState(null);
-  const deletePlayerMutation = useApiMutation();
+  const [deletePlayerState, setDeletePlayerState] = useState(null);
+  const [isDeletingPlayer, setIsDeletingPlayer] = useState(false);
 
-  const handleDeletePlayer = () => {
-    const { player, teamId } = deletePlayer;
-    deletePlayerMutation.mutate(async () => {
-      await teamApi.removePlayer(teamId, player.player_id ?? player.id);
+  const handleDeletePlayer = async () => {
+    const { player, teamId } = deletePlayerState;
+    setIsDeletingPlayer(true);
+    try {
+      // Dùng removePlayers từ teamStore (bulk delete đúng route)
+      await removePlayers(teamId, [player.id]);
       toast.success('Đã xóa cầu thủ khỏi đội.');
-      setDeletePlayer(null);
-      fetchPlayers(teamId);
-    }).catch((err) => {
+      setDeletePlayerState(null);
+      fetchPlayers(teamId, { force: true });
+    } catch (err) {
       toast.error(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
-    });
+    } finally {
+      setIsDeletingPlayer(false);
+    }
   };
 
-  const getTeamRoster = (team) => teamPlayers[team.id] ?? [];
+  const getTeamRoster = (team) => getPlayersFromCache(team.id);
 
   return (
     <AdminLayout>
@@ -305,7 +270,7 @@ export default function ManageTeams() {
                           {team.logo ? (
                             <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover mx-auto border border-navy-light" />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
+                        <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
                               {team.name?.[0]?.toUpperCase()}
                             </div>
                           )}
@@ -358,7 +323,7 @@ export default function ManageTeams() {
                                   <Users className="w-4 h-4 text-neon" />
                                   Danh sách cầu thủ – {team.name}
                                   <span className="ml-2 bg-navy-light px-2 py-0.5 rounded text-xs text-gray-400 font-normal">
-                                    {loadingPlayers[team.id] ? '...' : `${getTeamRoster(team).length} TV`}
+                                {playersLoading[team.id] ? '...' : `${getTeamRoster(team).length} TV`}
                                   </span>
                                 </h4>
                                 <button
@@ -369,7 +334,7 @@ export default function ManageTeams() {
                                 </button>
                               </div>
 
-                              {loadingPlayers[team.id] ? (
+                               {playersLoading[team.id] ? (
                                 <div className="space-y-2">
                                   {[1, 2, 3].map(i => <div key={i} className="skeleton h-10 rounded-lg" />)}
                                 </div>
@@ -418,7 +383,7 @@ export default function ManageTeams() {
                                           <td className="py-3 px-4 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                               <button
-                                                onClick={() => setDeletePlayer({ player, teamId: team.id })}
+                                                onClick={() => setDeletePlayerState({ player, teamId: team.id })}
                                                 className="p-1.5 rounded text-red-400 hover:bg-red-500/10 transition-colors"
                                                 title="Xóa cầu thủ"
                                               >
@@ -447,143 +412,37 @@ export default function ManageTeams() {
 
       {/* Team Add/Edit Modal */}
       {teamCrud.modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeTeamModal} />
-          <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-md animate-slide-up overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                {teamCrud.modal === 'add' ? 'Thêm đội bóng mới' : 'Chỉnh sửa đội bóng'}
-              </h3>
-              <button onClick={closeTeamModal} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 overflow-y-auto flex-1">
-              {teamCrud.formError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2 animate-fade-in">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{teamCrud.formError}
-                </div>
-              )}
-
-              {/* Logo Upload */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-2xl bg-navy-dark border-2 border-navy-light flex items-center justify-center overflow-hidden">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <UploadCloud className="w-8 h-8 text-gray-500" />
-                  )}
-                </div>
-                <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-navy-dark border border-navy-light rounded-lg text-sm text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-                  <UploadCloud className="w-4 h-4" />
-                  {logoPreview ? 'Đổi logo' : 'Tải logo'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tên đội bóng <span className="text-red-400">*</span></label>
-                <input
-                  type="text"
-                  value={teamCrud.form.name}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="VD: Kỹ thuật Phần mềm K21"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">HLV / Đội trưởng</label>
-                <input
-                  type="text"
-                  value={teamCrud.form.coach_name}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, coach_name: e.target.value }))}
-                  placeholder="Nguyễn Văn A"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mô tả</label>
-                <textarea
-                  rows={3}
-                  value={teamCrud.form.description}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Mô tả ngắn về đội bóng..."
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm resize-none"
-                />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end gap-3 shrink-0">
-              <button onClick={closeTeamModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl border border-navy-light transition-colors">Hủy</button>
-              <button
-                onClick={handleSaveTeam}
-                disabled={teamCrud.isSaving}
-                className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70"
-              >
-                {teamCrud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {teamCrud.modal === 'add' ? 'Tạo đội' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <TeamFormModal
+          mode={teamCrud.modal}
+          form={teamCrud.form}
+          setForm={teamCrud.setForm}
+          formError={teamCrud.formError}
+          logoPreview={logoPreview}
+          isSaving={teamCrud.isSaving}
+          onSave={handleSaveTeam}
+          onClose={closeTeamModal}
+          onLogoChange={handleLogoChange}
+        />
       )}
 
       {/* Player Add Modal */}
       {playerCrud.modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={playerCrud.closeModal} />
-          <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-md animate-slide-up overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                {playerCrud.modal === 'add' ? 'Thêm cầu thủ vào đội' : 'Chỉnh sửa cầu thủ'}
-              </h3>
-              <button onClick={playerCrud.closeModal} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              {playerCrud.formError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />{playerCrud.formError}
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Họ và tên <span className="text-red-400">*</span></label>
-                <input type="text" value={playerCrud.form.name} onChange={e => playerCrud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nguyễn Văn A"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Số áo <span className="text-red-400">*</span></label>
-                  <input type="number" min="1" max="99" value={playerCrud.form.number} onChange={e => playerCrud.setForm(f => ({ ...f, number: e.target.value }))} placeholder="10"
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm text-center font-bold" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vị trí</label>
-                  <select value={playerCrud.form.position} onChange={e => playerCrud.setForm(f => ({ ...f, position: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm">
-                    {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end gap-3">
-              <button onClick={playerCrud.closeModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl border border-navy-light transition-colors">Hủy</button>
-              <button onClick={handleSavePlayer} disabled={playerCrud.isSaving}
-                className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70">
-                {playerCrud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {playerCrud.modal === 'add' ? 'Thêm' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PlayerFormModal
+          mode={playerCrud.modal}
+          form={playerCrud.form}
+          setForm={playerCrud.setForm}
+          formError={playerCrud.formError}
+          isSaving={playerCrud.isSaving}
+          onSave={handleSavePlayer}
+          onClose={playerCrud.closeModal}
+        />
       )}
 
       {/* Delete Confirm – Team */}
       {teamCrud.deleting && (
         <ConfirmDeleteModal
-          name={teamCrud.deleting.name} type="team"
+          title="Xóa đội bóng?"
+          message={<>Xóa <strong className="text-white">{teamCrud.deleting.name}</strong>? Hành động này không thể hoàn tác và sẽ xóa toàn bộ cầu thủ.</>}
           onConfirm={handleDeleteTeam}
           onCancel={() => teamCrud.setDeleting(null)}
           isDeleting={teamCrud.isDeleting}
@@ -591,13 +450,13 @@ export default function ManageTeams() {
       )}
 
       {/* Delete Confirm – Player */}
-      {deletePlayer && (
+      {deletePlayerState && (
         <ConfirmDeleteModal
-          name={deletePlayer.player?.player?.name ?? deletePlayer.player?.name ?? 'Cầu thủ'}
-          type="player"
+          title="Xóa cầu thủ?"
+          message={<>Xóa cầu thủ <strong className="text-white">{deletePlayerState.player?.player?.name ?? deletePlayerState.player?.name ?? 'Cầu thủ'}</strong> khỏi đội?</>}
           onConfirm={handleDeletePlayer}
-          onCancel={() => setDeletePlayer(null)}
-          isDeleting={deletePlayerMutation.isLoading}
+          onCancel={() => setDeletePlayerState(null)}
+          isDeleting={isDeletingPlayer}
         />
       )}
     </AdminLayout>

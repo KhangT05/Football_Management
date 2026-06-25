@@ -7,6 +7,9 @@ import axiosClient from './axiosClient';
  * Base: /api/v1/seasons
  * Cần JWT. Response unwrapped bởi axiosClient interceptor.
  *
+ * Response shape (sau interceptor unwrap):
+ *   { status, message, data: { data: Season[], meta: {...} }, timestamp }
+ *
  * Season gồm: tournament_id (FK), start/end dates, status, max_teams...
  * ============================================================
  */
@@ -31,7 +34,7 @@ export const seasonApi = {
   },
 
   /**
-   * Tạo mùa giải mới
+   * Tạo mùa giải mới (yêu cầu role admin)
    * POST /seasons
    * @param {{
    *   name: string,
@@ -61,6 +64,25 @@ export const seasonApi = {
   },
 
   /**
+   * Cập nhật trạng thái mùa giải (admin)
+   * PATCH /seasons/{id}/status
+   * @param {number} id
+   * @param {{ status: string, cancel_reason?: string }} data
+   */
+  updateStatus: (id, data) => {
+    return axiosClient.patch(`/seasons/${id}/status`, data);
+  },
+
+  /**
+   * Lấy bảng xếp hạng của mùa giải
+   * GET /seasons/{id}/standings
+   * @param {number} id
+   */
+  getStandings: (id) => {
+    return axiosClient.get(`/seasons/${id}/standings`);
+  },
+
+  /**
    * Xóa mềm mùa giải
    * DELETE /seasons/{id}
    * @param {number} id
@@ -69,3 +91,4 @@ export const seasonApi = {
     return axiosClient.delete(`/seasons/${id}`);
   },
 };
+

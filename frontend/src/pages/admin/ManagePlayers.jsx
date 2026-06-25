@@ -1,62 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
-  Search, Filter, Plus, Edit, Trash2, X, UploadCloud,
+  Search, Plus, Edit, Trash2,
   ChevronLeft, ChevronRight, User, Loader2, AlertTriangle, CheckCircle2,
   RefreshCw, Phone, Mail, ShieldCheck
 } from 'lucide-react';
 import { userApi } from '../../api';
 import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
+import AdminModal from '../../components/admin/AdminModal';
 
-// ─── Reusable Modal ────────────────────────────────────
-function Modal({ title, onClose, children, footer }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-slide-up overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
-          <h3 className="text-lg font-black text-white uppercase tracking-tight">{title}</h3>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-navy-light bg-navy-dark shrink-0">{footer}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Delete Confirm Modal ───────────────────────────────
-function ConfirmDeleteModal({ player, onConfirm, onCancel, isDeleting }) {
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-navy border border-red-500/30 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 animate-slide-up">
-        <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-          <AlertTriangle className="w-7 h-7 text-red-400" />
-        </div>
-        <div className="text-center">
-          <h4 className="text-lg font-black text-white mb-1">Vô hiệu hóa người dùng?</h4>
-          <p className="text-sm text-gray-400">
-            Bạn có chắc muốn vô hiệu hóa <strong className="text-white">{player?.name}</strong>?
-            Tài khoản sẽ bị khóa, không thể đăng nhập.
-          </p>
-        </div>
-        <div className="flex gap-3 w-full mt-2">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl font-bold bg-navy-light text-gray-300 hover:text-white border border-navy-light transition-colors">
-            Hủy
-          </button>
-          <button onClick={onConfirm} disabled={isDeleting} className="flex-1 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2 transition-colors disabled:opacity-70">
-            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Xác nhận
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Shared components imported from ../../components/admin/*
 
 const EMPTY_FORM = { name: '', email: '', password: '', phone: '' };
 const EMPTY_EDIT_FORM = { name: '', phone: '' };
@@ -83,12 +38,10 @@ export default function ManagePlayers() {
   const prevSearchRef = useRef(debouncedSearch);
 
   useEffect(() => {
-    let page = currentPage;
-    if (prevSearchRef.current !== debouncedSearch) {
-      page = 1;
-      setCurrentPage(1);
-      prevSearchRef.current = debouncedSearch;
-    }
+    // Khi debouncedSearch thay đổi so với lần trước, trang đã được reset ở handleSearchChange
+    // Effect này chỉ fetch data, không set state trực tiếp
+    const page = prevSearchRef.current !== debouncedSearch ? 1 : currentPage;
+    prevSearchRef.current = debouncedSearch;
     fetchUsers({ page, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
   }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -143,9 +96,15 @@ export default function ManagePlayers() {
     crud.confirmDelete(async () => {
       await userApi.softDelete(user.id);
       toast.success(`Đã vô hiệu hóa tài khoản "${user.name}".`);
-      // Nếu xóa hết item trên trang hiện tại → về trang trước
+      // Nếu trang hiện tại chỉ còn 1 item → về trang trước rồi fetch lại
       const newPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
-      setCurrentPage(newPage);
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage);
+        // useEffect sẽ tự gọi fetchUsers khi currentPage thay đổi
+      } else {
+        // Cùng trang → fetch trực tiếp
+        refetchUsers(newPage);
+      }
     }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể vô hiệu hóa tài khoản.');
     });
@@ -153,6 +112,8 @@ export default function ManagePlayers() {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    // Reset trang ngay khi user gõ (không đợi debounce) — tránh setState trong effect
+    setCurrentPage(1);
   };
 
   const totalPages = meta.last_page;
@@ -187,7 +148,7 @@ export default function ManagePlayers() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => fetchUsers(currentPage, searchTerm)}
+              onClick={() => refetchUsers(currentPage)}
               disabled={isLoading}
               title="Tải lại"
               className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
@@ -385,11 +346,11 @@ export default function ManagePlayers() {
 
       {/* Add/Edit Modal */}
       {crud.modal && (
-        <Modal
+        <AdminModal
           title={crud.modal === 'add' ? 'Thêm người dùng mới' : 'Chỉnh sửa người dùng'}
           onClose={crud.closeModal}
           footer={
-            <div className="flex gap-3 justify-end">
+            <>
               <button onClick={crud.closeModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl transition-colors border border-navy-light">
                 Hủy
               </button>
@@ -401,7 +362,7 @@ export default function ManagePlayers() {
                 {crud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 {crud.modal === 'add' ? 'Tạo tài khoản' : 'Lưu thay đổi'}
               </button>
-            </div>
+            </>
           }
         >
           <div className="space-y-4">
@@ -472,16 +433,24 @@ export default function ManagePlayers() {
               />
             </div>
           </div>
-        </Modal>
+        </AdminModal>
       )}
 
       {/* Delete Confirm */}
       {crud.deleting && (
         <ConfirmDeleteModal
-          player={crud.deleting}
+          title="Vô hiệu hóa tài khoản?"
+          message={
+            <>
+              Bạn có chắc muốn vô hiệu hóa <strong className="text-white">{crud.deleting.name}</strong>?{' '}
+              Tài khoản sẽ bị khóa, không thể đăng nhập.
+            </>
+          }
+          confirmText="Vô hiệu hóa"
           onConfirm={handleDeleteConfirm}
           onCancel={() => crud.setDeleting(null)}
           isDeleting={crud.isDeleting}
+          variant="orange"
         />
       )}
     </AdminLayout>

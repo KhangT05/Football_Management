@@ -71,16 +71,24 @@ export function useApiQuery(apiFn, options = {}) {
     try {
       const res = await fnRef.current({ per_page: perPage, ...params });
 
-      // ── Normalize response ────────────────────────
-      // axiosClient interceptor trả về response.data = { status, message, data, timestamp }
-      //   → res.data = PaginatedResult { data: T[], meta: {...} }
-      // Một số endpoint trả trực tiếp PaginatedResult hoặc array.
-      // Pattern `res.data ?? res` xử lý cả hai case.
-      const result = res?.data ?? res;
-      const items = Array.isArray(result)
-        ? result
-        : (result?.data ?? []);
-      const resultMeta = Array.isArray(result) ? null : result?.meta;
+      // ── Normalize response ─────────────────────────────────────────
+      // axiosClient interceptor trả về response.data (HTTP body).
+      //
+      // Chỉ auth.controller dùng makeResponse:
+      //   body = { status: boolean, message, data: PaginatedResult, timestamp }
+      //
+      // Tất cả controller khác trả PaginatedResult trực tiếp:
+      //   body = { data: T[], meta: { total, page, per_page, ... } }
+      //
+      // Phân biệt qua: có `status` kiểu boolean → ApiResponseShape
+      //                không có → PaginatedResult trực tiếp
+      const payload = (typeof res?.status === 'boolean') ? res.data : res;
+
+      const items = Array.isArray(payload)
+        ? payload                          // trả về mảng trực tiếp
+        : (Array.isArray(payload?.data) ? payload.data : []);
+
+      const resultMeta = Array.isArray(payload) ? null : payload?.meta;
 
       setData(items);
       if (resultMeta) setMeta(resultMeta);

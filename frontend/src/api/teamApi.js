@@ -83,44 +83,55 @@ export const teamApi = {
     return axiosClient.delete(`/teams/${id}`);
   },
 
-  // ── Team Players ──────────────────────────────────────────
+  // ── Team Players ────────────────────────────────────────────────
 
   /**
    * Lấy danh sách cầu thủ trong đội
-   * GET /teams/{id}/players
+   * GET /players/{teamId}/team-players  (player.controller.ts)
    * @param {number} teamId
-   * @param {{ page?, per_page?, approval_status? }} params
+   * @param {{ page?, per_page?, approval_status?, position?, status? }} params
    */
   getPlayers: (teamId, params = {}) => {
-    return axiosClient.get(`/teams/${teamId}/players`, { params });
+    return axiosClient.get(`/players/${teamId}/team-players`, { params });
   },
 
   /**
    * Thêm cầu thủ vào đội
-   * POST /teams/{id}/players
+   * POST /players/{teamId}/team-players
    * @param {number} teamId
    * @param {{ player_id, jersey_number, position, role? }} data
    */
   addPlayer: (teamId, data) => {
-    return axiosClient.post(`/teams/${teamId}/players`, data);
+    return axiosClient.post(`/players/${teamId}/team-players`, data);
   },
 
   /**
-   * Duyệt / từ chối cầu thủ (admin / leader)
-   * PATCH /teams/{teamId}/players/{playerId}/approval
+   * Duyệt cầu thủ (admin / leader)
+   * POST /players/{teamId}/team-players/{id}/approve
    * @param {number} teamId
-   * @param {number} playerId
-   * @param {'approved'|'rejected'} approval_status
+   * @param {number} teamPlayerId
    */
-  approvePlayer: (teamId, playerId, approval_status) => {
-    return axiosClient.patch(`/teams/${teamId}/players/${playerId}/approval`, { approval_status });
+  approvePlayer: (teamId, teamPlayerId) => {
+    return axiosClient.post(`/players/${teamId}/team-players/${teamPlayerId}/approve`);
   },
 
   /**
-   * Xóa cầu thủ khỏi đội
-   * DELETE /teams/{teamId}/players/{playerId}
+   * Từ chối cầu thủ
+   * POST /players/{teamId}/team-players/{id}/reject
+   * @param {number} teamId
+   * @param {number} teamPlayerId
    */
-  removePlayer: (teamId, playerId) => {
-    return axiosClient.delete(`/teams/${teamId}/players/${playerId}`);
+  rejectPlayer: (teamId, teamPlayerId) => {
+    return axiosClient.post(`/players/${teamId}/team-players/${teamPlayerId}/reject`);
+  },
+
+  /**
+   * Xóa cầu thủ khỏi đội (bulk delete)
+   * DELETE /players/{teamId}/team-players
+   * @param {number} teamId
+   * @param {{ ids: number[] }} data
+   */
+  removePlayer: (teamId, data) => {
+    return axiosClient.delete(`/players/${teamId}/team-players`, { data });
   },
 };

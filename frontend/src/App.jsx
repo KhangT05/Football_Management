@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import ToastContainer from "./components/ToastContainer";
 import useAuthStore from "./store/authStore";
 
@@ -79,14 +80,28 @@ function App() {
           <Route path="/quan-ly-giai-dau/dang-nhap" element={<Login />} />
           <Route path="/dang-ky" element={<Register />} />
 
-          {/* Admin Routes */}
-          <Route path="/quan-ly-giai-dau" element={<Dashboard />} />
-          <Route path="/quan-ly-giai-dau/tran-dau" element={<ManageMatches />} />
-          <Route path="/quan-ly-giai-dau/ket-qua" element={<UpdateResults />} />
-          <Route path="/quan-ly-giai-dau/doi-bong" element={<ManageTeams />} />
-          <Route path="/quan-ly-giai-dau/cau-thu" element={<ManagePlayers />} />
-          <Route path="/quan-ly-giai-dau/dang-ky-giai" element={<ManageSeasonTeams />} />
-          <Route path="/quan-ly-giai-dau/cai-dat" element={<Settings />} />
+          {/* Admin Routes – bắt buộc đã đăng nhập + có role admin */}
+          <Route path="/quan-ly-giai-dau" element={
+            <AdminRoute><Dashboard /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/tran-dau" element={
+            <AdminRoute><ManageMatches /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/ket-qua" element={
+            <AdminRoute><UpdateResults /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/doi-bong" element={
+            <AdminRoute><ManageTeams /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/cau-thu" element={
+            <AdminRoute><ManagePlayers /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/dang-ky-giai" element={
+            <AdminRoute><ManageSeasonTeams /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/cai-dat" element={
+            <AdminRoute><Settings /></AdminRoute>
+          } />
         </Routes>
       </Suspense>
 

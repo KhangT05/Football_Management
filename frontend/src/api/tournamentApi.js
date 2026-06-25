@@ -54,11 +54,24 @@ export const tournamentApi = {
 
   /**
    * Cập nhật giải đấu
-   * PATCH /tournaments/{id}
+   * PATCH /tournaments/{id} — multipart/form-data (backend dùng @FormField)
    * @param {number} id
-   * @param {{ name?, description?, logo?, is_active? }} data
+   * @param {{ name?, description?, logo?(File), is_active? }} data
+   *
+   * Lưu ý: Backend PATCH /tournaments/{id} không dùng @FormField (chỉ POST dùng)
+   * → PATCH có thể dùng JSON nếu không có logo File mới
    */
   update: (id, data) => {
+    if (data.logo instanceof File) {
+      const form = new FormData();
+      if (data.name) form.append('name', data.name);
+      if (data.description) form.append('description', data.description);
+      if (data.is_active !== undefined) form.append('is_active', String(data.is_active));
+      form.append('logo', data.logo);
+      return axiosClient.patch(`/tournaments/${id}`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
     return axiosClient.patch(`/tournaments/${id}`, data);
   },
 
