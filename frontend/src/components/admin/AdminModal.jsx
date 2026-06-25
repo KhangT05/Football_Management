@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 /**
  * AdminModal — Modal wrapper dùng chung cho toàn bộ admin pages.
@@ -27,7 +28,7 @@ export default function AdminModal({
     xl: 'max-w-4xl',
   }[size] ?? 'max-w-lg';
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full ${maxW} flex flex-col max-h-[90vh] animate-slide-up overflow-hidden`}>
@@ -59,4 +60,6 @@ export default function AdminModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

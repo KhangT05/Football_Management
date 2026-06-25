@@ -1,4 +1,5 @@
 import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 /**
  * ConfirmDeleteModal — Component xác nhận xóa dùng chung cho toàn bộ admin pages.
@@ -25,7 +26,7 @@ export default function ConfirmDeleteModal({
   const iconColor = variant === 'orange' ? 'text-orange-400' : 'text-red-400';
   const btnColor = variant === 'orange' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700';
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
       <div className={`relative bg-navy border ${borderColor} rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 animate-slide-up`}>
@@ -59,4 +60,6 @@ export default function ConfirmDeleteModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

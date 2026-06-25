@@ -1,16 +1,16 @@
-import { navItems } from "../../data/data";
+import { Information, navItems } from "../../data/data";
 import { LogOut, Trophy, X } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
 
 // Map tên tiếng Anh → tiếng Việt cho nav items
 const VI_LABELS = {
   'Dashboard':           'Tổng quan',
-  'Manage Teams':        'Đội bóng',
-  'Manage Players':      'Cầu thủ',
-  'Season Teams':        'Đăng ký giải',
-  'Manage Matches':      'Trận đấu',
-  'Update Results':      'Kết quả',
-  'Tournament Settings': 'Cài đặt',
+  'Manage Teams':        'Quản lý đội',
+  'Manage Players':      'Quản lý cầu thủ',
+  'Season Teams':        'Đăng ký giải đấu',
+  'Manage Matches':      'Quản lý trận đấu',
+  'Update Results':      'Cập nhật kết quả',
+  'Tournament Settings': 'Cấu hình giải đấu',
 };
 
 export default function AsideAdmin({ onClose }) {
@@ -20,13 +20,15 @@ export default function AsideAdmin({ onClose }) {
       {/* Logo / Brand */}
       <div className="h-16 md:h-[72px] flex items-center justify-between px-5 border-b border-navy-light shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-neon to-blue-500 flex items-center justify-center shadow-lg shadow-neon/25">
-            <Trophy className="w-5 h-5 text-navy-dark" />
-          </div>
-          <div>
-            <p className="font-black text-base text-white tracking-tight leading-none">IT Admin</p>
-            <p className="text-xs text-gray-500 leading-none mt-0.5">Football Management</p>
-          </div>
+          <Link to="/" className="flex items-center gap-3 shrink-0">
+            <div>
+              <img src={Information.imgUrl} alt="" className='w-12 h-12 text-white rounded-full' />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
+              <p className="text-gray-400 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
+            </div>
+          </Link>
         </div>
 
         {/* Close button (mobile) */}

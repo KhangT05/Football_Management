@@ -2,57 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Users, Calendar, Trophy, Plus, CheckCircle2, XCircle,
-  Trash2, RefreshCw, AlertTriangle, Loader2, Save, X, Dices, Eraser, Edit
+  Trash2, RefreshCw, AlertTriangle, Loader2, Save, Dices, Eraser, Edit
 } from 'lucide-react';
 import { seasonApi, seasonTeamApi, teamApi, groupApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
-
-// ─── Shared Modal Component ─────────────────────────────────
-function Modal({ title, icon: Icon, iconClass, onClose, children, footer }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-slide-up overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
-          <h3 className="text-lg font-black text-white flex items-center gap-2">
-            {Icon && <Icon className={`w-5 h-5 ${iconClass}`} />}
-            {title}
-          </h3>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-navy-light bg-navy-dark shrink-0 flex gap-3 justify-end">{footer}</div>}
-      </div>
-    </div>
-  );
-}
-
-function ConfirmModal({ title, message, onConfirm, onCancel, isLoading, isDestructive = true }) {
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
-      <div className={`relative bg-navy border ${isDestructive ? 'border-red-500/30' : 'border-blue-500/30'} rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4`}>
-        <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isDestructive ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'}`}>
-          <AlertTriangle className="w-7 h-7" />
-        </div>
-        <div className="text-center">
-          <h4 className="text-lg font-black text-white mb-1">{title}</h4>
-          <p className="text-sm text-gray-400" dangerouslySetInnerHTML={{ __html: message }}></p>
-        </div>
-        <div className="flex gap-3 w-full">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl font-bold bg-navy-light text-gray-300 hover:text-white border border-navy-light transition-colors">Hủy</button>
-          <button onClick={onConfirm} disabled={isLoading} className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70 text-white ${isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Xác nhận
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import AdminModal from '../../components/admin/AdminModal';
+import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const INPUT = "w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm";
 
@@ -400,7 +356,7 @@ export default function ManageSeasonTeams() {
 
       {/* Add Team Modal */}
       {addTeamModal.modal && (
-        <Modal
+        <AdminModal
           title="Thêm đội vào mùa giải"
           icon={Plus} iconClass="text-emerald-400"
           onClose={addTeamModal.closeModal}
@@ -415,7 +371,7 @@ export default function ManageSeasonTeams() {
           {addTeamModal.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-start gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{addTeamModal.formError}</div>}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Chọn đội bóng <span className="text-red-400">*</span></label>
-            <select 
+            <select
               className={INPUT}
               value={addTeamModal.form.team_id}
               onChange={e => addTeamModal.setForm({ team_id: e.target.value })}
@@ -424,12 +380,12 @@ export default function ManageSeasonTeams() {
               {allTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
-        </Modal>
+        </AdminModal>
       )}
 
       {/* Assign Group Modal */}
       {assignModal.modal && (
-        <Modal
+        <AdminModal
           title="Xếp bảng thủ công"
           icon={Edit} iconClass="text-blue-400"
           onClose={assignModal.closeModal}
@@ -444,7 +400,7 @@ export default function ManageSeasonTeams() {
           {assignModal.formError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-start gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{assignModal.formError}</div>}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Group ID <span className="text-red-400">*</span></label>
-            <input 
+            <input
               type="number"
               className={INPUT}
               placeholder="VD: 12"
@@ -453,7 +409,7 @@ export default function ManageSeasonTeams() {
             />
             <p className="text-xs text-gray-500 mt-2">Đội <strong className="text-white">{assignModal.editing?.team?.name}</strong> sẽ được xếp vào bảng mang ID này.</p>
           </div>
-        </Modal>
+        </AdminModal>
       )}
 
       {/* Delete Confirm */}

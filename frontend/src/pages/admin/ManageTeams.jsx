@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
-  Plus, Edit, Trash2, Users, X, Save, UploadCloud,
-  ChevronDown, ChevronUp, AlertTriangle, Loader2, CheckCircle2,
+  Plus, Edit, Trash2, Users,
+  ChevronDown, ChevronUp, AlertTriangle, Loader2,
   UserPlus, RefreshCw, Search
 } from 'lucide-react';
 import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
+import TeamFormModal from '../../components/admin/TeamFormModal';
+import PlayerFormModal from '../../components/admin/PlayerFormModal';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -410,137 +412,30 @@ export default function ManageTeams() {
 
       {/* Team Add/Edit Modal */}
       {teamCrud.modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeTeamModal} />
-          <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-md animate-slide-up overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark shrink-0">
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                {teamCrud.modal === 'add' ? 'Thêm đội bóng mới' : 'Chỉnh sửa đội bóng'}
-              </h3>
-              <button onClick={closeTeamModal} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 overflow-y-auto flex-1">
-              {teamCrud.formError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex gap-2 animate-fade-in">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{teamCrud.formError}
-                </div>
-              )}
-
-              {/* Logo Upload */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-2xl bg-navy-dark border-2 border-navy-light flex items-center justify-center overflow-hidden">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <UploadCloud className="w-8 h-8 text-gray-500" />
-                  )}
-                </div>
-                <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-navy-dark border border-navy-light rounded-lg text-sm text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
-                  <UploadCloud className="w-4 h-4" />
-                  {logoPreview ? 'Đổi logo' : 'Tải logo'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tên đội bóng <span className="text-red-400">*</span></label>
-                <input
-                  type="text"
-                  value={teamCrud.form.name}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="VD: Kỹ thuật Phần mềm K21"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">HLV / Đội trưởng</label>
-                <input
-                  type="text"
-                  value={teamCrud.form.coach_name}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, coach_name: e.target.value }))}
-                  placeholder="Nguyễn Văn A"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mô tả</label>
-                <textarea
-                  rows={3}
-                  value={teamCrud.form.description}
-                  onChange={e => teamCrud.setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Mô tả ngắn về đội bóng..."
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm resize-none"
-                />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end gap-3 shrink-0">
-              <button onClick={closeTeamModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl border border-navy-light transition-colors">Hủy</button>
-              <button
-                onClick={handleSaveTeam}
-                disabled={teamCrud.isSaving}
-                className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70"
-              >
-                {teamCrud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {teamCrud.modal === 'add' ? 'Tạo đội' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <TeamFormModal
+          mode={teamCrud.modal}
+          form={teamCrud.form}
+          setForm={teamCrud.setForm}
+          formError={teamCrud.formError}
+          logoPreview={logoPreview}
+          isSaving={teamCrud.isSaving}
+          onSave={handleSaveTeam}
+          onClose={closeTeamModal}
+          onLogoChange={handleLogoChange}
+        />
       )}
 
       {/* Player Add Modal */}
       {playerCrud.modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={playerCrud.closeModal} />
-          <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-md animate-slide-up overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                {playerCrud.modal === 'add' ? 'Thêm cầu thủ vào đội' : 'Chỉnh sửa cầu thủ'}
-              </h3>
-              <button onClick={playerCrud.closeModal} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              {playerCrud.formError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />{playerCrud.formError}
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Họ và tên <span className="text-red-400">*</span></label>
-                <input type="text" value={playerCrud.form.name} onChange={e => playerCrud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nguyễn Văn A"
-                  className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Số áo <span className="text-red-400">*</span></label>
-                  <input type="number" min="1" max="99" value={playerCrud.form.number} onChange={e => playerCrud.setForm(f => ({ ...f, number: e.target.value }))} placeholder="10"
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm text-center font-bold" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vị trí</label>
-                  <select value={playerCrud.form.position} onChange={e => playerCrud.setForm(f => ({ ...f, position: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm">
-                    {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end gap-3">
-              <button onClick={playerCrud.closeModal} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl border border-navy-light transition-colors">Hủy</button>
-              <button onClick={handleSavePlayer} disabled={playerCrud.isSaving}
-                className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70">
-                {playerCrud.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {playerCrud.modal === 'add' ? 'Thêm' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PlayerFormModal
+          mode={playerCrud.modal}
+          form={playerCrud.form}
+          setForm={playerCrud.setForm}
+          formError={playerCrud.formError}
+          isSaving={playerCrud.isSaving}
+          onSave={handleSavePlayer}
+          onClose={playerCrud.closeModal}
+        />
       )}
 
       {/* Delete Confirm – Team */}
