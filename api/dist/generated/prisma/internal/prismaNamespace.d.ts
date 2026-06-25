@@ -247,9 +247,9 @@ export declare const ModelName: {
     readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
     readonly SeasonTeamJersey: "SeasonTeamJersey";
+    readonly Venue: "Venue";
     readonly MatchLineup: "MatchLineup";
     readonly Match: "Match";
-    readonly Venue: "Venue";
     readonly MatchEvent: "MatchEvent";
     readonly TeamStanding: "TeamStanding";
     readonly PlayerStatistic: "PlayerStatistic";
@@ -271,7 +271,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "bracketSlot" | "season" | "group" | "team" | "teamJersey" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "seasonTeamJersey" | "matchLineup" | "match" | "venue" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "bracketSlot" | "season" | "group" | "team" | "teamJersey" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "seasonTeamJersey" | "venue" | "matchLineup" | "match" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -1331,6 +1331,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        Venue: {
+            payload: Prisma.$VenuePayload<ExtArgs>;
+            fields: Prisma.VenueFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.VenueFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.VenueFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                findFirst: {
+                    args: Prisma.VenueFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.VenueFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                findMany: {
+                    args: Prisma.VenueFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>[];
+                };
+                create: {
+                    args: Prisma.VenueCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                createMany: {
+                    args: Prisma.VenueCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.VenueDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                update: {
+                    args: Prisma.VenueUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                deleteMany: {
+                    args: Prisma.VenueDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.VenueUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.VenueUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
+                };
+                aggregate: {
+                    args: Prisma.VenueAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateVenue>;
+                };
+                groupBy: {
+                    args: Prisma.VenueGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.VenueGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.VenueCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.VenueCountAggregateOutputType> | number;
+                };
+            };
+        };
         MatchLineup: {
             payload: Prisma.$MatchLineupPayload<ExtArgs>;
             fields: Prisma.MatchLineupFieldRefs;
@@ -1460,72 +1526,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 count: {
                     args: Prisma.MatchCountArgs<ExtArgs>;
                     result: runtime.Types.Utils.Optional<Prisma.MatchCountAggregateOutputType> | number;
-                };
-            };
-        };
-        Venue: {
-            payload: Prisma.$VenuePayload<ExtArgs>;
-            fields: Prisma.VenueFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.VenueFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.VenueFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                findFirst: {
-                    args: Prisma.VenueFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.VenueFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                findMany: {
-                    args: Prisma.VenueFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>[];
-                };
-                create: {
-                    args: Prisma.VenueCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                createMany: {
-                    args: Prisma.VenueCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                delete: {
-                    args: Prisma.VenueDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                update: {
-                    args: Prisma.VenueUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                deleteMany: {
-                    args: Prisma.VenueDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.VenueUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                upsert: {
-                    args: Prisma.VenueUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$VenuePayload>;
-                };
-                aggregate: {
-                    args: Prisma.VenueAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateVenue>;
-                };
-                groupBy: {
-                    args: Prisma.VenueGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.VenueGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.VenueCountArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.VenueCountAggregateOutputType> | number;
                 };
             };
         };
@@ -2360,6 +2360,16 @@ export declare const SeasonTeamJerseyScalarFieldEnum: {
     readonly image_url: "image_url";
 };
 export type SeasonTeamJerseyScalarFieldEnum = (typeof SeasonTeamJerseyScalarFieldEnum)[keyof typeof SeasonTeamJerseyScalarFieldEnum];
+export declare const VenueScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly address: "address";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const MatchLineupScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -2411,16 +2421,6 @@ export declare const MatchScalarFieldEnum: {
     readonly referee: "referee";
 };
 export type MatchScalarFieldEnum = (typeof MatchScalarFieldEnum)[keyof typeof MatchScalarFieldEnum];
-export declare const VenueScalarFieldEnum: {
-    readonly id: "id";
-    readonly name: "name";
-    readonly address: "address";
-    readonly is_active: "is_active";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
-};
-export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const MatchEventScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -2639,17 +2639,17 @@ export declare const SeasonTeamJerseyOrderByRelevanceFieldEnum: {
     readonly image_url: "image_url";
 };
 export type SeasonTeamJerseyOrderByRelevanceFieldEnum = (typeof SeasonTeamJerseyOrderByRelevanceFieldEnum)[keyof typeof SeasonTeamJerseyOrderByRelevanceFieldEnum];
+export declare const VenueOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+    readonly address: "address";
+};
+export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
     readonly postponed_reason: "postponed_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];
-export declare const VenueOrderByRelevanceFieldEnum: {
-    readonly name: "name";
-    readonly address: "address";
-};
-export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };
@@ -2942,9 +2942,9 @@ export type GlobalOmitConfig = {
     teamLeader?: Prisma.TeamLeaderOmit;
     seasonTeam?: Prisma.SeasonTeamOmit;
     seasonTeamJersey?: Prisma.SeasonTeamJerseyOmit;
+    venue?: Prisma.VenueOmit;
     matchLineup?: Prisma.MatchLineupOmit;
     match?: Prisma.MatchOmit;
-    venue?: Prisma.VenueOmit;
     matchEvent?: Prisma.MatchEventOmit;
     teamStanding?: Prisma.TeamStandingOmit;
     playerStatistic?: Prisma.PlayerStatisticOmit;

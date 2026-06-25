@@ -83,6 +83,11 @@ export type SeasonTeam = Prisma.SeasonTeamModel;
  */
 export type SeasonTeamJersey = Prisma.SeasonTeamJerseyModel;
 /**
+ * Model Venue
+ *
+ */
+export type Venue = Prisma.VenueModel;
+/**
  * Model MatchLineup
  *
  */
@@ -92,11 +97,6 @@ export type MatchLineup = Prisma.MatchLineupModel;
  *
  */
 export type Match = Prisma.MatchModel;
-/**
- * Model Venue
- *
- */
-export type Venue = Prisma.VenueModel;
 /**
  * Model MatchEvent
  *

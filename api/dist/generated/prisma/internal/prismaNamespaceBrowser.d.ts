@@ -42,9 +42,9 @@ export declare const ModelName: {
     readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
     readonly SeasonTeamJersey: "SeasonTeamJersey";
+    readonly Venue: "Venue";
     readonly MatchLineup: "MatchLineup";
     readonly Match: "Match";
-    readonly Venue: "Venue";
     readonly MatchEvent: "MatchEvent";
     readonly TeamStanding: "TeamStanding";
     readonly PlayerStatistic: "PlayerStatistic";
@@ -266,6 +266,16 @@ export declare const SeasonTeamJerseyScalarFieldEnum: {
     readonly image_url: "image_url";
 };
 export type SeasonTeamJerseyScalarFieldEnum = (typeof SeasonTeamJerseyScalarFieldEnum)[keyof typeof SeasonTeamJerseyScalarFieldEnum];
+export declare const VenueScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly address: "address";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const MatchLineupScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -317,16 +327,6 @@ export declare const MatchScalarFieldEnum: {
     readonly referee: "referee";
 };
 export type MatchScalarFieldEnum = (typeof MatchScalarFieldEnum)[keyof typeof MatchScalarFieldEnum];
-export declare const VenueScalarFieldEnum: {
-    readonly id: "id";
-    readonly name: "name";
-    readonly address: "address";
-    readonly is_active: "is_active";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
-};
-export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const MatchEventScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -545,17 +545,17 @@ export declare const SeasonTeamJerseyOrderByRelevanceFieldEnum: {
     readonly image_url: "image_url";
 };
 export type SeasonTeamJerseyOrderByRelevanceFieldEnum = (typeof SeasonTeamJerseyOrderByRelevanceFieldEnum)[keyof typeof SeasonTeamJerseyOrderByRelevanceFieldEnum];
+export declare const VenueOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+    readonly address: "address";
+};
+export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
     readonly postponed_reason: "postponed_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];
-export declare const VenueOrderByRelevanceFieldEnum: {
-    readonly name: "name";
-    readonly address: "address";
-};
-export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };

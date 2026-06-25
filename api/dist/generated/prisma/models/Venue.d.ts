@@ -300,10 +300,6 @@ export type VenueUncheckedUpdateManyInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
-export type VenueNullableScalarRelationFilter = {
-    is?: Prisma.VenueWhereInput | null;
-    isNot?: Prisma.VenueWhereInput | null;
-};
 export type VenueOrderByRelevanceInput = {
     fields: Prisma.VenueOrderByRelevanceFieldEnum | Prisma.VenueOrderByRelevanceFieldEnum[];
     sort: Prisma.SortOrder;
@@ -341,6 +337,10 @@ export type VenueMinOrderByAggregateInput = {
 };
 export type VenueSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+};
+export type VenueNullableScalarRelationFilter = {
+    is?: Prisma.VenueWhereInput | null;
+    isNot?: Prisma.VenueWhereInput | null;
 };
 export type VenueCreateNestedOneWithoutMatchesInput = {
     create?: Prisma.XOR<Prisma.VenueCreateWithoutMatchesInput, Prisma.VenueUncheckedCreateWithoutMatchesInput>;
