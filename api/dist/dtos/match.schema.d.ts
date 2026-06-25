@@ -38,11 +38,32 @@ export declare const FinalizeMatchSchema: z.ZodObject<{
         readonly forfeit: "forfeit";
         readonly walkover: "walkover";
     }>>>;
+    homeHalfTimeScore: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    awayHalfTimeScore: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     homePenaltyScore: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     awayPenaltyScore: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strip>;
+export declare const ManualScoreSchema: z.ZodObject<{
+    homeScore: z.ZodCoercedNumber<unknown>;
+    awayScore: z.ZodCoercedNumber<unknown>;
+    resultType: z.ZodEnum<{
+        readonly full_time: "full_time";
+        readonly extra_time: "extra_time";
+        readonly penalty: "penalty";
+        readonly forfeit: "forfeit";
+        readonly walkover: "walkover";
+    }>;
+    homePenalty: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    awayPenalty: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strip>;
+export declare const ConfirmOfficialSchema: z.ZodObject<{
+    venueIds: z.ZodOptional<z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export declare const ForfeitMatchSchema: z.ZodObject<{
     forfeitingTeamId: z.ZodCoercedNumber<unknown>;
+    venueIds: z.ZodOptional<z.ZodArray<z.ZodCoercedNumber<unknown>>>;
+    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
 }, z.core.$strip>;
 export declare const AbandonMatchSchema: z.ZodObject<{
     minute: z.ZodCoercedNumber<unknown>;
@@ -63,6 +84,8 @@ export declare const ResolveAppealSchema: z.ZodObject<{
 export type RecordEventDto = z.infer<typeof RecordEventSchema>;
 export type TransitionPeriodDto = z.infer<typeof TransitionPeriodSchema>;
 export type FinalizeMatchDto = z.infer<typeof FinalizeMatchSchema>;
+export type ManualScoreDto = z.infer<typeof ManualScoreSchema>;
+export type ConfirmOfficialDto = z.infer<typeof ConfirmOfficialSchema>;
 export type ForfeitMatchDto = z.infer<typeof ForfeitMatchSchema>;
 export type AbandonMatchDto = z.infer<typeof AbandonMatchSchema>;
 export type FileDisputeDto = z.infer<typeof FileDisputeSchema>;

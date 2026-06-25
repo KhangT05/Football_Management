@@ -61,10 +61,6 @@ export declare const matchDetailSelect: {
         select: {
             id: true;
             winner_team_id: true;
-            home_score: true;
-            away_score: true;
-            home_half_time_score: true;
-            away_half_time_score: true;
             home_extra_time_score: true;
             away_extra_time_score: true;
             home_penalty_score: true;
@@ -210,7 +206,7 @@ export declare const matchForForfeitSelect: {
         };
     };
 };
-export declare const matchAdminSelect: {
+export declare const Select: {
     is_active: true;
     created_at: true;
     updated_at: true;
@@ -226,10 +222,6 @@ export declare const matchAdminSelect: {
             updated_at: true;
             id: true;
             winner_team_id: true;
-            home_score: true;
-            away_score: true;
-            home_half_time_score: true;
-            away_half_time_score: true;
             home_extra_time_score: true;
             away_extra_time_score: true;
             home_penalty_score: true;
@@ -314,9 +306,6 @@ export type MatchList = Prisma.MatchGetPayload<{
 }>;
 export type MatchDetail = Prisma.MatchGetPayload<{
     select: typeof matchDetailSelect;
-}>;
-export type MatchAdmin = Prisma.MatchGetPayload<{
-    select: typeof matchAdminSelect;
 }>;
 export type MatchForConfirm = Prisma.MatchGetPayload<{
     select: typeof matchForConfirmSelect;

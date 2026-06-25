@@ -33,6 +33,13 @@ export declare const GroupStatus: {
     readonly SCHEDULE_FAILED: "SCHEDULE_FAILED";
 };
 export type GroupStatus = (typeof GroupStatus)[keyof typeof GroupStatus];
+export declare const JerseyType: {
+    readonly home: "home";
+    readonly away: "away";
+    readonly third: "third";
+    readonly goalkeeper: "goalkeeper";
+};
+export type JerseyType = (typeof JerseyType)[keyof typeof JerseyType];
 export declare const PlayerPosition: {
     readonly goalkeeper: "goalkeeper";
     readonly defender: "defender";
@@ -66,6 +73,18 @@ export declare const SeasonTeamStatus: {
     readonly withdrawn: "withdrawn";
 };
 export type SeasonTeamStatus = (typeof SeasonTeamStatus)[keyof typeof SeasonTeamStatus];
+export declare const LineupType: {
+    readonly starter: "starter";
+    readonly substitute: "substitute";
+};
+export type LineupType = (typeof LineupType)[keyof typeof LineupType];
+export declare const MatchPlayerStatus: {
+    readonly available: "available";
+    readonly injured: "injured";
+    readonly suspended: "suspended";
+    readonly absent: "absent";
+};
+export type MatchPlayerStatus = (typeof MatchPlayerStatus)[keyof typeof MatchPlayerStatus];
 export declare const MatchStatus: {
     readonly scheduled: "scheduled";
     readonly ongoing: "ongoing";

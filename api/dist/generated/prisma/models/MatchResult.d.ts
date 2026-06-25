@@ -17,10 +17,6 @@ export type MatchResultAvgAggregateOutputType = {
     id: number | null;
     match_id: number | null;
     winner_team_id: number | null;
-    home_score: number | null;
-    away_score: number | null;
-    home_half_time_score: number | null;
-    away_half_time_score: number | null;
     home_extra_time_score: number | null;
     away_extra_time_score: number | null;
     home_penalty_score: number | null;
@@ -33,10 +29,6 @@ export type MatchResultSumAggregateOutputType = {
     id: number | null;
     match_id: number | null;
     winner_team_id: number | null;
-    home_score: number | null;
-    away_score: number | null;
-    home_half_time_score: number | null;
-    away_half_time_score: number | null;
     home_extra_time_score: number | null;
     away_extra_time_score: number | null;
     home_penalty_score: number | null;
@@ -49,10 +41,6 @@ export type MatchResultMinAggregateOutputType = {
     id: number | null;
     match_id: number | null;
     winner_team_id: number | null;
-    home_score: number | null;
-    away_score: number | null;
-    home_half_time_score: number | null;
-    away_half_time_score: number | null;
     home_extra_time_score: number | null;
     away_extra_time_score: number | null;
     home_penalty_score: number | null;
@@ -74,10 +62,6 @@ export type MatchResultMaxAggregateOutputType = {
     id: number | null;
     match_id: number | null;
     winner_team_id: number | null;
-    home_score: number | null;
-    away_score: number | null;
-    home_half_time_score: number | null;
-    away_half_time_score: number | null;
     home_extra_time_score: number | null;
     away_extra_time_score: number | null;
     home_penalty_score: number | null;
@@ -99,10 +83,6 @@ export type MatchResultCountAggregateOutputType = {
     id: number;
     match_id: number;
     winner_team_id: number;
-    home_score: number;
-    away_score: number;
-    home_half_time_score: number;
-    away_half_time_score: number;
     home_extra_time_score: number;
     away_extra_time_score: number;
     home_penalty_score: number;
@@ -125,10 +105,6 @@ export type MatchResultAvgAggregateInputType = {
     id?: true;
     match_id?: true;
     winner_team_id?: true;
-    home_score?: true;
-    away_score?: true;
-    home_half_time_score?: true;
-    away_half_time_score?: true;
     home_extra_time_score?: true;
     away_extra_time_score?: true;
     home_penalty_score?: true;
@@ -141,10 +117,6 @@ export type MatchResultSumAggregateInputType = {
     id?: true;
     match_id?: true;
     winner_team_id?: true;
-    home_score?: true;
-    away_score?: true;
-    home_half_time_score?: true;
-    away_half_time_score?: true;
     home_extra_time_score?: true;
     away_extra_time_score?: true;
     home_penalty_score?: true;
@@ -157,10 +129,6 @@ export type MatchResultMinAggregateInputType = {
     id?: true;
     match_id?: true;
     winner_team_id?: true;
-    home_score?: true;
-    away_score?: true;
-    home_half_time_score?: true;
-    away_half_time_score?: true;
     home_extra_time_score?: true;
     away_extra_time_score?: true;
     home_penalty_score?: true;
@@ -182,10 +150,6 @@ export type MatchResultMaxAggregateInputType = {
     id?: true;
     match_id?: true;
     winner_team_id?: true;
-    home_score?: true;
-    away_score?: true;
-    home_half_time_score?: true;
-    away_half_time_score?: true;
     home_extra_time_score?: true;
     away_extra_time_score?: true;
     home_penalty_score?: true;
@@ -207,10 +171,6 @@ export type MatchResultCountAggregateInputType = {
     id?: true;
     match_id?: true;
     winner_team_id?: true;
-    home_score?: true;
-    away_score?: true;
-    home_half_time_score?: true;
-    away_half_time_score?: true;
     home_extra_time_score?: true;
     away_extra_time_score?: true;
     home_penalty_score?: true;
@@ -309,10 +269,6 @@ export type MatchResultGroupByOutputType = {
     id: number;
     match_id: number;
     winner_team_id: number | null;
-    home_score: number;
-    away_score: number;
-    home_half_time_score: number;
-    away_half_time_score: number;
     home_extra_time_score: number | null;
     away_extra_time_score: number | null;
     home_penalty_score: number | null;
@@ -345,10 +301,6 @@ export type MatchResultWhereInput = {
     id?: Prisma.IntFilter<"MatchResult"> | number;
     match_id?: Prisma.IntFilter<"MatchResult"> | number;
     winner_team_id?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
-    home_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_score?: Prisma.IntFilter<"MatchResult"> | number;
-    home_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
     home_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     away_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     home_penalty_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
@@ -372,10 +324,6 @@ export type MatchResultOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrderInput | Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -403,10 +351,6 @@ export type MatchResultWhereUniqueInput = Prisma.AtLeast<{
     OR?: Prisma.MatchResultWhereInput[];
     NOT?: Prisma.MatchResultWhereInput | Prisma.MatchResultWhereInput[];
     winner_team_id?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
-    home_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_score?: Prisma.IntFilter<"MatchResult"> | number;
-    home_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
     home_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     away_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     home_penalty_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
@@ -430,10 +374,6 @@ export type MatchResultOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrderInput | Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrderInput | Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -463,10 +403,6 @@ export type MatchResultScalarWhereWithAggregatesInput = {
     id?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
     match_id?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
     winner_team_id?: Prisma.IntNullableWithAggregatesFilter<"MatchResult"> | number | null;
-    home_score?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
-    away_score?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
-    home_half_time_score?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
-    away_half_time_score?: Prisma.IntWithAggregatesFilter<"MatchResult"> | number;
     home_extra_time_score?: Prisma.IntNullableWithAggregatesFilter<"MatchResult"> | number | null;
     away_extra_time_score?: Prisma.IntNullableWithAggregatesFilter<"MatchResult"> | number | null;
     home_penalty_score?: Prisma.IntNullableWithAggregatesFilter<"MatchResult"> | number | null;
@@ -485,10 +421,6 @@ export type MatchResultScalarWhereWithAggregatesInput = {
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"MatchResult"> | Date | string | null;
 };
 export type MatchResultCreateInput = {
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -512,10 +444,6 @@ export type MatchResultUncheckedCreateInput = {
     id?: number;
     match_id: number;
     winner_team_id?: number | null;
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -534,10 +462,6 @@ export type MatchResultUncheckedCreateInput = {
     deleted_at?: Date | string | null;
 };
 export type MatchResultUpdateInput = {
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -561,10 +485,6 @@ export type MatchResultUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     winner_team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -586,10 +506,6 @@ export type MatchResultCreateManyInput = {
     id?: number;
     match_id: number;
     winner_team_id?: number | null;
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -608,10 +524,6 @@ export type MatchResultCreateManyInput = {
     deleted_at?: Date | string | null;
 };
 export type MatchResultUpdateManyMutationInput = {
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -633,10 +545,6 @@ export type MatchResultUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     winner_team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -675,10 +583,6 @@ export type MatchResultCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrder;
@@ -700,10 +604,6 @@ export type MatchResultAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrder;
@@ -716,10 +616,6 @@ export type MatchResultMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrder;
@@ -741,10 +637,6 @@ export type MatchResultMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrder;
@@ -766,10 +658,6 @@ export type MatchResultSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     match_id?: Prisma.SortOrder;
     winner_team_id?: Prisma.SortOrder;
-    home_score?: Prisma.SortOrder;
-    away_score?: Prisma.SortOrder;
-    home_half_time_score?: Prisma.SortOrder;
-    away_half_time_score?: Prisma.SortOrder;
     home_extra_time_score?: Prisma.SortOrder;
     away_extra_time_score?: Prisma.SortOrder;
     home_penalty_score?: Prisma.SortOrder;
@@ -851,10 +739,6 @@ export type EnumMatchResultStatusFieldUpdateOperationsInput = {
     set?: $Enums.MatchResultStatus;
 };
 export type MatchResultCreateWithoutWinner_teamInput = {
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -876,10 +760,6 @@ export type MatchResultCreateWithoutWinner_teamInput = {
 export type MatchResultUncheckedCreateWithoutWinner_teamInput = {
     id?: number;
     match_id: number;
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -925,10 +805,6 @@ export type MatchResultScalarWhereInput = {
     id?: Prisma.IntFilter<"MatchResult"> | number;
     match_id?: Prisma.IntFilter<"MatchResult"> | number;
     winner_team_id?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
-    home_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_score?: Prisma.IntFilter<"MatchResult"> | number;
-    home_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
-    away_half_time_score?: Prisma.IntFilter<"MatchResult"> | number;
     home_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     away_extra_time_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
     home_penalty_score?: Prisma.IntNullableFilter<"MatchResult"> | number | null;
@@ -947,10 +823,6 @@ export type MatchResultScalarWhereInput = {
     deleted_at?: Prisma.DateTimeNullableFilter<"MatchResult"> | Date | string | null;
 };
 export type MatchResultCreateWithoutMatchInput = {
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -972,10 +844,6 @@ export type MatchResultCreateWithoutMatchInput = {
 export type MatchResultUncheckedCreateWithoutMatchInput = {
     id?: number;
     winner_team_id?: number | null;
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -1007,10 +875,6 @@ export type MatchResultUpdateToOneWithWhereWithoutMatchInput = {
     data: Prisma.XOR<Prisma.MatchResultUpdateWithoutMatchInput, Prisma.MatchResultUncheckedUpdateWithoutMatchInput>;
 };
 export type MatchResultUpdateWithoutMatchInput = {
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1032,10 +896,6 @@ export type MatchResultUpdateWithoutMatchInput = {
 export type MatchResultUncheckedUpdateWithoutMatchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     winner_team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1056,10 +916,6 @@ export type MatchResultUncheckedUpdateWithoutMatchInput = {
 export type MatchResultCreateManyWinner_teamInput = {
     id?: number;
     match_id: number;
-    home_score?: number;
-    away_score?: number;
-    home_half_time_score?: number;
-    away_half_time_score?: number;
     home_extra_time_score?: number | null;
     away_extra_time_score?: number | null;
     home_penalty_score?: number | null;
@@ -1078,10 +934,6 @@ export type MatchResultCreateManyWinner_teamInput = {
     deleted_at?: Date | string | null;
 };
 export type MatchResultUpdateWithoutWinner_teamInput = {
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1103,10 +955,6 @@ export type MatchResultUpdateWithoutWinner_teamInput = {
 export type MatchResultUncheckedUpdateWithoutWinner_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1127,10 +975,6 @@ export type MatchResultUncheckedUpdateWithoutWinner_teamInput = {
 export type MatchResultUncheckedUpdateManyWithoutWinner_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    home_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
-    away_half_time_score?: Prisma.IntFieldUpdateOperationsInput | number;
     home_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     away_extra_time_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     home_penalty_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1152,10 +996,6 @@ export type MatchResultSelect<ExtArgs extends runtime.Types.Extensions.InternalA
     id?: boolean;
     match_id?: boolean;
     winner_team_id?: boolean;
-    home_score?: boolean;
-    away_score?: boolean;
-    home_half_time_score?: boolean;
-    away_half_time_score?: boolean;
     home_extra_time_score?: boolean;
     away_extra_time_score?: boolean;
     home_penalty_score?: boolean;
@@ -1179,10 +1019,6 @@ export type MatchResultSelectScalar = {
     id?: boolean;
     match_id?: boolean;
     winner_team_id?: boolean;
-    home_score?: boolean;
-    away_score?: boolean;
-    home_half_time_score?: boolean;
-    away_half_time_score?: boolean;
     home_extra_time_score?: boolean;
     away_extra_time_score?: boolean;
     home_penalty_score?: boolean;
@@ -1200,7 +1036,7 @@ export type MatchResultSelectScalar = {
     updated_at?: boolean;
     deleted_at?: boolean;
 };
-export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_score" | "away_score" | "home_half_time_score" | "away_half_time_score" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "appeal_reason" | "appeal_note" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["matchResult"]>;
+export type MatchResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "winner_team_id" | "home_extra_time_score" | "away_extra_time_score" | "home_penalty_score" | "away_penalty_score" | "home_final_score" | "away_final_score" | "result_type" | "status" | "duration" | "notes" | "appeal_reason" | "appeal_note" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["matchResult"]>;
 export type MatchResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
     winner_team?: boolean | Prisma.MatchResult$winner_teamArgs<ExtArgs>;
@@ -1215,10 +1051,6 @@ export type $MatchResultPayload<ExtArgs extends runtime.Types.Extensions.Interna
         id: number;
         match_id: number;
         winner_team_id: number | null;
-        home_score: number;
-        away_score: number;
-        home_half_time_score: number;
-        away_half_time_score: number;
         home_extra_time_score: number | null;
         away_extra_time_score: number | null;
         home_penalty_score: number | null;
@@ -1542,10 +1374,6 @@ export interface MatchResultFieldRefs {
     readonly id: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly match_id: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly winner_team_id: Prisma.FieldRef<"MatchResult", 'Int'>;
-    readonly home_score: Prisma.FieldRef<"MatchResult", 'Int'>;
-    readonly away_score: Prisma.FieldRef<"MatchResult", 'Int'>;
-    readonly home_half_time_score: Prisma.FieldRef<"MatchResult", 'Int'>;
-    readonly away_half_time_score: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly home_extra_time_score: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly away_extra_time_score: Prisma.FieldRef<"MatchResult", 'Int'>;
     readonly home_penalty_score: Prisma.FieldRef<"MatchResult", 'Int'>;

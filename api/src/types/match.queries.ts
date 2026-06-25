@@ -21,10 +21,6 @@ const matchResultSelect = {
     select: {
         id: true,
         winner_team_id: true,
-        home_score: true,
-        away_score: true,
-        home_half_time_score: true,
-        away_half_time_score: true,
         home_extra_time_score: true,
         away_extra_time_score: true,
         home_penalty_score: true,
@@ -158,7 +154,7 @@ export const matchForForfeitSelect = {
 
 // ── 6. Admin / management ─────────────────────────────────────
 // Admin panel: full audit fields + appeal info + article links
-export const matchAdminSelect = {
+export const Select = {
     ...matchDetailSelect,
     is_active: true,
     created_at: true,
@@ -184,7 +180,6 @@ export const matchAdminSelect = {
 
 export type MatchList = Prisma.MatchGetPayload<{ select: typeof matchListSelect }>;
 export type MatchDetail = Prisma.MatchGetPayload<{ select: typeof matchDetailSelect }>;
-export type MatchAdmin = Prisma.MatchGetPayload<{ select: typeof matchAdminSelect }>;
 
 // Internal types — service dùng, không expose ra ngoài
 export type MatchForConfirm = Prisma.MatchGetPayload<{ select: typeof matchForConfirmSelect }>;
