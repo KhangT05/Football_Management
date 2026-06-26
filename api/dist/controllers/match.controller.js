@@ -10,8 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, } from "tsoa";
-import { MatchLifecycleService, } from "../services/match.service.js";
+import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Query, } from "tsoa";
+import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -68,8 +68,7 @@ let MatchController = class MatchController extends Controller {
         this.setStatus(204);
         // FinalizeMatchDto không có venueIds/matchTimes — finalize không advance bracket.
         // scheduleOptions truyền empty vì knockout guard xảy ra tại confirmOfficial.
-        const { ...finalizeInput } = body;
-        return this.lifecycleService.finalizeMatch(id, finalizeInput, {});
+        return this.lifecycleService.finalizeMatch(id, body, {});
     }
     /**
      * Nhập tay kết quả — fallback khi referee không dùng app (giải nhỏ).
@@ -153,10 +152,17 @@ let MatchController = class MatchController extends Controller {
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
      * Tự recompute MatchResult sau khi xóa.
+     * scheduleOptions truyền qua query params vì DELETE không nên có body.
+     * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
      */
-    async deleteEvent(id, eventId, body) {
+    async deleteEvent(id, eventId, venueIds, matchTimes) {
         this.setStatus(204);
-        return this.lifecycleService.deleteEvent(id, eventId, body);
+        // Parse CSV query params → typed scheduleOptions
+        const scheduleOptions = {
+            venueIds: venueIds ? venueIds.split(",").map(Number) : undefined,
+            matchTimes: matchTimes ? matchTimes.split(",") : undefined,
+        };
+        return this.lifecycleService.deleteEvent(id, eventId, scheduleOptions);
     }
     /**
      * Sửa event (minute, type, player, period, note) sau khi match finished.
@@ -302,9 +308,10 @@ __decorate([
     SuccessResponse(204, "Event deleted"),
     __param(0, Path()),
     __param(1, Path()),
-    __param(2, Body()),
+    __param(2, Query()),
+    __param(3, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", Promise)
 ], MatchController.prototype, "deleteEvent", null);
 __decorate([

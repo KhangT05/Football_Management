@@ -6,9 +6,6 @@ export declare class KnockoutController extends Controller {
     private service;
     constructor(service: KnockoutService);
     /**
-        * GET /phases/{phaseId}/bracket
-        */
-    /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
      * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)
@@ -20,11 +17,20 @@ export declare class KnockoutController extends Controller {
      * resource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.
      * venueIds/matchTimes trong body là ScheduleOptions cho match round sau
      * vừa được tạo ra (nếu advance làm xong 1 cặp slot).
+     *
+     * Service return newMatchId (singular) — leg 1 match ID của round tiếp theo.
+     * Leg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần
+     * anchor ID để poll/redirect; leg 2 visible qua GET bracket.
      */
     advanceWinner(seasonId: number, phaseId: number, body: knockoutSchema.AdvanceWinnerRequestDto): Promise<{
         matchCreated: boolean;
         newMatchId?: number;
     }>;
+    /**
+     * Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule.
+     * Trả toàn bộ slot tree; client tự build visual bracket từ
+     * sourceASlotId/sourceBSlotId links.
+     */
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
 }
 //# sourceMappingURL=knockout.controller.d.ts.map

@@ -1,8 +1,9 @@
 import { Controller } from "tsoa";
-import { MatchLifecycleService, AddEventInput, EditEventInput, EditScoreInput } from "../services/match.service.js";
+import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
+import { AddEventInput, EditEventInput, EditScoreInput } from "../types/match.type.js";
 export declare class MatchController extends Controller {
     private readonly lifecycleService;
     constructor(lifecycleService: MatchLifecycleService);
@@ -81,8 +82,10 @@ export declare class MatchController extends Controller {
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
      * Tự recompute MatchResult sau khi xóa.
+     * scheduleOptions truyền qua query params vì DELETE không nên có body.
+     * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
      */
-    deleteEvent(id: number, eventId: number, body: matchSchema.ConfirmOfficialDto): Promise<void>;
+    deleteEvent(id: number, eventId: number, venueIds?: string, matchTimes?: string): Promise<void>;
     /**
      * Sửa event (minute, type, player, period, note) sau khi match finished.
      * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.

@@ -16,18 +16,19 @@ import {
     EXTRA_TIME_PERIODS,
     AddEventInput,
     FinalizeMatchInput,
-    isCreditedToHomeTeam,
     ManualScoreInput,
     PERIOD_TRANSITIONS,
     RecordEventInput,
     ResolveAppealInput,
     SCORE_DELTA_BY_TYPE,
+    EditEventInput,
+    EditScoreInput,
 } from '../types/match.type.js';
 import {
     MatchResultService,
 } from './matchresult.service.js';
 import { matchForFinalizeSelect, matchForForfeitSelect } from '../types/match.queries.js';
-import { isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
+import { isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
 
 // ─── Correction window ────────────────────────────────────────────────────────
 // Sau khi match finished, admin có 15p để patch events/score nếu có sai sót.
@@ -35,28 +36,6 @@ import { isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnU
 // Match status KHÔNG đổi — vẫn giữ nguyên finished.
 
 const CORRECTION_WINDOW_MS = 15 * 60 * 1000;
-
-// ─── Correction input types ───────────────────────────────────────────────────
-// AddEventInput đã định nghĩa trong match.type.ts với period bắt buộc.
-// Re-export để controller import từ một chỗ.
-
-export type { AddEventInput };
-
-export type EditEventInput = Partial<RecordEventInput>;
-
-export type EditScoreInput = {
-    homeScore: number;
-    awayScore: number;
-    homePenalty?: number;
-    awayPenalty?: number;
-    homeExtraTime?: number;
-    awayExtraTime?: number;
-    homeHalfTime?: number;
-    awayHalfTime?: number;
-    resultType?: MatchResultType;
-    notes?: string;
-};
-
 // ─── Service ──────────────────────────────────────────────────────────────────
 // Quản lý state machine (status/period) và event recording.
 // Không tự tạo MatchResult — delegate toàn bộ result logic sang MatchResultService.
@@ -427,6 +406,8 @@ export class MatchLifecycleService {
     //
     // Idempotency: confirmOfficial có _guardConfirm check matchResult existing —
     // nếu cron chạy 2 lần, lần 2 throw CONFLICT (không crash, log warn).
+    // Phân biệt idempotency CONFLICT (code 'CONFLICT', message chứa 'đã có MatchResult')
+    // vs real error để tránh false alarm trong monitoring.
     // TODO: thêm SELECT FOR UPDATE nếu cần đảm bảo chỉ 1 instance xử lý.
 
     async handleGracePeriodTimeout(
@@ -458,8 +439,20 @@ export class MatchLifecycleService {
             try {
                 await this.confirmOfficial(matchId, scheduleOptions);
             } catch (err) {
-                confirmErrors.push({ matchId, error: err });
-                console.error(`[GracePeriod] auto-confirm failed for match ${matchId}:`, err);
+                // Phân biệt idempotency CONFLICT (cron chạy lần 2) vs real error
+                // _guardConfirm throw CONFLICT khi match đã có MatchResult
+                const isIdempotencyConflict =
+                    err instanceof Error &&
+                    (err as any).code === 'CONFLICT' &&
+                    (err as any).message?.includes('đã có MatchResult');
+
+                if (isIdempotencyConflict) {
+                    // Match đã được confirm trước đó — skip silently, không phải error
+                    console.warn(`[GracePeriod] match ${matchId} đã được confirm trước — skip (idempotent)`);
+                } else {
+                    confirmErrors.push({ matchId, error: err });
+                    console.error(`[GracePeriod] auto-confirm failed for match ${matchId}:`, err);
+                }
             }
         }
 
@@ -638,6 +631,8 @@ export class MatchLifecycleService {
         }
 
         // Recompute standings chỉ cho group phase — knockout đã bị guard ở trên
+        // NOTE: overturn không recompute player stats vì không đổi events,
+        // chỉ đổi score thông qua admin adjudication. Goals/cards giữ nguyên từ events gốc.
         if (!isKnockout && match.group_id) {
             await this.matchResultService.recomputeStandingsFor(match.group_id);
         }
@@ -666,6 +661,11 @@ export class MatchLifecycleService {
     }
 
     // ─── addEvent (correction) ────────────────────────────────────────────────
+    // Ghi event bổ sung vào match đã finished trong correction window.
+    //
+    // KHÔNG dùng recordEvent() — recordEvent guard reject status 'finished'.
+    // addEvent bypass guard bằng cách ghi trực tiếp vào matchEvent,
+    // sau đó gọi _recalculateResult để recompute score + stats + standings.
 
     async addEvent(
         matchId: number,
@@ -679,6 +679,7 @@ export class MatchLifecycleService {
             select: { home_team_id: true },
         });
 
+        // Second yellow guard — same logic as recordEvent
         if (input.type === MatchEventType.yellow_card && input.playerId) {
             const existingYellow = await this.prisma.matchEvent.findFirst({
                 where: {
@@ -692,8 +693,22 @@ export class MatchLifecycleService {
                 throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`);
         }
 
-        // Dùng recordEvent để tái sử dụng logic create — period đã có trong input (AddEventInput)
-        await this.recordEvent(matchId, input);
+        // Ghi trực tiếp — không qua recordEvent để tránh status guard
+        // AddEventInput có period bắt buộc (khác RecordEventInput) — period luôn có giá trị
+        await this.prisma.matchEvent.create({
+            data: {
+                match_id: matchId,
+                player_id: input.playerId,
+                team_id: input.teamId,
+                type: input.type,
+                minute: input.minute,
+                added_minute: input.addedMinute,
+                period: input.period,
+                note: input.note,
+                card_color: this._deriveCardColor(input.type),
+                sub_out_player_id: input.subOutPlayerId,
+            },
+        });
 
         await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
     }
@@ -906,4 +921,3 @@ export class MatchLifecycleService {
         await this.matchResultService.recomputePlayerStats(matchId);
     }
 }
-

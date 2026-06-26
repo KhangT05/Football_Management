@@ -15,7 +15,5 @@ export declare class KnockoutService extends ScheduleEngine {
     private scheduleMatchBatch;
     private buildAllSlotCreateData;
     private bulkLinkSlots;
-    private nextPowerOf2;
-    private buildRound1Pairings;
 }
 //# sourceMappingURL=knockout.service.d.ts.map

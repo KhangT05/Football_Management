@@ -2,6 +2,7 @@ import { AuthController } from "../controllers/auth.controller.js";
 import { GroupController } from "../controllers/group.controller.js";
 import { KnockoutController } from "../controllers/knockout.controller.js";
 import { MatchController } from "../controllers/match.controller.js";
+import { MatchLineupController } from "../controllers/matchlineup.controller.js";
 import { MatchResultController } from "../controllers/matchResult.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
@@ -17,6 +18,7 @@ import { AuthService } from "../services/auth.service.js";
 import { GroupService } from "../services/group.service.js";
 import { KnockoutService } from "../services/knockout.service.js";
 import { MatchLifecycleService } from "../services/match.service.js";
+import { MatchLineupService } from "../services/matchlineup.service.js";
 import { MatchResultService } from "../services/matchresult.service.js";
 import { PlayerService } from "../services/player.service.js";
 import { RoleService } from "../services/role.service.js";
@@ -42,7 +44,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [AuthController, () => new AuthController(new AuthService(prisma))],
     [VenueController, () => new VenueController(new VenueService(prisma))],
     [TournamentController, () => new TournamentController(new TournamentService(prisma))],
-    [SeasonController, () => new SeasonController(new SeasonService(prisma))],
+    [SeasonController, () => new SeasonController(new SeasonService(prisma), standingsService)],
     [TournamentRuleController, () => new TournamentRuleController(new TournamentRuleService(prisma))],
     [TeamController, () => new TeamController(new TeamService(prisma))],
     [PlayerController, () => new PlayerController(new PlayerService(prisma))],
@@ -52,6 +54,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [KnockoutController, () => new KnockoutController(new KnockoutService(prisma))],
     [MatchController, () => new MatchController(lifecycleService)],
     [MatchResultController, () => new MatchResultController(matchResultService)],
+    [MatchLineupController, () => new MatchLineupController(new MatchLineupService(prisma))],
 ]);
 export const iocContainer = {
     get<T>(controller: new (...args: unknown[]) => T): T {

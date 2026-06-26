@@ -1143,6 +1143,87 @@
                     "cancelled"
                 ]
             },
+            "SeasonListItem": {
+                "properties": {
+                    "_count": {
+                        "properties": {
+                            "phases": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "phases"
+                        ],
+                        "type": "object"
+                    },
+                    "tournament": {
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "id"
+                        ],
+                        "type": "object"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/SeasonStatus"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "_count",
+                    "tournament",
+                    "end_date",
+                    "start_date",
+                    "status",
+                    "name",
+                    "id"
+                ],
+                "type": "object"
+            },
+            "PaginatedResult_SeasonListItem_": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SeasonListItem"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "Decimal": {
                 "type": "string"
             },
@@ -1234,25 +1315,6 @@
             "Season": {
                 "$ref": "#/components/schemas/SeasonModel",
                 "description": "Model Season"
-            },
-            "PaginatedResult_Season_": {
-                "properties": {
-                    "data": {
-                        "items": {
-                            "$ref": "#/components/schemas/Season"
-                        },
-                        "type": "array"
-                    },
-                    "meta": {
-                        "$ref": "#/components/schemas/PaginationMeta"
-                    }
-                },
-                "required": [
-                    "data",
-                    "meta"
-                ],
-                "type": "object",
-                "additionalProperties": false
             },
             "infer_typeofcreateSeasonSchema_": {
                 "properties": {
@@ -1381,6 +1443,156 @@
             },
             "UpdateSeasonStatusDto": {
                 "$ref": "#/components/schemas/infer_typeofUpdateSeasonStatusSchema_"
+            },
+            "PaginatedResult__id-number--team_id-number--group_id-number--position-number--matches_played-number--wins-number--draws-number--losses-number--goals_for-number--goals_against-number--points-number__": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "properties": {
+                                "points": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "goals_against": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "goals_for": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "losses": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "draws": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "wins": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "matches_played": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "position": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "group_id": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "team_id": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "id": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "required": [
+                                "points",
+                                "goals_against",
+                                "goals_for",
+                                "losses",
+                                "draws",
+                                "wins",
+                                "matches_played",
+                                "position",
+                                "group_id",
+                                "team_id",
+                                "id"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "properties": {
+                                "is_suspended": {
+                                    "type": "boolean"
+                                },
+                                "accumulated_yellow_cards": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "player_id": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "matches_played": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "season_id": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "team_id": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "red_cards": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "yellow_cards": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "goals_scored": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
+                                "id": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            },
+                            "required": [
+                                "is_suspended",
+                                "accumulated_yellow_cards",
+                                "player_id",
+                                "matches_played",
+                                "season_id",
+                                "team_id",
+                                "red_cards",
+                                "yellow_cards",
+                                "goals_scored",
+                                "id"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
             },
             "GenerateResult": {
                 "properties": {
@@ -2057,6 +2269,10 @@
                         "type": "number",
                         "format": "double"
                     },
+                    "date_of_birth": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
                     "position": {
                         "type": "string",
                         "enum": [
@@ -2065,10 +2281,6 @@
                             "midfielder",
                             "forward"
                         ]
-                    },
-                    "date_of_birth": {
-                        "type": "string",
-                        "format": "date-time"
                     }
                 },
                 "type": "object"
@@ -2514,155 +2726,110 @@
                 "type": "object",
                 "additionalProperties": false
             },
-            "PaginatedResult__id-number--team_id-number--group_id-number--position-number--matches_played-number--wins-number--draws-number--losses-number--goals_for-number--goals_against-number--points-number__": {
-                "properties": {
-                    "data": {
-                        "items": {
-                            "properties": {
-                                "points": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "goals_against": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "goals_for": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "losses": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "draws": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "wins": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "matches_played": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "position": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "group_id": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "team_id": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "id": {
-                                    "type": "number",
-                                    "format": "double"
-                                }
-                            },
-                            "required": [
-                                "points",
-                                "goals_against",
-                                "goals_for",
-                                "losses",
-                                "draws",
-                                "wins",
-                                "matches_played",
-                                "position",
-                                "group_id",
-                                "team_id",
-                                "id"
-                            ],
-                            "type": "object"
-                        },
-                        "type": "array"
-                    },
-                    "meta": {
-                        "$ref": "#/components/schemas/PaginationMeta"
-                    }
-                },
-                "required": [
-                    "data",
-                    "meta"
-                ],
-                "type": "object",
-                "additionalProperties": false
+            "MatchPlayerStatus": {
+                "type": "string",
+                "enum": [
+                    "injured",
+                    "suspended",
+                    "available",
+                    "absent"
+                ]
             },
-            "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--player_id-number--matches_played-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+            "LineupType": {
+                "type": "string",
+                "enum": [
+                    "starter",
+                    "substitute"
+                ]
+            },
+            "DefaultSelection__36_MatchLineupPayload_": {
                 "properties": {
-                    "data": {
-                        "items": {
-                            "properties": {
-                                "is_suspended": {
-                                    "type": "boolean"
-                                },
-                                "accumulated_yellow_cards": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "matches_played": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "player_id": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "season_id": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "team_id": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "red_cards": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "yellow_cards": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "goals_scored": {
-                                    "type": "number",
-                                    "format": "double"
-                                },
-                                "id": {
-                                    "type": "number",
-                                    "format": "double"
-                                }
-                            },
-                            "required": [
-                                "is_suspended",
-                                "accumulated_yellow_cards",
-                                "matches_played",
-                                "player_id",
-                                "season_id",
-                                "team_id",
-                                "red_cards",
-                                "yellow_cards",
-                                "goals_scored",
-                                "id"
-                            ],
-                            "type": "object"
-                        },
-                        "type": "array"
+                    "minute_out": {
+                        "type": "number",
+                        "format": "double"
                     },
-                    "meta": {
-                        "$ref": "#/components/schemas/PaginationMeta"
+                    "minute_in": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "is_captain": {
+                        "type": "boolean"
+                    },
+                    "lineup_type": {
+                        "$ref": "#/components/schemas/LineupType"
+                    },
+                    "match_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "jersey_number": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "player_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/PlayerPosition"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/MatchPlayerStatus"
+                    },
+                    "team_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "id": {
+                        "type": "number",
+                        "format": "double"
                     }
                 },
                 "required": [
-                    "data",
-                    "meta"
+                    "minute_out",
+                    "minute_in",
+                    "is_captain",
+                    "lineup_type",
+                    "match_id",
+                    "jersey_number",
+                    "player_id",
+                    "position",
+                    "status",
+                    "team_id",
+                    "created_at",
+                    "id"
                 ],
+                "type": "object"
+            },
+            "MatchLineupModel": {
+                "$ref": "#/components/schemas/DefaultSelection__36_MatchLineupPayload_",
+                "description": "Model MatchLineup"
+            },
+            "MatchLineup": {
+                "$ref": "#/components/schemas/MatchLineupModel",
+                "description": "Model MatchLineup"
+            },
+            "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__": {
+                "properties": {},
                 "type": "object",
-                "additionalProperties": false
+                "description": "From T, pick a set of properties whose keys are in the union K"
+            },
+            "Omit_RegisterLineupDto.match_id_": {
+                "$ref": "#/components/schemas/Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__",
+                "description": "Construct a type with the properties of T except for those in type K."
+            },
+            "Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__": {
+                "properties": {},
+                "type": "object",
+                "description": "From T, pick a set of properties whose keys are in the union K"
+            },
+            "Omit_UpdateLineupEntryDto.match_id-or-team_id-or-player_id_": {
+                "$ref": "#/components/schemas/Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__",
+                "description": "Construct a type with the properties of T except for those in type K."
             },
             "infer_typeofTransitionPeriodSchema_": {
                 "properties": {
@@ -5256,27 +5423,24 @@
         },
         "/seasons": {
             "get": {
-                "operationId": "FindAll",
+                "operationId": "ListSeasons",
                 "responses": {
                     "200": {
                         "description": "Ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PaginatedResult_Season_"
+                                    "$ref": "#/components/schemas/PaginatedResult_SeasonListItem_"
                                 }
                             }
                         }
                     }
                 },
+                "description": "List seasons có thể xem standings.\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\n\nQuery params:\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\n  ?tournamentId=1\n  ?page=1&per_page=20\n  ?q=keyword&sort=start_date&direction=desc",
                 "tags": [
                     "Seasons"
                 ],
-                "security": [
-                    {
-                        "jwt": []
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "query",
@@ -5325,6 +5489,28 @@
                                 "desc"
                             ]
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ongoing",
+                                "finished",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "tournamentId",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
                     }
                 ]
             },
@@ -5347,7 +5533,9 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [],
@@ -5381,11 +5569,7 @@
                 "tags": [
                     "Seasons"
                 ],
-                "security": [
-                    {
-                        "jwt": []
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -5417,7 +5601,9 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -5454,7 +5640,9 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -5490,7 +5678,9 @@
                 ],
                 "security": [
                     {
-                        "jwt": []
+                        "jwt": [
+                            "admin"
+                        ]
                     }
                 ],
                 "parameters": [
@@ -5514,6 +5704,389 @@
                         }
                     }
                 }
+            }
+        },
+        "/seasons/{id}/standings": {
+            "get": {
+                "operationId": "GetSeasonStandings",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "properties": {
+                                            "standings": {
+                                                "items": {
+                                                    "properties": {
+                                                        "points": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "goals_against": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "goals_for": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "losses": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "draws": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "wins": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "matches_played": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "position": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "group_id": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "team_id": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        },
+                                                        "id": {
+                                                            "type": "number",
+                                                            "format": "double"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "points",
+                                                        "goals_against",
+                                                        "goals_for",
+                                                        "losses",
+                                                        "draws",
+                                                        "wins",
+                                                        "matches_played",
+                                                        "position",
+                                                        "group_id",
+                                                        "team_id",
+                                                        "id"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "groupName": {
+                                                "type": "string"
+                                            },
+                                            "groupId": {
+                                                "type": "number",
+                                                "format": "double"
+                                            }
+                                        },
+                                        "required": [
+                                            "standings",
+                                            "groupName",
+                                            "groupId"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Overview standings toàn season — tất cả groups, kiểu World Cup group stage.\nKhông paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).\nTrả về array grouped theo group, mỗi group có teams sorted by position.\n\nChỉ serve season ở status: ongoing / finished / cancelled.",
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/seasons/{id}/standings/{groupId}": {
+            "get": {
+                "operationId": "GetGroupStandings",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult__id-number--team_id-number--group_id-number--position-number--matches_played-number--wins-number--draws-number--losses-number--goals_for-number--goals_against-number--points-number__"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Standings chi tiết của 1 group — validate group thuộc season.\n\nQuery params:\n  ?page=1&per_page=20\n  ?sort=position|points|goals_for|wins&direction=asc|desc",
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "groupId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "/seasons/{id}/player-stats": {
+            "get": {
+                "operationId": "GetPlayerStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Thống kê cầu thủ trong season.\n\nQuery params:\n  ?teamId=1\n  ?page=1&per_page=20\n  ?sort=goals_scored&direction=desc",
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "teamId",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "/seasons/{id}/suspended-players": {
+            "get": {
+                "operationId": "GetSuspendedPlayers",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "properties": {
+                                            "is_suspended": {
+                                                "type": "boolean"
+                                            },
+                                            "accumulated_yellow_cards": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "minutes_played": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "assists": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "player_id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "matches_played": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "season_id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "team_id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "red_cards": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "yellow_cards": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "goals_scored": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            }
+                                        },
+                                        "required": [
+                                            "is_suspended",
+                                            "accumulated_yellow_cards",
+                                            "minutes_played",
+                                            "assists",
+                                            "player_id",
+                                            "matches_played",
+                                            "season_id",
+                                            "team_id",
+                                            "red_cards",
+                                            "yellow_cards",
+                                            "goals_scored",
+                                            "updated_at",
+                                            "created_at",
+                                            "id"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
             }
         },
         "/schedules/seasons/{seasonId}/generate": {
@@ -7094,169 +7667,9 @@
                 }
             }
         },
-        "/seasons/{seasonId}/standings": {
+        "/matches/{matchId}/lineups": {
             "get": {
-                "operationId": "GetStandings",
-                "responses": {
-                    "200": {
-                        "description": "Ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PaginatedResult__id-number--team_id-number--group_id-number--position-number--matches_played-number--wins-number--draws-number--losses-number--goals_for-number--goals_against-number--points-number__"
-                                }
-                            }
-                        }
-                    }
-                },
-                "description": "Bảng xếp hạng của season.\r\n\r\nQuery params:\r\n  ?groupId=1 (filter by group)\r\n  ?page=1&per_page=20 (pagination)\r\n  ?sort=position&direction=asc (sort)",
-                "tags": [
-                    "Standings & Player Stats"
-                ],
-                "security": [],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "seasonId",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "groupId",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "page",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "per_page",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "sort",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "direction",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "/seasons/{seasonId}/player-stats": {
-            "get": {
-                "operationId": "GetPlayerStats",
-                "responses": {
-                    "200": {
-                        "description": "Ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--player_id-number--matches_played-number--accumulated_yellow_cards-number--is_suspended-boolean__"
-                                }
-                            }
-                        }
-                    }
-                },
-                "description": "Thống kê cầu thủ trong season.\r\n\r\nQuery params:\r\n  ?teamId=1 (filter by team)\r\n  ?page=1&per_page=20\r\n  ?sort=goals_scored&direction=desc",
-                "tags": [
-                    "Standings & Player Stats"
-                ],
-                "security": [],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "seasonId",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "teamId",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "page",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "per_page",
-                        "required": false,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "sort",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "direction",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "/seasons/{seasonId}/suspended-players": {
-            "get": {
-                "operationId": "GetSuspendedPlayers",
+                "operationId": "GetLineups",
                 "responses": {
                     "200": {
                         "description": "Ok",
@@ -7264,80 +7677,7 @@
                             "application/json": {
                                 "schema": {
                                     "items": {
-                                        "properties": {
-                                            "is_suspended": {
-                                                "type": "boolean"
-                                            },
-                                            "accumulated_yellow_cards": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "minutes_played": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "assists": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "matches_played": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "player_id": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "season_id": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "team_id": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "red_cards": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "yellow_cards": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "goals_scored": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
-                                            "updated_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "id": {
-                                                "type": "number",
-                                                "format": "double"
-                                            }
-                                        },
-                                        "required": [
-                                            "is_suspended",
-                                            "accumulated_yellow_cards",
-                                            "minutes_played",
-                                            "assists",
-                                            "matches_played",
-                                            "player_id",
-                                            "season_id",
-                                            "team_id",
-                                            "red_cards",
-                                            "yellow_cards",
-                                            "goals_scored",
-                                            "updated_at",
-                                            "created_at",
-                                            "id"
-                                        ],
-                                        "type": "object"
+                                        "$ref": "#/components/schemas/MatchLineup"
                                     },
                                     "type": "array"
                                 }
@@ -7345,14 +7685,226 @@
                         }
                     }
                 },
+                "description": "Lấy toàn bộ lineup của trận — cả 2 team.",
                 "tags": [
-                    "Standings & Player Stats"
+                    "Match Lineup"
                 ],
                 "security": [],
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "seasonId",
+                        "name": "matchId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "RegisterLineup",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/MatchLineup"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Đăng ký lineup cho team — bulk replace, idempotent.\r\nChỉ được gọi trước giờ thi đấu ít nhất 1 giờ.\r\nAdmin: bất kỳ team nào.\r\nLeader: chỉ team của mình (ownership check tại middleware).",
+                "tags": [
+                    "Match Lineup"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "leader"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "matchId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Omit_RegisterLineupDto.match_id_"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{matchId}/lineups/teams/{teamId}": {
+            "get": {
+                "operationId": "GetTeamLineup",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/MatchLineup"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Lấy lineup của 1 team trong trận.",
+                "tags": [
+                    "Match Lineup"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "matchId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "teamId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/matches/{matchId}/lineups/teams/{teamId}/players/{playerId}": {
+            "patch": {
+                "operationId": "UpdateLineupEntry",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MatchLineup"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Sửa 1 player entry trong lineup.\r\nChỉ được gọi trước giờ thi đấu ít nhất 10 phút.\r\nAdmin only.",
+                "tags": [
+                    "Match Lineup"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "matchId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "teamId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "playerId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Omit_UpdateLineupEntryDto.match_id-or-team_id-or-player_id_"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "RemoveLineupEntry",
+                "responses": {
+                    "204": {
+                        "description": "Removed"
+                    }
+                },
+                "description": "Xóa 1 player khỏi lineup.\r\nChỉ được gọi trước giờ thi đấu ít nhất 10 phút.\r\nAdmin only.",
+                "tags": [
+                    "Match Lineup"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "matchId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "teamId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "playerId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -7853,7 +8405,7 @@
                         "description": "Event deleted"
                     }
                 },
-                "description": "Xóa event nhập sai sau khi match finished.\r\nChỉ trong 15p kể từ played_at.\r\nTự recompute MatchResult sau khi xóa.",
+                "description": "Xóa event nhập sai sau khi match finished.\r\nChỉ trong 15p kể từ played_at.\r\nTự recompute MatchResult sau khi xóa.\r\nscheduleOptions truyền qua query params vì DELETE không nên có body.\r\nvenueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...",
                 "tags": [
                     "Match"
                 ],
@@ -7882,18 +8434,24 @@
                             "format": "double",
                             "type": "number"
                         }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ConfirmOfficialDto"
-                            }
+                    },
+                    {
+                        "in": "query",
+                        "name": "venueIds",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "matchTimes",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     }
-                }
+                ]
             },
             "patch": {
                 "operationId": "EditEvent",
@@ -8016,7 +8574,7 @@
                         }
                     }
                 },
-                "description": "GET /phases/{phaseId}/bracket",
+                "description": "phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —\r\ntránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object\r\nrồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)\r\nlàm invariant check cuối, body schema con chỉ là contract cho OpenAPI.",
                 "tags": [
                     "Knockout"
                 ],
@@ -8064,7 +8622,7 @@
                 "operationId": "AdvanceWinner",
                 "responses": {
                     "200": {
-                        "description": "Ok",
+                        "description": "OK",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8086,7 +8644,7 @@
                         }
                     }
                 },
-                "description": "Action-style mutation (không idempotent, không phải partial update của\r\nresource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.\r\nvenueIds/matchTimes trong body là ScheduleOptions cho match round sau\r\nvừa được tạo ra (nếu advance làm xong 1 cặp slot).",
+                "description": "Action-style mutation (không idempotent, không phải partial update của\r\nresource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.\r\nvenueIds/matchTimes trong body là ScheduleOptions cho match round sau\r\nvừa được tạo ra (nếu advance làm xong 1 cặp slot).\r\n\r\nService return newMatchId (singular) — leg 1 match ID của round tiếp theo.\r\nLeg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần\r\nanchor ID để poll/redirect; leg 2 visible qua GET bracket.",
                 "tags": [
                     "Knockout"
                 ],
@@ -8147,6 +8705,7 @@
                         }
                     }
                 },
+                "description": "Read-only — không",
                 "tags": [
                     "Knockout"
                 ],

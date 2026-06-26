@@ -701,6 +701,14 @@ model PlayerStatistic {
   @@map("player_statistics")
 }
 
+enum MatchResultType {
+  full_time
+  extra_time
+  penalty
+  forfeit
+  walkover
+}
+
 model MatchResult {
   id                    Int               @id @default(autoincrement())
   match_id              Int               @unique
@@ -768,14 +776,6 @@ model Payment {
   season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
 
   @@map("payments")
-}
-
-enum MatchResultType {
-  full_time
-  extra_time
-  penalty
-  forfeit
-  walkover
 }
 
 enum NotificationSource {
