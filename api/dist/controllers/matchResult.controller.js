@@ -10,78 +10,62 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Query, } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Body, Security, Query, } from "tsoa";
 import { MatchResultService } from "../services/matchresult.service.js";
-import { MatchLifecycleService } from "../services/match.service.js";
-import { PrismaClient } from "../generated/prisma/client.js";
-// ─── Controller ───────────────────────────────────────────────────────────────
-// KHÔNG đặt @Security ở class level — GET endpoints là public (guest xem được).
-// Các write endpoints tự annotate @Security riêng.
-//
-// Read:
-//   GET /matches/:id/result          → MatchResult (score, winner, ET, penalty)
-//   GET /matches/:id/events          → list events của trận
-//   GET /matches/:id/result/stats    → player stats của trận
-//   GET /seasons/:seasonId/standings → bảng xếp hạng theo group
-//   GET /seasons/:seasonId/stats     → thống kê cầu thủ trong season
+import { StandingsService } from "../services/standing.service.js";
+import * as matchResultType from "../types/matchResult.type.js";
+import { buildMatchEventsQueryRequest, buildPlayerStatsQueryRequest, buildStandingsQueryRequest } from "../helper/match.helper.js";
 let MatchResultController = class MatchResultController extends Controller {
     matchResultService;
-    lifecycleService;
-    prisma;
-    constructor(matchResultService, lifecycleService, prisma) {
+    constructor(matchResultService) {
         super();
         this.matchResultService = matchResultService;
-        this.lifecycleService = lifecycleService;
-        this.prisma = prisma;
     }
-    // ─── GET — public (không cần JWT) ─────────────────────────────────────────
-    /**
-     * Xem kết quả chính thức của trận đấu.
-     * Trả về score 90p, ET, penalty, winner, result_type, status (official/protested...).
-     */
     async getMatchResult(id) {
-        const result = await this.prisma.matchResult.findUnique({
-            where: { match_id: id },
-            include: {
-                winner_team: { select: { id: true, name: true } },
-            },
-        });
-        if (!result) {
-            this.setStatus(404);
-            throw Object.assign(new Error(`Match ${id} chưa có kết quả`), { status: 404 });
-        }
+        const result = await this.matchResultService.getMatchResult(id);
         return result;
     }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — MATCH EVENTS (paginated)
+    // ═══════════════════════════════════════════════════════════════════════════
     /**
-     * List toàn bộ events của trận (goal, thẻ, thay người...).
-     * Hỗ trợ filter theo type và period.
+     * List events của 1 trận.
+     *
+     * Query params:
+     *   Simple filters: ?type=goal&period=first_half
+     *   Pagination: ?page=1&per_page=30
+     *   Sort: ?sort=minute&direction=asc
+     *   Search: ?q=keyword (if searchFields enabled)
      */
-    async getMatchEvents(id, type, period) {
-        return this.prisma.matchEvent.findMany({
-            where: {
-                match_id: id,
-                ...(type && { type: type }),
-                ...(period && { period: period }),
-            },
-            orderBy: [{ period: "asc" }, { minute: "asc" }, { added_minute: "asc" }],
-            include: {
-                match: { select: { home_team_id: true, away_team_id: true } },
-            },
+    async getMatchEvents(id, type, period, page, per_page, sort, direction, q) {
+        // Build QueryRequest từ parsed query params
+        const req = buildMatchEventsQueryRequest({
+            type,
+            period,
+            page,
+            per_page,
+            sort,
+            direction,
+            q,
         });
+        // Service gọi queryable.run(req)
+        const result = await this.matchResultService.listMatchEvents(id, req);
+        return result;
     }
-    /**
-     * Thống kê cầu thủ của 1 trận cụ thể (goals, cards per player).
-     * Aggregate từ match_events — không phải PlayerStatistic (đó là season-level).
-     */
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — MATCH PLAYER STATS (public, không pagination)
+    // ═══════════════════════════════════════════════════════════════════════════
     async getMatchPlayerStats(id) {
-        return this.prisma.matchEvent.groupBy({
-            by: ["player_id", "team_id", "type"],
-            where: {
-                match_id: id,
-                player_id: { not: null },
-            },
-            _count: { type: true },
-        });
+        const stats = await this.matchResultService.getMatchPlayerStats(id);
+        return stats;
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // POST — CONFIRM RESULT (require auth)
+    // ═══════════════════════════════════════════════════════════════════════════
+    async confirmResult(id, body) {
+        const result = await this.matchResultService.confirmResult(id, body.input, body.scheduleOptions);
+        this.setStatus(201);
+        return result;
     }
 };
 __decorate([
@@ -96,8 +80,13 @@ __decorate([
     __param(0, Path()),
     __param(1, Query()),
     __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __param(6, Query()),
+    __param(7, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String, String]),
+    __metadata("design:paramtypes", [Number, String, String, Number, Number, String, String, String]),
     __metadata("design:returntype", Promise)
 ], MatchResultController.prototype, "getMatchEvents", null);
 __decorate([
@@ -107,103 +96,115 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], MatchResultController.prototype, "getMatchPlayerStats", null);
+__decorate([
+    Security("jwt"),
+    Post("{id}/result/confirm"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchResultController.prototype, "confirmResult", null);
 MatchResultController = __decorate([
     Route("matches"),
     Tags("Match Result"),
-    __metadata("design:paramtypes", [MatchResultService,
-        MatchLifecycleService,
-        PrismaClient])
+    __metadata("design:paramtypes", [MatchResultService])
 ], MatchResultController);
 export { MatchResultController };
-// // ─── Season-level read endpoints ──────────────────────────────────────────────
-// // Tách route riêng vì prefix là /seasons thay vì /matches.
-// @Route("seasons")
-// @Tags("Match Result")
-// export class SeasonStatsController extends Controller {
-//     constructor(private readonly prisma: PrismaClient) {
-//         super();
-//     }
-//     /**
-//      * Bảng xếp hạng tất cả groups trong season.
-//      * Hỗ trợ filter theo group_id cụ thể.
-//      */
-//     @Get("{seasonId}/standings")
-//     async getStandings(
-//         @Path() seasonId: number,
-//         @Query() groupId?: number,
-//     ) {
-//         return this.prisma.teamStanding.findMany({
-//             where: {
-//                 group: {
-//                     phase: { season_id: seasonId },
-//                     ...(groupId && { id: groupId }),
-//                 },
-//                 is_active: true,
-//             },
-//             orderBy: [
-//                 { group_id: "asc" },
-//                 { position: "asc" },
-//             ],
-//             include: {
-//                 team: { select: { id: true, name: true } },
-//                 group: { select: { id: true, name: true } },
-//             },
-//         });
-//     }
-//     /**
-//      * Thống kê cầu thủ trong season.
-//      * Hỗ trợ sort theo goals_scored, yellow_cards, red_cards.
-//      * Dùng cho top scorer / disciplinary table.
-//      */
-//     @Get("{seasonId}/player-stats")
-//     async getPlayerStats(
-//         @Path() seasonId: number,
-//         @Query() sort: "goals_scored" | "yellow_cards" | "red_cards" | "matches_played" = "goals_scored",
-//         @Query() direction: "asc" | "desc" = "desc",
-//         @Query() page = 1,
-//         @Query() per_page = 20,
-//         @Query() teamId?: number,
-//     ) {
-//         const skip = (page - 1) * per_page;
-//         const [data, total] = await Promise.all([
-//             this.prisma.playerStatistic.findMany({
-//                 where: {
-//                     season_id: seasonId,
-//                     ...(teamId && { team_id: teamId }),
-//                 },
-//                 orderBy: { [sort]: direction },
-//                 skip,
-//                 take: per_page,
-//                 include: {
-//                     player: { select: { id: true, name: true } },
-//                     team: { select: { id: true, name: true } },
-//                 },
-//             }),
-//             this.prisma.playerStatistic.count({
-//                 where: {
-//                     season_id: seasonId,
-//                     ...(teamId && { team_id: teamId }),
-//                 },
-//             }),
-//         ]);
-//         return {
-//             data,
-//             meta: { total, page, per_page, total_pages: Math.ceil(total / per_page) },
-//         };
-//     }
-//     /**
-//      * Danh sách cầu thủ đang bị treo giò trong season.
-//      */
-//     @Get("{seasonId}/suspended-players")
-//     async getSuspendedPlayers(@Path() seasonId: number) {
-//         return this.prisma.playerStatistic.findMany({
-//             where: { season_id: seasonId, is_suspended: true },
-//             include: {
-//                 player: { select: { id: true, name: true } },
-//                 team: { select: { id: true, name: true } },
-//             },
-//             orderBy: { team_id: "asc" },
-//         });
-//     }
-// }
+// ─── Season-level controllers ─────────────────────────────────────────────────
+let SeasonStatsController = class SeasonStatsController extends Controller {
+    standingsService;
+    constructor(standingsService) {
+        super();
+        this.standingsService = standingsService;
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — STANDINGS (paginated)
+    // ═══════════════════════════════════════════════════════════════════════════
+    /**
+     * Bảng xếp hạng của season.
+     *
+     * Query params:
+     *   ?groupId=1 (filter by group)
+     *   ?page=1&per_page=20 (pagination)
+     *   ?sort=position&direction=asc (sort)
+     */
+    async getStandings(seasonId, groupId, page, per_page, sort, direction) {
+        const req = buildStandingsQueryRequest({
+            groupId,
+            page,
+            per_page,
+            sort,
+            direction,
+        });
+        const result = await this.standingsService.listStandings(seasonId, req);
+        return result;
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — PLAYER STATS (paginated)
+    // ═══════════════════════════════════════════════════════════════════════════
+    /**
+     * Thống kê cầu thủ trong season.
+     *
+     * Query params:
+     *   ?teamId=1 (filter by team)
+     *   ?page=1&per_page=20
+     *   ?sort=goals_scored&direction=desc
+     */
+    async getPlayerStats(seasonId, teamId, page, per_page, sort, direction) {
+        const req = buildPlayerStatsQueryRequest({
+            teamId,
+            page,
+            per_page,
+            sort,
+            direction,
+        });
+        const result = await this.standingsService.listPlayerStats(seasonId, req);
+        return result;
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — SUSPENDED PLAYERS (public)
+    // ═══════════════════════════════════════════════════════════════════════════
+    async getSuspendedPlayers(seasonId) {
+        const players = await this.standingsService.getSuspendedPlayers(seasonId);
+        return players;
+    }
+};
+__decorate([
+    Get("{seasonId}/standings"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], SeasonStatsController.prototype, "getStandings", null);
+__decorate([
+    Get("{seasonId}/player-stats"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], SeasonStatsController.prototype, "getPlayerStats", null);
+__decorate([
+    Get("{seasonId}/suspended-players"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonStatsController.prototype, "getSuspendedPlayers", null);
+SeasonStatsController = __decorate([
+    Route("seasons"),
+    Tags("Standings & Player Stats"),
+    __metadata("design:paramtypes", [StandingsService])
+], SeasonStatsController);
+export { SeasonStatsController };
 //# sourceMappingURL=matchResult.controller.js.map

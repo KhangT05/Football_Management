@@ -1,6 +1,5 @@
 import {
     Controller,
-    Get,
     Path,
     Tags,
     Route,
@@ -9,68 +8,18 @@ import {
     Body,
     SuccessResponse,
     Delete,
-    Query,
     Security,
-    Request,
 } from "tsoa";
-import type { Request as ExRequest } from "express";
-
-type AuthRequest = ExRequest & { user: { user_id: number } };
 
 import {
-    MatchLifecycleService, AddEventInput, EditEventInput,
-    EditScoreInput
+    MatchLifecycleService,
+    AddEventInput,
+    EditEventInput,
+    EditScoreInput,
 } from "../services/match.service.js";
-import { MatchResultService } from "../services/matchresult.service.js";
-import { MatchPeriod } from "../generated/prisma/client.js";
-import {
-    FinalizeMatchInput,
-    ManualScoreInput,
-    RecordEventInput,
-    ResolveAppealInput,
-} from "../types/match.type.js";
+import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
-import { ScheduleOptions } from "../types/schedule.type.js";
-
-// ─── Inline DTOs ──────────────────────────────────────────────────────────────
-// Không tách file riêng vì các type này chỉ dùng ở controller này.
-// Nếu reuse sang controller khác thì move sang dtos/match.schema.ts.
-
-interface TransitionPeriodBody {
-    period: MatchPeriod;
-}
-
-interface RecordEventBody extends RecordEventInput { }
-
-interface FinalizeMatchBody extends FinalizeMatchInput { }
-
-interface ManualScoreBody extends ManualScoreInput { }
-
-interface ScheduleOptionsBody extends ScheduleOptions { }
-
-interface ForfeitMatchBody {
-    forfeitingTeamId: number;
-    scheduleOptions: ScheduleOptions;
-}
-
-interface AbandonMatchBody {
-    minute: number;
-    reason?: string;
-}
-
-interface FileDisputeBody {
-    reason: string;
-}
-
-interface ResolveAppealBody extends ResolveAppealInput { }
-
-interface AddEventBody extends AddEventInput {
-    period: MatchPeriod; // bắt buộc trong correction — override optional từ RecordEventInput
-}
-
-interface EditEventBody extends EditEventInput { }
-
-interface EditScoreBody extends EditScoreInput { }
+import * as matchSchema from "../dtos/match.schema.js";
 
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/*
@@ -83,13 +32,15 @@ interface EditScoreBody extends EditScoreInput { }
 //
 // handleGracePeriodTimeout KHÔNG expose qua HTTP — gọi từ cron/worker nội bộ.
 // confirmOfficial expose để admin có thể trigger thủ công (ngoài auto-timeout).
+//
+// Body types: dùng Zod-inferred DTOs từ match.schema.ts thay vì inline interface.
+// ForfeitMatchDto thay thế inline ForfeitMatchBody — đã có venueIds/matchTimes optional.
 
 @Route("matches")
 @Tags("Match")
 export class MatchController extends Controller {
     constructor(
-        private readonly lifecycleService: MatchLifecycleService,
-        private readonly matchResultService: MatchResultService,
+        private readonly lifecycleService: MatchLifecycleService
     ) {
         super();
     }
@@ -117,7 +68,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Period transitioned")
     async transitionPeriod(
         @Path() id: number,
-        @Body() body: TransitionPeriodBody,
+        @Body() body: matchSchema.TransitionPeriodDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.transitionPeriod(id, body.period);
@@ -132,7 +83,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Event recorded")
     async recordEvent(
         @Path() id: number,
-        @Body() body: RecordEventBody,
+        @Body() body: matchType.RecordEventInput,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.recordEvent(id, body);
@@ -148,11 +99,13 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Finalized")
     async finalizeMatch(
         @Path() id: number,
-        @Body() body: FinalizeMatchBody & { scheduleOptions: ScheduleOptions },
+        @Body() body: matchSchema.FinalizeMatchDto,
     ): Promise<void> {
         this.setStatus(204);
-        const { scheduleOptions, ...finalizeInput } = body;
-        return this.lifecycleService.finalizeMatch(id, finalizeInput, scheduleOptions);
+        // FinalizeMatchDto không có venueIds/matchTimes — finalize không advance bracket.
+        // scheduleOptions truyền empty vì knockout guard xảy ra tại confirmOfficial.
+        const { ...finalizeInput } = body;
+        return this.lifecycleService.finalizeMatch(id, finalizeInput, {});
     }
 
     /**
@@ -164,11 +117,11 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Manual score submitted")
     async submitManualScore(
         @Path() id: number,
-        @Body() body: ManualScoreBody & { scheduleOptions: ScheduleOptions },
+        @Body() body: matchSchema.ManualScoreDto,
     ): Promise<void> {
         this.setStatus(204);
-        const { scheduleOptions, ...manualInput } = body;
-        return this.lifecycleService.submitManualScore(id, manualInput, scheduleOptions);
+        // Manual score cũng không cần scheduleOptions tại bước này.
+        return this.lifecycleService.submitManualScore(id, body, {});
     }
 
     /**
@@ -176,12 +129,13 @@ export class MatchController extends Controller {
      * Event path: compute score từ toàn bộ events.
      * Manual path: dùng manual_home_score / manual_away_score.
      * Tạo MatchResult, update standings, advance knockout bracket nếu có.
+     * venueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).
      */
     @Security("jwt", ["admin"])
     @Post("{id}/confirm")
     async confirmOfficial(
         @Path() id: number,
-        @Body() body: ScheduleOptionsBody,
+        @Body() body: matchSchema.ConfirmOfficialDto,
     ): Promise<ConfirmResultOutput> {
         return this.lifecycleService.confirmOfficial(id, body);
     }
@@ -193,18 +147,16 @@ export class MatchController extends Controller {
      * Bypass grace period, tạo MatchResult trực tiếp.
      * walkover = scheduled + team không xuất hiện.
      * forfeit  = ongoing/finished + team bỏ cuộc / vi phạm.
+     * venueIds/matchTimes optional — bắt buộc nếu knockout (validated tại matchResultService).
      */
     @Security("jwt", ["admin"])
     @Post("{id}/forfeit")
     async forfeitMatch(
         @Path() id: number,
-        @Body() body: ForfeitMatchBody,
+        @Body() body: matchSchema.ForfeitMatchDto,
     ): Promise<ConfirmResultOutput> {
-        return this.lifecycleService.forfeitMatch(
-            id,
-            body.forfeitingTeamId,
-            body.scheduleOptions,
-        );
+        const { forfeitingTeamId, ...scheduleOptions } = body;
+        return this.lifecycleService.forfeitMatch(id, forfeitingTeamId, scheduleOptions);
     }
 
     /**
@@ -216,7 +168,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Abandoned")
     async abandonMatch(
         @Path() id: number,
-        @Body() body: AbandonMatchBody,
+        @Body() body: matchSchema.AbandonMatchDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.abandonMatch(id, body.minute, body.reason);
@@ -233,7 +185,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Appeal filed")
     async fileAppeal(
         @Path() id: number,
-        @Body() body: FileDisputeBody,
+        @Body() body: matchSchema.FileDisputeDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.fileAppeal(id, body.reason);
@@ -248,7 +200,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Protest filed")
     async fileProtest(
         @Path() id: number,
-        @Body() body: FileDisputeBody,
+        @Body() body: matchSchema.FileDisputeDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.fileProtest(id, body.reason);
@@ -265,7 +217,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Appeal resolved")
     async resolveAppeal(
         @Path() id: number,
-        @Body() body: ResolveAppealBody,
+        @Body() body: matchSchema.ResolveAppealDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.resolveAppeal(id, body);
@@ -275,23 +227,20 @@ export class MatchController extends Controller {
 
     /**
      * Thêm event bị sót sau khi match finished.
-     * Chỉ trong 15p kể từ played_at. period bắt buộc.
+     * Chỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).
      * Tự recompute MatchResult sau khi thêm.
+     * venueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.
      */
     @Security("jwt", ["admin"])
     @Post("{id}/correction/events")
     @SuccessResponse(204, "Event added")
     async addEvent(
         @Path() id: number,
-        @Body() body: AddEventBody & { scheduleOptions: ScheduleOptions },
+        @Body() body: AddEventInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
-        const { scheduleOptions, ...eventInput } = body;
-        return this.lifecycleService.addEvent(
-            id,
-            eventInput as AddEventInput & { period: MatchPeriod },
-            scheduleOptions,
-        );
+        const { venueIds, matchTimes, ...eventInput } = body;
+        return this.lifecycleService.addEvent(id, eventInput, { venueIds, matchTimes });
     }
 
     /**
@@ -305,7 +254,7 @@ export class MatchController extends Controller {
     async deleteEvent(
         @Path() id: number,
         @Path() eventId: number,
-        @Body() body: ScheduleOptionsBody,
+        @Body() body: matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
         return this.lifecycleService.deleteEvent(id, eventId, body);
@@ -322,11 +271,11 @@ export class MatchController extends Controller {
     async editEvent(
         @Path() id: number,
         @Path() eventId: number,
-        @Body() body: EditEventBody & { scheduleOptions: ScheduleOptions },
+        @Body() body: EditEventInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
-        const { scheduleOptions, ...editInput } = body;
-        return this.lifecycleService.editEvent(id, eventId, editInput, scheduleOptions);
+        const { venueIds, matchTimes, ...editInput } = body;
+        return this.lifecycleService.editEvent(id, eventId, editInput, { venueIds, matchTimes });
     }
 
     /**
@@ -339,10 +288,10 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Score corrected")
     async editScore(
         @Path() id: number,
-        @Body() body: EditScoreBody & { scheduleOptions: ScheduleOptions },
+        @Body() body: EditScoreInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
-        const { scheduleOptions, ...scoreInput } = body;
-        return this.lifecycleService.editScore(id, scoreInput, scheduleOptions);
+        const { venueIds, matchTimes, ...scoreInput } = body;
+        return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
     }
 }

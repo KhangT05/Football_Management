@@ -12,7 +12,14 @@ export class KnockoutController extends Controller {
     constructor(private service: KnockoutService) {
         super();
     }
-
+    /**
+        * GET /phases/{phaseId}/bracket
+        */
+    // @Get("{phaseId}/bracket")
+    // async getBracket(@Path() phaseId: number) {
+    //     const bracket = await this.service.getBracket(phaseId);
+    //     return bracket;
+    // }
     /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object

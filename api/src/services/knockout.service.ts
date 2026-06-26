@@ -16,7 +16,7 @@ import {
     SlotWithParentLinks,
     slotWithParentLinksSelect,
 } from '../types/knockout.type.js';
-import { ScheduleOptions } from '../types/schedule.type.js';
+import { OptionalScheduleOptions, ScheduleOptions } from '../types/schedule.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
 import { KNOCKOUT_PHASE_TYPES } from '../dtos/knockout.schema.js';
 
@@ -25,6 +25,13 @@ export class KnockoutService extends ScheduleEngine {
     constructor(prisma: PrismaClient) {
         super(prisma);
     }
+
+    // ─── generateKnockoutBracket ──────────────────────────────────────────────
+    // Tạo toàn bộ bracket structure + round 1 matches trong 1 TX.
+    // Scheduling ngoài TX vì side-effect independent.
+    //
+    // TX timeout 30s — acceptable cho bracket size ≤ 32.
+    // Nếu N > 32: cân nhắc tách bracket creation và match creation thành 2 TX.
 
     async generateKnockoutBracket(options: KnockoutGenerateOptions): Promise<KnockoutGenerateResult> {
         const warnings: string[] = [];
@@ -72,6 +79,7 @@ export class KnockoutService extends ScheduleEngine {
             if (existingCount > 0)
                 throw createAppError('CONFLICT', `Phase ${options.phaseId} đã có bracket`);
 
+            // Tạo tất cả slot rows trước, chưa có link
             const slotCreateData = this.buildAllSlotCreateData(
                 options.phaseId, totalRounds, bracketSize, round1Pairings,
             );
@@ -86,6 +94,7 @@ export class KnockoutService extends ScheduleEngine {
             const slotMap = new Map(createdSlots.map(s => [`${s.round}:${s.slot_number}`, s.id]));
             const slotById = new Map(createdSlots.map(s => [s.id, s]));
 
+            // Link source_a / source_b cho round > 1
             const linkUpdates: SlotLinkUpdate[] = createdSlots
                 .filter(s => s.round > 1)
                 .map(s => ({
@@ -96,6 +105,7 @@ export class KnockoutService extends ScheduleEngine {
 
             await this.bulkLinkSlots(tx, linkUpdates);
 
+            // Tạo round 1 matches — chỉ non-bye slots
             const round1Slots = await tx.bracketSlot.findMany({
                 where: { phase_id: options.phaseId, round: 1, is_bye: false },
                 select: {
@@ -107,9 +117,10 @@ export class KnockoutService extends ScheduleEngine {
 
             const legs = phase.legs as 1 | 2;
             const { createdMatchIds, slotMatchLinks } = await this.createRound1Matches(
-                tx, round1Slots, options.phaseId, options.seasonId, legs,
+                tx, round1Slots, options.phaseId, legs,
             );
 
+            // Link match_id vào bracket_slots — raw SQL CASE để tránh N updates
             if (slotMatchLinks.length > 0) {
                 const cases = slotMatchLinks.map(l => Prisma.sql`WHEN ${l.slotId} THEN ${l.matchId}`);
                 const ids = slotMatchLinks.map(l => l.slotId);
@@ -120,6 +131,7 @@ export class KnockoutService extends ScheduleEngine {
                 `;
             }
 
+            // Propagate bye winners lên parent slots
             const byeSlotIds = createdSlots
                 .filter(s => s.round === 1 && byeSlotNumbers.has(s.slot_number))
                 .map(s => s.id);
@@ -205,11 +217,17 @@ export class KnockoutService extends ScheduleEngine {
         };
     }
 
+    // ─── advanceWinner ────────────────────────────────────────────────────────
+    // Gọi sau confirmResult. Propagate winner lên parent bracket slot.
+    // Tạo match tiếp theo nếu cả 2 slot đã có winner.
+    //
+    // Two-legged: chỉ advance sau khi leg 2 finished.
+
     async advanceWinner(
         phaseId: number,
         seasonId: number,
         input: AdvanceWinnerInput,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<{ matchCreated: boolean; newMatchId?: number }> {
         const result = await this.prisma.$transaction(async tx => {
             const phase = await tx.phase.findUnique({
@@ -221,12 +239,14 @@ export class KnockoutService extends ScheduleEngine {
 
             const legs = phase.legs as 1 | 2;
 
+            // Tìm BracketSlot của match này
             let slot: SlotWithParentLinks | null = await tx.bracketSlot.findFirst({
                 where: { match_id: input.matchId },
                 select: slotWithParentLinksSelect,
             });
 
             if (!slot) {
+                // Không tìm được qua match_id — có thể là leg 2 (leg 2 không link slot)
                 const match = await tx.match.findUnique({
                     where: { id: input.matchId },
                     select: { leg: true, home_team_id: true, away_team_id: true, phase_id: true },
@@ -237,6 +257,7 @@ export class KnockoutService extends ScheduleEngine {
                 if (match.leg !== 2)
                     throw createAppError('NOT_FOUND', `Match ${input.matchId} không link với BracketSlot`);
 
+                // Leg 2: tìm slot của leg 1 (home/away đảo ngược)
                 slot = await tx.bracketSlot.findFirst({
                     where: {
                         phase_id: phaseId,
@@ -248,7 +269,9 @@ export class KnockoutService extends ScheduleEngine {
 
                 if (!slot)
                     throw createAppError('NOT_FOUND', 'Không tìm thấy BracketSlot cho two-legged match');
+
             } else if (legs === 2) {
+                // Leg 1 vừa finish — kiểm tra leg 2 còn pending không
                 const leg2Pending = await tx.match.findFirst({
                     where: {
                         phase_id: phaseId,
@@ -259,7 +282,9 @@ export class KnockoutService extends ScheduleEngine {
                     },
                     select: { id: true },
                 });
-                if (leg2Pending) return { matchCreated: false, newMatchIds: [] as number[] };
+                // Chưa xong leg 2 → chưa advance
+                if (leg2Pending)
+                    return { matchCreated: false, newMatchIds: [] as number[] };
             }
 
             return this.propagateWinner(tx, slot, input.winnerTeamId, phaseId, seasonId, legs);
@@ -307,9 +332,7 @@ export class KnockoutService extends ScheduleEngine {
         }));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // PRIVATE — BRACKET LOGIC
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─── PRIVATE — BRACKET LOGIC ──────────────────────────────────────────────
 
     private async propagateWinner(
         tx: Prisma.TransactionClient,
@@ -323,6 +346,7 @@ export class KnockoutService extends ScheduleEngine {
         const parentViaB = slot.fed_as_b[0] ?? null;
         const parentSlot = parentViaA ?? parentViaB;
 
+        // Final slot — không có parent, không tạo match tiếp
         if (!parentSlot) return { matchCreated: false, newMatchIds: [] };
 
         const isHomeInParent = parentViaA !== null;
@@ -335,16 +359,17 @@ export class KnockoutService extends ScheduleEngine {
             select: { seeded_home_team_id: true, seeded_away_team_id: true },
         });
 
+        // Cả 2 slot chưa có winner → chờ match kia xong
         if (!updated.seeded_home_team_id || !updated.seeded_away_team_id)
             return { matchCreated: false, newMatchIds: [] };
 
         const homeId = updated.seeded_home_team_id;
         const awayId = updated.seeded_away_team_id;
 
+        // Match không có season_id trực tiếp — season đi qua phase
         const leg1 = await tx.match.create({
             data: {
                 phase_id: phaseId,
-                season_id: seasonId,
                 home_team_id: homeId,
                 away_team_id: awayId,
                 status: MatchStatus.scheduled,
@@ -365,7 +390,6 @@ export class KnockoutService extends ScheduleEngine {
             const leg2 = await tx.match.create({
                 data: {
                     phase_id: phaseId,
-                    season_id: seasonId,
                     home_team_id: awayId,
                     away_team_id: homeId,
                     status: MatchStatus.scheduled,
@@ -380,21 +404,31 @@ export class KnockoutService extends ScheduleEngine {
         return { matchCreated: true, newMatchId: leg1.id, newMatchIds };
     }
 
+    // ─── createRound1Matches ──────────────────────────────────────────────────
+    // Tạo matches cho round 1 slots.
+    // Match không có season_id trực tiếp → không truyền vào create data.
+    //
+    // Query lại sau createMany dùng phase_id + status + created_at DESC để chỉ
+    // lấy matches vừa tạo, tránh pick up matches cũ nếu phase đã có history.
+    // matchKey dùng (home, away, leg) để map slot → match chính xác.
+
     private async createRound1Matches(
         tx: Prisma.TransactionClient,
         round1Slots: { id: number; seeded_home_team_id: number | null; seeded_away_team_id: number | null }[],
         phaseId: number,
-        seasonId: number,
         legs: 1 | 2,
     ): Promise<{ createdMatchIds: number[]; slotMatchLinks: { slotId: number; matchId: number }[] }> {
         if (round1Slots.length === 0)
             return { createdMatchIds: [], slotMatchLinks: [] };
 
-        const matchKey = (home: number, away: number, leg: number | null) => `${home}:${away}:${leg ?? 'x'}`;
+        const matchKey = (home: number, away: number, leg: number | null) =>
+            `${home}:${away}:${leg ?? 'x'}`;
 
+        const leg1Tag = legs > 1 ? 1 : null;
+
+        // Build create data — Match không có season_id
         const matchCreateData: Prisma.MatchCreateManyInput[] = [];
         const leg1Meta: { slotId: number; key: string }[] = [];
-        const leg1Tag = legs > 1 ? 1 : null;
 
         for (const slot of round1Slots) {
             const homeId = slot.seeded_home_team_id!;
@@ -422,10 +456,18 @@ export class KnockoutService extends ScheduleEngine {
             }
         }
 
+        // Timestamp trước createMany — lấy lại chỉ những match vừa tạo
+        const beforeCreate = new Date();
         await tx.match.createMany({ data: matchCreateData });
 
+        // Filter theo phase_id + created_at >= beforeCreate + status=scheduled
+        // Tránh pick up matches cũ nếu phase đã có data
         const createdMatches = await tx.match.findMany({
-            where: { phase_id: phaseId, season_id: seasonId },
+            where: {
+                phase_id: phaseId,
+                status: MatchStatus.scheduled,
+                created_at: { gte: beforeCreate },
+            },
             select: { id: true, home_team_id: true, away_team_id: true, leg: true },
             orderBy: { id: 'asc' },
         });
@@ -448,15 +490,13 @@ export class KnockoutService extends ScheduleEngine {
         };
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // PRIVATE — SCHEDULING
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─── PRIVATE — SCHEDULING ─────────────────────────────────────────────────
 
     private async scheduleMatchBatch(
         matchIds: number[],
         seasonId: number,
         phaseId: number,
-        options: ScheduleOptions,
+        options: OptionalScheduleOptions,
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
         if (matchIds.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
 
@@ -478,11 +518,13 @@ export class KnockoutService extends ScheduleEngine {
 
         const teamIds = matches.flatMap(m => [m.home_team_id, m.away_team_id]);
 
+        // Recent matches để tính rest days — join phase để filter theo season
+        // (Match không có season_id trực tiếp)
         const [takenSet, recentMatches] = await Promise.all([
-            this.loadTakenSlots(options.venueIds, startDate, rangeEnd),
+            this.loadTakenSlots(options.venueIds!, startDate, rangeEnd),
             this.prisma.match.findMany({
                 where: {
-                    season_id: seasonId,
+                    phase: { season_id: seasonId },
                     status: MatchStatus.finished,
                     OR: [
                         { home_team_id: { in: teamIds } },
@@ -494,7 +536,7 @@ export class KnockoutService extends ScheduleEngine {
             }),
         ]);
 
-        const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
+        const pool = this.buildSlotPool(options.venueIds!, startDate, rangeEnd, options.matchTimes!, takenSet);
 
         const lastPlayedAt = new Map<number, number>();
         for (const m of recentMatches) {
@@ -532,9 +574,7 @@ export class KnockoutService extends ScheduleEngine {
         return { matchesScheduled: updates.length - failed.length, failedMatchIds: unscheduled };
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // PRIVATE — BRACKET MATH
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─── PRIVATE — BRACKET MATH ───────────────────────────────────────────────
 
     private buildAllSlotCreateData(
         phaseId: number,
@@ -597,12 +637,14 @@ export class KnockoutService extends ScheduleEngine {
         }
     }
 
+    // → helpers/bracket.helper.ts
     private nextPowerOf2(n: number): number {
         let p = 1;
         while (p < n) p *= 2;
         return p;
     }
 
+    // → helpers/bracket.helper.ts
     private buildRound1Pairings(
         seeding: (number | null)[],
     ): { home: number | null; away: number | null }[] {

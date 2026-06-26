@@ -11,8 +11,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, } from "tsoa";
-import { MatchLifecycleService } from "../services/match.service.js";
-import { MatchResultService } from "../services/matchresult.service.js";
+import { MatchLifecycleService, } from "../services/match.service.js";
+import * as matchType from "../types/match.type.js";
+import * as matchSchema from "../dtos/match.schema.js";
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/*
 //
@@ -24,13 +25,14 @@ import { MatchResultService } from "../services/matchresult.service.js";
 //
 // handleGracePeriodTimeout KHÔNG expose qua HTTP — gọi từ cron/worker nội bộ.
 // confirmOfficial expose để admin có thể trigger thủ công (ngoài auto-timeout).
+//
+// Body types: dùng Zod-inferred DTOs từ match.schema.ts thay vì inline interface.
+// ForfeitMatchDto thay thế inline ForfeitMatchBody — đã có venueIds/matchTimes optional.
 let MatchController = class MatchController extends Controller {
     lifecycleService;
-    matchResultService;
-    constructor(lifecycleService, matchResultService) {
+    constructor(lifecycleService) {
         super();
         this.lifecycleService = lifecycleService;
-        this.matchResultService = matchResultService;
     }
     // ─── State machine ────────────────────────────────────────────────────────
     /**
@@ -64,8 +66,10 @@ let MatchController = class MatchController extends Controller {
      */
     async finalizeMatch(id, body) {
         this.setStatus(204);
-        const { scheduleOptions, ...finalizeInput } = body;
-        return this.lifecycleService.finalizeMatch(id, finalizeInput, scheduleOptions);
+        // FinalizeMatchDto không có venueIds/matchTimes — finalize không advance bracket.
+        // scheduleOptions truyền empty vì knockout guard xảy ra tại confirmOfficial.
+        const { ...finalizeInput } = body;
+        return this.lifecycleService.finalizeMatch(id, finalizeInput, {});
     }
     /**
      * Nhập tay kết quả — fallback khi referee không dùng app (giải nhỏ).
@@ -73,14 +77,15 @@ let MatchController = class MatchController extends Controller {
      */
     async submitManualScore(id, body) {
         this.setStatus(204);
-        const { scheduleOptions, ...manualInput } = body;
-        return this.lifecycleService.submitManualScore(id, manualInput, scheduleOptions);
+        // Manual score cũng không cần scheduleOptions tại bước này.
+        return this.lifecycleService.submitManualScore(id, body, {});
     }
     /**
      * Xác nhận kết quả chính thức sau grace period.
      * Event path: compute score từ toàn bộ events.
      * Manual path: dùng manual_home_score / manual_away_score.
      * Tạo MatchResult, update standings, advance knockout bracket nếu có.
+     * venueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).
      */
     async confirmOfficial(id, body) {
         return this.lifecycleService.confirmOfficial(id, body);
@@ -91,9 +96,11 @@ let MatchController = class MatchController extends Controller {
      * Bypass grace period, tạo MatchResult trực tiếp.
      * walkover = scheduled + team không xuất hiện.
      * forfeit  = ongoing/finished + team bỏ cuộc / vi phạm.
+     * venueIds/matchTimes optional — bắt buộc nếu knockout (validated tại matchResultService).
      */
     async forfeitMatch(id, body) {
-        return this.lifecycleService.forfeitMatch(id, body.forfeitingTeamId, body.scheduleOptions);
+        const { forfeitingTeamId, ...scheduleOptions } = body;
+        return this.lifecycleService.forfeitMatch(id, forfeitingTeamId, scheduleOptions);
     }
     /**
      * Dừng trận giữa chừng (thời tiết, bạo lực...).
@@ -133,13 +140,14 @@ let MatchController = class MatchController extends Controller {
     // ─── Correction window (admin only, 15p sau finished) ────────────────────
     /**
      * Thêm event bị sót sau khi match finished.
-     * Chỉ trong 15p kể từ played_at. period bắt buộc.
+     * Chỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).
      * Tự recompute MatchResult sau khi thêm.
+     * venueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.
      */
     async addEvent(id, body) {
         this.setStatus(204);
-        const { scheduleOptions, ...eventInput } = body;
-        return this.lifecycleService.addEvent(id, eventInput, scheduleOptions);
+        const { venueIds, matchTimes, ...eventInput } = body;
+        return this.lifecycleService.addEvent(id, eventInput, { venueIds, matchTimes });
     }
     /**
      * Xóa event nhập sai sau khi match finished.
@@ -157,8 +165,8 @@ let MatchController = class MatchController extends Controller {
      */
     async editEvent(id, eventId, body) {
         this.setStatus(204);
-        const { scheduleOptions, ...editInput } = body;
-        return this.lifecycleService.editEvent(id, eventId, editInput, scheduleOptions);
+        const { venueIds, matchTimes, ...editInput } = body;
+        return this.lifecycleService.editEvent(id, eventId, editInput, { venueIds, matchTimes });
     }
     /**
      * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
@@ -167,8 +175,8 @@ let MatchController = class MatchController extends Controller {
      */
     async editScore(id, body) {
         this.setStatus(204);
-        const { scheduleOptions, ...scoreInput } = body;
-        return this.lifecycleService.editScore(id, scoreInput, scheduleOptions);
+        const { venueIds, matchTimes, ...scoreInput } = body;
+        return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
     }
 };
 __decorate([
@@ -323,8 +331,7 @@ __decorate([
 MatchController = __decorate([
     Route("matches"),
     Tags("Match"),
-    __metadata("design:paramtypes", [MatchLifecycleService,
-        MatchResultService])
+    __metadata("design:paramtypes", [MatchLifecycleService])
 ], MatchController);
 export { MatchController };
 //# sourceMappingURL=match.controller.js.map

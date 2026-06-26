@@ -11,9 +11,10 @@ import {
     PrismaClient,
 } from '../generated/prisma/client.js';
 import { ConfirmResultOutput } from '../types/matchResult.type.js';
-import { ScheduleOptions } from '../types/schedule.type.js';
+import { OptionalScheduleOptions } from '../types/schedule.type.js';
 import {
     EXTRA_TIME_PERIODS,
+    AddEventInput,
     FinalizeMatchInput,
     isCreditedToHomeTeam,
     ManualScoreInput,
@@ -24,32 +25,24 @@ import {
 } from '../types/match.type.js';
 import {
     MatchResultService,
-    toMatchResultUpdateOnUphold,
-    toMatchResultUpdateOnOverturn,
-    toMatchUpdateOnOverturn,
 } from './matchresult.service.js';
 import { matchForFinalizeSelect, matchForForfeitSelect } from '../types/match.queries.js';
+import { isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
 
 // ─── Correction window ────────────────────────────────────────────────────────
 // Sau khi match finished, admin có 15p để patch events/score nếu có sai sót.
 // Sau 15p: lock hoàn toàn, mọi edit bị reject.
 // Match status KHÔNG đổi — vẫn giữ nguyên finished.
-// Flow correction:
-//   addEvent()      → thêm event bị sót
-//   deleteEvent()   → xóa event nhập sai
-//   editEvent()     → sửa minute/type/player của event
-//   editScore()     → override manual score trực tiếp (manual path không có events)
-//   Mỗi operation trên tự gọi _recalculateResult() để recompute MatchResult từ events.
 
-const CORRECTION_WINDOW_MS = 15 * 60 * 1000; // 15 phút
+const CORRECTION_WINDOW_MS = 15 * 60 * 1000;
 
 // ─── Correction input types ───────────────────────────────────────────────────
+// AddEventInput đã định nghĩa trong match.type.ts với period bắt buộc.
+// Re-export để controller import từ một chỗ.
 
-export type AddEventInput = RecordEventInput; // reuse RecordEventInput
+export type { AddEventInput };
 
-export type EditEventInput = Partial<RecordEventInput> & {
-    /** minute/type/player/teamId — chỉ field nào thay đổi */
-};
+export type EditEventInput = Partial<RecordEventInput>;
 
 export type EditScoreInput = {
     homeScore: number;
@@ -78,15 +71,10 @@ export type EditScoreInput = {
 //
 // Flow manual (fallback khi không có referee app):
 //   startMatch()         → ongoing
-//   submitManualScore()  → pending_official  (lưu score vào Match, KHÔNG tạo MatchResult)
-//   [grace period 15p]   → timeout → needs_review (admin xác nhận thủ công)
+//   submitManualScore()  → pending_official
+//   [grace period 15p]   → timeout → needs_review
 //   confirmOfficial()    → dùng manual score → INSERT MatchResult → finished
 //   [correction 15p]     → editScore() override MatchResult trực tiếp
-//
-// Lý do tách finalizeMatch và confirmOfficial:
-//   referee cần 15p grace để bổ sung events bị sót sau còi kết thúc.
-//   Nếu tạo MatchResult ngay lúc finalize, events nhập trong grace period
-//   sẽ không reflect vào result — drift giữa match_events và match_results.
 
 export class MatchLifecycleService {
     constructor(
@@ -103,10 +91,7 @@ export class MatchLifecycleService {
         });
 
         if (match.status !== MatchStatus.scheduled)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} đang ở '${match.status}' — chỉ start từ 'scheduled'`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} đang ở '${match.status}' — chỉ start từ 'scheduled'`);
 
         await this.prisma.match.update({
             where: { id: matchId },
@@ -139,11 +124,8 @@ export class MatchLifecycleService {
     }
 
     // ─── Event recording ──────────────────────────────────────────────────────
-    // Guard mở rộng: cho phép nhập event khi pending_official (grace period 15p).
-    // Sau confirmOfficial() → finished → block hoàn toàn (dùng addEvent trong correction window).
-    //
-    // Live score (Match.home_score / away_score) chỉ update khi ongoing.
-    // Grace period: event nhập bổ sung, live display không có ý nghĩa sau còi cuối.
+    // Guard: cho phép nhập event khi ongoing và pending_official (grace period 15p).
+    // Live score update chỉ khi ongoing.
 
     async recordEvent(matchId: number, input: RecordEventInput): Promise<void> {
         await this.prisma.$transaction(async tx => {
@@ -160,20 +142,14 @@ export class MatchLifecycleService {
 
             const allowedStatuses: MatchStatus[] = [MatchStatus.ongoing, MatchStatus.pending_official];
             if (!allowedStatuses.includes(match.status))
-                throw createAppError(
-                    'CONFLICT',
-                    `Match ${matchId} ở trạng thái '${match.status}' — không nhập event`,
-                );
+                throw createAppError('CONFLICT', `Match ${matchId} ở trạng thái '${match.status}' — không nhập event`);
 
             if (match.status === MatchStatus.ongoing) {
                 if (match.home_score === null || match.away_score === null)
-                    throw createAppError(
-                        'CONFLICT',
-                        `Match ${matchId} chưa init score — gọi startMatch trước`,
-                    );
+                    throw createAppError('CONFLICT', `Match ${matchId} chưa init score — gọi startMatch trước`);
             }
 
-            // Second yellow guard — referee phải dùng type 'second_yellow' thay vì nhập yellow lần 2
+            // Second yellow guard
             if (input.type === MatchEventType.yellow_card && input.playerId) {
                 const existingYellow = await tx.matchEvent.findFirst({
                     where: {
@@ -184,10 +160,7 @@ export class MatchLifecycleService {
                     select: { id: true },
                 });
                 if (existingYellow)
-                    throw createAppError(
-                        'VALIDATION_ERROR',
-                        `Player ${input.playerId} đã có thẻ vàng trong trận này — dùng type 'second_yellow'`,
-                    );
+                    throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`);
             }
 
             await tx.matchEvent.create({
@@ -198,16 +171,17 @@ export class MatchLifecycleService {
                     type: input.type,
                     minute: input.minute,
                     added_minute: input.addedMinute,
-                    period: match.current_period ?? undefined,
+                    // Live recording: dùng current_period từ match state.
+                    // Correction: period được truyền tường minh từ AddEventInput.
+                    period: input.period ?? match.current_period ?? undefined,
                     note: input.note,
                     card_color: this._deriveCardColor(input.type),
                     sub_out_player_id: input.subOutPlayerId,
                 },
             });
 
-            // Live score update chỉ khi ongoing.
-            // pending_official: _computeScoreFromEvents() sẽ tính lại từ đầu khi confirmOfficial,
-            // nên không cần update live score ở đây (tránh drift nếu goal_disallowed được nhập sau).
+            // Live score: chỉ update khi ongoing
+            // pending_official: _computeScoreFromEvents sẽ tính lại khi confirmOfficial
             if (match.status === MatchStatus.ongoing) {
                 await this._applyScoreDelta(tx, matchId, match.home_team_id, input);
             }
@@ -252,15 +226,10 @@ export class MatchLifecycleService {
     }
 
     // ─── Score computation ────────────────────────────────────────────────────
-    // Source of truth duy nhất cho kết quả cuối.
-    // Gọi tại confirmOfficial() và finalizeMatch() (chỉ để validate knockout draw sớm).
-    // KHÔNG gọi để tạo MatchResult — đó là việc của confirmResult().
-    // Cũng gọi tại _recalculateResult() sau correction.
-    //
     // Return:
     //   home90/away90 = goals trong 90p (first_half + second_half)
     //   homeET/awayET = goals chỉ trong ET (extra_time_first + extra_time_second)
-    //   Cumulative ET score = home90 + homeET — tính ở caller khi cần.
+    //   Cumulative ET = home90 + homeET — tính ở caller khi cần.
 
     private async _computeScoreFromEvents(
         matchId: number,
@@ -294,18 +263,14 @@ export class MatchLifecycleService {
     }
 
     // ─── Finalize ─────────────────────────────────────────────────────────────
-    // Referee bấm "kết thúc trận" — chuyển sang grace period 15p.
-    // KHÔNG tạo MatchResult ở đây. MatchResult chỉ tạo tại confirmOfficial().
-    //
-    // Lưu referee input (resultType, penalty, half-time) vào Match để confirmOfficial()
-    // dùng lại — referee không cần nhập lại khi confirm.
-    //
-    // Validate knockout draw sớm — tránh referee chờ 15p rồi confirmOfficial mới báo lỗi.
+    // Referee bấm "kết thúc trận" → grace period 15p.
+    // KHÔNG tạo MatchResult. Persist referee input vào Match để confirmOfficial dùng lại.
+    // Validate knockout draw sớm để tránh báo lỗi muộn sau grace period.
 
     async finalizeMatch(
         matchId: number,
         input: FinalizeMatchInput = {},
-        _scheduleOptions: ScheduleOptions, // giữ signature, dùng khi confirm
+        _scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -317,19 +282,10 @@ export class MatchLifecycleService {
 
         const resultType = input.resultType ?? MatchResultType.full_time;
 
-        // Validate knockout draw sớm — preview score từ events, chưa commit gì
-        if (
-            match.phase.format === PhaseFormat.knockout &&
-            resultType === MatchResultType.full_time
-        ) {
-            const { home90, away90 } = await this._computeScoreFromEvents(
-                matchId, match.home_team_id,
-            );
+        if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
+            const { home90, away90 } = await this._computeScoreFromEvents(matchId, match.home_team_id);
             if (home90 === away90)
-                throw createAppError(
-                    'CONFLICT',
-                    `Match ${matchId} đang hoà ${home90}-${away90} ở knockout — cần extra_time/penalty`,
-                );
+                throw createAppError('CONFLICT', `Match ${matchId} đang hoà ${home90}-${away90} ở knockout — cần extra_time/penalty`);
         }
 
         await this.prisma.match.update({
@@ -337,8 +293,6 @@ export class MatchLifecycleService {
             data: {
                 status: MatchStatus.pending_official,
                 pending_official_at: new Date(),
-                // Persist referee input để confirmOfficial() dùng lại
-                // Score KHÔNG lưu ở đây — sẽ compute lại từ events lúc confirm
                 finalize_result_type: resultType,
                 finalize_home_half_time: input.homeHalfTimeScore ?? null,
                 finalize_away_half_time: input.awayHalfTimeScore ?? null,
@@ -348,18 +302,13 @@ export class MatchLifecycleService {
         });
     }
 
-    // ─── Manual score (fallback — không có events) ────────────────────────────
-    // Dùng khi referee không nhập events realtime (giải nhỏ, không có app).
-    // Score lấy trực tiếp từ input — không gọi _computeScoreFromEvents.
-    // Player stats sẽ trống (không có events → không có gì để aggregate).
-    //
-    // Guard: reject nếu match đã có events để tránh conflict giữa 2 nguồn score.
-    // Grace period timeout: manual path → flag needs_review thay vì auto-official.
+    // ─── Manual score ─────────────────────────────────────────────────────────
+    // Guard: reject nếu đã có events để tránh conflict giữa 2 nguồn score.
 
     async submitManualScore(
         matchId: number,
         input: ManualScoreInput,
-        _scheduleOptions: ScheduleOptions,
+        _scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -369,22 +318,11 @@ export class MatchLifecycleService {
         if (!match) throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
 
         if (match.status !== MatchStatus.ongoing)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} không ongoing — manual score chỉ dùng trong trận`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} không ongoing — manual score chỉ dùng trong trận`);
 
-        // Guard: nếu đã có events thì không cho nhập manual — yêu cầu dùng finalizeMatch()
-        // Tránh silent data loss: confirmOfficial() sẽ ưu tiên manual path nếu manual_home_score != null,
-        // bỏ qua toàn bộ events đã nhập
-        const eventCount = await this.prisma.matchEvent.count({
-            where: { match_id: matchId },
-        });
+        const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
         if (eventCount > 0)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} đã có ${eventCount} events — dùng finalizeMatch() thay vì manual score`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} đã có ${eventCount} events — dùng finalizeMatch() thay vì manual score`);
 
         await this.prisma.match.update({
             where: { id: matchId },
@@ -396,7 +334,6 @@ export class MatchLifecycleService {
                 finalize_result_type: input.resultType,
                 finalize_home_penalty: input.homePenalty ?? null,
                 finalize_away_penalty: input.awayPenalty ?? null,
-                // Half-time không collect ở manual path
                 finalize_home_half_time: null,
                 finalize_away_half_time: null,
             },
@@ -404,22 +341,15 @@ export class MatchLifecycleService {
     }
 
     // ─── Confirm official ─────────────────────────────────────────────────────
-    // Nơi DUY NHẤT tạo MatchResult.
-    // Referee gọi sau grace period, hoặc admin gọi cho needs_review match.
+    // Nơi DUY NHẤT tạo MatchResult (qua matchResultService.confirmResult).
+    // Event path: compute score từ toàn bộ events tại thời điểm này.
+    // Manual path: dùng manual_home_score / manual_away_score.
     //
-    // Event path: compute score từ toàn bộ events tại thời điểm này
-    //             (bao gồm events nhập trong grace period 15p)
-    // Manual path: dùng manual_home_score / manual_away_score, bỏ qua events
-    //
-    // ET score convention: homeExtraTime = cumulative (home90 + homeET)
-    //   → home_extra_time_score = score sau ET (không phải ET-only goals)
-    //   → home_final_score = homeExtraTime (cho penalty: ET score, không cộng penalty)
-    //
-    // Sau confirm → played_at được set → correction window bắt đầu tính từ đây.
+    // played_at được set trong confirmResult → correction window bắt đầu từ đây.
 
     async confirmOfficial(
         matchId: number,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<ConfirmResultOutput> {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -439,15 +369,11 @@ export class MatchLifecycleService {
 
         if (!match) throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
 
-        // Cho phép cả needs_review — admin confirm thủ công cho manual-score match
         if (
             match.status !== MatchStatus.pending_official &&
             match.status !== MatchStatus.needs_review
         )
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} không ở pending_official/needs_review — không confirm được`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} không ở pending_official/needs_review`);
 
         const resultType = match.finalize_result_type ?? MatchResultType.full_time;
         const isManual = match.manual_home_score !== null && match.manual_away_score !== null;
@@ -458,12 +384,9 @@ export class MatchLifecycleService {
         let awayExtraTime: number | undefined;
 
         if (isManual) {
-            // Manual path — score từ referee input, không có event breakdown
-            // ET không thể tách ra từ manual input → homeExtraTime = undefined
             homeScore = match.manual_home_score!;
             awayScore = match.manual_away_score!;
         } else {
-            // Event path — compute từ toàn bộ events (kể cả events nhập trong grace period)
             const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(
                 matchId, match.home_team_id,
             );
@@ -475,14 +398,11 @@ export class MatchLifecycleService {
                 resultType === MatchResultType.penalty;
 
             if (hasExtraTime) {
-                // Cumulative: home_extra_time_score = score sau ET (90p + ET goals)
                 homeExtraTime = home90 + homeET;
                 awayExtraTime = away90 + awayET;
             }
         }
 
-        // confirmResult tạo MatchResult + update stats + standings + knockout advance
-        // played_at được set trong confirmResult → correction window bắt đầu từ đây
         return this.matchResultService.confirmResult(
             matchId,
             {
@@ -501,20 +421,17 @@ export class MatchLifecycleService {
     }
 
     // ─── Grace period timeout handler ─────────────────────────────────────────
-    // Gọi bởi cron/BullMQ worker — KHÔNG dùng setTimeout trong process.
-    // Chạy mỗi 2p, tìm match pending_official đã quá gracePeriodMinutes.
+    // Gọi bởi cron — KHÔNG dùng setTimeout trong process.
+    // event-based  → auto confirmOfficial (đủ tin cậy)
+    // manual-based → flag needs_review    (cần admin xác nhận)
     //
-    // Strategy:
-    //   event-based  → auto confirmOfficial (score có events, đủ tin cậy)
-    //   manual-based → flag needs_review    (không có events, cần admin xác nhận)
-    //
-    // Event-based phải xử lý per-match (không batch) vì confirmOfficial gọi
-    // confirmResult → standings recompute + knockout advance, mỗi match có side-effect riêng.
-    // Manual-based batch update được vì chỉ đổi status, không có side-effect phụ.
+    // Idempotency: confirmOfficial có _guardConfirm check matchResult existing —
+    // nếu cron chạy 2 lần, lần 2 throw CONFLICT (không crash, log warn).
+    // TODO: thêm SELECT FOR UPDATE nếu cần đảm bảo chỉ 1 instance xử lý.
 
     async handleGracePeriodTimeout(
         gracePeriodMinutes = 15,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<{ autoOfficiated: number[]; flaggedForReview: number[] }> {
         const cutoff = new Date(Date.now() - gracePeriodMinutes * 60 * 1000);
 
@@ -523,10 +440,7 @@ export class MatchLifecycleService {
                 status: MatchStatus.pending_official,
                 pending_official_at: { lt: cutoff },
             },
-            select: {
-                id: true,
-                manual_home_score: true,
-            },
+            select: { id: true, manual_home_score: true },
         });
 
         if (expired.length === 0) return { autoOfficiated: [], flaggedForReview: [] };
@@ -535,74 +449,48 @@ export class MatchLifecycleService {
         const reviewIds: number[] = [];
 
         for (const m of expired) {
-            if (m.manual_home_score !== null) {
-                reviewIds.push(m.id);
-            } else {
-                autoIds.push(m.id);
-            }
+            if (m.manual_home_score !== null) reviewIds.push(m.id);
+            else autoIds.push(m.id);
         }
 
-        // Event-based: auto confirm từng match
         const confirmErrors: { matchId: number; error: unknown }[] = [];
         for (const matchId of autoIds) {
             try {
                 await this.confirmOfficial(matchId, scheduleOptions);
             } catch (err) {
-                // Không throw — tiếp tục xử lý các match khác
-                // Log lại để retry hoặc alert admin
                 confirmErrors.push({ matchId, error: err });
                 console.error(`[GracePeriod] auto-confirm failed for match ${matchId}:`, err);
             }
         }
 
-        // Manual-based: batch update sang needs_review
         if (reviewIds.length > 0) {
             await this.prisma.match.updateMany({
-                where: { id: reviewIds.length === 1 ? { equals: reviewIds[0] } : { in: reviewIds } },
+                where: { id: { in: reviewIds } },
                 data: { status: MatchStatus.needs_review },
             });
-            // TODO: emit notification tới admin dashboard / webhook
         }
 
-        const succeededAutoIds = autoIds.filter(
-            id => !confirmErrors.some(e => e.matchId === id),
-        );
-
+        const succeededAutoIds = autoIds.filter(id => !confirmErrors.some(e => e.matchId === id));
         return { autoOfficiated: succeededAutoIds, flaggedForReview: reviewIds };
     }
 
     // ─── Forfeit / walkover ───────────────────────────────────────────────────
-    // Do BTC quyết định — bypass grace period, confirmResult trực tiếp.
-    // STATUS_BY_RESULT_TYPE map forfeit/walkover → MatchStatus.forfeited (không qua pending_official).
-    //
-    // Phân biệt:
-    //   walkover  = match chưa diễn ra (scheduled), team không xuất hiện
-    //   forfeit   = match đang/đã diễn ra, team bỏ cuộc hoặc vi phạm luật
 
     async forfeitMatch(
         matchId: number,
         forfeitingTeamId: number,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<ConfirmResultOutput> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
             select: matchForForfeitSelect,
         });
 
-        if (
-            match.status === MatchStatus.finished ||
-            match.status === MatchStatus.forfeited
-        )
+        if (match.status === MatchStatus.finished || match.status === MatchStatus.forfeited)
             throw createAppError('CONFLICT', `Match ${matchId} đã '${match.status}' — không forfeit được`);
 
-        if (
-            forfeitingTeamId !== match.home_team_id &&
-            forfeitingTeamId !== match.away_team_id
-        )
-            throw createAppError(
-                'VALIDATION_ERROR',
-                `Team ${forfeitingTeamId} không thuộc match ${matchId}`,
-            );
+        if (forfeitingTeamId !== match.home_team_id && forfeitingTeamId !== match.away_team_id)
+            throw createAppError('VALIDATION_ERROR', `Team ${forfeitingTeamId} không thuộc match ${matchId}`);
 
         const rule = match.phase.season?.tournament?.tournamentRule;
         if (!rule)
@@ -626,7 +514,6 @@ export class MatchLifecycleService {
     }
 
     // ─── Abandon ──────────────────────────────────────────────────────────────
-    // Match bị dừng giữa chừng (thời tiết, bạo lực...).
     // TECH DEBT: reuse field postponed_reason cho abandoned_reason — cần field riêng.
 
     async abandonMatch(matchId: number, minute: number, reason?: string): Promise<void> {
@@ -638,13 +525,8 @@ export class MatchLifecycleService {
         if (match.status !== MatchStatus.ongoing)
             throw createAppError('CONFLICT', `Match ${matchId} không ongoing — không abandon được`);
 
-        // TECH DEBT: cần field abandoned_reason riêng.
-        // Hiện tại reuse postponed_reason — chặn nếu đã có giá trị để tránh ghi đè.
         if (reason && match.postponed_reason)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} đã có postponed_reason — cần field abandoned_reason riêng`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} đã có postponed_reason — cần field abandoned_reason riêng`);
 
         await this.prisma.match.update({
             where: { id: matchId },
@@ -657,9 +539,6 @@ export class MatchLifecycleService {
     }
 
     // ─── Appeal / protest ─────────────────────────────────────────────────────
-    // Chỉ file được khi MatchResult.status = official.
-    // appeal  = khiếu nại → under_review
-    // protest = phản đối chính thức → protested
 
     async fileAppeal(matchId: number, reason: string): Promise<void> {
         await this._fileDispute(matchId, reason, MatchResultStatus.under_review);
@@ -690,6 +569,9 @@ export class MatchLifecycleService {
         });
     }
 
+    // ─── resolveAppeal ────────────────────────────────────────────────────────
+    // Knockout overturn check TRƯỚC khi recompute standings để tránh partial update.
+
     async resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -715,6 +597,17 @@ export class MatchLifecycleService {
         )
             throw createAppError('CONFLICT', `MatchResult đang ở '${result.status}' — không resolve được`);
 
+        const isKnockout = match.phase.format === PhaseFormat.knockout;
+
+        // Guard knockout overturn TRƯỚC khi thực hiện bất kỳ update nào
+        // Tránh partial state: standings recompute xảy ra dù overturn bracket không xử lý được
+        if (isKnockout && input.resolution === 'overturn') {
+            throw createAppError(
+                'NOT_IMPLEMENTED',
+                `Match ${matchId} là knockout — overturn bracket chưa được hỗ trợ tự động`,
+            );
+        }
+
         if (input.resolution === 'uphold') {
             await this.prisma.matchResult.update({
                 where: { match_id: matchId },
@@ -734,12 +627,7 @@ export class MatchLifecycleService {
             await this.prisma.$transaction(async tx => {
                 await tx.matchResult.update({
                     where: { match_id: matchId },
-                    data: toMatchResultUpdateOnOverturn(
-                        input.newHomeScore!,
-                        input.newAwayScore!,
-                        newWinner,
-                        input.note,
-                    ),
+                    data: toMatchResultUpdateOnOverturn(input.newHomeScore!, input.newAwayScore!, newWinner, input.note),
                 });
 
                 await tx.match.update({
@@ -749,37 +637,13 @@ export class MatchLifecycleService {
             });
         }
 
-        const isKnockout = match.phase.format === PhaseFormat.knockout;
-
+        // Recompute standings chỉ cho group phase — knockout đã bị guard ở trên
         if (!isKnockout && match.group_id) {
             await this.matchResultService.recomputeStandingsFor(match.group_id);
         }
-
-        // Knockout overturn cần manual bracket correction — không thể tự động an toàn
-        // (winner có thể đã advance và thi đấu trận tiếp theo)
-        if (isKnockout && input.resolution === 'overturn') {
-            throw createAppError(
-                'NOT_IMPLEMENTED',
-                `Match ${matchId} là knockout — overturn bracket chưa được hỗ trợ tự động`,
-            );
-        }
     }
 
-    // ─── Correction window (admin only, sau finished) ─────────────────────────
-    // Cho phép sửa events/score trong 15p sau khi match finished (played_at).
-    // Match status KHÔNG đổi — vẫn giữ nguyên finished.
-    // Sau mỗi operation: recompute MatchResult từ events → update standings/stats.
-    //
-    // Dùng khi:
-    //   - Referee nhập sai event (sai player, sai phút, sai loại)
-    //   - Quên nhập event trong cả grace period
-    //   - Manual path: override score sau khi phát hiện sai
-    //
-    // KHÔNG dùng để:
-    //   - Đổi match status (finished → bất kỳ status nào khác)
-    //   - Thay đổi kết quả vì lý do khiếu nại (→ fileAppeal / fileProtest)
-    //
-    // Guard _assertCorrectionWindow() dùng chung cho tất cả correction ops.
+    // ─── Correction window guard ──────────────────────────────────────────────
 
     private async _assertCorrectionWindow(matchId: number): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
@@ -787,14 +651,9 @@ export class MatchLifecycleService {
             select: { status: true, played_at: true },
         });
 
-        // Chỉ cho phép sửa khi match đã finished
         if (match.status !== MatchStatus.finished)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} chưa finished — correction chỉ áp dụng sau khi xác nhận kết quả`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} chưa finished — correction chỉ áp dụng sau khi xác nhận kết quả`);
 
-        // Lock sau 15p kể từ played_at
         if (!match.played_at)
             throw createAppError('CONFLICT', `Match ${matchId} thiếu played_at — không xác định được correction window`);
 
@@ -807,16 +666,11 @@ export class MatchLifecycleService {
     }
 
     // ─── addEvent (correction) ────────────────────────────────────────────────
-    // Thêm event bị sót sau khi match finished.
-    // Gọi _recalculateResult() sau khi insert để recompute MatchResult.
-    //
-    // period phải được truyền tường minh — không có current_period sau finished.
-    // Second yellow guard vẫn apply để tránh double yellow trong correction.
 
     async addEvent(
         matchId: number,
-        input: AddEventInput & { period: MatchPeriod }, // period bắt buộc trong correction
-        scheduleOptions: ScheduleOptions,
+        input: AddEventInput,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         await this._assertCorrectionWindow(matchId);
 
@@ -825,7 +679,6 @@ export class MatchLifecycleService {
             select: { home_team_id: true },
         });
 
-        // Second yellow guard — apply ngay cả trong correction
         if (input.type === MatchEventType.yellow_card && input.playerId) {
             const existingYellow = await this.prisma.matchEvent.findFirst({
                 where: {
@@ -836,39 +689,21 @@ export class MatchLifecycleService {
                 select: { id: true },
             });
             if (existingYellow)
-                throw createAppError(
-                    'VALIDATION_ERROR',
-                    `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`,
-                );
+                throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`);
         }
 
-        await this.prisma.matchEvent.create({
-            data: {
-                match_id: matchId,
-                player_id: input.playerId,
-                team_id: input.teamId,
-                type: input.type,
-                minute: input.minute,
-                added_minute: input.addedMinute,
-                period: input.period,
-                note: input.note,
-                card_color: this._deriveCardColor(input.type),
-                sub_out_player_id: input.subOutPlayerId,
-            },
-        });
+        // Dùng recordEvent để tái sử dụng logic create — period đã có trong input (AddEventInput)
+        await this.recordEvent(matchId, input);
 
-        // Recompute MatchResult từ toàn bộ events sau khi thêm
         await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
     }
 
     // ─── deleteEvent (correction) ─────────────────────────────────────────────
-    // Xóa event nhập sai.
-    // Gọi _recalculateResult() sau khi delete.
 
     async deleteEvent(
         matchId: number,
         eventId: number,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         await this._assertCorrectionWindow(matchId);
 
@@ -877,7 +712,6 @@ export class MatchLifecycleService {
             select: { home_team_id: true },
         });
 
-        // Verify event thuộc match này trước khi xóa
         const event = await this.prisma.matchEvent.findUnique({
             where: { id: eventId },
             select: { match_id: true },
@@ -890,23 +724,16 @@ export class MatchLifecycleService {
 
         await this.prisma.matchEvent.delete({ where: { id: eventId } });
 
-        // Recompute MatchResult sau khi xóa event
         await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
     }
 
     // ─── editEvent (correction) ───────────────────────────────────────────────
-    // Sửa các field của event (minute, type, player, team, period, note).
-    // Chỉ update field được truyền vào — partial patch.
-    // Gọi _recalculateResult() sau khi update.
-    //
-    // Lưu ý: nếu sửa type → card_color cần derive lại.
-    // Nếu sửa player → yellow guard cần re-check với player mới.
 
     async editEvent(
         matchId: number,
         eventId: number,
         input: EditEventInput,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         await this._assertCorrectionWindow(matchId);
 
@@ -925,7 +752,6 @@ export class MatchLifecycleService {
         if (event.match_id !== matchId)
             throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
 
-        // Nếu type hoặc player thay đổi, re-check yellow guard với state mới
         const newType = input.type ?? event.type;
         const newPlayerId = input.playerId ?? event.player_id;
 
@@ -935,30 +761,24 @@ export class MatchLifecycleService {
                     match_id: matchId,
                     player_id: newPlayerId,
                     type: MatchEventType.yellow_card,
-                    // Exclude event đang edit — nếu chính event này là yellow cũ thì không conflict
                     NOT: { id: eventId },
                 },
                 select: { id: true },
             });
             if (existingYellow)
-                throw createAppError(
-                    'VALIDATION_ERROR',
-                    `Player ${newPlayerId} đã có thẻ vàng trong trận này — dùng type 'second_yellow'`,
-                );
+                throw createAppError('VALIDATION_ERROR', `Player ${newPlayerId} đã có thẻ vàng — dùng type 'second_yellow'`);
         }
 
-        // Build update data — chỉ field được truyền vào
         const updateData: Prisma.MatchEventUpdateInput = {};
         if (input.type !== undefined) {
             updateData.type = input.type;
-            // Derive lại card_color khi type thay đổi
             updateData.card_color = this._deriveCardColor(input.type) ?? null;
         }
         if (input.playerId !== undefined) updateData.player_id = input.playerId;
         if (input.teamId !== undefined) updateData.team_id = input.teamId;
         if (input.minute !== undefined) updateData.minute = input.minute;
         if (input.addedMinute !== undefined) updateData.added_minute = input.addedMinute;
-        if ('period' in input && input.period !== undefined) updateData.period = input.period;
+        if (input.period !== undefined) updateData.period = input.period;
         if (input.note !== undefined) updateData.note = input.note;
         if (input.subOutPlayerId !== undefined) updateData.sub_out_player_id = input.subOutPlayerId;
 
@@ -967,58 +787,47 @@ export class MatchLifecycleService {
             data: updateData,
         });
 
-        // Recompute MatchResult sau khi sửa event
         await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
     }
 
-    // ─── editScore (correction — manual path) ────────────────────────────────
-    // Override score trực tiếp khi match dùng manual path (không có events).
-    // Nếu match có events thì dùng addEvent/deleteEvent/editEvent để fix events,
-    // rồi để _recalculateResult() tự compute — không override thủ công.
-    //
-    // Guard: reject nếu match có events (dùng event correction thay vì override).
+    // ─── editScore (correction — manual path only) ────────────────────────────
+    // Guard: reject nếu match có events — dùng event correction thay vì override.
 
     async editScore(
         matchId: number,
         input: EditScoreInput,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         await this._assertCorrectionWindow(matchId);
 
-        const eventCount = await this.prisma.matchEvent.count({
-            where: { match_id: matchId },
-        });
-
+        const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
         if (eventCount > 0)
-            throw createAppError(
-                'CONFLICT',
-                `Match ${matchId} có ${eventCount} events — dùng addEvent/deleteEvent/editEvent thay vì editScore`,
-            );
+            throw createAppError('CONFLICT', `Match ${matchId} có ${eventCount} events — dùng addEvent/deleteEvent/editEvent thay vì editScore`);
 
-        // Delegate sang matchResultService để update MatchResult + standings
         await this.matchResultService.overrideResult(matchId, input, scheduleOptions);
     }
 
-    // ─── _recalculateResult (internal) ───────────────────────────────────────
-    // Recompute score từ toàn bộ events hiện tại → update MatchResult + standings + player stats.
-    // Gọi bởi addEvent / deleteEvent / editEvent sau mỗi correction.
+    // ─── _recalculateResult ───────────────────────────────────────────────────
+    // Recompute score từ toàn bộ events → update MatchResult + standings + player stats.
+    // Gọi sau mỗi correction operation.
     //
-    // Không tạo MatchResult mới — update existing record.
-    // Update Match.home_score / away_score để mirror MatchResult (query list không cần join).
+    // MatchResult fields đúng theo schema:
+    //   home_final_score / away_final_score  (display + standings)
+    //   home_extra_time_score / away_extra_time_score (cumulative ET nếu có)
+    //   KHÔNG có home_score / away_score trên MatchResult — chỉ có trên Match
     //
-    // Standings recompute: chỉ cho group phase — knockout bracket không có standings.
-    // Player stats recompute: full recompute từ events (stats có thể thay đổi khi event sửa).
+    // Match.home_score / away_score được mirror từ final score để query list không cần join.
 
     private async _recalculateResult(
         matchId: number,
         homeTeamId: number,
-        scheduleOptions: ScheduleOptions,
+        scheduleOptions: OptionalScheduleOptions,
     ): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
             select: {
-                group_id: true,
                 away_team_id: true,
+                group_id: true,
                 phase: { select: { format: true } },
                 matchResult: {
                     select: {
@@ -1026,8 +835,6 @@ export class MatchLifecycleService {
                         result_type: true,
                         home_penalty_score: true,
                         away_penalty_score: true,
-                        home_half_time_score: true,
-                        away_half_time_score: true,
                     },
                 },
             },
@@ -1046,22 +853,17 @@ export class MatchLifecycleService {
         const homeExtraTime = hasExtraTime ? home90 + homeET : null;
         const awayExtraTime = hasExtraTime ? away90 + awayET : null;
 
-        // homeFinal = score dùng cho standings display
-        // Penalty: final = ET score; ET: final = cumulative; full_time: final = 90p score
+        // homeFinal = score dùng cho display + standings
         const homeFinal = homeExtraTime ?? home90;
         const awayFinal = awayExtraTime ?? away90;
 
-        // Winner resolution sau khi recompute
+        // Winner resolution sau recompute
         const homePenalty = match.matchResult.home_penalty_score;
         const awayPenalty = match.matchResult.away_penalty_score;
         let winnerTeamId: number | null = null;
 
         if (resultType === MatchResultType.penalty && homePenalty !== null && awayPenalty !== null) {
             winnerTeamId = homePenalty > awayPenalty ? homeTeamId : match.away_team_id;
-        } else if (resultType === MatchResultType.extra_time) {
-            winnerTeamId = homeFinal > awayFinal ? homeTeamId
-                : awayFinal > homeFinal ? match.away_team_id
-                    : null;
         } else {
             winnerTeamId = homeFinal > awayFinal ? homeTeamId
                 : awayFinal > homeFinal ? match.away_team_id
@@ -1069,18 +871,17 @@ export class MatchLifecycleService {
         }
 
         await this.prisma.$transaction(async tx => {
+            // Update MatchResult — chỉ các field tồn tại trong schema
             await tx.matchResult.update({
                 where: { match_id: matchId },
                 data: {
-                    home_score: home90,
-                    away_score: away90,
-                    home_extra_time_score: homeExtraTime,
-                    away_extra_time_score: awayExtraTime,
                     home_final_score: homeFinal,
                     away_final_score: awayFinal,
+                    home_extra_time_score: homeExtraTime,
+                    away_extra_time_score: awayExtraTime,
                     winner_team_id: winnerTeamId,
-                    // Penalty scores giữ nguyên — không recompute từ events (penalty shootout events riêng)
-                    // half-time giữ nguyên từ confirm — không có source nào để recompute
+                    // home_penalty_score / away_penalty_score giữ nguyên — penalty shootout events riêng
+                    // home_half_time_score / away_half_time_score giữ nguyên từ confirm
                     updated_at: new Date(),
                 },
             });
@@ -1096,20 +897,13 @@ export class MatchLifecycleService {
             });
         });
 
-        // Standings recompute — ngoài TX vì đọc nhiều rows
-        // Nếu fail: MatchResult đã update → cần retry standalone hoặc background job
+        // Standings recompute ngoài TX — eventual consistency chấp nhận được
         if (!isKnockoutFormat(match.phase.format) && match.group_id) {
             await this.matchResultService.recomputeStandingsFor(match.group_id);
         }
 
-        // Player stats recompute toàn bộ từ events hiện tại
-        // Gọi ngoài TX — stats là derived data, chấp nhận eventual consistency ngắn
-        await this.matchResultService.recomputePlayerStats(matchId, scheduleOptions);
+        // Player stats recompute từ toàn bộ events hiện tại
+        await this.matchResultService.recomputePlayerStats(matchId);
     }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function isKnockoutFormat(format: PhaseFormat): boolean {
-    return format === PhaseFormat.knockout;
-}

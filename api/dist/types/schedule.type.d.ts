@@ -22,6 +22,7 @@ export type GenerateOptions = {
     minRestDaysPerTeam?: number;
 };
 export type ScheduleOptions = Pick<GenerateOptions, 'venueIds' | 'matchTimes'>;
+export type OptionalScheduleOptions = Partial<ScheduleOptions>;
 export type GenerateResult = {
     groupCount: number;
     groupIds: number[];

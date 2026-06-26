@@ -49,8 +49,8 @@ const controllerFactory = new Map([
     [GroupController, () => new GroupController(new GroupService(prisma))],
     [ScheduleController, () => new ScheduleController(new ScheduleService(prisma))],
     [KnockoutController, () => new KnockoutController(new KnockoutService(prisma))],
-    [MatchController, () => new MatchController(lifecycleService, matchResultService)],
-    [MatchResultController, () => new MatchResultController(matchResultService, lifecycleService, prisma)],
+    [MatchController, () => new MatchController(lifecycleService)],
+    [MatchResultController, () => new MatchResultController(matchResultService)],
 ]);
 export const iocContainer = {
     get(controller) {
