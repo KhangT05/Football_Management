@@ -24,6 +24,8 @@ import { PlayerController } from './../controllers/player.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MatchResultController } from './../controllers/matchResult.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MatchLineupController } from './../controllers/matchlineup.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MatchController } from './../controllers/match.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { KnockoutController } from './../controllers/knockout.controller.js';
@@ -787,6 +789,51 @@ const models = {
             "scheduleOptions": { "ref": "ScheduleOptions", "required": true },
         },
         "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MatchPlayerStatus": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["suspended"] }, { "dataType": "enum", "enums": ["available"] }, { "dataType": "enum", "enums": ["absent"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LineupType": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["starter"] }, { "dataType": "enum", "enums": ["substitute"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_MatchLineupPayload_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "minute_out": { "dataType": "double", "required": true }, "minute_in": { "dataType": "double", "required": true }, "is_captain": { "dataType": "boolean", "required": true }, "lineup_type": { "ref": "LineupType", "required": true }, "match_id": { "dataType": "double", "required": true }, "jersey_number": { "dataType": "double", "required": true }, "player_id": { "dataType": "double", "required": true }, "position": { "ref": "PlayerPosition", "required": true }, "status": { "ref": "MatchPlayerStatus", "required": true }, "team_id": { "dataType": "double", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MatchLineupModel": {
+        "dataType": "refAlias",
+        "type": { "ref": "DefaultSelection__36_MatchLineupPayload_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MatchLineup": {
+        "dataType": "refAlias",
+        "type": { "ref": "MatchLineupModel", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": {}, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Omit_RegisterLineupDto.match_id_": {
+        "dataType": "refAlias",
+        "type": { "ref": "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": {}, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Omit_UpdateLineupEntryDto.match_id-or-team_id-or-player_id_": {
+        "dataType": "refAlias",
+        "type": { "ref": "Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofTransitionPeriodSchema_": {
@@ -3192,6 +3239,148 @@ export function RegisterRoutes(app, opts) {
                 next,
                 validatedArgs,
                 successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchLineupController_getLineups = {
+        matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
+    };
+    app.get('/matches/:matchId/lineups', ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.getLineups)), async function MatchLineupController_getLineups(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchLineupController_getLineups, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchLineupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getLineups',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchLineupController_getTeamLineup = {
+        matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
+        teamId: { "in": "path", "name": "teamId", "required": true, "dataType": "double" },
+    };
+    app.get('/matches/:matchId/lineups/teams/:teamId', ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.getTeamLineup)), async function MatchLineupController_getTeamLineup(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchLineupController_getTeamLineup, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchLineupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getTeamLineup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchLineupController_registerLineup = {
+        matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "Omit_RegisterLineupDto.match_id_" },
+    };
+    app.post('/matches/:matchId/lineups', authenticateMiddleware([{ "jwt": ["admin", "leader"] }]), ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.registerLineup)), async function MatchLineupController_registerLineup(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchLineupController_registerLineup, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchLineupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'registerLineup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchLineupController_updateLineupEntry = {
+        matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
+        teamId: { "in": "path", "name": "teamId", "required": true, "dataType": "double" },
+        playerId: { "in": "path", "name": "playerId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "Omit_UpdateLineupEntryDto.match_id-or-team_id-or-player_id_" },
+    };
+    app.patch('/matches/:matchId/lineups/teams/:teamId/players/:playerId', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.updateLineupEntry)), async function MatchLineupController_updateLineupEntry(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchLineupController_updateLineupEntry, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchLineupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'updateLineupEntry',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchLineupController_removeLineupEntry = {
+        matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
+        teamId: { "in": "path", "name": "teamId", "required": true, "dataType": "double" },
+        playerId: { "in": "path", "name": "playerId", "required": true, "dataType": "double" },
+    };
+    app.delete('/matches/:matchId/lineups/teams/:teamId/players/:playerId', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.removeLineupEntry)), async function MatchLineupController_removeLineupEntry(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchLineupController_removeLineupEntry, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchLineupController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'removeLineupEntry',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
             });
         }
         catch (err) {
