@@ -5,9 +5,9 @@ import {
   CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { initialPlayers } from '../data/data';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
+import { teamApi, playerApi } from '../api';
 
 // ─── Skeleton Row ─────────────────────────────────────────
 function PlayerRowSkeleton() {
@@ -336,36 +336,91 @@ export default function MyTeam() {
   const [deletingPlayer, setDeletingPlayer] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch mock data
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  // ── Parse helpers ────────────────────────────────────────
+  const parseSingle = (res) => {
+    const payload = (typeof res?.status === 'boolean') ? res.data : res;
+    return Array.isArray(payload?.data) ? payload.data[0] : (payload?.data ?? payload);
+  };
+
+  const parseList = (res) => {
+    const payload = (typeof res?.status === 'boolean') ? res.data : res;
+    return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  };
+
+  // Normalize player from team-player record
+  const normalizePlayer = (tp) => ({
+    id: tp.id,           // teamPlayer ID
+    player_id: tp.player_id ?? tp.player?.id,
+    name: tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
+    number: tp.jersey_number ?? tp.number ?? 0,
+    position: tp.position ?? 'MID',
+    goals: tp.goals_scored ?? tp.goals ?? 0,
+    status: tp.status ?? 'active',
+    approval_status: tp.approval_status ?? 'approved',
+    role: tp.role ?? 'player',
+    avatar: tp.player?.avatar ?? null,
+  });
+
+  // ── Fetch team & players ─────────────────────────────────
+  const loadTeamData = useCallback(async () => {
+    if (!user?.id) { setIsLoading(false); return; }
+    setIsLoading(true);
+    try {
+      // Get teams owned by this user
+      const teamsRes = await teamApi.getTeams({ per_page: 10 });
+      const allTeams = parseList(teamsRes);
+      // Filter team belonging to the current user
+      const myTeam = allTeams.find(t => t.user_id === user.id) ?? allTeams[0] ?? null;
+
+      if (!myTeam) {
+        setTeam(null);
+        setPlayers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Enrich team object
       setTeam({
-        name: 'KTPM K21',
+        id: myTeam.id,
+        name: myTeam.name,
         emoji: '🛡️',
-        status: 'approved',
-        captain: 'Nguyễn Văn A',
-        phone: '0123 456 789',
-        primaryColor: 'Đỏ đen',
-        colorHex: '#dc2626',
-        registeredAt: '12/03/2026',
+        status: myTeam.is_active ? 'approved' : 'pending',
+        captain: myTeam.coach_name ?? '—',
+        phone: myTeam.phone ?? '—',
+        primaryColor: myTeam.primary_color ?? '—',
+        colorHex: myTeam.color_hex ?? '#334155',
+        registeredAt: myTeam.created_at
+          ? new Date(myTeam.created_at).toLocaleDateString('vi-VN')
+          : '—',
         season: '2026',
+        description: myTeam.description,
+        logo: myTeam.logo,
       });
-      setPlayers(initialPlayers.map(p => ({ ...p })));
+
+      // Load players
+      const playersRes = await teamApi.getPlayers(myTeam.id, { per_page: 50 });
+      const rawPlayers = parseList(playersRes);
+      setPlayers(rawPlayers.map(normalizePlayer));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Không thể tải dữ liệu đội bóng.');
+      setTeam(null);
+    } finally {
       setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [user?.id]);
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadTeamData(); }, [loadTeamData]);
 
   // Filtered + sorted players
   const displayed = players
     .filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
       String(p.number).includes(search)
     )
     .sort((a, b) => {
-      if (sortField === 'number') return a.number - b.number;
-      if (sortField === 'name') return a.name.localeCompare(b.name);
-      if (sortField === 'goals') return b.goals - a.goals;
+      if (sortField === 'number') return (a.number ?? 0) - (b.number ?? 0);
+      if (sortField === 'name') return (a.name ?? '').localeCompare(b.name ?? '');
+      if (sortField === 'goals') return (b.goals ?? 0) - (a.goals ?? 0);
       return 0;
     });
 
@@ -389,21 +444,27 @@ export default function MyTeam() {
     const err = validateForm(form);
     if (err) { setModalError(err); return; }
     setIsSaving(true);
-    await new Promise(r => setTimeout(r, 500));
-    const newPlayer = {
-      id: Date.now(),
-      name: form.name.trim(),
-      number: parseInt(form.number),
-      position: form.position,
-      goals: 0,
-      team: team.name,
-      teamLogo: team.emoji,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}&backgroundColor=0f172a`,
-    };
-    setPlayers(prev => [...prev, newPlayer]);
-    setIsSaving(false);
-    setPlayerModal(null);
-    toast.success(`Đã thêm "${newPlayer.name}" (áo số ${newPlayer.number}) vào đội!`);
+    try {
+      // Step 1: Create player record
+      const createRes = await playerApi.create({ name: form.name.trim() });
+      const newPlayer = parseSingle(createRes);
+
+      // Step 2: Add to team
+      await playerApi.addToTeam(team.id, {
+        player_id: newPlayer.id,
+        jersey_number: parseInt(form.number),
+        position: form.position,
+        role: 'player',
+      });
+
+      toast.success(`Đã thêm "${form.name.trim()}" (áo số ${form.number}) vào đội!`);
+      setPlayerModal(null);
+      await loadTeamData();
+    } catch (apiErr) {
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ. Vui lòng thử lại.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // ── EDIT Player ──────────────────────────────────────────
@@ -417,24 +478,41 @@ export default function MyTeam() {
     const err = validateForm(form, editingPlayer.id);
     if (err) { setModalError(err); return; }
     setIsSaving(true);
-    await new Promise(r => setTimeout(r, 500));
-    setPlayers(prev => prev.map(p => p.id === editingPlayer.id
-      ? { ...p, name: form.name.trim(), number: parseInt(form.number), position: form.position, goals: parseInt(form.goals) || 0 }
-      : p
-    ));
-    setIsSaving(false);
-    setPlayerModal(null);
-    toast.success(`Đã cập nhật thông tin cầu thủ "${form.name}".`);
+    try {
+      // Update team-player record (jersey_number, position)
+      await playerApi.updateTeamPlayer(team.id, editingPlayer.id, {
+        jersey_number: parseInt(form.number),
+        position: form.position,
+      });
+
+      // Also update the player name if it changed
+      if (editingPlayer.player_id && form.name.trim() !== editingPlayer.name) {
+        await playerApi.update(editingPlayer.player_id, { name: form.name.trim() });
+      }
+
+      toast.success(`Đã cập nhật thông tin cầu thủ "${form.name}".`);
+      setPlayerModal(null);
+      await loadTeamData();
+    } catch (apiErr) {
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi cập nhật cầu thủ.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // ── DELETE Player ─────────────────────────────────────────
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
-    await new Promise(r => setTimeout(r, 500));
-    setPlayers(prev => prev.filter(p => p.id !== deletingPlayer.id));
-    toast.success(`Đã xóa cầu thủ "${deletingPlayer.name}" khỏi đội.`);
-    setIsDeleting(false);
-    setDeletingPlayer(null);
+    try {
+      await playerApi.bulkRemoveFromTeam(team.id, { ids: [deletingPlayer.id] });
+      toast.success(`Đã xóa cầu thủ "${deletingPlayer.name}" khỏi đội.`);
+      setDeletingPlayer(null);
+      await loadTeamData();
+    } catch (apiErr) {
+      toast.error(apiErr?.response?.data?.message || 'Lỗi khi xóa cầu thủ.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const toggleSort = (field) => setSortField(field);
@@ -783,19 +861,34 @@ export default function MyTeam() {
               ) : (
                 <div className="grid grid-cols-2 gap-4 relative z-10">
                   {[
-                    { label: 'Trận đấu', value: '5', color: 'text-white', bg: 'bg-navy-dark' },
+                    {
+                      label: 'Cầu thủ',
+                      value: players.length,
+                      color: 'text-white',
+                      bg: 'bg-navy-dark border-navy-light'
+                    },
                     {
                       label: 'Bàn thắng',
                       value: players.reduce((s, p) => s + (p.goals || 0), 0),
                       color: 'text-neon drop-shadow-[0_0_8px_rgba(57,255,20,0.3)]',
                       bg: 'bg-neon/5 border-neon/20'
                     },
-                    { label: 'Thắng', value: '4', color: 'text-blue-400', bg: 'bg-blue-500/5 border-blue-500/20' },
-                    { label: 'Xếp hạng', value: '#1', color: 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.3)]', bg: 'bg-yellow-400/5 border-yellow-400/20' },
+                    {
+                      label: 'Đã duyệt',
+                      value: players.filter(p => p.approval_status === 'approved').length,
+                      color: 'text-emerald-400',
+                      bg: 'bg-emerald-500/5 border-emerald-500/20'
+                    },
+                    {
+                      label: 'Chờ duyệt',
+                      value: players.filter(p => p.approval_status === 'pending').length,
+                      color: 'text-amber-400',
+                      bg: 'bg-amber-400/5 border-amber-400/20'
+                    },
                   ].map((stat, idx) => (
                     <div
                       key={stat.label}
-                      className={`${stat.bg || 'bg-navy-dark'} p-5 rounded-2xl border ${stat.bg ? '' : 'border-navy-light'} text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
+                      className={`${stat.bg || 'bg-navy-dark'} p-5 rounded-2xl border text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
                       style={{ animationDelay: `${200 + idx * 50}ms` }}
                     >
                       <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>

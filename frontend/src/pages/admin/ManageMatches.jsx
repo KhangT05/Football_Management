@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   CalendarDays, Clock, MapPin, RefreshCw,
@@ -74,23 +74,12 @@ export default function ManageMatches() {
     minRestDaysPerTeam: 2
   });
 
-  // Derive auto-selected season (ưu tiên registration_open để tạo lịch, fallback ongoing)
-  const autoSeasonId = useMemo(() => {
-    if (seasons.length === 0) return '';
-    const regOpen = seasons.find(s => s.status === 'registration_open');
-    const ongoing  = seasons.find(s => s.status === 'ongoing');
-    return String((regOpen ?? ongoing ?? seasons[0]).id);
-  }, [seasons]);
+  // Không auto-select — bảng chỉ hiện khi user chủ động chọn mùa giải
 
-  const effectiveSeasonId = selectedSeasonId || autoSeasonId;
+  const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
 
-  const selectedSeason = useMemo(
-    () => seasons.find(s => String(s.id) === String(effectiveSeasonId)) ?? null,
-    [seasons, effectiveSeasonId],
-  );
-
-  const matches = effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : [];
-  const isLoadingMatches = effectiveSeasonId ? isSeasonLoading(Number(effectiveSeasonId)) : false;
+  const matches = selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [];
+  const isLoadingMatches = selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false;
 
   // Cờ cho biết mùa giải hiện tại có thể generate schedule không
   const canGenerate = selectedSeason?.status === 'registration_open';
@@ -101,11 +90,10 @@ export default function ManageMatches() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Khi season thay đổi: fetch lịch mới
   useEffect(() => {
-    if (effectiveSeasonId) {
-      fetchBySeason(Number(effectiveSeasonId));
-    }
-  }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId));
+  }, [selectedSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getTeamName = (id) => teams.find(t => t.id === Number(id))?.name ?? `#${id}`;
   const getVenueName = (id) => venues.find(v => v.id === Number(id))?.name ?? '—';
@@ -136,9 +124,9 @@ export default function ManageMatches() {
       await rescheduleMatch(
         rescheduleModal.match.id,
         { scheduledAt, venueId: Number(rescheduleForm.venue_id) },
-        Number(effectiveSeasonId),
+        Number(selectedSeasonId),
       );
-      fetchBySeason(Number(effectiveSeasonId), { force: true });
+      fetchBySeason(Number(selectedSeasonId), { force: true });
       toast.success('Đã đổi lịch trận đấu!');
       setRescheduleModal(null);
     } catch (err) {
@@ -160,9 +148,9 @@ export default function ManageMatches() {
   const openGenModal = async () => {
     setGenModal(true);
     setGenTeamCount(null);
-    if (!effectiveSeasonId) return;
+    if (!selectedSeasonId) return;
     try {
-      const res = await seasonTeamApi.getAll({ season_id: effectiveSeasonId, per_page: 100 });
+      const res = await seasonTeamApi.getAll({ season_id: selectedSeasonId, per_page: 100 });
       // Normalize response
       const payload = typeof res?.status === 'boolean' ? res.data : res;
       const allTeams = Array.isArray(payload?.data) ? payload.data : [];
@@ -215,10 +203,10 @@ export default function ManageMatches() {
         minRestDaysPerTeam: Number(genForm.minRestDaysPerTeam)
       };
 
-      await matchApi.generateSchedule(Number(effectiveSeasonId), payload);
+      await matchApi.generateSchedule(Number(selectedSeasonId), payload);
       toast.success(`Đã tạo lịch thi đấu tự động thành công! Khung giờ: ${matchTimes.join(', ')} 🎉`);
       setGenModal(false);
-      fetchBySeason(Number(effectiveSeasonId), { force: true });
+      fetchBySeason(Number(selectedSeasonId), { force: true });
     } catch (err) {
       const data = err?.response?.data;
       // Backend trả { code, message } — message thường là "Request failed" (generic)
@@ -238,7 +226,7 @@ export default function ManageMatches() {
   };
 
   const handleRefresh = () => {
-    if (effectiveSeasonId) fetchBySeason(Number(effectiveSeasonId), { force: true });
+    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });
   };
 
   return (
@@ -266,7 +254,7 @@ export default function ManageMatches() {
             </button>
             <button
               onClick={handleRefresh}
-              disabled={isLoadingMatches || !effectiveSeasonId}
+              disabled={isLoadingMatches || !selectedSeasonId}
               className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
               title="Tải lại"
             >
@@ -282,7 +270,7 @@ export default function ManageMatches() {
           </label>
           <div className="relative flex-1 max-w-sm">
             <select
-              value={effectiveSeasonId}
+              value={selectedSeasonId}
               onChange={e => setSelectedSeasonId(e.target.value)}
               className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon text-sm appearance-none"
             >
@@ -301,15 +289,15 @@ export default function ManageMatches() {
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-          {effectiveSeasonId && (
-            <span className="text-sm text-gray-400 font-medium">
-              Đang có <strong className="text-white">{matches.length}</strong> trận đấu
-            </span>
-          )}
+        {selectedSeasonId && (
+          <span className="text-sm text-gray-400 font-medium">
+            Đang có <strong className="text-white">{matches.length}</strong> trận đấu
+          </span>
+        )}
         </div>
 
         {/* Warning: season không ở registration_open */}
-        {effectiveSeasonId && !canGenerate && (
+        {selectedSeasonId && !canGenerate && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
@@ -325,7 +313,7 @@ export default function ManageMatches() {
         )}
 
         {/* No season selected */}
-        {!effectiveSeasonId && !seasonsLoading && (
+        {!selectedSeasonId && !seasonsLoading && (
           <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500">
             <CalendarDays className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="font-semibold text-lg">Vui lòng chọn mùa giải để xem lịch thi đấu</p>
@@ -333,7 +321,7 @@ export default function ManageMatches() {
         )}
 
         {/* Matches Table */}
-        {effectiveSeasonId && (
+        {selectedSeasonId && (
           <div className="bg-navy border border-navy-light rounded-2xl shadow-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap min-w-[800px]">

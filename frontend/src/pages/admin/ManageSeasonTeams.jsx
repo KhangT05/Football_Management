@@ -26,10 +26,10 @@ export default function ManageSeasonTeams() {
         const payload = (typeof res?.status === 'boolean') ? res.data : res;
         const data = Array.isArray(payload?.data) ? payload.data : [];
         setSeasons(data);
-        if (data.length > 0) setSelectedSeason(data[0].id.toString());
+        // Không auto-select — bảng chỉ hiện khi user chủ động chọn mùa
       })
       .catch(() => toast.error('Lỗi khi tải danh sách mùa giải.'));
-  }, [toast]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Season Teams ---
   const { data: seasonTeams, isLoading: loadingTeams, fetch: fetchSeasonTeams } = useApiQuery(
@@ -159,16 +159,36 @@ export default function ManageSeasonTeams() {
           <div className="flex gap-3 items-center">
             <span className="text-sm font-bold text-gray-400">Mùa giải:</span>
             <select 
-              className="bg-navy border border-navy-light rounded-xl px-4 py-2.5 text-white font-bold outline-none focus:border-neon min-w-[200px]"
+              className="bg-navy border border-navy-light rounded-xl px-4 py-2.5 text-white font-bold outline-none focus:border-neon min-w-[220px]"
               value={selectedSeason}
               onChange={(e) => setSelectedSeason(e.target.value)}
             >
-              {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              <option value="">-- Chọn mùa giải --</option>
+              {seasons.map(s => {
+                const statusLabel = {
+                  registration_open: '✅',
+                  ongoing: '🔴',
+                  finished: '✓',
+                  upcoming: '⏳',
+                  cancelled: '❌',
+                }[s.status] ?? '';
+                return <option key={s.id} value={s.id}>{statusLabel} {s.name}</option>;
+              })}
             </select>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Empty state: chưa chọn mùa */}
+        {!selectedSeason && (
+          <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500">
+            <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+            <p className="font-semibold text-lg">Vui lòng chọn mùa giải để xem danh sách đăng ký</p>
+          </div>
+        )}
+
+        {/* Tabs — chỉ hiện khi đã chọn mùa */}
+        {selectedSeason && (
+        <>
         <div className="flex items-center gap-2 border-b border-navy-light">
           <button 
             className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'teams' ? 'border-neon text-neon' : 'border-transparent text-gray-400 hover:text-white hover:bg-navy-light/50'}`}
@@ -349,6 +369,9 @@ export default function ManageSeasonTeams() {
             </div>
           </div>
         )}
+
+        </>
+        )} {/* end selectedSeason guard */}
 
       </div>
 

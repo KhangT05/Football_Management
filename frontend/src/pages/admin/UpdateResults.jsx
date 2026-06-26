@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Save, CheckCircle2, Plus, Trash2, Clock, Activity,
-  Loader2, AlertTriangle, RefreshCw, Construction,
-  Play, Pause, RotateCcw, Minus
+  Loader2, AlertTriangle, RefreshCw,
+  Play, Pause, RotateCcw, Minus, ChevronDown, CalendarDays
 } from 'lucide-react';
-import { matchApi, teamApi } from '../../api';
+import { teamApi } from '../../api';
+import useScheduleStore from '../../store/scheduleStore';
+import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
 
 // ─── Unified Event Card ──────────────────────────────────────
@@ -132,38 +134,72 @@ function MatchTimer() {
   );
 }
 
+// ─── Status Badge ────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const map = {
+    scheduled:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
+    ongoing:    'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse',
+    finished:   'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
+    cancelled:  'bg-gray-400/10 text-gray-400 border-gray-400/30',
+  };
+  const labels = {
+    scheduled: 'Sắp diễn ra',
+    ongoing:   '🔴 Đang diễn ra',
+    finished:  'Đã kết thúc',
+    cancelled: 'Đã hủy',
+  };
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-bold border ${map[status] || map.scheduled}`}>
+      {labels[status] || status}
+    </span>
+  );
+}
+
 export default function UpdateResults() {
   const toast = useToastStore();
 
-  // ── Load matches từ API ────────────────────────────────
-  const [matches, setMatches] = useState([]);
-  const [loadingMatches, setLoadingMatches] = useState(true);
-  const [matchApiError, setMatchApiError] = useState(null);
+  // ── Season Store ────────────────────────────────────────────
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
+  const { getMatchesFromCache, isSeasonLoading, fetchBySeason } = useScheduleStore();
 
-  useEffect(() => {
-    matchApi.getMatches({ status: 'scheduled,ongoing', per_page: 50 })
-      .then(res => {
-        const payload = (typeof res?.status === 'boolean') ? res.data : res;
-        setMatches(Array.isArray(payload?.data) ? payload.data : []);
-        setMatchApiError(null);
-      })
-      .catch(err => {
-        setMatchApiError(err?.response?.data?.message || 'Match API chưa khả dụng.');
-        setMatches([]);
-      })
-      .finally(() => setLoadingMatches(false));
-  }, []);
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+
+  // Auto-select: chọn mùa tốt nhất khi seasons thay đổi (useMemo để tránh setState trong effect)
+  const bestSeasonId = useMemo(() => {
+    if (seasons.length === 0) return '';
+    const ongoing = seasons.find(s => s.status === 'ongoing');
+    const regOpen = seasons.find(s => s.status === 'registration_open');
+    return String((ongoing ?? regOpen ?? seasons[0]).id);
+  }, [seasons]);
+
+  // selectedSeasonId: '' = chưa chọn tay, nếu rỗng sẽ fallback sang bestSeasonId
+  const effectiveSeasonId = selectedSeasonId || bestSeasonId;
+
+  // ── Matches from schedule store ─────────────────────────────
+  const allSeasonMatches = useMemo(
+    () => effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [effectiveSeasonId, getMatchesFromCache]
+  );
+  const isLoadingMatches = effectiveSeasonId ? isSeasonLoading(Number(effectiveSeasonId)) : false;
+
+  // Chỉ lấy trận đang diễn hoặc sắp diễn để cập nhật kết quả
+  const matches = useMemo(() =>
+    allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing'),
+    [allSeasonMatches]
+  );
 
   const [selectedMatchId, setSelectedMatchId] = useState('');
 
   const selectedMatch = useMemo(() => {
-    if (matches.length === 0) return null;
-    return matches.find(m => String(m.id) === String(selectedMatchId)) ?? matches[0];
+    if (!selectedMatchId || matches.length === 0) return null;
+    return matches.find(m => String(m.id) === String(selectedMatchId)) ?? null;
   }, [matches, selectedMatchId]);
 
-  // ── Load players ───────────────────────────────────────
+  // ── Load players ────────────────────────────────────────────
   const [homePlayers, setHomePlayers] = useState([]);
   const [awayPlayers, setAwayPlayers] = useState([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -174,6 +210,7 @@ export default function UpdateResults() {
       return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
     };
 
+    setLoadingPlayers(true);
     Promise.allSettled([
       teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }),
       teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }),
@@ -181,10 +218,11 @@ export default function UpdateResults() {
       if (cancelled) return;
       setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
       setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
+      setLoadingPlayers(false);
     });
 
     return () => { cancelled = true; };
-  }, [selectedMatchId]);
+  }, [selectedMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
@@ -193,6 +231,28 @@ export default function UpdateResults() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  // ── Fetch on mount ──────────────────────────────────────────
+  useEffect(() => {
+    fetchSeasons();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Khi season thay đổi: fetch lịch mới + reset trận đang chọn
+  const prevSeasonRef = useRef(effectiveSeasonId);
+  useEffect(() => {
+    if (!effectiveSeasonId) return;
+    fetchBySeason(Number(effectiveSeasonId));
+    // Chỉ reset khi season thực sự thay đổi (không phải lần mount đầu tiên)
+    if (prevSeasonRef.current !== effectiveSeasonId) {
+      prevSeasonRef.current = effectiveSeasonId;
+      setSelectedMatchId('');
+      setHomeScore(0);
+      setAwayScore(0);
+      setHomeEvents([]);
+      setAwayEvents([]);
+      setIsDirty(false);
+    }
+  }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMatchChange = (e) => {
     setSelectedMatchId(e.target.value);
@@ -281,8 +341,19 @@ export default function UpdateResults() {
     toast.info('Đã đặt lại form.');
   };
 
+  const handleRefresh = () => {
+    if (effectiveSeasonId) fetchBySeason(Number(effectiveSeasonId), { force: true });
+  };
+
   const getHomeName = () => selectedMatch?.home_team?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
   const getAwayName = () => selectedMatch?.away_team?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
+
+  const formatMatchLabel = (m) => {
+    const home = m.home_team?.name ?? `Đội #${m.home_team_id}`;
+    const away = m.away_team?.name ?? `Đội #${m.away_team_id}`;
+    const date = m.scheduled_at ? ` — ${new Date(m.scheduled_at).toLocaleDateString('vi-VN')}` : '';
+    return `${home} vs ${away}${date}`;
+  };
 
   return (
     <AdminLayout>
@@ -303,34 +374,66 @@ export default function UpdateResults() {
           )}
         </div>
 
-        {matchApiError && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex items-start gap-4">
-            <Construction className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-amber-400 mb-1">Tính năng đang phát triển</p>
-              <p className="text-sm text-gray-400">Match API chưa khả dụng hoàn toàn.</p>
-              <p className="text-xs text-gray-600 mt-1">Lỗi: {matchApiError}</p>
-            </div>
+        {/* Season Selector */}
+        <div className="bg-navy p-5 rounded-2xl border border-navy-light shadow-lg shadow-black/20 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-bold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-emerald-400" /> Mùa giải:
+          </label>
+          <div className="relative flex-1 max-w-sm">
+            <select
+              value={selectedSeasonId}
+              onChange={e => setSelectedSeasonId(e.target.value)}
+              disabled={seasonsLoading}
+              className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon text-sm appearance-none disabled:opacity-60"
+            >
+              <option value="">-- Chọn mùa giải --</option>
+              {seasons.map(s => {
+                const statusLabel = {
+                  registration_open: '✅ Đang mở đăng ký',
+                  ongoing: '🔴 Đang diễn ra',
+                  finished: '✓ Đã kết thúc',
+                  upcoming: '⏳ Sắp diễn ra',
+                  cancelled: '❌ Đã hủy',
+                }[s.status] ?? s.status;
+                return (
+                  <option key={s.id} value={s.id}>{s.name} — {statusLabel}</option>
+                );
+              })}
+            </select>
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-        )}
+          <button
+            onClick={handleRefresh}
+            disabled={isLoadingMatches || !effectiveSeasonId}
+            className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Tải lại"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
         {/* Match Selector */}
         <div className="bg-navy p-5 rounded-3xl border border-navy-light shadow-lg shadow-black/20">
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Chọn trận đấu</label>
-          {loadingMatches ? (
+          {!effectiveSeasonId ? (
+            <p className="text-gray-500 text-sm py-2">Vui lòng chọn mùa giải trước.</p>
+          ) : isLoadingMatches ? (
             <div className="skeleton h-14 rounded-xl" />
           ) : matches.length === 0 ? (
-            <div className="text-center py-4 text-gray-500 text-sm">Không có trận đấu nào đang diễn ra.</div>
+            <div className="text-center py-4 text-gray-500 text-sm">
+              Không có trận đấu nào ở trạng thái <strong className="text-amber-400">sắp diễn ra</strong> hoặc{' '}
+              <strong className="text-red-400">đang diễn ra</strong> trong mùa giải này.
+            </div>
           ) : (
             <select
               className="w-full text-base p-4 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon transition-colors"
               value={selectedMatchId}
               onChange={handleMatchChange}
             >
+              <option value="">-- Chọn trận đấu --</option>
               {matches.map(m => (
                 <option key={m.id} value={m.id}>
-                  {m.home_team?.name ?? `Đội #${m.home_team_id}`} vs {m.away_team?.name ?? `Đội #${m.away_team_id}`}
-                  {m.scheduled_at ? ` — [${new Date(m.scheduled_at).toLocaleDateString('vi-VN')}]` : ''}
+                  {formatMatchLabel(m)}
                 </option>
               ))}
             </select>
@@ -359,7 +462,9 @@ export default function UpdateResults() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-navy-light [&::-webkit-scrollbar-thumb]:rounded-full">
-                  {homeEvents.length === 0 ? (
+                  {loadingPlayers ? (
+                    <p className="text-xs text-center text-gray-500 py-6">Đang tải cầu thủ...</p>
+                  ) : homeEvents.length === 0 ? (
                     <p className="text-xs text-center text-gray-500 py-6">Chưa có sự kiện nào.</p>
                   ) : (
                     homeEvents.map(evt => (
@@ -377,11 +482,13 @@ export default function UpdateResults() {
               <div className="bg-navy p-6 md:p-8 rounded-3xl border border-navy-light shadow-xl relative overflow-hidden flex-1 flex flex-col justify-center">
                 <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-blue-500 via-emerald-400 to-amber-400" />
                 
-                <div className="text-center mb-6">
-                  <span className="bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider">
+                {/* Match status */}
+                <div className="text-center mb-4 flex items-center justify-center gap-3">
+                  <StatusBadge status={selectedMatch.status} />
+                  <span className="text-gray-500 text-xs font-bold">
                     {selectedMatch.scheduled_at
                       ? new Date(selectedMatch.scheduled_at).toLocaleDateString('vi-VN', { dateStyle: 'medium' })
-                      : 'Trực tiếp'
+                      : '—'
                     }
                   </span>
                 </div>
@@ -457,7 +564,9 @@ export default function UpdateResults() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-navy-light [&::-webkit-scrollbar-thumb]:rounded-full">
-                  {awayEvents.length === 0 ? (
+                  {loadingPlayers ? (
+                    <p className="text-xs text-center text-gray-500 py-6">Đang tải cầu thủ...</p>
+                  ) : awayEvents.length === 0 ? (
                     <p className="text-xs text-center text-gray-500 py-6">Chưa có sự kiện nào.</p>
                   ) : (
                     awayEvents.map(evt => (

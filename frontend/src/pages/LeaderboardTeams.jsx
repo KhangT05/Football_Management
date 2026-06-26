@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Trophy, Users, RefreshCw, ArrowRight, Shield, Construction } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
+import { seasonApi } from '../api';
 
 // ── Helpers ───────────────────────────────────────────────────
 const getInitials = (name) =>
@@ -191,17 +192,58 @@ export default function LeaderboardTeams() {
     fetchAll: fetchSeasons,
   } = useSeasonStore();
 
+  // ── Standings state ────────────────────────────────────────
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+  const [standings, setStandings] = useState([]);
+  const [standingsLoading, setStandingsLoading] = useState(false);
+  const [standingsError, setStandingsError] = useState(null);
+
   const isLoading = teamsLoading || seasonsLoading;
-  const activeSeason = seasons.find(s => s.status === 'ongoing') ?? seasons[0] ?? null;
+
+  // Auto-select active season khi dữ liệu được load
+  useEffect(() => {
+    if (seasons.length === 0 || selectedSeasonId) return;
+    const ongoing = seasons.find(s => s.status === 'ongoing');
+    const regOpen = seasons.find(s => s.status === 'registration_open');
+    const best = ongoing ?? regOpen ?? seasons[0];
+    if (best) setSelectedSeasonId(String(best.id));
+  }, [seasons]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
+
+  const fetchStandings = async (seasonId) => {
+    if (!seasonId) { setStandings([]); return; }
+    setStandingsLoading(true);
+    setStandingsError(null);
+    try {
+      const res = await seasonApi.getStandings(seasonId);
+      const payload = typeof res?.status === 'boolean' ? res.data : res;
+      const data = Array.isArray(payload?.data) ? payload.data :
+                   Array.isArray(payload) ? payload : [];
+      setStandings(data);
+    } catch (err) {
+      setStandingsError(err?.response?.data?.message || 'Không thể tải bảng xếp hạng.');
+      setStandings([]);
+    } finally {
+      setStandingsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchTeams({ sort: 'name', direction: 'asc' });
     fetchSeasons();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Khi season thay đổi: fetch standings mới
+  useEffect(() => {
+    if (selectedSeasonId) fetchStandings(selectedSeasonId);
+    else setStandings([]);
+  }, [selectedSeasonId]);
+
   const handleRefresh = () => {
     fetchTeams({ sort: 'name', direction: 'asc', force: true });
     fetchSeasons({ force: true });
+    if (selectedSeasonId) fetchStandings(selectedSeasonId);
   };
 
   return (
@@ -224,18 +266,36 @@ export default function LeaderboardTeams() {
                   Bảng <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon italic">Xếp Hạng</span>
                 </h2>
                 {activeSeason && (
-                  <p className="text-gray-400 text-sm mt-1 font-medium">Mùa giải hiện tại: <strong className="text-white">{activeSeason.name}</strong></p>
+                  <p className="text-gray-400 text-sm mt-1 font-medium">Mùa giải: <strong className="text-white">{activeSeason.name}</strong></p>
                 )}
               </div>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-50 bg-navy-dark hover:bg-navy-light border border-navy-light px-5 py-3 rounded-xl shadow-md"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Tải lại dữ liệu</span>
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative">
+                <select
+                  value={selectedSeasonId}
+                  onChange={e => setSelectedSeasonId(e.target.value)}
+                  disabled={seasonsLoading}
+                  className="pl-4 pr-9 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 text-sm appearance-none disabled:opacity-60 cursor-pointer"
+                >
+                  <option value="">-- Chọn mùa giải --</option>
+                  {seasons.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}{s.status === 'ongoing' ? ' 🔴' : s.status === 'registration_open' ? ' 📋' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading || standingsLoading}
+                className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-50 bg-navy-dark hover:bg-navy-light border border-navy-light px-5 py-3 rounded-xl shadow-md"
+              >
+                {standingsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />}
+                <span className="hidden sm:inline">Tải lại</span>
+              </button>
+            </div>
           </div>
 
           <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40 animate-slide-up" style={{ animationDelay: '100ms' }}>
@@ -256,25 +316,37 @@ export default function LeaderboardTeams() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-transparent">
-                  {isLoading ? (
+                  {standingsLoading || isLoading ? (
                     <LeaderboardSkeleton />
-                  ) : (
+                  ) : standingsError ? (
+                    <tr>
+                      <td colSpan={10} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <p className="text-red-400 font-bold">{standingsError}</p>
+                          <button onClick={() => fetchStandings(selectedSeasonId)} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : standings.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-20 text-center">
                         <div className="flex flex-col items-center gap-5">
-                          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-inner relative overflow-hidden">
-                            <div className="absolute inset-0 bg-amber-500/20 animate-pulse"></div>
-                            <Construction className="w-10 h-10 text-amber-400 relative z-10" />
+                          <div className="w-20 h-20 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-inner">
+                            <Trophy className="w-10 h-10 text-blue-400/50" />
                           </div>
                           <div>
-                            <p className="text-xl font-black text-amber-400 mb-2 uppercase tracking-wider">Hệ thống xếp hạng đang được xây dựng</p>
-                            <p className="text-gray-400 text-sm max-w-md mx-auto leading-relaxed">
-                              Bảng xếp hạng tự động sẽ hiển thị khi API <code className="text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-md font-mono text-xs mx-1">GET /seasons/&#123;id&#125;/standings</code> hoàn thiện.
+                            <p className="text-xl font-black text-gray-400 mb-2">Chưa có dữ liệu xếp hạng</p>
+                            <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+                              Bảng xếp hạng sẽ được cập nhật khi các trận đấu bắt đầu có kết quả.
                             </p>
                           </div>
                         </div>
                       </td>
                     </tr>
+                  ) : (
+                    standings.map((row, idx) => (
+                      <StandingRow key={row.team_id ?? idx} row={row} idx={idx} teams={teams} />
+                    ))
                   )}
                 </tbody>
               </table>
