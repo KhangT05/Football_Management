@@ -1,22 +1,8 @@
-import { MatchPeriod, MatchResultType, PrismaClient } from '../generated/prisma/client.js';
+import { MatchPeriod, PrismaClient } from '../generated/prisma/client.js';
 import { ConfirmResultOutput } from '../types/matchResult.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
-import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput } from '../types/match.type.js';
+import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput, EditEventInput, EditScoreInput } from '../types/match.type.js';
 import { MatchResultService } from './matchresult.service.js';
-export type { AddEventInput };
-export type EditEventInput = Partial<RecordEventInput>;
-export type EditScoreInput = {
-    homeScore: number;
-    awayScore: number;
-    homePenalty?: number;
-    awayPenalty?: number;
-    homeExtraTime?: number;
-    awayExtraTime?: number;
-    homeHalfTime?: number;
-    awayHalfTime?: number;
-    resultType?: MatchResultType;
-    notes?: string;
-};
 export declare class MatchLifecycleService {
     private readonly prisma;
     private readonly matchResultService;

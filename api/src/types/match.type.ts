@@ -88,29 +88,19 @@ export const SCORE_DELTA_BY_TYPE: Partial<Record<MatchEventType, 1 | -1>> = {
     [MatchEventType.penalty_scored]: 1,
     [MatchEventType.goal_disallowed]: -1,
 };
+// export type { AddEventInput };
 
-// ─── Pure helper — credit direction ──────────────────────────────────────────
+export type EditEventInput = Partial<RecordEventInput>;
 
-/**
- * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
- * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
- *
- * own_goal:         team đá phản lưới → credit cho đối thủ
- * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
- * goal/penalty_scored: team ghi → credit cho chính mình
- */
-export function isCreditedToHomeTeam(
-    homeTeamId: number,
-    eventTeamId: number,
-    type: MatchEventType,
-    wasOwnGoal?: boolean,
-): boolean {
-    if (type === MatchEventType.own_goal) {
-        return eventTeamId !== homeTeamId; // team đá phản → đối thủ được điểm
-    }
-    if (type === MatchEventType.goal_disallowed && wasOwnGoal) {
-        return eventTeamId !== homeTeamId; // huỷ own_goal → trừ của đối thủ
-    }
-    return eventTeamId === homeTeamId;
-}
+export type EditScoreInput = {
+    homeScore: number;
+    awayScore: number;
+    homePenalty?: number;
+    awayPenalty?: number;
+    homeExtraTime?: number;
+    awayExtraTime?: number;
+    homeHalfTime?: number;
+    awayHalfTime?: number;
+    resultType?: MatchResultType;
+    notes?: string;
+};

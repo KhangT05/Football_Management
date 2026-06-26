@@ -12,14 +12,7 @@ export class KnockoutController extends Controller {
     constructor(private service: KnockoutService) {
         super();
     }
-    /**
-        * GET /phases/{phaseId}/bracket
-        */
-    // @Get("{phaseId}/bracket")
-    // async getBracket(@Path() phaseId: number) {
-    //     const bracket = await this.service.getBracket(phaseId);
-    //     return bracket;
-    // }
+
     /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
@@ -48,9 +41,14 @@ export class KnockoutController extends Controller {
      * resource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.
      * venueIds/matchTimes trong body là ScheduleOptions cho match round sau
      * vừa được tạo ra (nếu advance làm xong 1 cặp slot).
+     *
+     * Service return newMatchId (singular) — leg 1 match ID của round tiếp theo.
+     * Leg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần
+     * anchor ID để poll/redirect; leg 2 visible qua GET bracket.
      */
     @Security('jwt', ['admin'])
     @Post('seasons/{seasonId}/phases/{phaseId}/knockout/advance')
+    @SuccessResponse(200, 'OK')
     async advanceWinner(
         @Path() seasonId: number,
         @Path() phaseId: number,
@@ -60,8 +58,11 @@ export class KnockoutController extends Controller {
         return this.service.advanceWinner(phaseId, seasonId, input, { venueIds, matchTimes });
     }
 
-    // Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule
-    // gốc (GET không bắt jwt admin trong ví dụ bạn gửi).
+    /**
+     * Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule.
+     * Trả toàn bộ slot tree; client tự build visual bracket từ
+     * sourceASlotId/sourceBSlotId links.
+     */
     @Get('phases/{phaseId}/knockout/bracket')
     async getBracket(
         @Path() phaseId: number,

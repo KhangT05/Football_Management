@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SeasonStatus } from "../generated/prisma/client.js";
 export declare const SeasonStatusSchema: z.ZodEnum<{
     upcoming: "upcoming";
     registration_open: "registration_open";
@@ -51,6 +52,20 @@ export declare const UpdateSeasonStatusSchema: z.ZodObject<{
     }>;
     cancel_reason: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
+export type SeasonListItem = {
+    id: number;
+    name: string;
+    status: SeasonStatus;
+    start_date: Date | null;
+    end_date: Date | null;
+    tournament: {
+        id: number;
+        name: string;
+    };
+    _count: {
+        phases: number;
+    };
+};
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>;
 export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>;
 export type UpdateSeasonStatusDto = z.infer<typeof UpdateSeasonStatusSchema>;
