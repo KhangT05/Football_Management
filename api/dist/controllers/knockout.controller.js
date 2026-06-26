@@ -20,6 +20,14 @@ let KnockoutController = class KnockoutController extends Controller {
         this.service = service;
     }
     /**
+        * GET /phases/{phaseId}/bracket
+        */
+    // @Get("{phaseId}/bracket")
+    // async getBracket(@Path() phaseId: number) {
+    //     const bracket = await this.service.getBracket(phaseId);
+    //     return bracket;
+    // }
+    /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
      * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)

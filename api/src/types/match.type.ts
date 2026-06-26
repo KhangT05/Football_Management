@@ -8,6 +8,9 @@ export interface RecordEventInput {
     type: MatchEventType;
     minute?: number;
     addedMinute?: number;
+    // period optional ở live recording (lấy từ match.current_period),
+    // bắt buộc ở correction window (match đã finished, không có current_period).
+    period?: MatchPeriod;
     note?: string;
     subOutPlayerId?: number;
 
@@ -15,6 +18,12 @@ export interface RecordEventInput {
     // teamId không đủ phân biệt hướng trừ — cần wasOwnGoal để đảo đúng team.
     // Schema cần voided_event_id để tự suy ra nếu dùng feature này thường xuyên.
     wasOwnGoal?: boolean;
+}
+
+// AddEventInput: period bắt buộc vì match đã finished khi correction chạy.
+// Tách khỏi RecordEventInput thay vì Partial/Omit để type error rõ ràng hơn.
+export interface AddEventInput extends Omit<RecordEventInput, 'period'> {
+    period: MatchPeriod;
 }
 
 export interface FinalizeMatchInput {

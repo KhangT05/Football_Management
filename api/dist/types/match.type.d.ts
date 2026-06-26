@@ -5,9 +5,13 @@ export interface RecordEventInput {
     type: MatchEventType;
     minute?: number;
     addedMinute?: number;
+    period?: MatchPeriod;
     note?: string;
     subOutPlayerId?: number;
     wasOwnGoal?: boolean;
+}
+export interface AddEventInput extends Omit<RecordEventInput, 'period'> {
+    period: MatchPeriod;
 }
 export interface FinalizeMatchInput {
     resultType?: MatchResultType;

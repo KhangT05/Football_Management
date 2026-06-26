@@ -6,6 +6,9 @@ export declare class KnockoutController extends Controller {
     private service;
     constructor(service: KnockoutService);
     /**
+        * GET /phases/{phaseId}/bracket
+        */
+    /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
      * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)

@@ -1,16 +1,10 @@
 import { Controller } from "tsoa";
 import { MatchResultService } from "../services/matchresult.service.js";
-import { MatchLifecycleService } from "../services/match.service.js";
-import { PrismaClient } from "../generated/prisma/client.js";
+import { StandingsService } from "../services/standing.service.js";
+import * as matchResultType from "../types/matchResult.type.js";
 export declare class MatchResultController extends Controller {
     private readonly matchResultService;
-    private readonly lifecycleService;
-    private readonly prisma;
-    constructor(matchResultService: MatchResultService, lifecycleService: MatchLifecycleService, prisma: PrismaClient);
-    /**
-     * Xem kết quả chính thức của trận đấu.
-     * Trả về score 90p, ET, penalty, winner, result_type, status (official/protested...).
-     */
+    constructor(matchResultService: MatchResultService);
     getMatchResult(id: number): Promise<{
         winner_team: {
             name: string;
@@ -38,36 +32,100 @@ export declare class MatchResultController extends Controller {
         appeal_note: string | null;
     }>;
     /**
-     * List toàn bộ events của trận (goal, thẻ, thay người...).
-     * Hỗ trợ filter theo type và period.
+     * List events của 1 trận.
+     *
+     * Query params:
+     *   Simple filters: ?type=goal&period=first_half
+     *   Pagination: ?page=1&per_page=30
+     *   Sort: ?sort=minute&direction=asc
+     *   Search: ?q=keyword (if searchFields enabled)
      */
-    getMatchEvents(id: number, type?: string, period?: string): Promise<({
-        match: {
-            home_team_id: number;
-            away_team_id: number;
-        };
-    } & {
+    getMatchEvents(id: number, type?: string, period?: string, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc', q?: string): Promise<import("../types/queryable.type.js").PaginatedResult<{
         type: import("../generated/prisma/enums.js").MatchEventType;
         id: number;
         created_at: Date;
         team_id: number | null;
         player_id: number | null;
         match_id: number;
-        minute: number | null;
-        note: string | null;
         period: import("../generated/prisma/enums.js").MatchPeriod | null;
+        minute: number | null;
         added_minute: number | null;
-        card_color: import("../generated/prisma/enums.js").CardColor | null;
-        sub_out_player_id: number | null;
-    })[]>;
-    /**
-     * Thống kê cầu thủ của 1 trận cụ thể (goals, cards per player).
-     * Aggregate từ match_events — không phải PlayerStatistic (đó là season-level).
-     */
+    }>>;
     getMatchPlayerStats(id: number): Promise<(import("../generated/prisma/internal/prismaNamespace.js").PickEnumerable<import("../generated/prisma/models.js").MatchEventGroupByOutputType, ("type" | "team_id" | "player_id")[]> & {
         _count: {
             type: number;
         };
+    })[]>;
+    confirmResult(id: number, body: matchResultType.ConfirmOfficialBody): Promise<matchResultType.ConfirmResultOutput>;
+}
+export declare class SeasonStatsController extends Controller {
+    private readonly standingsService;
+    constructor(standingsService: StandingsService);
+    /**
+     * Bảng xếp hạng của season.
+     *
+     * Query params:
+     *   ?groupId=1 (filter by group)
+     *   ?page=1&per_page=20 (pagination)
+     *   ?sort=position&direction=asc (sort)
+     */
+    getStandings(seasonId: number, groupId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<import("../types/queryable.type.js").PaginatedResult<{
+        id: number;
+        team_id: number;
+        group_id: number;
+        position: number;
+        matches_played: number;
+        wins: number;
+        draws: number;
+        losses: number;
+        goals_for: number;
+        goals_against: number;
+        points: number;
+    }>>;
+    /**
+     * Thống kê cầu thủ trong season.
+     *
+     * Query params:
+     *   ?teamId=1 (filter by team)
+     *   ?page=1&per_page=20
+     *   ?sort=goals_scored&direction=desc
+     */
+    getPlayerStats(seasonId: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<import("../types/queryable.type.js").PaginatedResult<{
+        id: number;
+        goals_scored: number;
+        yellow_cards: number;
+        red_cards: number;
+        team_id: number;
+        season_id: number;
+        player_id: number;
+        matches_played: number;
+        accumulated_yellow_cards: number;
+        is_suspended: boolean;
+    }>>;
+    getSuspendedPlayers(seasonId: number): Promise<({
+        team: {
+            name: string;
+            id: number;
+        };
+        player: {
+            name: never;
+            id: number;
+        };
+    } & {
+        id: number;
+        created_at: Date;
+        updated_at: Date | null;
+        goals_scored: number;
+        yellow_cards: number;
+        red_cards: number;
+        team_id: number;
+        season_id: number;
+        player_id: number;
+        matches_played: number;
+        assists: number;
+        minutes_played: number;
+        accumulated_yellow_cards: number;
+        is_suspended: boolean;
     })[]>;
 }
 //# sourceMappingURL=matchResult.controller.d.ts.map

@@ -25,6 +25,8 @@ export type ScheduleOptions = Pick<
     GenerateOptions,
     'venueIds' | 'matchTimes'
 >;
+// Dùng khi advance knockout — venueIds/matchTimes có thể chưa có
+export type OptionalScheduleOptions = Partial<ScheduleOptions>;
 
 export type GenerateResult = {
     groupCount: number;
