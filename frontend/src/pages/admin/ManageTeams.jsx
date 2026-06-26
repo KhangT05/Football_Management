@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, Users,
   ChevronDown, ChevronUp, AlertTriangle, Loader2,
-  UserPlus, RefreshCw, Search
+  UserPlus, RefreshCw, Search, CalendarDays
 } from 'lucide-react';
 import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
+import useSeasonStore from '../../store/seasonStore';
+import { seasonTeamApi } from '../../api';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
@@ -36,6 +38,58 @@ export default function ManageTeams() {
     addNewPlayerToTeam, removePlayers,
   } = useTeamStore();
 
+  // ── Season filter ────────────────────────────────────
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+
+  // Auto-select mùa tốt nhất
+  const bestSeasonId = useMemo(() => {
+    if (seasons.length === 0) return '';
+    const regOpen = seasons.find(s => s.status === 'registration_open');
+    const ongoing  = seasons.find(s => s.status === 'ongoing');
+    return String((regOpen ?? ongoing ?? seasons[0]).id);
+  }, [seasons]);
+  const effectiveSeasonId = selectedSeasonId || bestSeasonId;
+
+  // Dữ liệu đội theo mùa giải
+  const [seasonTeams, setSeasonTeams] = useState([]);   // SeasonTeam records
+  const [loadingSeasonTeams, setLoadingSeasonTeams] = useState(false);
+  const [seasonTeamsError, setSeasonTeamsError] = useState(null);
+
+  const fetchSeasonTeams = useCallback(async (seasonId) => {
+    if (!seasonId) { setSeasonTeams([]); return; }
+    setLoadingSeasonTeams(true);
+    setSeasonTeamsError(null);
+    try {
+      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 200 });
+      const payload = typeof res?.status === 'boolean' ? res.data : res;
+      const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      setSeasonTeams(data);
+    } catch (err) {
+      setSeasonTeamsError(err?.response?.data?.message || 'Không thể tải danh sách đội theo mùa giải.');
+      setSeasonTeams([]);
+    } finally {
+      setLoadingSeasonTeams(false);
+    }
+  }, []);
+
+  // Khi season thay đổi: load lại
+  useEffect(() => {
+    fetchSeasonTeams(effectiveSeasonId);
+  }, [effectiveSeasonId, fetchSeasonTeams]);
+
+  // Lọc teams: khi có mùa giải → chỉ lấy đội đã được duyệt (approved)
+  const approvedSeasonTeamIds = useMemo(
+    () => new Set(seasonTeams.filter(st => st.status === 'approved').map(st => st.team_id)),
+    [seasonTeams]
+  );
+  const filteredTeams = useMemo(
+    () => effectiveSeasonId
+      ? teams.filter(t => approvedSeasonTeamIds.has(t.id))
+      : teams,
+    [teams, effectiveSeasonId, approvedSeasonTeamIds]
+  );
+
   // ── Debounced search ──────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
@@ -43,6 +97,11 @@ export default function ManageTeams() {
   const refetchTeams = useCallback(() => {
     fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc', force: !!debouncedSearch });
   }, [fetchTeamsStore, debouncedSearch]);
+
+  useEffect(() => {
+    fetchSeasons();
+    refetchTeams();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { refetchTeams(); }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -178,7 +237,8 @@ export default function ManageTeams() {
           <div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight">Quản lý Đội Bóng</h2>
             <p className="text-gray-400 text-sm mt-1">
-              <span className="font-bold text-neon">{meta.total}</span> đội tham gia giải đấu
+              <span className="font-bold text-neon">{effectiveSeasonId ? filteredTeams.length : meta.total}</span>
+              {effectiveSeasonId ? ' đội đã được duyệt trong mùa giải' : ' đội trong hệ thống'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -199,8 +259,25 @@ export default function ManageTeams() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="bg-navy p-4 rounded-xl border border-navy-light flex gap-3 shadow-lg shadow-black/20">
+        {/* Season Selector + Search */}
+        <div className="bg-navy p-4 rounded-xl border border-navy-light flex flex-col sm:flex-row gap-3 shadow-lg shadow-black/20">
+          {/* Season select */}
+          <div className="relative shrink-0">
+            <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400 pointer-events-none" />
+            <select
+              value={selectedSeasonId}
+              onChange={e => { setSelectedSeasonId(e.target.value); setExpandedTeamId(null); }}
+              className="pl-10 pr-8 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white font-bold focus:outline-none focus:border-neon text-sm appearance-none min-w-[200px]"
+            >
+              <option value="">-- Tất cả mùa giải --</option>
+              {seasons.map(s => {
+                const icon = { registration_open: '✅', ongoing: '🔴', finished: '✓', upcoming: '⏳', cancelled: '❌' }[s.status] ?? '';
+                return <option key={s.id} value={s.id}>{icon} {s.name}</option>;
+              })}
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+          {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -222,12 +299,12 @@ export default function ManageTeams() {
                   <th className="py-4 px-6 w-16 text-center">Logo</th>
                   <th className="py-4 px-6">Đội bóng</th>
                   <th className="py-4 px-6">HLV</th>
-                  <th className="py-4 px-6 text-center">Trạng thái</th>
+                  <th className="py-4 px-6 text-center">{effectiveSeasonId ? 'Trạng thái mùa giải' : 'Trạng thái'}</th>
                   <th className="py-4 px-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
+                {isLoading || loadingSeasonTeams ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-navy-light">
                       {[1, 2, 3, 4, 5].map(j => (
@@ -237,12 +314,12 @@ export default function ManageTeams() {
                       ))}
                     </tr>
                   ))
-                ) : fetchError ? (
+                ) : fetchError || seasonTeamsError ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-red-400">
                       <div className="flex flex-col items-center gap-3">
                         <AlertTriangle className="w-10 h-10 text-red-500/50" />
-                        <p className="font-semibold">{fetchError}</p>
+                        <p className="font-semibold">{fetchError || seasonTeamsError}</p>
                         <button
                           onClick={refetchTeams}
                           className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
@@ -250,22 +327,26 @@ export default function ManageTeams() {
                       </div>
                     </td>
                   </tr>
-                ) : teams.length === 0 ? (
+                ) : filteredTeams.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-gray-400">
                       <div className="flex flex-col items-center gap-3">
                         <Users className="w-10 h-10 text-gray-600" />
                         <p className="font-semibold">
-                          {searchTerm ? `Không tìm thấy đội nào cho "${searchTerm}"` : 'Chưa có đội bóng nào.'}
+                          {searchTerm
+                            ? `Không tìm thấy đội nào cho "${searchTerm}"`
+                            : effectiveSeasonId
+                              ? 'Không có đội nào đăng ký trong mùa giải này.'
+                              : 'Chưa có đội bóng nào.'}
                         </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  teams.map((team, idx) => (
-                    <React.Fragment key={team.id}>
+                  filteredTeams.map((team, idx) => (
+                    <Fragment key={team.id}>
                       {/* Team Row */}
-                      <tr className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
+                      <tr key={team.id} className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
                         <td className="py-4 px-6 text-center">
                           {team.logo ? (
                             <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover mx-auto border border-navy-light" />
@@ -281,13 +362,22 @@ export default function ManageTeams() {
                         </td>
                         <td className="py-4 px-6 text-gray-300 text-sm">{team.coach_name || '—'}</td>
                         <td className="py-4 px-6 text-center">
-                          <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                            team.is_active
-                              ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                              : 'bg-red-400/10 text-red-400 border-red-400/30'
-                          }`}>
-                            {team.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          {effectiveSeasonId ? (
+                            /* Khi lọc theo mùa: chỉ hiện badge Đã duyệt */
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
+                              <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                              Đã duyệt
+                            </span>
+                          ) : (
+                            /* Khi xem tất cả: hiện Active/Inactive */
+                            <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
+                              team.is_active
+                                ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                                : 'bg-red-400/10 text-red-400 border-red-400/30'
+                            }`}>
+                              {team.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-2">
@@ -401,7 +491,7 @@ export default function ManageTeams() {
                           </td>
                         </tr>
                       )}
-                    </React.Fragment>
+                    </Fragment>
                   ))
                 )}
               </tbody>

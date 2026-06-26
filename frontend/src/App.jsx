@@ -51,7 +51,7 @@ function App() {
      * - Nếu không có csrf_token trong localStorage → bỏ qua (chưa login)
      */
     initializeAuth();
-  }, []); // Chỉ chạy 1 lần khi app mount
+  }, [initializeAuth]); // initializeAuth là stable Zustand action, không thay đổi giữa các render
 
   return (
     <Router>

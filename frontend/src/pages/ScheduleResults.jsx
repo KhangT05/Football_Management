@@ -187,31 +187,35 @@ export default function ScheduleResults() {
   const teamMap  = useMemo(() => Object.fromEntries((teams  || []).map(t => [t.id, t])), [teams]);
   const venueMap = useMemo(() => Object.fromEntries((venues || []).map(v => [v.id, v])), [venues]);
 
-  // ── Season selection ───────────────────────────────────────
-  const autoSeasonId = useMemo(() => {
-    if (seasons.length === 0) return '';
-    const ongoing = seasons.find(s => s.status === 'ongoing');
-    const regOpen = seasons.find(s => s.status === 'registration_open');
-    return String((ongoing ?? regOpen ?? seasons[0]).id);
-  }, [seasons]);
-
-  const effectiveSeasonId = selectedSeasonId || autoSeasonId;
+  // Auto-select season khi load xong – dùng useEffect nhưng tránh setState
+  // đồng bộ bằng cách tính toán ngoài và chỉ gọi setter khi cần
+  useEffect(() => {
+    if (!selectedSeasonId && seasons.length > 0) {
+      const ongoing = seasons.find(s => s.status === 'ongoing');
+      const regOpen = seasons.find(s => s.status === 'registration_open');
+      const best = ongoing ?? regOpen ?? seasons[0];
+      const nextId = best ? String(best.id) : '';
+      if (nextId) {
+        // Dùng setTimeout để tránh setState đồng bộ trong effect body
+        const id = setTimeout(() => setSelectedSeasonId(nextId), 0);
+        return () => clearTimeout(id);
+      }
+    }
+  }, [seasons, selectedSeasonId]);
 
   // ── Matches raw + enriched ─────────────────────────────────
-  const rawMatches = effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : [];
-
   // Enrich: gắn home_team, away_team, venue từ store
-  const allMatches = useMemo(() =>
-    rawMatches.map(m => ({
+  const allMatches = useMemo(() => {
+    const rawMatches = selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [];
+    return rawMatches.map(m => ({
       ...m,
       home_team: teamMap[m.home_team_id] ?? null,
       away_team: teamMap[m.away_team_id] ?? null,
       venue:     venueMap[m.venue_id]    ?? null,
-    })),
-    [rawMatches, teamMap, venueMap],
-  );
+    }));
+  }, [selectedSeasonId, getMatchesFromCache, teamMap, venueMap]);
 
-  const isLoading = seasonsLoading || (effectiveSeasonId ? isSeasonLoading(Number(effectiveSeasonId)) : false);
+  const isLoading = seasonsLoading || (selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false);
 
   // ── Tabs ───────────────────────────────────────────────────
   const upcoming = useMemo(() =>
@@ -234,18 +238,17 @@ export default function ScheduleResults() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Khi season thay đổi: fetch lịch mới
   useEffect(() => {
-    if (effectiveSeasonId) {
-      fetchBySeason(Number(effectiveSeasonId));
-    }
-  }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId));
+  }, [selectedSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = () => {
-    if (effectiveSeasonId) fetchBySeason(Number(effectiveSeasonId), { force: true });
+    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });
   };
 
   const currentData = activeTab === 'upcoming' ? upcoming : results;
-  const selectedSeason = seasons.find(s => String(s.id) === String(effectiveSeasonId));
+  const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId));
 
   return (
     <div className="py-12 lg:py-16 bg-navy-dark min-h-screen relative overflow-hidden">
@@ -278,7 +281,7 @@ export default function ScheduleResults() {
               </label>
               <div className="relative w-full sm:w-64">
                 <select
-                  value={effectiveSeasonId}
+                  value={selectedSeasonId}
                   onChange={e => setSelectedSeasonId(e.target.value)}
                   disabled={seasonsLoading}
                   className="w-full pl-5 pr-10 py-3 bg-navy-dark/80 border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm appearance-none disabled:opacity-60 transition-all cursor-pointer shadow-inner"
@@ -340,7 +343,7 @@ export default function ScheduleResults() {
             )}
             
             <div className="flex items-center gap-4 ml-auto">
-              {!isLoading && effectiveSeasonId && allMatches.length > 0 && (
+              {!isLoading && selectedSeasonId && allMatches.length > 0 && (
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden sm:block">
                   Tổng <span className="text-white">{allMatches.length}</span> trận <span className="mx-1 text-gray-600">|</span> 
                   <span className="text-emerald-400 ml-1">{results.length} KQ</span> <span className="mx-1 text-gray-600">|</span> 
@@ -350,7 +353,7 @@ export default function ScheduleResults() {
               
               <button
                 onClick={handleRefresh}
-                disabled={isLoading || !effectiveSeasonId}
+                disabled={isLoading || !selectedSeasonId}
                 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-400 hover:text-white hover:bg-blue-500/10 px-3 py-1.5 rounded-lg border border-transparent hover:border-blue-500/30 transition-all disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -361,7 +364,7 @@ export default function ScheduleResults() {
 
           {/* Content */}
           <div className="space-y-6">
-            {!effectiveSeasonId && !seasonsLoading ? (
+            {!selectedSeasonId && !seasonsLoading ? (
               <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-500 animate-fade-in bg-navy/30 rounded-4xl border border-navy-light/50 border-dashed backdrop-blur-sm">
                 <div className="p-5 bg-navy border border-navy-light rounded-full shadow-lg">
                   <CalendarDays className="w-12 h-12 text-blue-400" />
