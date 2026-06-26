@@ -311,6 +311,21 @@ export type EnumGroupStatusWithAggregatesFilter<$PrismaModel = never> = {
     _min?: Prisma.NestedEnumGroupStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumGroupStatusFilter<$PrismaModel>;
 };
+export type EnumJerseyTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.JerseyType | Prisma.EnumJerseyTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.JerseyType[];
+    notIn?: $Enums.JerseyType[];
+    not?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel> | $Enums.JerseyType;
+};
+export type EnumJerseyTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.JerseyType | Prisma.EnumJerseyTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.JerseyType[];
+    notIn?: $Enums.JerseyType[];
+    not?: Prisma.NestedEnumJerseyTypeWithAggregatesFilter<$PrismaModel> | $Enums.JerseyType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel>;
+};
 export type EnumPlayerPositionFilter<$PrismaModel = never> = {
     equals?: $Enums.PlayerPosition | Prisma.EnumPlayerPositionFieldRefInput<$PrismaModel>;
     in?: $Enums.PlayerPosition[];
@@ -410,6 +425,36 @@ export type EnumSeasonTeamStatusWithAggregatesFilter<$PrismaModel = never> = {
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumSeasonTeamStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumSeasonTeamStatusFilter<$PrismaModel>;
+};
+export type EnumLineupTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.LineupType | Prisma.EnumLineupTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.LineupType[];
+    notIn?: $Enums.LineupType[];
+    not?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel> | $Enums.LineupType;
+};
+export type EnumMatchPlayerStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchPlayerStatus | Prisma.EnumMatchPlayerStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.MatchPlayerStatus[];
+    notIn?: $Enums.MatchPlayerStatus[];
+    not?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel> | $Enums.MatchPlayerStatus;
+};
+export type EnumLineupTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LineupType | Prisma.EnumLineupTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.LineupType[];
+    notIn?: $Enums.LineupType[];
+    not?: Prisma.NestedEnumLineupTypeWithAggregatesFilter<$PrismaModel> | $Enums.LineupType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel>;
+};
+export type EnumMatchPlayerStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchPlayerStatus | Prisma.EnumMatchPlayerStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.MatchPlayerStatus[];
+    notIn?: $Enums.MatchPlayerStatus[];
+    not?: Prisma.NestedEnumMatchPlayerStatusWithAggregatesFilter<$PrismaModel> | $Enums.MatchPlayerStatus;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel>;
 };
 export type EnumMatchStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchStatus | Prisma.EnumMatchStatusFieldRefInput<$PrismaModel>;
@@ -897,6 +942,21 @@ export type NestedEnumGroupStatusWithAggregatesFilter<$PrismaModel = never> = {
     _min?: Prisma.NestedEnumGroupStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumGroupStatusFilter<$PrismaModel>;
 };
+export type NestedEnumJerseyTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.JerseyType | Prisma.EnumJerseyTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.JerseyType[];
+    notIn?: $Enums.JerseyType[];
+    not?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel> | $Enums.JerseyType;
+};
+export type NestedEnumJerseyTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.JerseyType | Prisma.EnumJerseyTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.JerseyType[];
+    notIn?: $Enums.JerseyType[];
+    not?: Prisma.NestedEnumJerseyTypeWithAggregatesFilter<$PrismaModel> | $Enums.JerseyType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumJerseyTypeFilter<$PrismaModel>;
+};
 export type NestedEnumPlayerPositionFilter<$PrismaModel = never> = {
     equals?: $Enums.PlayerPosition | Prisma.EnumPlayerPositionFieldRefInput<$PrismaModel>;
     in?: $Enums.PlayerPosition[];
@@ -996,6 +1056,36 @@ export type NestedEnumSeasonTeamStatusWithAggregatesFilter<$PrismaModel = never>
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumSeasonTeamStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumSeasonTeamStatusFilter<$PrismaModel>;
+};
+export type NestedEnumLineupTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.LineupType | Prisma.EnumLineupTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.LineupType[];
+    notIn?: $Enums.LineupType[];
+    not?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel> | $Enums.LineupType;
+};
+export type NestedEnumMatchPlayerStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchPlayerStatus | Prisma.EnumMatchPlayerStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.MatchPlayerStatus[];
+    notIn?: $Enums.MatchPlayerStatus[];
+    not?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel> | $Enums.MatchPlayerStatus;
+};
+export type NestedEnumLineupTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LineupType | Prisma.EnumLineupTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.LineupType[];
+    notIn?: $Enums.LineupType[];
+    not?: Prisma.NestedEnumLineupTypeWithAggregatesFilter<$PrismaModel> | $Enums.LineupType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumLineupTypeFilter<$PrismaModel>;
+};
+export type NestedEnumMatchPlayerStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchPlayerStatus | Prisma.EnumMatchPlayerStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.MatchPlayerStatus[];
+    notIn?: $Enums.MatchPlayerStatus[];
+    not?: Prisma.NestedEnumMatchPlayerStatusWithAggregatesFilter<$PrismaModel> | $Enums.MatchPlayerStatus;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumMatchPlayerStatusFilter<$PrismaModel>;
 };
 export type NestedEnumMatchStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.MatchStatus | Prisma.EnumMatchStatusFieldRefInput<$PrismaModel>;

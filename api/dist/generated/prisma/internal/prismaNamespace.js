@@ -77,12 +77,15 @@ export const ModelName = {
     Season: 'Season',
     Group: 'Group',
     Team: 'Team',
+    TeamJersey: 'TeamJersey',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
     TeamLeader: 'TeamLeader',
     SeasonTeam: 'SeasonTeam',
-    Match: 'Match',
+    SeasonTeamJersey: 'SeasonTeamJersey',
     Venue: 'Venue',
+    MatchLineup: 'MatchLineup',
+    Match: 'Match',
     MatchEvent: 'MatchEvent',
     TeamStanding: 'TeamStanding',
     PlayerStatistic: 'PlayerStatistic',
@@ -223,6 +226,13 @@ export const TeamScalarFieldEnum = {
     deleted_at: 'deleted_at',
     user_id: 'user_id'
 };
+export const TeamJerseyScalarFieldEnum = {
+    id: 'id',
+    team_id: 'team_id',
+    type: 'type',
+    primary_color: 'primary_color',
+    secondary_color: 'secondary_color'
+};
 export const PlayerScalarFieldEnum = {
     id: 'id',
     date_of_birth: 'date_of_birth',
@@ -274,6 +284,37 @@ export const SeasonTeamScalarFieldEnum = {
     group_id: 'group_id',
     user_id: 'user_id'
 };
+export const SeasonTeamJerseyScalarFieldEnum = {
+    id: 'id',
+    season_team_id: 'season_team_id',
+    type: 'type',
+    primary_color: 'primary_color',
+    secondary_color: 'secondary_color',
+    image_url: 'image_url'
+};
+export const VenueScalarFieldEnum = {
+    id: 'id',
+    name: 'name',
+    address: 'address',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+    deleted_at: 'deleted_at'
+};
+export const MatchLineupScalarFieldEnum = {
+    id: 'id',
+    match_id: 'match_id',
+    team_id: 'team_id',
+    player_id: 'player_id',
+    jersey_number: 'jersey_number',
+    position: 'position',
+    lineup_type: 'lineup_type',
+    is_captain: 'is_captain',
+    minute_in: 'minute_in',
+    minute_out: 'minute_out',
+    status: 'status',
+    created_at: 'created_at'
+};
 export const MatchScalarFieldEnum = {
     id: 'id',
     phase_id: 'phase_id',
@@ -308,15 +349,6 @@ export const MatchScalarFieldEnum = {
     venue_id: 'venue_id',
     is_published: 'is_published',
     referee: 'referee'
-};
-export const VenueScalarFieldEnum = {
-    id: 'id',
-    name: 'name',
-    address: 'address',
-    is_active: 'is_active',
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-    deleted_at: 'deleted_at'
 };
 export const MatchEventScalarFieldEnum = {
     id: 'id',
@@ -369,10 +401,6 @@ export const MatchResultScalarFieldEnum = {
     id: 'id',
     match_id: 'match_id',
     winner_team_id: 'winner_team_id',
-    home_score: 'home_score',
-    away_score: 'away_score',
-    home_half_time_score: 'home_half_time_score',
-    away_half_time_score: 'away_half_time_score',
     home_extra_time_score: 'home_extra_time_score',
     away_extra_time_score: 'away_extra_time_score',
     home_penalty_score: 'home_penalty_score',
@@ -503,18 +531,27 @@ export const TeamOrderByRelevanceFieldEnum = {
     logo: 'logo',
     description: 'description'
 };
+export const TeamJerseyOrderByRelevanceFieldEnum = {
+    primary_color: 'primary_color',
+    secondary_color: 'secondary_color'
+};
 export const PlayerOrderByRelevanceFieldEnum = {
     nationality: 'nationality',
     avatar: 'avatar'
+};
+export const SeasonTeamJerseyOrderByRelevanceFieldEnum = {
+    primary_color: 'primary_color',
+    secondary_color: 'secondary_color',
+    image_url: 'image_url'
+};
+export const VenueOrderByRelevanceFieldEnum = {
+    name: 'name',
+    address: 'address'
 };
 export const MatchOrderByRelevanceFieldEnum = {
     round: 'round',
     postponed_reason: 'postponed_reason',
     referee: 'referee'
-};
-export const VenueOrderByRelevanceFieldEnum = {
-    name: 'name',
-    address: 'address'
 };
 export const MatchEventOrderByRelevanceFieldEnum = {
     note: 'note'

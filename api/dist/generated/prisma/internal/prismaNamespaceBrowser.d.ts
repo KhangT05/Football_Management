@@ -36,12 +36,15 @@ export declare const ModelName: {
     readonly Season: "Season";
     readonly Group: "Group";
     readonly Team: "Team";
+    readonly TeamJersey: "TeamJersey";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
     readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
-    readonly Match: "Match";
+    readonly SeasonTeamJersey: "SeasonTeamJersey";
     readonly Venue: "Venue";
+    readonly MatchLineup: "MatchLineup";
+    readonly Match: "Match";
     readonly MatchEvent: "MatchEvent";
     readonly TeamStanding: "TeamStanding";
     readonly PlayerStatistic: "PlayerStatistic";
@@ -191,6 +194,14 @@ export declare const TeamScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
+export declare const TeamJerseyScalarFieldEnum: {
+    readonly id: "id";
+    readonly team_id: "team_id";
+    readonly type: "type";
+    readonly primary_color: "primary_color";
+    readonly secondary_color: "secondary_color";
+};
+export type TeamJerseyScalarFieldEnum = (typeof TeamJerseyScalarFieldEnum)[keyof typeof TeamJerseyScalarFieldEnum];
 export declare const PlayerScalarFieldEnum: {
     readonly id: "id";
     readonly date_of_birth: "date_of_birth";
@@ -246,6 +257,40 @@ export declare const SeasonTeamScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type SeasonTeamScalarFieldEnum = (typeof SeasonTeamScalarFieldEnum)[keyof typeof SeasonTeamScalarFieldEnum];
+export declare const SeasonTeamJerseyScalarFieldEnum: {
+    readonly id: "id";
+    readonly season_team_id: "season_team_id";
+    readonly type: "type";
+    readonly primary_color: "primary_color";
+    readonly secondary_color: "secondary_color";
+    readonly image_url: "image_url";
+};
+export type SeasonTeamJerseyScalarFieldEnum = (typeof SeasonTeamJerseyScalarFieldEnum)[keyof typeof SeasonTeamJerseyScalarFieldEnum];
+export declare const VenueScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly address: "address";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+    readonly updated_at: "updated_at";
+    readonly deleted_at: "deleted_at";
+};
+export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
+export declare const MatchLineupScalarFieldEnum: {
+    readonly id: "id";
+    readonly match_id: "match_id";
+    readonly team_id: "team_id";
+    readonly player_id: "player_id";
+    readonly jersey_number: "jersey_number";
+    readonly position: "position";
+    readonly lineup_type: "lineup_type";
+    readonly is_captain: "is_captain";
+    readonly minute_in: "minute_in";
+    readonly minute_out: "minute_out";
+    readonly status: "status";
+    readonly created_at: "created_at";
+};
+export type MatchLineupScalarFieldEnum = (typeof MatchLineupScalarFieldEnum)[keyof typeof MatchLineupScalarFieldEnum];
 export declare const MatchScalarFieldEnum: {
     readonly id: "id";
     readonly phase_id: "phase_id";
@@ -282,16 +327,6 @@ export declare const MatchScalarFieldEnum: {
     readonly referee: "referee";
 };
 export type MatchScalarFieldEnum = (typeof MatchScalarFieldEnum)[keyof typeof MatchScalarFieldEnum];
-export declare const VenueScalarFieldEnum: {
-    readonly id: "id";
-    readonly name: "name";
-    readonly address: "address";
-    readonly is_active: "is_active";
-    readonly created_at: "created_at";
-    readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
-};
-export type VenueScalarFieldEnum = (typeof VenueScalarFieldEnum)[keyof typeof VenueScalarFieldEnum];
 export declare const MatchEventScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
@@ -346,10 +381,6 @@ export declare const MatchResultScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
     readonly winner_team_id: "winner_team_id";
-    readonly home_score: "home_score";
-    readonly away_score: "away_score";
-    readonly home_half_time_score: "home_half_time_score";
-    readonly away_half_time_score: "away_half_time_score";
     readonly home_extra_time_score: "home_extra_time_score";
     readonly away_extra_time_score: "away_extra_time_score";
     readonly home_penalty_score: "home_penalty_score";
@@ -498,22 +529,33 @@ export declare const TeamOrderByRelevanceFieldEnum: {
     readonly description: "description";
 };
 export type TeamOrderByRelevanceFieldEnum = (typeof TeamOrderByRelevanceFieldEnum)[keyof typeof TeamOrderByRelevanceFieldEnum];
+export declare const TeamJerseyOrderByRelevanceFieldEnum: {
+    readonly primary_color: "primary_color";
+    readonly secondary_color: "secondary_color";
+};
+export type TeamJerseyOrderByRelevanceFieldEnum = (typeof TeamJerseyOrderByRelevanceFieldEnum)[keyof typeof TeamJerseyOrderByRelevanceFieldEnum];
 export declare const PlayerOrderByRelevanceFieldEnum: {
     readonly nationality: "nationality";
     readonly avatar: "avatar";
 };
 export type PlayerOrderByRelevanceFieldEnum = (typeof PlayerOrderByRelevanceFieldEnum)[keyof typeof PlayerOrderByRelevanceFieldEnum];
+export declare const SeasonTeamJerseyOrderByRelevanceFieldEnum: {
+    readonly primary_color: "primary_color";
+    readonly secondary_color: "secondary_color";
+    readonly image_url: "image_url";
+};
+export type SeasonTeamJerseyOrderByRelevanceFieldEnum = (typeof SeasonTeamJerseyOrderByRelevanceFieldEnum)[keyof typeof SeasonTeamJerseyOrderByRelevanceFieldEnum];
+export declare const VenueOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+    readonly address: "address";
+};
+export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
     readonly postponed_reason: "postponed_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];
-export declare const VenueOrderByRelevanceFieldEnum: {
-    readonly name: "name";
-    readonly address: "address";
-};
-export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldEnum)[keyof typeof VenueOrderByRelevanceFieldEnum];
 export declare const MatchEventOrderByRelevanceFieldEnum: {
     readonly note: "note";
 };

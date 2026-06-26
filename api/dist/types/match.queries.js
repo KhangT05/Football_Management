@@ -14,10 +14,6 @@ const matchResultSelect = {
     select: {
         id: true,
         winner_team_id: true,
-        home_score: true,
-        away_score: true,
-        home_half_time_score: true,
-        away_half_time_score: true,
         home_extra_time_score: true,
         away_extra_time_score: true,
         home_penalty_score: true,
@@ -142,7 +138,7 @@ export const matchForForfeitSelect = {
 };
 // ── 6. Admin / management ─────────────────────────────────────
 // Admin panel: full audit fields + appeal info + article links
-export const matchAdminSelect = {
+export const Select = {
     ...matchDetailSelect,
     is_active: true,
     created_at: true,

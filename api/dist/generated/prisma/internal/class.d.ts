@@ -228,6 +228,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.teamJersey`: Exposes CRUD operations for the **TeamJersey** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more TeamJerseys
+      * const teamJerseys = await prisma.teamJersey.findMany()
+      * ```
+      */
+    get teamJersey(): Prisma.TeamJerseyDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.player`: Exposes CRUD operations for the **Player** model.
       * Example usage:
       * ```ts
@@ -272,14 +283,14 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.match`: Exposes CRUD operations for the **Match** model.
+     * `prisma.seasonTeamJersey`: Exposes CRUD operations for the **SeasonTeamJersey** model.
       * Example usage:
       * ```ts
-      * // Fetch zero or more Matches
-      * const matches = await prisma.match.findMany()
+      * // Fetch zero or more SeasonTeamJerseys
+      * const seasonTeamJerseys = await prisma.seasonTeamJersey.findMany()
       * ```
       */
-    get match(): Prisma.MatchDelegate<ExtArgs, {
+    get seasonTeamJersey(): Prisma.SeasonTeamJerseyDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**
@@ -291,6 +302,28 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get venue(): Prisma.VenueDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.matchLineup`: Exposes CRUD operations for the **MatchLineup** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more MatchLineups
+      * const matchLineups = await prisma.matchLineup.findMany()
+      * ```
+      */
+    get matchLineup(): Prisma.MatchLineupDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.match`: Exposes CRUD operations for the **Match** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Matches
+      * const matches = await prisma.match.findMany()
+      * ```
+      */
+    get match(): Prisma.MatchDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

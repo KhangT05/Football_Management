@@ -37,6 +37,12 @@ export const GroupStatus = {
     SCHEDULED: 'SCHEDULED',
     SCHEDULE_FAILED: 'SCHEDULE_FAILED'
 };
+export const JerseyType = {
+    home: 'home',
+    away: 'away',
+    third: 'third',
+    goalkeeper: 'goalkeeper'
+};
 export const PlayerPosition = {
     goalkeeper: 'goalkeeper',
     defender: 'defender',
@@ -64,6 +70,16 @@ export const SeasonTeamStatus = {
     active: 'active',
     eliminated: 'eliminated',
     withdrawn: 'withdrawn'
+};
+export const LineupType = {
+    starter: 'starter',
+    substitute: 'substitute'
+};
+export const MatchPlayerStatus = {
+    available: 'available',
+    injured: 'injured',
+    suspended: 'suspended',
+    absent: 'absent'
 };
 export const MatchStatus = {
     scheduled: 'scheduled',
