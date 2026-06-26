@@ -9,17 +9,13 @@ import {
     SuccessResponse,
     Delete,
     Security,
+    Query,
 } from "tsoa";
-
-import {
-    MatchLifecycleService,
-    AddEventInput,
-    EditEventInput,
-    EditScoreInput,
-} from "../services/match.service.js";
+import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
+import { AddEventInput, EditEventInput, EditScoreInput } from "../types/match.type.js";
 
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/*
@@ -35,12 +31,11 @@ import * as matchSchema from "../dtos/match.schema.js";
 //
 // Body types: dùng Zod-inferred DTOs từ match.schema.ts thay vì inline interface.
 // ForfeitMatchDto thay thế inline ForfeitMatchBody — đã có venueIds/matchTimes optional.
-
 @Route("matches")
 @Tags("Match")
 export class MatchController extends Controller {
     constructor(
-        private readonly lifecycleService: MatchLifecycleService
+        private readonly lifecycleService: MatchLifecycleService,
     ) {
         super();
     }
@@ -104,8 +99,7 @@ export class MatchController extends Controller {
         this.setStatus(204);
         // FinalizeMatchDto không có venueIds/matchTimes — finalize không advance bracket.
         // scheduleOptions truyền empty vì knockout guard xảy ra tại confirmOfficial.
-        const { ...finalizeInput } = body;
-        return this.lifecycleService.finalizeMatch(id, finalizeInput, {});
+        return this.lifecycleService.finalizeMatch(id, body, {});
     }
 
     /**
@@ -247,6 +241,8 @@ export class MatchController extends Controller {
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
      * Tự recompute MatchResult sau khi xóa.
+     * scheduleOptions truyền qua query params vì DELETE không nên có body.
+     * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
      */
     @Security("jwt", ["admin"])
     @Delete("{id}/correction/events/{eventId}")
@@ -254,10 +250,16 @@ export class MatchController extends Controller {
     async deleteEvent(
         @Path() id: number,
         @Path() eventId: number,
-        @Body() body: matchSchema.ConfirmOfficialDto,
+        @Query() venueIds?: string,
+        @Query() matchTimes?: string,
     ): Promise<void> {
         this.setStatus(204);
-        return this.lifecycleService.deleteEvent(id, eventId, body);
+        // Parse CSV query params → typed scheduleOptions
+        const scheduleOptions: matchSchema.ConfirmOfficialDto = {
+            venueIds: venueIds ? venueIds.split(",").map(Number) : undefined,
+            matchTimes: matchTimes ? matchTimes.split(",") : undefined,
+        };
+        return this.lifecycleService.deleteEvent(id, eventId, scheduleOptions);
     }
 
     /**

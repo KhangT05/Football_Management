@@ -19,6 +19,7 @@ import {
 import { OptionalScheduleOptions, ScheduleOptions } from '../types/schedule.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
 import { KNOCKOUT_PHASE_TYPES } from '../dtos/knockout.schema.js';
+import { buildRound1Pairings, nextPowerOf2 } from '../helper/match.helper.js';
 
 export class KnockoutService extends ScheduleEngine {
 
@@ -43,7 +44,7 @@ export class KnockoutService extends ScheduleEngine {
         if (options.matchTimes.length === 0)
             throw createAppError('VALIDATION_ERROR', 'matchTimes không được rỗng');
 
-        const bracketSize = this.nextPowerOf2(options.seededTeamIds.length);
+        const bracketSize = nextPowerOf2(options.seededTeamIds.length);
         const byeCount = bracketSize - options.seededTeamIds.length;
         const totalRounds = Math.log2(bracketSize);
 
@@ -54,7 +55,7 @@ export class KnockoutService extends ScheduleEngine {
             ...options.seededTeamIds,
             ...Array<null>(byeCount).fill(null),
         ];
-        const round1Pairings = this.buildRound1Pairings(seeding);
+        const round1Pairings = buildRound1Pairings(seeding);
 
         const byeSlotNumbers = new Set(
             round1Pairings
@@ -222,6 +223,13 @@ export class KnockoutService extends ScheduleEngine {
     // Tạo match tiếp theo nếu cả 2 slot đã có winner.
     //
     // Two-legged: chỉ advance sau khi leg 2 finished.
+    //
+    // Leg 2 slot lookup strategy:
+    //   Leg 1 match → linked trực tiếp qua bracketSlot.match_id
+    //   Leg 2 match → KHÔNG link slot (1 slot chỉ chứa 1 match_id).
+    //   Khi leg 2 finish, tìm leg 1 match của cùng pairing qua phase_id + home/away đảo.
+    //   Sau đó tìm slot qua leg 1 match_id — tránh lookup bằng seeded_team_ids
+    //   vì seeded IDs có thể null nếu slot chưa fully propagated.
 
     async advanceWinner(
         phaseId: number,
@@ -246,7 +254,8 @@ export class KnockoutService extends ScheduleEngine {
             });
 
             if (!slot) {
-                // Không tìm được qua match_id — có thể là leg 2 (leg 2 không link slot)
+                // Không tìm được qua match_id trực tiếp.
+                // Có thể là leg 2 — bracketSlot chỉ link leg 1 match.
                 const match = await tx.match.findUnique({
                     where: { id: input.matchId },
                     select: { leg: true, home_team_id: true, away_team_id: true, phase_id: true },
@@ -257,21 +266,48 @@ export class KnockoutService extends ScheduleEngine {
                 if (match.leg !== 2)
                     throw createAppError('NOT_FOUND', `Match ${input.matchId} không link với BracketSlot`);
 
-                // Leg 2: tìm slot của leg 1 (home/away đảo ngược)
-                slot = await tx.bracketSlot.findFirst({
+                // Leg 2: home/away đảo so với leg 1.
+                // Tìm leg 1 match của cùng pairing → sau đó tìm slot qua match_id của leg 1.
+                //
+                // KHÔNG tìm slot bằng seeded_home_team_id / seeded_away_team_id vì:
+                //   - seeded IDs có thể null nếu slot chưa nhận winner propagation đầy đủ
+                //   - seeded IDs update asynchronous sau khi round trước kết thúc
+                //   - lookup bằng match_id của leg 1 stable hơn và không phụ thuộc vào
+                //     thứ tự propagation
+
+                const leg1Match = await tx.match.findFirst({
                     where: {
                         phase_id: phaseId,
-                        seeded_home_team_id: match.away_team_id,
-                        seeded_away_team_id: match.home_team_id,
+                        leg: 1,
+                        // Leg 1: home = leg2.away, away = leg2.home
+                        home_team_id: match.away_team_id,
+                        away_team_id: match.home_team_id,
+                        status: MatchStatus.finished,
                     },
+                    select: { id: true },
+                });
+
+                if (!leg1Match)
+                    throw createAppError(
+                        'NOT_FOUND',
+                        `Không tìm thấy leg 1 match đã finished cho pairing ` +
+                        `(home=${match.away_team_id}, away=${match.home_team_id}) trong phase ${phaseId}`,
+                    );
+
+                slot = await tx.bracketSlot.findFirst({
+                    where: { match_id: leg1Match.id },
                     select: slotWithParentLinksSelect,
                 });
 
                 if (!slot)
-                    throw createAppError('NOT_FOUND', 'Không tìm thấy BracketSlot cho two-legged match');
+                    throw createAppError(
+                        'NOT_FOUND',
+                        `Không tìm thấy BracketSlot cho leg 1 match ${leg1Match.id}`,
+                    );
 
             } else if (legs === 2) {
                 // Leg 1 vừa finish — kiểm tra leg 2 còn pending không
+                // Chưa xong leg 2 → chưa advance, đợi leg 2 trigger advanceWinner
                 const leg2Pending = await tx.match.findFirst({
                     where: {
                         phase_id: phaseId,
@@ -635,23 +671,5 @@ export class KnockoutService extends ScheduleEngine {
                 WHERE id IN (${Prisma.join(ids)})
             `;
         }
-    }
-
-    // → helpers/bracket.helper.ts
-    private nextPowerOf2(n: number): number {
-        let p = 1;
-        while (p < n) p *= 2;
-        return p;
-    }
-
-    // → helpers/bracket.helper.ts
-    private buildRound1Pairings(
-        seeding: (number | null)[],
-    ): { home: number | null; away: number | null }[] {
-        const n = seeding.length;
-        return Array.from({ length: n / 2 }, (_, i) => ({
-            home: seeding[i] ?? null,
-            away: seeding[n - 1 - i] ?? null,
-        }));
     }
 }

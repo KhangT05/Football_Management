@@ -42,7 +42,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [AuthController, () => new AuthController(new AuthService(prisma))],
     [VenueController, () => new VenueController(new VenueService(prisma))],
     [TournamentController, () => new TournamentController(new TournamentService(prisma))],
-    [SeasonController, () => new SeasonController(new SeasonService(prisma))],
+    [SeasonController, () => new SeasonController(new SeasonService(prisma), standingsService)],
     [TournamentRuleController, () => new TournamentRuleController(new TournamentRuleService(prisma))],
     [TeamController, () => new TeamController(new TeamService(prisma))],
     [PlayerController, () => new PlayerController(new PlayerService(prisma))],

@@ -1,4 +1,4 @@
-import { MatchStatus, PhaseFormat, Prisma } from "../generated/prisma/client.js";
+import { MatchEventType, MatchStatus, PhaseFormat, Prisma } from "../generated/prisma/client.js";
 import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
 import { QueryRequest } from "../types/queryable.type.js";
 export declare function isKnockoutFormat(format: PhaseFormat): boolean;
@@ -91,4 +91,19 @@ export declare function buildPlayerStatsQueryRequest(query: Record<string, any>)
 export declare function toMatchResultUpdateOnUphold(note?: string): Prisma.MatchResultUpdateInput;
 export declare function toMatchResultUpdateOnOverturn(newHomeScore: number, newAwayScore: number, newWinnerTeamId: number | null, note?: string): Prisma.MatchResultUpdateInput;
 export declare function toMatchUpdateOnOverturn(newHomeScore: number, newAwayScore: number): Prisma.MatchUpdateInput;
+export declare function nextPowerOf2(n: number): number;
+export declare function buildRound1Pairings(seeding: (number | null)[]): {
+    home: number | null;
+    away: number | null;
+}[];
+/**
+ * Xác định bàn thắng/trừ điểm có tính cho home hay không.
+ * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
+ * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
+ *
+ * own_goal:         team đá phản lưới → credit cho đối thủ
+ * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
+ * goal/penalty_scored: team ghi → credit cho chính mình
+ */
+export declare function isCreditedToHomeTeam(homeTeamId: number, eventTeamId: number, type: MatchEventType, wasOwnGoal?: boolean): boolean;
 //# sourceMappingURL=match.helper.d.ts.map

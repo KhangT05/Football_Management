@@ -12,9 +12,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Post, Body, Security, Query, } from "tsoa";
 import { MatchResultService } from "../services/matchresult.service.js";
-import { StandingsService } from "../services/standing.service.js";
 import * as matchResultType from "../types/matchResult.type.js";
-import { buildMatchEventsQueryRequest, buildPlayerStatsQueryRequest, buildStandingsQueryRequest } from "../helper/match.helper.js";
+import { buildMatchEventsQueryRequest } from "../helper/match.helper.js";
 let MatchResultController = class MatchResultController extends Controller {
     matchResultService;
     constructor(matchResultService) {
@@ -111,100 +110,4 @@ MatchResultController = __decorate([
     __metadata("design:paramtypes", [MatchResultService])
 ], MatchResultController);
 export { MatchResultController };
-// ─── Season-level controllers ─────────────────────────────────────────────────
-let SeasonStatsController = class SeasonStatsController extends Controller {
-    standingsService;
-    constructor(standingsService) {
-        super();
-        this.standingsService = standingsService;
-    }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — STANDINGS (paginated)
-    // ═══════════════════════════════════════════════════════════════════════════
-    /**
-     * Bảng xếp hạng của season.
-     *
-     * Query params:
-     *   ?groupId=1 (filter by group)
-     *   ?page=1&per_page=20 (pagination)
-     *   ?sort=position&direction=asc (sort)
-     */
-    async getStandings(seasonId, groupId, page, per_page, sort, direction) {
-        const req = buildStandingsQueryRequest({
-            groupId,
-            page,
-            per_page,
-            sort,
-            direction,
-        });
-        const result = await this.standingsService.listStandings(seasonId, req);
-        return result;
-    }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — PLAYER STATS (paginated)
-    // ═══════════════════════════════════════════════════════════════════════════
-    /**
-     * Thống kê cầu thủ trong season.
-     *
-     * Query params:
-     *   ?teamId=1 (filter by team)
-     *   ?page=1&per_page=20
-     *   ?sort=goals_scored&direction=desc
-     */
-    async getPlayerStats(seasonId, teamId, page, per_page, sort, direction) {
-        const req = buildPlayerStatsQueryRequest({
-            teamId,
-            page,
-            per_page,
-            sort,
-            direction,
-        });
-        const result = await this.standingsService.listPlayerStats(seasonId, req);
-        return result;
-    }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — SUSPENDED PLAYERS (public)
-    // ═══════════════════════════════════════════════════════════════════════════
-    async getSuspendedPlayers(seasonId) {
-        const players = await this.standingsService.getSuspendedPlayers(seasonId);
-        return players;
-    }
-};
-__decorate([
-    Get("{seasonId}/standings"),
-    __param(0, Path()),
-    __param(1, Query()),
-    __param(2, Query()),
-    __param(3, Query()),
-    __param(4, Query()),
-    __param(5, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String]),
-    __metadata("design:returntype", Promise)
-], SeasonStatsController.prototype, "getStandings", null);
-__decorate([
-    Get("{seasonId}/player-stats"),
-    __param(0, Path()),
-    __param(1, Query()),
-    __param(2, Query()),
-    __param(3, Query()),
-    __param(4, Query()),
-    __param(5, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String]),
-    __metadata("design:returntype", Promise)
-], SeasonStatsController.prototype, "getPlayerStats", null);
-__decorate([
-    Get("{seasonId}/suspended-players"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], SeasonStatsController.prototype, "getSuspendedPlayers", null);
-SeasonStatsController = __decorate([
-    Route("seasons"),
-    Tags("Standings & Player Stats"),
-    __metadata("design:paramtypes", [StandingsService])
-], SeasonStatsController);
-export { SeasonStatsController };
 //# sourceMappingURL=matchResult.controller.js.map

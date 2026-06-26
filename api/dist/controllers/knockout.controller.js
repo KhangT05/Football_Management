@@ -20,14 +20,6 @@ let KnockoutController = class KnockoutController extends Controller {
         this.service = service;
     }
     /**
-        * GET /phases/{phaseId}/bracket
-        */
-    // @Get("{phaseId}/bracket")
-    // async getBracket(@Path() phaseId: number) {
-    //     const bracket = await this.service.getBracket(phaseId);
-    //     return bracket;
-    // }
-    /**
      * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
      * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
      * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)
@@ -47,13 +39,20 @@ let KnockoutController = class KnockoutController extends Controller {
      * resource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.
      * venueIds/matchTimes trong body là ScheduleOptions cho match round sau
      * vừa được tạo ra (nếu advance làm xong 1 cặp slot).
+     *
+     * Service return newMatchId (singular) — leg 1 match ID của round tiếp theo.
+     * Leg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần
+     * anchor ID để poll/redirect; leg 2 visible qua GET bracket.
      */
     async advanceWinner(seasonId, phaseId, body) {
         const { venueIds, matchTimes, ...input } = knockoutSchema.advanceWinnerRequestSchema.parse(body);
         return this.service.advanceWinner(phaseId, seasonId, input, { venueIds, matchTimes });
     }
-    // Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule
-    // gốc (GET không bắt jwt admin trong ví dụ bạn gửi).
+    /**
+     * Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule.
+     * Trả toàn bộ slot tree; client tự build visual bracket từ
+     * sourceASlotId/sourceBSlotId links.
+     */
     async getBracket(phaseId) {
         return this.service.getBracket(phaseId);
     }
@@ -72,6 +71,7 @@ __decorate([
 __decorate([
     Security('jwt', ['admin']),
     Post('seasons/{seasonId}/phases/{phaseId}/knockout/advance'),
+    SuccessResponse(200, 'OK'),
     __param(0, Path()),
     __param(1, Path()),
     __param(2, Body()),

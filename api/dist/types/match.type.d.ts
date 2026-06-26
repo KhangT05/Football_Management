@@ -36,14 +36,17 @@ export interface ResolveAppealInput {
 export declare const PERIOD_TRANSITIONS: Record<MatchPeriod, MatchPeriod[]>;
 export declare const EXTRA_TIME_PERIODS: MatchPeriod[];
 export declare const SCORE_DELTA_BY_TYPE: Partial<Record<MatchEventType, 1 | -1>>;
-/**
- * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
- * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
- *
- * own_goal:         team đá phản lưới → credit cho đối thủ
- * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
- * goal/penalty_scored: team ghi → credit cho chính mình
- */
-export declare function isCreditedToHomeTeam(homeTeamId: number, eventTeamId: number, type: MatchEventType, wasOwnGoal?: boolean): boolean;
+export type EditEventInput = Partial<RecordEventInput>;
+export type EditScoreInput = {
+    homeScore: number;
+    awayScore: number;
+    homePenalty?: number;
+    awayPenalty?: number;
+    homeExtraTime?: number;
+    awayExtraTime?: number;
+    homeHalfTime?: number;
+    awayHalfTime?: number;
+    resultType?: MatchResultType;
+    notes?: string;
+};
 //# sourceMappingURL=match.type.d.ts.map

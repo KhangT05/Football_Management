@@ -26,23 +26,4 @@ export const SCORE_DELTA_BY_TYPE = {
     [MatchEventType.penalty_scored]: 1,
     [MatchEventType.goal_disallowed]: -1,
 };
-// ─── Pure helper — credit direction ──────────────────────────────────────────
-/**
- * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
- * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
- *
- * own_goal:         team đá phản lưới → credit cho đối thủ
- * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
- * goal/penalty_scored: team ghi → credit cho chính mình
- */
-export function isCreditedToHomeTeam(homeTeamId, eventTeamId, type, wasOwnGoal) {
-    if (type === MatchEventType.own_goal) {
-        return eventTeamId !== homeTeamId; // team đá phản → đối thủ được điểm
-    }
-    if (type === MatchEventType.goal_disallowed && wasOwnGoal) {
-        return eventTeamId !== homeTeamId; // huỷ own_goal → trừ của đối thủ
-    }
-    return eventTeamId === homeTeamId;
-}
 //# sourceMappingURL=match.type.js.map

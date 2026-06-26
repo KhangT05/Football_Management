@@ -12,7 +12,6 @@ const STATUS_TRANSITIONS: Partial<Record<SeasonStatus, SeasonStatus[]>> = {
 
 export class SeasonService {
     private readonly query: Queryable<Season>;
-
     constructor(private readonly prisma: PrismaClient) {
         this.query = new Queryable<Season>(prisma.season, {
             searchFields: ["name", "description"],
