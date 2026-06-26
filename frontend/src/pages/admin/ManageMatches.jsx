@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   CalendarDays, Clock, MapPin, RefreshCw,
-  Construction, ChevronDown, AlertTriangle, RotateCcw,
+  ChevronDown, AlertTriangle, RotateCcw,
   Edit, X, Save, Loader2, Play, Settings, Dices,
-  CheckCircle2
+  CheckCircle2, Filter, Search
 } from 'lucide-react';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -13,31 +13,40 @@ import useVenueStore from '../../store/venueStore';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import { matchApi, seasonTeamApi } from '../../api';
+import { RealtimeBadge } from '../../hooks';
 
 // ─── Status Badge ────────────────────────────────────────
 function StatusBadge({ status }) {
   const map = {
-    scheduled:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
-    ongoing:    'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse',
-    finished:   'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
-    cancelled:  'bg-gray-400/10 text-gray-400 border-gray-400/30',
-    forfeited:  'bg-orange-400/10 text-orange-400 border-orange-400/30',
+    scheduled:  { cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30', label: 'Sắp diễn ra' },
+    ongoing:    { cls: 'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse', label: '🔴 Đang diễn ra' },
+    finished:   { cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30', label: 'Đã kết thúc' },
+    cancelled:  { cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30', label: 'Đã hủy' },
+    forfeited:  { cls: 'bg-orange-400/10 text-orange-400 border-orange-400/30', label: 'Xử thua' },
   };
-  const labels = {
-    scheduled: 'Sắp diễn ra',
-    ongoing:   '🔴 Đang diễn ra',
-    finished:  'Đã kết thúc',
-    cancelled: 'Đã hủy',
-    forfeited: 'Xử thua',
-  };
+  const s = map[status] ?? map.scheduled;
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${map[status] || map.scheduled}`}>
-      {labels[status] || status}
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${s.cls}`}>
+      {s.label}
     </span>
   );
 }
 
-const INPUT = 'w-full px-4 py-2.5 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
+const INPUT = 'w-full px-4 py-2.5 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon/20 text-sm transition-all';
+
+// Button style helpers
+const BTN_PRIMARY   = 'px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/25 hover:shadow-emerald-500/35 flex items-center gap-2 transition-all active:scale-[.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none';
+const BTN_SECONDARY = 'px-5 py-2.5 rounded-xl font-bold text-gray-300 bg-navy border border-navy-light hover:bg-navy-light hover:text-white shadow-md shadow-black/20 hover:shadow-black/30 flex items-center gap-2 transition-all active:scale-[.98]';
+const BTN_ICON      = 'p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 shadow-md shadow-black/20 transition-all active:scale-[.98] disabled:opacity-50';
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'scheduled',  label: '📅 Sắp diễn ra' },
+  { value: 'ongoing',    label: '🔴 Đang diễn ra' },
+  { value: 'finished',   label: '✅ Đã kết thúc' },
+  { value: 'cancelled',  label: '❌ Đã hủy' },
+  { value: 'forfeited',  label: '⚠️ Xử thua' },
+];
 
 export default function ManageMatches() {
   const toast = useToastStore();
@@ -53,19 +62,21 @@ export default function ManageMatches() {
 
   // ── Local state ───────────────────────────────────────────
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [rescheduleModal, setRescheduleModal] = useState(null);
-  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '15:30', venue_id: '' });
-  const [isSaving, setIsSaving] = useState(false);
+  const [filterStatus, setFilterStatus]         = useState('');
+  const [filterRound, setFilterRound]           = useState('');
+  const [rescheduleModal, setRescheduleModal]   = useState(null);
+  const [rescheduleForm, setRescheduleForm]     = useState({ date: '', time: '15:30', venue_id: '' });
+  const [isSaving, setIsSaving]                 = useState(false);
 
   // ── Generate Schedule State ────────────────────────────────
-  const [genModal, setGenModal] = useState(false);
-  const [genLoading, setGenLoading] = useState(false);
-  const [genTeamCount, setGenTeamCount] = useState(null); // số đội active trong mùa giải
+  const [genModal, setGenModal]         = useState(false);
+  const [genLoading, setGenLoading]     = useState(false);
+  const [genTeamCount, setGenTeamCount] = useState(null);
   const [genForm, setGenForm] = useState({
     desiredGroupCount: 2,
     minGroupSize: 4,
     maxGroupSize: 5,
-    venueIds: [], // array of venue ids
+    venueIds: [],
     startTime: '08:00',
     matchDuration: 90,
     breakTime: 30,
@@ -74,15 +85,42 @@ export default function ManageMatches() {
     minRestDaysPerTeam: 2
   });
 
-  // Không auto-select — bảng chỉ hiện khi user chủ động chọn mùa giải
+  const selectedSeason = useMemo(
+    () => seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null,
+    [seasons, selectedSeasonId],
+  );
 
-  const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
+  // useMemo để reference ổn định, tránh các useMemo phụ thuộc vào rawMatches
+  // re-compute mỗi render do conditional expression
+  const rawMatches = useMemo(
+    () => selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [],
+    [selectedSeasonId, getMatchesFromCache],
+  );
 
-  const matches = selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [];
   const isLoadingMatches = selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false;
+  const canGenerate    = selectedSeason?.status === 'registration_open';
 
-  // Cờ cho biết mùa giải hiện tại có thể generate schedule không
-  const canGenerate = selectedSeason?.status === 'registration_open';
+  // ── Available rounds (derived from matches) ────────────────
+  const availableRounds = useMemo(() => {
+    const rounds = [...new Set(rawMatches.map(m => m.round).filter(Boolean))].sort((a, b) => a - b);
+    return rounds;
+  }, [rawMatches]);
+
+  // ── Filtered matches ───────────────────────────────────────
+  const matches = useMemo(() => {
+    let filtered = rawMatches;
+    if (filterStatus) filtered = filtered.filter(m => m.status === filterStatus);
+    if (filterRound)  filtered = filtered.filter(m => String(m.round) === String(filterRound));
+    return filtered;
+  }, [rawMatches, filterStatus, filterRound]);
+
+  // ── Count by status ─────────────────────────────────────────
+  const statusCounts = useMemo(() => {
+    return rawMatches.reduce((acc, m) => {
+      acc[m.status] = (acc[m.status] || 0) + 1;
+      return acc;
+    }, {});
+  }, [rawMatches]);
 
   useEffect(() => {
     fetchSeasons();
@@ -90,12 +128,23 @@ export default function ManageMatches() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Khi season thay đổi: fetch lịch mới
+  // Auto-select latest active season if none selected
+  useEffect(() => {
+    if (!selectedSeasonId && seasons.length > 0) {
+      const ongoing = seasons.find(s => s.status === 'ongoing');
+      const regOpen = seasons.find(s => s.status === 'registration_open');
+      const best = ongoing ?? regOpen ?? seasons[0];
+      if (best) setSelectedSeasonId(String(best.id));
+    }
+  }, [seasons]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId));
+    setFilterStatus('');
+    setFilterRound('');
   }, [selectedSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getTeamName = (id) => teams.find(t => t.id === Number(id))?.name ?? `#${id}`;
+  const getTeamName  = (id) => teams.find(t => t.id === Number(id))?.name ?? `#${id}`;
   const getVenueName = (id) => venues.find(v => v.id === Number(id))?.name ?? '—';
 
   const formatDateTime = (isoStr) => {
@@ -115,11 +164,10 @@ export default function ManageMatches() {
   };
 
   const handleReschedule = async () => {
-    if (!rescheduleForm.date) { toast.error('Vui lòng chọn ngày thi đấu.'); return; }
+    if (!rescheduleForm.date)     { toast.error('Vui lòng chọn ngày thi đấu.'); return; }
     if (!rescheduleForm.venue_id) { toast.error('Vui lòng chọn sân thi đấu.'); return; }
     setIsSaving(true);
     try {
-      // ⚠️ Backend schema dùng camelCase: scheduledAt + venueId (không phải snake_case)
       const scheduledAt = new Date(`${rescheduleForm.date}T${rescheduleForm.time}:00`).toISOString();
       await rescheduleMatch(
         rescheduleModal.match.id,
@@ -144,20 +192,18 @@ export default function ManageMatches() {
     });
   };
 
-  // Mở gen modal — fetch số đội active trong mùa giải
   const openGenModal = async () => {
     setGenModal(true);
     setGenTeamCount(null);
     if (!selectedSeasonId) return;
     try {
       const res = await seasonTeamApi.getAll({ season_id: selectedSeasonId, per_page: 100 });
-      // Normalize response
       const payload = typeof res?.status === 'boolean' ? res.data : res;
       const allTeams = Array.isArray(payload?.data) ? payload.data : [];
       const active = allTeams.filter(st => st.status !== 'withdrawn');
       setGenTeamCount(active.length);
     } catch {
-      setGenTeamCount(null); // Không query được, bỏ qua
+      setGenTeamCount(null);
     }
   };
 
@@ -166,23 +212,19 @@ export default function ManageMatches() {
       toast.error('Vui lòng chọn ít nhất 1 sân thi đấu!'); return;
     }
     if (!canGenerate) {
-      toast.error(`Mùa giải phải ở trạng thái "Đang mở đăng ký" (registration_open) mới có thể tạo lịch!`); return;
+      toast.error('Mùa giải phải ở trạng thái "Đang mở đăng ký" mới có thể tạo lịch!'); return;
     }
     setGenLoading(true);
     try {
-      // Tính toán mảng matchTimes từ config
       const { startTime, matchDuration, breakTime, matchesPerDay } = genForm;
       const matchTimes = [];
-      
       const [hh, mm] = startTime.split(':').map(Number);
       let currentMinutes = hh * 60 + mm;
 
       for (let i = 0; i < Number(matchesPerDay); i++) {
-        // Chặn overflow qua nửa đêm (24:00 = 1440 phút)
         if (currentMinutes >= 1440) break;
         const h = Math.floor(currentMinutes / 60);
         const m = currentMinutes % 60;
-        // Backend regex: /^([01]\d|2[0-3]):[0-5]\d$/ — phải đúng format HH:MM
         if (h > 23) break;
         matchTimes.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
         currentMinutes += Number(matchDuration) + Number(breakTime);
@@ -209,8 +251,6 @@ export default function ManageMatches() {
       fetchBySeason(Number(selectedSeasonId), { force: true });
     } catch (err) {
       const data = err?.response?.data;
-      // Backend trả { code, message } — message thường là "Request failed" (generic)
-      // Nên map code sang tiếng Việt để UX tốt hơn
       const codeMessages = {
         'VALIDATION_ERROR': data?.message === 'Request failed'
           ? 'Mùa giải chưa đủ điều kiện: cần ít nhất 2 đội đã đăng ký và chưa có lịch nào được tạo.'
@@ -229,11 +269,13 @@ export default function ManageMatches() {
     if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });
   };
 
+  const hasActiveFilter = filterStatus || filterRound;
+
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
 
-        {/* Header */}
+        {/* ── Header ──────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
@@ -244,18 +286,19 @@ export default function ManageMatches() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {selectedSeasonId && <RealtimeBadge seasonId={Number(selectedSeasonId)} />}
             <button
               onClick={openGenModal}
               disabled={!canGenerate}
               title={!canGenerate ? 'Mùa giải phải ở trạng thái Đang mở đăng ký' : undefined}
-              className="px-5 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className={BTN_PRIMARY + ' bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400'}
             >
-              <Settings className="w-4 h-4" /> Tạo lịch thi đấu tự động
+              <Settings className="w-4 h-4" /> Tạo lịch tự động
             </button>
             <button
               onClick={handleRefresh}
               disabled={isLoadingMatches || !selectedSeasonId}
-              className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              className={BTN_ICON}
               title="Tải lại"
             >
               <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
@@ -263,24 +306,24 @@ export default function ManageMatches() {
           </div>
         </div>
 
-        {/* Season Selector */}
-        <div className="bg-navy p-5 rounded-2xl border border-navy-light shadow-lg shadow-black/20 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <label className="text-sm font-bold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-2">
+        {/* ── Season Selector ─────────────────────────────────── */}
+        <div className="bg-navy p-5 rounded-2xl border border-navy-light shadow-xl shadow-black/20 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-bold text-gray-400 uppercase tracking-wider shrink-0">
             Mùa giải:
           </label>
           <div className="relative flex-1 max-w-sm">
             <select
               value={selectedSeasonId}
               onChange={e => setSelectedSeasonId(e.target.value)}
-              className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon text-sm appearance-none"
+              className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon/20 text-sm appearance-none transition-all cursor-pointer"
             >
               <option value="">-- Chọn mùa giải --</option>
               {seasons.map(s => {
                 const statusLabel = {
                   registration_open: '✅ Đang mở đăng ký',
-                  ongoing: '🔴 Đang diễn ra',
-                  finished: '✓ Đã kết thúc',
-                  upcoming: '⏳ Sắp diễn ra',
+                  ongoing:           '🔴 Đang diễn ra',
+                  finished:          '✓ Đã kết thúc',
+                  upcoming:          '⏳ Sắp diễn ra',
                 }[s.status] ?? s.status;
                 return (
                   <option key={s.id} value={s.id}>{s.name} — {statusLabel}</option>
@@ -289,22 +332,98 @@ export default function ManageMatches() {
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-        {selectedSeasonId && (
-          <span className="text-sm text-gray-400 font-medium">
-            Đang có <strong className="text-white">{matches.length}</strong> trận đấu
-          </span>
-        )}
+          {selectedSeasonId && (
+            <span className="text-sm text-gray-400 font-medium">
+              <strong className="text-white">{rawMatches.length}</strong> trận đấu
+            </span>
+          )}
         </div>
 
-        {/* Warning: season không ở registration_open */}
+        {/* ── Filter Bar ──────────────────────────────────────── */}
+        {selectedSeasonId && rawMatches.length > 0 && (
+          <div className="bg-navy/60 backdrop-blur-sm p-4 rounded-2xl border border-navy-light shadow-lg shadow-black/15 flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider shrink-0">
+              <Filter className="w-3.5 h-3.5" /> Lọc:
+            </div>
+
+            {/* Status filter */}
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="pl-3 pr-8 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-xs font-bold focus:outline-none focus:border-neon appearance-none cursor-pointer transition-all"
+              >
+                {STATUS_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Round filter */}
+            {availableRounds.length > 0 && (
+              <div className="relative">
+                <select
+                  value={filterRound}
+                  onChange={e => setFilterRound(e.target.value)}
+                  className="pl-3 pr-8 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-xs font-bold focus:outline-none focus:border-neon appearance-none cursor-pointer transition-all"
+                >
+                  <option value="">Tất cả vòng</option>
+                  {availableRounds.map(r => (
+                    <option key={r} value={r}>Vòng {r}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+
+            {/* Status count chips */}
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {Object.entries(statusCounts).map(([s, count]) => {
+                const colors = {
+                  scheduled: 'bg-amber-400/10 text-amber-400 border-amber-400/20',
+                  ongoing:   'bg-red-400/10 text-red-400 border-red-400/20',
+                  finished:  'bg-emerald-400/10 text-emerald-400 border-emerald-400/20',
+                  cancelled: 'bg-gray-400/10 text-gray-400 border-gray-400/20',
+                  forfeited: 'bg-orange-400/10 text-orange-400 border-orange-400/20',
+                }[s] ?? 'bg-gray-400/10 text-gray-400 border-gray-400/20';
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setFilterStatus(prev => prev === s ? '' : s)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider transition-all ${colors} ${filterStatus === s ? 'ring-1 ring-offset-1 ring-offset-navy ring-current' : 'opacity-70 hover:opacity-100'}`}
+                  >
+                    {count} {s}
+                  </button>
+                );
+              })}
+              {hasActiveFilter && (
+                <button
+                  onClick={() => { setFilterStatus(''); setFilterRound(''); }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black text-gray-400 border border-gray-600 hover:border-gray-400 hover:text-white transition-all uppercase"
+                >
+                  <X className="w-3 h-3" /> Xóa filter
+                </button>
+              )}
+            </div>
+
+            {hasActiveFilter && (
+              <p className="text-xs text-blue-400 font-bold shrink-0">
+                Hiển thị <span className="text-white">{matches.length}</span> / {rawMatches.length} trận
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Warning: season không ở registration_open ────────── */}
         {selectedSeasonId && !canGenerate && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3 shadow-lg shadow-amber-500/5">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-amber-400 text-sm font-bold">Không thể tạo lịch cho mùa giải này</p>
               <p className="text-amber-400/80 text-xs mt-1">
-                Mùa giải hiện ở trạng thái <strong>{selectedSeason?.status}</strong>.
-                Chức năng “Tạo lịch tự động” chỉ hoạt động khi mùa giải ở trạng thái{' '}
+                Mùa giải hiện ở trạng thái <strong>{selectedSeason?.status}</strong>.{' '}
+                Chức năng "Tạo lịch tự động" chỉ hoạt động khi mùa giải ở trạng thái{' '}
                 <strong className="text-amber-300">registration_open (Đang mở đăng ký)</strong>.
                 Bạn vẫn có thể <strong>chỉnh sửa lịch từng trận</strong> có sẵn bên dưới.
               </p>
@@ -312,22 +431,23 @@ export default function ManageMatches() {
           </div>
         )}
 
-        {/* No season selected */}
+        {/* ── No season selected ───────────────────────────────── */}
         {!selectedSeasonId && !seasonsLoading && (
-          <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500">
+          <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500 shadow-xl shadow-black/20">
             <CalendarDays className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="font-semibold text-lg">Vui lòng chọn mùa giải để xem lịch thi đấu</p>
           </div>
         )}
 
-        {/* Matches Table */}
+        {/* ── Matches Table ─────────────────────────────────────── */}
         {selectedSeasonId && (
-          <div className="bg-navy border border-navy-light rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl shadow-black/25 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                 <thead>
                   <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                     <th className="py-4 px-6">Thời gian & Sân</th>
+                    <th className="py-4 px-6 text-center">Vòng</th>
                     <th className="py-4 px-6 text-right">Đội nhà</th>
                     <th className="py-4 px-6 text-center">VS</th>
                     <th className="py-4 px-6">Đội khách</th>
@@ -340,7 +460,7 @@ export default function ManageMatches() {
                   {isLoadingMatches ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        {[1, 2, 3, 4, 5, 6, 7].map(j => (
+                        {[1,2,3,4,5,6,7,8].map(j => (
                           <td key={j} className="py-4 px-6">
                             <div className="skeleton h-5 w-full rounded" />
                           </td>
@@ -349,16 +469,32 @@ export default function ManageMatches() {
                     ))
                   ) : matches.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-24 text-center text-gray-400">
+                      <td colSpan={8} className="py-24 text-center text-gray-400">
                         <Dices className="w-16 h-16 text-emerald-500/20 mx-auto mb-4" />
-                        <h4 className="text-xl font-bold text-white mb-2">Chưa có lịch thi đấu</h4>
-                        <p className="text-sm text-gray-500 mb-6">Mùa giải này chưa được xếp lịch thi đấu nào.</p>
-                        <button
-                          onClick={openGenModal}
-                          className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-lg shadow-emerald-500/20"
-                        >
-                          Tạo lịch tự động ngay
-                        </button>
+                        <h4 className="text-xl font-bold text-white mb-2">
+                          {hasActiveFilter ? 'Không có trận nào khớp bộ lọc' : 'Chưa có lịch thi đấu'}
+                        </h4>
+                        <p className="text-sm text-gray-500 mb-6">
+                          {hasActiveFilter
+                            ? 'Thử thay đổi điều kiện lọc hoặc xóa bộ lọc.'
+                            : 'Mùa giải này chưa được xếp lịch thi đấu nào.'}
+                        </p>
+                        {!hasActiveFilter && (
+                          <button
+                            onClick={openGenModal}
+                            className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 active:scale-[.98]"
+                          >
+                            Tạo lịch tự động ngay
+                          </button>
+                        )}
+                        {hasActiveFilter && (
+                          <button
+                            onClick={() => { setFilterStatus(''); setFilterRound(''); }}
+                            className="px-6 py-3 rounded-xl bg-navy border border-navy-light hover:bg-navy-light text-white font-bold transition-all shadow-lg shadow-black/20"
+                          >
+                            Xóa bộ lọc
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -375,6 +511,13 @@ export default function ManageMatches() {
                             </div>
                           )}
                         </td>
+                        <td className="py-4 px-6 text-center">
+                          {match.round ? (
+                            <span className="px-2.5 py-1 bg-navy-dark text-blue-400 font-black text-[10px] rounded-lg border border-blue-500/20 uppercase">
+                              V{match.round}
+                            </span>
+                          ) : '—'}
+                        </td>
                         <td className="py-4 px-6 font-bold text-white text-right">{getTeamName(match.home_team_id)}</td>
                         <td className="py-4 px-6 text-center">
                           <span className="px-2.5 py-1 bg-navy-dark text-gray-500 font-black text-[10px] rounded border border-navy-light uppercase">VS</span>
@@ -390,11 +533,11 @@ export default function ManageMatches() {
                           <StatusBadge status={match.status} />
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity gap-2">
                             {match.status === 'scheduled' && (
                               <button
                                 onClick={() => openReschedule(match)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-dark text-blue-400 hover:text-white hover:bg-blue-600 border border-blue-500/30 transition-all text-xs font-bold shadow-md"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-dark text-blue-400 hover:text-white hover:bg-blue-600 border border-blue-500/30 hover:border-blue-500 transition-all text-xs font-bold shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[.97]"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 Đổi lịch
@@ -412,12 +555,12 @@ export default function ManageMatches() {
         )}
       </div>
 
-      {/* ─── Generate Schedule Modal ───────────────────────────────── */}
+      {/* ─── Generate Schedule Modal ──────────────────────────── */}
       {genModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !genLoading && setGenModal(false)} />
           <div className="relative bg-navy border border-navy-light rounded-3xl shadow-2xl w-full max-w-3xl animate-slide-up flex flex-col max-h-[90vh]">
-            
+
             <div className="flex items-center justify-between px-6 py-5 border-b border-navy-light bg-navy-dark rounded-t-3xl">
               <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                 <Settings className="w-6 h-6 text-emerald-400" />
@@ -429,23 +572,20 @@ export default function ManageMatches() {
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
-              
+
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
                 <Dices className="w-6 h-6 text-emerald-400 shrink-0" />
                 <div>
                   <p className="text-emerald-400 text-sm font-bold">Hệ thống tạo lịch tự động</p>
                   <p className="text-emerald-400/80 text-xs mt-1">
-                    Công cụ này sẽ tiến hành chia bảng, tạo danh sách trận đấu và sắp xếp thời gian tự động dựa trên số lượng đội đã đăng ký trong mùa giải. Các trận đấu sẽ được rải đều trên các sân và khung giờ bạn chọn.
+                    Công cụ này sẽ tiến hành chia bảng, tạo danh sách trận đấu và sắp xếp thời gian tự động dựa trên số lượng đội đã đăng ký trong mùa giải.
                   </p>
                 </div>
               </div>
 
-              {/* Team Count Check */}
               {genTeamCount !== null && (
                 <div className={`rounded-2xl p-4 flex items-start gap-3 border ${
-                  genTeamCount < 2
-                    ? 'bg-red-500/10 border-red-500/20'
-                    : 'bg-blue-500/10 border-blue-500/20'
+                  genTeamCount < 2 ? 'bg-red-500/10 border-red-500/20' : 'bg-blue-500/10 border-blue-500/20'
                 }`}>
                   <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${genTeamCount < 2 ? 'text-red-400' : 'text-blue-400'}`} />
                   <div>
@@ -453,9 +593,7 @@ export default function ManageMatches() {
                       <>
                         <p className="text-red-400 text-sm font-bold">Không đủ đội để tạo lịch</p>
                         <p className="text-red-400/80 text-xs mt-1">
-                          Mùa giải hiện có <strong>{genTeamCount}</strong> đội đăng ký (chưa rút).
-                          Cần ít nhất <strong>2 đội</strong> mới có thể tạo lịch thi đấu.
-                          Hãy thêm đội vào mùa giải trước.
+                          Mùa giải hiện có <strong>{genTeamCount}</strong> đội. Cần ít nhất <strong>2 đội</strong>.
                         </p>
                       </>
                     ) : (
@@ -478,15 +616,15 @@ export default function ManageMatches() {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số lượng bảng đấu</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số bảng đấu</label>
                     <input type="number" min="1" value={genForm.desiredGroupCount} onChange={e => setGenForm(f => ({...f, desiredGroupCount: e.target.value}))} className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số đội / Bảng (Tối thiểu)</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số đội / Bảng (Min)</label>
                     <input type="number" min="2" value={genForm.minGroupSize} onChange={e => setGenForm(f => ({...f, minGroupSize: e.target.value}))} className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số đội / Bảng (Tối đa)</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số đội / Bảng (Max)</label>
                     <input type="number" min="2" value={genForm.maxGroupSize} onChange={e => setGenForm(f => ({...f, maxGroupSize: e.target.value}))} className={INPUT} />
                   </div>
                 </div>
@@ -506,24 +644,24 @@ export default function ManageMatches() {
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" title="Thời gian bắt đầu trận đầu tiên trong ngày">Giờ bắt đầu</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Giờ bắt đầu</label>
                     <input type="time" value={genForm.startTime} onChange={e => setGenForm(f => ({...f, startTime: e.target.value}))} className={INPUT + ' font-mono'} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" title="Thời lượng mỗi trận đấu (phút)">Thời lượng (phút)</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Thời lượng (phút)</label>
                     <input type="number" min="30" value={genForm.matchDuration} onChange={e => setGenForm(f => ({...f, matchDuration: e.target.value}))} className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" title="Thời gian nghỉ giữa các trận (phút)">Nghỉ giữa trận</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nghỉ giữa trận</label>
                     <input type="number" min="0" value={genForm.breakTime} onChange={e => setGenForm(f => ({...f, breakTime: e.target.value}))} className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" title="Số trận tổ chức trên mỗi sân trong 1 ngày">Số trận / Ngày</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số trận / Ngày</label>
                     <input type="number" min="1" value={genForm.matchesPerDay} onChange={e => setGenForm(f => ({...f, matchesPerDay: e.target.value}))} className={INPUT} />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2" title="Số ngày nghỉ tối thiểu giữa 2 trận của cùng 1 đội">Số ngày nghỉ tối thiểu cho mỗi đội</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ngày nghỉ tối thiểu / đội</label>
                   <input type="number" min="1" value={genForm.minRestDaysPerTeam} onChange={e => setGenForm(f => ({...f, minRestDaysPerTeam: e.target.value}))} className={INPUT + ' max-w-[200px]'} />
                 </div>
               </div>
@@ -541,10 +679,10 @@ export default function ManageMatches() {
                       <button
                         key={v.id}
                         onClick={() => toggleVenue(v.id)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                          isSelected 
-                            ? 'bg-emerald-500/20 border-emerald-500 text-white' 
-                            : 'bg-navy border-navy-light text-gray-400 hover:border-gray-500 hover:bg-navy-light'
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all shadow-md active:scale-[.97] ${
+                          isSelected
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white shadow-emerald-500/15'
+                            : 'bg-navy border-navy-light text-gray-400 hover:border-gray-500 hover:bg-navy-light shadow-black/10'
                         }`}
                       >
                         <div className={`w-4 h-4 rounded flex items-center justify-center border ${isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-500'}`}>
@@ -552,22 +690,22 @@ export default function ManageMatches() {
                         </div>
                         <span className="font-bold text-sm truncate">{v.name}</span>
                       </button>
-                    )
+                    );
                   })}
-                  {venues.length === 0 && <p className="text-gray-500 text-sm">Chưa có sân thi đấu nào trong hệ thống.</p>}
+                  {venues.length === 0 && <p className="text-gray-500 text-sm">Chưa có sân thi đấu nào.</p>}
                 </div>
               </div>
 
             </div>
 
             <div className="px-6 py-5 border-t border-navy-light bg-navy-dark rounded-b-3xl flex justify-end gap-3 shrink-0">
-              <button onClick={() => !genLoading && setGenModal(false)} className="px-6 py-3 font-bold text-gray-400 hover:text-white bg-navy border border-navy-light hover:bg-navy-light rounded-xl transition-colors">
+              <button onClick={() => !genLoading && setGenModal(false)} className={BTN_SECONDARY}>
                 Hủy
               </button>
               <button
                 onClick={handleGenerateSchedule}
                 disabled={genLoading}
-                className="px-8 py-3 font-black bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center gap-2 transition-all disabled:opacity-70 shadow-lg shadow-emerald-500/20 uppercase tracking-wide"
+                className={BTN_PRIMARY + ' px-8 bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 uppercase tracking-wide'}
               >
                 {genLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
                 Tạo lịch thi đấu
@@ -577,7 +715,7 @@ export default function ManageMatches() {
         </div>
       )}
 
-      {/* Reschedule Modal */}
+      {/* ─── Reschedule Modal ─────────────────────────────────── */}
       {rescheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRescheduleModal(null)} />
@@ -595,11 +733,11 @@ export default function ManageMatches() {
 
             <div className="p-6 space-y-5">
               {/* Match preview */}
-              <div className="bg-navy-dark border border-navy-light rounded-2xl p-4 flex items-center justify-center gap-4">
+              <div className="bg-navy-dark border border-navy-light rounded-2xl p-4 flex items-center justify-center gap-4 shadow-inner">
                 <span className="font-black text-white text-sm text-right flex-1 truncate">
                   {getTeamName(rescheduleModal.match.home_team_id)}
                 </span>
-                <span className="px-3 py-1 bg-blue-600 text-white font-black text-xs rounded-lg shrink-0">VS</span>
+                <span className="px-3 py-1 bg-blue-600 text-white font-black text-xs rounded-lg shrink-0 shadow-md shadow-blue-600/30">VS</span>
                 <span className="font-black text-white text-sm flex-1 truncate">
                   {getTeamName(rescheduleModal.match.away_team_id)}
                 </span>
@@ -607,7 +745,9 @@ export default function ManageMatches() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ngày thi đấu <span className="text-red-400">*</span></label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Ngày thi đấu <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="date"
                     value={rescheduleForm.date}
@@ -640,11 +780,11 @@ export default function ManageMatches() {
             </div>
 
             <div className="px-6 py-5 border-t border-navy-light bg-navy-dark flex justify-end gap-3">
-              <button onClick={() => setRescheduleModal(null)} className="px-6 py-2.5 font-bold text-gray-400 hover:text-white bg-navy border border-navy-light hover:bg-navy-light rounded-xl transition-colors">Hủy</button>
+              <button onClick={() => setRescheduleModal(null)} className={BTN_SECONDARY}>Hủy</button>
               <button
                 onClick={handleReschedule}
                 disabled={isSaving}
-                className="px-6 py-2.5 font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70 shadow-lg shadow-blue-500/20"
+                className="flex items-center gap-2 px-6 py-2.5 font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-70 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 active:scale-[.98]"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Lưu lịch mới

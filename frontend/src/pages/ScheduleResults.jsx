@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, Clock, MapPin, RefreshCw, ChevronDown, Users } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, Clock, MapPin, RefreshCw, ChevronDown, Users, Filter, X } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
 import useVenueStore from '../store/venueStore';
+import MatchModal from '../components/MatchModal';
 
 // ── Skeleton ─────────────────────────────────────────────────
 function MatchRowSkeleton() {
@@ -47,7 +48,7 @@ function StatusBadge({ status }) {
 
 // ── Match Card ────────────────────────────────────────────────
 // match được enrich với home_team, away_team, venue objects
-function MatchCard({ match, idx }) {
+function MatchCard({ match, idx, onSelectMatch }) {
   const homeName  = match.home_team?.name  ?? `Đội #${match.home_team_id}`;
   const awayName  = match.away_team?.name  ?? `Đội #${match.away_team_id}`;
   const homeInitial = homeName[0]?.toUpperCase() ?? '?';
@@ -63,7 +64,8 @@ function MatchCard({ match, idx }) {
 
   return (
     <div
-      className="bg-navy/60 backdrop-blur-xl border border-navy-light rounded-4xl p-6 sm:p-8 shadow-2xl shadow-black/40 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 animate-slide-up group relative overflow-hidden"
+      onClick={() => onSelectMatch(match)}
+      className="cursor-pointer bg-navy/60 backdrop-blur-xl border border-navy-light rounded-4xl p-6 sm:p-8 shadow-2xl shadow-black/40 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 animate-slide-up group relative overflow-hidden"
       style={{ animationDelay: `${idx * 40}ms` }}
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
@@ -173,6 +175,8 @@ function MatchCard({ match, idx }) {
 export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [filterRound, setFilterRound] = useState('');
 
   // ── Zustand stores ─────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
@@ -218,18 +222,23 @@ export default function ScheduleResults() {
   const isLoading = seasonsLoading || (selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false);
 
   // ── Tabs ───────────────────────────────────────────────────
-  const upcoming = useMemo(() =>
-    allMatches
-      .filter(m => m.status === 'scheduled' || m.status === 'ongoing')
-      .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
-    [allMatches],
-  );
-  const results = useMemo(() =>
-    allMatches
-      .filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited')
-      .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at)),
-    [allMatches],
-  );
+  // Available rounds derived from all matches
+  const availableRounds = useMemo(() => {
+    const rounds = [...new Set(allMatches.map(m => m.round).filter(Boolean))].sort((a, b) => a - b);
+    return rounds;
+  }, [allMatches]);
+
+  const upcoming = useMemo(() => {
+    let list = allMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
+    if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
+    return list.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+  }, [allMatches, filterRound]);
+
+  const results = useMemo(() => {
+    let list = allMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited');
+    if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
+    return list.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
+  }, [allMatches, filterRound]);
 
   // ── Fetch on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -271,7 +280,8 @@ export default function ScheduleResults() {
           </div>
 
           {/* Controls Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10 animate-fade-in bg-navy/40 backdrop-blur-xl border border-navy-light rounded-4xl p-6 shadow-2xl">
+          <div className="flex flex-col gap-4 mb-10 animate-fade-in bg-navy/40 backdrop-blur-xl border border-navy-light rounded-4xl p-6 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             
             {/* Season Selector */}
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -332,6 +342,47 @@ export default function ScheduleResults() {
                 )}
               </button>
             </div>
+            </div>{/* end flex row */}
+
+            {/* Round filter row — chỉ hiện khi có dữ liệu */}
+            {availableRounds.length > 0 && (
+              <div className="flex items-center gap-3 flex-wrap border-t border-navy-light/50 pt-4">
+                <div className="flex items-center gap-1.5 text-xs font-black text-gray-400 uppercase tracking-wider shrink-0">
+                  <Filter className="w-3.5 h-3.5" /> Vòng đấu:
+                </div>
+                <button
+                  onClick={() => setFilterRound('')}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${
+                    !filterRound
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {availableRounds.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setFilterRound(prev => String(prev) === String(r) ? '' : String(r))}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${
+                      String(filterRound) === String(r)
+                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                        : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                    }`}
+                  >
+                    Vòng {r}
+                  </button>
+                ))}
+                {filterRound && (
+                  <button
+                    onClick={() => setFilterRound('')}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-black text-gray-500 border border-navy-light hover:text-white hover:border-gray-500 transition-all ml-auto"
+                  >
+                    <X className="w-3 h-3" /> Xóa filter
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stats bar */}
@@ -409,7 +460,7 @@ export default function ScheduleResults() {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {currentData.map((match, idx) => (
-                  <MatchCard key={match.id} match={match} idx={idx} />
+                  <MatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
                 ))}
               </div>
             )}
@@ -417,6 +468,8 @@ export default function ScheduleResults() {
 
         </div>
       </div>
+
+      <MatchModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />
     </div>
   );
 }

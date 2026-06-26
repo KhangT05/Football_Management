@@ -395,7 +395,7 @@
 
 /* ─── Skeleton Loading ───────────────────────────────── */
 .skeleton {
-  background: linear-linear(
+  background: linear-gradient(
     90deg,
     #112240 25%,
     #1a3155 50%,
@@ -410,3 +410,165 @@
 .animate-progress-bar {
   animation: progressBar linear both;
 }
+
+/* ─── Button Utility Classes ─────────────────────────────
+ * Sử dụng trong toàn bộ admin pages để đảm bảo consistency.
+ * Shadow được thiết kế để tạo cảm giác depth và premium.
+ * ──────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.975);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Primary — Neon green */
+.btn-primary {
+  color: #070e17;
+  background-color: #39FF14;
+  border-color: #39FF14;
+  box-shadow: 0 4px 14px rgba(57,255,20,0.25), 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: #32E612;
+  box-shadow: 0 6px 20px rgba(57,255,20,0.35), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Emerald */
+.btn-emerald {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-color: #059669;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.25), 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-emerald:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 6px 20px rgba(16,185,129,0.35), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Blue */
+.btn-blue {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border-color: #2563eb;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.25), 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-blue:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 6px 20px rgba(59,130,246,0.35), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Secondary — navy glass */
+.btn-secondary {
+  color: #94a3b8;
+  background-color: #0A192F;
+  border-color: #112240;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
+}
+.btn-secondary:hover:not(:disabled) {
+  color: #fff;
+  background-color: #112240;
+  border-color: #1e3a5f;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Danger — red */
+.btn-danger {
+  color: #fff;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border-color: #dc2626;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.25), 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  box-shadow: 0 6px 20px rgba(239,68,68,0.35), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Ghost — transparent with border */
+.btn-ghost {
+  color: #94a3b8;
+  background: transparent;
+  border-color: #112240;
+  box-shadow: none;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(17,34,64,0.5);
+  border-color: #1e3a5f;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Purple */
+.btn-purple {
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  border-color: #7c3aed;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.25), 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-purple:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  box-shadow: 0 6px 20px rgba(124,58,237,0.35), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Icon button */
+.btn-icon {
+  padding: 0.625rem;
+  border-radius: 0.75rem;
+  color: #64748b;
+  background-color: #0A192F;
+  border: 1px solid #112240;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover:not(:disabled) {
+  color: #fff;
+  border-color: #1e3a5f;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+}
+.btn-icon:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Card Shadow Utilities ─────────────────────────────── */
+.card-shadow {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2);
+}
+.card-shadow-lg {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+}
+.card-shadow-neon {
+  box-shadow: 0 0 20px rgba(57,255,20,0.15), 0 4px 24px rgba(0,0,0,0.35);
+}
+

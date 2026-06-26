@@ -4,10 +4,16 @@ import useAuthStore from '../store/authStore';
 /**
  * ProtectedRoute - Chỉ cho phép truy cập khi đã đăng nhập
  * Nếu chưa đăng nhập → redirect về trang login, giữ lại `from` để sau login redirect lại
+ *
+ * Note: App.jsx đã chờ isInitialized trước khi render routes
+ * nên ProtectedRoute chỉ cần kiểm tra isAuthenticated (đã là giá trị cuối cùng).
  */
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, loading } = useAuthStore();
   const location = useLocation();
+
+  // loading = đang refresh token (rare case)
+  if (loading) return null;
 
   if (!isAuthenticated) {
     return (

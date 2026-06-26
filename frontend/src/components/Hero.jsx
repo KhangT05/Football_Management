@@ -33,7 +33,14 @@ export default function Hero() {
             Nền tảng quản lý giải đấu toàn diện. Tối ưu hóa việc tổ chức, tự động hóa xếp hạng và kết nối các đội bóng một cách chuyên nghiệp nhất.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center gap-5 pt-6">
+          <div className="flex flex-wrap items-center gap-5 pt-6">
+            <Link 
+              to="/dang-ky-doi-bong" 
+              className="w-full sm:w-auto px-8 py-4 bg-linear-to-r from-neon to-emerald-500 text-navy-dark font-black rounded-2xl hover:from-emerald-400 hover:to-neon transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-wider text-sm shadow-[0_0_30px_rgba(57,255,20,0.5)] hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(57,255,20,0.7)]"
+            >
+              <TrophyIcon className="w-5 h-5" />
+              Đăng Ký Đội
+            </Link>
             <Link 
               to="/lich-thi-dau" 
               className="w-full sm:w-auto px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-wider text-sm shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(37,99,235,0.6)]"

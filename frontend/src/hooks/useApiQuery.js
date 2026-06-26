@@ -18,19 +18,15 @@ const DEFAULT_META = Object.freeze({
  * - Loading / error state
  * - Pagination metadata
  * - Response normalization (xử lý cả ApiResponseShape lẫn PaginatedResult trực tiếp)
- *
- * Thay thế pattern lặp lại ở mọi admin page:
- *   const [items, setItems] = useState([]);
- *   const [meta, setMeta] = useState(DEFAULT);
- *   const [isLoading, setIsLoading] = useState(true);
- *   const [fetchError, setFetchError] = useState(null);
- *   const fetch = useCallback(async () => { ... try/catch/finally }, []);
+ * - deps[] — re-fetch tự động khi dependencies thay đổi
  *
  * @param {Function} apiFn — hàm API (e.g. teamApi.getTeams). Nhận object params.
  * @param {Object} [options]
- * @param {number} [options.perPage=20]       — số item mỗi trang
- * @param {boolean} [options.autoFetch=true]  — tự fetch khi mount
- * @param {string} [options.errorMsg]         — fallback error message
+ * @param {number}   [options.perPage=20]       — số item mỗi trang
+ * @param {boolean}  [options.autoFetch=true]   — tự fetch khi mount
+ * @param {string}   [options.errorMsg]         — fallback error message
+ * @param {Object}   [options.params={}]        — params tĩnh gắn vào mỗi request
+ * @param {any[]}    [options.deps=[]]          — dependencies để trigger re-fetch tự động
  *
  * @returns {{
  *   data: any[],
@@ -42,18 +38,19 @@ const DEFAULT_META = Object.freeze({
  * }}
  *
  * @example
- * const { data: teams, meta, isLoading, error, fetch } = useApiQuery(
- *   teamApi.getTeams,
- *   { perPage: 20, autoFetch: false }
+ * // Re-fetch tự động khi selectedSeason thay đổi
+ * const { data: seasonTeams, isLoading } = useApiQuery(
+ *   (p) => seasonTeamApi.getAll(p),
+ *   { autoFetch: true, params: { season_id: selectedSeason }, deps: [selectedSeason] }
  * );
- * // Gọi fetch với query params tùy ý:
- * fetch({ q: 'keyword', sort: 'name', page: 2 });
  */
 export function useApiQuery(apiFn, options = {}) {
   const {
     perPage = 20,
     autoFetch = true,
     errorMsg = 'Không thể tải dữ liệu.',
+    params: staticParams = {},
+    deps = [],
   } = options;
 
   const [data, setData] = useState([]);
@@ -65,27 +62,30 @@ export function useApiQuery(apiFn, options = {}) {
   const fnRef = useRef(apiFn);
   fnRef.current = apiFn;
 
-  const fetchData = useCallback(async (params = {}) => {
+  // Ref cho staticParams để tránh re-render loops
+  const staticParamsRef = useRef(staticParams);
+  staticParamsRef.current = staticParams;
+
+  const fetchData = useCallback(async (extraParams = {}) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fnRef.current({ per_page: perPage, ...params });
+      const res = await fnRef.current({
+        per_page: perPage,
+        ...staticParamsRef.current,
+        ...extraParams,
+      });
 
       // ── Normalize response ─────────────────────────────────────────
       // axiosClient interceptor trả về response.data (HTTP body).
-      //
       // Chỉ auth.controller dùng makeResponse:
       //   body = { status: boolean, message, data: PaginatedResult, timestamp }
-      //
       // Tất cả controller khác trả PaginatedResult trực tiếp:
       //   body = { data: T[], meta: { total, page, per_page, ... } }
-      //
-      // Phân biệt qua: có `status` kiểu boolean → ApiResponseShape
-      //                không có → PaginatedResult trực tiếp
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
 
       const items = Array.isArray(payload)
-        ? payload                          // trả về mảng trực tiếp
+        ? payload
         : (Array.isArray(payload?.data) ? payload.data : []);
 
       const resultMeta = Array.isArray(payload) ? null : payload?.meta;
@@ -101,13 +101,19 @@ export function useApiQuery(apiFn, options = {}) {
     }
   }, [perPage, errorMsg]);
 
-  // Auto-fetch on mount
+  // Auto-fetch on mount và khi deps thay đổi
   useEffect(() => {
-    if (autoFetch) {
-      fetchData();
+    if (!autoFetch) return;
+    // Không fetch nếu deps có giá trị falsy (e.g. selectedSeason chưa chọn)
+    const hasFalsyDep = deps.some(d => d === '' || d === null || d === undefined || d === 0);
+    if (deps.length > 0 && hasFalsyDep) {
+      setData([]);
+      setIsLoading(false);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFetch, fetchData, ...deps]);
 
   return { data, meta, isLoading, error, fetch: fetchData, setData };
 }

@@ -18,6 +18,8 @@ const Profile = lazy(() => import("./pages/Profile"));
 const MyTeam = lazy(() => import("./pages/MyTeam"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const ForbiddenPage = lazy(() => import("./pages/ForbiddenPage"));
 
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
@@ -40,18 +42,46 @@ function PageLoader() {
   );
 }
 
+// ── Auth Initializing Loader ───────────────────────────────
+// Hiển thị trong khi initializeAuth() đang chạy (F5 / mở tab mới)
+// Ngăn AdminRoute/ProtectedRoute redirect sai trước khi biết auth state
+function AuthInitLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-navy-dark">
+      <div className="flex flex-col items-center gap-5 animate-fade-in">
+        <div className="relative">
+          <div className="w-14 h-14 border-2 border-navy-light border-t-neon rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-navy-light border-t-blue-400 rounded-full animate-spin" style={{ animationDirection: 'reverse' }} />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-white font-bold text-sm">Đang khôi phục phiên đăng nhập...</p>
+          <p className="text-gray-500 text-xs mt-1">Vui lòng chờ</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const { initializeAuth, isInitialized } = useAuthStore();
 
   useEffect(() => {
     /**
      * Khôi phục session khi user F5 hoặc mở tab mới
      * - access token (in-memory) bị mất khi reload → cần refresh
      * - httpOnly cookie refresh_token vẫn còn → gọi /auth/refresh để lấy token mới
-     * - Nếu không có csrf_token trong localStorage → bỏ qua (chưa login)
+     * - Sau khi xong → set isInitialized = true → App render routes
      */
     initializeAuth();
-  }, [initializeAuth]); // initializeAuth là stable Zustand action, không thay đổi giữa các render
+  }, [initializeAuth]);
+
+  // Chờ auth initialization xong trước khi render routes
+  // Tránh AdminRoute/ProtectedRoute đọc isAuthenticated = false sai lúc đang refresh
+  if (!isInitialized) {
+    return <AuthInitLoader />;
+  }
 
   return (
     <Router>
@@ -63,7 +93,7 @@ function App() {
             <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
             <Route path="/doi-bong/:id" element={<TeamDetail />} />
             <Route path="/tran-dau/:id" element={<MatchDetail />} />
-            
+
             {/* Protected routes – cần đăng nhập */}
             <Route path="/dang-ky-doi-bong" element={
               <ProtectedRoute><RegisterTeam /></ProtectedRoute>
@@ -74,6 +104,9 @@ function App() {
             <Route path="/doi-cua-toi" element={
               <ProtectedRoute><MyTeam /></ProtectedRoute>
             } />
+
+            {/* 403 Forbidden */}
+            <Route path="/forbidden" element={<ForbiddenPage />} />
           </Route>
 
           {/* Auth Routes */}
@@ -102,6 +135,9 @@ function App() {
           <Route path="/quan-ly-giai-dau/cai-dat" element={
             <AdminRoute><Settings /></AdminRoute>
           } />
+
+          {/* 404 — phải để cuối cùng */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
 
@@ -112,4 +148,3 @@ function App() {
 }
 
 export default App;
-

@@ -127,9 +127,16 @@ axiosClient.interceptors.response.use(
           headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {},
         });
 
-        // API trả về { status, message, data: { accessToken, csrfToken, ... } }
-        const newAccessToken = refreshRes.data?.accessToken;
-        const newCsrfToken = refreshRes.data?.csrfToken;
+        // axiosClient interceptor đã unwrap response.data → refreshRes là body của HTTP response
+        // Body shape: { status: boolean, message: string, data: { accessToken, csrfToken, ... } }
+        // Hoặc nếu backend không wrap: { accessToken, csrfToken, ... } trực tiếp
+        // Normalize cả hai trường hợp:
+        const tokenPayload = (typeof refreshRes?.status === 'boolean')
+          ? (refreshRes?.data ?? {})   // Wrapped: { status, message, data: {...} }
+          : (refreshRes ?? {});         // Không wrap hoặc đã unwrap: { accessToken, ... }
+
+        const newAccessToken = tokenPayload?.accessToken;
+        const newCsrfToken = tokenPayload?.csrfToken;
 
         if (!newAccessToken) throw new Error('Refresh token không hợp lệ');
 

@@ -78,10 +78,10 @@ export default function Header() {
             {!isAuthenticated ? (
               <>
                 <Link
-                  to="/dang-ky-doi-bong"
+                  to="/dang-ky"
                   className="hidden lg:inline-block bg-navy-light text-white px-5 py-2.5 rounded-lg font-bold hover:bg-navy-dark transition-all duration-300 shadow-md text-sm uppercase tracking-wider border border-navy-light"
                 >
-                  Đăng Kí Đội
+                  Đăng Ký Tài Khoản
                 </Link>
                 <Link
                   to="/quan-ly-giai-dau/dang-nhap"
@@ -219,11 +219,11 @@ export default function Header() {
             {!isAuthenticated ? (
               <div className="flex flex-col gap-2">
                 <Link
-                  to="/dang-ky-doi-bong"
+                  to="/dang-ky"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-navy-light text-white font-bold text-sm hover:bg-navy transition-colors"
                 >
-                  <Trophy className="w-4 h-4" /> Đăng Kí Đội
+                  <User className="w-4 h-4" /> Đăng Ký Tài Khoản
                 </Link>
                 <Link
                   to="/quan-ly-giai-dau/dang-nhap"
