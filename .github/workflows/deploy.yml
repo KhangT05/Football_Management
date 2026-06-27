@@ -34,9 +34,9 @@ jobs:
     - name: Install DI API
       run: npm ci
 
-    - name: INSTALL DI FE
-      run: npm ci
-      working-directory: frontend
+    # - name: INSTALL DI FE
+    #   run: npm ci
+    #   working-directory: frontend
 
     - name: GENERATE PRISMA
       run: npx prisma generate
