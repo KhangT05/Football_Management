@@ -34,6 +34,27 @@ export interface WorkflowConfig {
     teamIds: number[];  // phải tồn tại trong DB
     venueId: number;    // phải tồn tại trong DB
     seed?: number;      // seeded RNG cho score random tái tạo được
+
+    /**
+     * Base timestamp cho TOÀN BỘ schedule trong workflow này (season dates,
+     * group stage matches, Final). Default: thời điểm gọi run().
+     * Truyền cố định để test reproducible theo thời gian, hoặc để dựng
+     * nhiều season liên tiếp không bị lệch theo wall-clock thực tế.
+     */
+    startTime?: Date | string;
+
+    /**
+     * Khoảng cách giữa 2 match liên tiếp (đơn vị slot thời gian), phút.
+     * Default 60. Phải > 0, nếu không sẽ fallback về default.
+     */
+    matchIntervalMinutes?: number;
+
+    /**
+     * Độ trễ tối thiểu (phút) giữa trận cuối group stage và trận Final.
+     * Default 1440 (1 ngày). Tính theo phút thay vì slot để không leak
+     * implementation detail (slot size) ra config public.
+     */
+    finalDelayMinutes?: number;
 }
 
 export interface MatchReport {
@@ -96,6 +117,9 @@ const NO_SCHEDULE: { venueIds: number[]; matchTimes: string[] } = {
     matchTimes: [],
 };
 
+const DEFAULT_MATCH_INTERVAL_MINUTES = 60;
+const DEFAULT_FINAL_DELAY_MINUTES = 24 * 60;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVICE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -103,6 +127,13 @@ const NO_SCHEDULE: { venueIds: number[]; matchTimes: string[] } = {
 export class WorkflowService {
     private rng: () => number;
     private log: string[] = [];
+
+    // ── Clock: nguồn thời gian DUY NHẤT cho toàn bộ scheduled_at trong workflow.
+    // Không còn rải rác new Date() ở từng method — tất cả đi qua _nextSlot()/
+    // _skipSlots(), điều khiển được qua WorkflowConfig.startTime/matchIntervalMinutes.
+    private clockBase: Date = new Date();
+    private matchSlot = 0;
+    private matchIntervalMinutes = DEFAULT_MATCH_INTERVAL_MINUTES;
 
     constructor(
         private readonly prisma: PrismaClient,
@@ -122,6 +153,17 @@ export class WorkflowService {
 
         if (config.seed !== undefined) this._seedRng(config.seed);
         this.log = [];
+
+        // ── Clock setup ─────────────────────────────────────────────────────
+        this.clockBase = config.startTime ? new Date(config.startTime) : new Date();
+        this.matchSlot = 0;
+        this.matchIntervalMinutes =
+            config.matchIntervalMinutes && config.matchIntervalMinutes > 0
+                ? config.matchIntervalMinutes
+                : DEFAULT_MATCH_INTERVAL_MINUTES;
+
+        const finalDelayMinutes = config.finalDelayMinutes ?? DEFAULT_FINAL_DELAY_MINUTES;
+        const finalDelaySlots = Math.max(1, Math.ceil(finalDelayMinutes / this.matchIntervalMinutes));
 
         // ── 1. Load teams ──────────────────────────────────────────────────
         const teams = await this.prisma.team.findMany({
@@ -161,6 +203,12 @@ export class WorkflowService {
         const groupAReports = await this._executeMatches(groupAMatches, teamMap, config.venueId);
         this._log(`Group A: ${groupAReports.length} matches played`);
 
+        // FIX: recompute tường minh — không dựa vào side-effect ngầm bên trong
+        // confirmOfficial(). standingsService được inject nhưng trước đây không
+        // hề được gọi ở workflow này; toàn bộ correctness của bước đọc standings
+        // dưới đây phụ thuộc vào một hành vi mà WorkflowService không kiểm soát
+        // được (race nếu recompute phía MatchLifecycleService là fire-and-forget).
+        await this.standingsService.recomputeGroupStandings(groupAId);
         const groupAStandings = await this._getStandings(groupAId, teamMap);
 
         // ── 6. Group Phase B ───────────────────────────────────────────────
@@ -176,6 +224,7 @@ export class WorkflowService {
         const groupBReports = await this._executeMatches(groupBMatches, teamMap, config.venueId);
         this._log(`Group B: ${groupBReports.length} matches played`);
 
+        await this.standingsService.recomputeGroupStandings(groupBId);
         const groupBStandings = await this._getStandings(groupBId, teamMap);
 
         // ── 7. Knockout Phase ──────────────────────────────────────────────
@@ -189,7 +238,7 @@ export class WorkflowService {
 
         const { phaseId: knockoutPhaseId, match: finalMatch } =
             await this._createAndRunFinal(
-                seasonId, groupAWinner.teamId, groupBWinner.teamId, config.venueId,
+                seasonId, groupAWinner.teamId, groupBWinner.teamId, config.venueId, finalDelaySlots,
             );
 
         const winnerName = finalMatch?.score
@@ -228,7 +277,7 @@ export class WorkflowService {
         await this.prisma.$transaction([
             this.prisma.season.update({
                 where: { id: seasonId },
-                data: { status: 'finished', end_date: new Date() },
+                data: { status: 'finished', end_date: this.clockBase },
             }),
             this.prisma.seasonTeam.updateMany({
                 where: { season_id: seasonId, team_id: winnerTeamId },
@@ -262,14 +311,17 @@ export class WorkflowService {
             select: { id: true },
         });
 
+        // FIX: dùng clockBase thay vì new Date() trực tiếp — season dates phải
+        // nhất quán với clock điều khiển được của workflow, không lệch theo
+        // wall-clock thực khi caller truyền startTime cố định.
         const season = await this.prisma.season.create({
             data: {
                 tournament_id: tournament.id,
                 name: `Season ${suffix}`,
                 status: 'ongoing',
                 max_teams: 32,
-                start_date: new Date(),
-                end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+                start_date: this.clockBase,
+                end_date: new Date(this.clockBase.getTime() + 90 * 24 * 60 * 60 * 1000),
             },
             select: { id: true },
         });
@@ -351,15 +403,9 @@ export class WorkflowService {
             }
         }
 
-        const startDate = new Date();
         const created: { id: number; home_team_id: number; away_team_id: number }[] = [];
 
-        for (let idx = 0; idx < pairs.length; idx++) {
-            const pair = pairs[idx]!;
-            const scheduledAt = new Date(startDate);
-            // Giãn cách 1 giờ giữa các trận để tránh unique constraint (venue_id, scheduled_at)
-            scheduledAt.setHours(scheduledAt.getHours() + idx);
-
+        for (const pair of pairs) {
             const match = await this.prisma.match.create({
                 data: {
                     phase_id: phaseId,
@@ -367,7 +413,12 @@ export class WorkflowService {
                     home_team_id: pair.home,
                     away_team_id: pair.away,
                     status: MatchStatus.scheduled,
-                    scheduled_at: scheduledAt,
+                    // FIX: trước đây mỗi lần gọi method này tự new Date() riêng rồi
+                    // +idx giờ. Group A và Group B chạy 2 lần khác nhau, chỉ lệch
+                    // vài ms theo tốc độ thực thi thực tế → có thể đụng unique
+                    // constraint (venue_id, scheduled_at) nếu chạy đủ nhanh/đồng bộ.
+                    // Giờ dùng 1 slot counter monotonic xuyên suốt cả workflow.
+                    scheduled_at: this._nextSlot(),
                     venue_id: venueId,
                 },
                 select: { id: true, home_team_id: true, away_team_id: true },
@@ -429,7 +480,9 @@ export class WorkflowService {
             NO_SCHEDULE,
         );
 
-        // 5. Confirm official → MatchResult created + standings recomputed
+        // 5. Confirm official → MatchResult created + (kỳ vọng) standings recomputed
+        // phía MatchLifecycleService. Workflow KHÔNG còn dựa vào điều này — xem
+        // recomputeGroupStandings() tường minh ở run() sau khi hết group stage.
         await this.matchLifecycleService.confirmOfficial(m.id, NO_SCHEDULE);
 
         return {
@@ -538,7 +591,14 @@ export class WorkflowService {
     private async _getStandings(groupId: number, teamMap: Map<number, string>): Promise<StandingRow[]> {
         const rows = await this.prisma.teamStanding.findMany({
             where: { group_id: groupId, is_active: true },
-            orderBy: [{ points: 'desc' }, { wins: 'desc' }],
+            // FIX: trước đây orderBy [{points:'desc'},{wins:'desc'}] — bỏ qua
+            // hoàn toàn goal_diff/goals_scored/head_to_head/cards. 2 team cùng
+            // điểm cùng số thắng nhưng goal_diff khác (rất phổ biến) sẽ ra thứ
+            // tự không xác định, sai lệch với standings chính thức.
+            // `position` là field đã được recomputeGroupStandings() tính đầy đủ
+            // tiebreaker chain (kể cả H2H mini-league) — đó là single source
+            // of truth, không nên tự tính lại sort ở đây.
+            orderBy: { position: 'asc' },
             select: {
                 team_id: true,
                 matches_played: true,
@@ -578,6 +638,7 @@ export class WorkflowService {
         homeTeamId: number,
         awayTeamId: number,
         venueId: number,
+        finalDelaySlots: number,
     ): Promise<{ phaseId: number; match: MatchReport }> {
         // Phase order
         const maxOrder = await this.prisma.phase.aggregate({
@@ -599,8 +660,13 @@ export class WorkflowService {
             select: { id: true },
         });
 
-        const scheduledAt = new Date();
-        scheduledAt.setDate(scheduledAt.getDate() + 1);
+        // FIX: trước đây new Date()+1 ngày cố định, không liên quan gì tới slot
+        // của group stage → vẫn có thể đụng nếu group stage kéo dài hơn 1 ngày
+        // (interval nhỏ + nhiều team → nhiều trận). Giờ nhảy tiếp từ slot cuối
+        // cùng của group stage nên Final luôn nằm sau toàn bộ group stage,
+        // không phụ thuộc wall-clock hay số lượng trận đã chạy.
+        this._skipSlots(finalDelaySlots);
+        const scheduledAt = this._nextSlot();
 
         // Tạo match trước
         const match = await this.prisma.match.create({
@@ -746,6 +812,24 @@ export class WorkflowService {
         if (homeScore > awayScore) return groupAWinner.team;
         if (awayScore > homeScore) return groupBWinner.team;
         return 'Unknown';
+    }
+
+    /**
+     * Lấy timestamp kế tiếp theo slot counter rồi advance slot lên 1.
+     * Đây là nguồn thời gian DUY NHẤT cho mọi scheduled_at trong workflow —
+     * điều khiển được qua config.startTime/matchIntervalMinutes, deterministic,
+     * không phụ thuộc tốc độ thực thi (khác hẳn rải rác new Date() trước đây).
+     */
+    private _nextSlot(): Date {
+        const t = new Date(this.clockBase);
+        t.setMinutes(t.getMinutes() + this.matchSlot * this.matchIntervalMinutes);
+        this.matchSlot++;
+        return t;
+    }
+
+    /** Nhảy qua n slot mà không tạo match — dùng để tách Final ra khỏi group stage. */
+    private _skipSlots(n: number): void {
+        this.matchSlot += n;
     }
 
     private _seedRng(seed: number): void {
