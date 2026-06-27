@@ -6,7 +6,7 @@ import type { Team, TeamLeader } from "../generated/prisma/client.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
-@Security("jwt")
+@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("teams")
 @Tags("Teams")
 export class TeamController extends Controller {

@@ -61,21 +61,21 @@ export declare class GroupService {
     }): Promise<DrawAssignment[]>;
     findByIdWithTeams(id: number): Promise<{
         phase: {
-            name: string;
-            is_active: boolean;
-            id: number;
             format: PhaseFormat;
+            id: number;
+            is_active: boolean;
+            name: string;
             season_id: number;
         };
         seasonTeams: never;
     } & {
-        name: string;
-        is_active: boolean;
         id: number;
+        phase_id: number;
+        status: import("../generated/prisma/enums.js").GroupStatus;
+        is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
-        status: import("../generated/prisma/enums.js").GroupStatus;
-        phase_id: number;
+        name: string;
         scheduleGeneratedAt: Date | null;
     }>;
     private assertNoForeignGroupAssignment;

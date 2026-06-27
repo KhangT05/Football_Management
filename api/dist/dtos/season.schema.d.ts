@@ -1,21 +1,21 @@
 import { z } from "zod";
 import { SeasonStatus } from "../generated/prisma/client.js";
 export declare const SeasonStatusSchema: z.ZodEnum<{
-    upcoming: "upcoming";
-    registration_open: "registration_open";
     ongoing: "ongoing";
     finished: "finished";
     cancelled: "cancelled";
+    upcoming: "upcoming";
+    registration_open: "registration_open";
 }>;
 export declare const createSeasonSchema: z.ZodObject<{
     name: z.ZodString;
     description: z.ZodOptional<z.ZodString>;
     status: z.ZodDefault<z.ZodEnum<{
-        upcoming: "upcoming";
-        registration_open: "registration_open";
         ongoing: "ongoing";
         finished: "finished";
         cancelled: "cancelled";
+        upcoming: "upcoming";
+        registration_open: "registration_open";
     }>>;
     start_date: z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
     end_date: z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
@@ -26,29 +26,29 @@ export declare const createSeasonSchema: z.ZodObject<{
     tournament_id: z.ZodNumber;
 }, z.core.$strip>;
 export declare const updateSeasonSchema: z.ZodObject<{
-    name: z.ZodOptional<z.ZodString>;
-    is_active: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
-    description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
-        upcoming: "upcoming";
-        registration_open: "registration_open";
         ongoing: "ongoing";
         finished: "finished";
         cancelled: "cancelled";
+        upcoming: "upcoming";
+        registration_open: "registration_open";
     }>>>;
+    is_active: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
+    name: z.ZodOptional<z.ZodString>;
     start_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     end_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
+    description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     registration_deadline: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     max_teams: z.ZodOptional<z.ZodNumber>;
     is_registration_open: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
 }, z.core.$strip>;
 export declare const UpdateSeasonStatusSchema: z.ZodObject<{
     status: z.ZodEnum<{
-        upcoming: "upcoming";
-        registration_open: "registration_open";
         ongoing: "ongoing";
         finished: "finished";
         cancelled: "cancelled";
+        upcoming: "upcoming";
+        registration_open: "registration_open";
     }>;
     cancel_reason: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;

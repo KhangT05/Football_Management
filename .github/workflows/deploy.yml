@@ -46,9 +46,9 @@ jobs:
     - name: BUILD API
       run: npm run build
 
-    - name: BUILD FE
-      run: npm run build
-      working-directory: frontend
+    # - name: BUILD FE
+    #   run: npm run build
+    #   working-directory: frontend
     # - name: TEST
     #   run: npm test
   # deploy-api:

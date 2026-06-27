@@ -33,25 +33,25 @@ export declare class StandingsService {
     listPlayerStats(seasonId: number, req: QueryRequest): Promise<PaginatedResult<PlayerStatisticRow>>;
     getSuspendedPlayers(seasonId: number): Promise<({
         team: {
-            name: string;
             id: number;
+            name: string;
         };
         player: {
-            name: never;
             id: number;
+            name: never;
         };
     } & {
         id: number;
         created_at: Date;
         updated_at: Date | null;
-        goals_scored: number;
-        yellow_cards: number;
-        red_cards: number;
+        player_id: number;
         team_id: number;
         season_id: number;
         matches_played: number;
-        player_id: number;
+        goals_scored: number;
         assists: number;
+        yellow_cards: number;
+        red_cards: number;
         minutes_played: number;
         accumulated_yellow_cards: number;
         is_suspended: boolean;

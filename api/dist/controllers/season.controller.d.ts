@@ -52,8 +52,8 @@ export declare class SeasonController extends Controller {
      */
     getGroupStandings(id: number, groupId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
-        team_id: number;
         group_id: number;
+        team_id: number;
         position: number;
         matches_played: number;
         wins: number;
@@ -73,37 +73,37 @@ export declare class SeasonController extends Controller {
      */
     getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
-        goals_scored: number;
-        yellow_cards: number;
-        red_cards: number;
+        player_id: number;
         team_id: number;
         season_id: number;
         matches_played: number;
-        player_id: number;
+        goals_scored: number;
+        yellow_cards: number;
+        red_cards: number;
         accumulated_yellow_cards: number;
         is_suspended: boolean;
     }>>;
     getSuspendedPlayers(id: number): Promise<({
         team: {
-            name: string;
             id: number;
+            name: string;
         };
         player: {
-            name: never;
             id: number;
+            name: never;
         };
     } & {
         id: number;
         created_at: Date;
         updated_at: Date | null;
-        goals_scored: number;
-        yellow_cards: number;
-        red_cards: number;
+        player_id: number;
         team_id: number;
         season_id: number;
         matches_played: number;
-        player_id: number;
+        goals_scored: number;
         assists: number;
+        yellow_cards: number;
+        red_cards: number;
         minutes_played: number;
         accumulated_yellow_cards: number;
         is_suspended: boolean;
