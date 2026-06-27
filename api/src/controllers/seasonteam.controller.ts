@@ -7,7 +7,7 @@ import { SeasonTeam } from "../generated/prisma/client.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 
-@Security("jwt", ['admin'])
+@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("seasonteams")
 @Tags("SeasonTeams")
 export class SeasonTeamController extends Controller {

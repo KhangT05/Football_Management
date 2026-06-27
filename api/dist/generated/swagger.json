@@ -1961,17 +1961,18 @@
             },
             "infer_typeofrescheduleMatchSchema_": {
                 "properties": {
-                    "scheduledAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
                     "venueId": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "scheduledAt": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 },
                 "required": [
-                    "venueId"
+                    "venueId",
+                    "scheduledAt"
                 ],
                 "type": "object"
             },

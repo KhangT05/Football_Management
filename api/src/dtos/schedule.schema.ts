@@ -23,7 +23,7 @@ export const autoScheduleSchema = z.object({
 });
 
 export const rescheduleMatchSchema = z.object({
-    scheduledAt: isoDatetime('scheduledAt'),
+    scheduledAt: z.date(),
     venueId: z.number().int().positive(),
 });
 

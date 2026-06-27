@@ -1,7 +1,16 @@
 import { createAppError } from '../common/app.error.js';
-import { Match, MatchStatus, PhaseFormat, PhaseStatus, PhaseType, PrismaClient, SeasonStatus, SeasonTeamStatus } from '../generated/prisma/client.js';
+import {
+    Match,
+    MatchStatus,
+    PhaseFormat,
+    PhaseStatus,
+    PhaseType,
+    PrismaClient,
+    SeasonStatus,
+    SeasonTeamStatus,
+} from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
-import { shuffle } from "../libs/array.utils.js";
+import { shuffle } from '../libs/array.utils.js';
 import {
     GenerateOptions,
     GenerateResult,
@@ -13,19 +22,14 @@ import {
 } from '../types/schedule.type.js';
 import { PaginatedResult, QueryRequest, SortDir } from '../types/queryable.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
-export class ScheduleService extends ScheduleEngine {
 
+export class ScheduleService extends ScheduleEngine {
     private readonly query: Queryable<Match>;
 
-    constructor(
-        prisma: PrismaClient
-    ) {
-        // FIX: bỏ 'round' khỏi sortable. Cột `round` là String (generateRoundRobin
-        // lưu round: String(d.round)) → orderBy DB-level sort lexicographic
-        // ("10" < "2"), sai thứ tự khi >=10 round (double round-robin với 6+ team
-        // đã chạm mức này: numRounds*2 = (n-1)*2). Muốn sort theo round đúng nghĩa
-        // số phải migrate cột sang Int, hoặc sort ở application layer (xem
-        // findMatchesByTeam — vẫn chưa migrate nên tạm chặn ở Queryable).
+    constructor(prisma: PrismaClient) {
+        // round là String column → DB-level orderBy là lexicographic ("10" < "2").
+        // Chặn 'round' khỏi sortable ở Queryable; sort đúng chỉ ở app layer sau khi
+        // parseInt. Muốn DB-level sort chuẩn phải migrate round sang Int.
         super(prisma);
 
         this.query = new Queryable<Match>(prisma.match, {
@@ -34,10 +38,7 @@ export class ScheduleService extends ScheduleEngine {
             defaultSort: { column: 'scheduled_at', direction: 'asc' },
             searchFields: [],
             defaultPerPage: 20,
-            maxPerPage: 300, // đủ load full season 1 request; nâng tiếp nếu tournament scale lên multi-league
-            // TODO: select đang rỗng — verify thật runtime xem Prisma version này throw
-            // hay fallback trả mỗi `id`. Fill rõ field list cần dùng trước khi findAll
-            // được gọi ở chỗ phụ thuộc field khác ngoài id.
+            maxPerPage: 300,
             beforeBuild: (wheres) => { wheres.push({ is_active: true }); },
         });
     }
@@ -51,12 +52,8 @@ export class ScheduleService extends ScheduleEngine {
         teamId: number,
         req: QueryRequest = {},
     ): Promise<PaginatedResult<MatchByTeamRow>> {
-        // FIX: clamp input. page/per_page <= 0 từ client trước đây gây skip âm
-        // (Prisma throw PrismaClientValidationError) hoặc take=0 (vẫn full count scan
-        // vô nghĩa). Không liên quan gì đến "ít dữ liệu" — đó chỉ trả data: [] sạch,
-        // không cần xử lý riêng.
         const page = Math.max(1, Number(req.page ?? 1));
-        const perPage = Math.max(1, Math.min(Number(req.per_page ?? 20), 300)); // đồng bộ cap với Queryable.maxPerPage — nếu Queryable export hằng số dùng chung được thì import lại, đừng hardcode 2 nơi
+        const perPage = Math.max(1, Math.min(Number(req.per_page ?? 20), 300));
         const sortCol = (req.sort === 'round' || req.sort === 'scheduled_at')
             ? req.sort
             : 'scheduled_at';
@@ -70,19 +67,16 @@ export class ScheduleService extends ScheduleEngine {
             OR: [{ home_team_id: teamId }, { away_team_id: teamId }],
         };
 
-        // FIX: nếu sortCol === 'round' thì KHÔNG dùng orderBy DB-level (round là String,
-        // lexicographic sort sai khi round >= 10). Phải fetch hết rồi sort+paginate ở app
-        // layer. Trade-off: mất khả năng skip/take ở DB cho case này — acceptable vì
-        // dataset 1 season/1 team chỉ vài chục match, không phải hàng nghìn.
+        const SELECT = {
+            id: true, round: true, home_team_id: true, away_team_id: true,
+            scheduled_at: true, venue_id: true, status: true,
+        } as const;
+
+        // round là String → không thể dùng DB-level orderBy đúng nghĩa số.
+        // Fetch toàn bộ dataset (bounded: vài chục match/team/season) rồi sort ở app.
         if (sortCol === 'round') {
             const [allRows, total] = await this.prisma.$transaction([
-                this.prisma.match.findMany({
-                    where,
-                    select: {
-                        id: true, round: true, home_team_id: true, away_team_id: true,
-                        scheduled_at: true, venue_id: true, status: true,
-                    },
-                }),
+                this.prisma.match.findMany({ where, select: SELECT }),
                 this.prisma.match.count({ where }),
             ]);
 
@@ -92,7 +86,7 @@ export class ScheduleService extends ScheduleEngine {
                 return direction === 'asc' ? ra - rb : rb - ra;
             });
 
-            const data = allRows.slice((page - 1) * perPage, (page - 1) * perPage + perPage);
+            const data = allRows.slice((page - 1) * perPage, page * perPage);
             const last_page = Math.max(1, Math.ceil(total / perPage));
 
             return {
@@ -101,16 +95,11 @@ export class ScheduleService extends ScheduleEngine {
             };
         }
 
-        // FIX: orderBy bị mất ở bản trước — skip/take không có orderBy là undefined
-        // behavior trên MySQL/Postgres (page 2 có thể lặp/lệch row khi không có thứ tự
-        // tự nhiên ổn định, đặc biệt nếu có write xảy ra giữa request).
+        // scheduled_at là DateTime → DB-level orderBy hợp lệ.
         const [data, total] = await this.prisma.$transaction([
             this.prisma.match.findMany({
                 where,
-                select: {
-                    id: true, round: true, home_team_id: true, away_team_id: true,
-                    scheduled_at: true, venue_id: true, status: true,
-                },
+                select: SELECT,
                 orderBy: { [sortCol]: direction },
                 skip: (page - 1) * perPage,
                 take: perPage,
@@ -125,7 +114,6 @@ export class ScheduleService extends ScheduleEngine {
             meta: { total, page, per_page: perPage, last_page, has_next: page < last_page },
         };
     }
-
 
     async generateGroupsAndSchedule(
         seasonId: number,
@@ -153,16 +141,25 @@ export class ScheduleService extends ScheduleEngine {
                 if (!season)
                     throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
                 if (season.status !== SeasonStatus.registration_open)
-                    throw createAppError('CONFLICT',
-                        `Season phải ở trạng thái 'registration_open' để generate, hiện tại: '${season.status}'`);
+                    throw createAppError(
+                        'CONFLICT',
+                        `Season phải ở 'registration_open' để generate, hiện tại: '${season.status}'`,
+                    );
                 if (season.phases.length > 0)
                     throw createAppError('CONFLICT', `Season ${seasonId} đã có phase — không generate lại`);
 
                 const teamIds = season.season_teams.map(st => st.team_id);
                 if (teamIds.length < 2)
-                    throw createAppError('VALIDATION_ERROR', `Chỉ có ${teamIds.length} team active — cần ít nhất 2`);
+                    throw createAppError(
+                        'VALIDATION_ERROR',
+                        `Chỉ có ${teamIds.length} team active — cần ít nhất 2`,
+                    );
 
-                const groupCount = this.resolveGroupCount(teamIds.length, options.desiredGroupCount, options.minGroupSize);
+                const groupCount = this.resolveGroupCount(
+                    teamIds.length,
+                    options.desiredGroupCount,
+                    options.minGroupSize,
+                );
 
                 if (groupCount === 1 && teamIds.length > options.maxGroupSize)
                     throw createAppError(
@@ -191,7 +188,7 @@ export class ScheduleService extends ScheduleEngine {
                 }));
 
                 const groups = await Promise.all(
-                    groupCreateData.map(data => tx.group.create({ data }))
+                    groupCreateData.map(data => tx.group.create({ data })),
                 );
 
                 const createdGroupIds: number[] = [];
@@ -201,26 +198,30 @@ export class ScheduleService extends ScheduleEngine {
                     const group = groups[i]!;
                     const teamsInGroup = distributed[i]!;
 
-                    // FIX (CRITICAL #1): mapping bị mất khi refactor sang Promise.all — restore lại
                     await tx.seasonTeam.updateMany({
                         where: { season_id: seasonId, team_id: { in: teamsInGroup } },
                         data: { group_id: group.id },
                     });
 
                     if (teamsInGroup.length < 2) {
-                        warnings.push(`${group.name}: chỉ có ${teamsInGroup.length} team — bỏ qua generate match`);
+                        warnings.push(
+                            `${group.name}: chỉ có ${teamsInGroup.length} team — bỏ qua generate match`,
+                        );
                         continue;
                     }
 
                     const matches = this.generateRoundRobin(
-                        teamsInGroup, group.id, phase.id, options.doubleRound ?? true
+                        teamsInGroup, group.id, phase.id, options.doubleRound ?? true,
                     );
                     allMatches.push(...matches);
                     createdGroupIds.push(group.id);
                 }
 
                 await tx.match.createMany({ data: allMatches });
-                await tx.season.update({ where: { id: seasonId }, data: { status: SeasonStatus.ongoing } });
+                await tx.season.update({
+                    where: { id: seasonId },
+                    data: { status: SeasonStatus.ongoing },
+                });
 
                 return { groupCount, groupIds: createdGroupIds };
             },
@@ -243,8 +244,9 @@ export class ScheduleService extends ScheduleEngine {
         seasonId: number,
         options: ScheduleOptions,
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
+        // Fetch không orderBy round ở DB — round là String, sort sai khi >= 10.
+        // Sort ở app layer sau khi parseInt.
         const matches = await this.prisma.match.findMany({
-
             where: {
                 phase: { season_id: seasonId },
                 scheduled_at: null,
@@ -258,17 +260,15 @@ export class ScheduleService extends ScheduleEngine {
                 round: true,
                 group_id: true,
             },
-            orderBy: [{ round: 'asc' }, { id: 'asc' }],
+            // Không orderBy round ở DB — lexicographic sai. Sort ở app layer bên dưới.
+            orderBy: { id: 'asc' }, // stable secondary sort để output deterministic
         });
 
         if (matches.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
 
         const [phase, season] = await Promise.all([
             this.prisma.phase.findFirst({
-                where: {
-                    season_id: seasonId,
-                    type: PhaseType.group_stage
-                },
+                where: { season_id: seasonId, type: PhaseType.group_stage },
                 select: { min_rest_days_per_team: true },
             }),
             this.prisma.season.findUnique({
@@ -285,17 +285,18 @@ export class ScheduleService extends ScheduleEngine {
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date`);
 
         const minRestDays = phase.min_rest_days_per_team ?? 3;
-        const startDate = season.start_date; // UTC Date từ DB — dùng trực tiếp
+        const startDate = season.start_date;
 
         if (startDate < new Date())
-            // log warning nhưng không throw — vẫn schedule được, chỉ pool nhỏ hơn
             console.warn(`[autoSchedule] season ${seasonId} start_date đã qua: ${startDate.toISOString()}`);
 
         const rangeEnd = new Date(startDate);
         rangeEnd.setMonth(rangeEnd.getMonth() + 6);
 
         const takenSet = await this.loadTakenSlots(options.venueIds, startDate, rangeEnd);
-        const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
+        const pool = this.buildSlotPool(
+            options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet,
+        );
 
         if (pool.length < matches.length) {
             throw createAppError(
@@ -310,6 +311,7 @@ export class ScheduleService extends ScheduleEngine {
         const updates: { id: number; scheduledAt: Date; venueId: number }[] = [];
         const unscheduled: number[] = [];
 
+        // Group by round (parseInt để sort đúng thứ tự số).
         const byRound = new Map<number, typeof matches>();
         for (const m of matches) {
             const r = parseInt(m.round ?? '0', 10);
@@ -329,15 +331,14 @@ export class ScheduleService extends ScheduleEngine {
                 if (slotIdx === -1) { unscheduled.push(match.id); continue; }
 
                 const slot = pool[slotIdx]!;
-                usedSlotIdx.add(slotIdx);
-
                 const scheduledAt = this.vnTimeToUtc(slot.date, slot.time);
+
+                usedSlotIdx.add(slotIdx);
                 lastPlayedAt.set(match.home_team_id, scheduledAt.getTime());
                 lastPlayedAt.set(match.away_team_id, scheduledAt.getTime());
                 updates.push({ id: match.id, scheduledAt, venueId: slot.venue_id });
             }
         }
-
 
         const failedFromCollision = await this.writeScheduleBatch(updates);
         unscheduled.push(...failedFromCollision);
@@ -347,27 +348,45 @@ export class ScheduleService extends ScheduleEngine {
             failedMatchIds: unscheduled,
         };
     }
+
     async rescheduleMatch(matchId: number, input: RescheduleInput): Promise<void> {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
-            select: { id: true, status: true, home_team_id: true, away_team_id: true },
+            select: {
+                id: true,
+                status: true,
+                home_team_id: true,
+                away_team_id: true,
+                phase: { select: { min_rest_days_per_team: true } },
+            },
         });
 
-        if (!match || match.status === MatchStatus.cancelled)
-            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại hoặc đã bị huỷ`);
+        if (!match)
+            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
 
+        // Whitelist status hợp lệ để reschedule — tránh silent accept trên ongoing/finished.
+        const RESCHEDULABLE: MatchStatus[] = [MatchStatus.scheduled, MatchStatus.postponed];
+        if (!RESCHEDULABLE.includes(match.status))
+            throw createAppError(
+                'CONFLICT',
+                `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`,
+            );
+
+        // Conflict check: exact-time overlap cho venue hoặc team.
+        // Note: không check rest days ở đây — manual reschedule là override có chủ đích,
+        // caller (admin) chịu trách nhiệm. Nếu muốn enforce thì cần thêm flag strictRestDays.
         const conflict = await this.prisma.match.findFirst({
             where: {
                 id: { not: matchId },
                 scheduled_at: input.scheduledAt,
-                status: { not: MatchStatus.cancelled },
+                status: { notIn: [MatchStatus.cancelled, MatchStatus.forfeited] },
                 OR: [
                     { venue_id: input.venueId },
                     { home_team_id: { in: [match.home_team_id, match.away_team_id] } },
                     { away_team_id: { in: [match.home_team_id, match.away_team_id] } },
                 ],
             },
-            select: { id: true },
+            select: { id: true, status: true },
         });
 
         if (conflict)
@@ -376,28 +395,41 @@ export class ScheduleService extends ScheduleEngine {
                 `Venue ${input.venueId} hoặc 1 trong 2 team đã có trận lúc ${input.scheduledAt.toISOString()}`,
             );
 
-        // status: scheduled ở đây KHÔNG redundant như writeScheduleBatch — reschedule là entry point
-        // duy nhất xử lý match đang ở `postponed` cần gán lại giờ. Set lại scheduled = transition
-        // postponed -> scheduled hợp lệ. Match đang `ongoing`/`finished`/`forfeited`/`bye`/`abandoned`
-        // mà bị reschedule là input-error, nên thêm whitelist rõ thay vì chỉ exclude cancelled:
-        if (match.status !== MatchStatus.scheduled && match.status !== MatchStatus.postponed)
-            throw createAppError('CONFLICT', `Match ${matchId} đang ở status '${match.status}' — không thể reschedule`);
-
         await this.prisma.match.update({
             where: { id: matchId },
-            data: { scheduled_at: input.scheduledAt, venue_id: input.venueId, status: MatchStatus.scheduled },
+            data: {
+                scheduled_at: input.scheduledAt,
+                venue_id: input.venueId,
+                status: MatchStatus.scheduled, // transition: postponed → scheduled hợp lệ
+            },
         });
     }
 
     async getSeasonSchedule(seasonId: number): Promise<SeasonSchedule> {
+        // match không có season_id trực tiếp — join qua phase.
         const matches = await this.prisma.match.findMany({
-            where: { season_id: seasonId, is_active: true },
+            where: {
+                phase: { season_id: seasonId },
+                is_active: true,
+            },
             select: {
                 id: true, round: true,
                 home_team_id: true, away_team_id: true,
                 scheduled_at: true, venue_id: true, status: true,
             },
-            orderBy: [{ round: 'asc' }, { scheduled_at: 'asc' }, { id: 'asc' }],
+            // round là String → không sort ở DB. Sort ở app layer bên dưới.
+            orderBy: [{ scheduled_at: 'asc' }, { id: 'asc' }],
+        });
+
+        // Sort theo round (số) + scheduled_at làm secondary.
+        matches.sort((a, b) => {
+            const ra = parseInt(a.round ?? '0', 10);
+            const rb = parseInt(b.round ?? '0', 10);
+            if (ra !== rb) return ra - rb;
+            // secondary: scheduled_at asc (null cuối)
+            const ta = a.scheduled_at?.getTime() ?? Infinity;
+            const tb = b.scheduled_at?.getTime() ?? Infinity;
+            return ta - tb;
         });
 
         const scheduled = matches.filter(m => m.scheduled_at !== null).length;
@@ -419,8 +451,11 @@ export class ScheduleService extends ScheduleEngine {
         };
     }
 
-
-    private resolveGroupCount(totalTeams: number, desiredGroups: number, minGroupSize: number): number {
+    private resolveGroupCount(
+        totalTeams: number,
+        desiredGroups: number,
+        minGroupSize: number,
+    ): number {
         let g = Math.min(desiredGroups, totalTeams);
         while (g > 1) {
             if (Math.floor(totalTeams / g) >= minGroupSize) return g;
@@ -429,7 +464,11 @@ export class ScheduleService extends ScheduleEngine {
         return 1;
     }
 
-    private assignTeamsToGroups(teamIds: number[], numberOfGroups: number, seedOrder?: number[]): number[][] {
+    private assignTeamsToGroups(
+        teamIds: number[],
+        numberOfGroups: number,
+        seedOrder?: number[],
+    ): number[][] {
         const ordered = seedOrder ?? shuffle([...teamIds]);
         const groups: number[][] = Array.from({ length: numberOfGroups }, () => []);
         let idx = 0;
@@ -453,7 +492,7 @@ export class ScheduleService extends ScheduleEngine {
         if (teamIds.length < 2) return [];
 
         const teams: (number | null)[] = [...teamIds];
-        if (teams.length % 2 !== 0) teams.push(null);
+        if (teams.length % 2 !== 0) teams.push(null); // bye slot
 
         const n = teams.length;
         const numRounds = n - 1;
@@ -464,9 +503,7 @@ export class ScheduleService extends ScheduleEngine {
             for (let i = 0; i < n / 2; i++) {
                 const a = current[i];
                 const b = current[n - 1 - i];
-                if (a === null || a === undefined || b === null || b === undefined) {
-                    continue;
-                }
+                if (a == null || b == null) continue;
                 const [home, away] = round % 2 === 0 ? [a, b] : [b, a];
                 drafts.push({ round: round + 1, home, away });
             }
@@ -491,6 +528,7 @@ export class ScheduleService extends ScheduleEngine {
 
     private rotate<T>(arr: T[]): T[] {
         if (arr.length <= 2) return arr;
+        // Giữ arr[0] cố định (round-robin rotation algorithm), xoay phần còn lại.
         return [arr[0]!, arr[arr.length - 1]!, ...arr.slice(1, arr.length - 1)];
     }
 }
