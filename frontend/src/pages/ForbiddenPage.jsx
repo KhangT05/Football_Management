@@ -5,7 +5,7 @@ export default function ForbiddenPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-navy-dark flex items-center justify-center relative overflow-hidden px-4">
+    <div className="min-h-screen bg-navy-dark flex items-center justify-center relative overflow-x-hidden px-4">
       {/* Background orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-700 rounded-full blur-[160px] opacity-10 pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600 rounded-full blur-[160px] opacity-10 pointer-events-none" />

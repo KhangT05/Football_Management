@@ -81,7 +81,7 @@ export default function Header() {
                   to="/dang-ky"
                   className="hidden lg:inline-block bg-navy-light text-white px-5 py-2.5 rounded-lg font-bold hover:bg-navy-dark transition-all duration-300 shadow-md text-sm uppercase tracking-wider border border-navy-light"
                 >
-                  Đăng Ký Tài Khoản
+                  Đăng Ký
                 </Link>
                 <Link
                   to="/quan-ly-giai-dau/dang-nhap"
@@ -193,21 +193,24 @@ export default function Header() {
           }}
         >
           {/* Nav links */}
-          {navLinks.map(({ to, label, icon: Icon }) => (
+          {navLinks.map((item) => {
+            const NavIcon = item.icon;
+            return (
             <Link
-              key={to}
-              to={to}
+              key={item.to}
+              to={item.to}
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
-                isActive(to)
+                isActive(item.to)
                   ? 'bg-navy-light text-white border-l-2 border-neon'
                   : 'text-gray-300 hover:bg-navy-light hover:text-white'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              {NavIcon && <NavIcon className="w-4 h-4" />}
+              {item.label}
             </Link>
-          ))}
+            );
+          })}
 
           {/* Theme Switcher in mobile */}
           <div className="flex items-center justify-between px-4 py-3 mb-1">

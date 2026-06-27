@@ -3,42 +3,17 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Hash } from 'lucide-react';
 import { matchApi, teamApi } from '../api';
 
+import { getInitials, POSITION_LABELS } from '../utils/constants';
+import MatchHeaderSkeleton from '../components/skeletons/MatchHeaderSkeleton';
+import StatusBadge from '../components/ui/StatusBadge';
+
 // ── Helpers ───────────────────────────────────────────────────
-const getInitials = (name) =>
-  name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
-
-const STATUS_MAP = {
-  scheduled:  { label: 'Sắp diễn ra', cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30' },
-  ongoing:    { label: '🔴 Đang diễn ra', cls: 'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse' },
-  finished:   { label: 'Kết thúc',     cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' },
-  cancelled:  { label: 'Đã hủy',       cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30' },
-};
-
-const POSITION_LABELS = { GK: 'TM', DEF: 'HV', MID: 'TV', FW: 'TĐ' };
 const POSITION_COLORS = {
   GK:  'bg-amber-400/10 text-amber-400',
   DEF: 'bg-blue-400/10 text-blue-400',
   MID: 'bg-emerald-400/10 text-emerald-400',
   FW:  'bg-red-400/10 text-red-400',
 };
-
-// ── Skeletons ─────────────────────────────────────────────────
-function HeaderSkeleton() {
-  return (
-    <div className="flex justify-center items-center gap-8">
-      {[0, 1].map(i => (
-        <div key={i} className="flex flex-col items-center gap-4">
-          <div className="skeleton w-28 h-28 rounded-full" />
-          <div className="skeleton h-5 w-20 rounded" />
-        </div>
-      ))}
-      <div className="flex flex-col items-center gap-3">
-        <div className="skeleton h-20 w-44 rounded-3xl" />
-        <div className="skeleton h-6 w-24 rounded-full" />
-      </div>
-    </div>
-  );
-}
 
 // ── Construction Banner ───────────────────────────────────────
 function ApiBanner({ message }) {
@@ -86,17 +61,18 @@ export default function MatchDetail() {
   useEffect(() => {
     if (!matchId) return; // Không có matchId → hasError đã = true từ useState initial
     let cancelled = false;
-    setIsLoading(true);
-    setHasError(false);
-    setMatchApiError(null);
-
     const parsePage = (res) => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
     };
 
-    matchApi.getMatchById(matchId)
-      .then(async (res) => {
+    const loadData = async () => {
+      setIsLoading(true);
+      setHasError(false);
+      setMatchApiError(null);
+
+      try {
+        const res = await matchApi.getMatchById(matchId);
         if (cancelled) return;
         const payload = (typeof res?.status === 'boolean') ? res.data : res;
         setMatch(payload);
@@ -112,8 +88,7 @@ export default function MatchDetail() {
             if (awayRes.status === 'fulfilled') setAwayPlayers(parsePage(awayRes.value));
           }
         }
-      })
-      .catch(err => {
+      } catch (err) {
         if (!cancelled) {
           if (err?.response?.status === 404 || err?.code === 'ERR_NETWORK') {
             setMatchApiError('Match API chưa được triển khai. Dữ liệu sẽ xuất hiện khi backend hoàn thiện.');
@@ -121,8 +96,12 @@ export default function MatchDetail() {
             setHasError(true);
           }
         }
-      })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    
+    loadData();
 
     return () => { cancelled = true; };
   }, [matchId]);
@@ -133,7 +112,6 @@ export default function MatchDetail() {
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;
-  const statusInfo = STATUS_MAP[match?.status] ?? STATUS_MAP.scheduled;
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-20">
@@ -155,7 +133,7 @@ export default function MatchDetail() {
         <div className="container mx-auto px-4 lg:px-8 py-12 md:py-20 relative z-10">
 
           {isLoading ? (
-            <HeaderSkeleton />
+            <MatchHeaderSkeleton />
           ) : matchApiError ? (
             <div className="text-center space-y-4">
               <ApiBanner message={matchApiError} />
@@ -192,9 +170,7 @@ export default function MatchDetail() {
                       <span className="text-xl md:text-3xl font-black text-gray-400 tracking-widest px-2">VS</span>
                     )}
                   </div>
-                  <span className={`text-xs font-bold uppercase tracking-widest border px-4 py-1.5 rounded-full ${statusInfo.cls}`}>
-                    {statusInfo.label}
-                  </span>
+                  <StatusBadge status={match.status} size="fancy" />
                 </div>
 
                 {/* Away */}

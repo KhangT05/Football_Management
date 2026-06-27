@@ -44,7 +44,7 @@ export default function Register() {
       return;
     }
 
-    const { confirmPassword, ...registerData } = formData;
+    const { confirmPassword: _confirmPassword, ...registerData } = formData;
     
     const result = await register(registerData);
     if (result.success) {
@@ -56,7 +56,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden py-12">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-x-hidden py-12">
       {/* Stadium Background with Dark Tint Overlay */}
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"

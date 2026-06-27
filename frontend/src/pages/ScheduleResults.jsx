@@ -1,175 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, Clock, MapPin, RefreshCw, ChevronDown, Users, Filter, X } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
 import useVenueStore from '../store/venueStore';
 import MatchModal from '../components/MatchModal';
-
-// ── Skeleton ─────────────────────────────────────────────────
-function MatchRowSkeleton() {
-  return (
-    <div className="bg-navy/60 backdrop-blur-md border border-navy-light rounded-4xl p-6 shadow-xl shadow-black/20">
-      <div className="flex items-center justify-between mb-5">
-        <div className="skeleton h-4 w-32 rounded-lg" />
-        <div className="skeleton h-6 w-24 rounded-full" />
-      </div>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col items-center gap-3 flex-1">
-          <div className="skeleton w-16 h-16 rounded-2xl" />
-          <div className="skeleton h-4 w-24 rounded" />
-        </div>
-        <div className="skeleton h-12 w-24 rounded-xl" />
-        <div className="flex flex-col items-center gap-3 flex-1">
-          <div className="skeleton w-16 h-16 rounded-2xl" />
-          <div className="skeleton h-4 w-24 rounded" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Status badge ──────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const map = {
-    scheduled:  { label: 'Sắp diễn ra', cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.15)]' },
-    ongoing:    { label: '🔴 Live',      cls: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]' },
-    finished:   { label: 'Đã kết thúc', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]' },
-    cancelled:  { label: 'Đã hủy',      cls: 'bg-gray-500/10 text-gray-400 border-gray-500/30' },
-    forfeited:  { label: 'Xử thua',     cls: 'bg-orange-500/10 text-orange-400 border-orange-500/30 shadow-[0_0_10px_rgba(249,115,22,0.15)]' },
-  };
-  const s = map[status] ?? map.scheduled;
-  return (
-    <span className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${s.cls}`}>
-      {s.label}
-    </span>
-  );
-}
-
-// ── Match Card ────────────────────────────────────────────────
-// match được enrich với home_team, away_team, venue objects
-function MatchCard({ match, idx, onSelectMatch }) {
-  const homeName  = match.home_team?.name  ?? `Đội #${match.home_team_id}`;
-  const awayName  = match.away_team?.name  ?? `Đội #${match.away_team_id}`;
-  const homeInitial = homeName[0]?.toUpperCase() ?? '?';
-  const awayInitial = awayName[0]?.toUpperCase() ?? '?';
-  const hasScore  = match.home_score != null && match.away_score != null;
-  const venueName = match.venue?.name ?? null;
-
-  const dateLabel = match.scheduled_at
-    ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })
-    : 'Chưa xác định';
-
-  const roundLabel = match.round ? `Vòng ${match.round}` : null;
-
-  return (
-    <div
-      onClick={() => onSelectMatch(match)}
-      className="cursor-pointer bg-navy/60 backdrop-blur-xl border border-navy-light rounded-4xl p-6 sm:p-8 shadow-2xl shadow-black/40 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300 animate-slide-up group relative overflow-hidden"
-      style={{ animationDelay: `${idx * 40}ms` }}
-    >
-      <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-      
-      {/* Date & Status */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3 relative z-10">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-blue-400 text-xs font-black uppercase tracking-wider">
-            <Clock className="w-4 h-4" />
-            {dateLabel}
-          </div>
-          {roundLabel && (
-            <span className="text-[10px] font-black text-gray-400 bg-navy-dark border border-navy-light px-3 py-1 rounded-full shadow-inner uppercase tracking-widest">
-              {roundLabel}
-            </span>
-          )}
-        </div>
-        <StatusBadge status={match.status} />
-      </div>
-
-      {/* Match Row */}
-      <div className="flex items-center justify-between gap-4 relative z-10">
-        {/* Home */}
-        <div className="flex flex-col items-center gap-3 flex-1 min-w-0 group/team">
-          <div className="relative">
-            <div className="absolute inset-0 bg-blue-500/20 rounded-2xl blur-lg opacity-0 group-hover/team:opacity-100 transition-opacity duration-300"></div>
-            {match.home_team?.logo ? (
-              <img
-                src={match.home_team.logo}
-                alt={homeName}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg border-[3px] border-navy-light relative z-10 group-hover/team:scale-105 transition-transform duration-300"
-                onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-black text-white text-3xl shadow-lg border-[3px] border-navy-light relative z-10 group-hover/team:scale-105 transition-transform duration-300">
-                {homeInitial}
-              </div>
-            )}
-          </div>
-          <span className="font-bold text-white text-sm sm:text-base text-center line-clamp-2 w-full group-hover/team:text-blue-400 transition-colors">{homeName}</span>
-        </div>
-
-        {/* Score / VS */}
-        <div className="shrink-0 text-center px-2">
-          {hasScore ? (
-            <div className="bg-navy-dark border border-navy-light rounded-2xl px-6 py-3 shadow-[inset_0_2px_10px_rgba(0,0,0,0.4)] relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-navy-dark border border-navy-light px-2 py-0.5 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                Kết quả
-              </div>
-              <span className={`text-4xl font-black tracking-wider ${
-                match.home_score > match.away_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
-              }`}>
-                {match.home_score}
-              </span>
-              <span className="text-2xl font-black text-gray-600 mx-3">—</span>
-              <span className={`text-4xl font-black tracking-wider ${
-                match.away_score > match.home_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
-              }`}>
-                {match.away_score}
-              </span>
-            </div>
-          ) : (
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-500 rounded-full blur-md opacity-20"></div>
-              <div className="bg-navy-dark border border-navy-light rounded-full w-14 h-14 flex items-center justify-center relative z-10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.4)]">
-                <span className="text-sm font-black text-transparent bg-clip-text bg-linear-to-br from-gray-300 to-gray-500 italic tracking-widest pr-0.5">VS</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Away */}
-        <div className="flex flex-col items-center gap-3 flex-1 min-w-0 group/team">
-          <div className="relative">
-            <div className="absolute inset-0 bg-rose-500/20 rounded-2xl blur-lg opacity-0 group-hover/team:opacity-100 transition-opacity duration-300"></div>
-            {match.away_team?.logo ? (
-              <img
-                src={match.away_team.logo}
-                alt={awayName}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg border-[3px] border-navy-light relative z-10 group-hover/team:scale-105 transition-transform duration-300"
-                onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-br from-rose-600 to-red-800 flex items-center justify-center font-black text-white text-3xl shadow-lg border-[3px] border-navy-light relative z-10 group-hover/team:scale-105 transition-transform duration-300">
-                {awayInitial}
-              </div>
-            )}
-          </div>
-          <span className="font-bold text-white text-sm sm:text-base text-center line-clamp-2 w-full group-hover/team:text-rose-400 transition-colors">{awayName}</span>
-        </div>
-      </div>
-
-      {/* Venue */}
-      {venueName && (
-        <div className="mt-6 pt-4 border-t border-navy-light/50 flex items-center gap-2 text-gray-400 text-xs font-bold relative z-10">
-          <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
-          {venueName}
-        </div>
-      )}
-    </div>
-  );
-}
+import StatusBadge from '../components/ui/StatusBadge';
+import MatchRowSkeleton from '../components/skeletons/MatchRowSkeleton';
+import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
@@ -185,41 +23,31 @@ export default function ScheduleResults() {
   const {
     getMatchesFromCache, isSeasonLoading,
     fetchBySeason, error: scheduleError,
+    scheduleCache
   } = useScheduleStore();
 
   // ── Lookup maps từ stores ──────────────────────────────────
   const teamMap  = useMemo(() => Object.fromEntries((teams  || []).map(t => [t.id, t])), [teams]);
   const venueMap = useMemo(() => Object.fromEntries((venues || []).map(v => [v.id, v])), [venues]);
 
-  // Auto-select season khi load xong – dùng useEffect nhưng tránh setState
-  // đồng bộ bằng cách tính toán ngoài và chỉ gọi setter khi cần
-  useEffect(() => {
-    if (!selectedSeasonId && seasons.length > 0) {
-      const ongoing = seasons.find(s => s.status === 'ongoing');
-      const regOpen = seasons.find(s => s.status === 'registration_open');
-      const best = ongoing ?? regOpen ?? seasons[0];
-      const nextId = best ? String(best.id) : '';
-      if (nextId) {
-        // Dùng setTimeout để tránh setState đồng bộ trong effect body
-        const id = setTimeout(() => setSelectedSeasonId(nextId), 0);
-        return () => clearTimeout(id);
-      }
-    }
-  }, [seasons, selectedSeasonId]);
 
   // ── Matches raw + enriched ─────────────────────────────────
   // Enrich: gắn home_team, away_team, venue từ store
   const allMatches = useMemo(() => {
-    const rawMatches = selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [];
+    const rawMatches = selectedSeasonId 
+      ? getMatchesFromCache(Number(selectedSeasonId)) 
+      : seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
     return rawMatches.map(m => ({
       ...m,
       home_team: teamMap[m.home_team_id] ?? null,
       away_team: teamMap[m.away_team_id] ?? null,
       venue:     venueMap[m.venue_id]    ?? null,
     }));
-  }, [selectedSeasonId, getMatchesFromCache, teamMap, venueMap]);
+  }, [selectedSeasonId, seasons, scheduleCache, getMatchesFromCache, teamMap, venueMap]);
 
-  const isLoading = seasonsLoading || (selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false);
+  const isLoading = seasonsLoading || (selectedSeasonId 
+    ? isSeasonLoading(Number(selectedSeasonId)) 
+    : seasons.some(s => isSeasonLoading(s.id)));
 
   // ── Tabs ───────────────────────────────────────────────────
   // Available rounds derived from all matches
@@ -249,8 +77,12 @@ export default function ScheduleResults() {
 
   // Khi season thay đổi: fetch lịch mới
   useEffect(() => {
-    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId));
-  }, [selectedSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (selectedSeasonId) {
+      fetchBySeason(Number(selectedSeasonId));
+    } else {
+      seasons.forEach(s => fetchBySeason(s.id));
+    }
+  }, [selectedSeasonId, seasons, fetchBySeason]);
 
   const handleRefresh = () => {
     if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });
@@ -260,11 +92,13 @@ export default function ScheduleResults() {
   const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId));
 
   return (
-    <div className="py-12 lg:py-16 bg-navy-dark min-h-screen relative overflow-hidden">
+    <div className="py-12 lg:py-16 bg-navy-dark min-h-screen relative">
       {/* Background Orbs */}
-      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 translate-x-1/4 z-0 pointer-events-none"></div>
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay z-0 pointer-events-none"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/3 -translate-x-1/4"></div>
+        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 translate-x-1/4"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+      </div>
 
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto">
@@ -460,7 +294,7 @@ export default function ScheduleResults() {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {currentData.map((match, idx) => (
-                  <MatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                  <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
                 ))}
               </div>
             )}

@@ -38,8 +38,7 @@ export default function AdminRoute({ children }) {
   const isAdmin =
     user?.role === 'admin' ||
     (Array.isArray(user?.roles) && user.roles.includes('admin')) ||
-    user?.is_admin === true ||
-    user?.email === 'admin@gmail.com';
+    user?.is_admin === true
 
   // Đã đăng nhập nhưng không phải admin → trang Forbidden (403)
   if (!isAdmin) {

@@ -4,7 +4,7 @@ import {
   CalendarDays, Clock, MapPin, RefreshCw,
   ChevronDown, AlertTriangle, RotateCcw,
   Edit, X, Save, Loader2, Play, Settings, Dices,
-  CheckCircle2, Filter, Search
+  CheckCircle2, Filter, Search, Users
 } from 'lucide-react';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -13,31 +13,12 @@ import useVenueStore from '../../store/venueStore';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import { matchApi, seasonTeamApi } from '../../api';
-import { RealtimeBadge } from '../../hooks';
+import GroupDrawUI from '../../components/admin/GroupDrawUI';
+import RealtimeBadge from '../../components/RealtimeBadge';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 
-// ─── Status Badge ────────────────────────────────────────
-function StatusBadge({ status }) {
-  const map = {
-    scheduled:  { cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30', label: 'Sắp diễn ra' },
-    ongoing:    { cls: 'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse', label: '🔴 Đang diễn ra' },
-    finished:   { cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30', label: 'Đã kết thúc' },
-    cancelled:  { cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30', label: 'Đã hủy' },
-    forfeited:  { cls: 'bg-orange-400/10 text-orange-400 border-orange-400/30', label: 'Xử thua' },
-  };
-  const s = map[status] ?? map.scheduled;
-  return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${s.cls}`}>
-      {s.label}
-    </span>
-  );
-}
 
-const INPUT = 'w-full px-4 py-2.5 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon/20 text-sm transition-all';
-
-// Button style helpers
-const BTN_PRIMARY   = 'px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/25 hover:shadow-emerald-500/35 flex items-center gap-2 transition-all active:scale-[.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none';
-const BTN_SECONDARY = 'px-5 py-2.5 rounded-xl font-bold text-gray-300 bg-navy border border-navy-light hover:bg-navy-light hover:text-white shadow-md shadow-black/20 hover:shadow-black/30 flex items-center gap-2 transition-all active:scale-[.98]';
-const BTN_ICON      = 'p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 shadow-md shadow-black/20 transition-all active:scale-[.98] disabled:opacity-50';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -52,16 +33,18 @@ export default function ManageMatches() {
   const toast = useToastStore();
 
   // ── Zustand stores ─────────────────────────────────────────
-  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const {
-    getMatchesFromCache, isSeasonLoading,
+    isSeasonLoading,
     fetchBySeason, rescheduleMatch,
+    scheduleCache
   } = useScheduleStore();
 
   // ── Local state ───────────────────────────────────────────
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
+  const [activeTab, setActiveTab]               = useState('schedule');
   const [filterStatus, setFilterStatus]         = useState('');
   const [filterRound, setFilterRound]           = useState('');
   const [rescheduleModal, setRescheduleModal]   = useState(null);
@@ -92,12 +75,15 @@ export default function ManageMatches() {
 
   // useMemo để reference ổn định, tránh các useMemo phụ thuộc vào rawMatches
   // re-compute mỗi render do conditional expression
-  const rawMatches = useMemo(
-    () => selectedSeasonId ? getMatchesFromCache(Number(selectedSeasonId)) : [],
-    [selectedSeasonId, getMatchesFromCache],
-  );
+  const rawMatches = useMemo(() => {
+    if (selectedSeasonId) return scheduleCache[selectedSeasonId]?.matches ?? [];
+    return seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
+  }, [selectedSeasonId, seasons, scheduleCache]);
 
-  const isLoadingMatches = selectedSeasonId ? isSeasonLoading(Number(selectedSeasonId)) : false;
+  const isLoadingMatches = selectedSeasonId 
+    ? isSeasonLoading(Number(selectedSeasonId)) 
+    : seasons.some(s => isSeasonLoading(s.id));
+
   const canGenerate    = selectedSeason?.status === 'registration_open';
 
   // ── Available rounds (derived from matches) ────────────────
@@ -128,21 +114,16 @@ export default function ManageMatches() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-select latest active season if none selected
+  // Fetch logic
   useEffect(() => {
-    if (!selectedSeasonId && seasons.length > 0) {
-      const ongoing = seasons.find(s => s.status === 'ongoing');
-      const regOpen = seasons.find(s => s.status === 'registration_open');
-      const best = ongoing ?? regOpen ?? seasons[0];
-      if (best) setSelectedSeasonId(String(best.id));
+    if (selectedSeasonId) {
+      fetchBySeason(Number(selectedSeasonId));
+    } else {
+      seasons.forEach(s => fetchBySeason(s.id));
     }
-  }, [seasons]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId));
     setFilterStatus('');
     setFilterRound('');
-  }, [selectedSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedSeasonId, seasons, fetchBySeason]);
 
   const getTeamName  = (id) => teams.find(t => t.id === Number(id))?.name ?? `#${id}`;
   const getVenueName = (id) => venues.find(v => v.id === Number(id))?.name ?? '—';
@@ -431,16 +412,37 @@ export default function ManageMatches() {
           </div>
         )}
 
-        {/* ── No season selected ───────────────────────────────── */}
-        {!selectedSeasonId && !seasonsLoading && (
-          <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500 shadow-xl shadow-black/20">
-            <CalendarDays className="w-16 h-16 mx-auto mb-4 opacity-30" />
-            <p className="font-semibold text-lg">Vui lòng chọn mùa giải để xem lịch thi đấu</p>
-          </div>
+        {/* ── Tabs ─────────────────────────────────────────────── */}
+        <div className="flex items-center gap-2 border-b border-navy-light pb-4">
+          <button
+            onClick={() => setActiveTab('schedule')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeTab === 'schedule'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                : 'text-gray-400 hover:text-white hover:bg-navy-light'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" /> Lịch thi đấu
+          </button>
+          <button
+            onClick={() => setActiveTab('draw')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeTab === 'draw'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-lg shadow-blue-500/10'
+                : 'text-gray-400 hover:text-white hover:bg-navy-light'
+            }`}
+          >
+            <Users className="w-4 h-4" /> Bốc thăm chia bảng
+          </button>
+        </div>
+
+        {/* ── Tab Content ─────────────────────────────────────── */}
+        {activeTab === 'draw' && (
+          <GroupDrawUI seasonId={selectedSeasonId ? Number(selectedSeasonId) : null} />
         )}
 
-        {/* ── Matches Table ─────────────────────────────────────── */}
-        {selectedSeasonId && (
+        {/* ── Matches Table (Schedule Tab) ─────────────────────── */}
+        {activeTab === 'schedule' && (
           <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl shadow-black/25 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap min-w-[800px]">

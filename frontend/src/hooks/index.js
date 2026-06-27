@@ -17,4 +17,4 @@ export { useApiQuery } from './useApiQuery';
 export { useCrudModal } from './useCrudModal';
 export { useApiMutation } from './useApiMutation';
 export { useDebouncedValue } from './useDebouncedValue';
-export { useSocket, RealtimeBadge } from './useSocket';
+export { useSocket } from './useSocket';

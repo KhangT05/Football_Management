@@ -10,13 +10,8 @@ import { useApiQuery, useApiMutation, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
-
-const INPUT = "w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon/20 text-sm transition-all";
-
-// Button style helpers
-const BTN_PRIMARY   = 'flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/30 transition-all active:scale-[.98] disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed';
-const BTN_SECONDARY = 'flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-gray-300 bg-navy border border-navy-light hover:bg-navy-light hover:text-white shadow-md shadow-black/20 transition-all active:scale-[.98]';
-const BTN_ICON      = 'p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white shadow-md shadow-black/15 transition-all active:scale-[.97]';
+import StatusBadge from '../../components/ui/StatusBadge';
+import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 
 const STATUS_OPTIONS = [
   { value: '',          label: 'Tất cả trạng thái' },
@@ -35,21 +30,7 @@ const SEASON_STATUS_COLORS = {
   cancelled:         'text-gray-500',
 };
 
-function StatusBadge({ status }) {
-  const map = {
-    approved:  { cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30', label: 'Đã duyệt' },
-    pending:   { cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30',       label: 'Chờ duyệt' },
-    rejected:  { cls: 'bg-red-400/10 text-red-400 border-red-400/30',             label: 'Từ chối' },
-    active:    { cls: 'bg-blue-400/10 text-blue-400 border-blue-400/30',           label: 'Hoạt động' },
-    withdrawn: { cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30',           label: 'Đã rút' },
-  };
-  const s = map[status] ?? { cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30', label: status };
-  return (
-    <span className={`px-2.5 py-1 text-[11px] font-black rounded-lg border uppercase tracking-wide shadow-sm ${s.cls}`}>
-      {s.label}
-    </span>
-  );
-}
+
 
 export default function ManageSeasonTeams() {
   const toast = useToastStore();
@@ -67,14 +48,6 @@ export default function ManageSeasonTeams() {
         const payload = (typeof res?.status === 'boolean') ? res.data : res;
         const data = Array.isArray(payload?.data) ? payload.data : [];
         setSeasons(data);
-
-        // Auto-select latest active season if none selected
-        if (!selectedSeason && data.length > 0) {
-          const ongoing = data.find(s => s.status === 'ongoing');
-          const regOpen = data.find(s => s.status === 'registration_open');
-          const best = ongoing ?? regOpen ?? data[0];
-          if (best) setSelectedSeason(String(best.id));
-        }
       })
       .catch(() => toast.error('Lỗi khi tải danh sách mùa giải.'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -94,6 +67,8 @@ export default function ManageSeasonTeams() {
   const reloadTeams = useCallback(() => {
     if (selectedSeason) {
       fetchSeasonTeams({ season_id: selectedSeason, per_page: 200 });
+    } else {
+      fetchSeasonTeams({ per_page: 500 }); // Lấy tất cả khi không chọn mùa
     }
   }, [selectedSeason, fetchSeasonTeams]);
 
@@ -411,7 +386,7 @@ export default function ManageSeasonTeams() {
                               </div>
                             </td>
                             <td className="py-4 px-6 text-center">
-                              <StatusBadge status={st.status} />
+                              <StatusBadge status={st.status} variant="seasonTeam" />
                             </td>
                             <td className="py-4 px-6 text-center">
                               {st.group_id ? (

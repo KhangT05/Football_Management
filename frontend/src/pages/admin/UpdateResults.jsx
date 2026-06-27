@@ -10,178 +10,39 @@ import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
 
-// ─── Unified Event Card ──────────────────────────────────────
-function EventCard({ evt, players, onUpdate, onRemove }) {
-  const getEventStyle = (type) => {
-    switch (type) {
-      case 'goal': return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-      case 'yellow': return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400';
-      case 'red': return 'bg-red-500/10 border-red-500/30 text-red-400';
-      default: return 'bg-gray-500/10 border-gray-500/30 text-gray-400';
-    }
-  };
-
-  const getEventIcon = (type) => {
-    switch (type) {
-      case 'goal': return '⚽';
-      case 'yellow': return '🟨';
-      case 'red': return '🟥';
-      default: return '❓';
-    }
-  };
-
-  return (
-    <div className={`flex flex-col gap-2 p-3 rounded-xl border relative group transition-all ${getEventStyle(evt.type)}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-          {getEventIcon(evt.type)} {evt.type === 'goal' ? 'Bàn thắng' : evt.type === 'yellow' ? 'Thẻ vàng' : 'Thẻ đỏ'}
-        </span>
-        <button
-          onClick={() => onRemove(evt.id)}
-          className="w-6 h-6 bg-navy border border-red-500/40 text-red-400 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
-          title="Xóa sự kiện"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
-      </div>
-
-      <select
-        value={evt.player}
-        onChange={e => onUpdate(evt.id, 'player', e.target.value)}
-        className="w-full text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none focus:border-neon"
-      >
-        <option value="">Chọn cầu thủ...</option>
-        {players.map(p => (
-          <option key={p.id} value={String(p.id)}>
-            {p.name || p.player?.name} ({p.jersey_number ?? p.number ?? '?'})
-          </option>
-        ))}
-      </select>
-
-      <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 opacity-70 shrink-0" />
-        <input
-          type="number"
-          min="1" max="120"
-          placeholder="Phút"
-          value={evt.minute}
-          onChange={e => onUpdate(evt.id, 'minute', e.target.value)}
-          className="w-full text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
-        />
-        <span className="text-xs opacity-70 shrink-0">'</span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Match Timer Component ──────────────────────────────────────
-function MatchTimer() {
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setSeconds(s => s + 1);
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [isRunning]);
-
-  const toggleTimer = () => setIsRunning(!isRunning);
-  const resetTimer = () => {
-    setIsRunning(false);
-    setSeconds(0);
-  };
-
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-
-  return (
-    <div className="flex flex-col items-center justify-center p-5 bg-navy rounded-3xl border border-navy-light shadow-lg shadow-black/20">
-      <div className="flex w-full items-center justify-between mb-3">
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-          <Clock className="w-4 h-4 text-neon" /> Thời gian trận đấu
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleTimer}
-            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              isRunning 
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30'
-                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
-            }`}
-          >
-            {isRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            {isRunning ? 'Tạm dừng' : 'Bắt đầu'}
-          </button>
-          <button
-            onClick={resetTimer}
-            className="flex items-center justify-center p-1.5 bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-500/30 transition-all"
-            title="Đặt lại thời gian"
-          >
-            <RotateCcw className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-      <div className="text-5xl font-black text-white tracking-widest font-mono drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">
-        {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-      </div>
-    </div>
-  );
-}
-
-// ─── Status Badge ────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const map = {
-    scheduled:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
-    ongoing:    'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse',
-    finished:   'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
-    cancelled:  'bg-gray-400/10 text-gray-400 border-gray-400/30',
-  };
-  const labels = {
-    scheduled: 'Sắp diễn ra',
-    ongoing:   '🔴 Đang diễn ra',
-    finished:  'Đã kết thúc',
-    cancelled: 'Đã hủy',
-  };
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-bold border ${map[status] || map.scheduled}`}>
-      {labels[status] || status}
-    </span>
-  );
-}
+import EventCard from '../../components/admin/EventCard';
+import MatchTimer from '../../components/admin/MatchTimer';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 export default function UpdateResults() {
   const toast = useToastStore();
 
   // ── Season Store ────────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
-  const { getMatchesFromCache, isSeasonLoading, fetchBySeason } = useScheduleStore();
+  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
 
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
 
-  // Auto-select: chọn mùa tốt nhất khi seasons thay đổi (useMemo để tránh setState trong effect)
-  const bestSeasonId = useMemo(() => {
-    if (seasons.length === 0) return '';
-    const ongoing = seasons.find(s => s.status === 'ongoing');
-    const regOpen = seasons.find(s => s.status === 'registration_open');
-    return String((ongoing ?? regOpen ?? seasons[0]).id);
-  }, [seasons]);
+  // Fetch logic for all seasons if selectedSeasonId is empty
+  useEffect(() => {
+    if (selectedSeasonId) {
+      fetchBySeason(Number(selectedSeasonId));
+    } else {
+      seasons.forEach(s => fetchBySeason(s.id));
+    }
+  }, [selectedSeasonId, seasons, fetchBySeason]);
 
-  // selectedSeasonId: '' = chưa chọn tay, nếu rỗng sẽ fallback sang bestSeasonId
-  const effectiveSeasonId = selectedSeasonId || bestSeasonId;
+  const effectiveSeasonId = selectedSeasonId;
 
   // ── Matches from schedule store ─────────────────────────────
   const allSeasonMatches = useMemo(
-    () => effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [effectiveSeasonId, getMatchesFromCache]
+    () => effectiveSeasonId ? getMatchesFromCache(Number(effectiveSeasonId)) : seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []),
+    [effectiveSeasonId, seasons, scheduleCache, getMatchesFromCache]
   );
-  const isLoadingMatches = effectiveSeasonId ? isSeasonLoading(Number(effectiveSeasonId)) : false;
+  
+  const isLoadingMatches = effectiveSeasonId 
+    ? isSeasonLoading(Number(effectiveSeasonId)) 
+    : seasons.some(s => isSeasonLoading(s.id));
 
   // Chỉ lấy trận đang diễn hoặc sắp diễn để cập nhật kết quả
   const matches = useMemo(() =>
@@ -210,16 +71,21 @@ export default function UpdateResults() {
       return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
     };
 
-    setLoadingPlayers(true);
-    Promise.allSettled([
-      teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }),
-      teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }),
-    ]).then(([homeRes, awayRes]) => {
-      if (cancelled) return;
-      setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
-      setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
-      setLoadingPlayers(false);
-    });
+    const load = async () => {
+      setLoadingPlayers(true);
+      try {
+        const [homeRes, awayRes] = await Promise.allSettled([
+          teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }),
+          teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }),
+        ]);
+        if (cancelled) return;
+        setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
+        setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
+      } finally {
+        if (!cancelled) setLoadingPlayers(false);
+      }
+    };
+    load();
 
     return () => { cancelled = true; };
   }, [selectedMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -245,12 +111,14 @@ export default function UpdateResults() {
     // Chỉ reset khi season thực sự thay đổi (không phải lần mount đầu tiên)
     if (prevSeasonRef.current !== effectiveSeasonId) {
       prevSeasonRef.current = effectiveSeasonId;
-      setSelectedMatchId('');
-      setHomeScore(0);
-      setAwayScore(0);
-      setHomeEvents([]);
-      setAwayEvents([]);
-      setIsDirty(false);
+      setTimeout(() => {
+        setSelectedMatchId('');
+        setHomeScore(0);
+        setAwayScore(0);
+        setHomeEvents([]);
+        setAwayEvents([]);
+        setIsDirty(false);
+      }, 0);
     }
   }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -357,7 +225,7 @@ export default function UpdateResults() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-6 pb-24 animate-fade-in">
+      <div className="max-w-7xl mx-auto space-y-6 pb-18 animate-fade-in">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -582,7 +450,7 @@ export default function UpdateResults() {
 
         {/* Footer Actions */}
         {selectedMatch && (
-          <div className="bg-navy p-5 rounded-2xl border border-navy-light shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-6 z-10">
+          <div className="bg-navy p-3 rounded-2xl border border-navy-light shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-6 z-10">
             <p className="text-sm font-medium text-gray-400 text-center sm:text-left flex-1">
               Kiểm tra kỹ tỷ số, thẻ phạt và sự kiện bàn thắng trước khi công bố.
             </p>
@@ -598,10 +466,10 @@ export default function UpdateResults() {
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-500/20 transition-all uppercase tracking-wider"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-500/20 transition-all uppercase tracking-wider"
               >
                 {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                Xác nhận & Cập nhật
+                Cập nhật
               </button>
             </div>
           </div>

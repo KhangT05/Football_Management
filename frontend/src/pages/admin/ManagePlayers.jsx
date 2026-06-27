@@ -10,8 +10,7 @@ import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import AdminModal from '../../components/admin/AdminModal';
-
-// Shared components imported from ../../components/admin/*
+import { getInitials, AVATAR_COLORS } from '../../utils/constants';
 
 const EMPTY_FORM = { name: '', email: '', password: '', phone: '' };
 const EMPTY_EDIT_FORM = { name: '', phone: '' };
@@ -119,20 +118,7 @@ export default function ManagePlayers() {
   const totalPages = meta.last_page;
   const safePage = Math.min(currentPage, Math.max(1, totalPages));
 
-  // Tạo avatar từ tên (initials)
-  const getInitials = (name) =>
-    name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
-
-  const getAvatarColor = (id) => {
-    const colors = [
-      'from-emerald-500 to-teal-600',
-      'from-blue-500 to-cyan-600',
-      'from-purple-500 to-violet-600',
-      'from-orange-500 to-amber-600',
-      'from-pink-500 to-rose-600',
-    ];
-    return colors[id % colors.length];
-  };
+  const getAvatarColor = (id) => AVATAR_COLORS[id % AVATAR_COLORS.length];
 
   return (
     <AdminLayout>

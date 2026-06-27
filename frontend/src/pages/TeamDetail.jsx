@@ -6,51 +6,17 @@ import {
 } from 'lucide-react';
 import { teamApi } from '../api';
 
-// ── Helpers ───────────────────────────────────────────────────
-const AVATAR_COLORS = [
-  'from-blue-500 to-cyan-600', 'from-purple-500 to-violet-600',
-  'from-emerald-500 to-teal-600', 'from-amber-500 to-orange-600',
-  'from-pink-500 to-rose-600', 'from-red-500 to-rose-700',
-];
-const getInitials = (name) =>
-  name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
+import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
+import TeamHeaderSkeleton from '../components/skeletons/TeamHeaderSkeleton';
+import PlayerCardSkeleton from '../components/skeletons/PlayerCardSkeleton';
 
-const POSITION_LABELS = { GK: 'Thủ môn', DEF: 'Hậu vệ', MID: 'Tiền vệ', FW: 'Tiền đạo' };
+// ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
   GK:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
   DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30',
   MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
   FW:  'bg-red-400/10 text-red-400 border-red-400/30',
 };
-
-// ── Skeletons ─────────────────────────────────────────────────
-function HeaderSkeleton() {
-  return (
-    <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-      <div className="skeleton w-32 h-32 md:w-48 md:h-48 rounded-full shrink-0" />
-      <div className="space-y-4 w-full max-w-lg">
-        <div className="skeleton h-6 w-24 rounded-full" />
-        <div className="skeleton h-12 w-64 rounded" />
-        <div className="skeleton h-4 w-full max-w-md rounded" />
-      </div>
-    </div>
-  );
-}
-
-function PlayerCardSkeleton() {
-  return (
-    <div className="bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/20">
-      <div className="flex items-center gap-3">
-        <div className="skeleton w-12 h-12 rounded-full shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="skeleton h-4 w-28 rounded" />
-          <div className="skeleton h-3 w-16 rounded" />
-        </div>
-        <div className="skeleton h-6 w-8 rounded" />
-      </div>
-    </div>
-  );
-}
 
 // ── StatBox ───────────────────────────────────────────────────
 function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
@@ -131,28 +97,40 @@ export default function TeamDetail() {
   useEffect(() => {
     if (!teamId) return; // Không có teamId → hasError đã = true từ useState initial
     let cancelled = false;
-    setIsLoading(true);
-    setHasError(false);
-
+    
     const parsePage = (res) => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
     };
 
-    Promise.allSettled([
-      teamApi.getTeamById(teamId),
-      teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 50 }),
-    ]).then(([teamRes, playersRes]) => {
-      if (cancelled) return;
-      if (teamRes.status === 'fulfilled') {
-        const raw = teamRes.value;
-        const payload = (typeof raw?.status === 'boolean') ? raw.data : raw;
-        setTeam(payload);
-      } else {
-        setHasError(true);
+    const loadData = async () => {
+      setIsLoading(true);
+      setHasError(false);
+
+      try {
+        const [teamRes, playersRes] = await Promise.allSettled([
+          teamApi.getTeamById(teamId),
+          teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 50 }),
+        ]);
+
+        if (cancelled) return;
+
+        if (teamRes.status === 'fulfilled') {
+          const raw = teamRes.value;
+          const payload = (typeof raw?.status === 'boolean') ? raw.data : raw;
+          setTeam(payload);
+        } else {
+          setHasError(true);
+        }
+        if (playersRes.status === 'fulfilled') {
+          setPlayers(parsePage(playersRes.value));
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-      if (playersRes.status === 'fulfilled') setPlayers(parsePage(playersRes.value));
-    }).finally(() => { if (!cancelled) setIsLoading(false); });
+    };
+
+    loadData();
 
     return () => { cancelled = true; };
   }, [teamId]);
@@ -189,7 +167,7 @@ export default function TeamDetail() {
         <div className="absolute inset-0 bg-linear-to-br from-blue-900/10 via-transparent to-cyan-900/5 pointer-events-none" />
         <div className="container relative z-10 mx-auto px-4 lg:px-8 py-12 md:py-20 animate-slide-up">
           {isLoading ? (
-            <HeaderSkeleton />
+            <TeamHeaderSkeleton />
           ) : hasError ? (
             <div className="flex flex-col items-center gap-4 text-gray-400 py-8">
               <WifiOff className="w-12 h-12 text-gray-600" />

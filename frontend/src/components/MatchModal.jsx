@@ -1,17 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Clock, MapPin, Shield, Activity, Users, User, ChevronDown } from 'lucide-react';
 import { teamApi } from '../api';
+import { getInitials, POSITION_LABELS } from '../utils/constants';
 
-const POSITION_LABELS = { GK: 'TM', DEF: 'HV', MID: 'TV', FW: 'TĐ' };
 const POSITION_COLORS = {
   GK:  'bg-amber-400/10 text-amber-400',
   DEF: 'bg-blue-400/10 text-blue-400',
   MID: 'bg-emerald-400/10 text-emerald-400',
   FW:  'bg-red-400/10 text-red-400',
 };
-
-const getInitials = (name) =>
-  name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
 
 function PlayerItem({ tp }) {
   const name = tp.player?.name ?? tp.player?.player?.name ?? `#${tp.player_id}`;
@@ -97,12 +94,13 @@ export default function MatchModal({ match, onClose }) {
   const loadingPlayers = playerState.loading;
 
   useEffect(() => {
+    if (!match) return;
     // Ngăn scroll cuộn body khi modal mở
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = '';
     };
-  }, []);
+  }, [match]);
 
   useEffect(() => {
     if (!match) return;

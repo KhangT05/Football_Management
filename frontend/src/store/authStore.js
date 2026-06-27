@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
 import { setAccessToken, clearAccessToken, getAccessToken } from '../api/axiosClient';
-
+import { userApi } from '../api/userApi';
 /**
  * Map error từ backend sang message thân thiện với người dùng.
  */
@@ -87,6 +87,15 @@ const useAuthStore = create((set) => ({
       try {
         const profileRes = await authApi.getProfile();
         userProfile = profileRes.data;
+        
+        if (userProfile) {
+          try {
+            await userApi.getAll({ per_page: 1 });
+            userProfile.roles = ['admin'];
+          } catch {
+            userProfile.roles = ['user'];
+          }
+        }
       } catch (profileErr) {
         console.warn('[authStore] Không lấy được profile user:', profileErr);
       }
@@ -123,7 +132,9 @@ const useAuthStore = create((set) => ({
         }
         try {
           const profileRes = await authApi.getProfile();
-          set({ user: profileRes.data, isAuthenticated: true, isInitialized: true });
+          const userProfile = profileRes.data;
+          if (userProfile) userProfile.roles = ['user'];
+          set({ user: userProfile, isAuthenticated: true, isInitialized: true });
         } catch {
           set({ isAuthenticated: true, isInitialized: true });
         }
@@ -199,6 +210,15 @@ const useAuthStore = create((set) => ({
       // Lấy thông tin user
       const profileRes = await authApi.getProfile();
       const userProfile = profileRes?.data ?? profileRes;
+
+      if (userProfile) {
+        try {
+          await userApi.getAll({ per_page: 1 });
+          userProfile.roles = ['admin'];
+        } catch {
+          userProfile.roles = ['user'];
+        }
+      }
 
       set({
         user: userProfile,

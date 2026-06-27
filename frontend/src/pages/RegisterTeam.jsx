@@ -89,7 +89,7 @@ export default function RegisterTeam() {
   };
 
   return (
-    <div className="min-h-screen relative pt-24 pb-20 overflow-hidden bg-navy-dark">
+    <div className="min-h-screen relative pt-24 pb-20 overflow-x-hidden bg-navy-dark">
       {/* Background Orbs */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600 rounded-full blur-[150px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0"></div>
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[150px] opacity-20 translate-y-1/3 -translate-x-1/4 z-0"></div>

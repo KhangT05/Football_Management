@@ -42,14 +42,8 @@ export default function ManageTeams() {
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
 
-  // Auto-select mùa tốt nhất
-  const bestSeasonId = useMemo(() => {
-    if (seasons.length === 0) return '';
-    const regOpen = seasons.find(s => s.status === 'registration_open');
-    const ongoing  = seasons.find(s => s.status === 'ongoing');
-    return String((regOpen ?? ongoing ?? seasons[0]).id);
-  }, [seasons]);
-  const effectiveSeasonId = selectedSeasonId || bestSeasonId;
+  // removed auto-select mùa tốt nhất
+  const effectiveSeasonId = selectedSeasonId;
 
   // Dữ liệu đội theo mùa giải
   const [seasonTeams, setSeasonTeams] = useState([]);   // SeasonTeam records

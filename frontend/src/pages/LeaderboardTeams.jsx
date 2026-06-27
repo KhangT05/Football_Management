@@ -5,179 +5,11 @@ import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
 import { seasonApi } from '../api';
 
-// ── Helpers ───────────────────────────────────────────────────
-const getInitials = (name) =>
-  name?.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
-
-const AVATAR_COLORS = [
-  'from-blue-600 to-indigo-600',
-  'from-purple-600 to-violet-700',
-  'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
-  'from-pink-500 to-rose-600',
-  'from-red-600 to-rose-800',
-  'from-indigo-600 to-blue-800',
-  'from-lime-500 to-green-600',
-];
-
-// ── Skeletons ─────────────────────────────────────────────────
-function LeaderboardSkeleton() {
-  return (
-    <>
-      {[1, 2, 3, 4, 5, 6].map(i => (
-        <tr key={i} className="border-b border-navy-light/50">
-          <td className="py-5 px-6"><div className="skeleton h-6 w-8 mx-auto rounded-lg" /></td>
-          <td className="py-5 px-6">
-            <div className="flex items-center gap-4">
-              <div className="skeleton w-10 h-10 rounded-xl shrink-0" />
-              <div className="skeleton h-5 w-32 rounded-lg" />
-            </div>
-          </td>
-          {[1,2,3,4,5,6,7,8].map(j => (
-            <td key={j} className="py-5 px-4"><div className="skeleton h-5 w-8 mx-auto rounded-lg" /></td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
-}
-
-function TeamCardSkeleton() {
-  return (
-    <div className="bg-navy/50 border border-navy-light rounded-3xl p-6 shadow-xl">
-      <div className="flex items-start gap-4 mb-6">
-        <div className="skeleton w-16 h-16 rounded-2xl shrink-0" />
-        <div className="flex-1 space-y-3">
-          <div className="skeleton h-5 w-32 rounded-lg" />
-          <div className="skeleton h-4 w-20 rounded-lg" />
-          <div className="skeleton h-4 w-24 rounded-lg" />
-        </div>
-      </div>
-      <div className="skeleton h-12 w-full rounded-xl" />
-    </div>
-  );
-}
-
-// ── Standing Row ──────────────────────────────────────────────
-function StandingRow({ row, idx, teams }) {
-  const team = teams.find(t => t.id === row.team_id);
-  const initial = getInitials(team?.name ?? row.team_name ?? `Đội ${row.team_id}`);
-  const colorIdx = (row.team_id ?? idx) % AVATAR_COLORS.length;
-  const rank = idx + 1;
-
-  return (
-    <tr
-      className={`group/row transition-all duration-300 animate-slide-up border-b border-navy-light/50 hover:bg-navy-light/20 ${
-        rank === 1 ? 'bg-yellow-500/5' :
-        rank === 2 ? 'bg-gray-400/5' :
-        rank === 3 ? 'bg-amber-600/5' : ''
-      }`}
-      style={{ animationDelay: `${idx * 40}ms` }}
-    >
-      <td className="py-4 px-6 text-center">
-        {rank === 1 ? (
-          <div className="inline-flex w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500/50 items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.3)]">
-            <Trophy className="w-4 h-4 text-yellow-400" />
-          </div>
-        ) : rank === 2 ? (
-          <div className="inline-flex w-8 h-8 rounded-full bg-gray-300/20 border border-gray-300/50 items-center justify-center">
-            <Trophy className="w-4 h-4 text-gray-300" />
-          </div>
-        ) : rank === 3 ? (
-          <div className="inline-flex w-8 h-8 rounded-full bg-amber-600/20 border border-amber-600/50 items-center justify-center">
-            <Trophy className="w-4 h-4 text-amber-500" />
-          </div>
-        ) : (
-          <span className="font-bold text-gray-500">{rank}</span>
-        )}
-      </td>
-      <td className="py-4 px-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-sm text-white shadow-md border border-white/10 shrink-0 group-hover/row:scale-105 transition-transform`}>
-            {initial}
-          </div>
-          <div className="min-w-0">
-            <Link
-              to={`/doi-bong/${row.team_id}`}
-              className="font-bold text-white text-base hover:text-blue-400 transition-colors truncate block"
-            >
-              {team?.name ?? row.team_name ?? `Đội #${row.team_id}`}
-            </Link>
-          </div>
-        </div>
-      </td>
-      <td className="py-4 px-4 text-center font-medium text-gray-400">{row.played ?? 0}</td>
-      <td className="py-4 px-4 text-center font-bold text-emerald-400 bg-emerald-500/5">{row.won ?? 0}</td>
-      <td className="py-4 px-4 text-center font-medium text-gray-400 bg-gray-500/5">{row.drawn ?? 0}</td>
-      <td className="py-4 px-4 text-center font-bold text-red-400 bg-red-500/5">{row.lost ?? 0}</td>
-      <td className="py-4 px-4 text-center font-medium text-gray-400">{row.goals_for ?? 0}</td>
-      <td className="py-4 px-4 text-center font-medium text-gray-400">{row.goals_against ?? 0}</td>
-      <td className="py-4 px-4 text-center font-medium text-gray-400">
-        {(row.goal_difference ?? 0) > 0 ? `+${row.goal_difference}` : (row.goal_difference ?? 0)}
-      </td>
-      <td className="py-4 px-6 text-center">
-        <span className={`px-3 py-1.5 rounded-lg font-black text-lg ${
-          rank <= 3 ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400' : 'text-white'
-        }`}>
-          {row.points ?? 0}
-        </span>
-      </td>
-    </tr>
-  );
-}
-
-// ── Team Card ─────────────────────────────────────────────────
-function TeamCard({ team, idx }) {
-  const initial = getInitials(team.name);
-  const colorIdx = (team.id ?? idx) % AVATAR_COLORS.length;
-  const playerCount = team.players_count ?? team.players ?? '—';
-
-  return (
-    <div
-      className="bg-navy/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 shadow-2xl shadow-black/20 hover:shadow-blue-900/20 hover:-translate-y-1.5 hover:border-blue-500/30 transition-all duration-300 flex flex-col h-full group animate-slide-up relative overflow-hidden"
-      style={{ animationDelay: `${idx * 60}ms` }}
-    >
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-colors"></div>
-
-      {/* Header */}
-      <div className="flex items-start gap-4 mb-6 relative z-10">
-        <div className={`w-16 h-16 shrink-0 rounded-2xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-2xl text-white shadow-lg border border-white/10 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300`}>
-          {initial}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-black text-white mb-1 line-clamp-2 group-hover:text-blue-400 transition-colors">{team.name}</h3>
-          {team.abbreviation && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">{team.abbreviation}</span>
-          )}
-          {team.description && (
-            <p className="text-xs text-gray-500 mt-2 line-clamp-2">{team.description}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mt-auto space-y-3 relative z-10">
-        <div className="text-sm font-medium text-gray-400 bg-navy-dark/80 border border-navy-light/50 py-2.5 px-3.5 rounded-xl flex items-center justify-between">
-          <span className="flex items-center gap-2"><Users className="w-4 h-4 text-gray-500" /> Cầu thủ</span>
-          <strong className="text-white text-base">{playerCount}</strong>
-        </div>
-        {team.captain_name && (
-          <div className="text-sm font-medium text-gray-400 bg-navy-dark/80 border border-navy-light/50 py-2.5 px-3.5 rounded-xl flex items-center justify-between">
-            <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-gray-500" /> Đội trưởng</span>
-            <strong className="text-white truncate ml-2">{team.captain_name}</strong>
-          </div>
-        )}
-        <Link
-          to={`/doi-bong/${team.id}`}
-          className="w-full mt-4 flex items-center justify-center gap-2 px-5 py-3 bg-navy border border-navy-light text-blue-400 font-bold rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all duration-300 uppercase tracking-wider text-xs group/btn shadow-md"
-        >
-          Xem chi tiết
-          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-        </Link>
-      </div>
-    </div>
-  );
-}
+// Shared imports
+import LeaderboardSkeleton from '../components/skeletons/LeaderboardSkeleton';
+import TeamCardSkeleton from '../components/skeletons/TeamCardSkeleton';
+import StandingRow from '../components/StandingRow';
+import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
@@ -200,15 +32,7 @@ export default function LeaderboardTeams() {
 
   const isLoading = teamsLoading || seasonsLoading;
 
-  // Auto-select active season khi dữ liệu được load
-  useEffect(() => {
-    if (seasons.length === 0 || selectedSeasonId) return;
-    const ongoing = seasons.find(s => s.status === 'ongoing');
-    const regOpen = seasons.find(s => s.status === 'registration_open');
-    const best = ongoing ?? regOpen ?? seasons[0];
-    if (best) setSelectedSeasonId(String(best.id));
-  }, [seasons]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Removed auto-select logic to default to All/Empty
   const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
 
   const fetchStandings = async (seasonId) => {
@@ -247,10 +71,12 @@ export default function LeaderboardTeams() {
   };
 
   return (
-    <div className="py-12 bg-navy-dark min-h-screen relative overflow-hidden">
+    <div className="py-12 bg-navy-dark min-h-screen relative">
       {/* Background ambient lights */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px]"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px]"></div>
+      </div>
 
       <div className="container mx-auto px-4 xl:px-8 relative z-10">
 
@@ -393,7 +219,7 @@ export default function LeaderboardTeams() {
                 <p className="font-bold text-gray-400 text-lg">Chưa có đội bóng nào trong hệ thống.</p>
               </div>
             ) : (
-              teams.map((team, idx) => <TeamCard key={team.id} team={team} idx={idx} />)
+              teams.map((team, idx) => <LeaderboardTeamCard key={team.id} team={team} idx={idx} />)
             )}
           </div>
         </section>
