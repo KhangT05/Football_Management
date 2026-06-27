@@ -13,9 +13,9 @@ export declare const advanceWinnerInputSchema: z.ZodObject<{
     winnerTeamId: z.ZodNumber;
 }, z.core.$strip>;
 export declare const generateKnockoutRequestSchema: z.ZodObject<{
-    legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     venueIds: z.ZodArray<z.ZodNumber>;
     matchTimes: z.ZodArray<z.ZodString>;
+    legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     seededTeamIds: z.ZodArray<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const advanceWinnerRequestSchema: z.ZodObject<{
