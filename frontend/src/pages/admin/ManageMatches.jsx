@@ -4,7 +4,7 @@ import {
   CalendarDays, Clock, MapPin, RefreshCw,
   ChevronDown, AlertTriangle, RotateCcw,
   Edit, X, Save, Loader2, Play, Settings, Dices,
-  CheckCircle2, Filter, Search, Users
+  CheckCircle2, Filter, Search, Users, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -13,7 +13,7 @@ import useVenueStore from '../../store/venueStore';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import { matchApi, seasonTeamApi } from '../../api';
-import GroupDrawUI from '../../components/admin/GroupDrawUI';
+
 import RealtimeBadge from '../../components/RealtimeBadge';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
@@ -44,7 +44,7 @@ export default function ManageMatches() {
 
   // ── Local state ───────────────────────────────────────────
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [activeTab, setActiveTab]               = useState('schedule');
+
   const [filterStatus, setFilterStatus]         = useState('');
   const [filterRound, setFilterRound]           = useState('');
   const [rescheduleModal, setRescheduleModal]   = useState(null);
@@ -76,8 +76,14 @@ export default function ManageMatches() {
   // useMemo để reference ổn định, tránh các useMemo phụ thuộc vào rawMatches
   // re-compute mỗi render do conditional expression
   const rawMatches = useMemo(() => {
-    if (selectedSeasonId) return scheduleCache[selectedSeasonId]?.matches ?? [];
-    return seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
+    if (selectedSeasonId) {
+      const ms = scheduleCache[selectedSeasonId]?.matches ?? [];
+      return ms.map(m => ({ ...m, season_id: m.season_id || Number(selectedSeasonId) }));
+    }
+    return seasons.flatMap(s => {
+      const ms = scheduleCache[s.id]?.matches ?? [];
+      return ms.map(m => ({ ...m, season_id: m.season_id || s.id }));
+    });
   }, [selectedSeasonId, seasons, scheduleCache]);
 
   const isLoadingMatches = selectedSeasonId 
@@ -95,8 +101,16 @@ export default function ManageMatches() {
   // ── Filtered matches ───────────────────────────────────────
   const matches = useMemo(() => {
     let filtered = rawMatches;
-    if (filterStatus) filtered = filtered.filter(m => m.status === filterStatus);
-    if (filterRound)  filtered = filtered.filter(m => String(m.round) === String(filterRound));
+    if (filterStatus) {
+      filtered = filtered.filter(m => String(m.status || '').toLowerCase().trim() === String(filterStatus).toLowerCase().trim());
+    }
+    if (filterRound) {
+      filtered = filtered.filter(m => String(m.round || '').toLowerCase().trim() === String(filterRound).toLowerCase().trim());
+    }
+    
+    // Sắp xếp từ mới nhất đến cũ nhất
+    filtered = [...filtered].sort((a, b) => b.id - a.id);
+    
     return filtered;
   }, [rawMatches, filterStatus, filterRound]);
 
@@ -114,16 +128,37 @@ export default function ManageMatches() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+
+
   // Fetch logic
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
-    } else {
+    } else if (seasons.length > 0) {
       seasons.forEach(s => fetchBySeason(s.id));
     }
-    setFilterStatus('');
-    setFilterRound('');
   }, [selectedSeasonId, seasons, fetchBySeason]);
+
+  // Reset filter when season changes
+  useEffect(() => {
+    setTimeout(() => {
+      setFilterStatus('');
+      setFilterRound('');
+      setCurrentPage(1);
+    }, 0);
+  }, [selectedSeasonId]);
+
+  // ── Pagination ───────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterRound]);
+
+  const totalPages = Math.ceil(matches.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedMatches = matches.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const getTeamName  = (id) => teams.find(t => t.id === Number(id))?.name ?? `#${id}`;
   const getVenueName = (id) => venues.find(v => v.id === Number(id))?.name ?? '—';
@@ -150,12 +185,15 @@ export default function ManageMatches() {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(`${rescheduleForm.date}T${rescheduleForm.time}:00`).toISOString();
+      const actualSeasonId = rescheduleModal.match.season_id;
+      
       await rescheduleMatch(
         rescheduleModal.match.id,
         { scheduledAt, venueId: Number(rescheduleForm.venue_id) },
-        Number(selectedSeasonId),
+        actualSeasonId
       );
-      fetchBySeason(Number(selectedSeasonId), { force: true });
+      
+      fetchBySeason(actualSeasonId, { force: true });
       toast.success('Đã đổi lịch trận đấu!');
       setRescheduleModal(null);
     } catch (err) {
@@ -412,38 +450,8 @@ export default function ManageMatches() {
           </div>
         )}
 
-        {/* ── Tabs ─────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2 border-b border-navy-light pb-4">
-          <button
-            onClick={() => setActiveTab('schedule')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
-              activeTab === 'schedule'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-500/10'
-                : 'text-gray-400 hover:text-white hover:bg-navy-light'
-            }`}
-          >
-            <CalendarDays className="w-4 h-4" /> Lịch thi đấu
-          </button>
-          <button
-            onClick={() => setActiveTab('draw')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
-              activeTab === 'draw'
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-lg shadow-blue-500/10'
-                : 'text-gray-400 hover:text-white hover:bg-navy-light'
-            }`}
-          >
-            <Users className="w-4 h-4" /> Bốc thăm chia bảng
-          </button>
-        </div>
-
-        {/* ── Tab Content ─────────────────────────────────────── */}
-        {activeTab === 'draw' && (
-          <GroupDrawUI seasonId={selectedSeasonId ? Number(selectedSeasonId) : null} />
-        )}
-
-        {/* ── Matches Table (Schedule Tab) ─────────────────────── */}
-        {activeTab === 'schedule' && (
-          <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl shadow-black/25 overflow-hidden">
+        {/* ── Matches Table ─────────────────────── */}
+        <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl shadow-black/25 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                 <thead>
@@ -500,7 +508,7 @@ export default function ManageMatches() {
                       </td>
                     </tr>
                   ) : (
-                    matches.map((match) => (
+                    paginatedMatches.map((match) => (
                       <tr key={match.id} className="hover:bg-navy-light/30 transition-colors group">
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2 text-white font-bold text-sm">
@@ -553,8 +561,34 @@ export default function ManageMatches() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {matches.length > 0 && (
+              <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
+                <span>
+                  Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
+                  {' · '}Tổng <strong className="text-white">{matches.length}</strong> trận đấu
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={safePage <= 1 || isLoadingMatches}
+                    className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={safePage >= totalPages || isLoadingMatches}
+                    className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
-        )}
       </div>
 
       {/* ─── Generate Schedule Modal ──────────────────────────── */}

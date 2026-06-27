@@ -309,11 +309,85 @@ export default function UpdateResults() {
         </div>
 
         {selectedMatch && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 gap-6 items-start">
             
+            {/* Central Scoreboard (moves to top on lg, middle on xl) */}
+            <div className="lg:col-span-12 xl:col-span-6 order-1 xl:order-2 flex flex-col gap-6">
+              <MatchTimer />
+
+              <div className="bg-navy p-6 md:p-8 rounded-3xl border border-navy-light shadow-xl relative overflow-hidden flex-1 flex flex-col justify-center">
+                <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-blue-500 via-emerald-400 to-amber-400" />
+                
+                {/* Match status */}
+                <div className="text-center mb-4 flex items-center justify-center gap-3">
+                  <StatusBadge status={selectedMatch.status} />
+                  <span className="text-gray-500 text-xs font-bold">
+                    {selectedMatch.scheduled_at
+                      ? new Date(selectedMatch.scheduled_at).toLocaleDateString('vi-VN', { dateStyle: 'medium' })
+                      : '—'
+                    }
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 sm:gap-6 md:gap-8 mb-4">
+                  {/* Home */}
+                  <div className="flex flex-col items-center flex-1">
+                    <div className="w-14 h-14 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full border-2 sm:border-4 border-navy-light bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-xl sm:text-3xl md:text-4xl mb-3 sm:mb-4 shadow-inner">
+                      {getHomeName()[0]}
+                    </div>
+                    <div className="flex gap-1 sm:gap-2 bg-navy-dark p-1 sm:p-1.5 rounded-full border border-navy-light">
+                      <button onClick={() => updateScoreDelta('home', -1)} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Minus className="w-4 h-4 sm:w-5 sm:h-5"/></button>
+                      <button onClick={() => updateScoreDelta('home', 1)} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Plus className="w-4 h-4 sm:w-5 sm:h-5"/></button>
+                    </div>
+                  </div>
+
+                  {/* Score */}
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                    <input
+                      type="number" 
+                      min="0" 
+                      max="99"
+                      value={homeScore}
+                      onChange={e => handleScoreChange('home', e.target.value)}
+                      className="w-14 h-20 sm:w-24 sm:h-28 md:w-28 md:h-32 text-center text-3xl sm:text-6xl md:text-7xl font-black bg-navy-dark border-2 border-navy-light rounded-2xl sm:rounded-3xl focus:border-neon outline-none transition-all text-white shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-2xl sm:text-4xl font-black text-gray-600">–</span>
+                    <input
+                      type="number" 
+                      min="0" 
+                      max="99"
+                      value={awayScore}
+                      onChange={e => handleScoreChange('away', e.target.value)}
+                      className="w-14 h-20 sm:w-24 sm:h-28 md:w-28 md:h-32 text-center text-3xl sm:text-6xl md:text-7xl font-black bg-navy-dark border-2 border-navy-light rounded-2xl sm:rounded-3xl focus:border-neon outline-none transition-all text-white shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+
+                  {/* Away */}
+                  <div className="flex flex-col items-center flex-1">
+                    <div className="w-14 h-14 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full border-2 sm:border-4 border-navy-light bg-linear-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white font-black text-xl sm:text-3xl md:text-4xl mb-3 sm:mb-4 shadow-inner">
+                      {getAwayName()[0]}
+                    </div>
+                    <div className="flex gap-1 sm:gap-2 bg-navy-dark p-1 sm:p-1.5 rounded-full border border-navy-light">
+                      <button onClick={() => updateScoreDelta('away', -1)} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Minus className="w-4 h-4 sm:w-5 sm:h-5"/></button>
+                      <button onClick={() => updateScoreDelta('away', 1)} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Plus className="w-4 h-4 sm:w-5 sm:h-5"/></button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center justify-center gap-2 py-2.5 px-6 bg-navy-dark hover:bg-navy-light text-gray-400 hover:text-white border border-navy-light rounded-xl text-sm font-bold transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Đặt lại tỷ số
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Home Column */}
-            <div className="lg:col-span-3 order-2 lg:order-1 flex flex-col gap-4">
-              <div className="bg-navy p-5 rounded-3xl border border-navy-light shadow-lg flex flex-col h-[650px]">
+            <div className="lg:col-span-6 xl:col-span-3 order-2 xl:order-1 flex flex-col gap-4">
+              <div className="bg-navy p-4 sm:p-5 rounded-3xl border border-navy-light shadow-lg flex flex-col h-[450px] xl:h-[650px]">
                 <div className="border-b border-navy-light pb-4 mb-4">
                   <h3 className="font-extrabold text-white text-lg uppercase tracking-wider line-clamp-1 mb-3 text-center">
                     {getHomeName()}
@@ -343,79 +417,9 @@ export default function UpdateResults() {
               </div>
             </div>
 
-            {/* Central Scoreboard */}
-            <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col gap-6">
-              <MatchTimer />
-
-              <div className="bg-navy p-6 md:p-8 rounded-3xl border border-navy-light shadow-xl relative overflow-hidden flex-1 flex flex-col justify-center">
-                <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-blue-500 via-emerald-400 to-amber-400" />
-                
-                {/* Match status */}
-                <div className="text-center mb-4 flex items-center justify-center gap-3">
-                  <StatusBadge status={selectedMatch.status} />
-                  <span className="text-gray-500 text-xs font-bold">
-                    {selectedMatch.scheduled_at
-                      ? new Date(selectedMatch.scheduled_at).toLocaleDateString('vi-VN', { dateStyle: 'medium' })
-                      : '—'
-                    }
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-center gap-4 sm:gap-8 mb-4">
-                  {/* Home */}
-                  <div className="flex flex-col items-center flex-1">
-                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-navy-light bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-3xl sm:text-4xl mb-4 shadow-inner">
-                      {getHomeName()[0]}
-                    </div>
-                    <div className="flex gap-2 bg-navy-dark p-1.5 rounded-full border border-navy-light">
-                      <button onClick={() => updateScoreDelta('home', -1)} className="w-10 h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Minus className="w-5 h-5"/></button>
-                      <button onClick={() => updateScoreDelta('home', 1)} className="w-10 h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Plus className="w-5 h-5"/></button>
-                    </div>
-                  </div>
-
-                  {/* Score */}
-                  <div className="flex items-center gap-4 shrink-0">
-                    <input
-                      type="number" min="0" max="99"
-                      value={homeScore}
-                      onChange={e => handleScoreChange('home', e.target.value)}
-                      className="w-20 h-24 sm:w-28 sm:h-32 text-center text-5xl sm:text-7xl font-black bg-navy-dark border-2 border-navy-light rounded-3xl focus:border-neon outline-none transition-all text-white shadow-inner"
-                    />
-                    <span className="text-4xl font-black text-gray-600">–</span>
-                    <input
-                      type="number" min="0" max="99"
-                      value={awayScore}
-                      onChange={e => handleScoreChange('away', e.target.value)}
-                      className="w-20 h-24 sm:w-28 sm:h-32 text-center text-5xl sm:text-7xl font-black bg-navy-dark border-2 border-navy-light rounded-3xl focus:border-neon outline-none transition-all text-white shadow-inner"
-                    />
-                  </div>
-
-                  {/* Away */}
-                  <div className="flex flex-col items-center flex-1">
-                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-navy-light bg-linear-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white font-black text-3xl sm:text-4xl mb-4 shadow-inner">
-                      {getAwayName()[0]}
-                    </div>
-                    <div className="flex gap-2 bg-navy-dark p-1.5 rounded-full border border-navy-light">
-                      <button onClick={() => updateScoreDelta('away', -1)} className="w-10 h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Minus className="w-5 h-5"/></button>
-                      <button onClick={() => updateScoreDelta('away', 1)} className="w-10 h-10 rounded-full bg-navy border border-transparent flex items-center justify-center text-gray-400 hover:text-white hover:bg-navy-light hover:border-navy-light transition-all shadow-sm"><Plus className="w-5 h-5"/></button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={handleReset}
-                    className="flex items-center justify-center gap-2 py-2.5 px-6 bg-navy-dark hover:bg-navy-light text-gray-400 hover:text-white border border-navy-light rounded-xl text-sm font-bold transition-colors"
-                  >
-                    <RefreshCw className="w-4 h-4" /> Đặt lại tỷ số
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Away Column */}
-            <div className="lg:col-span-3 order-3 flex flex-col gap-4">
-              <div className="bg-navy p-5 rounded-3xl border border-navy-light shadow-lg flex flex-col h-[650px]">
+            <div className="lg:col-span-6 xl:col-span-3 order-3 xl:order-3 flex flex-col gap-4">
+              <div className="bg-navy p-4 sm:p-5 rounded-3xl border border-navy-light shadow-lg flex flex-col h-[450px] xl:h-[650px]">
                 <div className="border-b border-navy-light pb-4 mb-4">
                   <h3 className="font-extrabold text-white text-lg uppercase tracking-wider line-clamp-1 mb-3 text-center">
                     {getAwayName()}

@@ -3,7 +3,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, Users,
   ChevronDown, ChevronUp, AlertTriangle, Loader2,
-  UserPlus, RefreshCw, Search, CalendarDays
+  UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
@@ -84,17 +84,28 @@ export default function ManageTeams() {
     [teams, effectiveSeasonId, approvedSeasonTeamIds]
   );
 
+  // ── Pagination (Client-side over filteredTeams) ───────
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, effectiveSeasonId]);
+
+  const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
   // ── Debounced search ──────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   const refetchTeams = useCallback(() => {
-    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc', force: !!debouncedSearch });
+    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'id', direction: 'asc', per_page: 200, force: !!debouncedSearch });
   }, [fetchTeamsStore, debouncedSearch]);
 
   useEffect(() => {
     fetchSeasons();
-    refetchTeams();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { refetchTeams(); }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -337,7 +348,7 @@ export default function ManageTeams() {
                     </td>
                   </tr>
                 ) : (
-                  filteredTeams.map((team, idx) => (
+                  paginatedTeams.map((team, idx) => (
                     <Fragment key={team.id}>
                       {/* Team Row */}
                       <tr key={team.id} className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
@@ -491,6 +502,33 @@ export default function ManageTeams() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {filteredTeams.length > 0 && (
+            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
+              <span>
+                Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
+                {' · '}Tổng <strong className="text-white">{filteredTeams.length}</strong> đội bóng
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safePage <= 1 || isLoading}
+                  className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages || isLoading}
+                  className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 

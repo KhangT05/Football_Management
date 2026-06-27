@@ -75,14 +75,30 @@ export default function ScheduleResults() {
     fetchVenues();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-select latest season on mount
+  useEffect(() => {
+    if (!selectedSeasonId && seasons?.length > 0) {
+      const ongoing = seasons.find(s => s.status === 'ongoing');
+      const registering = seasons.find(s => s.status === 'registration_open');
+      setTimeout(() => {
+        if (ongoing) {
+          setSelectedSeasonId(String(ongoing.id));
+        } else if (registering) {
+          setSelectedSeasonId(String(registering.id));
+        } else {
+          const latest = [...seasons].sort((a, b) => b.id - a.id)[0];
+          setSelectedSeasonId(String(latest.id));
+        }
+      }, 0);
+    }
+  }, [seasons, selectedSeasonId]);
+
   // Khi season thay đổi: fetch lịch mới
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
-    } else {
-      seasons.forEach(s => fetchBySeason(s.id));
     }
-  }, [selectedSeasonId, seasons, fetchBySeason]);
+  }, [selectedSeasonId, fetchBySeason]);
 
   const handleRefresh = () => {
     if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });

@@ -3,13 +3,14 @@ import AdminLayout from '../../layouts/AdminLayout';
 import {
   Users, Calendar, Trophy, Plus, CheckCircle2, XCircle,
   Trash2, RefreshCw, AlertTriangle, Loader2, Save, Dices,
-  Eraser, Edit, Filter, X, ChevronDown, TrendingUp
+  Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { seasonApi, seasonTeamApi, teamApi, groupApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import GroupDrawUI from '../../components/admin/GroupDrawUI';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 
@@ -66,19 +67,33 @@ export default function ManageSeasonTeams() {
 
   const reloadTeams = useCallback(() => {
     if (selectedSeason) {
-      fetchSeasonTeams({ season_id: selectedSeason, per_page: 200 });
+      fetchSeasonTeams({ season_id: selectedSeason, per_page: 500, sort: 'id', direction: 'asc' });
     } else {
-      fetchSeasonTeams({ per_page: 500 }); // Lấy tất cả khi không chọn mùa
+      fetchSeasonTeams({ per_page: 500, sort: 'id', direction: 'asc' }); // Lấy tất cả khi không chọn mùa
     }
   }, [selectedSeason, fetchSeasonTeams]);
 
-  useEffect(() => { reloadTeams(); }, [reloadTeams]);
+  useEffect(() => { reloadTeams(); }, [reloadTeams, selectedSeason]);
 
   // ── Client-side filter by status ───────────────────────────
   const seasonTeams = useMemo(() => {
     if (!filterStatus) return allSeasonTeams;
     return allSeasonTeams.filter(st => st.status === filterStatus);
   }, [allSeasonTeams, filterStatus]);
+
+  // ── Pagination ───────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  
+  useEffect(() => {
+    setTimeout(() => {
+      setCurrentPage(1);
+    }, 0);
+  }, [filterStatus, selectedSeason]);
+
+  const totalPages = Math.ceil(seasonTeams.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTeams = seasonTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   // ── Summary stats ───────────────────────────────────────────
   const stats = useMemo(() => ({
@@ -139,30 +154,6 @@ export default function ManageSeasonTeams() {
       toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
     }).catch(err => addTeamModal.setFormError(err?.response?.data?.message || 'Lỗi khi thêm đội.'));
-  };
-
-  // ── Draw Groups ─────────────────────────────────────────────
-  const [drawForm, setDrawForm] = useState({ phase_id: '', teams_per_group: 4 });
-  const drawMutation      = useApiMutation();
-  const clearDrawMutation = useApiMutation();
-
-  const handleDraw = () => {
-    if (!drawForm.phase_id) { toast.error('Vui lòng nhập ID của Phase!'); return; }
-    drawMutation.mutate(async () => {
-      await groupApi.drawGroups(Number(drawForm.phase_id), { teams_per_group: Number(drawForm.teams_per_group) });
-      toast.success('Bốc thăm chia bảng thành công!');
-      reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi bốc thăm.'));
-  };
-
-  const handleClearDraw = () => {
-    if (!drawForm.phase_id) { toast.error('Vui lòng nhập ID của Phase để xóa!'); return; }
-    if (!window.confirm('Xóa kết quả bốc thăm của Phase này?')) return;
-    clearDrawMutation.mutate(async () => {
-      await groupApi.clearDraw(Number(drawForm.phase_id));
-      toast.success('Đã xóa kết quả chia bảng!');
-      reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi xóa kết quả.'));
   };
 
   // ── Manual Group Assign ─────────────────────────────────────
@@ -243,18 +234,9 @@ export default function ManageSeasonTeams() {
           </div>
         </div>
 
-        {/* ── Empty state: chưa chọn mùa ───────────────────────── */}
-        {!selectedSeason && (
-          <div className="bg-navy border border-navy-light rounded-2xl py-20 text-center text-gray-500 shadow-xl shadow-black/20">
-            <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-            <p className="font-semibold text-lg">Vui lòng chọn mùa giải để xem danh sách đăng ký</p>
-          </div>
-        )}
-
-        {/* ── Content khi đã chọn mùa ─────────────────────────── */}
-        {selectedSeason && (
-          <>
-            {/* Stats Cards */}
+        {/* ── Content ─────────────────────────── */}
+        <>
+          {/* Stats Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { label: 'Tổng số', value: stats.total,     color: 'blue',    icon: Users },
@@ -263,6 +245,7 @@ export default function ManageSeasonTeams() {
                 { label: 'Hoạt động', value: stats.active,   color: 'sky',     icon: TrendingUp },
                 { label: 'Từ chối',   value: stats.rejected, color: 'red',     icon: XCircle },
                 { label: 'Đã rút',    value: stats.withdrawn,color: 'gray',    icon: X },
+                // eslint-disable-next-line no-unused-vars
               ].map(({ label, value, color, icon: Icon }) => (
                 <div
                   key={label}
@@ -368,7 +351,7 @@ export default function ManageSeasonTeams() {
                           </td>
                         </tr>
                       ) : (
-                        seasonTeams.map(st => (
+                        paginatedTeams.map(st => (
                           <tr key={st.id} className="hover:bg-navy-dark/70 transition-colors group">
                             <td className="py-4 px-6 text-center text-gray-500 text-xs font-mono">#{st.id}</td>
                             <td className="py-4 px-6">
@@ -441,98 +424,42 @@ export default function ManageSeasonTeams() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination */}
+                {seasonTeams.length > 0 && (
+                  <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
+                    <span>
+                      Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
+                      {' · '}Tổng <strong className="text-white">{seasonTeams.length}</strong> đội bóng
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={safePage <= 1 || loadingTeams}
+                        className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={safePage >= totalPages || loadingTeams}
+                        className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
               </div>
             )}
 
             {/* ── Tab: Draw Groups ────────────────────────────────── */}
             {activeTab === 'draw' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-navy border border-navy-light rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
-                  <div className="p-6 bg-navy-dark border-b border-navy-light">
-                    <h3 className="font-black text-white text-lg flex items-center gap-2">
-                      <Dices className="w-6 h-6 text-purple-400" /> Bốc thăm chia bảng
-                    </h3>
-                    <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-                      Hệ thống sẽ lấy toàn bộ các đội <strong className="text-emerald-400">Đã Duyệt (Approved)</strong> và phân bổ ngẫu nhiên vào các Bảng thuộc Phase chỉ định.
-                    </p>
-                    <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-bold text-red-400 mb-1">CẢNH BÁO QUAN TRỌNG</p>
-                        <p className="text-xs text-red-200/80">
-                          Chỉ tiến hành bốc thăm khi <strong>TẤT CẢ CÁC ĐỘI ĐƯỢC DUYỆT ĐÃ HOÀN TẤT THANH TOÁN</strong> thực tế.
-                          Hiện có <strong className="text-white">{stats.approved}</strong> đội Approved.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6 space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                          Phase ID <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={drawForm.phase_id}
-                          onChange={e => setDrawForm({ ...drawForm, phase_id: e.target.value })}
-                          placeholder="VD: 1"
-                          className={INPUT + " font-mono text-center text-lg font-bold"}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Số đội / Bảng</label>
-                        <input
-                          type="number" min="2" max="8"
-                          value={drawForm.teams_per_group}
-                          onChange={e => setDrawForm({ ...drawForm, teams_per_group: e.target.value })}
-                          className={INPUT + " text-center text-lg font-bold"}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 pt-4 border-t border-navy-light">
-                      <button
-                        onClick={handleDraw}
-                        disabled={drawMutation.isLoading}
-                        className="w-full py-3.5 rounded-xl font-black text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/35 flex items-center justify-center gap-2 transition-all active:scale-[.98] disabled:opacity-70"
-                      >
-                        {drawMutation.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Dices className="w-5 h-5" />}
-                        TIẾN HÀNH BỐC THĂM
-                      </button>
-
-                      <button
-                        onClick={handleClearDraw}
-                        disabled={clearDrawMutation.isLoading}
-                        className="w-full py-3 rounded-xl font-bold text-red-400 bg-navy-dark border border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 flex items-center justify-center gap-2 transition-all shadow-md shadow-red-500/5 hover:shadow-red-500/10 disabled:opacity-70 active:scale-[.98]"
-                      >
-                        {clearDrawMutation.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eraser className="w-4 h-4" />}
-                        Xóa kết quả chia bảng
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-navy border border-navy-light rounded-2xl shadow-xl shadow-black/20 p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/10">
-                    <Trophy className="w-10 h-10 text-purple-400 opacity-80" />
-                  </div>
-                  <h4 className="text-xl font-black text-gray-300">Kết quả bốc thăm</h4>
-                  <p className="text-sm text-gray-500 mt-2 max-w-xs leading-relaxed">
-                    Danh sách đội chia vào từng bảng có thể được theo dõi sau khi bốc thăm tại mục <strong className="text-white">Danh sách đội</strong> với Group ID tương ứng.
-                  </p>
-                  {stats.approved > 0 && (
-                    <div className="mt-6 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm text-emerald-400 font-bold">
-                      {stats.approved} đội đã sẵn sàng bốc thăm
-                    </div>
-                  )}
-                </div>
-              </div>
+              <GroupDrawUI seasonId={selectedSeason ? Number(selectedSeason) : null} />
             )}
           </>
-        )}
-      </div>
+        </div>
 
       {/* ── Add Team Modal ──────────────────────────────────────── */}
       {addTeamModal.modal && (

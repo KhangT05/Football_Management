@@ -56,7 +56,7 @@ export default function MatchTimer() {
           </button>
         </div>
       </div>
-      <div className="text-5xl font-black text-white tracking-widest font-mono drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">
+      <div className="text-4xl sm:text-5xl font-black text-white tracking-widest font-mono drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">
         {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
       </div>
     </div>
