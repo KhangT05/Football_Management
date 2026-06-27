@@ -13,7 +13,7 @@ export declare const autoScheduleSchema: z.ZodObject<{
     matchTimes: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 export declare const rescheduleMatchSchema: z.ZodObject<{
-    scheduledAt: z.ZodPipe<z.ZodString, z.ZodTransform<Date, string>>;
+    scheduledAt: z.ZodDate;
     venueId: z.ZodNumber;
 }, z.core.$strip>;
 export type AutoScheduleDto = z.infer<typeof autoScheduleSchema>;

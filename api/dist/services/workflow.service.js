@@ -79,7 +79,12 @@ export class WorkflowService {
         const winnerName = finalMatch?.score
             ? this._resolveWinnerName(finalMatch, groupAWinner, groupBWinner)
             : null;
+        const winnerTeamId = winnerName === groupAWinner.team
+            ? groupAWinner.teamId
+            : groupBWinner.teamId;
+        await this._finalizeSeasonState(seasonId, winnerTeamId, teams.map(t => t.id));
         this._log(`Winner: ${winnerName ?? 'unknown'}`);
+        this._log(`Season ${seasonId} → finished, SeasonTeams updated`);
         return {
             tournamentId,
             seasonId,
@@ -89,6 +94,24 @@ export class WorkflowService {
             final: { match: finalMatch ?? null, winner: winnerName },
             log: this.log,
         };
+    }
+    // ─── FINALIZE ─────────────────────────────────────────────────────────────
+    async _finalizeSeasonState(seasonId, winnerTeamId, allTeamIds) {
+        const eliminatedIds = allTeamIds.filter(id => id !== winnerTeamId);
+        await this.prisma.$transaction([
+            this.prisma.season.update({
+                where: { id: seasonId },
+                data: { status: 'finished', end_date: new Date() },
+            }),
+            this.prisma.seasonTeam.updateMany({
+                where: { season_id: seasonId, team_id: winnerTeamId },
+                data: { status: SeasonTeamStatus.active, seed: 1 },
+            }),
+            this.prisma.seasonTeam.updateMany({
+                where: { season_id: seasonId, team_id: { in: eliminatedIds } },
+                data: { status: SeasonTeamStatus.eliminated },
+            }),
+        ]);
     }
     // ─── SETUP ────────────────────────────────────────────────────────────────
     async _setupTournament() {
@@ -368,7 +391,8 @@ export class WorkflowService {
             select: { id: true },
         });
         const scheduledAt = new Date();
-        scheduledAt.setDate(scheduledAt.getDate() + 1); // Final ngày mai
+        scheduledAt.setDate(scheduledAt.getDate() + 1);
+        // Tạo match trước
         const match = await this.prisma.match.create({
             data: {
                 phase_id: phase.id,
@@ -379,6 +403,22 @@ export class WorkflowService {
                 venue_id: venueId,
             },
             select: { id: true, home_team_id: true, away_team_id: true },
+        });
+        // BracketSlot cho Final — round=1, slot=1, không có source_a/source_b (là trận cuối).
+        // advanceWinner lookup match → slot → parentSlot = null → early return { matchCreated: false }.
+        // Nếu không có slot này: advanceWinner throw NOT_FOUND vì match không link với bracket.
+        await this.prisma.bracketSlot.create({
+            data: {
+                phase_id: phase.id,
+                round: 1,
+                slot_number: 1,
+                match_id: match.id,
+                seeded_home_team_id: homeTeamId,
+                seeded_away_team_id: awayTeamId,
+                is_bye: false,
+                source_a_slot_id: null,
+                source_b_slot_id: null,
+            },
         });
         this._log(`Final match created: id=${match.id}`);
         const teamMap = new Map();

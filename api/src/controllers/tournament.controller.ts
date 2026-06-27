@@ -7,7 +7,7 @@ import { type UpdateTournamentDto } from "../dtos/tournament.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
-@Security("jwt")
+@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("tournaments")
 @Tags("Tournaments")
 export class TournamentController extends Controller {

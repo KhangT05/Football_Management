@@ -4,7 +4,7 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentRuleDto, type CreateTournamentRuleDto, type UpdateTournamentRuleDto } from "../dtos/tournamentRule.schema.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 
-@Security("jwt")
+@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("tournamentrules")
 @Tags("TournamentRules")
 export class TournamentRuleController extends Controller {

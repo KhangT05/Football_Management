@@ -15,7 +15,7 @@ export const autoScheduleSchema = z.object({
     matchTimes: matchTimesField,
 });
 export const rescheduleMatchSchema = z.object({
-    scheduledAt: isoDatetime('scheduledAt'),
+    scheduledAt: z.date(),
     venueId: z.number().int().positive(),
 });
 //# sourceMappingURL=schedule.schema.js.map

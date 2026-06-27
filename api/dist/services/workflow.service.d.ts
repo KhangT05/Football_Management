@@ -68,6 +68,7 @@ export declare class WorkflowService {
     private log;
     constructor(prisma: PrismaClient, knockoutService: KnockoutService, matchLifecycleService: MatchLifecycleService, matchResultService: MatchResultService, standingsService: StandingsService);
     run(config: WorkflowConfig): Promise<WorkflowReport>;
+    private _finalizeSeasonState;
     private _setupTournament;
     private _registerSeasonTeams;
     private _createGroupPhase;

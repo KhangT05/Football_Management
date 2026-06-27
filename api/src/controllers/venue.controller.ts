@@ -5,7 +5,7 @@ import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.j
 import { PaginatedResult } from "../types/queryable.type.js";
 
 
-@Security("jwt", ['user', 'admin'])
+@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("venues")
 @Tags("Venues")
 export class VenueController extends Controller {
