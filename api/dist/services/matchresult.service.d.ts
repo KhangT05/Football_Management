@@ -14,17 +14,17 @@ export declare class MatchResultService {
     constructor(prisma: PrismaClient, knockoutService: KnockoutService, standingsService: StandingsService);
     getMatchResult(matchId: number): Promise<{
         winner_team: {
-            name: string;
             id: number;
+            name: string;
         } | null;
     } & {
-        is_active: boolean;
         id: number;
+        match_id: number;
+        status: import("../generated/prisma/enums.js").MatchResultStatus;
+        is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        status: import("../generated/prisma/enums.js").MatchResultStatus;
-        match_id: number;
         winner_team_id: number | null;
         home_extra_time_score: number | null;
         away_extra_time_score: number | null;
@@ -43,7 +43,7 @@ export declare class MatchResultService {
      * match_id inject vào filter — không thể sort/filter trực tiếp trên FK.
      */
     listMatchEvents(matchId: number, req: QueryRequest): Promise<PaginatedResult<MatchEventRow>>;
-    getMatchPlayerStats(matchId: number): Promise<(Prisma.PickEnumerable<Prisma.MatchEventGroupByOutputType, ("type" | "team_id" | "player_id")[]> & {
+    getMatchPlayerStats(matchId: number): Promise<(Prisma.PickEnumerable<Prisma.MatchEventGroupByOutputType, ("type" | "player_id" | "team_id")[]> & {
         _count: {
             type: number;
         };

@@ -6,17 +6,17 @@ export declare class MatchResultController extends Controller {
     constructor(matchResultService: MatchResultService);
     getMatchResult(id: number): Promise<{
         winner_team: {
-            name: string;
             id: number;
+            name: string;
         } | null;
     } & {
-        is_active: boolean;
         id: number;
+        match_id: number;
+        status: import("../generated/prisma/enums.js").MatchResultStatus;
+        is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
-        status: import("../generated/prisma/enums.js").MatchResultStatus;
-        match_id: number;
         winner_team_id: number | null;
         home_extra_time_score: number | null;
         away_extra_time_score: number | null;
@@ -42,15 +42,15 @@ export declare class MatchResultController extends Controller {
     getMatchEvents(id: number, type?: string, period?: string, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc', q?: string): Promise<import("../types/queryable.type.js").PaginatedResult<{
         type: import("../generated/prisma/enums.js").MatchEventType;
         id: number;
-        created_at: Date;
-        team_id: number | null;
-        player_id: number | null;
         match_id: number;
+        created_at: Date;
+        player_id: number | null;
+        team_id: number | null;
         minute: number | null;
         period: import("../generated/prisma/enums.js").MatchPeriod | null;
         added_minute: number | null;
     }>>;
-    getMatchPlayerStats(id: number): Promise<(import("../generated/prisma/internal/prismaNamespace.js").PickEnumerable<import("../generated/prisma/models.js").MatchEventGroupByOutputType, ("type" | "team_id" | "player_id")[]> & {
+    getMatchPlayerStats(id: number): Promise<(import("../generated/prisma/internal/prismaNamespace.js").PickEnumerable<import("../generated/prisma/models.js").MatchEventGroupByOutputType, ("type" | "player_id" | "team_id")[]> & {
         _count: {
             type: number;
         };
