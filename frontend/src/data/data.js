@@ -128,7 +128,7 @@ export const Information = {
   imgUrl: 'https://cntt.caothang.edu.vn/uploads/media/logo.jpg',
   organization: 'Khoa Công nghệ Thông tin',
   description: 'Hệ thống quản lý chuyên nghiệp dành riêng cho giải bóng đá sinh viên Khoa Công Nghệ Thông Tin. Mang phong cách thể thao, năng động và đậm chất IT.',
-  address: '65 Huỳnh Thúc Kháng, Phường Sài Gòn, TP.HCM, Việt Nam',
+  address: '65 Huỳnh Thúc Kháng, Phường Sài Gòn, TP.HCM',
   email: 'btc.football@it.edu.vn',
   phone: '0123.456.789',
   logoTitle: 'IT Faculty',

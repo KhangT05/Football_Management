@@ -20,6 +20,8 @@ export default function Header() {
     navigate('/');
   };
 
+  const isAdmin = user?.role === 'admin' || (Array.isArray(user?.roles) && user.roles.includes('admin')) || user?.is_admin === true;
+
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
@@ -139,13 +141,17 @@ export default function Header() {
                     </Link>
                     
                     <>
-                      <div className="h-px bg-navy-light my-1 mx-2"></div>
-                      <Link to="/quan-ly-giai-dau" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 rounded-xl transition-all border border-transparent hover:border-blue-600/20">
-                        <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-blue-600/20 transition-colors">
-                          <Shield className="w-4 h-4" />
-                        </div>
-                        Trang quản trị (Admin)
-                      </Link>
+                      {isAdmin && (
+                        <>
+                          <div className="h-px bg-navy-light my-1 mx-2"></div>
+                          <Link to="/quan-ly-giai-dau" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 rounded-xl transition-all border border-transparent hover:border-blue-600/20">
+                            <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-blue-600/20 transition-colors">
+                              <Shield className="w-4 h-4" />
+                            </div>
+                            Trang quản trị (Admin)
+                          </Link>
+                        </>
+                      )}
                     </>
                   </div>
 
@@ -258,10 +264,14 @@ export default function Header() {
                 <Link to="/doi-cua-toi" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-navy-light hover:text-white transition-colors">
                   <Shield className="w-4 h-4 text-purple-400" /> Đội bóng của tôi
                 </Link>
-                <div className="h-px bg-navy-light my-1 mx-4"></div>
-                <Link to="/quan-ly-giai-dau" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 transition-colors">
-                  <Shield className="w-4 h-4" /> Trang quản trị (Admin)
-                </Link>
+                {isAdmin && (
+                  <>
+                    <div className="h-px bg-navy-light my-1 mx-4"></div>
+                    <Link to="/quan-ly-giai-dau" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 transition-colors">
+                      <Shield className="w-4 h-4" /> Trang quản trị (Admin)
+                    </Link>
+                  </>
+                )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 transition-colors mt-1"

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
-import { setAccessToken, clearAccessToken, getAccessToken } from '../api/axiosClient';
-import { userApi } from '../api/userApi';
+import axiosClient, { setAccessToken, clearAccessToken, getAccessToken } from '../api/axiosClient';
 /**
  * Map error từ backend sang message thân thiện với người dùng.
  */
@@ -90,7 +89,7 @@ const useAuthStore = create((set) => ({
         
         if (userProfile) {
           try {
-            await userApi.getAll({ per_page: 1 });
+            await axiosClient.get('/roles', { params: { per_page: 1 } });
             userProfile.roles = ['admin'];
           } catch {
             userProfile.roles = ['user'];
@@ -213,7 +212,7 @@ const useAuthStore = create((set) => ({
 
       if (userProfile) {
         try {
-          await userApi.getAll({ per_page: 1 });
+          await axiosClient.get('/roles', { params: { per_page: 1 } });
           userProfile.roles = ['admin'];
         } catch {
           userProfile.roles = ['user'];

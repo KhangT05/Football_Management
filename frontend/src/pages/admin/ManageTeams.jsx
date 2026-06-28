@@ -88,6 +88,10 @@ export default function ManageTeams() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
+  // ── Debounced search ──────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, effectiveSeasonId]);
@@ -95,10 +99,6 @@ export default function ManageTeams() {
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
   const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
-
-  // ── Debounced search ──────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   const refetchTeams = useCallback(() => {
     fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'id', direction: 'asc', per_page: 200, force: !!debouncedSearch });

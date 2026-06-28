@@ -53,6 +53,7 @@ export default function MatchDetail() {
   // Khởi tạo state từ matchId để tránh setState synchronous trong effect
   const [isLoading, setIsLoading] = useState(!!matchId);
   const [match, setMatch] = useState(null);
+  const [events, setEvents] = useState([]);
   const [homePlayers, setHomePlayers] = useState([]);
   const [awayPlayers, setAwayPlayers] = useState([]);
   const [hasError, setHasError] = useState(!matchId);
@@ -72,10 +73,19 @@ export default function MatchDetail() {
       setMatchApiError(null);
 
       try {
-        const res = await matchApi.getMatchById(matchId);
+        const [res, eventsRes] = await Promise.all([
+          matchApi.getMatchById(matchId),
+          matchApi.getMatchEvents(matchId, { per_page: 100, sort: 'minute', direction: 'asc' }).catch(() => null)
+        ]);
+
         if (cancelled) return;
         const payload = (typeof res?.status === 'boolean') ? res.data : res;
         setMatch(payload);
+
+        if (eventsRes) {
+          const evtPayload = (typeof eventsRes?.status === 'boolean') ? eventsRes.data : eventsRes;
+          setEvents(Array.isArray(evtPayload?.data) ? evtPayload.data : (Array.isArray(evtPayload) ? evtPayload : []));
+        }
 
         // Load lineups if we have team IDs
         if (payload?.home_team_id && payload?.away_team_id) {
@@ -208,20 +218,41 @@ export default function MatchDetail() {
       {!isLoading && !hasError && !matchApiError && match && (
         <div className="container mx-auto px-4 lg:px-8 max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-          {/* Timeline — chờ backend */}
+          {/* Timeline */}
           <section className="lg:col-span-2">
             <h3 className="text-2xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3 animate-slide-up">
               <Activity className="w-6 h-6 text-neon" /> Diễn Biến Trận Đấu
             </h3>
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 flex items-start gap-3">
-              <Construction className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-amber-400 mb-1">Tính năng đang phát triển</p>
-                <p className="text-sm text-gray-400">
-                  Chi tiết diễn biến bàn thắng, thẻ phạt sẽ được hiển thị khi backend hoàn thiện Match Events API.
-                </p>
+            
+            {events.length > 0 ? (
+              <div className="bg-navy border border-navy-light rounded-2xl p-4 sm:p-6 shadow-lg shadow-black/20 space-y-4">
+                {events.map((evt) => {
+                  const isHome = evt.team_id === match.home_team_id;
+                  const icon = evt.type === 'goal' ? '⚽' : evt.type === 'yellow' ? '🟨' : evt.type === 'red' ? '🟥' : '🔄';
+                  const playerName = evt.player?.name ?? `Cầu thủ #${evt.player_id}`;
+                  
+                  return (
+                    <div key={evt.id} className={`flex items-center gap-4 ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
+                      <div className="w-12 text-center text-neon font-mono font-bold text-lg bg-navy-dark py-1 rounded-lg border border-navy-light shrink-0">
+                        {evt.minute}'
+                      </div>
+                      <div className={`flex-1 flex items-center gap-3 ${isHome ? 'justify-start' : 'justify-end'}`}>
+                        {isHome && <span className="text-xl">{icon}</span>}
+                        <div className={`flex flex-col ${isHome ? 'items-start' : 'items-end'}`}>
+                          <span className="font-bold text-white">{playerName}</span>
+                          <span className="text-xs text-gray-500 uppercase">{evt.type}</span>
+                        </div>
+                        {!isHome && <span className="text-xl">{icon}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            ) : (
+              <div className="bg-navy-dark border border-navy-light rounded-xl p-8 text-center text-gray-500">
+                Chưa có sự kiện nào được ghi nhận.
+              </div>
+            )}
           </section>
 
           {/* Lineups */}

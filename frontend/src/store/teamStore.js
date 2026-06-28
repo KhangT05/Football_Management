@@ -42,6 +42,9 @@ const useTeamStore = create((set, get) => ({
   /** Loading state cho players theo teamId: { [id]: boolean } */
   playersLoading: {},
 
+  /** Cờ cho biết đã fetch fallback public teams cho season chưa */
+  publicTeamsFetchedForSeason: null,
+
   // ── Team Actions ──────────────────────────────────────────
 
   /**
@@ -65,6 +68,51 @@ const useTeamStore = create((set, get) => ({
         error: err?.response?.data?.message || 'Không thể tải danh sách đội bóng.',
         isLoading: false,
       });
+    }
+  },
+
+  /**
+   * Fallback cho Guest: Vì teamApi.getTeams yêu cầu JWT, Guest sẽ bị 401.
+   * Để đồng bộ dữ liệu (hiển thị tên đội thay vì Đội 1), ta dùng các API public
+   * của season/group để trích xuất danh sách team.
+   */
+  fetchPublicTeamsBySeason: async (seasonId) => {
+    const { teams, publicTeamsFetchedForSeason } = get();
+    if (teams.length > 0 || publicTeamsFetchedForSeason === seasonId) return;
+
+    try {
+      const { seasonApi } = await import('../api/seasonApi');
+      const { groupApi } = await import('../api/groupApi');
+      
+      const stRes = await seasonApi.getStandings(seasonId);
+      const payload = typeof stRes?.status === 'boolean' ? stRes.data : stRes;
+      const groupsData = Array.isArray(payload) ? payload : [];
+
+      const teamMap = {};
+      const teamList = [];
+
+      await Promise.all(groupsData.map(async (g) => {
+        if (!g.groupId) return;
+        const groupDetailRes = await groupApi.getByIdWithTeams(g.groupId).catch(() => null);
+        const groupDetail = typeof groupDetailRes?.status === 'boolean' ? groupDetailRes.data : groupDetailRes;
+        
+        if (groupDetail?.seasonTeams) {
+          groupDetail.seasonTeams.forEach(st => {
+            if (st.team && !teamMap[st.team.id]) {
+              teamMap[st.team.id] = true;
+              teamList.push(st.team);
+            }
+          });
+        }
+      }));
+
+      if (teamList.length > 0) {
+        set({ teams: teamList, publicTeamsFetchedForSeason: seasonId });
+      } else {
+        set({ publicTeamsFetchedForSeason: seasonId });
+      }
+    } catch (err) {
+      console.error('Lỗi khi fetch public teams fallback:', err);
     }
   },
 

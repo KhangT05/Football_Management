@@ -22,8 +22,6 @@ import axiosClient from './axiosClient';
  */
 export const matchApi = {
 
-  // ── Schedule endpoints (ĐÚNG theo backend) ─────────────────
-
   /**
    * Lấy lịch thi đấu theo mùa giải (paginated)
    * GET /schedules/seasons/{seasonId}/schedule
@@ -86,52 +84,35 @@ export const matchApi = {
 
   // ── Legacy stubs (giữ để không break code cũ, nhưng KHÔNG hoạt động) ──
 
-  /**
-   * @deprecated Backend không có endpoint này.
-   * Dùng getScheduleBySeason(seasonId) thay thế.
-   */
+  // ── Match Lifecycle (match.controller.ts) ────────────────────
+  
+  startMatch: (id) => axiosClient.post(`/matches/${id}/start`),
+  transitionPeriod: (id, body) => axiosClient.post(`/matches/${id}/period`, body),
+  recordEvent: (id, body) => axiosClient.post(`/matches/${id}/events`, body),
+  finalizeMatch: (id, body) => axiosClient.post(`/matches/${id}/finalize`, body),
+  confirmOfficial: (id, body) => axiosClient.post(`/matches/${id}/confirm-official`, body),
+  forfeitMatch: (id, body) => axiosClient.post(`/matches/${id}/forfeit`, body),
+  abandonMatch: (id, body) => axiosClient.post(`/matches/${id}/abandon`, body),
+  submitManualScore: (id, body) => axiosClient.post(`/matches/${id}/manual-score`, body),
+
+  // ── Match Results (matchResult.controller.ts) ────────────────
+
+  getMatchById: (id) => axiosClient.get(`/matches/${id}/result`),
+  getMatchEvents: (id, params = {}) => axiosClient.get(`/matches/${id}/events`, { params }),
+
+  // ── Legacy stubs (deprecated) ────────────────────────────────
+
   getMatches: (_params = {}) => {
-    console.warn('[matchApi] getMatches() đã deprecated — backend không có /matches endpoint. Dùng getScheduleBySeason(seasonId) thay thế.');
-    return Promise.reject(new Error('API /matches không tồn tại trên backend. Dùng /schedules/seasons/{seasonId}/schedule.'));
+    console.warn('[matchApi] getMatches() đã deprecated. Dùng getScheduleBySeason(seasonId).');
+    return Promise.reject(new Error('API /matches không tồn tại.'));
   },
-
-  /**
-   * @deprecated Backend không có endpoint này.
-   */
-  getMatchById: (_id) => {
-    console.warn('[matchApi] getMatchById() đã deprecated — backend không có /matches/{id} endpoint.');
-    return Promise.reject(new Error('API /matches/{id} không tồn tại trên backend.'));
-  },
-
-  /**
-   * @deprecated Backend không có endpoint này. Match được tạo qua generateSchedule.
-   */
   create: (_data) => {
-    console.warn('[matchApi] create() đã deprecated — tạo lịch qua generateSchedule(seasonId, body).');
     return Promise.reject(new Error('POST /matches không tồn tại. Dùng generateSchedule() hoặc autoSchedule().'));
   },
-
-  /**
-   * @deprecated Backend không có endpoint này. Dùng rescheduleMatch(matchId, body).
-   */
   update: (_id, _data) => {
-    console.warn('[matchApi] update() đã deprecated — dùng rescheduleMatch(matchId, body).');
     return Promise.reject(new Error('PATCH /matches/{id} không tồn tại. Dùng rescheduleMatch().'));
   },
-
-  /**
-   * @deprecated Backend không có endpoint này.
-   */
-  updateResult: (_id, _data) => {
-    console.warn('[matchApi] updateResult() đã deprecated — backend chưa có Match Events API.');
-    return Promise.reject(new Error('POST /matches/{id}/result chưa được implement trên backend.'));
-  },
-
-  /**
-   * @deprecated Backend không có endpoint này.
-   */
   delete: (_id) => {
-    console.warn('[matchApi] delete() đã deprecated — backend không có DELETE /matches/{id}.');
     return Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.'));
   },
 };

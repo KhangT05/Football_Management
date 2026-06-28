@@ -5,7 +5,7 @@ import {
   Loader2, AlertTriangle, RefreshCw,
   Play, Pause, RotateCcw, Minus, ChevronDown, CalendarDays
 } from 'lucide-react';
-import { teamApi } from '../../api';
+import { teamApi, matchApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
@@ -182,22 +182,70 @@ export default function UpdateResults() {
     return '';
   };
 
+  const syncEvents = async () => {
+    if (selectedMatch.status === 'scheduled') {
+      await matchApi.startMatch(selectedMatch.id);
+    }
+    const pushEvents = async (events, teamId) => {
+      for (const evt of events) {
+        if (!evt.isSaved) {
+          await matchApi.recordEvent(selectedMatch.id, {
+            teamId,
+            playerId: evt.player,
+            type: evt.type,
+            minute: Number(evt.minute)
+          });
+          evt.isSaved = true; // Đánh dấu đã lưu để không push lại
+        }
+      }
+    };
+    await pushEvents(homeEvents, selectedMatch.home_team_id);
+    await pushEvents(awayEvents, selectedMatch.away_team_id);
+  };
+
   const handleSaveDraft = async () => {
+    const err = validate();
+    if (err) { toast.error(err); return; }
     setIsSavingDraft(true);
-    await new Promise(r => setTimeout(r, 400));
-    setIsSavingDraft(false);
-    setIsDirty(false);
-    toast.info('Đã lưu nháp. Kết quả chưa được công bố công khai.');
+    try {
+      await syncEvents();
+      toast.info('Đã đồng bộ sự kiện với máy chủ (chưa kết thúc trận).');
+      setIsDirty(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi lưu dữ liệu lên server.');
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   const handlePublish = async () => {
     const err = validate();
     if (err) { toast.error(err); return; }
     setIsPublishing(true);
-    await new Promise(r => setTimeout(r, 600));
-    setIsPublishing(false);
-    setIsDirty(false);
-    toast.success('Đã cập nhật kết quả thành công! 🎉', 5000);
+    try {
+      // 1. Sync events
+      if (homeEvents.length > 0 || awayEvents.length > 0) {
+        await syncEvents();
+        // 2. Finalize match
+        await matchApi.finalizeMatch(selectedMatch.id, { resultType: 'full_time' });
+      } else {
+        // Nếu không có sự kiện nào, dùng submitManualScore
+        await matchApi.submitManualScore(selectedMatch.id, {
+          homeScore: Number(homeScore),
+          awayScore: Number(awayScore),
+          resultType: 'full_time'
+        });
+      }
+      toast.success('Đã cập nhật kết quả và kết thúc trận đấu! 🎉', 5000);
+      setIsDirty(false);
+      handleRefresh(); // Refresh schedule list
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi công bố kết quả: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleReset = () => {

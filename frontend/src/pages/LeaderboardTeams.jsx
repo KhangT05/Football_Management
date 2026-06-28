@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
-import { seasonApi } from '../api';
+import { seasonApi, seasonTeamApi } from '../api';
 
 // Shared imports
 import LeaderboardSkeleton from '../components/skeletons/LeaderboardSkeleton';
@@ -17,6 +17,7 @@ export default function LeaderboardTeams() {
   const {
     teams, isLoading: teamsLoading,
     fetchAll: fetchTeams,
+    fetchPublicTeamsBySeason
   } = useTeamStore();
 
   const {
@@ -26,28 +27,66 @@ export default function LeaderboardTeams() {
 
   // ── Standings state ────────────────────────────────────────
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [standings, setStandings] = useState([]);
+  const [groupedStandings, setGroupedStandings] = useState([]);
   const [standingsLoading, setStandingsLoading] = useState(false);
   const [standingsError, setStandingsError] = useState(null);
+  const [activeTab, setActiveTab] = useState('group'); // 'group' or 'knockout'
+  const [seasonTeams, setSeasonTeams] = useState([]);
+  const [loadingSeasonTeams, setLoadingSeasonTeams] = useState(false);
 
-  const isLoading = teamsLoading || seasonsLoading;
+  const isLoading = teamsLoading || seasonsLoading || loadingSeasonTeams;
 
   // Removed auto-select logic to default to All/Empty
   const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
 
+  const fetchSeasonTeams = async (seasonId) => {
+    if (!seasonId) { setSeasonTeams([]); return; }
+    setLoadingSeasonTeams(true);
+    try {
+      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 200 });
+      const payload = typeof res?.status === 'boolean' ? res.data : res;
+      const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      setSeasonTeams(data);
+    } catch (err) {
+      if (err?.response?.status !== 401 && err?.response?.status !== 403) {
+        console.error('Không thể tải danh sách đội theo mùa giải.', err);
+      }
+      setSeasonTeams([]);
+    } finally {
+      setLoadingSeasonTeams(false);
+    }
+  };
+
   const fetchStandings = async (seasonId) => {
-    if (!seasonId) { setStandings([]); return; }
+    if (!seasonId) { setGroupedStandings([]); return; }
     setStandingsLoading(true);
     setStandingsError(null);
     try {
       const res = await seasonApi.getStandings(seasonId);
+      // axiosClient interceptor returns response.data → res = { status, message, data, timestamp }
       const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const data = Array.isArray(payload?.data) ? payload.data :
-                   Array.isArray(payload) ? payload : [];
-      setStandings(data);
+      // payload is an array of groups: [{ groupId, groupName, standings: [...] }, ...]
+      const groups = Array.isArray(payload) ? payload : [];
+      
+      const formattedGroups = groups.map(group => ({
+        ...group,
+        standings: (group.standings || []).map(row => ({
+          ...row,
+          played: row.matches_played ?? row.played ?? 0,
+          won: row.wins ?? row.won ?? 0,
+          drawn: row.draws ?? row.drawn ?? 0,
+          lost: row.losses ?? row.lost ?? 0,
+          goal_difference: (row.goals_for ?? 0) - (row.goals_against ?? 0),
+        })).sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference)
+      }));
+      setGroupedStandings(formattedGroups);
+
+      if (teams.length === 0) {
+        await fetchPublicTeamsBySeason(seasonId);
+      }
     } catch (err) {
       setStandingsError(err?.response?.data?.message || 'Không thể tải bảng xếp hạng.');
-      setStandings([]);
+      setGroupedStandings([]);
     } finally {
       setStandingsLoading(false);
     }
@@ -77,9 +116,22 @@ export default function LeaderboardTeams() {
   }, [seasons, selectedSeasonId]);
   // Khi season thay đổi: fetch standings mới
   useEffect(() => {
-    if (selectedSeasonId) fetchStandings(selectedSeasonId);
-    else setStandings([]);
+    if (selectedSeasonId) {
+      fetchStandings(selectedSeasonId);
+      fetchSeasonTeams(selectedSeasonId);
+    } else {
+      setGroupedStandings([]);
+      setSeasonTeams([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId]);
+
+  const filteredTeams = useMemo(() => {
+    if (!selectedSeasonId) return teams;
+    if (seasonTeams.length === 0) return teams; // Guest fallback
+    const approvedSeasonTeamIds = new Set(seasonTeams.filter(st => st.status === 'approved').map(st => st.team_id));
+    return teams.filter(t => approvedSeasonTeamIds.has(t.id));
+  }, [teams, seasonTeams, selectedSeasonId]);
 
   const handleRefresh = () => {
     fetchTeams({ sort: 'name', direction: 'asc', force: true });
@@ -141,72 +193,113 @@ export default function LeaderboardTeams() {
             </div>
           </div>
 
-          <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40 animate-slide-up" style={{ animationDelay: '100ms' }}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left whitespace-nowrap min-w-[800px]">
-                <thead className="bg-linear-to-r from-navy-dark via-navy to-navy-dark text-white text-[11px] sm:text-xs font-black uppercase tracking-widest border-b border-navy-light">
-                  <tr>
-                    <th className="py-5 px-6 text-center w-20">Hạng</th>
-                    <th className="py-5 px-6">Đội Bóng</th>
-                    <th className="py-5 px-4 text-center text-gray-400 cursor-help" title="Số trận đã đấu">P</th>
-                    <th className="py-5 px-4 text-center text-emerald-400/80 cursor-help" title="Thắng">W</th>
-                    <th className="py-5 px-4 text-center text-gray-400 cursor-help" title="Hòa">D</th>
-                    <th className="py-5 px-4 text-center text-red-400/80 cursor-help" title="Thua">L</th>
-                    <th className="py-5 px-4 text-center text-gray-400 cursor-help" title="Bàn thắng">GF</th>
-                    <th className="py-5 px-4 text-center text-gray-400 cursor-help" title="Bàn thua">GA</th>
-                    <th className="py-5 px-4 text-center text-gray-400 cursor-help" title="Hiệu số">GD</th>
-                    <th className="py-5 px-6 text-center text-blue-400">PTS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-transparent">
-                  {standingsLoading || isLoading ? (
-                    <LeaderboardSkeleton />
-                  ) : standingsError ? (
-                    <tr>
-                      <td colSpan={10} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-4">
-                          <p className="text-red-400 font-bold">{standingsError}</p>
-                          <button onClick={() => fetchStandings(selectedSeasonId)} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : standings.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-5">
-                          <div className="w-20 h-20 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-inner">
-                            <Trophy className="w-10 h-10 text-blue-400/50" />
-                          </div>
-                          <div>
-                            <p className="text-xl font-black text-gray-400 mb-2">Chưa có dữ liệu xếp hạng</p>
-                            <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
-                              Bảng xếp hạng sẽ được cập nhật khi các trận đấu bắt đầu có kết quả.
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    standings.map((row, idx) => (
-                      <StandingRow key={row.team_id ?? idx} row={row} idx={idx} teams={teams} />
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Footer Legend */}
-            <div className="bg-navy-dark/90 px-6 py-4 border-t border-navy-light text-[10px] sm:text-xs text-gray-500 font-semibold flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
-              <span className="flex items-center gap-1.5"><strong className="text-gray-300">P:</strong> Played</span>
-              <span className="flex items-center gap-1.5"><strong className="text-emerald-400">W:</strong> Won</span>
-              <span className="flex items-center gap-1.5"><strong className="text-gray-300">D:</strong> Drawn</span>
-              <span className="flex items-center gap-1.5"><strong className="text-red-400">L:</strong> Lost</span>
-              <span className="flex items-center gap-1.5"><strong className="text-gray-300">GF:</strong> Goals For</span>
-              <span className="flex items-center gap-1.5"><strong className="text-gray-300">GA:</strong> Goals Against</span>
-              <span className="flex items-center gap-1.5"><strong className="text-gray-300">GD:</strong> Goal Diff</span>
-              <span className="flex items-center gap-1.5"><strong className="text-blue-400">PTS:</strong> Points</span>
-            </div>
+          {/* Tabs */}
+          <div className="flex items-center gap-8 mb-8 border-b border-navy-light px-2">
+            <button
+              onClick={() => setActiveTab('group')}
+              className={`pb-4 text-sm md:text-base font-bold transition-all border-b-2 -mb-px ${
+                activeTab === 'group' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+              }`}
+            >
+              Vòng Đấu bảng
+            </button>
+            <button
+              onClick={() => setActiveTab('knockout')}
+              className={`pb-4 text-sm md:text-base font-bold transition-all border-b-2 -mb-px ${
+                activeTab === 'knockout' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+              }`}
+            >
+              Vòng loại trực tiếp
+            </button>
           </div>
+
+          {activeTab === 'knockout' ? (
+            <div className="bg-navy/40 backdrop-blur-md border border-navy-light p-16 rounded-3xl text-center">
+              <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-400 mb-2">Vòng loại trực tiếp</h3>
+              <p className="text-gray-500">Sơ đồ đấu loại trực tiếp sẽ được cập nhật khi có dữ liệu.</p>
+            </div>
+          ) : (
+            <div className="space-y-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+              {standingsLoading || isLoading ? (
+                <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap min-w-[800px]">
+                      <tbody className="divide-y divide-transparent">
+                        <LeaderboardSkeleton />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : standingsError ? (
+                <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl p-16 text-center">
+                  <p className="text-red-400 font-bold mb-4">{standingsError}</p>
+                  <button onClick={() => fetchStandings(selectedSeasonId)} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
+                </div>
+              ) : groupedStandings.length === 0 ? (
+                <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl p-20 text-center shadow-2xl shadow-black/40">
+                  <div className="w-20 h-20 mx-auto rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-inner mb-5">
+                    <Trophy className="w-10 h-10 text-blue-400/50" />
+                  </div>
+                  <p className="text-xl font-black text-gray-400 mb-2">Chưa có dữ liệu xếp hạng</p>
+                  <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+                    Bảng xếp hạng sẽ được cập nhật khi các trận đấu bắt đầu có kết quả.
+                  </p>
+                </div>
+              ) : (
+                groupedStandings.map((group, groupIdx) => (
+                  <div key={group.groupId || groupIdx} className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40">
+                    <div className="px-6 py-4 bg-navy-dark border-b border-navy-light">
+                      <h3 className="text-lg font-black text-white">{group.groupName || 'Bảng đấu'}</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left whitespace-nowrap min-w-[800px]">
+                        <thead className="bg-linear-to-r from-navy-dark via-navy to-navy-dark text-white text-[11px] sm:text-xs font-black uppercase tracking-widest border-b border-navy-light">
+                          <tr>
+                            <th className="py-4 px-6 text-center w-20">Hạng</th>
+                            <th className="py-4 px-6">Đội Bóng</th>
+                            <th className="py-4 px-4 text-center text-gray-400 cursor-help" title="Số trận đã đấu">P</th>
+                            <th className="py-4 px-4 text-center text-emerald-400/80 cursor-help" title="Thắng">W</th>
+                            <th className="py-4 px-4 text-center text-gray-400 cursor-help" title="Hòa">D</th>
+                            <th className="py-4 px-4 text-center text-red-400/80 cursor-help" title="Thua">L</th>
+                            <th className="py-4 px-4 text-center text-gray-400 cursor-help" title="Bàn thắng">GF</th>
+                            <th className="py-4 px-4 text-center text-gray-400 cursor-help" title="Bàn thua">GA</th>
+                            <th className="py-4 px-4 text-center text-gray-400 cursor-help" title="Hiệu số">GD</th>
+                            <th className="py-4 px-6 text-center text-blue-400">PTS</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-transparent">
+                          {group.standings.length === 0 ? (
+                            <tr>
+                              <td colSpan={10} className="py-8 text-center text-gray-500 text-sm">Chưa có đội nào trong bảng này.</td>
+                            </tr>
+                          ) : (
+                            group.standings.map((row, idx) => (
+                              <StandingRow key={row.team_id ?? idx} row={row} idx={idx} teams={teams} />
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+              )}
+              
+              {/* Footer Legend */}
+              {groupedStandings.length > 0 && !standingsLoading && (
+                <div className="bg-navy-dark/90 px-6 py-4 border border-navy-light rounded-2xl text-[10px] sm:text-xs text-gray-500 font-semibold flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                  <span className="flex items-center gap-1.5"><strong className="text-gray-300">P:</strong> Played</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-emerald-400">W:</strong> Won</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-gray-300">D:</strong> Drawn</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-red-400">L:</strong> Lost</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-gray-300">GF:</strong> Goals For</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-gray-300">GA:</strong> Goals Against</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-gray-300">GD:</strong> Goal Diff</span>
+                  <span className="flex items-center gap-1.5"><strong className="text-blue-400">PTS:</strong> Points</span>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ─── TEAMS ───────────────────────────────────── */}
@@ -217,9 +310,9 @@ export default function LeaderboardTeams() {
                 <Users className="w-6 h-6 text-blue-400 drop-shadow-md" />
               </div>
               Danh Sách Đội Bóng
-              {!isLoading && teams.length > 0 && (
+              {!isLoading && filteredTeams.length > 0 && (
                 <span className="text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-full ml-2">
-                  {teams.length} đội
+                  {filteredTeams.length} đội
                 </span>
               )}
             </h2>
@@ -228,15 +321,17 @@ export default function LeaderboardTeams() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
             {isLoading ? (
               <>{[1,2,3,4,5,6].map(i => <TeamCardSkeleton key={i} />)}</>
-            ) : teams.length === 0 ? (
+            ) : filteredTeams.length === 0 ? (
               <div className="col-span-1 md:col-span-2 lg:col-span-3 py-20 flex flex-col items-center gap-4 bg-navy/30 backdrop-blur-md rounded-3xl border border-navy-light border-dashed">
                 <div className="w-20 h-20 rounded-full bg-navy border border-navy-light flex items-center justify-center shadow-inner">
                   <Users className="w-10 h-10 text-gray-600" />
                 </div>
-                <p className="font-bold text-gray-400 text-lg">Chưa có đội bóng nào trong hệ thống.</p>
+                <p className="font-bold text-gray-400 text-lg">
+                  {selectedSeasonId ? 'Chưa có đội bóng nào tham gia mùa giải này.' : 'Chưa có đội bóng nào trong hệ thống.'}
+                </p>
               </div>
             ) : (
-              teams.map((team, idx) => <LeaderboardTeamCard key={team.id} team={team} idx={idx} />)
+              filteredTeams.map((team, idx) => <LeaderboardTeamCard key={team.id} team={team} idx={idx} />)
             )}
           </div>
         </section>
