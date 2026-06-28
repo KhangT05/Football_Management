@@ -6,6 +6,7 @@ import useToastStore from '../../../store/toastStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
+import Pagination from '../../ui/Pagination';
 
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
@@ -37,6 +38,18 @@ export default function TournamentRulesSection() {
     () => tournamentRuleApi.getAll(),
     { perPage: 50, errorMsg: 'Không tải được dữ liệu luật giải.' }
   );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
@@ -133,7 +146,7 @@ export default function TournamentRulesSection() {
             <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p>Chưa có luật giải nào. Nhấn "Thêm luật" để bắt đầu.</p>
           </div>
-        ) : items.map(item => (
+        ) : paginatedItems.map(item => (
           <div key={item.id} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-navy-light/10 transition-colors">
             <div className="min-w-0 flex-1">
               <p className="font-bold text-white truncate">{getTournamentName(item.tournament_id)}</p>
@@ -152,6 +165,17 @@ export default function TournamentRulesSection() {
             </div>
           </div>
         ))}
+        {totalPages > 1 && (items || []).length > 0 && !isLoading && (
+          <div className="mt-4 mb-2 flex justify-center">
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        )}
       </div>
 
       {crud.modal && (

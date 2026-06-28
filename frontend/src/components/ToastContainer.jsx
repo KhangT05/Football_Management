@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 import useToastStore from '../store/toastStore';
 import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 const ICONS = {
   success: CheckCircle2,
@@ -37,7 +38,7 @@ const COLORS = {
 };
 
 function ToastItem({ toast }) {
-  const { removeToast } = useToastStore();
+  const { removeToast } = useToastStore(useShallow(state => ({ removeToast: state.removeToast })));
   const [visible, setVisible] = useState(false);
 
   const color = COLORS[toast.type] || COLORS.info;
@@ -90,7 +91,7 @@ function ToastItem({ toast }) {
  * ToastContainer - Đặt trong App.jsx để render toasts toàn cục
  */
 export default function ToastContainer() {
-  const { toasts } = useToastStore();
+  const { toasts } = useToastStore(useShallow(state => ({ toasts: state.toasts })));
 
   return (
     <div className="fixed bottom-6 right-6 z-9999 flex flex-col gap-3 items-end pointer-events-none">

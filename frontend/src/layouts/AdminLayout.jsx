@@ -6,6 +6,7 @@ import {
   LogOut, Home, ChevronRight, Bell, User, Settings,
   Shield, Menu, X
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 
 // Map path → tên trang hiển thị trên breadcrumb
 const PAGE_NAMES = {
@@ -19,7 +20,7 @@ const PAGE_NAMES = {
 };
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuthStore(useShallow(state => ({ user: state.user, logout: state.logout })));
   const location = useLocation();
   const navigate = useNavigate();
 

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Trophy, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Shield } from 'lucide-react';
 import { tournamentApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
@@ -6,12 +7,14 @@ import useTournamentStore from '../../../store/tournamentStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
+import Pagination from '../../ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
 
 const INPUT = 'w-full px-4 py-3 bg-navy border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm';
 
 export default function TournamentsSection() {
   const toast = useToastStore();
-  const { invalidate: invalidateTournamentStore } = useTournamentStore();
+  const { invalidate: invalidateTournamentStore } = useTournamentStore(useShallow(state => ({ invalidate: state.invalidate })));
   const { data: items, isLoading, fetch } = useApiQuery(
     (params) => tournamentApi.getAll(params),
     { perPage: 50, errorMsg: 'Không tải được danh sách giải đấu.' }
@@ -21,6 +24,18 @@ export default function TournamentsSection() {
     emptyForm: { name: '', description: '' },
     onSuccess: () => { fetch(); invalidateTournamentStore(); },
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const openAdd = () => crud.openAdd();
   const openEdit = (item) => crud.openEdit(item, { name: item.name, description: item.description ?? '' });
@@ -101,7 +116,7 @@ export default function TournamentsSection() {
             </button>
           </div>
         ) : (
-          items.map((item, idx) => (
+          paginatedItems.map((item, idx) => (
             <div 
               key={item.id} 
               className="group bg-navy border border-navy-light hover:border-blue-500/30 hover:bg-navy-dark rounded-2xl px-5 py-4 flex items-center justify-between gap-4 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-blue-900/10 animate-slide-up"
@@ -137,6 +152,18 @@ export default function TournamentsSection() {
               </div>
             </div>
           ))
+        )}
+        
+        {totalPages > 1 && (items || []).length > 0 && !isLoading && (
+          <div className="mt-4 mb-2 flex justify-center">
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
         )}
       </div>
 

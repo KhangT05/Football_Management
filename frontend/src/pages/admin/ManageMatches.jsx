@@ -12,8 +12,8 @@ import useTeamStore from '../../store/teamStore';
 import useVenueStore from '../../store/venueStore';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
+import Pagination from '../../components/ui/Pagination';
 import { matchApi, seasonTeamApi } from '../../api';
-
 import RealtimeBadge from '../../components/RealtimeBadge';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
@@ -150,7 +150,12 @@ export default function ManageMatches() {
 
   // ── Pagination ───────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
   
   useEffect(() => {
     setCurrentPage(1);
@@ -563,28 +568,15 @@ export default function ManageMatches() {
             </div>
 
             {/* Pagination */}
-            {matches.length > 0 && (
-              <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
-                <span>
-                  Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
-                  {' · '}Tổng <strong className="text-white">{matches.length}</strong> trận đấu
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={safePage <= 1 || isLoadingMatches}
-                    className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={safePage >= totalPages || isLoadingMatches}
-                    className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-navy-light bg-navy-dark rounded-b-xl">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </div>
             )}
 

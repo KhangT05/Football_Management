@@ -8,6 +8,8 @@ import MatchModal from '../components/MatchModal';
 import StatusBadge from '../components/ui/StatusBadge';
 import MatchRowSkeleton from '../components/skeletons/MatchRowSkeleton';
 import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
+import Pagination from '../components/ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
 
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
@@ -17,14 +19,12 @@ export default function ScheduleResults() {
   const [filterRound, setFilterRound] = useState('');
 
   // ── Zustand stores ─────────────────────────────────────────
-  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
-  const { teams, fetchAll: fetchTeams } = useTeamStore();
-  const { venues, fetchAll: fetchVenues } = useVenueStore();
-  const {
-    getMatchesFromCache, isSeasonLoading,
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
+  const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({ teams: state.teams, fetchAll: state.fetchAll })));
+  const { venues, fetchAll: fetchVenues } = useVenueStore(useShallow(state => ({ venues: state.venues, fetchAll: state.fetchAll })));
+  const { getMatchesFromCache, isSeasonLoading,
     fetchBySeason, error: scheduleError,
-    scheduleCache
-  } = useScheduleStore();
+    scheduleCache } = useScheduleStore(useShallow(state => ({ getMatchesFromCache: state.getMatchesFromCache, isSeasonLoading: state.isSeasonLoading, fetchBySeason: state.fetchBySeason, error: state.error, scheduleCache: state.scheduleCache })));
 
   // ── Lookup maps từ stores ──────────────────────────────────
   const teamMap  = useMemo(() => Object.fromEntries((teams  || []).map(t => [t.id, t])), [teams]);
@@ -105,6 +105,29 @@ export default function ScheduleResults() {
   };
 
   const currentData = activeTab === 'upcoming' ? upcoming : results;
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const [prevFilterState, setPrevFilterState] = useState({ activeTab, selectedSeasonId, filterRound });
+  if (
+    prevFilterState.activeTab !== activeTab || 
+    prevFilterState.selectedSeasonId !== selectedSeasonId || 
+    prevFilterState.filterRound !== filterRound
+  ) {
+    setPrevFilterState({ activeTab, selectedSeasonId, filterRound });
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(currentData.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedData = currentData.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
   const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId));
 
   return (
@@ -309,9 +332,21 @@ export default function ScheduleResults() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {currentData.map((match, idx) => (
+                {paginatedData.map((match, idx) => (
                   <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
                 ))}
+              </div>
+            )}
+            
+            {totalPages > 1 && currentData.length > 0 && !isLoading && !scheduleError && (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </div>
             )}
           </div>

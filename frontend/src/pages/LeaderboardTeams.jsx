@@ -1,96 +1,66 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
-import { seasonApi, seasonTeamApi } from '../api';
+// APIs and constants (if any)
+
+import { useShallow } from 'zustand/react/shallow';
+import useSeasonTeamStore from '../store/seasonTeamStore';
 
 // Shared imports
 import LeaderboardSkeleton from '../components/skeletons/LeaderboardSkeleton';
 import TeamCardSkeleton from '../components/skeletons/TeamCardSkeleton';
 import StandingRow from '../components/StandingRow';
 import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
+import Pagination from '../components/ui/Pagination';
 
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
   // ── Zustand stores ─────────────────────────────────────────
-  const {
-    teams, isLoading: teamsLoading,
-    fetchAll: fetchTeams,
-    fetchPublicTeamsBySeason
-  } = useTeamStore();
+  const { teams, isLoading: teamsLoading, fetchAll: fetchTeams, fetchPublicTeamsBySeason } = useTeamStore(
+    useShallow((state) => ({
+      teams: state.teams,
+      isLoading: state.isLoading,
+      fetchAll: state.fetchAll,
+      fetchPublicTeamsBySeason: state.fetchPublicTeamsBySeason,
+    }))
+  );
 
-  const {
-    seasons, isLoading: seasonsLoading,
-    fetchAll: fetchSeasons,
-  } = useSeasonStore();
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons, fetchStandings, standingsLoading, standingsError, getStandingsFromCache } = useSeasonStore(
+    useShallow((state) => ({
+      seasons: state.seasons,
+      isLoading: state.isLoading,
+      fetchAll: state.fetchAll,
+      fetchStandings: state.fetchStandings,
+      standingsLoading: state.standingsLoading,
+      standingsError: state.standingsError,
+      getStandingsFromCache: state.getStandingsFromCache,
+    }))
+  );
+
+  const { fetchSeasonTeams, loadingSeasons: seasonTeamsLoading, getSeasonTeamsFromCache } = useSeasonTeamStore(
+    useShallow((state) => ({
+      fetchSeasonTeams: state.fetchSeasonTeams,
+      loadingSeasons: state.loadingSeasons,
+      getSeasonTeamsFromCache: state.getSeasonTeamsFromCache,
+    }))
+  );
 
   // ── Standings state ────────────────────────────────────────
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [groupedStandings, setGroupedStandings] = useState([]);
-  const [standingsLoading, setStandingsLoading] = useState(false);
-  const [standingsError, setStandingsError] = useState(null);
   const [activeTab, setActiveTab] = useState('group'); // 'group' or 'knockout'
-  const [seasonTeams, setSeasonTeams] = useState([]);
-  const [loadingSeasonTeams, setLoadingSeasonTeams] = useState(false);
+
+  const groupedStandings = getStandingsFromCache(selectedSeasonId);
+  const isLoadingStandings = standingsLoading[selectedSeasonId] || false;
+  const currentStandingsError = standingsError[selectedSeasonId] || null;
+
+  const seasonTeams = getSeasonTeamsFromCache(selectedSeasonId);
+  const loadingSeasonTeams = seasonTeamsLoading[selectedSeasonId] || false;
 
   const isLoading = teamsLoading || seasonsLoading || loadingSeasonTeams;
 
   // Removed auto-select logic to default to All/Empty
   const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
-
-  const fetchSeasonTeams = async (seasonId) => {
-    if (!seasonId) { setSeasonTeams([]); return; }
-    setLoadingSeasonTeams(true);
-    try {
-      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 200 });
-      const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-      setSeasonTeams(data);
-    } catch (err) {
-      if (err?.response?.status !== 401 && err?.response?.status !== 403) {
-        console.error('Không thể tải danh sách đội theo mùa giải.', err);
-      }
-      setSeasonTeams([]);
-    } finally {
-      setLoadingSeasonTeams(false);
-    }
-  };
-
-  const fetchStandings = async (seasonId) => {
-    if (!seasonId) { setGroupedStandings([]); return; }
-    setStandingsLoading(true);
-    setStandingsError(null);
-    try {
-      const res = await seasonApi.getStandings(seasonId);
-      // axiosClient interceptor returns response.data → res = { status, message, data, timestamp }
-      const payload = typeof res?.status === 'boolean' ? res.data : res;
-      // payload is an array of groups: [{ groupId, groupName, standings: [...] }, ...]
-      const groups = Array.isArray(payload) ? payload : [];
-      
-      const formattedGroups = groups.map(group => ({
-        ...group,
-        standings: (group.standings || []).map(row => ({
-          ...row,
-          played: row.matches_played ?? row.played ?? 0,
-          won: row.wins ?? row.won ?? 0,
-          drawn: row.draws ?? row.drawn ?? 0,
-          lost: row.losses ?? row.lost ?? 0,
-          goal_difference: (row.goals_for ?? 0) - (row.goals_against ?? 0),
-        })).sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference)
-      }));
-      setGroupedStandings(formattedGroups);
-
-      if (teams.length === 0) {
-        await fetchPublicTeamsBySeason(seasonId);
-      }
-    } catch (err) {
-      setStandingsError(err?.response?.data?.message || 'Không thể tải bảng xếp hạng.');
-      setGroupedStandings([]);
-    } finally {
-      setStandingsLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchTeams({ sort: 'name', direction: 'asc' });
@@ -119,9 +89,9 @@ export default function LeaderboardTeams() {
     if (selectedSeasonId) {
       fetchStandings(selectedSeasonId);
       fetchSeasonTeams(selectedSeasonId);
-    } else {
-      setGroupedStandings([]);
-      setSeasonTeams([]);
+      if (teams.length === 0) {
+        fetchPublicTeamsBySeason(selectedSeasonId);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId]);
@@ -132,6 +102,24 @@ export default function LeaderboardTeams() {
     const approvedSeasonTeamIds = new Set(seasonTeams.filter(st => st.status === 'approved').map(st => st.team_id));
     return teams.filter(t => approvedSeasonTeamIds.has(t.id));
   }, [teams, seasonTeams, selectedSeasonId]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const [prevSeasonId, setPrevSeasonId] = useState(selectedSeasonId);
+  if (prevSeasonId !== selectedSeasonId) {
+    setPrevSeasonId(selectedSeasonId);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const handleRefresh = () => {
     fetchTeams({ sort: 'name', direction: 'asc', force: true });
@@ -184,10 +172,10 @@ export default function LeaderboardTeams() {
               </div>
               <button
                 onClick={handleRefresh}
-                disabled={isLoading || standingsLoading}
+                disabled={isLoading || isLoadingStandings}
                 className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-50 bg-navy-dark hover:bg-navy-light border border-navy-light px-5 py-3 rounded-xl shadow-md"
               >
-                {standingsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />}
+                {isLoadingStandings ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />}
                 <span className="hidden sm:inline">Tải lại</span>
               </button>
             </div>
@@ -221,7 +209,7 @@ export default function LeaderboardTeams() {
             </div>
           ) : (
             <div className="space-y-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
-              {standingsLoading || isLoading ? (
+              {isLoadingStandings || isLoading ? (
                 <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap min-w-[800px]">
@@ -231,10 +219,10 @@ export default function LeaderboardTeams() {
                     </table>
                   </div>
                 </div>
-              ) : standingsError ? (
+              ) : currentStandingsError ? (
                 <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl p-16 text-center">
-                  <p className="text-red-400 font-bold mb-4">{standingsError}</p>
-                  <button onClick={() => fetchStandings(selectedSeasonId)} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
+                  <p className="text-red-400 font-bold mb-4">{currentStandingsError}</p>
+                  <button onClick={() => fetchStandings(selectedSeasonId, { force: true })} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
                 </div>
               ) : groupedStandings.length === 0 ? (
                 <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl p-20 text-center shadow-2xl shadow-black/40">
@@ -286,7 +274,7 @@ export default function LeaderboardTeams() {
               )}
               
               {/* Footer Legend */}
-              {groupedStandings.length > 0 && !standingsLoading && (
+              {groupedStandings.length > 0 && !isLoadingStandings && (
                 <div className="bg-navy-dark/90 px-6 py-4 border border-navy-light rounded-2xl text-[10px] sm:text-xs text-gray-500 font-semibold flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
                   <span className="flex items-center gap-1.5"><strong className="text-gray-300">P:</strong> Played</span>
                   <span className="flex items-center gap-1.5"><strong className="text-emerald-400">W:</strong> Won</span>
@@ -331,9 +319,21 @@ export default function LeaderboardTeams() {
                 </p>
               </div>
             ) : (
-              filteredTeams.map((team, idx) => <LeaderboardTeamCard key={team.id} team={team} idx={idx} />)
+              paginatedTeams.map((team, idx) => <LeaderboardTeamCard key={team.id} team={team} idx={idx} />)
             )}
           </div>
+          
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <Pagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          )}
         </section>
 
       </div>

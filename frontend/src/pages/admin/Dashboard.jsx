@@ -9,25 +9,22 @@ import StatCard from '../../components/StatCard';
 import useAuthStore from '../../store/authStore';
 import useTournamentStore from '../../store/tournamentStore';
 import useSeasonStore from '../../store/seasonStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Dashboard() {
-  const { user } = useAuthStore();
+  const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
   const navigate = useNavigate();
 
   // ── Zustand stores ─────────────────────────────────────────
-  const {
-    tournaments,
+  const { tournaments,
     meta: tMeta,
     isLoading: tLoading,
-    fetchAll: fetchTournaments,
-  } = useTournamentStore();
+    fetchAll: fetchTournaments, } = useTournamentStore(useShallow(state => ({ tournaments: state.tournaments, meta: state.meta, isLoading: state.isLoading, fetchAll: state.fetchAll })));
 
-  const {
-    seasons,
+  const { seasons,
     meta: sMeta,
     isLoading: sLoading,
-    fetchAll: fetchSeasons,
-  } = useSeasonStore();
+    fetchAll: fetchSeasons, } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, meta: state.meta, isLoading: state.isLoading, fetchAll: state.fetchAll })));
 
   const isLoading = tLoading || sLoading;
 

@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, User, Fingerprint, ArrowLeft, Loader2, CheckCi
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,7 @@ export default function Register() {
   const [isSuccess, setIsSuccess] = useState(false);
   
   const navigate = useNavigate();
-  const { register, socialLogin, loading, error, clearError } = useAuthStore();
+  const { register, socialLogin, loading, error, clearError } = useAuthStore(useShallow(state => ({ register: state.register, socialLogin: state.socialLogin, loading: state.loading, error: state.error, clearError: state.clearError })));
   const [socialLoadingProvider, setSocialLoadingProvider] = useState(null);
 
   const handleChange = (e) => {

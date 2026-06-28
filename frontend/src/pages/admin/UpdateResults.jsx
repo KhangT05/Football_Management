@@ -13,13 +13,14 @@ import useToastStore from '../../store/toastStore';
 import EventCard from '../../components/admin/EventCard';
 import MatchTimer from '../../components/admin/MatchTimer';
 import StatusBadge from '../../components/ui/StatusBadge';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function UpdateResults() {
   const toast = useToastStore();
 
   // ── Season Store ────────────────────────────────────────────
-  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
-  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
+  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore(useShallow(state => ({ getMatchesFromCache: state.getMatchesFromCache, isSeasonLoading: state.isSeasonLoading, fetchBySeason: state.fetchBySeason, scheduleCache: state.scheduleCache })));
 
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
 

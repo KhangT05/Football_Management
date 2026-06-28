@@ -7,11 +7,12 @@ import {
   User, ChevronDown, LogOut, UserCircle, Shield, Trophy,
   Menu, X, CalendarDays, BarChart3, Home
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated, user: state.user, logout: state.logout })));
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {

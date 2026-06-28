@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Hash } from 'lucide-react';
-import { matchApi, teamApi } from '../api';
 
 import { getInitials, POSITION_LABELS } from '../utils/constants';
+import { useShallow } from 'zustand/react/shallow';
+import useScheduleStore from '../store/scheduleStore';
 import MatchHeaderSkeleton from '../components/skeletons/MatchHeaderSkeleton';
 import StatusBadge from '../components/ui/StatusBadge';
 
@@ -50,71 +51,28 @@ export default function MatchDetail() {
   const { id } = useParams();
   const matchId = parseInt(id) || null;
 
-  // Khởi tạo state từ matchId để tránh setState synchronous trong effect
-  const [isLoading, setIsLoading] = useState(!!matchId);
-  const [match, setMatch] = useState(null);
-  const [events, setEvents] = useState([]);
-  const [homePlayers, setHomePlayers] = useState([]);
-  const [awayPlayers, setAwayPlayers] = useState([]);
-  const [hasError, setHasError] = useState(!matchId);
-  const [matchApiError, setMatchApiError] = useState(null);
+  const { fetchMatchDetail, matchDetailLoading, matchDetailError, getMatchDetailFromCache } = useScheduleStore(useShallow(state => ({
+    fetchMatchDetail: state.fetchMatchDetail,
+    matchDetailLoading: state.matchDetailLoading,
+    matchDetailError: state.matchDetailError,
+    getMatchDetailFromCache: state.getMatchDetailFromCache,
+  })));
 
   useEffect(() => {
-    if (!matchId) return; // Không có matchId → hasError đã = true từ useState initial
-    let cancelled = false;
-    const parsePage = (res) => {
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    };
+    if (matchId) {
+      fetchMatchDetail(matchId);
+    }
+  }, [matchId, fetchMatchDetail]);
 
-    const loadData = async () => {
-      setIsLoading(true);
-      setHasError(false);
-      setMatchApiError(null);
+  const isLoading = matchDetailLoading[matchId] || false;
+  const matchApiError = matchDetailError[matchId] || null;
+  const hasError = !matchId || (!isLoading && !matchApiError && !getMatchDetailFromCache(matchId));
 
-      try {
-        const [res, eventsRes] = await Promise.all([
-          matchApi.getMatchById(matchId),
-          matchApi.getMatchEvents(matchId, { per_page: 100, sort: 'minute', direction: 'asc' }).catch(() => null)
-        ]);
-
-        if (cancelled) return;
-        const payload = (typeof res?.status === 'boolean') ? res.data : res;
-        setMatch(payload);
-
-        if (eventsRes) {
-          const evtPayload = (typeof eventsRes?.status === 'boolean') ? eventsRes.data : eventsRes;
-          setEvents(Array.isArray(evtPayload?.data) ? evtPayload.data : (Array.isArray(evtPayload) ? evtPayload : []));
-        }
-
-        // Load lineups if we have team IDs
-        if (payload?.home_team_id && payload?.away_team_id) {
-          const [homeRes, awayRes] = await Promise.allSettled([
-            teamApi.getPlayers(payload.home_team_id, { approval_status: 'approved', per_page: 30 }),
-            teamApi.getPlayers(payload.away_team_id, { approval_status: 'approved', per_page: 30 }),
-          ]);
-          if (!cancelled) {
-            if (homeRes.status === 'fulfilled') setHomePlayers(parsePage(homeRes.value));
-            if (awayRes.status === 'fulfilled') setAwayPlayers(parsePage(awayRes.value));
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          if (err?.response?.status === 404 || err?.code === 'ERR_NETWORK') {
-            setMatchApiError('Match API chưa được triển khai. Dữ liệu sẽ xuất hiện khi backend hoàn thiện.');
-          } else {
-            setHasError(true);
-          }
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-    
-    loadData();
-
-    return () => { cancelled = true; };
-  }, [matchId]);
+  const detailData = getMatchDetailFromCache(matchId);
+  const match = detailData?.match || null;
+  const events = detailData?.events || [];
+  const homePlayers = detailData?.homePlayers || [];
+  const awayPlayers = detailData?.awayPlayers || [];
 
   const homeName = match?.home_team?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = match?.away_team?.name ?? `Đội #${match?.away_team_id ?? '?'}`;

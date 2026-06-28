@@ -1,11 +1,12 @@
 import { Sun, Moon } from 'lucide-react';
 import useThemeStore from '../store/themeStore';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * ThemeSwitcher: Nút bấm tối ưu đổi trực tiếp giao diện Tối/Sáng
  */
 export default function ThemeSwitcher() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore(useShallow(state => ({ theme: state.theme, setTheme: state.setTheme })));
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'pastel' : 'dark');

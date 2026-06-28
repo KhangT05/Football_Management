@@ -3,10 +3,11 @@ import { Users, Shuffle, Save, GripVertical, AlertTriangle } from 'lucide-react'
 import { seasonTeamApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function GroupDrawUI({ seasonId }) {
   const toast = useToastStore();
-  const { teams } = useTeamStore();
+  const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
   
   const [loading, setLoading] = useState(false);
   const [unassignedTeams, setUnassignedTeams] = useState([]);

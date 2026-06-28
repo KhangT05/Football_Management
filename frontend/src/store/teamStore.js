@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { teamApi } from '../api/teamApi';
 import { playerApi } from '../api/playerApi';
+import { matchApi } from '../api/matchApi';
 
 /**
  * ============================================================
@@ -44,6 +45,11 @@ const useTeamStore = create((set, get) => ({
 
   /** Cờ cho biết đã fetch fallback public teams cho season chưa */
   publicTeamsFetchedForSeason: null,
+
+  /** Cache chi tiết đội: { [teamId]: { data: any, fetchedAt: number } } */
+  teamDetailCache: {},
+  teamDetailLoading: {},
+  teamDetailError: {},
 
   // ── Team Actions ──────────────────────────────────────────
 
@@ -124,6 +130,66 @@ const useTeamStore = create((set, get) => ({
     const res = await teamApi.getTeamById(id);
     const payload = typeof res?.status === 'boolean' ? res.data : res;
     return payload;
+  },
+
+  /**
+   * Lấy chi tiết đầy đủ 1 đội (TeamDetail)
+   */
+  fetchTeamDetail: async (teamId, options = {}) => {
+    if (!teamId) return;
+
+    const { force = false } = options;
+    const cache = get().teamDetailCache[teamId];
+    const isLoading = get().teamDetailLoading[teamId];
+
+    if (isLoading) return;
+    if (!force && cache && Date.now() - cache.fetchedAt < CACHE_TTL_MS) return;
+
+    set(state => ({
+      teamDetailLoading: { ...state.teamDetailLoading, [teamId]: true },
+      teamDetailError: { ...state.teamDetailError, [teamId]: null },
+    }));
+
+    try {
+      const [teamRes, playersRes, matchesRes] = await Promise.all([
+        teamApi.getTeamById(teamId),
+        teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 50 }).catch(() => null),
+        matchApi.getTeamSchedule(null, teamId, { per_page: 20 }).catch(() => null)
+      ]);
+
+      const teamPayload = typeof teamRes?.status === 'boolean' ? teamRes.data : teamRes;
+      
+      const parsePage = (res) => {
+        const payload = typeof res?.status === 'boolean' ? res.data : res;
+        return Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []);
+      };
+
+      const players = playersRes ? parsePage(playersRes) : [];
+      const matches = matchesRes ? parsePage(matchesRes) : [];
+
+      set(state => ({
+        teamDetailCache: {
+          ...state.teamDetailCache,
+          [teamId]: { 
+            data: { team: teamPayload, players, matches }, 
+            fetchedAt: Date.now() 
+          }
+        },
+        teamDetailLoading: { ...state.teamDetailLoading, [teamId]: false }
+      }));
+    } catch (err) {
+      set(state => ({
+        teamDetailError: {
+          ...state.teamDetailError,
+          [teamId]: err?.response?.data?.message || 'Không thể tải thông tin đội bóng.'
+        },
+        teamDetailLoading: { ...state.teamDetailLoading, [teamId]: false }
+      }));
+    }
+  },
+
+  getTeamDetailFromCache: (teamId) => {
+    return get().teamDetailCache[teamId]?.data ?? null;
   },
 
   /**

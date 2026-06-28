@@ -26,11 +26,6 @@ export default function TournamentFormats() {
             title: "Thể thức hỗn hợp",
             icon: <Combine className="w-8 h-8" />,
             image: "https://images.unsplash.com/photo-1551280857-2b9ebf241ac6?q=80&w=600&auto=format&fit=crop", // Mixed
-        },
-        {
-            title: "Hệ Thụy Sĩ",
-            icon: <ListOrdered className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1580541832626-2a7131ee809f?q=80&w=600&auto=format&fit=crop", // Chess
         }
     ];
 
@@ -44,14 +39,14 @@ export default function TournamentFormats() {
                     </h2>
                 </div>
                 <p className="text-gray-400 max-w-3xl mx-auto leading-relaxed text-sm md:text-base">
-                    Nền tảng giúp người dùng tạo ra các giải đấu có thể thức giống như với các giải đấu nổi tiếng thế giới như Champions League, World Cup, NBA, Laliga, ATP Cup...
+                    Nền tảng giúp người dùng tạo ra các giải đấu có thể thức giống như với các giải đấu nổi tiếng thế giới như Champions League, World Cup, Laliga...
                     <span className="inline-flex items-center justify-center px-2 py-0.5 ml-2 text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/30 rounded-full align-middle">
                         Nổi bật
                     </span>
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {formats.map((format, idx) => (
                     <div key={idx} className="group flex flex-col items-center gap-6 cursor-pointer">
                         {/* Image Container */}

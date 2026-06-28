@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, Loader2 } from 'lucide
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || '/';
-  const { login, socialLogin, loading, error, clearError } = useAuthStore();
+  const { login, socialLogin, loading, error, clearError } = useAuthStore(useShallow(state => ({ login: state.login, socialLogin: state.socialLogin, loading: state.loading, error: state.error, clearError: state.clearError })));
   const [socialLoadingProvider, setSocialLoadingProvider] = useState(null);
 
   const handleLogin = async (e) => {

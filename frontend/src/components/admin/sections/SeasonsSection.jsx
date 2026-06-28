@@ -10,6 +10,7 @@ import useSeasonStore from '../../../store/seasonStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
+import Pagination from '../../ui/Pagination';
 
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
@@ -52,6 +53,18 @@ export default function SeasonsSection() {
     (params) => seasonApi.getAll(params),
     { perPage: 50, errorMsg: 'Không tải được dữ liệu mùa giải.' }
   );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
@@ -208,7 +221,7 @@ export default function SeasonsSection() {
             <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p>Chưa có mùa giải nào</p>
           </div>
-        ) : items.map(item => {
+        ) : paginatedItems.map(item => {
           const sm = statusMeta[item.status] ?? statusMeta.upcoming;
           const nextStatuses = STATUS_TRANSITIONS[item.status] ?? [];
           const editable  = canEdit(item.status);
@@ -297,6 +310,17 @@ export default function SeasonsSection() {
             </div>
           );
         })}
+        {totalPages > 1 && (items || []).length > 0 && !isLoading && (
+          <div className="mt-4 mb-2 flex justify-center">
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Add / Edit Modal ──────────────────────────────── */}
