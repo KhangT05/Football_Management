@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "softDelete", null);
 UserController = __decorate([
-    Security("jwt", ['admin']),
+    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("users"),
     Tags("Users"),
     __metadata("design:paramtypes", [UserService])

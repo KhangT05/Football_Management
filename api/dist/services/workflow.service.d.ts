@@ -15,6 +15,24 @@ export interface WorkflowConfig {
     teamIds: number[];
     venueId: number;
     seed?: number;
+    /**
+     * Base timestamp cho TOÀN BỘ schedule trong workflow này (season dates,
+     * group stage matches, Final). Default: thời điểm gọi run().
+     * Truyền cố định để test reproducible theo thời gian, hoặc để dựng
+     * nhiều season liên tiếp không bị lệch theo wall-clock thực tế.
+     */
+    startTime?: Date | string;
+    /**
+     * Khoảng cách giữa 2 match liên tiếp (đơn vị slot thời gian), phút.
+     * Default 60. Phải > 0, nếu không sẽ fallback về default.
+     */
+    matchIntervalMinutes?: number;
+    /**
+     * Độ trễ tối thiểu (phút) giữa trận cuối group stage và trận Final.
+     * Default 1440 (1 ngày). Tính theo phút thay vì slot để không leak
+     * implementation detail (slot size) ra config public.
+     */
+    finalDelayMinutes?: number;
 }
 export interface MatchReport {
     id: number;
@@ -66,6 +84,9 @@ export declare class WorkflowService {
     private readonly standingsService;
     private rng;
     private log;
+    private clockBase;
+    private matchSlot;
+    private matchIntervalMinutes;
     constructor(prisma: PrismaClient, knockoutService: KnockoutService, matchLifecycleService: MatchLifecycleService, matchResultService: MatchResultService, standingsService: StandingsService);
     run(config: WorkflowConfig): Promise<WorkflowReport>;
     private _finalizeSeasonState;
@@ -102,6 +123,15 @@ export declare class WorkflowService {
      */
     private _playFinalMatch;
     private _resolveWinnerName;
+    /**
+     * Lấy timestamp kế tiếp theo slot counter rồi advance slot lên 1.
+     * Đây là nguồn thời gian DUY NHẤT cho mọi scheduled_at trong workflow —
+     * điều khiển được qua config.startTime/matchIntervalMinutes, deterministic,
+     * không phụ thuộc tốc độ thực thi (khác hẳn rải rác new Date() trước đây).
+     */
+    private _nextSlot;
+    /** Nhảy qua n slot mà không tạo match — dùng để tách Final ra khỏi group stage. */
+    private _skipSlots;
     private _seedRng;
     private _log;
 }

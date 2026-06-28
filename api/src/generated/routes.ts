@@ -1188,6 +1188,7 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"double","required":true},
             "name": {"dataType":"string","required":true},
             "email": {"dataType":"string","required":true},
+            "roles": {"dataType":"array","array":{"dataType":"string"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -1264,7 +1265,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/venues',
-            authenticateMiddleware([{"jwt":["user","admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(VenueController)),
             ...(fetchMiddlewares<RequestHandler>(VenueController.prototype.findAll)),
 
@@ -1300,7 +1301,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/venues/:id',
-            authenticateMiddleware([{"jwt":["user","admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(VenueController)),
             ...(fetchMiddlewares<RequestHandler>(VenueController.prototype.findById)),
 
@@ -1336,7 +1337,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreateVenueDto"},
         };
         app.post('/venues',
-            authenticateMiddleware([{"jwt":["user","admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(VenueController)),
             ...(fetchMiddlewares<RequestHandler>(VenueController.prototype.create)),
 
@@ -1373,7 +1374,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateVenueDto"},
         };
         app.patch('/venues/:id',
-            authenticateMiddleware([{"jwt":["user","admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(VenueController)),
             ...(fetchMiddlewares<RequestHandler>(VenueController.prototype.update)),
 
@@ -1409,7 +1410,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/venues/:id',
-            authenticateMiddleware([{"jwt":["user","admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(VenueController)),
             ...(fetchMiddlewares<RequestHandler>(VenueController.prototype.softDelete)),
 
@@ -1449,7 +1450,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/users',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findAll)),
 
@@ -1485,7 +1486,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/users/:id',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findById)),
 
@@ -1521,7 +1522,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreateUserDto"},
         };
         app.post('/users',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.create)),
 
@@ -1558,7 +1559,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateUserDto"},
         };
         app.patch('/users/:id',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.update)),
 
@@ -1594,7 +1595,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/users/:id',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.softDelete)),
 
@@ -1718,7 +1719,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         const argsTournamentRuleController_findAll: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/tournamentrules',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController.prototype.findAll)),
 
@@ -1754,7 +1755,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/tournamentrules/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController.prototype.findById)),
 
@@ -1791,7 +1792,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/tournamentrules',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController.prototype.create)),
 
@@ -1828,7 +1829,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateTournamentRuleDto"},
         };
         app.patch('/tournamentrules/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController.prototype.update)),
 
@@ -1864,7 +1865,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/tournamentrules/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentRuleController.prototype.softDelete)),
 
@@ -1904,7 +1905,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/tournaments',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.findAll)),
 
@@ -1940,7 +1941,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/tournaments/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.findById)),
 
@@ -1979,7 +1980,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/tournaments',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2022,7 +2023,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateTournamentDto"},
         };
         app.patch('/tournaments/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.update)),
 
@@ -2058,7 +2059,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/tournaments/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.softDelete)),
 
@@ -2098,7 +2099,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/teams',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.findAll)),
 
@@ -2134,7 +2135,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/teams/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.findById)),
 
@@ -2174,7 +2175,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logo: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.post('/teams',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2220,7 +2221,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logoFile: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.patch('/teams/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2262,7 +2263,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/teams/:id',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.softDelete)),
 
@@ -2298,7 +2299,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/teams/:id/captain',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.getCaptain)),
 
@@ -2336,7 +2337,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/teams/:id/captain',
-            authenticateMiddleware([{"jwt":[]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.assignCaptain)),
 
@@ -2376,7 +2377,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/seasonteams',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findAll)),
 
@@ -2412,7 +2413,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/seasonteams/:id',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findById)),
 

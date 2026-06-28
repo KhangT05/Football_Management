@@ -113,7 +113,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "softDelete", null);
 SeasonTeamController = __decorate([
-    Security("jwt", ['admin']),
+    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("seasonteams"),
     Tags("SeasonTeams"),
     __metadata("design:paramtypes", [SeasonTeamService])
