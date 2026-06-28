@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
-import { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
+import axiosClient, { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
 
 /**
  * Map HTTP error → user-facing message.
