@@ -139,7 +139,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "assignCaptain", null);
 TeamController = __decorate([
-    Security("jwt"),
+    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("teams"),
     Tags("Teams"),
     __metadata("design:paramtypes", [TeamService])

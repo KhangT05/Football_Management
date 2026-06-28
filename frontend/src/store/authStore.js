@@ -1,86 +1,59 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
-import axiosClient, { setAccessToken, clearAccessToken, getAccessToken } from '../api/axiosClient';
+import { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
+
 /**
- * Map error từ backend sang message thân thiện với người dùng.
+ * Map HTTP error → user-facing message.
  */
 function getErrorMessage(error, fallback) {
   const data = error?.response?.data;
   const status = error?.response?.status;
   const rawMsg = data?.message ?? '';
 
-  if (status === 403 && rawMsg === 'Access denied') {
-    return 'Email hoặc mật khẩu không chính xác.';
-  }
-  if (status === 409) {
-    return data?.message || 'Email này đã được sử dụng.';
-  }
-  if (status === 429) {
-    return 'Bạn đã thử quá nhiều lần. Vui lòng chờ 15 phút và thử lại.';
-  }
-  if (status === 422) {
-    return data?.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
-  }
+  if (status === 403 && rawMsg === 'Access denied') return 'Email hoặc mật khẩu không chính xác.';
+  if (status === 409) return data?.message || 'Email này đã được sử dụng.';
+  if (status === 429) return 'Bạn đã thử quá nhiều lần. Vui lòng chờ 15 phút và thử lại.';
+  if (status === 422) return data?.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
   return rawMsg || fallback;
 }
 
 /**
  * ============================================================
- * useAuthStore - Zustand store quản lý trạng thái xác thực
+ * useAuthStore — Zustand store quản lý trạng thái xác thực
  * ============================================================
- * Token Storage:
- * - accessToken  → in-memory (biến trong axiosClient) - KHÔNG lưu localStorage
- * - csrfToken    → localStorage (cần gửi khi /refresh)
- * - refreshToken → httpOnly cookie (JS không truy cập được)
+ * Token storage:
+ *   accessToken  → in-memory (axiosClient) — mất khi F5, khôi phục qua /refresh
+ *   csrfToken    → localStorage — gửi kèm X-CSRF-TOKEN header khi /refresh
+ *   refreshToken → httpOnly cookie — browser tự gửi, JS không đọc được
  *
- * isInitialized: true sau khi initializeAuth() hoàn thành.
- * App.jsx phải chờ isInitialized trước khi render routes để tránh
- * redirect sai khi F5 (access token đang được khôi phục từ refresh).
+ * Roles: lấy từ /auth/me (DB) — KHÔNG probe API để đoán role.
+ *
+ * isInitialized: true sau initializeAuth() xong.
+ * App phải chờ isInitialized trước khi render routes để tránh
+ * redirect sai khi F5 (token đang được khôi phục).
  * ============================================================
  */
 const useAuthStore = create((set) => ({
-  // ── State ─────────────────────────────────────────────────
-  user: null,              // Thông tin user sau khi lấy từ /auth/me
-  loading: false,          // Trạng thái đang xử lý (hiển thị spinner)
-  error: null,             // Thông báo lỗi (hiển thị trên UI)
-
-  /**
-   * isInitialized: true sau khi initializeAuth() chạy xong.
-   * Trong thời gian chưa khởi tạo xong, App.jsx render loader thay vì routes
-   * → tránh AdminRoute/ProtectedRoute redirect sai khi F5.
-   */
+  user: null,
+  loading: false,
+  error: null,
   isInitialized: false,
-
-  /**
-   * isAuthenticated: true nếu user object khác null.
-   * Được set sau login/register/initializeAuth thành công.
-   * Fallback: kiểm tra csrf_token trong localStorage khi chưa init xong.
-   */
   isAuthenticated: false,
 
-  /** Cập nhật thông tin user */
   setUser: (userData) => set({ user: userData }),
 
-  // ── Actions ───────────────────────────────────────────────
-
-  /**
-   * Đăng nhập người dùng
-   * POST /auth/login
-   */
+  // ── login ────────────────────────────────────────────────
+  // POST /auth/login → set token → GET /auth/me (roles từ DB)
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
-      const response = await authApi.login(credentials);
-      const { accessToken, csrfToken } = response.data ?? {};
+      const res = await authApi.login(credentials);
+      const { accessToken, csrfToken } = res.data;
 
-      if (!accessToken) {
-        throw new Error('Không nhận được access token từ server');
-      }
+      if (!accessToken) throw new Error('Không nhận được access token từ server');
 
       setAccessToken(accessToken);
-      if (csrfToken) {
-        localStorage.setItem('csrf_token', csrfToken);
-      }
+      if (csrfToken) localStorage.setItem('csrf_token', csrfToken);
 
       let userProfile = null;
       try {
@@ -95,17 +68,12 @@ const useAuthStore = create((set) => ({
             userProfile.roles = ['user'];
           }
         }
+        userProfile = profileRes.data; // { id, name, email, roles }
       } catch (profileErr) {
-        console.warn('[authStore] Không lấy được profile user:', profileErr);
+        console.warn('[authStore] Không lấy được profile:', profileErr);
       }
 
-      set({
-        user: userProfile,
-        isAuthenticated: true,
-        isInitialized: true,
-        loading: false,
-      });
-
+      set({ user: userProfile, isAuthenticated: true, isInitialized: true, loading: false });
       return { success: true };
     } catch (error) {
       const errorMsg = getErrorMessage(error, 'Có lỗi xảy ra khi đăng nhập.');
@@ -114,33 +82,28 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  /**
-   * Đăng ký tài khoản mới
-   * POST /auth/register
-   */
+  // ── register ─────────────────────────────────────────────
+  // POST /auth/register → set token → GET /auth/me
   register: async (userData) => {
     set({ loading: true, error: null });
     try {
-      const response = await authApi.register(userData);
-      const { accessToken, csrfToken } = response.data ?? {};
+      const res = await authApi.register(userData);
+      const { accessToken, csrfToken } = res.data;
 
       if (accessToken) {
         setAccessToken(accessToken);
-        if (csrfToken) {
-          localStorage.setItem('csrf_token', csrfToken);
-        }
+        if (csrfToken) localStorage.setItem('csrf_token', csrfToken);
+
         try {
           const profileRes = await authApi.getProfile();
-          const userProfile = profileRes.data;
-          if (userProfile) userProfile.roles = ['user'];
-          set({ user: userProfile, isAuthenticated: true, isInitialized: true });
+          set({ user: profileRes.data, isAuthenticated: true, isInitialized: true });
         } catch {
           set({ isAuthenticated: true, isInitialized: true });
         }
       }
 
       set({ loading: false });
-      return { success: true, data: response.data };
+      return { success: true, data: res.data };
     } catch (error) {
       const errorMsg = getErrorMessage(error, 'Có lỗi xảy ra khi đăng ký.');
       set({ error: errorMsg, loading: false });
@@ -148,10 +111,8 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  /**
-   * Đăng xuất người dùng
-   * POST /auth/logout
-   */
+  // ── logout ───────────────────────────────────────────────
+  // POST /auth/logout → clear state (kể cả khi API fail)
   logout: async () => {
     try {
       await authApi.logout();
@@ -164,24 +125,24 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  /**
-   * Khởi tạo lại session khi ứng dụng load (F5 / mở tab mới)
-   * - accessToken bị mất (in-memory) → cần refresh
-   * - httpOnly cookie refresh_token vẫn còn → gọi /auth/refresh để lấy token mới
-   *
-   * QUAN TRỌNG: Luôn set isInitialized = true ở cuối (kể cả khi fail)
-   * để App.jsx biết là đã kiểm tra xong, có thể render routes.
-   */
+  // ── initializeAuth ───────────────────────────────────────
+  // Khôi phục session khi F5 / mở tab mới.
+  //
+  // Flow:
+  //   1. accessToken in-memory còn → đã init (StrictMode double-call) → skip
+  //   2. Không có csrf_token → chưa login hoặc đã logout → stop
+  //   3. Gọi refreshTokens() — single-flight từ axiosClient, dedupe nếu
+  //      interceptor 401 cũng đang refresh đồng thời
+  //   4. GET /auth/me lấy profile + roles
+  //
+  // LUÔN set isInitialized = true ở cuối (kể cả khi fail).
   initializeAuth: async () => {
-    // Nếu đã có access token (không cần init lại)
     if (getAccessToken()) {
       set({ isInitialized: true, isAuthenticated: true });
       return;
     }
 
     const csrfToken = localStorage.getItem('csrf_token');
-
-    // Nếu không có csrf_token → chắc chắn chưa login hoặc đã logout
     if (!csrfToken) {
       set({ isAuthenticated: false, isInitialized: true });
       return;
@@ -189,24 +150,9 @@ const useAuthStore = create((set) => ({
 
     set({ loading: true });
     try {
-      // Gọi /auth/refresh: cookie tự gửi, CSRF token gửi qua header
-      const refreshRes = await authApi.refreshToken(csrfToken);
+      // single-flight — không race với interceptor 401 refresh
+      await refreshTokens();
 
-      // refreshRes đã được unwrap bởi axiosClient interceptor thành công
-      // Nếu backend trả { status, message, data: { accessToken, csrfToken } }
-      // thì interceptor unwrap → refreshRes = { status, message, data: {...} }
-      const tokenData = refreshRes?.data ?? refreshRes;
-      const accessToken = tokenData?.accessToken;
-      const newCsrfToken = tokenData?.csrfToken;
-
-      if (!accessToken) throw new Error('Không lấy được token mới');
-
-      setAccessToken(accessToken);
-      if (newCsrfToken) {
-        localStorage.setItem('csrf_token', newCsrfToken);
-      }
-
-      // Lấy thông tin user
       const profileRes = await authApi.getProfile();
       const userProfile = profileRes?.data ?? profileRes;
 
@@ -220,23 +166,20 @@ const useAuthStore = create((set) => ({
       }
 
       set({
-        user: userProfile,
+        user: profileRes.data,
         isAuthenticated: true,
         isInitialized: true,
         loading: false,
       });
     } catch {
-      // Refresh thất bại → session hết hạn
       clearAccessToken();
       localStorage.removeItem('csrf_token');
       set({ user: null, isAuthenticated: false, isInitialized: true, loading: false });
     }
   },
 
-  /**
-   * Đăng nhập qua mạng xã hội (Google / Github)
-   * [CHƯA ĐƯỢC BACKEND IMPLEMENT - đang mock]
-   */
+  // ── socialLogin ──────────────────────────────────────────
+  // Backend chưa implement — stub tránh crash UI
   socialLogin: async (provider) => {
     set({ loading: true, error: null });
     try {
@@ -244,14 +187,12 @@ const useAuthStore = create((set) => ({
       set({ loading: false });
       return { success: true };
     } catch (error) {
-      const errorMsg =
-        error.response?.data?.message || `Có lỗi xảy ra khi kết nối ${provider}.`;
+      const errorMsg = error?.message || `Có lỗi xảy ra khi kết nối ${provider}.`;
       set({ error: errorMsg, loading: false });
       return { success: false, error: errorMsg };
     }
   },
 
-  /** Xóa thông báo lỗi */
   clearError: () => set({ error: null }),
 }));
 
