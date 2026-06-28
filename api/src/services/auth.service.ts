@@ -7,30 +7,22 @@ import { sessionStore } from '../libs/session.js';
 import { signAccessToken } from '../libs/jwt.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
-// Dummy hash hợp lệ format bcrypt (cost=12) để giữ thời gian compare constant
-// khi user không tồn tại — tránh timing side-channel lộ email có tồn tại hay không.
 const DUMMY_HASH = '$2b$12$' + 'x'.repeat(53);
 
 export class AuthService {
     constructor(
         private readonly prisma: PrismaClient
-    ) {
+    ) { }
 
-    }
     async login(dto: LoginDto): Promise<AuthTokens> {
         const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
-
-        // Luôn chạy bcrypt.compare dù user có tồn tại hay không, để thời gian phản hồi
-        // không lộ thông tin "email tồn tại" qua timing (bcrypt compare ~50-100ms vs ~0ms).
         const passwordMatch = await bcrypt.compare(dto.password, user?.password ?? DUMMY_HASH);
 
-
-        // Không phân biệt "sai email" vs "sai password" — tránh user enumeration
         if (!user || !passwordMatch) {
             throw createAppError('UNAUTHORIZED');
         }
-        // console.log(user.is_active);
+
         if (!user.is_active) {
             throw createAppError('FORBIDDEN');
         }
@@ -46,7 +38,6 @@ export class AuthService {
                 `Email already exists: ${dto.email}`, 'Email đã được sử dụng');
         }
 
-
         const hashed = await bcrypt.hash(dto.password, 12);
         const user = await this.prisma.user.create({
             data: { email: dto.email, password: hashed, name: dto.name },
@@ -54,44 +45,47 @@ export class AuthService {
 
         return this.issueTokens(user.id);
     }
+
     /**
-     * Refresh token rotation với atomic consume.
+     * Refresh token rotation với atomic GETDEL (Redis >= 6.2).
      *
-     * Fix race condition: bản cũ issue token mới TRƯỚC khi xoá session cũ
-     * -> 2 request refresh song song cùng 1 token đều pass, đều issue được
-     * token mới -> double-issue, không detect được token reuse.
+     * getAndDelete đảm bảo chỉ 1 trong N concurrent request với cùng UUID
+     * nhận được session — request còn lại nhận null → reject.
      *
-     * Fix: del trước, kiểm tra kết quả del để xác nhận request này là người
-     * duy nhất "consume" được token. Nếu sessionStore.del trả về 0/false
-     * (key đã bị xoá bởi request khác) -> coi như race/replay, reject.
+     * Flow:
+     * 1. GETDEL uuid → nhận session hoặc null (atomic)
+     * 2. Validate CSRF
+     * 3. Issue token mới (bao gồm session mới trong Redis)
      *
-     * Trade-off: nếu Redis chết giữa del và issueTokens, user bị logout
-     * (phải login lại) thay vì lock-out vĩnh viễn — đây là tradeoff đúng,
-     * ưu tiên an toàn hơn tiện lợi.
-     *
-     * Assumption: sessionStore.del(key) trả về number/boolean cho biết có
-     * xoá được key hay không (giống ioredis .del() trả count). Nếu hiện tại
-     * sessionStore.del trả void, cần sửa lib session.ts để trả count trước.
+     * Failure mode: nếu issueTokens fail sau khi đã del session
+     * → user phải login lại. Đây là trade-off đúng: ưu tiên security hơn UX.
      */
-
-    async refresh(refreshTokenUuid: string | undefined, csrfHeader: string | undefined):
-        Promise<AuthTokens> {
-
-        if (!refreshTokenUuid) throw createAppError('UNAUTHORIZED', 'Missing refresh token cookie');
-
-        if (!csrfHeader) throw createAppError('UNAUTHORIZED', 'Missing X-CSRF-TOKEN header');
-
-        const session = await sessionStore.get(refreshTokenUuid);
-        if (!session) throw createAppError('UNAUTHORIZED',
-            `Session not found or expired: ${refreshTokenUuid}`);
-
-        if (session.csrfToken !== csrfHeader) {
-            throw createAppError('FORBIDDEN', `CSRF mismatch for session: ${refreshTokenUuid}`);
+    async refresh(
+        refreshTokenUuid: string | undefined,
+        csrfHeader: string | undefined
+    ): Promise<AuthTokens> {
+        if (!refreshTokenUuid) {
+            throw createAppError('UNAUTHORIZED', 'Missing refresh token cookie');
         }
-        // Issue trước, del sau — tránh lock-out nếu Redis fail giữa chừng
-        const tokens = await this.issueTokens(session.user_id);
-        await sessionStore.del(refreshTokenUuid);
-        return tokens;
+
+        if (!csrfHeader) {
+            throw createAppError('UNAUTHORIZED', 'Missing X-CSRF-TOKEN header');
+        }
+
+        // Atomic GET + DELETE — tránh race condition double-issue
+        const session = await sessionStore.getAndDelete(refreshTokenUuid);
+
+        if (!session) {
+            throw createAppError('UNAUTHORIZED', 'Session not found or expired');
+        }
+
+        // CSRF validate sau khi đã del — nếu sai thì token cũ đã bị consume,
+        // attacker không thể reuse dù biết UUID
+        if (session.csrfToken !== csrfHeader) {
+            throw createAppError('FORBIDDEN', 'CSRF mismatch');
+        }
+
+        return this.issueTokens(session.user_id);
     }
 
     async logout(refreshTokenUuid: string | undefined): Promise<void> {
@@ -99,29 +93,38 @@ export class AuthService {
     }
 
     async getMe(id: number): Promise<UserPayload> {
-
         const user = await this.prisma.user.findUnique({
-            where: { id: id },
-            select: { id: true, name: true, email: true },
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                user_roles: { select: { role: { select: { name: true } } } },
+            },
         });
 
         if (!user) throw createAppError('NOT_FOUND', `User not found: ${id}`);
-        return user;
+
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            roles: user.user_roles.map((r) => r.role.name),
+        };
     }
 
     private async issueTokens(user_id: number): Promise<AuthTokens> {
         const refreshTokenUuid = crypto.randomUUID();
         const csrfToken = crypto.randomUUID();
+
         try {
             await sessionStore.set(refreshTokenUuid, { user_id, csrfToken });
+        } catch {
+            throw createAppError(
+                'INTERNAL_SERVER_ERROR',
+                `Redis sessionStore.set failed for user_id: ${user_id}`
+            );
         }
-        catch {
-            // Lỗi hạ tầng (Redis down) -> không phải lỗi auth của user.
-            // UNAUTHORIZED (401) sai vì FE/client sẽ hiểu nhầm là sai credential
-            // và có thể trigger logout/redirect login loop. Phải là lỗi server.
-            throw createAppError('INTERNAL_SERVER_ERROR', `Redis sessionStore.set failed for user_id: ${user_id}`);
-
-        };
 
         return {
             accessToken: signAccessToken(user_id),

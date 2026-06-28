@@ -15,6 +15,7 @@ export interface UserPayload {
     id: number;
     name: string;
     email: string;
+    roles: string[]; // thay role: string -> roles: string[]
 }
 export interface TokenResponseDto {
     accessToken: string;

@@ -2,78 +2,39 @@ import axios from 'axios';
 
 /**
  * ============================================================
- * TOKEN STORAGE - Theo mô hình bảo mật của backend (auth.md)
+ * TOKEN STORAGE
  * ============================================================
- * - accessToken:  lưu in-memory (biến JS) → không thể bị XSS đọc qua localStorage
- * - csrfToken:    lưu localStorage → cần gửi kèm header X-CSRF-TOKEN khi /refresh
- * - refreshToken: httpOnly cookie → trình duyệt tự gửi, JS không đọc được
+ * - accessToken:  in-memory, mất khi F5 → bootstrap phải gọi refreshTokens()
+ * - csrfToken:    localStorage
+ * - refreshToken: httpOnly cookie, path=/api/v1/auth/refresh — browser tự gửi
  *
- * Tại sao KHÔNG lưu accessToken vào localStorage?
- * → XSS attack có thể đọc mọi giá trị trong localStorage
- * → In-memory token biến mất khi tab đóng → bắt buộc refresh token mới (đúng thiết kế)
+ * RESPONSE SHAPE (ApiResponseShape<T>):
+ *   Backend: { status: bool, message: string, data: T, timestamp: string }
+ *   Interceptor unwrap response.data → caller nhận object trên
+ *   Payload nằm ở .data: const { accessToken } = res.data
  * ============================================================
  */
-let _accessToken = null;  // Biến in-memory lưu JWT access token (15 phút TTL)
-let _isRefreshing = false; // Cờ ngăn gửi nhiều request refresh đồng thời
-let _failedQueue = [];     // Hàng đợi các request bị thất bại khi đang refresh token
+let _accessToken = null;
 
-/**
- * Xử lý hàng đợi request bị block trong khi token đang được refresh
- * @param {Error|null} error - Lỗi nếu refresh thất bại
- * @param {string|null} token - Token mới nếu refresh thành công
- */
-function processQueue(error, token = null) {
-  _failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  _failedQueue = [];
-}
+export function setAccessToken(token) { _accessToken = token; }
+export function getAccessToken() { return _accessToken; }
+export function clearAccessToken() { _accessToken = null; }
 
 // ============================================================
-// GETTER / SETTER cho accessToken (dùng trong authStore)
-// ============================================================
-
-/** Lưu access token vào memory */
-export function setAccessToken(token) {
-  _accessToken = token;
-}
-
-/** Lấy access token hiện tại */
-export function getAccessToken() {
-  return _accessToken;
-}
-
-/** Xóa access token (khi logout) */
-export function clearAccessToken() {
-  _accessToken = null;
-}
-
-// ============================================================
-// TẠO AXIOS INSTANCE
+// AXIOS INSTANCE
 // ============================================================
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  // withCredentials = true: Cho phép trình duyệt tự gửi httpOnly cookie
-  // (bao gồm refresh_token cookie mà backend set)
-  withCredentials: true,
-  // Timeout 15 giây — ngăn request treo vô thời hạn khi server không phản hồi
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,   // gửi httpOnly refresh_token cookie tự động
   timeout: 15000,
 });
 
-
 // ============================================================
-// REQUEST INTERCEPTOR - Gắn access token vào mọi request
+// REQUEST INTERCEPTOR
 // ============================================================
 axiosClient.interceptors.request.use(
   (config) => {
-    // Nếu có access token in-memory, gắn vào Authorization header
     if (_accessToken) {
       config.headers.Authorization = `Bearer ${_accessToken}`;
     }
@@ -83,91 +44,86 @@ axiosClient.interceptors.request.use(
 );
 
 // ============================================================
-// RESPONSE INTERCEPTOR - Xử lý token hết hạn & tự động refresh
+// SINGLE-FLIGHT REFRESH
+// ============================================================
+// Mọi nơi cần refresh (401 retry + bootstrap authStore khi F5) PHẢI dùng hàm này.
+// Backend dùng rotating refresh token (1 uuid dùng 1 lần) → 2 caller đồng thời
+// sẽ race: 1 thành công, 1 fail, hoặc cả 2 "thành công" nhưng state lệch.
+//
+// _refreshPromise cache promise đang pending → caller thứ N nhận lại CÙNG promise,
+// không tạo request mới. Clear trong finally để lần hết hạn tiếp theo hoạt động bình thường.
+//
+// Scope: dedupe trong 1 tab/JS context. Multi-tab race vẫn phải xử lý ở backend
+// (del-before-issue pattern trong AuthService.refresh).
+// ============================================================
+let _refreshPromise = null;
+
+export function refreshTokens() {
+  if (_refreshPromise) return _refreshPromise;
+
+  const csrfToken = localStorage.getItem('csrf_token');
+
+  _refreshPromise = axios  // ← dùng axios gốc, KHÔNG dùng axiosClient
+    .post(
+      `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/refresh`,
+      {},
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+        },
+      }
+    )
+    .then((res) => {
+      // axios gốc KHÔNG unwrap → res.data = ApiResponseShape
+      const newAccessToken = res.data?.data?.accessToken;
+      const newCsrfToken = res.data?.data?.csrfToken;
+
+      if (!newAccessToken) throw new Error('Refresh token không hợp lệ');
+
+      setAccessToken(newAccessToken);
+      if (newCsrfToken) localStorage.setItem('csrf_token', newCsrfToken);
+
+      return newAccessToken;
+    })
+    .catch((err) => {
+      clearAccessToken();
+      localStorage.removeItem('csrf_token');
+      throw err;
+    })
+    .finally(() => {
+      _refreshPromise = null;
+    });
+
+  return _refreshPromise;
+}
+
+// ============================================================
+// RESPONSE INTERCEPTOR
 // ============================================================
 axiosClient.interceptors.response.use(
-  (response) => {
-    // Trả về trực tiếp response.data vì API luôn wrap trong { status, message, data, timestamp }
-    return response.data;
-  },
+  (response) => response.data, // unwrap axios envelope → caller nhận ApiResponseShape<T>
+
   async (error) => {
     const originalRequest = error.config;
 
-    // ── Xử lý lỗi 401 Unauthorized ──────────────────────────
-    // Nếu server trả 401 VÀ request này chưa được retry
-    // VÀ đây không phải endpoint refresh (tránh vòng lặp vô hạn)
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/refresh')
     ) {
-      if (_isRefreshing) {
-        // Đang có request khác đang refresh → đưa vào hàng đợi chờ token mới
-        return new Promise((resolve, reject) => {
-          _failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            // Sau khi refresh xong, retry request với token mới
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return axiosClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      // Đánh dấu đang refresh và request này sẽ được retry
       originalRequest._retry = true;
-      _isRefreshing = true;
 
       try {
-        // Gọi /auth/refresh:
-        // - Cookie refresh_token được trình duyệt tự gửi (httpOnly)
-        // - Cần gửi CSRF token trong header X-CSRF-TOKEN để chống CSRF attack
-        const csrfToken = localStorage.getItem('csrf_token');
-        const refreshRes = await axiosClient.post('/auth/refresh', {}, {
-          headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {},
-        });
-
-        // axiosClient interceptor đã unwrap response.data → refreshRes là body của HTTP response
-        // Body shape: { status: boolean, message: string, data: { accessToken, csrfToken, ... } }
-        // Hoặc nếu backend không wrap: { accessToken, csrfToken, ... } trực tiếp
-        // Normalize cả hai trường hợp:
-        const tokenPayload = (typeof refreshRes?.status === 'boolean')
-          ? (refreshRes?.data ?? {})   // Wrapped: { status, message, data: {...} }
-          : (refreshRes ?? {});         // Không wrap hoặc đã unwrap: { accessToken, ... }
-
-        const newAccessToken = tokenPayload?.accessToken;
-        const newCsrfToken = tokenPayload?.csrfToken;
-
-        if (!newAccessToken) throw new Error('Refresh token không hợp lệ');
-
-        // Cập nhật token mới vào memory và localStorage
-        setAccessToken(newAccessToken);
-        if (newCsrfToken) {
-          localStorage.setItem('csrf_token', newCsrfToken);
-        }
-
-        // Xử lý các request đang chờ trong hàng đợi
-        processQueue(null, newAccessToken);
-
-        // Retry request ban đầu với access token mới
+        const newAccessToken = await refreshTokens(); // dedupe tự động
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosClient(originalRequest);
       } catch (refreshError) {
-        // Refresh thất bại (token hết hạn / Redis miss) → đẩy lỗi cho tất cả request đang chờ
-        processQueue(refreshError, null);
-
-        // Xóa toàn bộ trạng thái auth → buộc user đăng nhập lại
-        clearAccessToken();
-        localStorage.removeItem('csrf_token');
-
-        // Redirect về trang login nếu không phải đang ở đó rồi
         if (!window.location.pathname.includes('/dang-nhap')) {
           window.location.href = '/quan-ly-giai-dau/dang-nhap';
         }
-
         return Promise.reject(refreshError);
-      } finally {
-        _isRefreshing = false;
       }
     }
 

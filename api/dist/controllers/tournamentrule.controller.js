@@ -75,7 +75,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentRuleController.prototype, "softDelete", null);
 TournamentRuleController = __decorate([
-    Security("jwt"),
+    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("tournamentrules"),
     Tags("TournamentRules"),
     __metadata("design:paramtypes", [TournamentRuleService])

@@ -3976,12 +3976,19 @@
 					},
 					"email": {
 						"type": "string"
+					},
+					"roles": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
 					"id",
 					"name",
-					"email"
+					"email",
+					"roles"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4087,8 +4094,10 @@
 				"security": [
 					{
 						"jwt": [
+							"admin",
 							"user",
-							"admin"
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4163,8 +4172,10 @@
 				"security": [
 					{
 						"jwt": [
+							"admin",
 							"user",
-							"admin"
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4202,8 +4213,10 @@
 				"security": [
 					{
 						"jwt": [
+							"admin",
 							"user",
-							"admin"
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4239,8 +4252,10 @@
 				"security": [
 					{
 						"jwt": [
+							"admin",
 							"user",
-							"admin"
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4279,8 +4294,10 @@
 				"security": [
 					{
 						"jwt": [
+							"admin",
 							"user",
-							"admin"
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4318,7 +4335,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4393,7 +4413,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4431,7 +4454,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4467,7 +4493,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4506,7 +4535,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -4657,7 +4689,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": []
@@ -4681,7 +4718,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [],
@@ -4717,7 +4759,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -4751,7 +4798,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -4788,7 +4840,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -4824,7 +4881,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -4897,7 +4959,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [],
@@ -4950,7 +5017,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -4984,7 +5056,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5021,7 +5098,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5057,7 +5139,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5130,7 +5217,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [],
@@ -5184,7 +5276,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5218,7 +5315,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5270,7 +5372,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5311,7 +5418,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5345,7 +5457,12 @@
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
 					}
 				],
 				"parameters": [
@@ -5401,7 +5518,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],
@@ -5515,7 +5635,10 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"user",
+							"organizing",
+							"guest"
 						]
 					}
 				],

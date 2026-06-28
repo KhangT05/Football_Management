@@ -1,8 +1,3 @@
-import type { Request } from 'express';
-export type AuthenticatedUser = {
-    user_id: number;
-    roles: string[];
-};
 /**
  * CSRF/cross-origin guard cho cookie-based request (vd /auth/refresh).
  * Chỉ áp dụng khi browser thực sự gửi Origin header (cross-site hoặc same-site
@@ -19,6 +14,23 @@ export type AuthenticatedUser = {
  * (vd app.use(authenticate) trước khi routes tsoa-generated được mount).
  *
  * "admin" luôn bypass scope check, đồng bộ với requireRoles().
+ */
+import type { Request } from 'express';
+export type AuthenticatedUser = {
+    user_id: number;
+    roles: string[];
+};
+/**
+ * expressAuthentication cho tsoa.
+ *
+ * is_active check vẫn hit DB vì không cache field này.
+ * Trade-off: 1 DB query nhỏ (select 1 field) vs risk serve deactivated user
+ * từ cache trong TTL window. Với graduation project, acceptable.
+ *
+ * Nếu cần optimize: thêm is_active vào Redis session hoặc encode vào JWT claim,
+ * invalidate khi admin deactivate user.
+ *
+ * roles lấy từ Redis cache (TTL 120s) thay vì JOIN mỗi request.
  */
 export declare function expressAuthentication(req: Request, securityName: string, scopes?: string[]): Promise<AuthenticatedUser>;
 //# sourceMappingURL=auth.middleware.d.ts.map
