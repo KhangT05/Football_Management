@@ -102,17 +102,17 @@ export const matchApi = {
 
   // ── Legacy stubs (deprecated) ────────────────────────────────
 
-  getMatches: (_params = {}) => {
-    console.warn('[matchApi] getMatches() đã deprecated. Dùng getScheduleBySeason(seasonId).');
-    return Promise.reject(new Error('API /matches không tồn tại.'));
-  },
-  create: (_data) => {
-    return Promise.reject(new Error('POST /matches không tồn tại. Dùng generateSchedule() hoặc autoSchedule().'));
-  },
-  update: (_id, _data) => {
-    return Promise.reject(new Error('PATCH /matches/{id} không tồn tại. Dùng rescheduleMatch().'));
-  },
-  delete: (_id) => {
-    return Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.'));
-  },
+  // getMatches: (_params = {}) => {
+  //   console.warn('[matchApi] getMatches() đã deprecated. Dùng getScheduleBySeason(seasonId).');
+  //   return Promise.reject(new Error('API /matches không tồn tại.'));
+  // },
+  // create: (_data) => {
+  //   return Promise.reject(new Error('POST /matches không tồn tại. Dùng generateSchedule() hoặc autoSchedule().'));
+  // },
+  // update: (_id, _data) => {
+  //   return Promise.reject(new Error('PATCH /matches/{id} không tồn tại. Dùng rescheduleMatch().'));
+  // },
+  // delete: (_id) => {
+  //   return Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.'));
+  // },
 };
