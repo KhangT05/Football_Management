@@ -13,6 +13,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET}
       SWAGGER_ENABLED: true
+      APP_ORIGIN: ${APP_ORIGIN}
       # Phụ thuộc vào
     depends_on:                                  # MISSING: không có depends_on mysql/redis
         - mysql
