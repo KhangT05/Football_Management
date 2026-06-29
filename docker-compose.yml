@@ -5,6 +5,8 @@ services:
     image: ghcr.io/khangt05/football_management:latest
     # Khởi động lại nếu bị crash hoặc server reboot
     restart: unless-stopped
+    env_file:
+      - .env
     ports: 
       - "3000:3000"  # host 3000 → container 3000
     environment:
