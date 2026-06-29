@@ -164,6 +164,8 @@ export declare const PaymentStatus: {
     readonly pending: "pending";
     readonly confirmed: "confirmed";
     readonly rejected: "rejected";
+    readonly refund_pending: "refund_pending";
+    readonly refunded: "refunded";
 };
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 export declare const ArticleStatus: {
