@@ -8,7 +8,7 @@ export type * from './models/BracketSlot.js';
 export type * from './models/Season.js';
 export type * from './models/Group.js';
 export type * from './models/Team.js';
-export type * from './models/TeamJersey.js';
+export type * from './models/MatchJerseyAssignment.js';
 export type * from './models/Player.js';
 export type * from './models/TeamPlayer.js';
 export type * from './models/TeamLeader.js';

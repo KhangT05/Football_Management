@@ -1,28 +1,49 @@
-import { CreateRoleDto, UpdateRoleDto } from "../dtos/role.schema.js";
-import { PrismaClient, Role } from "../generated/prisma/client.js";
-import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
-export declare class RoleService {
+import { ArticleStatus, PrismaClient } from "../generated/prisma/client.js";
+import { PaginatedResult } from "../types/queryable.type.js";
+import { AddArticleMediaDto, AddTagDto, BulkAddTagsDto, BulkDeleteMediaDto, CreateArticleDto, UpdateArticleDto } from "../dtos/article.schema.js";
+import { ArticleListItem, ArticleQueryRequest, SafeArticle } from "../types/article.type.js";
+export declare class ArticleService {
     private readonly prisma;
     private readonly query;
     constructor(prisma: PrismaClient);
-    findAll(req?: QueryRequest): Promise<PaginatedResult<Role>>;
-    /**
- * Filter is_active: true để đồng bộ với findAll() — role đã soft-delete
- * không còn coi là "tồn tại" cho update/softDelete. Nếu cần cho phép admin
- * "undelete" qua update(), tách riêng method restore() rõ ràng.
- */
-    findByIdOrFail(id: number): Promise<Role>;
-    create(data: CreateRoleDto): Promise<Role>;
-    /**
-     * Dùng updateMany (where không bị giới hạn unique-constraint-only như update())
-     * để gộp "check tồn tại + check active + update" — count===0 nghĩa là không
-     * match (không tồn tại hoặc đã soft-delete) -> NOT_FOUND. Tổng vẫn 2 round-trip
-     * (updateMany + fetch lại record để trả về), nhưng loại bỏ raw Error và đảm bảo
-     * is_active consistency với findAll(). Nếu chấp nhận update() áp dụng được lên
-     * record đã soft-delete (vd dùng update() để undelete), dùng prisma.role.update
-     * thẳng với where:{id} thay vì updateMany.
-     */
-    update(id: number, data: UpdateRoleDto): Promise<Role>;
+    findAll(req?: ArticleQueryRequest): Promise<PaginatedResult<ArticleListItem>>;
+    findById(id: number): Promise<SafeArticle | null>;
+    findByIdOrFail(id: number): Promise<SafeArticle>;
+    findBySlug(slug: string): Promise<SafeArticle | null>;
+    findBySlugOrFail(slug: string): Promise<SafeArticle>;
+    create(userId: number, data: CreateArticleDto): Promise<SafeArticle>;
+    update(id: number, data: UpdateArticleDto): Promise<SafeArticle>;
+    updateStatus(id: number, status: ArticleStatus): Promise<SafeArticle>;
     softDelete(id: number): Promise<void>;
+    listDistinctTags(): Promise<string[]>;
+    addTag(articleId: number, dto: AddTagDto): Promise<void>;
+    /** Bulk add — createMany skipDuplicates, 1 round-trip */
+    bulkAddTags(articleId: number, dto: BulkAddTagsDto): Promise<{
+        count: number;
+    }>;
+    removeTag(articleId: number, tag: string): Promise<void>;
+    getMedia(articleId: number): Promise<{
+        type: import("../generated/prisma/enums.js").MediaType;
+        id: number;
+        created_at: Date;
+        order: number;
+        url: string;
+        caption: string | null;
+        article_id: number;
+    }[]>;
+    addMedia(articleId: number, dto: AddArticleMediaDto): Promise<{
+        type: import("../generated/prisma/enums.js").MediaType;
+        id: number;
+        created_at: Date;
+        order: number;
+        url: string;
+        caption: string | null;
+        article_id: number;
+    }>;
+    deleteMedia(articleId: number, mediaId: number): Promise<void>;
+    bulkDeleteMedia(articleId: number, dto: BulkDeleteMediaDto): Promise<{
+        deleted: number;
+        notFound: number[];
+    }>;
 }
 //# sourceMappingURL=article.service.d.ts.map

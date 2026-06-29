@@ -1,66 +1,237 @@
-import { createAppError } from "../common/app.error.js";
 import { Queryable } from "../libs/queryable.js";
-export class RoleService {
+import { createAppError } from "../common/app.error.js";
+import { ARTICLE_BASE_WHERE, ARTICLE_FULL_INCLUDE, ARTICLE_LIST_INCLUDE } from "../types/article.type.js";
+export class ArticleService {
     prisma;
     query;
     constructor(prisma) {
         this.prisma = prisma;
-        this.query = new Queryable(prisma.role, {
-            searchFields: ["name", "description"],
-            sortable: ["id", "name", "created_at"],
-            defaultSort: { column: "id", direction: "asc" },
-            filterable: ["is_active"],
+        this.query = new Queryable(prisma.article, {
+            searchFields: ["title", "slug"],
+            sortable: ["id", "title", "published_at", "created_at"],
+            defaultSort: { column: "created_at", direction: "desc" },
+            filterable: ["status", "user_id", "season_id", "match_id", "team_id"],
             defaultPerPage: 20,
             maxPerPage: 100,
+            ...ARTICLE_LIST_INCLUDE,
             beforeBuild: (where) => {
-                where.push({ is_active: true });
+                where.push(ARTICLE_BASE_WHERE);
             },
         });
     }
-    findAll(req = {}) {
-        return this.query.run(req);
+    // ─── Read ──────────────────────────────────────────────────────────────────
+    async findAll(req = {}) {
+        const { tag, ...baseReq } = req;
+        return this.query.run(baseReq, tag
+            ? {
+                beforeBuild: (where) => {
+                    where.push(ARTICLE_BASE_WHERE);
+                    where.push({ tags: { some: { tag } } });
+                },
+            }
+            : undefined);
     }
-    /**
- * Filter is_active: true để đồng bộ với findAll() — role đã soft-delete
- * không còn coi là "tồn tại" cho update/softDelete. Nếu cần cho phép admin
- * "undelete" qua update(), tách riêng method restore() rõ ràng.
- */
+    findById(id) {
+        return this.prisma.article.findFirst({
+            where: { id, ...ARTICLE_BASE_WHERE },
+            ...ARTICLE_FULL_INCLUDE,
+        });
+    }
     async findByIdOrFail(id) {
-        const role = await this.prisma.role.findUnique({ where: { id } });
-        if (!role || !role.is_active)
-            throw createAppError('NOT_FOUND', `Role not found: ${id}`);
-        return role;
+        const article = await this.findById(id);
+        if (!article)
+            throw createAppError("NOT_FOUND", `Article ${id} not found`);
+        return article;
     }
-    async create(data) {
-        return this.prisma.role.create({
-            data: data
+    findBySlug(slug) {
+        return this.prisma.article.findFirst({
+            where: { slug, ...ARTICLE_BASE_WHERE },
+            ...ARTICLE_FULL_INCLUDE,
         });
     }
-    /**
-     * Dùng updateMany (where không bị giới hạn unique-constraint-only như update())
-     * để gộp "check tồn tại + check active + update" — count===0 nghĩa là không
-     * match (không tồn tại hoặc đã soft-delete) -> NOT_FOUND. Tổng vẫn 2 round-trip
-     * (updateMany + fetch lại record để trả về), nhưng loại bỏ raw Error và đảm bảo
-     * is_active consistency với findAll(). Nếu chấp nhận update() áp dụng được lên
-     * record đã soft-delete (vd dùng update() để undelete), dùng prisma.role.update
-     * thẳng với where:{id} thay vì updateMany.
-     */
+    async findBySlugOrFail(slug) {
+        const article = await this.findBySlug(slug);
+        if (!article)
+            throw createAppError("NOT_FOUND", `Article slug "${slug}" not found`);
+        return article;
+    }
+    // ─── Write ─────────────────────────────────────────────────────────────────
+    async create(userId, data) {
+        const slugExists = await this.prisma.article.findUnique({
+            where: { slug: data.slug },
+            select: { id: true },
+        });
+        if (slugExists)
+            throw createAppError("CONFLICT", `Slug "${data.slug}" already exists`);
+        const { tags, media, published_at, ...fields } = data;
+        // published_at: explicit value > auto-now khi status=published > undefined
+        const publishedAt = published_at
+            ? new Date(published_at)
+            : fields.status === "published"
+                ? new Date()
+                : undefined;
+        return this.prisma.article.create({
+            data: {
+                ...fields,
+                user_id: userId,
+                ...(publishedAt && { published_at: publishedAt }),
+                // bulk insert tags + media trong cùng 1 query — 1 round-trip
+                ...(tags?.length && {
+                    tags: {
+                        createMany: {
+                            data: tags.map((tag) => ({ tag })),
+                            skipDuplicates: true,
+                        },
+                    },
+                }),
+                ...(media?.length && {
+                    media: {
+                        createMany: { data: media },
+                    },
+                }),
+            },
+            ...ARTICLE_FULL_INCLUDE,
+        });
+    }
     async update(id, data) {
-        const result = await this.prisma.role.updateMany({
-            where: { id, is_active: true },
-            data,
+        await this.findByIdOrFail(id);
+        const { tags, media, published_at, slug, status, ...fields } = data;
+        if (slug) {
+            const conflict = await this.prisma.article.findFirst({
+                where: { slug, id: { not: id } },
+                select: { id: true },
+            });
+            if (conflict)
+                throw createAppError("CONFLICT", `Slug "${slug}" already exists`);
+        }
+        const publishedAt = published_at
+            ? new Date(published_at)
+            : status === "published"
+                ? new Date()
+                : undefined;
+        return this.prisma.$transaction(async (tx) => {
+            // tags: replace-all nếu truyền (bulk delete + bulk insert)
+            if (tags !== undefined) {
+                await tx.articleTag.deleteMany({ where: { article_id: id } });
+                if (tags.length) {
+                    await tx.articleTag.createMany({
+                        data: tags.map((tag) => ({ article_id: id, tag })),
+                        skipDuplicates: true,
+                    });
+                }
+            }
+            // media: replace-all nếu truyền
+            if (media !== undefined) {
+                await tx.articleMedia.deleteMany({ where: { article_id: id } });
+                if (media.length) {
+                    await tx.articleMedia.createMany({
+                        data: media.map((m) => ({ ...m, article_id: id })),
+                    });
+                }
+            }
+            const patch = Object.fromEntries(Object.entries({ ...fields, slug, status }).filter(([, v]) => v !== undefined));
+            return tx.article.update({
+                where: { id },
+                data: {
+                    ...patch,
+                    ...(publishedAt && { published_at: publishedAt }),
+                },
+                ...ARTICLE_FULL_INCLUDE,
+            });
         });
-        if (result.count === 0)
-            throw createAppError('NOT_FOUND', `Role not found: ${id}`);
-        return this.prisma.role.findUniqueOrThrow({ where: { id } });
+    }
+    async updateStatus(id, status) {
+        await this.findByIdOrFail(id);
+        return this.prisma.article.update({
+            where: { id },
+            data: {
+                status,
+                ...(status === "published" && { published_at: new Date() }),
+            },
+            ...ARTICLE_FULL_INCLUDE,
+        });
     }
     async softDelete(id) {
-        const result = await this.prisma.role.updateMany({
-            where: { id, is_active: true },
-            data: { is_active: false },
+        await this.findByIdOrFail(id);
+        await this.prisma.article.update({
+            where: { id },
+            data: { is_active: false, deleted_at: new Date() },
         });
-        if (result.count === 0)
-            throw createAppError('NOT_FOUND', `Role not found: ${id}`);
+    }
+    // ─── Tags ──────────────────────────────────────────────────────────────────
+    async listDistinctTags() {
+        const rows = await this.prisma.articleTag.findMany({
+            distinct: ["tag"],
+            select: { tag: true },
+            orderBy: { tag: "asc" },
+        });
+        return rows.map((r) => r.tag);
+    }
+    async addTag(articleId, dto) {
+        await this.findByIdOrFail(articleId);
+        await this.prisma.articleTag.upsert({
+            where: { article_id_tag: { article_id: articleId, tag: dto.tag } },
+            create: { article_id: articleId, tag: dto.tag },
+            update: {},
+        });
+    }
+    /** Bulk add — createMany skipDuplicates, 1 round-trip */
+    async bulkAddTags(articleId, dto) {
+        await this.findByIdOrFail(articleId);
+        const result = await this.prisma.articleTag.createMany({
+            data: dto.tags.map((tag) => ({ article_id: articleId, tag })),
+            skipDuplicates: true,
+        });
+        return { count: result.count };
+    }
+    async removeTag(articleId, tag) {
+        await this.findByIdOrFail(articleId);
+        const exists = await this.prisma.articleTag.findUnique({
+            where: { article_id_tag: { article_id: articleId, tag } },
+            select: { id: true },
+        });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `Tag "${tag}" not found on article ${articleId}`);
+        await this.prisma.articleTag.delete({
+            where: { article_id_tag: { article_id: articleId, tag } },
+        });
+    }
+    // ─── Media ─────────────────────────────────────────────────────────────────
+    async getMedia(articleId) {
+        await this.findByIdOrFail(articleId);
+        return this.prisma.articleMedia.findMany({
+            where: { article_id: articleId },
+            orderBy: { order: "asc" },
+        });
+    }
+    async addMedia(articleId, dto) {
+        await this.findByIdOrFail(articleId);
+        return this.prisma.articleMedia.create({
+            data: { ...dto, article_id: articleId },
+        });
+    }
+    async deleteMedia(articleId, mediaId) {
+        await this.findByIdOrFail(articleId);
+        const exists = await this.prisma.articleMedia.findFirst({
+            where: { id: mediaId, article_id: articleId },
+            select: { id: true },
+        });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `Media ${mediaId} not found on article ${articleId}`);
+        await this.prisma.articleMedia.delete({ where: { id: mediaId } });
+    }
+    async bulkDeleteMedia(articleId, dto) {
+        await this.findByIdOrFail(articleId);
+        const found = await this.prisma.articleMedia.findMany({
+            where: { id: { in: dto.ids }, article_id: articleId },
+            select: { id: true },
+        });
+        const foundIds = found.map((m) => m.id);
+        const notFound = dto.ids.filter((id) => !foundIds.includes(id));
+        const { count } = await this.prisma.articleMedia.deleteMany({
+            where: { id: { in: foundIds } },
+        });
+        return { deleted: count, notFound };
     }
 }
 //# sourceMappingURL=article.service.js.map

@@ -3197,10 +3197,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"jersey_number": {
-						"type": "number",
-						"format": "double"
-					},
 					"player_id": {
 						"type": "number",
 						"format": "double"
@@ -3230,7 +3226,6 @@
 					"is_captain",
 					"lineup_type",
 					"match_id",
-					"jersey_number",
 					"player_id",
 					"position",
 					"status",
@@ -3917,6 +3912,85 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"JerseyType": {
+				"type": "string",
+				"enum": [
+					"goalkeeper",
+					"home",
+					"away",
+					"third"
+				]
+			},
+			"DefaultSelection__36_SeasonTeamJerseyPayload_": {
+				"properties": {
+					"image_url": {
+						"type": "string"
+					},
+					"secondary_color": {
+						"type": "string"
+					},
+					"primary_color": {
+						"type": "string"
+					},
+					"season_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"type": {
+						"$ref": "#/components/schemas/JerseyType"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"image_url",
+					"secondary_color",
+					"primary_color",
+					"season_team_id",
+					"type",
+					"id"
+				],
+				"type": "object"
+			},
+			"SeasonTeamJerseyModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_SeasonTeamJerseyPayload_",
+				"description": "Model SeasonTeamJersey"
+			},
+			"SeasonTeamJersey": {
+				"$ref": "#/components/schemas/SeasonTeamJerseyModel",
+				"description": "Model SeasonTeamJersey"
+			},
+			"infer_typeofupsertSeasonTeamJerseySchema_": {
+				"properties": {
+					"image_url": {
+						"type": "string"
+					},
+					"secondary_color": {
+						"type": "string"
+					},
+					"primary_color": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"goalkeeper",
+							"home",
+							"away",
+							"third"
+						]
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object"
+			},
+			"UpsertSeasonTeamJerseyDto": {
+				"$ref": "#/components/schemas/infer_typeofupsertSeasonTeamJerseySchema_"
+			},
 			"GroupStatus": {
 				"type": "string",
 				"enum": [
@@ -4285,6 +4359,622 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"ArticleStatus": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"published",
+					"archived"
+				]
+			},
+			"Pick_Article.Exclude_keyofArticle.content__": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/ArticleStatus"
+					},
+					"match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"title": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"cover_image": {
+						"type": "string"
+					},
+					"published_at": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"is_active",
+					"created_at",
+					"updated_at",
+					"deleted_at",
+					"user_id",
+					"team_id",
+					"season_id",
+					"status",
+					"match_id",
+					"title",
+					"slug",
+					"cover_image",
+					"published_at"
+				],
+				"type": "object",
+				"description": "From T, pick a set of properties whose keys are in the union K"
+			},
+			"Omit_Article.content_": {
+				"$ref": "#/components/schemas/Pick_Article.Exclude_keyofArticle.content__",
+				"description": "Construct a type with the properties of T except for those in type K."
+			},
+			"DefaultSelection__36_ArticleTagPayload_": {
+				"properties": {
+					"tag": {
+						"type": "string"
+					},
+					"article_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"tag",
+					"article_id",
+					"id"
+				],
+				"type": "object"
+			},
+			"ArticleTagModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_ArticleTagPayload_",
+				"description": "Model ArticleTag"
+			},
+			"ArticleTag": {
+				"$ref": "#/components/schemas/ArticleTagModel",
+				"description": "Model ArticleTag"
+			},
+			"ArticleListItem": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Omit_Article.content_"
+					},
+					{
+						"properties": {
+							"user": {
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"name",
+									"id"
+								],
+								"type": "object"
+							},
+							"tags": {
+								"items": {
+									"$ref": "#/components/schemas/ArticleTag"
+								},
+								"type": "array"
+							}
+						},
+						"required": [
+							"user",
+							"tags"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"PaginatedResult_ArticleListItem_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/ArticleListItem"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DefaultSelection__36_ArticlePayload_": {
+				"properties": {
+					"published_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"cover_image": {
+						"type": "string"
+					},
+					"content": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/ArticleStatus"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"published_at",
+					"cover_image",
+					"content",
+					"slug",
+					"title",
+					"match_id",
+					"status",
+					"season_id",
+					"team_id",
+					"user_id",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id"
+				],
+				"type": "object"
+			},
+			"ArticleModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_ArticlePayload_",
+				"description": "Model Article"
+			},
+			"Article": {
+				"$ref": "#/components/schemas/ArticleModel",
+				"description": "Model Article"
+			},
+			"MediaType": {
+				"type": "string",
+				"enum": [
+					"image",
+					"video"
+				]
+			},
+			"DefaultSelection__36_ArticleMediaPayload_": {
+				"properties": {
+					"order": {
+						"type": "number",
+						"format": "double"
+					},
+					"caption": {
+						"type": "string"
+					},
+					"article_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"url": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/MediaType"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"order",
+					"caption",
+					"article_id",
+					"url",
+					"type",
+					"created_at",
+					"id"
+				],
+				"type": "object"
+			},
+			"ArticleMediaModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_ArticleMediaPayload_",
+				"description": "Model ArticleMedia"
+			},
+			"ArticleMedia": {
+				"$ref": "#/components/schemas/ArticleMediaModel",
+				"description": "Model ArticleMedia"
+			},
+			"SafeArticle": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Article"
+					},
+					{
+						"properties": {
+							"user": {
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"name",
+									"id"
+								],
+								"type": "object"
+							},
+							"media": {
+								"items": {
+									"$ref": "#/components/schemas/ArticleMedia"
+								},
+								"type": "array"
+							},
+							"tags": {
+								"items": {
+									"$ref": "#/components/schemas/ArticleTag"
+								},
+								"type": "array"
+							}
+						},
+						"required": [
+							"user",
+							"media",
+							"tags"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"infer_typeofcreateArticleSchema_": {
+				"properties": {
+					"media": {
+						"items": {
+							"properties": {
+								"caption": {
+									"type": "string"
+								},
+								"order": {
+									"type": "number",
+									"format": "double"
+								},
+								"url": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"image",
+										"video"
+									]
+								}
+							},
+							"required": [
+								"order",
+								"url",
+								"type"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"tags": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"published_at": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"cover_image": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					},
+					"content": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"status",
+					"content",
+					"slug",
+					"title"
+				],
+				"type": "object"
+			},
+			"CreateArticleDto": {
+				"$ref": "#/components/schemas/infer_typeofcreateArticleSchema_"
+			},
+			"infer_typeofupdateArticleSchema_": {
+				"properties": {
+					"media": {
+						"items": {
+							"properties": {
+								"caption": {
+									"type": "string"
+								},
+								"order": {
+									"type": "number",
+									"format": "double"
+								},
+								"url": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"image",
+										"video"
+									]
+								}
+							},
+							"required": [
+								"order",
+								"url",
+								"type"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"tags": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"published_at": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"match_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					},
+					"cover_image": {
+						"type": "string"
+					},
+					"content": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					}
+				},
+				"type": "object"
+			},
+			"UpdateArticleDto": {
+				"$ref": "#/components/schemas/infer_typeofupdateArticleSchema_"
+			},
+			"infer_typeofupdateArticleStatusSchema_": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object"
+			},
+			"UpdateArticleStatusDto": {
+				"$ref": "#/components/schemas/infer_typeofupdateArticleStatusSchema_"
+			},
+			"infer_typeofaddTagSchema_": {
+				"properties": {
+					"tag": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"tag"
+				],
+				"type": "object"
+			},
+			"AddTagDto": {
+				"$ref": "#/components/schemas/infer_typeofaddTagSchema_"
+			},
+			"infer_typeofbulkAddTagsSchema_": {
+				"properties": {
+					"tags": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"tags"
+				],
+				"type": "object"
+			},
+			"BulkAddTagsDto": {
+				"$ref": "#/components/schemas/infer_typeofbulkAddTagsSchema_"
+			},
+			"infer_typeofaddArticleMediaSchema_": {
+				"properties": {
+					"caption": {
+						"type": "string"
+					},
+					"order": {
+						"type": "number",
+						"format": "double"
+					},
+					"url": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"image",
+							"video"
+						]
+					}
+				},
+				"required": [
+					"order",
+					"url",
+					"type"
+				],
+				"type": "object"
+			},
+			"AddArticleMediaDto": {
+				"$ref": "#/components/schemas/infer_typeofaddArticleMediaSchema_"
+			},
+			"infer_typeofbulkDeleteMediaSchema_": {
+				"properties": {
+					"ids": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"ids"
+				],
+				"type": "object"
+			},
+			"BulkDeleteMediaDto": {
+				"$ref": "#/components/schemas/infer_typeofbulkDeleteMediaSchema_"
 			}
 		},
 		"securitySchemes": {
@@ -9807,6 +10497,142 @@
 				]
 			}
 		},
+		"/jerseys/season-teams/{seasonTeamId}": {
+			"get": {
+				"operationId": "GetSeasonTeamJerseys",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/SeasonTeamJersey"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "GET /jerseys/season-teams/:seasonTeamId",
+				"tags": [
+					"Jerseys"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonTeamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpsertSeasonTeamJersey",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonTeamJersey"
+								}
+							}
+						}
+					}
+				},
+				"description": "PUT /jerseys/season-teams/:seasonTeamId — upsert by type",
+				"tags": [
+					"Jerseys"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonTeamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpsertSeasonTeamJerseyDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteSeasonTeamJersey",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"description": "DELETE /jerseys/season-teams/:seasonTeamId?type=home",
+				"tags": [
+					"Jerseys"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonTeamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "type",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/JerseyType"
+						}
+					}
+				]
+			}
+		},
 		"/groups/{id}": {
 			"get": {
 				"operationId": "FindByIdWithTeams",
@@ -10192,6 +11018,753 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/articles": {
+			"get": {
+				"operationId": "FindAll",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_ArticleListItem_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "q",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "season_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "match_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "team_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "user_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "tag",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SafeArticle"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateArticleDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/articles/{id}": {
+			"get": {
+				"operationId": "FindById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SafeArticle"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SafeArticle"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateArticleDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "SoftDelete",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/articles/slug/{slug}": {
+			"get": {
+				"operationId": "FindBySlug",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SafeArticle"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "slug",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/articles/{id}/status": {
+			"patch": {
+				"operationId": "UpdateStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SafeArticle"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateArticleStatusDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/articles/tags": {
+			"get": {
+				"operationId": "ListTags",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"type": "string"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "Distinct tags toàn hệ thống — dùng cho autocomplete",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/articles/{article_id}/tags": {
+			"post": {
+				"operationId": "AddTag",
+				"responses": {
+					"201": {
+						"description": "Created"
+					}
+				},
+				"description": "Add 1 tag vào article",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddTagDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/articles/{article_id}/tags/bulk": {
+			"post": {
+				"operationId": "BulkAddTags",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"count": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"count"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Bulk add nhiều tags vào article — 1 round-trip",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BulkAddTagsDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/articles/{article_id}/tags/{tag}": {
+			"delete": {
+				"operationId": "RemoveTag",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"description": "Remove 1 tag khỏi article",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "tag",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/articles/{article_id}/media": {
+			"get": {
+				"operationId": "GetMedia",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ArticleMedia"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "AddMedia",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ArticleMedia"
+								}
+							}
+						}
+					}
+				},
+				"description": "Add 1 media item — dùng sau khi upload lên Cloudinary",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddArticleMediaDto"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "BulkDeleteMedia",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"notFound": {
+											"items": {
+												"type": "number",
+												"format": "double"
+											},
+											"type": "array"
+										},
+										"deleted": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"notFound",
+										"deleted"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Bulk delete media — truyền ids[]",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BulkDeleteMediaDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/articles/{article_id}/media/{media_id}": {
+			"delete": {
+				"operationId": "DeleteMedia",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"description": "Delete 1 media item",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "media_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
 			}
 		}
 	},

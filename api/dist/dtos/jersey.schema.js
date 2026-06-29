@@ -6,16 +6,6 @@ const hexColor = z
     .string()
     .regex(/^#?[0-9A-Fa-f]{6}$/, "Invalid hex color format")
     .transform((val) => (val.startsWith("#") ? val : `#${val}`));
-// ─── TeamJersey ────────────────────────────────────────────────────────────
-/**
- * Update team jersey (approved state).
- * Triggered by admin or after season approval.
- */
-export const updateTeamJerseySchema = z.object({
-    type: z.nativeEnum(JerseyType),
-    primary_color: hexColor,
-    secondary_color: hexColor.nullable().optional(),
-});
 // ─── SeasonTeamJersey ──────────────────────────────────────────────────────
 /**
  * Submit season jersey for approval.

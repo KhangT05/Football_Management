@@ -36,7 +36,7 @@ export declare const ModelName: {
     readonly Season: "Season";
     readonly Group: "Group";
     readonly Team: "Team";
-    readonly TeamJersey: "TeamJersey";
+    readonly MatchJerseyAssignment: "MatchJerseyAssignment";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
     readonly TeamLeader: "TeamLeader";
@@ -194,14 +194,12 @@ export declare const TeamScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
-export declare const TeamJerseyScalarFieldEnum: {
+export declare const MatchJerseyAssignmentScalarFieldEnum: {
     readonly id: "id";
-    readonly team_id: "team_id";
-    readonly type: "type";
-    readonly primary_color: "primary_color";
-    readonly secondary_color: "secondary_color";
+    readonly match_id: "match_id";
+    readonly season_jersey_id: "season_jersey_id";
 };
-export type TeamJerseyScalarFieldEnum = (typeof TeamJerseyScalarFieldEnum)[keyof typeof TeamJerseyScalarFieldEnum];
+export type MatchJerseyAssignmentScalarFieldEnum = (typeof MatchJerseyAssignmentScalarFieldEnum)[keyof typeof MatchJerseyAssignmentScalarFieldEnum];
 export declare const PlayerScalarFieldEnum: {
     readonly id: "id";
     readonly date_of_birth: "date_of_birth";
@@ -281,7 +279,6 @@ export declare const MatchLineupScalarFieldEnum: {
     readonly match_id: "match_id";
     readonly team_id: "team_id";
     readonly player_id: "player_id";
-    readonly jersey_number: "jersey_number";
     readonly position: "position";
     readonly lineup_type: "lineup_type";
     readonly is_captain: "is_captain";
@@ -531,11 +528,6 @@ export declare const TeamOrderByRelevanceFieldEnum: {
     readonly description: "description";
 };
 export type TeamOrderByRelevanceFieldEnum = (typeof TeamOrderByRelevanceFieldEnum)[keyof typeof TeamOrderByRelevanceFieldEnum];
-export declare const TeamJerseyOrderByRelevanceFieldEnum: {
-    readonly primary_color: "primary_color";
-    readonly secondary_color: "secondary_color";
-};
-export type TeamJerseyOrderByRelevanceFieldEnum = (typeof TeamJerseyOrderByRelevanceFieldEnum)[keyof typeof TeamJerseyOrderByRelevanceFieldEnum];
 export declare const PlayerOrderByRelevanceFieldEnum: {
     readonly nationality: "nationality";
     readonly avatar: "avatar";

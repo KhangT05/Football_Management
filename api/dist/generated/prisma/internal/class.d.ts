@@ -228,14 +228,14 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
-     * `prisma.teamJersey`: Exposes CRUD operations for the **TeamJersey** model.
+     * `prisma.matchJerseyAssignment`: Exposes CRUD operations for the **MatchJerseyAssignment** model.
       * Example usage:
       * ```ts
-      * // Fetch zero or more TeamJerseys
-      * const teamJerseys = await prisma.teamJersey.findMany()
+      * // Fetch zero or more MatchJerseyAssignments
+      * const matchJerseyAssignments = await prisma.matchJerseyAssignment.findMany()
       * ```
       */
-    get teamJersey(): Prisma.TeamJerseyDelegate<ExtArgs, {
+    get matchJerseyAssignment(): Prisma.MatchJerseyAssignmentDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

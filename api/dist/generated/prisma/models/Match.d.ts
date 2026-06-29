@@ -472,6 +472,7 @@ export type MatchWhereInput = {
     articles?: Prisma.ArticleListRelationFilter;
     bracketSlot?: Prisma.XOR<Prisma.BracketSlotNullableScalarRelationFilter, Prisma.BracketSlotWhereInput> | null;
     matchLineups?: Prisma.MatchLineupListRelationFilter;
+    matchJerseyAssignment?: Prisma.XOR<Prisma.MatchJerseyAssignmentNullableScalarRelationFilter, Prisma.MatchJerseyAssignmentWhereInput> | null;
 };
 export type MatchOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -518,6 +519,7 @@ export type MatchOrderByWithRelationInput = {
     articles?: Prisma.ArticleOrderByRelationAggregateInput;
     bracketSlot?: Prisma.BracketSlotOrderByWithRelationInput;
     matchLineups?: Prisma.MatchLineupOrderByRelationAggregateInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentOrderByWithRelationInput;
     _relevance?: Prisma.MatchOrderByRelevanceInput;
 };
 export type MatchWhereUniqueInput = Prisma.AtLeast<{
@@ -569,6 +571,7 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     articles?: Prisma.ArticleListRelationFilter;
     bracketSlot?: Prisma.XOR<Prisma.BracketSlotNullableScalarRelationFilter, Prisma.BracketSlotWhereInput> | null;
     matchLineups?: Prisma.MatchLineupListRelationFilter;
+    matchJerseyAssignment?: Prisma.XOR<Prisma.MatchJerseyAssignmentNullableScalarRelationFilter, Prisma.MatchJerseyAssignmentWhereInput> | null;
 }, "id" | "venue_id_scheduled_at">;
 export type MatchOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -686,6 +689,7 @@ export type MatchCreateInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateInput = {
     id?: number;
@@ -726,6 +730,7 @@ export type MatchUncheckedCreateInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchUpdateInput = {
     scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -765,6 +770,7 @@ export type MatchUpdateInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -805,6 +811,7 @@ export type MatchUncheckedUpdateInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateManyInput = {
     id?: number;
@@ -1278,6 +1285,18 @@ export type MatchUncheckedUpdateManyWithoutAway_teamNestedInput = {
     updateMany?: Prisma.MatchUpdateManyWithWhereWithoutAway_teamInput | Prisma.MatchUpdateManyWithWhereWithoutAway_teamInput[];
     deleteMany?: Prisma.MatchScalarWhereInput | Prisma.MatchScalarWhereInput[];
 };
+export type MatchCreateNestedOneWithoutMatchJerseyAssignmentInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedCreateWithoutMatchJerseyAssignmentInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutMatchJerseyAssignmentInput;
+    connect?: Prisma.MatchWhereUniqueInput;
+};
+export type MatchUpdateOneRequiredWithoutMatchJerseyAssignmentNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchCreateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedCreateWithoutMatchJerseyAssignmentInput>;
+    connectOrCreate?: Prisma.MatchCreateOrConnectWithoutMatchJerseyAssignmentInput;
+    upsert?: Prisma.MatchUpsertWithoutMatchJerseyAssignmentInput;
+    connect?: Prisma.MatchWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.MatchUpdateToOneWithWhereWithoutMatchJerseyAssignmentInput, Prisma.MatchUpdateWithoutMatchJerseyAssignmentInput>, Prisma.MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput>;
+};
 export type MatchCreateNestedManyWithoutVenueInput = {
     create?: Prisma.XOR<Prisma.MatchCreateWithoutVenueInput, Prisma.MatchUncheckedCreateWithoutVenueInput> | Prisma.MatchCreateWithoutVenueInput[] | Prisma.MatchUncheckedCreateWithoutVenueInput[];
     connectOrCreate?: Prisma.MatchCreateOrConnectWithoutVenueInput | Prisma.MatchCreateOrConnectWithoutVenueInput[];
@@ -1412,6 +1431,7 @@ export type MatchCreateWithoutUserInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutUserInput = {
     id?: number;
@@ -1451,6 +1471,7 @@ export type MatchUncheckedCreateWithoutUserInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutUserInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1548,6 +1569,7 @@ export type MatchCreateWithoutPhaseInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutPhaseInput = {
     id?: number;
@@ -1587,6 +1609,7 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutPhaseInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1646,6 +1669,7 @@ export type MatchCreateWithoutBracketSlotInput = {
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutBracketSlotInput = {
     id?: number;
@@ -1685,6 +1709,7 @@ export type MatchUncheckedCreateWithoutBracketSlotInput = {
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutBracketSlotInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1736,6 +1761,7 @@ export type MatchUpdateWithoutBracketSlotInput = {
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1775,6 +1801,7 @@ export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateWithoutGroupInput = {
     scheduled_at?: Date | string | null;
@@ -1813,6 +1840,7 @@ export type MatchCreateWithoutGroupInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutGroupInput = {
     id?: number;
@@ -1852,6 +1880,7 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutGroupInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1911,6 +1940,7 @@ export type MatchCreateWithoutHome_teamInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutHome_teamInput = {
     id?: number;
@@ -1950,6 +1980,7 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutHome_teamInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -1996,6 +2027,7 @@ export type MatchCreateWithoutAway_teamInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutAway_teamInput = {
     id?: number;
@@ -2035,6 +2067,7 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutAway_teamInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2069,6 +2102,177 @@ export type MatchUpdateWithWhereUniqueWithoutAway_teamInput = {
 export type MatchUpdateManyWithWhereWithoutAway_teamInput = {
     where: Prisma.MatchScalarWhereInput;
     data: Prisma.XOR<Prisma.MatchUpdateManyMutationInput, Prisma.MatchUncheckedUpdateManyWithoutAway_teamInput>;
+};
+export type MatchCreateWithoutMatchJerseyAssignmentInput = {
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    is_published?: boolean;
+    referee?: string | null;
+    phase: Prisma.PhaseCreateNestedOneWithoutMatchesInput;
+    group?: Prisma.GroupCreateNestedOneWithoutMatchesInput;
+    home_team: Prisma.TeamCreateNestedOneWithoutHome_matchesInput;
+    away_team: Prisma.TeamCreateNestedOneWithoutAway_matchesInput;
+    events?: Prisma.MatchEventCreateNestedManyWithoutMatchInput;
+    user?: Prisma.UserCreateNestedOneWithoutMatchesInput;
+    matchResult?: Prisma.MatchResultCreateNestedOneWithoutMatchInput;
+    venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
+    bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
+    matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+};
+export type MatchUncheckedCreateWithoutMatchJerseyAssignmentInput = {
+    id?: number;
+    phase_id: number;
+    group_id?: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    scheduled_at?: Date | string | null;
+    played_at?: Date | string | null;
+    home_score?: number | null;
+    away_score?: number | null;
+    status?: $Enums.MatchStatus;
+    round?: string | null;
+    leg?: number | null;
+    current_period?: $Enums.MatchPeriod | null;
+    postponed_from?: Date | string | null;
+    postponed_reason?: string | null;
+    replay_of_match_id?: number | null;
+    abandoned_minute?: number | null;
+    pending_official_at?: Date | string | null;
+    finalize_result_type?: $Enums.MatchResultType | null;
+    finalize_home_half_time?: number | null;
+    finalize_away_half_time?: number | null;
+    finalize_home_penalty?: number | null;
+    finalize_away_penalty?: number | null;
+    manual_home_score?: number | null;
+    manual_away_score?: number | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    venue_id?: number | null;
+    is_published?: boolean;
+    referee?: string | null;
+    events?: Prisma.MatchEventUncheckedCreateNestedManyWithoutMatchInput;
+    matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
+    bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
+    matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+};
+export type MatchCreateOrConnectWithoutMatchJerseyAssignmentInput = {
+    where: Prisma.MatchWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedCreateWithoutMatchJerseyAssignmentInput>;
+};
+export type MatchUpsertWithoutMatchJerseyAssignmentInput = {
+    update: Prisma.XOR<Prisma.MatchUpdateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput>;
+    create: Prisma.XOR<Prisma.MatchCreateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedCreateWithoutMatchJerseyAssignmentInput>;
+    where?: Prisma.MatchWhereInput;
+};
+export type MatchUpdateToOneWithWhereWithoutMatchJerseyAssignmentInput = {
+    where?: Prisma.MatchWhereInput;
+    data: Prisma.XOR<Prisma.MatchUpdateWithoutMatchJerseyAssignmentInput, Prisma.MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput>;
+};
+export type MatchUpdateWithoutMatchJerseyAssignmentInput = {
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phase?: Prisma.PhaseUpdateOneRequiredWithoutMatchesNestedInput;
+    group?: Prisma.GroupUpdateOneWithoutMatchesNestedInput;
+    home_team?: Prisma.TeamUpdateOneRequiredWithoutHome_matchesNestedInput;
+    away_team?: Prisma.TeamUpdateOneRequiredWithoutAway_matchesNestedInput;
+    events?: Prisma.MatchEventUpdateManyWithoutMatchNestedInput;
+    user?: Prisma.UserUpdateOneWithoutMatchesNestedInput;
+    matchResult?: Prisma.MatchResultUpdateOneWithoutMatchNestedInput;
+    venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
+    bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
+    matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+};
+export type MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    phase_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    home_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    away_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    scheduled_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    played_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    status?: Prisma.EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus;
+    round?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    leg?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    current_period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    postponed_from?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    postponed_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    replay_of_match_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pending_official_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
+    finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    manual_away_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    events?: Prisma.MatchEventUncheckedUpdateManyWithoutMatchNestedInput;
+    matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
+    bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
+    matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
 };
 export type MatchCreateWithoutVenueInput = {
     scheduled_at?: Date | string | null;
@@ -2107,6 +2311,7 @@ export type MatchCreateWithoutVenueInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutVenueInput = {
     id?: number;
@@ -2146,6 +2351,7 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutVenueInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2205,6 +2411,7 @@ export type MatchCreateWithoutMatchLineupsInput = {
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutMatchLineupsInput = {
     id?: number;
@@ -2244,6 +2451,7 @@ export type MatchUncheckedCreateWithoutMatchLineupsInput = {
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutMatchLineupsInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2295,6 +2503,7 @@ export type MatchUpdateWithoutMatchLineupsInput = {
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutMatchLineupsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2334,6 +2543,7 @@ export type MatchUncheckedUpdateWithoutMatchLineupsInput = {
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateWithoutEventsInput = {
     scheduled_at?: Date | string | null;
@@ -2372,6 +2582,7 @@ export type MatchCreateWithoutEventsInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutEventsInput = {
     id?: number;
@@ -2411,6 +2622,7 @@ export type MatchUncheckedCreateWithoutEventsInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutEventsInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2462,6 +2674,7 @@ export type MatchUpdateWithoutEventsInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutEventsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2501,6 +2714,7 @@ export type MatchUncheckedUpdateWithoutEventsInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateWithoutMatchResultInput = {
     scheduled_at?: Date | string | null;
@@ -2539,6 +2753,7 @@ export type MatchCreateWithoutMatchResultInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutMatchResultInput = {
     id?: number;
@@ -2578,6 +2793,7 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutMatchResultInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2629,6 +2845,7 @@ export type MatchUpdateWithoutMatchResultInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutMatchResultInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2668,6 +2885,7 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateWithoutArticlesInput = {
     scheduled_at?: Date | string | null;
@@ -2706,6 +2924,7 @@ export type MatchCreateWithoutArticlesInput = {
     venue?: Prisma.VenueCreateNestedOneWithoutMatchesInput;
     bracketSlot?: Prisma.BracketSlotCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentCreateNestedOneWithoutMatchInput;
 };
 export type MatchUncheckedCreateWithoutArticlesInput = {
     id?: number;
@@ -2745,6 +2964,7 @@ export type MatchUncheckedCreateWithoutArticlesInput = {
     matchResult?: Prisma.MatchResultUncheckedCreateNestedOneWithoutMatchInput;
     bracketSlot?: Prisma.BracketSlotUncheckedCreateNestedOneWithoutMatchInput;
     matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutMatchInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedOneWithoutMatchInput;
 };
 export type MatchCreateOrConnectWithoutArticlesInput = {
     where: Prisma.MatchWhereUniqueInput;
@@ -2796,6 +3016,7 @@ export type MatchUpdateWithoutArticlesInput = {
     venue?: Prisma.VenueUpdateOneWithoutMatchesNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutArticlesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2835,6 +3056,7 @@ export type MatchUncheckedUpdateWithoutArticlesInput = {
     matchResult?: Prisma.MatchResultUncheckedUpdateOneWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchCreateManyUserInput = {
     id?: number;
@@ -2907,6 +3129,7 @@ export type MatchUpdateWithoutUserInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2946,6 +3169,7 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3052,6 +3276,7 @@ export type MatchUpdateWithoutPhaseInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutPhaseInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3091,6 +3316,7 @@ export type MatchUncheckedUpdateWithoutPhaseInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutPhaseInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3197,6 +3423,7 @@ export type MatchUpdateWithoutGroupInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3236,6 +3463,7 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3376,6 +3604,7 @@ export type MatchUpdateWithoutHome_teamInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutHome_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3415,6 +3644,7 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3487,6 +3717,7 @@ export type MatchUpdateWithoutAway_teamInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutAway_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3526,6 +3757,7 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3632,6 +3864,7 @@ export type MatchUpdateWithoutVenueInput = {
     articles?: Prisma.ArticleUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateWithoutVenueInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3671,6 +3904,7 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutMatchNestedInput;
     bracketSlot?: Prisma.BracketSlotUncheckedUpdateOneWithoutMatchNestedInput;
     matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutMatchNestedInput;
+    matchJerseyAssignment?: Prisma.MatchJerseyAssignmentUncheckedUpdateOneWithoutMatchNestedInput;
 };
 export type MatchUncheckedUpdateManyWithoutVenueInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -3791,6 +4025,7 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     bracketSlot?: boolean | Prisma.Match$bracketSlotArgs<ExtArgs>;
     matchLineups?: boolean | Prisma.Match$matchLineupsArgs<ExtArgs>;
+    matchJerseyAssignment?: boolean | Prisma.Match$matchJerseyAssignmentArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["match"]>;
 export type MatchSelectScalar = {
@@ -3841,6 +4076,7 @@ export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     articles?: boolean | Prisma.Match$articlesArgs<ExtArgs>;
     bracketSlot?: boolean | Prisma.Match$bracketSlotArgs<ExtArgs>;
     matchLineups?: boolean | Prisma.Match$matchLineupsArgs<ExtArgs>;
+    matchJerseyAssignment?: boolean | Prisma.Match$matchJerseyAssignmentArgs<ExtArgs>;
     _count?: boolean | Prisma.MatchCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3857,6 +4093,7 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         articles: Prisma.$ArticlePayload<ExtArgs>[];
         bracketSlot: Prisma.$BracketSlotPayload<ExtArgs> | null;
         matchLineups: Prisma.$MatchLineupPayload<ExtArgs>[];
+        matchJerseyAssignment: Prisma.$MatchJerseyAssignmentPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -4180,6 +4417,7 @@ export interface Prisma__MatchClient<T, Null = never, ExtArgs extends runtime.Ty
     articles<T extends Prisma.Match$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     bracketSlot<T extends Prisma.Match$bracketSlotArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$bracketSlotArgs<ExtArgs>>): Prisma.Prisma__BracketSlotClient<runtime.Types.Result.GetResult<Prisma.$BracketSlotPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     matchLineups<T extends Prisma.Match$matchLineupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$matchLineupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchLineupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    matchJerseyAssignment<T extends Prisma.Match$matchJerseyAssignmentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Match$matchJerseyAssignmentArgs<ExtArgs>>): Prisma.Prisma__MatchJerseyAssignmentClient<runtime.Types.Result.GetResult<Prisma.$MatchJerseyAssignmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4728,6 +4966,24 @@ export type Match$matchLineupsArgs<ExtArgs extends runtime.Types.Extensions.Inte
     take?: number;
     skip?: number;
     distinct?: Prisma.MatchLineupScalarFieldEnum | Prisma.MatchLineupScalarFieldEnum[];
+};
+/**
+ * Match.matchJerseyAssignment
+ */
+export type Match$matchJerseyAssignmentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchJerseyAssignment
+     */
+    select?: Prisma.MatchJerseyAssignmentSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchJerseyAssignment
+     */
+    omit?: Prisma.MatchJerseyAssignmentOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.MatchJerseyAssignmentInclude<ExtArgs> | null;
+    where?: Prisma.MatchJerseyAssignmentWhereInput;
 };
 /**
  * Match without action
