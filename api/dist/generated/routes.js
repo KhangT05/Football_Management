@@ -1022,6 +1022,31 @@ const models = {
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "notes": { "dataType": "string" }, "resultType": { "ref": "MatchResultType" }, "awayHalfTime": { "dataType": "double" }, "homeHalfTime": { "dataType": "double" }, "awayExtraTime": { "dataType": "double" }, "homeExtraTime": { "dataType": "double" }, "awayPenalty": { "dataType": "double" }, "homePenalty": { "dataType": "double" }, "awayScore": { "dataType": "double", "required": true }, "homeScore": { "dataType": "double", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminScorerInput": {
+        "dataType": "refObject",
+        "properties": {
+            "teamId": { "dataType": "double", "required": true },
+            "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goal"] }, { "dataType": "enum", "enums": ["own_goal"] }], "required": true },
+            "minute": { "dataType": "double", "required": true },
+            "playerName": { "dataType": "string" },
+            "period": { "ref": "MatchPeriod" },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminRecordResultInput": {
+        "dataType": "refObject",
+        "properties": {
+            "homeScore": { "dataType": "double", "required": true },
+            "awayScore": { "dataType": "double", "required": true },
+            "scorers": { "dataType": "array", "array": { "dataType": "refObject", "ref": "AdminScorerInput" } },
+            "resultType": { "ref": "MatchResultType" },
+            "homeHalfTimeScore": { "dataType": "double" },
+            "awayHalfTimeScore": { "dataType": "double" },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "KnockoutGenerateResult": {
         "dataType": "refObject",
         "properties": {
@@ -3885,6 +3910,34 @@ export function RegisterRoutes(app, opts) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsMatchController_adminRecordResult = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "AdminRecordResultInput" },
+    };
+    app.post('/matches/:id/admin-result', authenticateMiddleware([{ "jwt": ["organizing", "admin"] }]), ...(fetchMiddlewares(MatchController)), ...(fetchMiddlewares(MatchController.prototype.adminRecordResult)), async function MatchController_adminRecordResult(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsMatchController_adminRecordResult, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(MatchController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'adminRecordResult',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
             });
         }
         catch (err) {

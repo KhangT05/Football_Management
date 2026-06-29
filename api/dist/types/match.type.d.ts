@@ -49,4 +49,29 @@ export type EditScoreInput = {
     resultType?: MatchResultType;
     notes?: string;
 };
+export interface AdminScorerInput {
+    teamId: number;
+    type: "goal" | "own_goal";
+    minute: number;
+    /**
+     * Free-text, stored vào MatchEvent.note
+     * Schema không có varchar player_name riêng
+     */
+    playerName?: string;
+    /**
+     * Default: null (không force default sai khi resultType = extra_time)
+     */
+    period?: MatchPeriod;
+}
+export interface AdminRecordResultInput {
+    /** Source of truth — KHÔNG derive từ scorers */
+    homeScore: number;
+    awayScore: number;
+    /** Metadata tùy chọn, không ảnh hưởng score computation */
+    scorers?: AdminScorerInput[];
+    /** Default: full_time */
+    resultType?: MatchResultType;
+    homeHalfTimeScore?: number;
+    awayHalfTimeScore?: number;
+}
 //# sourceMappingURL=match.type.d.ts.map

@@ -3491,6 +3491,78 @@
                 ],
                 "type": "object"
             },
+            "AdminScorerInput": {
+                "properties": {
+                    "teamId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "goal",
+                            "own_goal"
+                        ]
+                    },
+                    "minute": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "playerName": {
+                        "type": "string",
+                        "description": "Free-text, stored vào MatchEvent.note\r\nSchema không có varchar player_name riêng"
+                    },
+                    "period": {
+                        "$ref": "#/components/schemas/MatchPeriod",
+                        "description": "Default: null (không force default sai khi resultType = extra_time)"
+                    }
+                },
+                "required": [
+                    "teamId",
+                    "type",
+                    "minute"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AdminRecordResultInput": {
+                "properties": {
+                    "homeScore": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Source of truth — KHÔNG derive từ scorers"
+                    },
+                    "awayScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "scorers": {
+                        "items": {
+                            "$ref": "#/components/schemas/AdminScorerInput"
+                        },
+                        "type": "array",
+                        "description": "Metadata tùy chọn, không ảnh hưởng score computation"
+                    },
+                    "resultType": {
+                        "$ref": "#/components/schemas/MatchResultType",
+                        "description": "Default: full_time"
+                    },
+                    "homeHalfTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayHalfTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "homeScore",
+                    "awayScore"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "KnockoutGenerateResult": {
                 "properties": {
                     "totalSlots": {
@@ -8952,6 +9024,56 @@
                                         "$ref": "#/components/schemas/ConfirmOfficialDto"
                                     }
                                 ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/matches/{id}/admin-result": {
+            "post": {
+                "operationId": "AdminRecordResult",
+                "responses": {
+                    "201": {
+                        "description": "Result recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConfirmResultOutput"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.\r\n\r\nKhác với recordEvent (từng event riêng lẻ):\r\n  - Finalize toàn bộ match ngay lập tức\r\n  - Score = input.homeScore / input.awayScore (không compute từ events)\r\n  - scorers[] chỉ để audit trail / player stats, không ảnh hưởng score\r\n\r\nAllowed statuses: scheduled, postponed, bye, ongoing, pending_official, needs_review\r\nReject: finished, cancelled, forfeited, abandoned",
+                "tags": [
+                    "Match"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing",
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminRecordResultInput"
                             }
                         }
                     }

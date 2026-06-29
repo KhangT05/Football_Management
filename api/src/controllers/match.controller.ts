@@ -15,7 +15,6 @@ import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
-import { AddEventInput, EditEventInput, EditScoreInput } from "../types/match.type.js";
 
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/*
@@ -230,7 +229,7 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Event added")
     async addEvent(
         @Path() id: number,
-        @Body() body: AddEventInput & matchSchema.ConfirmOfficialDto,
+        @Body() body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
         const { venueIds, matchTimes, ...eventInput } = body;
@@ -273,7 +272,7 @@ export class MatchController extends Controller {
     async editEvent(
         @Path() id: number,
         @Path() eventId: number,
-        @Body() body: EditEventInput & matchSchema.ConfirmOfficialDto,
+        @Body() body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
         const { venueIds, matchTimes, ...editInput } = body;
@@ -290,10 +289,34 @@ export class MatchController extends Controller {
     @SuccessResponse(204, "Score corrected")
     async editScore(
         @Path() id: number,
-        @Body() body: EditScoreInput & matchSchema.ConfirmOfficialDto,
+        @Body() body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto,
     ): Promise<void> {
         this.setStatus(204);
         const { venueIds, matchTimes, ...scoreInput } = body;
         return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
     }
+    /**
+ * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
+ *
+ * Khác với recordEvent (từng event riêng lẻ):
+ *   - Finalize toàn bộ match ngay lập tức
+ *   - Score = input.homeScore / input.awayScore (không compute từ events)
+ *   - scorers[] chỉ để audit trail / player stats, không ảnh hưởng score
+ *
+ * Allowed statuses: scheduled, postponed, bye, ongoing, pending_official, needs_review
+ * Reject: finished, cancelled, forfeited, abandoned
+ */
+    @Security("jwt", ["organizing", "admin"])
+    @Post("{id}/admin-result")
+    @SuccessResponse(201, "Result recorded")
+    async adminRecordResult(
+        @Path() id: number,
+        @Body() body: matchType.AdminRecordResultInput,
+    ): Promise<ConfirmResultOutput> {
+        this.setStatus(201);
+        // scheduleOptions: pass empty — knockout advance sẽ dùng venue/time default
+        // Nếu cần override venue/matchTimes, mở rộng body hoặc thêm @Query params
+        return this.lifecycleService.adminRecordResult(id, body, {});
+    }
+
 }
