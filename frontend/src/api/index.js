@@ -20,6 +20,7 @@
  *   ✅ groupApi         — Group draw/clear
  *   ✅ matchApi         — Schedule routes (/schedules/seasons/{id}/schedule...)
  *                        ⚠️ Legacy getMatches/create/update/delete đã deprecated
+ *   🔧 paymentApi       — VNPay integration (chờ Backend endpoints sẵn sàng)
  * ============================================================
  */
 
@@ -36,6 +37,7 @@ export { seasonTeamApi } from './seasonTeamApi';
 export { groupApi } from './groupApi';
 export { knockoutApi } from './knockoutApi';
 export { matchLineupApi } from './matchLineupApi';
+export { paymentApi } from './paymentApi';
 
 // Re-export token utilities để dùng ngoài axiosClient nếu cần
 export { setAccessToken, getAccessToken, clearAccessToken } from './axiosClient';

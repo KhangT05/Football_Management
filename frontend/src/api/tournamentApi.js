@@ -43,9 +43,13 @@ export const tournamentApi = {
    */
   create: (data) => {
     const form = new FormData();
-    form.append('name', data.name);
-    if (data.description) form.append('description', data.description);
-    if (data.logo instanceof File) form.append('logo', data.logo);
+    form.append('name', data.name || '');
+    // Luôn gửi description dù rỗng để tránh TSOA ValidateError do API khai báo @FormField() description: string (bắt buộc)
+    form.append('description', data.description || '');
+    
+    if (data.logo instanceof File) {
+      form.append('logo', data.logo);
+    }
 
     return axiosClient.post('/tournaments', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -54,25 +58,21 @@ export const tournamentApi = {
 
   /**
    * Cập nhật giải đấu
-   * PATCH /tournaments/{id} — multipart/form-data (backend dùng @FormField)
+   * PATCH /tournaments/{id} — backend dùng @Body() (chỉ nhận JSON)
    * @param {number} id
    * @param {{ name?, description?, logo?(File), is_active? }} data
    *
-   * Lưu ý: Backend PATCH /tournaments/{id} không dùng @FormField (chỉ POST dùng)
-   * → PATCH có thể dùng JSON nếu không có logo File mới
+   * Lưu ý: Backend PATCH /tournaments/{id} đang dùng @Body() JSON, 
+   * KHÔNG hỗ trợ @FormField cho Upload File. 
+   * Do đó Frontend tạm loại bỏ File khi update để tránh lỗi 500 ValidateError.
    */
   update: (id, data) => {
-    if (data.logo instanceof File) {
-      const form = new FormData();
-      if (data.name) form.append('name', data.name);
-      if (data.description) form.append('description', data.description);
-      if (data.is_active !== undefined) form.append('is_active', String(data.is_active));
-      form.append('logo', data.logo);
-      return axiosClient.patch(`/tournaments/${id}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    // Loại bỏ logo File nếu có, vì backend chưa hỗ trợ nhận form-data qua PATCH endpoint
+    const { logo, ...jsonPayload } = data;
+    if (logo instanceof File) {
+      console.warn('Backend chưa hỗ trợ upload logo qua endpoint PATCH (cần đổi sang @FormField). Logo File sẽ bị bỏ qua.');
     }
-    return axiosClient.patch(`/tournaments/${id}`, data);
+    return axiosClient.patch(`/tournaments/${id}`, jsonPayload);
   },
 
   /**

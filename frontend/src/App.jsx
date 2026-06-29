@@ -21,6 +21,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ForbiddenPage = lazy(() => import("./pages/ForbiddenPage"));
+const PaymentResultPage = lazy(() => import("./pages/PaymentResultPage"));
 
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
@@ -104,6 +105,11 @@ function App() {
             } />
             <Route path="/doi-cua-toi" element={
               <ProtectedRoute><MyTeam /></ProtectedRoute>
+            } />
+
+            {/* Payment Result — VNPay callback return URL */}
+            <Route path="/thanh-toan/ket-qua" element={
+              <ProtectedRoute><PaymentResultPage /></ProtectedRoute>
             } />
 
             {/* 403 Forbidden */}
