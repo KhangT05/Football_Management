@@ -2746,6 +2746,198 @@
 			"BulkDeleteDto": {
 				"$ref": "#/components/schemas/infer_typeofbulkDeleteSchema_"
 			},
+			"InitiatePaymentOutput": {
+				"properties": {
+					"payment_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"transaction_ref": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"payment_url": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"payment_id",
+					"transaction_ref",
+					"amount",
+					"payment_url"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"InitiatePaymentDto": {
+				"description": "Leader gọi để bắt đầu thanh toán lệ phí",
+				"properties": {
+					"season_team_id": {
+						"type": "number",
+						"format": "double",
+						"description": "season_team_id của team mình trong mùa giải"
+					},
+					"return_url": {
+						"type": "string",
+						"description": "URL redirect sau khi VNPay xử lý xong.\r\nFrontend truyền vào để linh hoạt (web vs mobile deep link).\r\nVí dụ: https://app.example.com/payment/result"
+					}
+				},
+				"required": [
+					"season_team_id",
+					"return_url"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaymentStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"rejected",
+					"confirmed",
+					"refund_pending",
+					"refunded"
+				]
+			},
+			"PaymentRow": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PaymentStatus"
+					},
+					"transaction_ref": {
+						"type": "string",
+						"nullable": true
+					},
+					"paid_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"confirmed_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"confirmed_by": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"season_name": {
+						"type": "string"
+					},
+					"registration_fee": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"season_team_id",
+					"amount",
+					"status",
+					"transaction_ref",
+					"paid_at",
+					"confirmed_at",
+					"confirmed_by",
+					"created_at",
+					"team_name",
+					"season_name",
+					"registration_fee"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IpnResponseCode": {
+				"type": "string",
+				"enum": [
+					"97",
+					"99",
+					"00",
+					"01",
+					"02",
+					"04"
+				]
+			},
+			"IpnResponse": {
+				"properties": {
+					"RspCode": {
+						"$ref": "#/components/schemas/IpnResponseCode"
+					},
+					"Message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"RspCode",
+					"Message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ManualConfirmPaymentDto": {
+				"description": "Admin confirm tay khi IPN bị miss",
+				"properties": {
+					"note": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.unknown_": {
+				"properties": {},
+				"additionalProperties": {},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"RefundPaymentDto": {
+				"properties": {
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"reason": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"full",
+							"partial"
+						]
+					}
+				},
+				"required": [
+					"amount",
+					"reason",
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MatchResultStatus": {
 				"type": "string",
 				"enum": [
@@ -7742,6 +7934,377 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/payments/initiate": {
+			"post": {
+				"operationId": "InitiatePayment",
+				"responses": {
+					"201": {
+						"description": "Payment initiated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InitiatePaymentOutput"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"leader",
+							"user"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/InitiatePaymentDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/payments/status": {
+			"get": {
+				"operationId": "GetPaymentStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/PaymentRow"
+										}
+									],
+									"nullable": true
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"leader",
+							"user"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "season_team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/payments/return": {
+			"get": {
+				"operationId": "HandleReturn",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"status": {
+											"allOf": [
+												{
+													"$ref": "#/components/schemas/PaymentStatus"
+												}
+											],
+											"nullable": true
+										},
+										"payment_id": {
+											"type": "number",
+											"format": "double",
+											"nullable": true
+										},
+										"is_success": {
+											"type": "boolean"
+										},
+										"is_verified": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"status",
+										"payment_id",
+										"is_success",
+										"is_verified"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/payments/ipn": {
+			"get": {
+				"operationId": "HandleIpn",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IpnResponse"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/payments": {
+			"get": {
+				"operationId": "ListPayments",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"limit": {
+											"type": "number",
+											"format": "double"
+										},
+										"page": {
+											"type": "number",
+											"format": "double"
+										},
+										"total": {
+											"type": "number",
+											"format": "double"
+										},
+										"data": {
+											"items": {
+												"$ref": "#/components/schemas/PaymentRow"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"limit",
+										"page",
+										"total",
+										"data"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "season_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/PaymentStatus"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/payments/{id}/confirm": {
+			"patch": {
+				"operationId": "ConfirmManual",
+				"responses": {
+					"204": {
+						"description": "Confirmed"
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ManualConfirmPaymentDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/payments/{id}/query": {
+			"get": {
+				"operationId": "QueryTransaction",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Record_string.unknown_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/payments/{id}/refund": {
+			"post": {
+				"operationId": "RefundPayment",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Record_string.unknown_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RefundPaymentDto"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/matches/{id}/result": {
