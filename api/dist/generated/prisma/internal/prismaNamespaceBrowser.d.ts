@@ -426,10 +426,12 @@ export declare const PaymentScalarFieldEnum: {
     readonly paid_at: "paid_at";
     readonly confirmed_at: "confirmed_at";
     readonly confirmed_by: "confirmed_by";
-    readonly is_active: "is_active";
+    readonly refunded_at: "refunded_at";
+    readonly refunded_by: "refunded_by";
+    readonly refund_amount: "refund_amount";
+    readonly vnp_transaction_no: "vnp_transaction_no";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
 };
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum];
 export declare const ArticleScalarFieldEnum: {
@@ -574,6 +576,7 @@ export declare const NotificationOrderByRelevanceFieldEnum: {
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum];
 export declare const PaymentOrderByRelevanceFieldEnum: {
     readonly transaction_ref: "transaction_ref";
+    readonly vnp_transaction_no: "vnp_transaction_no";
 };
 export type PaymentOrderByRelevanceFieldEnum = (typeof PaymentOrderByRelevanceFieldEnum)[keyof typeof PaymentOrderByRelevanceFieldEnum];
 export declare const ArticleOrderByRelevanceFieldEnum: {

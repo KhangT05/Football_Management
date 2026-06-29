@@ -14,6 +14,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SWAGGER_ENABLED: true
       APP_ORIGIN: ${APP_ORIGIN}
+      VNPAY_QUERY_REFUND_HOST: ${VNPAY_QUERY_REFUND_HOST}
       # Phụ thuộc vào
     depends_on:                                  # MISSING: không có depends_on mysql/redis
         - mysql

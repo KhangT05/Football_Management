@@ -760,20 +760,22 @@ model Notification {
 }
 
 model Payment {
-  id              Int           @id @default(autoincrement())
-  season_team_id  Int
-  amount          Decimal       @db.Decimal(10, 2)
-  status          PaymentStatus @default(pending)
-  transaction_ref String?
-  paid_at         DateTime?
-  confirmed_at    DateTime?
-  confirmed_by    Int?
-  is_active       Boolean       @default(true)
-  created_at      DateTime      @default(now())
-  updated_at      DateTime?     @updatedAt
-  deleted_at      DateTime?
+  id                 Int           @id @default(autoincrement())
+  season_team_id     Int
+  amount             Decimal       @db.Decimal(10, 2)
+  status             PaymentStatus @default(pending)
+  transaction_ref    String?       @unique
+  paid_at            DateTime?
+  confirmed_at       DateTime?
+  confirmed_by       Int?
+  refunded_at        DateTime?
+  refunded_by        Int?
+  refund_amount      Decimal?
+  vnp_transaction_no String?       @unique
+  created_at         DateTime      @default(now())
+  updated_at         DateTime?     @updatedAt
 
-  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Restrict)
 
   @@map("payments")
 }
@@ -802,6 +804,8 @@ enum PaymentStatus {
   pending
   confirmed
   rejected
+  refund_pending
+  refunded
 }
 
 // Bảng 1: Bài viết
