@@ -78,6 +78,7 @@ export default function TournamentsSection() {
       toast.success(`Đã xóa "${item.name}".`);
     }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể xóa giải đấu.');
+      crud.setDeleting(null);
     });
   };
 
@@ -212,6 +213,12 @@ export default function TournamentsSection() {
           )}
           
           <div className="space-y-5">
+            {crud.modal === 'add' && (
+              <div className="text-center text-sm font-medium text-gray-400 bg-navy-dark py-2 rounded-xl border border-navy-light shadow-inner">
+                Thời gian tạo: <span className="text-white font-bold">{new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
+            )}
+
             {/* Logo Upload */}
             <div className="flex flex-col items-center gap-3">
               <div className="w-24 h-24 rounded-2xl bg-navy-dark border border-navy-light flex items-center justify-center overflow-hidden shadow-inner relative group">

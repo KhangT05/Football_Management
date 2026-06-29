@@ -17,6 +17,7 @@ const RegisterTeam = lazy(() => import("./pages/RegisterTeam"));
 const TeamDetail = lazy(() => import("./pages/TeamDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
 const MyTeam = lazy(() => import("./pages/MyTeam"));
+const ManageMatchLineup = lazy(() => import("./pages/ManageMatchLineup"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -105,6 +106,9 @@ function App() {
             } />
             <Route path="/doi-cua-toi" element={
               <ProtectedRoute><MyTeam /></ProtectedRoute>
+            } />
+            <Route path="/tran-dau/:matchId/doi-hinh" element={
+              <ProtectedRoute><ManageMatchLineup /></ProtectedRoute>
             } />
 
             {/* Payment Result — VNPay callback return URL */}

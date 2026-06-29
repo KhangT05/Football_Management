@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Hash } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings, Star } from 'lucide-react';
 
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 import { useShallow } from 'zustand/react/shallow';
 import useScheduleStore from '../store/scheduleStore';
+import useAuthStore from '../store/authStore';
 import MatchHeaderSkeleton from '../components/skeletons/MatchHeaderSkeleton';
 import StatusBadge from '../components/ui/StatusBadge';
+import { teamApi, matchLineupApi } from '../api';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
@@ -27,16 +29,19 @@ function ApiBanner({ message }) {
 }
 
 // ── Player list item ──────────────────────────────────────────
-function PlayerItem({ tp }) {
-  const name = tp.player?.name ?? tp.player?.player?.name ?? `#${tp.player_id}`;
+function PlayerItem({ tp, isCap }) {
+  const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
   const pos = tp.position;
   const jersey = tp.jersey_number ?? '?';
   return (
-    <li className="flex items-center gap-2.5 py-2 border-b border-navy-light/50 last:border-0">
+    <li className="flex items-center gap-2.5 py-2 border-b border-navy-light/50 last:border-0 relative group">
       <span className="w-7 text-right font-mono text-neon font-bold text-xs shrink-0">
         #{jersey}
       </span>
-      <span className="font-medium text-white text-sm flex-1 truncate">{name}</span>
+      <span className="font-medium text-white text-sm flex-1 truncate flex items-center gap-2">
+        {name}
+        {isCap && <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" title="Đội trưởng" />}
+      </span>
       {pos && (
         <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${POSITION_COLORS[pos] ?? 'bg-gray-400/10 text-gray-400'}`}>
           {POSITION_LABELS[pos] ?? pos}
@@ -50,6 +55,12 @@ function PlayerItem({ tp }) {
 export default function MatchDetail() {
   const { id } = useParams();
   const matchId = parseInt(id) || null;
+  const navigate = useNavigate();
+
+  const { isAuthenticated, user } = useAuthStore(useShallow(state => ({
+    isAuthenticated: state.isAuthenticated,
+    user: state.user
+  })));
 
   const { fetchMatchDetail, matchDetailLoading, matchDetailError, getMatchDetailFromCache } = useScheduleStore(useShallow(state => ({
     fetchMatchDetail: state.fetchMatchDetail,
@@ -58,18 +69,43 @@ export default function MatchDetail() {
     getMatchDetailFromCache: state.getMatchDetailFromCache,
   })));
 
-  useEffect(() => {
-    if (matchId) {
-      fetchMatchDetail(matchId);
-    }
-  }, [matchId, fetchMatchDetail]);
-
-  const isLoading = matchDetailLoading[matchId] || false;
-  const matchApiError = matchDetailError[matchId] || null;
-  const hasError = !matchId || (!isLoading && !matchApiError && !getMatchDetailFromCache(matchId));
+  const [isLeader, setIsLeader] = useState(false);
+  const [lineups, setLineups] = useState({ home: [], away: [] });
 
   const detailData = getMatchDetailFromCache(matchId);
   const match = detailData?.match || null;
+
+  useEffect(() => {
+    if (matchId) {
+      fetchMatchDetail(matchId);
+      // Fetch match lineups
+      matchLineupApi.getMatchLineups(matchId).then(res => {
+        const allLineups = Array.isArray(res?.data) ? res.data : [];
+        setLineups({
+          home: allLineups.filter(l => l.team_id === match?.home_team_id),
+          away: allLineups.filter(l => l.team_id === match?.away_team_id)
+        });
+      }).catch(err => console.warn('Could not fetch lineups', err));
+    }
+  }, [matchId, fetchMatchDetail, match?.home_team_id, match?.away_team_id]);
+
+  useEffect(() => {
+    if (isAuthenticated && match && user) {
+      teamApi.getTeams({ per_page: 50 }).then(res => {
+        const teams = Array.isArray(res?.data) ? res.data : [];
+        const leader = teams.some(t => 
+          (t.id === match.home_team_id || t.id === match.away_team_id) && 
+          t.user_id === user.id
+        );
+        setIsLeader(leader);
+      }).catch(err => console.warn('Could not check leader status', err));
+    }
+  }, [isAuthenticated, match, user]);
+
+  const isLoading = matchDetailLoading[matchId] || false;
+  const matchApiError = matchDetailError[matchId] || null;
+  const hasError = !matchId || (!isLoading && !matchApiError && !match);
+
   const events = detailData?.events || [];
   const homePlayers = detailData?.homePlayers || [];
   const awayPlayers = detailData?.awayPlayers || [];
@@ -215,11 +251,21 @@ export default function MatchDetail() {
 
           {/* Lineups */}
           <section className="animate-slide-in-right">
-            <h3 className="text-2xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3">
-              <Shield className="w-6 h-6 text-neon" /> Đội Hình
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3">
+                <Shield className="w-6 h-6 text-neon" /> Đội Hình
+              </h3>
+              {isLeader && (
+                <button
+                  onClick={() => navigate(`/tran-dau/${matchId}/doi-hinh`)}
+                  className="px-4 py-2 bg-navy border border-neon/50 text-neon font-bold rounded-xl hover:bg-neon/10 transition-colors flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(57,255,20,0.15)]"
+                >
+                  <Settings className="w-4 h-4" /> Cập nhật đội hình
+                </button>
+              )}
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Home */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
@@ -227,12 +273,29 @@ export default function MatchDetail() {
                     {getInitials(homeName)[0]}
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
-                  <span className="ml-auto text-neon font-bold text-xs">{homePlayers.length}♟</span>
                 </div>
-                {homePlayers.length > 0 ? (
-                  <ul>
-                    {homePlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
-                  </ul>
+                {lineups.home.length > 0 ? (
+                  <>
+                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Đá chính</h5>
+                    <ul className="mb-4">
+                      {lineups.home.filter(l => l.lineup_type === 'starter').map(lu => (
+                        <PlayerItem key={lu.id} tp={lu} isStarter={true} isCap={lu.is_captain} />
+                      ))}
+                    </ul>
+                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Dự bị</h5>
+                    <ul>
+                      {lineups.home.filter(l => l.lineup_type === 'substitute').map(lu => (
+                        <PlayerItem key={lu.id} tp={lu} isStarter={false} />
+                      ))}
+                    </ul>
+                  </>
+                ) : homePlayers.length > 0 ? (
+                  <>
+                    <p className="text-gray-500 text-xs text-center py-2 italic mb-2">Danh sách đăng ký (chưa chốt đá chính)</p>
+                    <ul>
+                      {homePlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
+                    </ul>
+                  </>
                 ) : (
                   <p className="text-gray-500 text-xs text-center py-4">Chưa có danh sách cầu thủ</p>
                 )}
@@ -245,12 +308,29 @@ export default function MatchDetail() {
                     {getInitials(awayName)[0]}
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>
-                  <span className="ml-auto text-neon font-bold text-xs">{awayPlayers.length}♟</span>
                 </div>
-                {awayPlayers.length > 0 ? (
-                  <ul>
-                    {awayPlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
-                  </ul>
+                {lineups.away.length > 0 ? (
+                  <>
+                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Đá chính</h5>
+                    <ul className="mb-4">
+                      {lineups.away.filter(l => l.lineup_type === 'starter').map(lu => (
+                        <PlayerItem key={lu.id} tp={lu} isStarter={true} isCap={lu.is_captain} />
+                      ))}
+                    </ul>
+                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Dự bị</h5>
+                    <ul>
+                      {lineups.away.filter(l => l.lineup_type === 'substitute').map(lu => (
+                        <PlayerItem key={lu.id} tp={lu} isStarter={false} />
+                      ))}
+                    </ul>
+                  </>
+                ) : awayPlayers.length > 0 ? (
+                  <>
+                    <p className="text-gray-500 text-xs text-center py-2 italic mb-2">Danh sách đăng ký (chưa chốt đá chính)</p>
+                    <ul>
+                      {awayPlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
+                    </ul>
+                  </>
                 ) : (
                   <p className="text-gray-500 text-xs text-center py-4">Chưa có danh sách cầu thủ</p>
                 )}

@@ -54,7 +54,12 @@ const useSeasonStore = create((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const res = await seasonApi.getAll({ per_page: 50, ...queryParams });
+      const res = await seasonApi.getAll({ 
+        per_page: 50, 
+        sort: 'id', 
+        direction: 'desc',
+        ...queryParams 
+      });
       const { items, meta } = parsePaginatedResponse(res);
       set({ seasons: items, meta, isLoading: false, fetchedAt: Date.now() });
     } catch (err) {

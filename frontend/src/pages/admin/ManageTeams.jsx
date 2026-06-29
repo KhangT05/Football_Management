@@ -58,10 +58,10 @@ export default function ManageTeams() {
   const seasonTeamsError = errors[effectiveSeasonId] || null;
   const seasonTeams = getSeasonTeamsFromCache(effectiveSeasonId);
 
-  // Khi season thay đổi: load lại
+  // Khi season thay đổi: load lại (realtime force reload để chuẩn thông tin)
   useEffect(() => {
     if (effectiveSeasonId) {
-      fetchSeasonTeams(effectiveSeasonId);
+      fetchSeasonTeams(effectiveSeasonId, { force: true });
     }
   }, [effectiveSeasonId, fetchSeasonTeams]);
 
@@ -99,7 +99,7 @@ export default function ManageTeams() {
   const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const refetchTeams = useCallback(() => {
-    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'id', direction: 'asc', per_page: 200, force: !!debouncedSearch });
+    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'id', direction: 'asc', per_page: 200, force: true });
   }, [fetchTeamsStore, debouncedSearch]);
 
   useEffect(() => {

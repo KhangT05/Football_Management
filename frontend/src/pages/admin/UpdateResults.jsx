@@ -6,13 +6,14 @@ import {
   RotateCcw, Minus, ChevronDown, CalendarDays,
   Flag, Zap, Target, ArrowLeftRight, Shield,
 } from 'lucide-react';
-import { teamApi, matchApi } from '../../api';
+import { teamApi, matchApi, matchLineupApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
 
 import EventCard from '../../components/admin/EventCard';
 import StatusBadge from '../../components/ui/StatusBadge';
+import Pagination from '../../components/ui/Pagination';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,17 @@ export default function UpdateResults() {
     [allSeasonMatches],
   );
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  const handleSeasonChange = (e) => {
+    setSelectedSeasonId(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(matches.length / itemsPerPage);
+  const displayedMatches = matches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const [selectedMatchId, setSelectedMatchId] = useState('');
 
   const selectedMatch = useMemo(
@@ -105,10 +117,11 @@ export default function UpdateResults() {
     [matches, selectedMatchId],
   );
 
-  // ── Players ─────────────────────────────────────────────────────────────────
+  // ── Players & Lineups ─────────────────────────────────────────────────────────────────
   const [homePlayers, setHomePlayers] = useState([]);
   const [awayPlayers, setAwayPlayers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
+  const [lineups, setLineups] = useState({ home: [], away: [] });
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -120,13 +133,20 @@ export default function UpdateResults() {
     const load = async () => {
       setLoadingPlayers(true);
       try {
-        const [homeRes, awayRes] = await Promise.allSettled([
+        const [homeRes, awayRes, lineupRes] = await Promise.allSettled([
           teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }),
           teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }),
+          matchLineupApi.getMatchLineups(selectedMatch.id)
         ]);
         if (cancelled) return;
         setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
         setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
+        
+        const allLineups = lineupRes.status === 'fulfilled' && Array.isArray(lineupRes.value?.data) ? lineupRes.value.data : [];
+        setLineups({
+          home: allLineups.filter(l => l.team_id === selectedMatch.home_team_id),
+          away: allLineups.filter(l => l.team_id === selectedMatch.away_team_id)
+        });
       } finally {
         if (!cancelled) setLoadingPlayers(false);
       }
@@ -158,7 +178,7 @@ export default function UpdateResults() {
   const prevSeasonRef = useRef(effectiveSeasonId);
   useEffect(() => {
     if (!effectiveSeasonId) return;
-    fetchBySeason(Number(effectiveSeasonId));
+    fetchBySeason(Number(effectiveSeasonId), { force: true });
     if (prevSeasonRef.current !== effectiveSeasonId) {
       prevSeasonRef.current = effectiveSeasonId;
       setTimeout(() => resetForm(), 0);
@@ -229,7 +249,11 @@ export default function UpdateResults() {
   const getAwayName = () => selectedMatch?.away_team?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
 
   const handleRefresh = () => {
-    if (effectiveSeasonId) fetchBySeason(Number(effectiveSeasonId), { force: true });
+    if (effectiveSeasonId) {
+      fetchBySeason(Number(effectiveSeasonId), { force: true });
+    } else {
+      seasons.forEach(s => fetchBySeason(s.id, { force: true }));
+    }
   };
 
   const validate = () => {
@@ -373,17 +397,17 @@ export default function UpdateResults() {
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Season */}
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                 <CalendarDays className="w-3.5 h-3.5 text-emerald-400" /> Mùa giải
               </label>
               <div className="relative">
                 <select
                   value={selectedSeasonId}
-                  onChange={e => { setSelectedSeasonId(e.target.value); }}
+                  onChange={handleSeasonChange}
                   disabled={seasonsLoading}
                   className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 text-sm appearance-none disabled:opacity-60 transition-colors"
                 >
-                  <option value="">— Chọn mùa giải —</option>
+                  <option value="">— Tất cả các Mùa giải —</option>
                   {seasons.map(s => {
                     const lbl = { registration_open: '🟢 Mở đăng ký', ongoing: '🔴 Đang diễn ra', finished: '✓ Kết thúc', upcoming: '⏳ Sắp diễn ra', cancelled: '❌ Đã hủy' }[s.status] ?? s.status;
                     return <option key={s.id} value={s.id}>{s.name} — {lbl}</option>;
@@ -397,7 +421,7 @@ export default function UpdateResults() {
             <div className="flex items-end">
               <button
                 onClick={handleRefresh}
-                disabled={isLoadingMatches || !effectiveSeasonId}
+                disabled={isLoadingMatches}
                 className="p-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
                 title="Tải lại danh sách trận"
               >
@@ -408,8 +432,7 @@ export default function UpdateResults() {
         </div>
 
         {/* ── Match Cards ── */}
-        {effectiveSeasonId && (
-          <div>
+        <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-blue-400" />
               Chọn Trận Đấu
@@ -428,9 +451,10 @@ export default function UpdateResults() {
                 <p className="text-gray-500 text-sm">Không có trận nào đang <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc <span className="text-red-400 font-bold">đang diễn ra</span>.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {matches.map(m => {
-                  const isSelected = String(m.id) === String(selectedMatchId);
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {displayedMatches.map(m => {
+                    const isSelected = String(m.id) === String(selectedMatchId);
                   const isLive = m.status === 'ongoing';
                   const homeName = m.home_team?.name ?? `Đội #${m.home_team_id}`;
                   const awayName = m.away_team?.name ?? `Đội #${m.away_team_id}`;
@@ -487,10 +511,19 @@ export default function UpdateResults() {
                     </button>
                   );
                 })}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination 
+                      currentPage={currentPage} 
+                      totalPages={totalPages} 
+                      onPageChange={setCurrentPage} 
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
 
         {/* ── Main Workspace ── */}
         {selectedMatch && (
@@ -502,7 +535,7 @@ export default function UpdateResults() {
               <div className={`h-1 w-full ${isOngoing ? 'bg-linear-to-r from-red-600 via-orange-500 to-red-600 animate-gradient' : 'bg-linear-to-r from-blue-600 via-indigo-500 to-blue-600'}`} />
 
               {/* BG glow */}
-              <div className="absolute inset-0 bg-linear-to-b from-white/[0.02] to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
 
               <div className="p-5 sm:p-8 relative">
                 {/* Status row */}
@@ -635,6 +668,7 @@ export default function UpdateResults() {
                 teamColor="blue"
                 events={homeEvents}
                 players={homePlayers}
+                lineup={lineups.home}
                 loadingPlayers={loadingPlayers}
                 onAdd={type => addEvent('home', type)}
                 onUpdate={(id, f, v) => updateEvent('home', id, f, v)}
@@ -645,6 +679,7 @@ export default function UpdateResults() {
                 teamColor="orange"
                 events={awayEvents}
                 players={awayPlayers}
+                lineup={lineups.away}
                 loadingPlayers={loadingPlayers}
                 onAdd={type => addEvent('away', type)}
                 onUpdate={(id, f, v) => updateEvent('away', id, f, v)}
@@ -730,14 +765,13 @@ export default function UpdateResults() {
 
 // ─── EventColumn ──────────────────────────────────────────────────────────────
 
-function EventColumn({ title, teamColor, events, players, loadingPlayers, onAdd, onUpdate, onRemove }) {
+function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers, onAdd, onUpdate, onRemove }) {
   const c = countEvents(events);
 
   const headerGradient = teamColor === 'blue'
     ? 'from-blue-600/20 to-navy border-blue-500/20'
     : 'from-orange-600/20 to-navy border-orange-500/20';
 
-  const accentColor = teamColor === 'blue' ? 'text-blue-400' : 'text-orange-400';
   const avatarGradient = teamColor === 'blue'
     ? 'from-blue-600 to-cyan-700'
     : 'from-orange-600 to-amber-700';
@@ -807,6 +841,8 @@ function EventColumn({ title, teamColor, events, players, loadingPlayers, onAdd,
               key={evt.id}
               evt={evt}
               players={players}
+              lineup={lineup}
+              allEvents={events}
               onUpdate={(id, f, v) => onUpdate(id, f, v)}
               onRemove={onRemove}
             />

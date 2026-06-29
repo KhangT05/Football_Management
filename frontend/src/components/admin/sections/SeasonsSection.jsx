@@ -51,7 +51,11 @@ export default function SeasonsSection() {
   const toast = useToastStore();
   const { data: items, isLoading, fetch: fetchSeasons } = useApiQuery(
     (params) => seasonApi.getAll(params),
-    { perPage: 50, errorMsg: 'Không tải được dữ liệu mùa giải.' }
+    { 
+      perPage: 50, 
+      params: { sort: 'id', direction: 'desc' },
+      errorMsg: 'Không tải được dữ liệu mùa giải.' 
+    }
   );
 
   const [currentPage, setCurrentPage] = useState(1);

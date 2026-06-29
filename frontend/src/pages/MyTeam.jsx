@@ -7,11 +7,13 @@ import {
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi } from '../api';
+import { teamApi, playerApi, seasonApi, matchApi } from '../api';
 
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
+import LineupBuilderModal from '../components/modals/LineupBuilderModal';
+import EditTeamModal from '../components/modals/EditTeamModal';
 
 // ─── Empty State ──────────────────────────────────────────
 function NoTeamState() {
@@ -298,13 +300,17 @@ export default function MyTeam() {
   const [isLoading, setIsLoading] = useState(true);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [matches, setMatches] = useState([]);
 
   // UI State
+  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'matches'
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('number');
   const [showPayment, setShowPayment] = useState(false);
 
   // Modal State
+  const [editTeamModalOpen, setEditTeamModalOpen] = useState(false);
+  const [lineupModalMatch, setLineupModalMatch] = useState(null);
   const [playerModal, setPlayerModal] = useState(null); // null | 'add' | 'edit'
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [modalError, setModalError] = useState('');
@@ -379,6 +385,21 @@ export default function MyTeam() {
       const playersRes = await teamApi.getPlayers(myTeam.id, { per_page: 50 });
       const rawPlayers = parseList(playersRes);
       setPlayers(rawPlayers.map(normalizePlayer));
+
+      // Load active season and matches
+      try {
+        const seasonsRes = await seasonApi.getAll();
+        const allSeasons = parseList(seasonsRes);
+        const activeSeason = allSeasons.find(s => ['registration_open', 'ongoing', 'upcoming'].includes(s.status)) || allSeasons[0];
+        
+        if (activeSeason) {
+          setTeam(prev => ({ ...prev, season: activeSeason.name }));
+          const scheduleRes = await matchApi.getTeamSchedule(activeSeason.id, myTeam.id);
+          setMatches(parseList(scheduleRes));
+        }
+      } catch (seasonErr) {
+        console.warn('Cannot fetch season or schedule for team:', seasonErr);
+      }
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Không thể tải dữ liệu đội bóng.');
       setTeam(null);
@@ -428,6 +449,21 @@ export default function MyTeam() {
     if (conflict) return `Số áo ${form.number} đã được dùng bởi ${conflict.name}.`;
     return '';
   }, [players]);
+
+  // ── EDIT Team Info ─────────────────────────────────────────
+  const handleEditTeamSave = async (form) => {
+    setIsSaving(true);
+    try {
+      await teamApi.update(team.id, form);
+      toast.success('Đã cập nhật thông tin đội bóng thành công!');
+      setEditTeamModalOpen(false);
+      await loadTeamData();
+    } catch (apiErr) {
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi cập nhật thông tin đội.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // ── ADD Player ───────────────────────────────────────────
   const openAddModal = () => {
@@ -607,9 +643,12 @@ export default function MyTeam() {
 
           {!isLoading && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <Link to="/dang-ky-doi-bong" className="bg-navy/60 backdrop-blur-xl text-white font-bold px-5 py-3.5 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light text-sm shadow-lg">
+              <button 
+                onClick={() => setEditTeamModalOpen(true)}
+                className="bg-navy/60 backdrop-blur-xl text-white font-bold px-5 py-3.5 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light text-sm shadow-lg hover:-translate-y-0.5"
+              >
                 <Settings className="w-5 h-5" /> Cài đặt đội
-              </Link>
+              </button>
               <button
                 onClick={openAddModal}
                 disabled={players.length >= 20}
@@ -621,12 +660,76 @@ export default function MyTeam() {
           )}
         </div>
 
+        {/* ─── Tabs ──────────────────────────────────────── */}
+        {!isLoading && (
+          <div className="flex items-center gap-4 border-b border-navy-light mb-8 animate-fade-in">
+            <button
+              onClick={() => setActiveTab('roster')}
+              className={`pb-4 px-2 font-black uppercase tracking-wider text-sm border-b-2 transition-all ${activeTab === 'roster' ? 'border-neon text-neon' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+            >
+              Đội hình ({players.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('matches')}
+              className={`pb-4 px-2 font-black uppercase tracking-wider text-sm border-b-2 transition-all ${activeTab === 'matches' ? 'border-neon text-neon' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+            >
+              Lịch thi đấu & Ra sân
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ─── Players Table ──────────────────────────────── */}
+          {/* ─── Players Table / Matches Table ──────────────────────────────── */}
           <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
+            
+            {activeTab === 'matches' && (
+              <div className="space-y-4">
+                {matches.length === 0 ? (
+                  <div className="text-center py-16 bg-navy/30 border border-dashed border-navy-light rounded-3xl">
+                    <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 font-medium">Chưa có lịch thi đấu nào trong mùa giải này.</p>
+                  </div>
+                ) : (
+                  matches.map((match) => (
+                    <div key={match.id} className="bg-navy/50 border border-navy-light rounded-3xl p-5 hover:border-blue-500/50 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${match.status === 'scheduled' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' : match.status === 'ongoing' ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-gray-500/10 text-gray-400 border border-gray-500/30'}`}>
+                            {match.status}
+                          </span>
+                          <span className="text-sm font-medium text-gray-400">
+                            {new Date(match.start_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        <p className="text-lg font-black text-white">
+                          {match.home_team?.name || 'Đội nhà'} <span className="text-gray-500 font-medium mx-2">vs</span> {match.away_team?.name || 'Đội khách'}
+                        </p>
+                        <p className="text-sm text-gray-400 mt-1">Sân: {match.venue?.name || 'Chưa xếp sân'}</p>
+                      </div>
+                      <div className="shrink-0">
+                        {match.status === 'scheduled' || match.status === 'ongoing' ? (
+                          <button
+                            onClick={() => setLineupModalMatch(match)}
+                            className="w-full md:w-auto px-6 py-3 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/30 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                          >
+                            Xếp Đội Hình
+                          </button>
+                        ) : (
+                          <button disabled className="w-full md:w-auto px-6 py-3 bg-gray-500/10 text-gray-500 border border-gray-500/30 rounded-xl font-black uppercase tracking-widest text-xs">
+                            Đã kết thúc
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
 
-            {/* Search + sort bar */}
+            {activeTab === 'roster' && (
+              <>
+                {/* Search + sort bar */}
             {!isLoading && (
               <div className="flex gap-4 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
                 <div className="relative flex-1">
@@ -798,6 +901,8 @@ export default function MyTeam() {
                 />
               </div>
             )}
+              </>
+            )}
           </div>
 
           {/* ─── Sidebar ─────────────────────────────────────── */}
@@ -937,6 +1042,27 @@ export default function MyTeam() {
         <PaymentModal
           teamName={team?.name}
           onClose={() => setShowPayment(false)}
+        />
+      )}
+
+      {/* ─── Edit Team Modal ──────────────────────────────── */}
+      {editTeamModalOpen && (
+        <EditTeamModal
+          team={team}
+          onSave={handleEditTeamSave}
+          onClose={() => setEditTeamModalOpen(false)}
+          isSaving={isSaving}
+          error={modalError}
+        />
+      )}
+
+      {/* ─── Lineup Builder Modal ─────────────────────────── */}
+      {lineupModalMatch && (
+        <LineupBuilderModal
+          match={lineupModalMatch}
+          teamId={team.id}
+          roster={players}
+          onClose={() => setLineupModalMatch(null)}
         />
       )}
     </div>
