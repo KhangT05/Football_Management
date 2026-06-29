@@ -1,7 +1,7 @@
 import { MatchPeriod, PrismaClient } from '../generated/prisma/client.js';
 import { ConfirmResultOutput } from '../types/matchResult.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
-import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput, EditEventInput, EditScoreInput } from '../types/match.type.js';
+import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput, EditEventInput, EditScoreInput, AdminRecordResultInput } from '../types/match.type.js';
 import { MatchResultService } from './matchresult.service.js';
 export declare class MatchLifecycleService {
     private readonly prisma;
@@ -32,5 +32,21 @@ export declare class MatchLifecycleService {
     editEvent(matchId: number, eventId: number, input: EditEventInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
     editScore(matchId: number, input: EditScoreInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
     private _recalculateResult;
+    /**
+  * Admin finalize kết quả trận đấu ở bất kỳ trạng thái hợp lệ nào.
+  *
+  * Allowed statuses:
+  *   scheduled / postponed / bye   → chưa bắt đầu, admin nhập hậu kỳ
+  *   ongoing                       → đang diễn ra, admin finalize ngay
+  *   pending_official / needs_review → grace period qua hoặc cần review
+  *
+  * Score lấy từ input.homeScore / input.awayScore — KHÔNG compute từ events.
+  * Scorers insert vào MatchEvent chỉ để audit trail / player stats downstream.
+  * player_name lưu vào note field (schema không có free-text player_name).
+  *
+  * period của scorer để null nếu không truyền — tránh default sai
+  * khi resultType = extra_time hoặc penalty.
+  */
+    adminRecordResult(matchId: number, input: AdminRecordResultInput, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutput>;
 }
 //# sourceMappingURL=match.service.d.ts.map

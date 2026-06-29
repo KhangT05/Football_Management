@@ -184,6 +184,23 @@ let MatchController = class MatchController extends Controller {
         const { venueIds, matchTimes, ...scoreInput } = body;
         return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
     }
+    /**
+ * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
+ *
+ * Khác với recordEvent (từng event riêng lẻ):
+ *   - Finalize toàn bộ match ngay lập tức
+ *   - Score = input.homeScore / input.awayScore (không compute từ events)
+ *   - scorers[] chỉ để audit trail / player stats, không ảnh hưởng score
+ *
+ * Allowed statuses: scheduled, postponed, bye, ongoing, pending_official, needs_review
+ * Reject: finished, cancelled, forfeited, abandoned
+ */
+    async adminRecordResult(id, body) {
+        this.setStatus(201);
+        // scheduleOptions: pass empty — knockout advance sẽ dùng venue/time default
+        // Nếu cần override venue/matchTimes, mở rộng body hoặc thêm @Query params
+        return this.lifecycleService.adminRecordResult(id, body, {});
+    }
 };
 __decorate([
     Security("jwt", ["organizing", "admin"]),
@@ -335,6 +352,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], MatchController.prototype, "editScore", null);
+__decorate([
+    Security("jwt", ["organizing", "admin"]),
+    Post("{id}/admin-result"),
+    SuccessResponse(201, "Result recorded"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "adminRecordResult", null);
 MatchController = __decorate([
     Route("matches"),
     Tags("Match"),

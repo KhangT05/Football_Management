@@ -23,6 +23,7 @@ import {
     SCORE_DELTA_BY_TYPE,
     EditEventInput,
     EditScoreInput,
+    AdminRecordResultInput,
 } from '../types/match.type.js';
 import {
     MatchResultService,
@@ -919,5 +920,105 @@ export class MatchLifecycleService {
 
         // Player stats recompute từ toàn bộ events hiện tại
         await this.matchResultService.recomputePlayerStats(matchId);
+    }
+    // Đặt SAU submitManualScore(), TRƯỚC confirmOfficial()
+    //
+    // Statuses được phép:
+    //   scheduled / postponed / bye   → trận chưa bắt đầu, admin nhập hậu kỳ
+    //   ongoing                       → trận đang diễn ra, admin finalize ngay
+    //   pending_official / needs_review → grace period đã qua hoặc cần review
+    //
+    // Score: lấy từ input.homeScore / input.awayScore — KHÔNG compute từ events.
+    // Scorers: insert vào MatchEvent chỉ để audit trail / player stats.
+    //   → player_name lưu vào note field (MatchEvent.note) vì schema không có varchar riêng.
+    //
+    // confirmResult() guard (_guardConfirm):
+    //   - Reject nếu status === finished || cancelled → ok, ta không gọi từ finished
+    //   - Reject nếu matchResult tồn tại → ok, ta gọi từ non-finished
+    //   - Không check status phải là pending_official → ok với mọi status ở trên
+    //
+    // played_at set trong toMatchUpdateOnConfirm → correction window hoạt động bình thường.
+
+    /**
+  * Admin finalize kết quả trận đấu ở bất kỳ trạng thái hợp lệ nào.
+  *
+  * Allowed statuses:
+  *   scheduled / postponed / bye   → chưa bắt đầu, admin nhập hậu kỳ
+  *   ongoing                       → đang diễn ra, admin finalize ngay
+  *   pending_official / needs_review → grace period qua hoặc cần review
+  *
+  * Score lấy từ input.homeScore / input.awayScore — KHÔNG compute từ events.
+  * Scorers insert vào MatchEvent chỉ để audit trail / player stats downstream.
+  * player_name lưu vào note field (schema không có free-text player_name).
+  *
+  * period của scorer để null nếu không truyền — tránh default sai
+  * khi resultType = extra_time hoặc penalty.
+  */
+    async adminRecordResult(
+        matchId: number,
+        input: AdminRecordResultInput,
+        scheduleOptions: OptionalScheduleOptions,
+    ): Promise<ConfirmResultOutput> {
+        const match = await this.prisma.match.findUniqueOrThrow({
+            where: { id: matchId },
+            select: {
+                status: true,
+                home_team_id: true,
+                away_team_id: true,
+            },
+        });
+
+        const allowedStatuses: MatchStatus[] = [
+            MatchStatus.scheduled,
+            MatchStatus.postponed,
+            MatchStatus.bye,
+            MatchStatus.ongoing,
+            MatchStatus.pending_official,
+            MatchStatus.needs_review,
+        ];
+
+        if (!allowedStatuses.includes(match.status)) {
+            throw createAppError(
+                "CONFLICT",
+                `Match ${matchId} ở '${match.status}' — không thể nhập kết quả. ` +
+                `Dùng correction window (addEvent/editScore) cho match đã finished.`,
+            );
+        }
+
+        // Insert scorer events nếu có
+        // Score KHÔNG derive từ đây — chỉ audit trail / player stats
+        if (input.scorers && input.scorers.length > 0) {
+            await this.prisma.matchEvent.createMany({
+                data: input.scorers.map((s) => ({
+                    match_id: matchId,
+                    team_id: s.teamId,
+                    player_id: null,
+                    type:
+                        s.type === "own_goal"
+                            ? MatchEventType.own_goal
+                            : MatchEventType.goal,
+                    minute: s.minute,
+                    // null thay vì default second_half — tránh gán sai period
+                    // khi resultType = extra_time / penalty mà caller không pass period
+                    period: s.period ?? null,
+                    note: s.playerName ?? null,
+                })),
+            });
+        }
+
+        const resultType = input.resultType ?? MatchResultType.full_time;
+
+        // Delegate sang confirmResult — score từ input, bypass event computation
+        return this.matchResultService.confirmResult(
+            matchId,
+            {
+                homeScore: input.homeScore,
+                awayScore: input.awayScore,
+                homeHalfTimeScore: input.homeHalfTimeScore,
+                awayHalfTimeScore: input.awayHalfTimeScore,
+                resultType,
+            },
+            scheduleOptions,
+        );
     }
 }
