@@ -3,7 +3,6 @@ import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
-import { AddEventInput, EditEventInput, EditScoreInput } from "../types/match.type.js";
 export declare class MatchController extends Controller {
     private readonly lifecycleService;
     constructor(lifecycleService: MatchLifecycleService);
@@ -77,7 +76,7 @@ export declare class MatchController extends Controller {
      * Tự recompute MatchResult sau khi thêm.
      * venueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.
      */
-    addEvent(id: number, body: AddEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    addEvent(id: number, body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
     /**
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
@@ -91,12 +90,24 @@ export declare class MatchController extends Controller {
      * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
      * Tự recompute MatchResult sau khi sửa.
      */
-    editEvent(id: number, eventId: number, body: EditEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    editEvent(id: number, eventId: number, body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
     /**
      * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
      * Chỉ trong 15p kể từ played_at.
      * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
      */
-    editScore(id: number, body: EditScoreInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    editScore(id: number, body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    /**
+ * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
+ *
+ * Khác với recordEvent (từng event riêng lẻ):
+ *   - Finalize toàn bộ match ngay lập tức
+ *   - Score = input.homeScore / input.awayScore (không compute từ events)
+ *   - scorers[] chỉ để audit trail / player stats, không ảnh hưởng score
+ *
+ * Allowed statuses: scheduled, postponed, bye, ongoing, pending_official, needs_review
+ * Reject: finished, cancelled, forfeited, abandoned
+ */
+    adminRecordResult(id: number, body: matchType.AdminRecordResultInput): Promise<ConfirmResultOutput>;
 }
 //# sourceMappingURL=match.controller.d.ts.map
