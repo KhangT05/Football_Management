@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { matchApi } from '../api/matchApi';
+import { teamApi } from '../api/teamApi';
 
 /**
  * ============================================================
@@ -35,6 +36,11 @@ const useScheduleStore = create((set, get) => ({
   /** Loading state theo seasonId: { [seasonId]: boolean } */
   loadingSeasons: {},
   error: null,
+
+  /** Cache chi tiết trận đấu: { [matchId]: { data: any, fetchedAt: number } } */
+  matchDetailCache: {},
+  matchDetailLoading: {},
+  matchDetailError: {},
 
   // ── Actions ───────────────────────────────────────────────
 
@@ -80,6 +86,84 @@ const useScheduleStore = create((set, get) => ({
       }));
       throw err;
     }
+  },
+
+  /**
+   * Lấy chi tiết trận đấu
+   */
+  fetchMatchDetail: async (matchId, options = {}) => {
+    if (!matchId) return;
+
+    const { force = false } = options;
+    const cache = get().matchDetailCache[matchId];
+    const isLoading = get().matchDetailLoading[matchId];
+
+    if (isLoading) return;
+    if (!force && cache && Date.now() - cache.fetchedAt < CACHE_TTL_MS) return;
+
+    set(state => ({
+      matchDetailLoading: { ...state.matchDetailLoading, [matchId]: true },
+      matchDetailError: { ...state.matchDetailError, [matchId]: null },
+    }));
+
+    try {
+      const [res, eventsRes] = await Promise.all([
+        matchApi.getMatchById(matchId),
+        matchApi.getMatchEvents(matchId, { per_page: 100, sort: 'minute', direction: 'asc' }).catch(() => null)
+      ]);
+
+      const payload = typeof res?.status === 'boolean' ? res.data : res;
+      const match = payload;
+
+      let events = [];
+      if (eventsRes) {
+        const evtPayload = typeof eventsRes?.status === 'boolean' ? eventsRes.data : eventsRes;
+        events = Array.isArray(evtPayload?.data) ? evtPayload.data : (Array.isArray(evtPayload) ? evtPayload : []);
+      }
+
+      let homePlayers = [];
+      let awayPlayers = [];
+
+      if (match?.home_team_id && match?.away_team_id) {
+        const parsePage = (response) => {
+          const pl = typeof response?.status === 'boolean' ? response.data : response;
+          return Array.isArray(pl?.data) ? pl.data : Array.isArray(pl) ? pl : [];
+        };
+
+        const [homeRes, awayRes] = await Promise.allSettled([
+          teamApi.getPlayers(match.home_team_id, { approval_status: 'approved', per_page: 30 }),
+          teamApi.getPlayers(match.away_team_id, { approval_status: 'approved', per_page: 30 }),
+        ]);
+
+        if (homeRes.status === 'fulfilled') homePlayers = parsePage(homeRes.value);
+        if (awayRes.status === 'fulfilled') awayPlayers = parsePage(awayRes.value);
+      }
+
+      set(state => ({
+        matchDetailCache: {
+          ...state.matchDetailCache,
+          [matchId]: { 
+            data: { match, events, homePlayers, awayPlayers }, 
+            fetchedAt: Date.now() 
+          }
+        },
+        matchDetailLoading: { ...state.matchDetailLoading, [matchId]: false }
+      }));
+    } catch (err) {
+      set(state => ({
+        matchDetailError: {
+          ...state.matchDetailError,
+          [matchId]: err?.response?.status === 404 || err?.code === 'ERR_NETWORK' 
+            ? 'Match API chưa được triển khai hoặc không tìm thấy trận đấu.' 
+            : 'Đã có lỗi xảy ra.'
+        },
+        matchDetailLoading: { ...state.matchDetailLoading, [matchId]: false }
+      }));
+    }
+  },
+
+  getMatchDetailFromCache: (matchId) => {
+    return get().matchDetailCache[matchId]?.data ?? null;
   },
 
   /**

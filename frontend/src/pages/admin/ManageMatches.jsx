@@ -142,8 +142,8 @@ function TeamToggle({ side, onChange, homeLabel, awayLabel }) {
     <button
       onClick={onChange}
       className={`shrink-0 flex items-center justify-center px-2.5 py-2 rounded-lg border text-xs font-black transition-all min-w-[72px] ${side === 'home'
-          ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-          : 'bg-blue-500/20 border-blue-500/40 text-blue-400'
+        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+        : 'bg-blue-500/20 border-blue-500/40 text-blue-400'
         }`}
     >
       {side === 'home' ? (homeLabel?.slice(0, 6) ?? 'Nhà') : (awayLabel?.slice(0, 6) ?? 'Khách')}
@@ -218,8 +218,8 @@ function ScorerRow({ scorer, homeTeamName, awayTeamName, onChange, onRemove }) {
       <button
         onClick={() => onChange({ ...scorer, isOwnGoal: !scorer.isOwnGoal })}
         className={`shrink-0 px-1.5 py-2 rounded-lg text-[9px] font-black uppercase border transition-all ${scorer.isOwnGoal
-            ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
-            : 'bg-navy-dark border-navy-light text-gray-600 hover:text-gray-400'
+          ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+          : 'bg-navy-dark border-navy-light text-gray-600 hover:text-gray-400'
           }`}
         title="Phản lưới nhà"
       >OG</button>
@@ -580,10 +580,11 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Lưu
               </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+            </div >
+          )
+          }
+        </div >
+      </div >
+    </div >
   );
 }

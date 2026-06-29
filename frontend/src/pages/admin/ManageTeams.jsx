@@ -9,10 +9,13 @@ import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import useSeasonStore from '../../store/seasonStore';
-import { seasonTeamApi } from '../../api';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
+import Pagination from '../../components/ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
+import useAdminUIStore from '../../store/adminUIStore';
+import useSeasonTeamStore from '../../store/seasonTeamStore';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -28,48 +31,38 @@ export default function ManageTeams() {
   const toast = useToastStore();
 
   // ── Zustand store ──────────────────────────────────────────────
-  const {
-    teams, meta, isLoading, error: fetchError,
+  const { teams, meta, isLoading, error: fetchError,
     fetchAll: fetchTeamsStore,
     create: createTeam,
     update: updateTeam,
     softDelete: deleteTeam,
     fetchPlayers, getPlayersFromCache, playersLoading,
-    addNewPlayerToTeam, removePlayers,
-  } = useTeamStore();
+    addNewPlayerToTeam, removePlayers, } = useTeamStore(useShallow(state => ({ teams: state.teams, meta: state.meta, isLoading: state.isLoading, error: state.error, fetchAll: state.fetchAll, create: state.create, update: state.update, softDelete: state.softDelete, fetchPlayers: state.fetchPlayers, getPlayersFromCache: state.getPlayersFromCache, playersLoading: state.playersLoading, addNewPlayerToTeam: state.addNewPlayerToTeam, removePlayers: state.removePlayers })));
 
   // ── Season filter ────────────────────────────────────
-  const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, fetchAll: state.fetchAll })));
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
 
   // removed auto-select mùa tốt nhất
   const effectiveSeasonId = selectedSeasonId;
 
   // Dữ liệu đội theo mùa giải
-  const [seasonTeams, setSeasonTeams] = useState([]);   // SeasonTeam records
-  const [loadingSeasonTeams, setLoadingSeasonTeams] = useState(false);
-  const [seasonTeamsError, setSeasonTeamsError] = useState(null);
+  const { fetchSeasonTeams, loadingSeasons, errors, getSeasonTeamsFromCache } = useSeasonTeamStore(useShallow(state => ({
+    fetchSeasonTeams: state.fetchSeasonTeams,
+    loadingSeasons: state.loadingSeasons,
+    errors: state.errors,
+    getSeasonTeamsFromCache: state.getSeasonTeamsFromCache,
+  })));
 
-  const fetchSeasonTeams = useCallback(async (seasonId) => {
-    if (!seasonId) { setSeasonTeams([]); return; }
-    setLoadingSeasonTeams(true);
-    setSeasonTeamsError(null);
-    try {
-      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 200 });
-      const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-      setSeasonTeams(data);
-    } catch (err) {
-      setSeasonTeamsError(err?.response?.data?.message || 'Không thể tải danh sách đội theo mùa giải.');
-      setSeasonTeams([]);
-    } finally {
-      setLoadingSeasonTeams(false);
-    }
-  }, []);
+  const loadingSeasonTeams = loadingSeasons[effectiveSeasonId] || false;
+  const seasonTeamsError = errors[effectiveSeasonId] || null;
+  const seasonTeams = getSeasonTeamsFromCache(effectiveSeasonId);
 
   // Khi season thay đổi: load lại
   useEffect(() => {
-    fetchSeasonTeams(effectiveSeasonId);
+    if (effectiveSeasonId) {
+      fetchSeasonTeams(effectiveSeasonId);
+    }
   }, [effectiveSeasonId, fetchSeasonTeams]);
 
   // Lọc teams: khi có mùa giải → chỉ lấy đội đã được duyệt (approved)
@@ -84,17 +77,22 @@ export default function ManageTeams() {
     [teams, effectiveSeasonId, approvedSeasonTeamIds]
   );
 
-  // ── Pagination (Client-side over filteredTeams) ───────
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const { teamFilters, setTeamFilters } = useAdminUIStore(useShallow(state => ({
+    teamFilters: state.teamFilters,
+    setTeamFilters: state.setTeamFilters,
+  })));
+  const { search: searchTerm, page: currentPage, limit: itemsPerPage } = teamFilters;
   
+  const setSearchTerm = useCallback((val) => setTeamFilters({ search: typeof val === 'function' ? val(searchTerm) : val }), [searchTerm, setTeamFilters]);
+  const setCurrentPage = useCallback((val) => setTeamFilters({ page: typeof val === 'function' ? val(currentPage) : val }), [currentPage, setTeamFilters]);
+
+  const setItemsPerPage = useCallback((val) => setTeamFilters({ limit: val, page: 1 }), [setTeamFilters]);
   // ── Debounced search ──────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, effectiveSeasonId]);
+  }, [debouncedSearch, effectiveSeasonId, setCurrentPage]);
 
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
@@ -504,28 +502,15 @@ export default function ManageTeams() {
           </div>
 
           {/* Pagination */}
-          {filteredTeams.length > 0 && (
-            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
-              <span>
-                Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
-                {' · '}Tổng <strong className="text-white">{filteredTeams.length}</strong> đội bóng
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={safePage <= 1 || isLoading}
-                  className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={safePage >= totalPages || isLoading}
-                  className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark rounded-b-xl">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
             </div>
           )}
 

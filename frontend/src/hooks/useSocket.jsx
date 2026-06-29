@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import useAuthStore from '../store/authStore';
 import useScheduleStore from '../store/scheduleStore';
 import { getAccessToken } from '../api/axiosClient';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * ============================================================
@@ -40,8 +41,8 @@ let _globalSocket = null;
 let _listenerCount = 0;
 
 export function useSocket({ enabled = true, seasonId = null } = {}) {
-  const { isAuthenticated } = useAuthStore();
-  const { invalidateSeason, fetchBySeason } = useScheduleStore();
+  const { isAuthenticated } = useAuthStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated })));
+  const { invalidateSeason, fetchBySeason } = useScheduleStore(useShallow(state => ({ invalidateSeason: state.invalidateSeason, fetchBySeason: state.fetchBySeason })));
   const socketRef      = useRef(null);
   const pollingRef     = useRef(null);
   const connectionTRef = useRef(null);

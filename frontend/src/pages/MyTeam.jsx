@@ -10,6 +10,8 @@ import useToastStore from '../store/toastStore';
 import { teamApi, playerApi } from '../api';
 
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
+import Pagination from '../components/ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
 
 // ─── Empty State ──────────────────────────────────────────
 function NoTeamState() {
@@ -290,7 +292,7 @@ function PaymentModal({ teamName, onClose }) {
 
 // ─── Main Component ───────────────────────────────────────
 export default function MyTeam() {
-  const { user } = useAuthStore();
+  const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
   const toast = useToastStore();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -399,6 +401,24 @@ export default function MyTeam() {
       if (sortField === 'goals') return (b.goals ?? 0) - (a.goals ?? 0);
       return 0;
     });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const [prevFilterState, setPrevFilterState] = useState({ search, sortField });
+  if (prevFilterState.search !== search || prevFilterState.sortField !== sortField) {
+    setPrevFilterState({ search, sortField });
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.ceil(displayed.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedPlayers = displayed.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   // ── Validate form ────────────────────────────────────────
   const validateForm = useCallback((form, excludeId = null) => {
@@ -688,7 +708,7 @@ export default function MyTeam() {
                         <PlayerRowSkeleton />
                         <PlayerRowSkeleton />
                       </>
-                    ) : displayed.length === 0 ? (
+                    ) : paginatedPlayers.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-20 text-center text-gray-500">
                           <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
@@ -697,7 +717,7 @@ export default function MyTeam() {
                         </td>
                       </tr>
                     ) : (
-                      displayed.map((player, idx) => (
+                      paginatedPlayers.map((player, idx) => (
                         <tr
                           key={player.id}
                           className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
@@ -766,6 +786,18 @@ export default function MyTeam() {
                 </div>
               )}
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-6">
+                <Pagination
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
+            )}
           </div>
 
           {/* ─── Sidebar ─────────────────────────────────────── */}

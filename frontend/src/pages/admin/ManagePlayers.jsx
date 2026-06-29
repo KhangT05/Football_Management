@@ -10,14 +10,15 @@ import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import AdminModal from '../../components/admin/AdminModal';
+import Pagination from '../../components/ui/Pagination';
 import { getInitials, AVATAR_COLORS } from '../../utils/constants';
 
 const EMPTY_FORM = { name: '', email: '', password: '', phone: '' };
 const EMPTY_EDIT_FORM = { name: '', phone: '' };
-const PAGE_SIZE = 8;
 
 export default function ManagePlayers() {
   const toast = useToastStore();
+  const PAGE_SIZE = 10;
 
   // ── Data: Users (useApiQuery) ──────────────────────────
   const { data: users, meta, isLoading, error: fetchError, fetch: fetchUsers } = useApiQuery(
@@ -28,11 +29,17 @@ export default function ManagePlayers() {
   // ── Search + Pagination ─────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
   const refetchUsers = useCallback((page) => {
-    fetchUsers({ page: page ?? currentPage, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
-  }, [fetchUsers, currentPage, debouncedSearch]);
+    fetchUsers({ page: page ?? currentPage, per_page: itemsPerPage, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
+  }, [fetchUsers, currentPage, itemsPerPage, debouncedSearch]);
 
   const prevSearchRef = useRef(debouncedSearch);
 
@@ -41,8 +48,8 @@ export default function ManagePlayers() {
     // Effect này chỉ fetch data, không set state trực tiếp
     const page = prevSearchRef.current !== debouncedSearch ? 1 : currentPage;
     prevSearchRef.current = debouncedSearch;
-    fetchUsers({ page, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
-  }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchUsers({ page, per_page: itemsPerPage, q: debouncedSearch || undefined, sort: 'created_at', direction: 'desc' });
+  }, [currentPage, debouncedSearch, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CRUD Modal (useCrudModal) ───────────────────────────
   const crud = useCrudModal({
@@ -116,7 +123,6 @@ export default function ManagePlayers() {
   };
 
   const totalPages = meta.last_page;
-  const safePage = Math.min(currentPage, Math.max(1, totalPages));
 
   const getAvatarColor = (id) => AVATAR_COLORS[id % AVATAR_COLORS.length];
 
@@ -288,45 +294,17 @@ export default function ManagePlayers() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap">
-            <span>
-              Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
-              {' · '}Tổng <strong className="text-white">{meta.total}</strong> người dùng
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={safePage <= 1 || isLoading}
-                className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              {/* Chỉ hiển thị tối đa 5 page buttons */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const offset = Math.max(0, Math.min(safePage - 3, totalPages - 5));
-                const page = i + 1 + offset;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    disabled={isLoading}
-                    className={`px-3 py-1 rounded-lg font-bold transition-colors ${
-                      page === safePage ? 'bg-blue-600 text-white' : 'hover:bg-navy-light text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={safePage >= totalPages || isLoading}
-                className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-navy-light bg-navy-dark rounded-b-xl">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
             </div>
-          </div>
+          )}
         </div>
       </div>
 

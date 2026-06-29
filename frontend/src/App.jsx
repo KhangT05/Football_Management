@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import ToastContainer from "./components/ToastContainer";
 import useAuthStore from "./store/authStore";
+import { useShallow } from 'zustand/react/shallow';
 
 // ── Lazy-loaded Pages ──────────────────────────────────────
 // Mỗi page chỉ được tải khi user navigate tới → giảm initial bundle size
@@ -65,7 +66,7 @@ function AuthInitLoader() {
 }
 
 function App() {
-  const { initializeAuth, isInitialized } = useAuthStore();
+  const { initializeAuth, isInitialized } = useAuthStore(useShallow(state => ({ initializeAuth: state.initializeAuth, isInitialized: state.isInitialized })));
 
   useEffect(() => {
     /**

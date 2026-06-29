@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * ProtectedRoute - Chỉ cho phép truy cập khi đã đăng nhập
@@ -9,7 +10,7 @@ import useAuthStore from '../store/authStore';
  * nên ProtectedRoute chỉ cần kiểm tra isAuthenticated (đã là giá trị cuối cùng).
  */
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuthStore();
+  const { isAuthenticated, loading } = useAuthStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated, loading: state.loading })));
   const location = useLocation();
 
   // loading = đang refresh token (rare case)

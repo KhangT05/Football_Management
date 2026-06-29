@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  ArrowLeft, Users, Trophy, Target, Shield, Activity,
+import { ArrowLeft, Users, Trophy, Target, Shield, Activity,
   WifiOff, Crown, UserCheck, UserX, Hash
 } from 'lucide-react';
-import { teamApi } from '../api';
 
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 import TeamHeaderSkeleton from '../components/skeletons/TeamHeaderSkeleton';
 import PlayerCardSkeleton from '../components/skeletons/PlayerCardSkeleton';
+import Pagination from '../components/ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
+import useTeamStore from '../store/teamStore';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
@@ -88,55 +89,40 @@ export default function TeamDetail() {
   const { id } = useParams();
   const teamId = parseInt(id) || null;
 
-  // Khởi tạo state từ teamId để tránh setState synchronous trong effect
-  const [isLoading, setIsLoading] = useState(!!teamId);
-  const [team, setTeam] = useState(null);
-  const [players, setPlayers] = useState([]);
-  const [hasError, setHasError] = useState(!teamId);
+  const { fetchTeamDetail, teamDetailLoading, teamDetailError, getTeamDetailFromCache } = useTeamStore(useShallow(state => ({
+    fetchTeamDetail: state.fetchTeamDetail,
+    teamDetailLoading: state.teamDetailLoading,
+    teamDetailError: state.teamDetailError,
+    getTeamDetailFromCache: state.getTeamDetailFromCache,
+  })));
 
   useEffect(() => {
-    if (!teamId) return; // Không có teamId → hasError đã = true từ useState initial
-    let cancelled = false;
-    
-    const parsePage = (res) => {
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    };
+    if (teamId) {
+      fetchTeamDetail(teamId);
+    }
+  }, [teamId, fetchTeamDetail]);
 
-    const loadData = async () => {
-      setIsLoading(true);
-      setHasError(false);
+  const isLoading = teamDetailLoading[teamId] || false;
+  const hasError = !teamId || teamDetailError[teamId];
+  
+  const detailData = getTeamDetailFromCache(teamId);
+  const team = detailData?.team || null;
+  const players = detailData?.players || [];
 
-      try {
-        const [teamRes, playersRes] = await Promise.allSettled([
-          teamApi.getTeamById(teamId),
-          teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 50 }),
-        ]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
-        if (cancelled) return;
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
 
-        if (teamRes.status === 'fulfilled') {
-          const raw = teamRes.value;
-          const payload = (typeof raw?.status === 'boolean') ? raw.data : raw;
-          setTeam(payload);
-        } else {
-          setHasError(true);
-        }
-        if (playersRes.status === 'fulfilled') {
-          setPlayers(parsePage(playersRes.value));
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => { cancelled = true; };
-  }, [teamId]);
+  const totalPages = Math.ceil(players.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedPlayers = players.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   // Group players by position
-  const byPosition = players.reduce((acc, tp) => {
+  const byPosition = paginatedPlayers.reduce((acc, tp) => {
     const pos = tp.position ?? 'OTHER';
     if (!acc[pos]) acc[pos] = [];
     acc[pos].push(tp);
@@ -244,19 +230,33 @@ export default function TeamDetail() {
               <p className="font-semibold">Đội bóng chưa có cầu thủ nào.</p>
             </div>
           ) : (
-            positionOrder.filter(pos => byPosition[pos]?.length).map(pos => (
-              <div key={pos} className="mb-8">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Hash className="w-3.5 h-3.5" />
-                  {POSITION_LABELS[pos] ?? 'Khác'} ({byPosition[pos].length})
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {byPosition[pos].map((tp, idx) => (
-                    <PlayerCard key={tp.id} tp={tp} idx={idx} />
-                  ))}
+            <>
+              {positionOrder.filter(pos => byPosition[pos]?.length).map(pos => (
+                <div key={pos} className="mb-8">
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Hash className="w-3.5 h-3.5" />
+                    {POSITION_LABELS[pos] ?? 'Khác'} ({byPosition[pos].length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {byPosition[pos].map((tp, idx) => (
+                      <PlayerCard key={tp.id} tp={tp} idx={idx} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination
+                    currentPage={safePage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </div>
+              )}
+            </>
           )}
         </section>
 

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { MapPin, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { venueApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
@@ -6,6 +7,8 @@ import useVenueStore from '../../../store/venueStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
+import Pagination from '../../ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
 
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
@@ -16,7 +19,7 @@ export default function VenuesSection() {
     { perPage: 100, errorMsg: 'Không tải được danh sách sân.' }
   );
 
-  const { invalidate: invalidateVenueStore } = useVenueStore();
+  const { invalidate: invalidateVenueStore } = useVenueStore(useShallow(state => ({ invalidate: state.invalidate })));
   const crud = useCrudModal({
     emptyForm: { name: '', address: '' },
     onSuccess: () => { fetch(); invalidateVenueStore(); },
@@ -47,6 +50,17 @@ export default function VenuesSection() {
       toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
     });
   };
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(items.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = items.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
@@ -68,7 +82,7 @@ export default function VenuesSection() {
           <div className="p-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-12 rounded-lg" />)}</div>
         ) : items.length === 0 ? (
           <div className="py-10 text-center text-gray-500"><MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" /><p>Chưa có sân thi đấu nào</p></div>
-        ) : items.map(item => (
+        ) : paginatedItems.map(item => (
           <div key={item.id} className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-navy-light/10 transition-colors">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-lg bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-sm shrink-0">
@@ -89,6 +103,18 @@ export default function VenuesSection() {
           </div>
         ))}
       </div>
+      {totalPages > 1 && items.length > 0 && !isLoading && (
+        <div className="px-6 py-4 border-t border-navy-light flex justify-center bg-navy-dark/30">
+          <Pagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
+
 
       {crud.modal && (
         <AdminModal

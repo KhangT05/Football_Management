@@ -13,6 +13,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import GroupDrawUI from '../../components/admin/GroupDrawUI';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
+import Pagination from '../../components/ui/Pagination';
 
 const STATUS_OPTIONS = [
   { value: '',          label: 'Tất cả trạng thái' },
@@ -83,7 +84,12 @@ export default function ManageSeasonTeams() {
 
   // ── Pagination ───────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
   
   useEffect(() => {
     setTimeout(() => {
@@ -426,28 +432,15 @@ export default function ManageSeasonTeams() {
                 </div>
 
                 {/* Pagination */}
-                {seasonTeams.length > 0 && (
-                  <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex items-center justify-between gap-4 text-sm text-gray-400 flex-wrap rounded-b-xl">
-                    <span>
-                      Trang <strong className="text-white">{safePage}</strong> / <strong className="text-white">{totalPages}</strong>
-                      {' · '}Tổng <strong className="text-white">{seasonTeams.length}</strong> đội bóng
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={safePage <= 1 || loadingTeams}
-                        className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={safePage >= totalPages || loadingTeams}
-                        className="p-1.5 rounded-lg hover:bg-navy-light transition-colors disabled:opacity-30"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-navy-light bg-navy-dark rounded-b-xl">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      itemsPerPage={itemsPerPage}
+                      onItemsPerPageChange={handleItemsPerPageChange}
+                    />
                   </div>
                 )}
 

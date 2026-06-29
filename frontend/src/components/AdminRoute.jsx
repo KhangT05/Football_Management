@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * AdminRoute - Chỉ cho phép truy cập khi đã đăng nhập VÀ có role 'admin'
@@ -15,7 +16,7 @@ import useAuthStore from '../store/authStore';
  *   hoặc user.roles = ['admin'] (array JWT claim)
  */
 export default function AdminRoute({ children }) {
-  const { isAuthenticated, user, loading } = useAuthStore();
+  const { isAuthenticated, user, loading } = useAuthStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated, user: state.user, loading: state.loading })));
   const location = useLocation();
 
   // Đang refresh token → tạm thời render null

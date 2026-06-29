@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import MatchCard from "../../MatchCard";
-import { ChevronRight, BarChart, Trophy, Loader2, CalendarX2 } from 'lucide-react';
+import { ChevronRight, Loader2, CalendarX2 } from 'lucide-react';
 import { Link } from "react-router-dom";
 import BannerSection from "./BannerSection";
 import TournamentFormats from "./TournamentFormats";
@@ -40,8 +40,7 @@ function extractItems(res) {
 }
 
 export default function ContentSection() {
-    const [matches, setMatches] = useState({ liveUpcoming: [], finished: [] });
-    const [standings, setStandings] = useState([]);
+    const [matches, setMatches] = useState({ live: [], upcoming: [], finished: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -71,11 +70,8 @@ export default function ContentSection() {
                 const teamMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
                 
                 if (targetSeason?.id) {
-                    // Fetch matches and standings for the target season
-                    const [matchRes, standingsRes] = await Promise.all([
-                        matchApi.getScheduleBySeason(targetSeason.id, { per_page: 100 }).catch(() => null),
-                        seasonApi.getStandings(targetSeason.id).catch(() => null)
-                    ]);
+                    // Fetch matches for the target season
+                    const matchRes = await matchApi.getScheduleBySeason(targetSeason.id, { per_page: 100 }).catch(() => null);
 
                     if (cancelled) return;
 
@@ -93,38 +89,22 @@ export default function ContentSection() {
                         scheduled_at: new Date(m.scheduled_at || 0).getTime()
                     }));
 
-                    const liveUpcoming = mappedMatches
-                        .filter(m => m.status === 'LIVE' || m.status === 'UPCOMING')
+                    const live = mappedMatches
+                        .filter(m => m.status === 'LIVE')
                         .sort((a, b) => a.scheduled_at - b.scheduled_at)
-                        .slice(0, 3); // Hiện 3 kết quả gần nhất
+                        .slice(0, 3);
+
+                    const upcoming = mappedMatches
+                        .filter(m => m.status === 'UPCOMING')
+                        .sort((a, b) => a.scheduled_at - b.scheduled_at)
+                        .slice(0, 3);
 
                     const finished = mappedMatches
                         .filter(m => m.status === 'FT')
                         .sort((a, b) => b.scheduled_at - a.scheduled_at)
-                        .slice(0, 3); // Hiện 3 kết quả gần nhất
+                        .slice(0, 3);
 
-                    // -- Process Standings --
-                    const stPayload = typeof standingsRes?.status === 'boolean' ? standingsRes.data : standingsRes;
-                    const groups = Array.isArray(stPayload) ? stPayload : [];
-                    const flatStandings = groups.flatMap(g => g.standings || [])
-                        .map(row => ({
-                            team_id: row.team_id,
-                            team: teamMap[row.team_id] || row.team_name || `Đội ${row.team_id}`,
-                            p: row.matches_played ?? row.played ?? 0,
-                            pts: row.points ?? 0,
-                            goal_difference: (row.goals_for ?? 0) - (row.goals_against ?? 0)
-                        }))
-                        .sort((a, b) => b.pts - a.pts || b.goal_difference - a.goal_difference); // Sort by pts then GD
-
-                    // Assign ranks (Top 5 only)
-                    const rankedStandings = flatStandings.slice(0, 5).map((row, i) => ({
-                        ...row,
-                        rank: i + 1,
-                        isTop: i < 3
-                    }));
-
-                    setMatches({ liveUpcoming, finished });
-                    setStandings(rankedStandings);
+                    setMatches({ live, upcoming, finished });
                 }
             } catch (err) {
                 console.warn('[ContentSection] Failed to fetch dashboard data:', err);
@@ -146,143 +126,106 @@ export default function ContentSection() {
                 {/* Banner Section */}
                 <BannerSection />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
-                    
+                <div className="w-full relative group">
+                    {/* Glowing background blob */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[400px] bg-blue-500/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
+
                     {/* Main Content: Latest Results Widget */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="flex items-end justify-between border-b border-navy-light pb-4">
+                    <div className="bg-navy/40 backdrop-blur-3xl border border-navy-light/50 rounded-[2.5rem] p-8 lg:p-12 shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none"></div>
+                        
+                        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 border-b border-navy-light/50 pb-8 relative z-10">
                             <div>
-                                <h2 className="text-3xl font-black text-white uppercase tracking-tight">Kết quả & Lịch thi đấu</h2>
-                                <p className="text-gray-400 text-sm mt-1">Cập nhật nhanh diễn biến mới nhất của mùa giải hiện tại</p>
+                                <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-neon uppercase tracking-tight">Kết quả & Lịch thi đấu</h2>
+                                <p className="text-gray-400 text-sm md:text-base mt-2 font-medium">Cập nhật nhanh diễn biến mới nhất của mùa giải hiện tại</p>
                             </div>
-                            <Link to="/lich-thi-dau" className="hidden sm:flex items-center gap-2 text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl">
-                                Xem tất cả <ChevronRight className="w-4 h-4" />
+                            <Link to="/lich-thi-dau" className="shrink-0 flex items-center gap-2 text-white text-sm font-bold bg-blue-600 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all px-6 py-3.5 rounded-2xl group/link">
+                                Xem tất cả <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                             </Link>
                         </div>
                         
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center py-20 bg-navy/30 rounded-3xl border border-navy-light/50 backdrop-blur-sm">
-                                <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-                                <p className="text-gray-400 font-medium">Đang tải dữ liệu trận đấu...</p>
+                            <div className="flex flex-col items-center justify-center py-32 relative z-10">
+                                <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-6" />
+                                <p className="text-gray-400 font-bold text-lg">Đang tải dữ liệu trận đấu...</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-5">
-                                    <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2.5 uppercase tracking-wider bg-navy-dark border border-navy-light px-4 py-2 rounded-xl shadow-sm w-fit">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></div> Trực tiếp / Sắp tới
-                                    </h3>
-                                    {matches.liveUpcoming.length > 0 ? (
-                                        <div className="flex flex-col gap-4">
-                                            {matches.liveUpcoming.map(match => (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12 mt-10 relative z-10">
+                                {/* Sắp diễn ra */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-base font-black text-white flex items-center gap-3 uppercase tracking-widest bg-linear-to-r from-amber-500/20 to-transparent border-l-4 border-amber-500 pl-4 py-2 pr-8 rounded-r-2xl">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"></div> 
+                                            Sắp diễn ra
+                                        </h3>
+                                    </div>
+
+                                    {matches.upcoming.length > 0 ? (
+                                        <div className="flex flex-col gap-5">
+                                            {matches.upcoming.map(match => (
                                                 <MatchCard key={match.id} {...match} />
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="bg-navy/50 border border-navy-light/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-                                            <CalendarX2 className="w-8 h-8 text-gray-500 mb-3" />
-                                            <p className="text-gray-400 text-sm">Không có trận đấu nào sắp tới</p>
+                                        <div className="bg-navy/30 border border-navy-light/40 rounded-3xl p-10 flex flex-col items-center justify-center text-center h-48 transition-all hover:bg-navy/40 group/card">
+                                            <CalendarX2 className="w-10 h-10 text-gray-500/50 mb-4 group-hover/card:text-amber-500/50 transition-colors" />
+                                            <p className="text-gray-400 font-medium">Không có trận đấu nào sắp tới</p>
                                         </div>
                                     )}
                                 </div>
-                                
-                                <div className="space-y-5">
-                                    <h3 className="text-sm font-bold text-gray-400 flex items-center gap-2.5 uppercase tracking-wider bg-navy-dark border border-navy-light px-4 py-2 rounded-xl shadow-sm w-fit">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-gray-500"></div> Đã kết thúc
-                                    </h3>
+
+                                {/* Trực tiếp */}
+                                <div className="space-y-6 relative">
+                                    <div className="hidden lg:block absolute -left-6 top-0 bottom-0 w-px bg-linear-to-b from-navy-light/0 via-navy-light to-navy-light/0"></div>
+                                    
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-base font-black text-white flex items-center gap-3 uppercase tracking-widest bg-linear-to-r from-red-500/20 to-transparent border-l-4 border-red-500 pl-4 py-2 pr-8 rounded-r-2xl">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,1)] animate-pulse"></div> 
+                                            Đang diễn ra
+                                        </h3>
+                                    </div>
+                                    
+                                    {matches.live.length > 0 ? (
+                                        <div className="flex flex-col gap-5">
+                                            {matches.live.map(match => (
+                                                <MatchCard key={match.id} {...match} />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-navy/30 border border-navy-light/40 rounded-3xl p-10 flex flex-col items-center justify-center text-center h-48 transition-all hover:bg-navy/40 group/card">
+                                            <CalendarX2 className="w-10 h-10 text-gray-500/50 mb-4 group-hover/card:text-red-500/50 transition-colors" />
+                                            <p className="text-gray-400 font-medium">Không có trận đấu nào đang diễn ra</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Đã kết thúc */}
+                                <div className="space-y-6 relative">
+                                    <div className="hidden lg:block absolute -left-6 top-0 bottom-0 w-px bg-linear-to-b from-navy-light/0 via-navy-light to-navy-light/0"></div>
+                                    
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-base font-black text-white flex items-center gap-3 uppercase tracking-widest bg-linear-to-r from-gray-500/20 to-transparent border-l-4 border-gray-400 pl-4 py-2 pr-8 rounded-r-2xl">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-gray-400"></div> 
+                                            Đã kết thúc
+                                        </h3>
+                                    </div>
+
                                     {matches.finished.length > 0 ? (
-                                        <div className="flex flex-col gap-4 opacity-90 hover:opacity-100 transition-opacity">
+                                        <div className="flex flex-col gap-5 opacity-90 hover:opacity-100 transition-opacity">
                                             {matches.finished.map(match => (
                                                 <MatchCard key={match.id} {...match} />
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="bg-navy/50 border border-navy-light/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-                                            <CalendarX2 className="w-8 h-8 text-gray-500 mb-3" />
-                                            <p className="text-gray-400 text-sm">Chưa có kết quả trận đấu nào</p>
+                                        <div className="bg-navy/30 border border-navy-light/40 rounded-3xl p-10 flex flex-col items-center justify-center text-center h-48 transition-all hover:bg-navy/40 group/card">
+                                            <CalendarX2 className="w-10 h-10 text-gray-500/50 mb-4 group-hover/card:text-gray-400 transition-colors" />
+                                            <p className="text-gray-400 font-medium">Chưa có kết quả trận đấu nào</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
-
-                        <Link to="/lich-thi-dau" className="sm:hidden w-full flex items-center justify-center gap-2 text-blue-400 text-sm font-bold bg-navy border border-navy-light py-3 rounded-xl mt-4">
-                            Xem toàn bộ lịch thi đấu <ChevronRight className="w-4 h-4" />
-                        </Link>
                     </div>
-
-                    {/* Sidebar: Mini Leaderboard */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-navy/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 lg:p-8 shadow-2xl shadow-black/40 relative overflow-hidden h-full flex flex-col group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[50px] group-hover:bg-blue-500/20 transition-colors duration-500"></div>
-                            
-                            <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3 relative z-10">
-                                <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30">
-                                    <BarChart className="w-5 h-5 text-blue-400" />
-                                </div>
-                                Bảng xếp hạng
-                            </h3>
-                            
-                            <div className="flex-1 relative z-10">
-                                {loading ? (
-                                    <div className="flex items-center justify-center h-40">
-                                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                                    </div>
-                                ) : standings.length > 0 ? (
-                                    <table className="w-full text-left whitespace-nowrap">
-                                        <thead>
-                                            <tr className="border-b border-navy-light text-xs font-bold uppercase tracking-wider text-gray-500">
-                                                <th className="pb-3 px-2 font-medium">Hạng</th>
-                                                <th className="pb-3 px-2 font-medium">Đội bóng</th>
-                                                <th className="pb-3 px-2 text-center font-medium">P</th>
-                                                <th className="pb-3 px-2 text-right font-medium">Điểm</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-navy-light/50">
-                                            {standings.map((row, i) => (
-                                                <tr key={i} className="group/row hover:bg-navy-light/20 transition-colors">
-                                                    <td className="py-4 px-2">
-                                                        {row.rank === 1 ? (
-                                                            <div className="w-7 h-7 rounded-full bg-yellow-500/20 border border-yellow-500/50 flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-                                                                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                                                            </div>
-                                                        ) : row.rank === 2 ? (
-                                                            <div className="w-7 h-7 rounded-full bg-gray-300/20 border border-gray-300/50 flex items-center justify-center">
-                                                                <Trophy className="w-3.5 h-3.5 text-gray-300" />
-                                                            </div>
-                                                        ) : row.rank === 3 ? (
-                                                            <div className="w-7 h-7 rounded-full bg-amber-600/20 border border-amber-600/50 flex items-center justify-center">
-                                                                <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-7 h-7 rounded-full bg-navy-dark flex items-center justify-center font-bold text-gray-500 text-xs">
-                                                                {row.rank}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className={`py-4 px-2 font-bold ${row.isTop ? 'text-white' : 'text-gray-300'} truncate max-w-[120px]`}>{row.team}</td>
-                                                    <td className="py-4 px-2 text-center text-gray-500">{row.p}</td>
-                                                    <td className="py-4 px-2 text-right">
-                                                        <span className={`px-2 py-1 rounded-md font-bold text-sm ${row.isTop ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-gray-400'}`}>
-                                                            {row.pts}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-40 text-center">
-                                        <p className="text-gray-500 text-sm">Chưa có dữ liệu xếp hạng</p>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <Link to="/bang-xep-hang" className="w-full mt-6 py-3.5 rounded-2xl bg-linear-to-r from-blue-600/10 to-indigo-600/10 border border-blue-500/20 text-blue-400 text-sm font-bold hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 group/btn relative z-10">
-                                Xem bảng xếp hạng đầy đủ <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                            </Link>
-                        </div>
-                    </div>
-                    
                 </div>
 
                 {/* Thể thức thi đấu */}
