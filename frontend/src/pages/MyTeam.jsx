@@ -596,7 +596,7 @@ export default function MyTeam() {
                     {team.status === 'pending' && (
                       <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(234,179,8,0.2)]">
                         Chờ Duyệt
-                      </span>
+                      </span> 
                     )}
                   </div>
                   <p className="text-blue-400/80 font-bold tracking-wide">Khoa Công nghệ thông tin <span className="text-gray-600 mx-2">•</span> Mùa giải {team.season}</p>
