@@ -18,12 +18,16 @@ export type PaymentAvgAggregateOutputType = {
     season_team_id: number | null;
     amount: runtime.Decimal | null;
     confirmed_by: number | null;
+    refunded_by: number | null;
+    refund_amount: runtime.Decimal | null;
 };
 export type PaymentSumAggregateOutputType = {
     id: number | null;
     season_team_id: number | null;
     amount: runtime.Decimal | null;
     confirmed_by: number | null;
+    refunded_by: number | null;
+    refund_amount: runtime.Decimal | null;
 };
 export type PaymentMinAggregateOutputType = {
     id: number | null;
@@ -34,10 +38,12 @@ export type PaymentMinAggregateOutputType = {
     paid_at: Date | null;
     confirmed_at: Date | null;
     confirmed_by: number | null;
-    is_active: boolean | null;
+    refunded_at: Date | null;
+    refunded_by: number | null;
+    refund_amount: runtime.Decimal | null;
+    vnp_transaction_no: string | null;
     created_at: Date | null;
     updated_at: Date | null;
-    deleted_at: Date | null;
 };
 export type PaymentMaxAggregateOutputType = {
     id: number | null;
@@ -48,10 +54,12 @@ export type PaymentMaxAggregateOutputType = {
     paid_at: Date | null;
     confirmed_at: Date | null;
     confirmed_by: number | null;
-    is_active: boolean | null;
+    refunded_at: Date | null;
+    refunded_by: number | null;
+    refund_amount: runtime.Decimal | null;
+    vnp_transaction_no: string | null;
     created_at: Date | null;
     updated_at: Date | null;
-    deleted_at: Date | null;
 };
 export type PaymentCountAggregateOutputType = {
     id: number;
@@ -62,10 +70,12 @@ export type PaymentCountAggregateOutputType = {
     paid_at: number;
     confirmed_at: number;
     confirmed_by: number;
-    is_active: number;
+    refunded_at: number;
+    refunded_by: number;
+    refund_amount: number;
+    vnp_transaction_no: number;
     created_at: number;
     updated_at: number;
-    deleted_at: number;
     _all: number;
 };
 export type PaymentAvgAggregateInputType = {
@@ -73,12 +83,16 @@ export type PaymentAvgAggregateInputType = {
     season_team_id?: true;
     amount?: true;
     confirmed_by?: true;
+    refunded_by?: true;
+    refund_amount?: true;
 };
 export type PaymentSumAggregateInputType = {
     id?: true;
     season_team_id?: true;
     amount?: true;
     confirmed_by?: true;
+    refunded_by?: true;
+    refund_amount?: true;
 };
 export type PaymentMinAggregateInputType = {
     id?: true;
@@ -89,10 +103,12 @@ export type PaymentMinAggregateInputType = {
     paid_at?: true;
     confirmed_at?: true;
     confirmed_by?: true;
-    is_active?: true;
+    refunded_at?: true;
+    refunded_by?: true;
+    refund_amount?: true;
+    vnp_transaction_no?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
 };
 export type PaymentMaxAggregateInputType = {
     id?: true;
@@ -103,10 +119,12 @@ export type PaymentMaxAggregateInputType = {
     paid_at?: true;
     confirmed_at?: true;
     confirmed_by?: true;
-    is_active?: true;
+    refunded_at?: true;
+    refunded_by?: true;
+    refund_amount?: true;
+    vnp_transaction_no?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
 };
 export type PaymentCountAggregateInputType = {
     id?: true;
@@ -117,10 +135,12 @@ export type PaymentCountAggregateInputType = {
     paid_at?: true;
     confirmed_at?: true;
     confirmed_by?: true;
-    is_active?: true;
+    refunded_at?: true;
+    refunded_by?: true;
+    refund_amount?: true;
+    vnp_transaction_no?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
     _all?: true;
 };
 export type PaymentAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -208,10 +228,12 @@ export type PaymentGroupByOutputType = {
     paid_at: Date | null;
     confirmed_at: Date | null;
     confirmed_by: number | null;
-    is_active: boolean;
+    refunded_at: Date | null;
+    refunded_by: number | null;
+    refund_amount: runtime.Decimal | null;
+    vnp_transaction_no: string | null;
     created_at: Date;
     updated_at: Date | null;
-    deleted_at: Date | null;
     _count: PaymentCountAggregateOutputType | null;
     _avg: PaymentAvgAggregateOutputType | null;
     _sum: PaymentSumAggregateOutputType | null;
@@ -233,10 +255,12 @@ export type PaymentWhereInput = {
     paid_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
-    is_active?: Prisma.BoolFilter<"Payment"> | boolean;
+    refunded_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
+    refunded_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
+    refund_amount?: Prisma.DecimalNullableFilter<"Payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.StringNullableFilter<"Payment"> | string | null;
     created_at?: Prisma.DateTimeFilter<"Payment"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
 };
 export type PaymentOrderByWithRelationInput = {
@@ -248,31 +272,35 @@ export type PaymentOrderByWithRelationInput = {
     paid_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     confirmed_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
+    refunded_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrderInput | Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    vnp_transaction_no?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     season_team?: Prisma.SeasonTeamOrderByWithRelationInput;
     _relevance?: Prisma.PaymentOrderByRelevanceInput;
 };
 export type PaymentWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    transaction_ref?: string;
+    vnp_transaction_no?: string;
     AND?: Prisma.PaymentWhereInput | Prisma.PaymentWhereInput[];
     OR?: Prisma.PaymentWhereInput[];
     NOT?: Prisma.PaymentWhereInput | Prisma.PaymentWhereInput[];
     season_team_id?: Prisma.IntFilter<"Payment"> | number;
     amount?: Prisma.DecimalFilter<"Payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumPaymentStatusFilter<"Payment"> | $Enums.PaymentStatus;
-    transaction_ref?: Prisma.StringNullableFilter<"Payment"> | string | null;
     paid_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
-    is_active?: Prisma.BoolFilter<"Payment"> | boolean;
+    refunded_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
+    refunded_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
+    refund_amount?: Prisma.DecimalNullableFilter<"Payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
     created_at?: Prisma.DateTimeFilter<"Payment"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
-}, "id">;
+}, "id" | "transaction_ref" | "vnp_transaction_no">;
 export type PaymentOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     season_team_id?: Prisma.SortOrder;
@@ -282,10 +310,12 @@ export type PaymentOrderByWithAggregationInput = {
     paid_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     confirmed_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrderInput | Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
+    refunded_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrderInput | Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    vnp_transaction_no?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.PaymentCountOrderByAggregateInput;
     _avg?: Prisma.PaymentAvgOrderByAggregateInput;
     _max?: Prisma.PaymentMaxOrderByAggregateInput;
@@ -304,10 +334,12 @@ export type PaymentScalarWhereWithAggregatesInput = {
     paid_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null;
     confirmed_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null;
     confirmed_by?: Prisma.IntNullableWithAggregatesFilter<"Payment"> | number | null;
-    is_active?: Prisma.BoolWithAggregatesFilter<"Payment"> | boolean;
+    refunded_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null;
+    refunded_by?: Prisma.IntNullableWithAggregatesFilter<"Payment"> | number | null;
+    refund_amount?: Prisma.DecimalNullableWithAggregatesFilter<"Payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.StringNullableWithAggregatesFilter<"Payment"> | string | null;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Payment"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null;
 };
 export type PaymentCreateInput = {
     amount: runtime.Decimal | runtime.DecimalJsLike | number | string;
@@ -316,10 +348,12 @@ export type PaymentCreateInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
     season_team: Prisma.SeasonTeamCreateNestedOneWithoutPaymentsInput;
 };
 export type PaymentUncheckedCreateInput = {
@@ -331,10 +365,12 @@ export type PaymentUncheckedCreateInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
 };
 export type PaymentUpdateInput = {
     amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
@@ -343,10 +379,12 @@ export type PaymentUpdateInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutPaymentsNestedInput;
 };
 export type PaymentUncheckedUpdateInput = {
@@ -358,10 +396,12 @@ export type PaymentUncheckedUpdateInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentCreateManyInput = {
     id?: number;
@@ -372,10 +412,12 @@ export type PaymentCreateManyInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
 };
 export type PaymentUpdateManyMutationInput = {
     amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
@@ -384,10 +426,12 @@ export type PaymentUpdateManyMutationInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -398,10 +442,12 @@ export type PaymentUncheckedUpdateManyInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentListRelationFilter = {
     every?: Prisma.PaymentWhereInput;
@@ -425,16 +471,20 @@ export type PaymentCountOrderByAggregateInput = {
     paid_at?: Prisma.SortOrder;
     confirmed_at?: Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
+    refunded_at?: Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrder;
+    vnp_transaction_no?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
 };
 export type PaymentAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     season_team_id?: Prisma.SortOrder;
     amount?: Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrder;
 };
 export type PaymentMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -445,10 +495,12 @@ export type PaymentMaxOrderByAggregateInput = {
     paid_at?: Prisma.SortOrder;
     confirmed_at?: Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
+    refunded_at?: Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrder;
+    vnp_transaction_no?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
 };
 export type PaymentMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -459,16 +511,20 @@ export type PaymentMinOrderByAggregateInput = {
     paid_at?: Prisma.SortOrder;
     confirmed_at?: Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
+    refunded_at?: Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrder;
+    vnp_transaction_no?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
 };
 export type PaymentSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     season_team_id?: Prisma.SortOrder;
     amount?: Prisma.SortOrder;
     confirmed_by?: Prisma.SortOrder;
+    refunded_by?: Prisma.SortOrder;
+    refund_amount?: Prisma.SortOrder;
 };
 export type PaymentCreateNestedManyWithoutSeason_teamInput = {
     create?: Prisma.XOR<Prisma.PaymentCreateWithoutSeason_teamInput, Prisma.PaymentUncheckedCreateWithoutSeason_teamInput> | Prisma.PaymentCreateWithoutSeason_teamInput[] | Prisma.PaymentUncheckedCreateWithoutSeason_teamInput[];
@@ -518,10 +574,12 @@ export type PaymentCreateWithoutSeason_teamInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
 };
 export type PaymentUncheckedCreateWithoutSeason_teamInput = {
     id?: number;
@@ -531,10 +589,12 @@ export type PaymentUncheckedCreateWithoutSeason_teamInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
 };
 export type PaymentCreateOrConnectWithoutSeason_teamInput = {
     where: Prisma.PaymentWhereUniqueInput;
@@ -569,10 +629,12 @@ export type PaymentScalarWhereInput = {
     paid_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
     confirmed_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
-    is_active?: Prisma.BoolFilter<"Payment"> | boolean;
+    refunded_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
+    refunded_by?: Prisma.IntNullableFilter<"Payment"> | number | null;
+    refund_amount?: Prisma.DecimalNullableFilter<"Payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.StringNullableFilter<"Payment"> | string | null;
     created_at?: Prisma.DateTimeFilter<"Payment"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"Payment"> | Date | string | null;
 };
 export type PaymentCreateManySeason_teamInput = {
     id?: number;
@@ -582,10 +644,12 @@ export type PaymentCreateManySeason_teamInput = {
     paid_at?: Date | string | null;
     confirmed_at?: Date | string | null;
     confirmed_by?: number | null;
-    is_active?: boolean;
+    refunded_at?: Date | string | null;
+    refunded_by?: number | null;
+    refund_amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
 };
 export type PaymentUpdateWithoutSeason_teamInput = {
     amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
@@ -594,10 +658,12 @@ export type PaymentUpdateWithoutSeason_teamInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentUncheckedUpdateWithoutSeason_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -607,10 +673,12 @@ export type PaymentUncheckedUpdateWithoutSeason_teamInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentUncheckedUpdateManyWithoutSeason_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -620,10 +688,12 @@ export type PaymentUncheckedUpdateManyWithoutSeason_teamInput = {
     paid_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     confirmed_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    refunded_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    refunded_by?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    refund_amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null;
+    vnp_transaction_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 export type PaymentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -634,10 +704,12 @@ export type PaymentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     paid_at?: boolean;
     confirmed_at?: boolean;
     confirmed_by?: boolean;
-    is_active?: boolean;
+    refunded_at?: boolean;
+    refunded_by?: boolean;
+    refund_amount?: boolean;
+    vnp_transaction_no?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
-    deleted_at?: boolean;
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["payment"]>;
 export type PaymentSelectScalar = {
@@ -649,12 +721,14 @@ export type PaymentSelectScalar = {
     paid_at?: boolean;
     confirmed_at?: boolean;
     confirmed_by?: boolean;
-    is_active?: boolean;
+    refunded_at?: boolean;
+    refunded_by?: boolean;
+    refund_amount?: boolean;
+    vnp_transaction_no?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
-    deleted_at?: boolean;
 };
-export type PaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "amount" | "status" | "transaction_ref" | "paid_at" | "confirmed_at" | "confirmed_by" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["payment"]>;
+export type PaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "amount" | "status" | "transaction_ref" | "paid_at" | "confirmed_at" | "confirmed_by" | "refunded_at" | "refunded_by" | "refund_amount" | "vnp_transaction_no" | "created_at" | "updated_at", ExtArgs["result"]["payment"]>;
 export type PaymentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
 };
@@ -672,10 +746,12 @@ export type $PaymentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
         paid_at: Date | null;
         confirmed_at: Date | null;
         confirmed_by: number | null;
-        is_active: boolean;
+        refunded_at: Date | null;
+        refunded_by: number | null;
+        refund_amount: runtime.Decimal | null;
+        vnp_transaction_no: string | null;
         created_at: Date;
         updated_at: Date | null;
-        deleted_at: Date | null;
     }, ExtArgs["result"]["payment"]>;
     composites: {};
 };
@@ -987,10 +1063,12 @@ export interface PaymentFieldRefs {
     readonly paid_at: Prisma.FieldRef<"Payment", 'DateTime'>;
     readonly confirmed_at: Prisma.FieldRef<"Payment", 'DateTime'>;
     readonly confirmed_by: Prisma.FieldRef<"Payment", 'Int'>;
-    readonly is_active: Prisma.FieldRef<"Payment", 'Boolean'>;
+    readonly refunded_at: Prisma.FieldRef<"Payment", 'DateTime'>;
+    readonly refunded_by: Prisma.FieldRef<"Payment", 'Int'>;
+    readonly refund_amount: Prisma.FieldRef<"Payment", 'Decimal'>;
+    readonly vnp_transaction_no: Prisma.FieldRef<"Payment", 'String'>;
     readonly created_at: Prisma.FieldRef<"Payment", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Payment", 'DateTime'>;
-    readonly deleted_at: Prisma.FieldRef<"Payment", 'DateTime'>;
 }
 /**
  * Payment findUnique

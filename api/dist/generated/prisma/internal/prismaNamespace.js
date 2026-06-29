@@ -444,10 +444,12 @@ export const PaymentScalarFieldEnum = {
     paid_at: 'paid_at',
     confirmed_at: 'confirmed_at',
     confirmed_by: 'confirmed_by',
-    is_active: 'is_active',
+    refunded_at: 'refunded_at',
+    refunded_by: 'refunded_by',
+    refund_amount: 'refund_amount',
+    vnp_transaction_no: 'vnp_transaction_no',
     created_at: 'created_at',
-    updated_at: 'updated_at',
-    deleted_at: 'deleted_at'
+    updated_at: 'updated_at'
 };
 export const ArticleScalarFieldEnum = {
     id: 'id',
@@ -567,7 +569,8 @@ export const NotificationOrderByRelevanceFieldEnum = {
     ref_entity_type: 'ref_entity_type'
 };
 export const PaymentOrderByRelevanceFieldEnum = {
-    transaction_ref: 'transaction_ref'
+    transaction_ref: 'transaction_ref',
+    vnp_transaction_no: 'vnp_transaction_no'
 };
 export const ArticleOrderByRelevanceFieldEnum = {
     title: 'title',

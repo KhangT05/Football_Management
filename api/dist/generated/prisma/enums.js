@@ -151,7 +151,9 @@ export const NotificationType = {
 export const PaymentStatus = {
     pending: 'pending',
     confirmed: 'confirmed',
-    rejected: 'rejected'
+    rejected: 'rejected',
+    refund_pending: 'refund_pending',
+    refunded: 'refunded'
 };
 export const ArticleStatus = {
     draft: 'draft',
