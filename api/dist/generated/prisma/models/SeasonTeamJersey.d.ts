@@ -182,6 +182,7 @@ export type SeasonTeamJerseyWhereInput = {
     secondary_color?: Prisma.StringNullableFilter<"SeasonTeamJersey"> | string | null;
     image_url?: Prisma.StringNullableFilter<"SeasonTeamJersey"> | string | null;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentListRelationFilter;
 };
 export type SeasonTeamJerseyOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -191,6 +192,7 @@ export type SeasonTeamJerseyOrderByWithRelationInput = {
     secondary_color?: Prisma.SortOrderInput | Prisma.SortOrder;
     image_url?: Prisma.SortOrderInput | Prisma.SortOrder;
     season_team?: Prisma.SeasonTeamOrderByWithRelationInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentOrderByRelationAggregateInput;
     _relevance?: Prisma.SeasonTeamJerseyOrderByRelevanceInput;
 };
 export type SeasonTeamJerseyWhereUniqueInput = Prisma.AtLeast<{
@@ -205,6 +207,7 @@ export type SeasonTeamJerseyWhereUniqueInput = Prisma.AtLeast<{
     secondary_color?: Prisma.StringNullableFilter<"SeasonTeamJersey"> | string | null;
     image_url?: Prisma.StringNullableFilter<"SeasonTeamJersey"> | string | null;
     season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentListRelationFilter;
 }, "id" | "season_team_id_type">;
 export type SeasonTeamJerseyOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -236,6 +239,7 @@ export type SeasonTeamJerseyCreateInput = {
     secondary_color?: string | null;
     image_url?: string | null;
     season_team: Prisma.SeasonTeamCreateNestedOneWithoutJerseysInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutSeason_jerseyInput;
 };
 export type SeasonTeamJerseyUncheckedCreateInput = {
     id?: number;
@@ -244,6 +248,7 @@ export type SeasonTeamJerseyUncheckedCreateInput = {
     primary_color: string;
     secondary_color?: string | null;
     image_url?: string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedManyWithoutSeason_jerseyInput;
 };
 export type SeasonTeamJerseyUpdateInput = {
     type?: Prisma.EnumJerseyTypeFieldUpdateOperationsInput | $Enums.JerseyType;
@@ -251,6 +256,7 @@ export type SeasonTeamJerseyUpdateInput = {
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutJerseysNestedInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutSeason_jerseyNestedInput;
 };
 export type SeasonTeamJerseyUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -259,6 +265,7 @@ export type SeasonTeamJerseyUncheckedUpdateInput = {
     primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedUpdateManyWithoutSeason_jerseyNestedInput;
 };
 export type SeasonTeamJerseyCreateManyInput = {
     id?: number;
@@ -281,6 +288,10 @@ export type SeasonTeamJerseyUncheckedUpdateManyInput = {
     primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+};
+export type SeasonTeamJerseyScalarRelationFilter = {
+    is?: Prisma.SeasonTeamJerseyWhereInput;
+    isNot?: Prisma.SeasonTeamJerseyWhereInput;
 };
 export type SeasonTeamJerseyListRelationFilter = {
     every?: Prisma.SeasonTeamJerseyWhereInput;
@@ -331,6 +342,18 @@ export type SeasonTeamJerseySumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     season_team_id?: Prisma.SortOrder;
 };
+export type SeasonTeamJerseyCreateNestedOneWithoutMatchJerseyAssignmentsInput = {
+    create?: Prisma.XOR<Prisma.SeasonTeamJerseyCreateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedCreateWithoutMatchJerseyAssignmentsInput>;
+    connectOrCreate?: Prisma.SeasonTeamJerseyCreateOrConnectWithoutMatchJerseyAssignmentsInput;
+    connect?: Prisma.SeasonTeamJerseyWhereUniqueInput;
+};
+export type SeasonTeamJerseyUpdateOneRequiredWithoutMatchJerseyAssignmentsNestedInput = {
+    create?: Prisma.XOR<Prisma.SeasonTeamJerseyCreateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedCreateWithoutMatchJerseyAssignmentsInput>;
+    connectOrCreate?: Prisma.SeasonTeamJerseyCreateOrConnectWithoutMatchJerseyAssignmentsInput;
+    upsert?: Prisma.SeasonTeamJerseyUpsertWithoutMatchJerseyAssignmentsInput;
+    connect?: Prisma.SeasonTeamJerseyWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.SeasonTeamJerseyUpdateToOneWithWhereWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUpdateWithoutMatchJerseyAssignmentsInput>, Prisma.SeasonTeamJerseyUncheckedUpdateWithoutMatchJerseyAssignmentsInput>;
+};
 export type SeasonTeamJerseyCreateNestedManyWithoutSeason_teamInput = {
     create?: Prisma.XOR<Prisma.SeasonTeamJerseyCreateWithoutSeason_teamInput, Prisma.SeasonTeamJerseyUncheckedCreateWithoutSeason_teamInput> | Prisma.SeasonTeamJerseyCreateWithoutSeason_teamInput[] | Prisma.SeasonTeamJerseyUncheckedCreateWithoutSeason_teamInput[];
     connectOrCreate?: Prisma.SeasonTeamJerseyCreateOrConnectWithoutSeason_teamInput | Prisma.SeasonTeamJerseyCreateOrConnectWithoutSeason_teamInput[];
@@ -369,11 +392,58 @@ export type SeasonTeamJerseyUncheckedUpdateManyWithoutSeason_teamNestedInput = {
     updateMany?: Prisma.SeasonTeamJerseyUpdateManyWithWhereWithoutSeason_teamInput | Prisma.SeasonTeamJerseyUpdateManyWithWhereWithoutSeason_teamInput[];
     deleteMany?: Prisma.SeasonTeamJerseyScalarWhereInput | Prisma.SeasonTeamJerseyScalarWhereInput[];
 };
+export type EnumJerseyTypeFieldUpdateOperationsInput = {
+    set?: $Enums.JerseyType;
+};
+export type SeasonTeamJerseyCreateWithoutMatchJerseyAssignmentsInput = {
+    type: $Enums.JerseyType;
+    primary_color: string;
+    secondary_color?: string | null;
+    image_url?: string | null;
+    season_team: Prisma.SeasonTeamCreateNestedOneWithoutJerseysInput;
+};
+export type SeasonTeamJerseyUncheckedCreateWithoutMatchJerseyAssignmentsInput = {
+    id?: number;
+    season_team_id: number;
+    type: $Enums.JerseyType;
+    primary_color: string;
+    secondary_color?: string | null;
+    image_url?: string | null;
+};
+export type SeasonTeamJerseyCreateOrConnectWithoutMatchJerseyAssignmentsInput = {
+    where: Prisma.SeasonTeamJerseyWhereUniqueInput;
+    create: Prisma.XOR<Prisma.SeasonTeamJerseyCreateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedCreateWithoutMatchJerseyAssignmentsInput>;
+};
+export type SeasonTeamJerseyUpsertWithoutMatchJerseyAssignmentsInput = {
+    update: Prisma.XOR<Prisma.SeasonTeamJerseyUpdateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedUpdateWithoutMatchJerseyAssignmentsInput>;
+    create: Prisma.XOR<Prisma.SeasonTeamJerseyCreateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedCreateWithoutMatchJerseyAssignmentsInput>;
+    where?: Prisma.SeasonTeamJerseyWhereInput;
+};
+export type SeasonTeamJerseyUpdateToOneWithWhereWithoutMatchJerseyAssignmentsInput = {
+    where?: Prisma.SeasonTeamJerseyWhereInput;
+    data: Prisma.XOR<Prisma.SeasonTeamJerseyUpdateWithoutMatchJerseyAssignmentsInput, Prisma.SeasonTeamJerseyUncheckedUpdateWithoutMatchJerseyAssignmentsInput>;
+};
+export type SeasonTeamJerseyUpdateWithoutMatchJerseyAssignmentsInput = {
+    type?: Prisma.EnumJerseyTypeFieldUpdateOperationsInput | $Enums.JerseyType;
+    primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
+    secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutJerseysNestedInput;
+};
+export type SeasonTeamJerseyUncheckedUpdateWithoutMatchJerseyAssignmentsInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    type?: Prisma.EnumJerseyTypeFieldUpdateOperationsInput | $Enums.JerseyType;
+    primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
+    secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+};
 export type SeasonTeamJerseyCreateWithoutSeason_teamInput = {
     type: $Enums.JerseyType;
     primary_color: string;
     secondary_color?: string | null;
     image_url?: string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutSeason_jerseyInput;
 };
 export type SeasonTeamJerseyUncheckedCreateWithoutSeason_teamInput = {
     id?: number;
@@ -381,6 +451,7 @@ export type SeasonTeamJerseyUncheckedCreateWithoutSeason_teamInput = {
     primary_color: string;
     secondary_color?: string | null;
     image_url?: string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedManyWithoutSeason_jerseyInput;
 };
 export type SeasonTeamJerseyCreateOrConnectWithoutSeason_teamInput = {
     where: Prisma.SeasonTeamJerseyWhereUniqueInput;
@@ -426,6 +497,7 @@ export type SeasonTeamJerseyUpdateWithoutSeason_teamInput = {
     primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutSeason_jerseyNestedInput;
 };
 export type SeasonTeamJerseyUncheckedUpdateWithoutSeason_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -433,6 +505,7 @@ export type SeasonTeamJerseyUncheckedUpdateWithoutSeason_teamInput = {
     primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedUpdateManyWithoutSeason_jerseyNestedInput;
 };
 export type SeasonTeamJerseyUncheckedUpdateManyWithoutSeason_teamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -440,6 +513,30 @@ export type SeasonTeamJerseyUncheckedUpdateManyWithoutSeason_teamInput = {
     primary_color?: Prisma.StringFieldUpdateOperationsInput | string;
     secondary_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     image_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+};
+/**
+ * Count Type SeasonTeamJerseyCountOutputType
+ */
+export type SeasonTeamJerseyCountOutputType = {
+    matchJerseyAssignments: number;
+};
+export type SeasonTeamJerseyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    matchJerseyAssignments?: boolean | SeasonTeamJerseyCountOutputTypeCountMatchJerseyAssignmentsArgs;
+};
+/**
+ * SeasonTeamJerseyCountOutputType without action
+ */
+export type SeasonTeamJerseyCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeasonTeamJerseyCountOutputType
+     */
+    select?: Prisma.SeasonTeamJerseyCountOutputTypeSelect<ExtArgs> | null;
+};
+/**
+ * SeasonTeamJerseyCountOutputType without action
+ */
+export type SeasonTeamJerseyCountOutputTypeCountMatchJerseyAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.MatchJerseyAssignmentWhereInput;
 };
 export type SeasonTeamJerseySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -449,6 +546,8 @@ export type SeasonTeamJerseySelect<ExtArgs extends runtime.Types.Extensions.Inte
     secondary_color?: boolean;
     image_url?: boolean;
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
+    matchJerseyAssignments?: boolean | Prisma.SeasonTeamJersey$matchJerseyAssignmentsArgs<ExtArgs>;
+    _count?: boolean | Prisma.SeasonTeamJerseyCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["seasonTeamJersey"]>;
 export type SeasonTeamJerseySelectScalar = {
     id?: boolean;
@@ -461,11 +560,14 @@ export type SeasonTeamJerseySelectScalar = {
 export type SeasonTeamJerseyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "type" | "primary_color" | "secondary_color" | "image_url", ExtArgs["result"]["seasonTeamJersey"]>;
 export type SeasonTeamJerseyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
+    matchJerseyAssignments?: boolean | Prisma.SeasonTeamJersey$matchJerseyAssignmentsArgs<ExtArgs>;
+    _count?: boolean | Prisma.SeasonTeamJerseyCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $SeasonTeamJerseyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "SeasonTeamJersey";
     objects: {
         season_team: Prisma.$SeasonTeamPayload<ExtArgs>;
+        matchJerseyAssignments: Prisma.$MatchJerseyAssignmentPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -752,6 +854,7 @@ export interface SeasonTeamJerseyDelegate<ExtArgs extends runtime.Types.Extensio
 export interface Prisma__SeasonTeamJerseyClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     season_team<T extends Prisma.SeasonTeamDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SeasonTeamDefaultArgs<ExtArgs>>): Prisma.Prisma__SeasonTeamClient<runtime.Types.Result.GetResult<Prisma.$SeasonTeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
+    matchJerseyAssignments<T extends Prisma.SeasonTeamJersey$matchJerseyAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SeasonTeamJersey$matchJerseyAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchJerseyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1114,6 +1217,29 @@ export type SeasonTeamJerseyDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
      * Limit how many SeasonTeamJerseys to delete.
      */
     limit?: number;
+};
+/**
+ * SeasonTeamJersey.matchJerseyAssignments
+ */
+export type SeasonTeamJersey$matchJerseyAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchJerseyAssignment
+     */
+    select?: Prisma.MatchJerseyAssignmentSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchJerseyAssignment
+     */
+    omit?: Prisma.MatchJerseyAssignmentOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.MatchJerseyAssignmentInclude<ExtArgs> | null;
+    where?: Prisma.MatchJerseyAssignmentWhereInput;
+    orderBy?: Prisma.MatchJerseyAssignmentOrderByWithRelationInput | Prisma.MatchJerseyAssignmentOrderByWithRelationInput[];
+    cursor?: Prisma.MatchJerseyAssignmentWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.MatchJerseyAssignmentScalarFieldEnum | Prisma.MatchJerseyAssignmentScalarFieldEnum[];
 };
 /**
  * SeasonTeamJersey without action

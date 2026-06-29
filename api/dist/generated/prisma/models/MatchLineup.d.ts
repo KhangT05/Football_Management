@@ -18,7 +18,6 @@ export type MatchLineupAvgAggregateOutputType = {
     match_id: number | null;
     team_id: number | null;
     player_id: number | null;
-    jersey_number: number | null;
     minute_in: number | null;
     minute_out: number | null;
 };
@@ -27,7 +26,6 @@ export type MatchLineupSumAggregateOutputType = {
     match_id: number | null;
     team_id: number | null;
     player_id: number | null;
-    jersey_number: number | null;
     minute_in: number | null;
     minute_out: number | null;
 };
@@ -36,7 +34,6 @@ export type MatchLineupMinAggregateOutputType = {
     match_id: number | null;
     team_id: number | null;
     player_id: number | null;
-    jersey_number: number | null;
     position: $Enums.PlayerPosition | null;
     lineup_type: $Enums.LineupType | null;
     is_captain: boolean | null;
@@ -50,7 +47,6 @@ export type MatchLineupMaxAggregateOutputType = {
     match_id: number | null;
     team_id: number | null;
     player_id: number | null;
-    jersey_number: number | null;
     position: $Enums.PlayerPosition | null;
     lineup_type: $Enums.LineupType | null;
     is_captain: boolean | null;
@@ -64,7 +60,6 @@ export type MatchLineupCountAggregateOutputType = {
     match_id: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: number;
     lineup_type: number;
     is_captain: number;
@@ -79,7 +74,6 @@ export type MatchLineupAvgAggregateInputType = {
     match_id?: true;
     team_id?: true;
     player_id?: true;
-    jersey_number?: true;
     minute_in?: true;
     minute_out?: true;
 };
@@ -88,7 +82,6 @@ export type MatchLineupSumAggregateInputType = {
     match_id?: true;
     team_id?: true;
     player_id?: true;
-    jersey_number?: true;
     minute_in?: true;
     minute_out?: true;
 };
@@ -97,7 +90,6 @@ export type MatchLineupMinAggregateInputType = {
     match_id?: true;
     team_id?: true;
     player_id?: true;
-    jersey_number?: true;
     position?: true;
     lineup_type?: true;
     is_captain?: true;
@@ -111,7 +103,6 @@ export type MatchLineupMaxAggregateInputType = {
     match_id?: true;
     team_id?: true;
     player_id?: true;
-    jersey_number?: true;
     position?: true;
     lineup_type?: true;
     is_captain?: true;
@@ -125,7 +116,6 @@ export type MatchLineupCountAggregateInputType = {
     match_id?: true;
     team_id?: true;
     player_id?: true;
-    jersey_number?: true;
     position?: true;
     lineup_type?: true;
     is_captain?: true;
@@ -216,7 +206,6 @@ export type MatchLineupGroupByOutputType = {
     match_id: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type: $Enums.LineupType;
     is_captain: boolean;
@@ -241,7 +230,6 @@ export type MatchLineupWhereInput = {
     match_id?: Prisma.IntFilter<"MatchLineup"> | number;
     team_id?: Prisma.IntFilter<"MatchLineup"> | number;
     player_id?: Prisma.IntFilter<"MatchLineup"> | number;
-    jersey_number?: Prisma.IntFilter<"MatchLineup"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"MatchLineup"> | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFilter<"MatchLineup"> | $Enums.LineupType;
     is_captain?: Prisma.BoolFilter<"MatchLineup"> | boolean;
@@ -258,7 +246,6 @@ export type MatchLineupOrderByWithRelationInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     lineup_type?: Prisma.SortOrder;
     is_captain?: Prisma.SortOrder;
@@ -279,7 +266,6 @@ export type MatchLineupWhereUniqueInput = Prisma.AtLeast<{
     match_id?: Prisma.IntFilter<"MatchLineup"> | number;
     team_id?: Prisma.IntFilter<"MatchLineup"> | number;
     player_id?: Prisma.IntFilter<"MatchLineup"> | number;
-    jersey_number?: Prisma.IntFilter<"MatchLineup"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"MatchLineup"> | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFilter<"MatchLineup"> | $Enums.LineupType;
     is_captain?: Prisma.BoolFilter<"MatchLineup"> | boolean;
@@ -296,7 +282,6 @@ export type MatchLineupOrderByWithAggregationInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     lineup_type?: Prisma.SortOrder;
     is_captain?: Prisma.SortOrder;
@@ -318,7 +303,6 @@ export type MatchLineupScalarWhereWithAggregatesInput = {
     match_id?: Prisma.IntWithAggregatesFilter<"MatchLineup"> | number;
     team_id?: Prisma.IntWithAggregatesFilter<"MatchLineup"> | number;
     player_id?: Prisma.IntWithAggregatesFilter<"MatchLineup"> | number;
-    jersey_number?: Prisma.IntWithAggregatesFilter<"MatchLineup"> | number;
     position?: Prisma.EnumPlayerPositionWithAggregatesFilter<"MatchLineup"> | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeWithAggregatesFilter<"MatchLineup"> | $Enums.LineupType;
     is_captain?: Prisma.BoolWithAggregatesFilter<"MatchLineup"> | boolean;
@@ -328,7 +312,6 @@ export type MatchLineupScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"MatchLineup"> | Date | string;
 };
 export type MatchLineupCreateInput = {
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -345,7 +328,6 @@ export type MatchLineupUncheckedCreateInput = {
     match_id: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -355,7 +337,6 @@ export type MatchLineupUncheckedCreateInput = {
     created_at?: Date | string;
 };
 export type MatchLineupUpdateInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -372,7 +353,6 @@ export type MatchLineupUncheckedUpdateInput = {
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -386,7 +366,6 @@ export type MatchLineupCreateManyInput = {
     match_id: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -396,7 +375,6 @@ export type MatchLineupCreateManyInput = {
     created_at?: Date | string;
 };
 export type MatchLineupUpdateManyMutationInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -410,7 +388,6 @@ export type MatchLineupUncheckedUpdateManyInput = {
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -436,7 +413,6 @@ export type MatchLineupCountOrderByAggregateInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     lineup_type?: Prisma.SortOrder;
     is_captain?: Prisma.SortOrder;
@@ -450,7 +426,6 @@ export type MatchLineupAvgOrderByAggregateInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     minute_in?: Prisma.SortOrder;
     minute_out?: Prisma.SortOrder;
 };
@@ -459,7 +434,6 @@ export type MatchLineupMaxOrderByAggregateInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     lineup_type?: Prisma.SortOrder;
     is_captain?: Prisma.SortOrder;
@@ -473,7 +447,6 @@ export type MatchLineupMinOrderByAggregateInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     lineup_type?: Prisma.SortOrder;
     is_captain?: Prisma.SortOrder;
@@ -487,7 +460,6 @@ export type MatchLineupSumOrderByAggregateInput = {
     match_id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
-    jersey_number?: Prisma.SortOrder;
     minute_in?: Prisma.SortOrder;
     minute_out?: Prisma.SortOrder;
 };
@@ -612,7 +584,6 @@ export type MatchLineupUncheckedUpdateManyWithoutMatchNestedInput = {
     deleteMany?: Prisma.MatchLineupScalarWhereInput | Prisma.MatchLineupScalarWhereInput[];
 };
 export type MatchLineupCreateWithoutTeamInput = {
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -627,7 +598,6 @@ export type MatchLineupUncheckedCreateWithoutTeamInput = {
     id?: number;
     match_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -665,7 +635,6 @@ export type MatchLineupScalarWhereInput = {
     match_id?: Prisma.IntFilter<"MatchLineup"> | number;
     team_id?: Prisma.IntFilter<"MatchLineup"> | number;
     player_id?: Prisma.IntFilter<"MatchLineup"> | number;
-    jersey_number?: Prisma.IntFilter<"MatchLineup"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"MatchLineup"> | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFilter<"MatchLineup"> | $Enums.LineupType;
     is_captain?: Prisma.BoolFilter<"MatchLineup"> | boolean;
@@ -675,7 +644,6 @@ export type MatchLineupScalarWhereInput = {
     created_at?: Prisma.DateTimeFilter<"MatchLineup"> | Date | string;
 };
 export type MatchLineupCreateWithoutPlayerInput = {
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -690,7 +658,6 @@ export type MatchLineupUncheckedCreateWithoutPlayerInput = {
     id?: number;
     match_id: number;
     team_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -721,7 +688,6 @@ export type MatchLineupUpdateManyWithWhereWithoutPlayerInput = {
     data: Prisma.XOR<Prisma.MatchLineupUpdateManyMutationInput, Prisma.MatchLineupUncheckedUpdateManyWithoutPlayerInput>;
 };
 export type MatchLineupCreateWithoutMatchInput = {
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -736,7 +702,6 @@ export type MatchLineupUncheckedCreateWithoutMatchInput = {
     id?: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -770,7 +735,6 @@ export type MatchLineupCreateManyTeamInput = {
     id?: number;
     match_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -780,7 +744,6 @@ export type MatchLineupCreateManyTeamInput = {
     created_at?: Date | string;
 };
 export type MatchLineupUpdateWithoutTeamInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -795,7 +758,6 @@ export type MatchLineupUncheckedUpdateWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -808,7 +770,6 @@ export type MatchLineupUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -821,7 +782,6 @@ export type MatchLineupCreateManyPlayerInput = {
     id?: number;
     match_id: number;
     team_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -831,7 +791,6 @@ export type MatchLineupCreateManyPlayerInput = {
     created_at?: Date | string;
 };
 export type MatchLineupUpdateWithoutPlayerInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -846,7 +805,6 @@ export type MatchLineupUncheckedUpdateWithoutPlayerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -859,7 +817,6 @@ export type MatchLineupUncheckedUpdateManyWithoutPlayerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     match_id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -872,7 +829,6 @@ export type MatchLineupCreateManyMatchInput = {
     id?: number;
     team_id: number;
     player_id: number;
-    jersey_number: number;
     position: $Enums.PlayerPosition;
     lineup_type?: $Enums.LineupType;
     is_captain?: boolean;
@@ -882,7 +838,6 @@ export type MatchLineupCreateManyMatchInput = {
     created_at?: Date | string;
 };
 export type MatchLineupUpdateWithoutMatchInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -897,7 +852,6 @@ export type MatchLineupUncheckedUpdateWithoutMatchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -910,7 +864,6 @@ export type MatchLineupUncheckedUpdateManyWithoutMatchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     lineup_type?: Prisma.EnumLineupTypeFieldUpdateOperationsInput | $Enums.LineupType;
     is_captain?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -924,7 +877,6 @@ export type MatchLineupSelect<ExtArgs extends runtime.Types.Extensions.InternalA
     match_id?: boolean;
     team_id?: boolean;
     player_id?: boolean;
-    jersey_number?: boolean;
     position?: boolean;
     lineup_type?: boolean;
     is_captain?: boolean;
@@ -941,7 +893,6 @@ export type MatchLineupSelectScalar = {
     match_id?: boolean;
     team_id?: boolean;
     player_id?: boolean;
-    jersey_number?: boolean;
     position?: boolean;
     lineup_type?: boolean;
     is_captain?: boolean;
@@ -950,7 +901,7 @@ export type MatchLineupSelectScalar = {
     status?: boolean;
     created_at?: boolean;
 };
-export type MatchLineupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "team_id" | "player_id" | "jersey_number" | "position" | "lineup_type" | "is_captain" | "minute_in" | "minute_out" | "status" | "created_at", ExtArgs["result"]["matchLineup"]>;
+export type MatchLineupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "team_id" | "player_id" | "position" | "lineup_type" | "is_captain" | "minute_in" | "minute_out" | "status" | "created_at", ExtArgs["result"]["matchLineup"]>;
 export type MatchLineupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
@@ -968,7 +919,6 @@ export type $MatchLineupPayload<ExtArgs extends runtime.Types.Extensions.Interna
         match_id: number;
         team_id: number;
         player_id: number;
-        jersey_number: number;
         position: $Enums.PlayerPosition;
         lineup_type: $Enums.LineupType;
         is_captain: boolean;
@@ -1285,7 +1235,6 @@ export interface MatchLineupFieldRefs {
     readonly match_id: Prisma.FieldRef<"MatchLineup", 'Int'>;
     readonly team_id: Prisma.FieldRef<"MatchLineup", 'Int'>;
     readonly player_id: Prisma.FieldRef<"MatchLineup", 'Int'>;
-    readonly jersey_number: Prisma.FieldRef<"MatchLineup", 'Int'>;
     readonly position: Prisma.FieldRef<"MatchLineup", 'PlayerPosition'>;
     readonly lineup_type: Prisma.FieldRef<"MatchLineup", 'LineupType'>;
     readonly is_captain: Prisma.FieldRef<"MatchLineup", 'Boolean'>;

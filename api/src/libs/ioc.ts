@@ -1,5 +1,7 @@
+import { ArticleController } from "../controllers/article.controller.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { GroupController } from "../controllers/group.controller.js";
+import { JerseyController } from "../controllers/jersey.controller.js";
 import { KnockoutController } from "../controllers/knockout.controller.js";
 import { MatchController } from "../controllers/match.controller.js";
 import { MatchLineupController } from "../controllers/matchlineup.controller.js";
@@ -15,8 +17,10 @@ import { TournamentRuleController } from "../controllers/tournamentrule.controll
 import { UserController } from "../controllers/user.controller.js";
 import { VenueController } from "../controllers/venue.controller.js";
 import { WorkflowController } from "../controllers/workflow.controller.js";
+import { ArticleService } from "../services/article.service.js";
 import { AuthService } from "../services/auth.service.js";
 import { GroupService } from "../services/group.service.js";
+import { JerseyService } from "../services/jersey.service.js";
 import { KnockoutService } from "../services/knockout.service.js";
 import { MatchLifecycleService } from "../services/match.service.js";
 import { MatchLineupService } from "../services/matchlineup.service.js";
@@ -59,6 +63,8 @@ const controllerFactory = new Map<Function, () => unknown>([
     [MatchResultController, () => new MatchResultController(matchResultService)],
     [MatchLineupController, () => new MatchLineupController(new MatchLineupService(prisma))],
     [WorkflowController, () => new WorkflowController(workflowService)],
+    [JerseyController, () => new JerseyController(new JerseyService(prisma))],
+    [ArticleController, () => new ArticleController(new ArticleService(prisma))],
 ]);
 export const iocContainer = {
     get<T>(controller: new (...args: unknown[]) => T): T {

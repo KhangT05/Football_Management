@@ -38,9 +38,13 @@ import { MatchController } from './../controllers/match.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { KnockoutController } from './../controllers/knockout.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { JerseyController } from './../controllers/jersey.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { GroupController } from './../controllers/group.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AuthController } from './../controllers/auth.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ArticleController } from './../controllers/article.controller.js';
 import { expressAuthentication } from './../middleware/auth.middleware.js';
 // @ts-ignore - no great way to install types from subpackage
 import { iocContainer } from './../libs/ioc.js';
@@ -951,7 +955,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_MatchLineupPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"minute_out":{"dataType":"double","required":true},"minute_in":{"dataType":"double","required":true},"is_captain":{"dataType":"boolean","required":true},"lineup_type":{"ref":"LineupType","required":true},"match_id":{"dataType":"double","required":true},"jersey_number":{"dataType":"double","required":true},"player_id":{"dataType":"double","required":true},"position":{"ref":"PlayerPosition","required":true},"status":{"ref":"MatchPlayerStatus","required":true},"team_id":{"dataType":"double","required":true},"created_at":{"dataType":"datetime","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"minute_out":{"dataType":"double","required":true},"minute_in":{"dataType":"double","required":true},"is_captain":{"dataType":"boolean","required":true},"lineup_type":{"ref":"LineupType","required":true},"match_id":{"dataType":"double","required":true},"player_id":{"dataType":"double","required":true},"position":{"ref":"PlayerPosition","required":true},"status":{"ref":"MatchPlayerStatus","required":true},"team_id":{"dataType":"double","required":true},"created_at":{"dataType":"datetime","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchLineupModel": {
@@ -1188,6 +1192,36 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "JerseyType": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["home"]},{"dataType":"enum","enums":["away"]},{"dataType":"enum","enums":["third"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_SeasonTeamJerseyPayload_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"image_url":{"dataType":"string","required":true},"secondary_color":{"dataType":"string","required":true},"primary_color":{"dataType":"string","required":true},"season_team_id":{"dataType":"double","required":true},"type":{"ref":"JerseyType","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonTeamJerseyModel": {
+        "dataType": "refAlias",
+        "type": {"ref":"DefaultSelection__36_SeasonTeamJerseyPayload_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonTeamJersey": {
+        "dataType": "refAlias",
+        "type": {"ref":"SeasonTeamJerseyModel","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofupsertSeasonTeamJerseySchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"image_url":{"dataType":"string"},"secondary_color":{"dataType":"string"},"primary_color":{"dataType":"string"},"type":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["home"]},{"dataType":"enum","enums":["away"]},{"dataType":"enum","enums":["third"]}],"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpsertSeasonTeamJerseyDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofupsertSeasonTeamJerseySchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GroupStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["DRAFT"]},{"dataType":"enum","enums":["LOCKED"]},{"dataType":"enum","enums":["SCHEDULED"]},{"dataType":"enum","enums":["SCHEDULE_FAILED"]}],"validators":{}},
@@ -1310,6 +1344,160 @@ const models: TsoaRoute.Models = {
             "timestamp": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["archived"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Pick_Article.Exclude_keyofArticle.content__": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"created_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"deleted_at":{"dataType":"datetime","required":true},"user_id":{"dataType":"double","required":true},"team_id":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true},"status":{"ref":"ArticleStatus","required":true},"match_id":{"dataType":"double","required":true},"title":{"dataType":"string","required":true},"slug":{"dataType":"string","required":true},"cover_image":{"dataType":"string","required":true},"published_at":{"dataType":"datetime","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Omit_Article.content_": {
+        "dataType": "refAlias",
+        "type": {"ref":"Pick_Article.Exclude_keyofArticle.content__","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_ArticleTagPayload_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tag":{"dataType":"string","required":true},"article_id":{"dataType":"double","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleTagModel": {
+        "dataType": "refAlias",
+        "type": {"ref":"DefaultSelection__36_ArticleTagPayload_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleTag": {
+        "dataType": "refAlias",
+        "type": {"ref":"ArticleTagModel","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleListItem": {
+        "dataType": "refAlias",
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"Omit_Article.content_"},{"dataType":"nestedObjectLiteral","nestedProperties":{"user":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"tags":{"dataType":"array","array":{"dataType":"refAlias","ref":"ArticleTag"},"required":true}}}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PaginatedResult_ArticleListItem_": {
+        "dataType": "refObject",
+        "properties": {
+            "data": {"dataType":"array","array":{"dataType":"refAlias","ref":"ArticleListItem"},"required":true},
+            "meta": {"ref":"PaginationMeta","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_ArticlePayload_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"published_at":{"dataType":"datetime","required":true},"cover_image":{"dataType":"string","required":true},"content":{"dataType":"string","required":true},"slug":{"dataType":"string","required":true},"title":{"dataType":"string","required":true},"match_id":{"dataType":"double","required":true},"status":{"ref":"ArticleStatus","required":true},"season_id":{"dataType":"double","required":true},"team_id":{"dataType":"double","required":true},"user_id":{"dataType":"double","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleModel": {
+        "dataType": "refAlias",
+        "type": {"ref":"DefaultSelection__36_ArticlePayload_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Article": {
+        "dataType": "refAlias",
+        "type": {"ref":"ArticleModel","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MediaType": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["image"]},{"dataType":"enum","enums":["video"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_ArticleMediaPayload_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"order":{"dataType":"double","required":true},"caption":{"dataType":"string","required":true},"article_id":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"type":{"ref":"MediaType","required":true},"created_at":{"dataType":"datetime","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleMediaModel": {
+        "dataType": "refAlias",
+        "type": {"ref":"DefaultSelection__36_ArticleMediaPayload_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArticleMedia": {
+        "dataType": "refAlias",
+        "type": {"ref":"ArticleMediaModel","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SafeArticle": {
+        "dataType": "refAlias",
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"Article"},{"dataType":"nestedObjectLiteral","nestedProperties":{"user":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"media":{"dataType":"array","array":{"dataType":"refAlias","ref":"ArticleMedia"},"required":true},"tags":{"dataType":"array","array":{"dataType":"refAlias","ref":"ArticleTag"},"required":true}}}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofcreateArticleSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"media":{"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"caption":{"dataType":"string"},"order":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"type":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["image"]},{"dataType":"enum","enums":["video"]}],"required":true}}}},"tags":{"dataType":"array","array":{"dataType":"string"}},"published_at":{"dataType":"string"},"team_id":{"dataType":"double"},"match_id":{"dataType":"double"},"season_id":{"dataType":"double"},"cover_image":{"dataType":"string"},"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["archived"]}],"required":true},"content":{"dataType":"string","required":true},"slug":{"dataType":"string","required":true},"title":{"dataType":"string","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateArticleDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofcreateArticleSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofupdateArticleSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"media":{"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"caption":{"dataType":"string"},"order":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"type":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["image"]},{"dataType":"enum","enums":["video"]}],"required":true}}}},"tags":{"dataType":"array","array":{"dataType":"string"}},"published_at":{"dataType":"string"},"team_id":{"dataType":"double"},"match_id":{"dataType":"double"},"season_id":{"dataType":"double"},"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["archived"]}]},"cover_image":{"dataType":"string"},"content":{"dataType":"string"},"slug":{"dataType":"string"},"title":{"dataType":"string"}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateArticleDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofupdateArticleSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofupdateArticleStatusSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["archived"]}],"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateArticleStatusDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofupdateArticleStatusSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofaddTagSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tag":{"dataType":"string","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddTagDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofaddTagSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofbulkAddTagsSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tags":{"dataType":"array","array":{"dataType":"string"},"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BulkAddTagsDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofbulkAddTagsSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofaddArticleMediaSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"caption":{"dataType":"string"},"order":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"type":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["image"]},{"dataType":"enum","enums":["video"]}],"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddArticleMediaDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofaddArticleMediaSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofbulkDeleteMediaSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"ids":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BulkDeleteMediaDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofbulkDeleteMediaSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
@@ -5302,6 +5490,118 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsJerseyController_getSeasonTeamJerseys: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonTeamId: {"in":"path","name":"seasonTeamId","required":true,"dataType":"double"},
+        };
+        app.get('/jerseys/season-teams/:seasonTeamId',
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController)),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController.prototype.getSeasonTeamJerseys)),
+
+            async function JerseyController_getSeasonTeamJerseys(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsJerseyController_getSeasonTeamJerseys, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<JerseyController>(JerseyController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getSeasonTeamJerseys',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsJerseyController_upsertSeasonTeamJersey: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonTeamId: {"in":"path","name":"seasonTeamId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpsertSeasonTeamJerseyDto"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.put('/jerseys/season-teams/:seasonTeamId',
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController)),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController.prototype.upsertSeasonTeamJersey)),
+
+            async function JerseyController_upsertSeasonTeamJersey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsJerseyController_upsertSeasonTeamJersey, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<JerseyController>(JerseyController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'upsertSeasonTeamJersey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsJerseyController_deleteSeasonTeamJersey: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonTeamId: {"in":"path","name":"seasonTeamId","required":true,"dataType":"double"},
+                type: {"in":"query","name":"type","required":true,"ref":"JerseyType"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.delete('/jerseys/season-teams/:seasonTeamId',
+            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController)),
+            ...(fetchMiddlewares<RequestHandler>(JerseyController.prototype.deleteSeasonTeamJersey)),
+
+            async function JerseyController_deleteSeasonTeamJersey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsJerseyController_deleteSeasonTeamJersey, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<JerseyController>(JerseyController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'deleteSeasonTeamJersey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsGroupController_findByIdWithTeams: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
@@ -5688,6 +5988,564 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'me',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_findAll: Record<string, TsoaRoute.ParameterSchema> = {
+                page: {"default":1,"in":"query","name":"page","dataType":"double"},
+                per_page: {"default":20,"in":"query","name":"per_page","dataType":"double"},
+                q: {"in":"query","name":"q","dataType":"string"},
+                sort: {"in":"query","name":"sort","dataType":"string"},
+                direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
+                status: {"in":"query","name":"status","dataType":"string"},
+                season_id: {"in":"query","name":"season_id","dataType":"double"},
+                match_id: {"in":"query","name":"match_id","dataType":"double"},
+                team_id: {"in":"query","name":"team_id","dataType":"double"},
+                user_id: {"in":"query","name":"user_id","dataType":"double"},
+                tag: {"in":"query","name":"tag","dataType":"string"},
+        };
+        app.get('/articles',
+            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findAll)),
+
+            async function ArticleController_findAll(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_findAll, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'findAll',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_findById: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+        };
+        app.get('/articles/:id',
+            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findById)),
+
+            async function ArticleController_findById(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_findById, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'findById',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_findBySlug: Record<string, TsoaRoute.ParameterSchema> = {
+                slug: {"in":"path","name":"slug","required":true,"dataType":"string"},
+        };
+        app.get('/articles/slug/:slug',
+            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findBySlug)),
+
+            async function ArticleController_findBySlug(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_findBySlug, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'findBySlug',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_create: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"CreateArticleDto"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.post('/articles',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.create)),
+
+            async function ArticleController_create(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_create, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'create',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_update: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateArticleDto"},
+        };
+        app.patch('/articles/:id',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.update)),
+
+            async function ArticleController_update(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_update, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'update',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_updateStatus: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateArticleStatusDto"},
+        };
+        app.patch('/articles/:id/status',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.updateStatus)),
+
+            async function ArticleController_updateStatus(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_updateStatus, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'updateStatus',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_softDelete: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+        };
+        app.delete('/articles/:id',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.softDelete)),
+
+            async function ArticleController_softDelete(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_softDelete, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'softDelete',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_listTags: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/articles/tags',
+            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.listTags)),
+
+            async function ArticleController_listTags(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_listTags, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'listTags',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_addTag: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"AddTagDto"},
+        };
+        app.post('/articles/:article_id/tags',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.addTag)),
+
+            async function ArticleController_addTag(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_addTag, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'addTag',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_bulkAddTags: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"BulkAddTagsDto"},
+        };
+        app.post('/articles/:article_id/tags/bulk',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.bulkAddTags)),
+
+            async function ArticleController_bulkAddTags(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_bulkAddTags, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'bulkAddTags',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_removeTag: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                tag: {"in":"path","name":"tag","required":true,"dataType":"string"},
+        };
+        app.delete('/articles/:article_id/tags/:tag',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.removeTag)),
+
+            async function ArticleController_removeTag(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_removeTag, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'removeTag',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_getMedia: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+        };
+        app.get('/articles/:article_id/media',
+            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.getMedia)),
+
+            async function ArticleController_getMedia(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_getMedia, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getMedia',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_addMedia: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"AddArticleMediaDto"},
+        };
+        app.post('/articles/:article_id/media',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.addMedia)),
+
+            async function ArticleController_addMedia(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_addMedia, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'addMedia',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_deleteMedia: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                media_id: {"in":"path","name":"media_id","required":true,"dataType":"double"},
+        };
+        app.delete('/articles/:article_id/media/:media_id',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.deleteMedia)),
+
+            async function ArticleController_deleteMedia(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_deleteMedia, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'deleteMedia',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsArticleController_bulkDeleteMedia: Record<string, TsoaRoute.ParameterSchema> = {
+                article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"BulkDeleteMediaDto"},
+        };
+        app.delete('/articles/:article_id/media',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController)),
+            ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.bulkDeleteMedia)),
+
+            async function ArticleController_bulkDeleteMedia(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_bulkDeleteMedia, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<ArticleController>(ArticleController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'bulkDeleteMedia',
                 controller,
                 response,
                 next,

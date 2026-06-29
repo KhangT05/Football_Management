@@ -72,10 +72,10 @@ export type Group = Prisma.GroupModel;
  */
 export type Team = Prisma.TeamModel;
 /**
- * Model TeamJersey
+ * Model MatchJerseyAssignment
  *
  */
-export type TeamJersey = Prisma.TeamJerseyModel;
+export type MatchJerseyAssignment = Prisma.MatchJerseyAssignmentModel;
 /**
  * Model Player
  *

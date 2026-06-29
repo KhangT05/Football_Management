@@ -49,7 +49,7 @@ export const ModelName = {
     Season: 'Season',
     Group: 'Group',
     Team: 'Team',
-    TeamJersey: 'TeamJersey',
+    MatchJerseyAssignment: 'MatchJerseyAssignment',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
     TeamLeader: 'TeamLeader',
@@ -198,12 +198,10 @@ export const TeamScalarFieldEnum = {
     deleted_at: 'deleted_at',
     user_id: 'user_id'
 };
-export const TeamJerseyScalarFieldEnum = {
+export const MatchJerseyAssignmentScalarFieldEnum = {
     id: 'id',
-    team_id: 'team_id',
-    type: 'type',
-    primary_color: 'primary_color',
-    secondary_color: 'secondary_color'
+    match_id: 'match_id',
+    season_jersey_id: 'season_jersey_id'
 };
 export const PlayerScalarFieldEnum = {
     id: 'id',
@@ -278,7 +276,6 @@ export const MatchLineupScalarFieldEnum = {
     match_id: 'match_id',
     team_id: 'team_id',
     player_id: 'player_id',
-    jersey_number: 'jersey_number',
     position: 'position',
     lineup_type: 'lineup_type',
     is_captain: 'is_captain',
@@ -504,10 +501,6 @@ export const TeamOrderByRelevanceFieldEnum = {
     coach_name: 'coach_name',
     logo: 'logo',
     description: 'description'
-};
-export const TeamJerseyOrderByRelevanceFieldEnum = {
-    primary_color: 'primary_color',
-    secondary_color: 'secondary_color'
 };
 export const PlayerOrderByRelevanceFieldEnum = {
     nationality: 'nationality',

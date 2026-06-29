@@ -293,22 +293,20 @@ model Team {
   notifications    Notification[]
   matchResults     MatchResult[]
   articles         Article[]
-  jerseys          TeamJersey[]
   matchLineups     MatchLineup[]
 
   @@map("teams")
 }
 
-model TeamJersey {
-  id              Int        @id @default(autoincrement())
-  team_id         Int
-  type            JerseyType
-  primary_color   String
-  secondary_color String?
-  team            Team       @relation(fields: [team_id], references: [id], onDelete: Cascade)
+model MatchJerseyAssignment {
+  id               Int              @id @default(autoincrement())
+  match_id         Int
+  season_jersey_id Int // FK thẳng vào SeasonTeamJersey — không cần resolve lại
+  match            Match            @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  season_jersey    SeasonTeamJersey @relation(fields: [season_jersey_id], references: [id])
 
-  @@unique([team_id, type])
-  @@map("team_jerseys")
+  @@unique([match_id])
+  @@map("match_jersey_assignments")
 }
 
 enum JerseyType {
@@ -466,7 +464,8 @@ model SeasonTeamJersey {
 
   image_url String?
 
-  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+  season_team            SeasonTeam              @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+  matchJerseyAssignments MatchJerseyAssignment[]
 
   @@unique([season_team_id, type])
   @@map("season_team_jerseys")
@@ -507,9 +506,7 @@ model MatchLineup {
   match_id  Int
   team_id   Int
   player_id Int
-
-  jersey_number Int
-  position      PlayerPosition
+  position  PlayerPosition
 
   lineup_type LineupType @default(starter)
 
@@ -580,17 +577,18 @@ model Match {
   home_team Team   @relation("Match_homeTeam", fields: [home_team_id], references: [id])
   away_team Team   @relation("Match_awayTeam", fields: [away_team_id], references: [id])
 
-  events       MatchEvent[]
-  user         User?         @relation(fields: [user_id], references: [id])
-  user_id      Int?
-  venue_id     Int?
-  matchResult  MatchResult?
-  venue        Venue?        @relation(fields: [venue_id], references: [id])
-  is_published Boolean       @default(false)
-  referee      String?
-  articles     Article[]
-  bracketSlot  BracketSlot?
-  matchLineups MatchLineup[]
+  events                MatchEvent[]
+  user                  User?                  @relation(fields: [user_id], references: [id])
+  user_id               Int?
+  venue_id              Int?
+  matchResult           MatchResult?
+  venue                 Venue?                 @relation(fields: [venue_id], references: [id])
+  is_published          Boolean                @default(false)
+  referee               String?
+  articles              Article[]
+  bracketSlot           BracketSlot?
+  matchLineups          MatchLineup[]
+  matchJerseyAssignment MatchJerseyAssignment?
 
   @@unique([venue_id, scheduled_at])
   @@map("matches")
