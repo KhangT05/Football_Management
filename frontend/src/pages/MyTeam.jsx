@@ -587,7 +587,7 @@ export default function MyTeam() {
                 </div>
                 <div>
                   <div className="flex items-center flex-wrap gap-3 mb-2">
-                    <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-white via-gray-100 to-gray-400 uppercase tracking-tight">{team.name}</h1>
+                    <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-neon uppercase tracking-tight">{team.name}</h1>
                     {team.status === 'approved' && (
                       <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                         Chờ Thanh Toán

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Shield } from 'lucide-react';
+import { Trophy, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Shield, UploadCloud } from 'lucide-react';
 import { tournamentApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
 import useToastStore from '../../../store/toastStore';
@@ -21,7 +21,7 @@ export default function TournamentsSection() {
   );
 
   const crud = useCrudModal({
-    emptyForm: { name: '', description: '' },
+    emptyForm: { name: '', description: '', logo: null },
     onSuccess: () => { fetch(); invalidateTournamentStore(); },
   });
 
@@ -37,18 +37,36 @@ export default function TournamentsSection() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  const openAdd = () => crud.openAdd();
-  const openEdit = (item) => crud.openEdit(item, { name: item.name, description: item.description ?? '' });
+  const [logoPreview, setLogoPreview] = useState(null);
+
+  const openAdd = () => {
+    setLogoPreview(null);
+    crud.openAdd();
+  };
+  const openEdit = (item) => {
+    setLogoPreview(item.logo || null);
+    crud.openEdit(item, { name: item.name, description: item.description ?? '', logo: null });
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      crud.setForm(f => ({ ...f, logo: file }));
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSave = () => {
-    if (!crud.form.name.trim()) { crud.setFormError('Tên giải đấu không được bỏ trống.'); return; }
+    const name = (crud.form.name || '').trim();
+    const description = (crud.form.description || '').trim();
+    if (!name) { crud.setFormError('Tên giải đấu không được bỏ trống.'); return; }
     crud.save(async () => {
       if (crud.modal === 'add') {
-        await tournamentApi.create({ name: crud.form.name.trim(), description: crud.form.description.trim() });
-        toast.success(`Đã tạo giải đấu "${crud.form.name.trim()}"!`);
+        await tournamentApi.create({ name, description, logo: crud.form.logo });
+        toast.success(`Đã tạo giải đấu "${name}"!`);
       } else {
-        await tournamentApi.update(crud.editing.id, { name: crud.form.name.trim(), description: crud.form.description.trim() });
-        toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
+        await tournamentApi.update(crud.editing.id, { name, description, logo: crud.form.logo });
+        toast.success(`Đã cập nhật "${name}"!`);
       }
     });
   };
@@ -125,7 +143,11 @@ export default function TournamentsSection() {
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-lg shadow-blue-900/40 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  {item.name?.[0]?.toUpperCase()}
+                  {item.logo ? (
+                    <img src={item.logo} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    item.name?.[0]?.toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0 flex flex-col justify-center">
                   <p className="font-black text-white text-base sm:text-lg truncate group-hover:text-blue-400 transition-colors">{item.name}</p>
@@ -190,6 +212,22 @@ export default function TournamentsSection() {
           )}
           
           <div className="space-y-5">
+            {/* Logo Upload */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-24 h-24 rounded-2xl bg-navy-dark border border-navy-light flex items-center justify-center overflow-hidden shadow-inner relative group">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <Trophy className="w-10 h-10 text-gray-600" />
+                )}
+                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <UploadCloud className="w-6 h-6 text-white" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                </label>
+              </div>
+              <div className="text-xs text-gray-500 font-medium">{logoPreview ? 'Nhấn vào ảnh để đổi logo' : 'Nhấn để tải logo lên'}</div>
+            </div>
+
             <FormField label="Tên giải đấu" required>
               <input 
                 className={INPUT} 

@@ -33,7 +33,7 @@ function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
 // ── Player Card ───────────────────────────────────────────────
 function PlayerCard({ tp, idx }) {
   const player = tp.player ?? tp;
-  const name = player.name ?? `#${tp.player_id}`;
+  const name = tp.player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
   const initial = getInitials(name);
   const colorIdx = (tp.player_id ?? idx) % AVATAR_COLORS.length;
   const pos = tp.position ?? player.position;
@@ -121,9 +121,32 @@ export default function TeamDetail() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = players.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // Group players by position
+  // Normalize position helper
+  const normalizePosition = (posStr) => {
+    if (!posStr) return 'OTHER';
+    let p = posStr.toUpperCase().trim();
+    if (p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
+    if (p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
+    if (p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
+    if (p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
+    return p;
+  };
+
+  // Calculate total stats by position across ALL players
+  const totalByPosition = players.reduce((acc, tp) => {
+    const player = tp.player ?? tp;
+    const rawPos = tp.position ?? player.position;
+    const pos = normalizePosition(rawPos);
+    if (!acc[pos]) acc[pos] = 0;
+    acc[pos]++;
+    return acc;
+  }, {});
+
+  // Group paginated players by position for roster display
   const byPosition = paginatedPlayers.reduce((acc, tp) => {
-    const pos = tp.position ?? 'OTHER';
+    const player = tp.player ?? tp;
+    const rawPos = tp.position ?? player.position;
+    const pos = normalizePosition(rawPos);
     if (!acc[pos]) acc[pos] = [];
     acc[pos].push(tp);
     return acc;
@@ -198,11 +221,12 @@ export default function TeamDetail() {
             <h2 className="text-2xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3">
               <Target className="w-6 h-6 text-neon" /> Thống kê đội bóng
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <StatBox label="Cầu thủ" value={players.length} icon={Users} colorClass="text-blue-400" />
-              <StatBox label="Thủ môn" value={byPosition['GK']?.length ?? 0} icon={Shield} colorClass="text-amber-400" />
-              <StatBox label="Hậu vệ" value={byPosition['DEF']?.length ?? 0} icon={Shield} colorClass="text-blue-400" />
-              <StatBox label="Tiền đạo" value={byPosition['FW']?.length ?? 0} icon={Target} colorClass="text-red-400" />
+              <StatBox label="Thủ môn" value={totalByPosition['GK'] ?? 0} icon={Shield} colorClass="text-amber-400" />
+              <StatBox label="Hậu vệ" value={totalByPosition['DEF'] ?? 0} icon={Shield} colorClass="text-blue-400" />
+              <StatBox label="Tiền vệ" value={totalByPosition['MID'] ?? 0} icon={Activity} colorClass="text-emerald-400" />
+              <StatBox label="Tiền đạo" value={totalByPosition['FW'] ?? 0} icon={Target} colorClass="text-red-400" />
             </div>
           </section>
         )}
