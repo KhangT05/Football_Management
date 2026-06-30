@@ -16,6 +16,7 @@ export type TeamStandingAvgAggregateOutputType = {
     id: number | null;
     team_id: number | null;
     group_id: number | null;
+    season_id: number | null;
     position: number | null;
     matches_played: number | null;
     wins: number | null;
@@ -29,6 +30,7 @@ export type TeamStandingSumAggregateOutputType = {
     id: number | null;
     team_id: number | null;
     group_id: number | null;
+    season_id: number | null;
     position: number | null;
     matches_played: number | null;
     wins: number | null;
@@ -42,6 +44,7 @@ export type TeamStandingMinAggregateOutputType = {
     id: number | null;
     team_id: number | null;
     group_id: number | null;
+    season_id: number | null;
     position: number | null;
     matches_played: number | null;
     wins: number | null;
@@ -50,7 +53,6 @@ export type TeamStandingMinAggregateOutputType = {
     goals_for: number | null;
     goals_against: number | null;
     points: number | null;
-    is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
@@ -59,6 +61,7 @@ export type TeamStandingMaxAggregateOutputType = {
     id: number | null;
     team_id: number | null;
     group_id: number | null;
+    season_id: number | null;
     position: number | null;
     matches_played: number | null;
     wins: number | null;
@@ -67,7 +70,6 @@ export type TeamStandingMaxAggregateOutputType = {
     goals_for: number | null;
     goals_against: number | null;
     points: number | null;
-    is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
     deleted_at: Date | null;
@@ -76,6 +78,7 @@ export type TeamStandingCountAggregateOutputType = {
     id: number;
     team_id: number;
     group_id: number;
+    season_id: number;
     position: number;
     matches_played: number;
     wins: number;
@@ -84,7 +87,6 @@ export type TeamStandingCountAggregateOutputType = {
     goals_for: number;
     goals_against: number;
     points: number;
-    is_active: number;
     created_at: number;
     updated_at: number;
     deleted_at: number;
@@ -94,6 +96,7 @@ export type TeamStandingAvgAggregateInputType = {
     id?: true;
     team_id?: true;
     group_id?: true;
+    season_id?: true;
     position?: true;
     matches_played?: true;
     wins?: true;
@@ -107,6 +110,7 @@ export type TeamStandingSumAggregateInputType = {
     id?: true;
     team_id?: true;
     group_id?: true;
+    season_id?: true;
     position?: true;
     matches_played?: true;
     wins?: true;
@@ -120,6 +124,7 @@ export type TeamStandingMinAggregateInputType = {
     id?: true;
     team_id?: true;
     group_id?: true;
+    season_id?: true;
     position?: true;
     matches_played?: true;
     wins?: true;
@@ -128,7 +133,6 @@ export type TeamStandingMinAggregateInputType = {
     goals_for?: true;
     goals_against?: true;
     points?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
@@ -137,6 +141,7 @@ export type TeamStandingMaxAggregateInputType = {
     id?: true;
     team_id?: true;
     group_id?: true;
+    season_id?: true;
     position?: true;
     matches_played?: true;
     wins?: true;
@@ -145,7 +150,6 @@ export type TeamStandingMaxAggregateInputType = {
     goals_for?: true;
     goals_against?: true;
     points?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
@@ -154,6 +158,7 @@ export type TeamStandingCountAggregateInputType = {
     id?: true;
     team_id?: true;
     group_id?: true;
+    season_id?: true;
     position?: true;
     matches_played?: true;
     wins?: true;
@@ -162,7 +167,6 @@ export type TeamStandingCountAggregateInputType = {
     goals_for?: true;
     goals_against?: true;
     points?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
     deleted_at?: true;
@@ -248,6 +252,7 @@ export type TeamStandingGroupByOutputType = {
     id: number;
     team_id: number;
     group_id: number;
+    season_id: number | null;
     position: number;
     matches_played: number;
     wins: number;
@@ -256,7 +261,6 @@ export type TeamStandingGroupByOutputType = {
     goals_for: number;
     goals_against: number;
     points: number;
-    is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
     deleted_at: Date | null;
@@ -276,6 +280,7 @@ export type TeamStandingWhereInput = {
     id?: Prisma.IntFilter<"TeamStanding"> | number;
     team_id?: Prisma.IntFilter<"TeamStanding"> | number;
     group_id?: Prisma.IntFilter<"TeamStanding"> | number;
+    season_id?: Prisma.IntNullableFilter<"TeamStanding"> | number | null;
     position?: Prisma.IntFilter<"TeamStanding"> | number;
     matches_played?: Prisma.IntFilter<"TeamStanding"> | number;
     wins?: Prisma.IntFilter<"TeamStanding"> | number;
@@ -284,17 +289,18 @@ export type TeamStandingWhereInput = {
     goals_for?: Prisma.IntFilter<"TeamStanding"> | number;
     goals_against?: Prisma.IntFilter<"TeamStanding"> | number;
     points?: Prisma.IntFilter<"TeamStanding"> | number;
-    is_active?: Prisma.BoolFilter<"TeamStanding"> | boolean;
     created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>;
+    season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
 };
 export type TeamStandingOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -303,12 +309,12 @@ export type TeamStandingOrderByWithRelationInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     team?: Prisma.TeamOrderByWithRelationInput;
     group?: Prisma.GroupOrderByWithRelationInput;
+    season?: Prisma.SeasonOrderByWithRelationInput;
 };
 export type TeamStandingWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
@@ -318,6 +324,7 @@ export type TeamStandingWhereUniqueInput = Prisma.AtLeast<{
     NOT?: Prisma.TeamStandingWhereInput | Prisma.TeamStandingWhereInput[];
     team_id?: Prisma.IntFilter<"TeamStanding"> | number;
     group_id?: Prisma.IntFilter<"TeamStanding"> | number;
+    season_id?: Prisma.IntNullableFilter<"TeamStanding"> | number | null;
     position?: Prisma.IntFilter<"TeamStanding"> | number;
     matches_played?: Prisma.IntFilter<"TeamStanding"> | number;
     wins?: Prisma.IntFilter<"TeamStanding"> | number;
@@ -326,17 +333,18 @@ export type TeamStandingWhereUniqueInput = Prisma.AtLeast<{
     goals_for?: Prisma.IntFilter<"TeamStanding"> | number;
     goals_against?: Prisma.IntFilter<"TeamStanding"> | number;
     points?: Prisma.IntFilter<"TeamStanding"> | number;
-    is_active?: Prisma.BoolFilter<"TeamStanding"> | boolean;
     created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>;
+    season?: Prisma.XOR<Prisma.SeasonNullableScalarRelationFilter, Prisma.SeasonWhereInput> | null;
 }, "id" | "group_id_team_id">;
 export type TeamStandingOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -345,7 +353,6 @@ export type TeamStandingOrderByWithAggregationInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -362,6 +369,7 @@ export type TeamStandingScalarWhereWithAggregatesInput = {
     id?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     team_id?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     group_id?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
+    season_id?: Prisma.IntNullableWithAggregatesFilter<"TeamStanding"> | number | null;
     position?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     matches_played?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     wins?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
@@ -370,7 +378,6 @@ export type TeamStandingScalarWhereWithAggregatesInput = {
     goals_for?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     goals_against?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
     points?: Prisma.IntWithAggregatesFilter<"TeamStanding"> | number;
-    is_active?: Prisma.BoolWithAggregatesFilter<"TeamStanding"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"TeamStanding"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamStanding"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamStanding"> | Date | string | null;
@@ -384,17 +391,18 @@ export type TeamStandingCreateInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     team: Prisma.TeamCreateNestedOneWithoutTeamStandingsInput;
     group: Prisma.GroupCreateNestedOneWithoutTeamStandingsInput;
+    season?: Prisma.SeasonCreateNestedOneWithoutTeamStandingsInput;
 };
 export type TeamStandingUncheckedCreateInput = {
     id?: number;
     team_id: number;
     group_id: number;
+    season_id?: number | null;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -403,7 +411,6 @@ export type TeamStandingUncheckedCreateInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -417,17 +424,18 @@ export type TeamStandingUpdateInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamStandingsNestedInput;
     group?: Prisma.GroupUpdateOneRequiredWithoutTeamStandingsNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutTeamStandingsNestedInput;
 };
 export type TeamStandingUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -436,7 +444,6 @@ export type TeamStandingUncheckedUpdateInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -445,6 +452,7 @@ export type TeamStandingCreateManyInput = {
     id?: number;
     team_id: number;
     group_id: number;
+    season_id?: number | null;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -453,7 +461,6 @@ export type TeamStandingCreateManyInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -467,7 +474,6 @@ export type TeamStandingUpdateManyMutationInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -476,6 +482,7 @@ export type TeamStandingUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -484,7 +491,6 @@ export type TeamStandingUncheckedUpdateManyInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -505,6 +511,7 @@ export type TeamStandingCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -513,7 +520,6 @@ export type TeamStandingCountOrderByAggregateInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
@@ -522,6 +528,7 @@ export type TeamStandingAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -535,6 +542,7 @@ export type TeamStandingMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -543,7 +551,6 @@ export type TeamStandingMaxOrderByAggregateInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
@@ -552,6 +559,7 @@ export type TeamStandingMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -560,7 +568,6 @@ export type TeamStandingMinOrderByAggregateInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
@@ -569,6 +576,7 @@ export type TeamStandingSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     team_id?: Prisma.SortOrder;
     group_id?: Prisma.SortOrder;
+    season_id?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     matches_played?: Prisma.SortOrder;
     wins?: Prisma.SortOrder;
@@ -577,6 +585,44 @@ export type TeamStandingSumOrderByAggregateInput = {
     goals_for?: Prisma.SortOrder;
     goals_against?: Prisma.SortOrder;
     points?: Prisma.SortOrder;
+};
+export type TeamStandingCreateNestedManyWithoutSeasonInput = {
+    create?: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput> | Prisma.TeamStandingCreateWithoutSeasonInput[] | Prisma.TeamStandingUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.TeamStandingCreateOrConnectWithoutSeasonInput | Prisma.TeamStandingCreateOrConnectWithoutSeasonInput[];
+    createMany?: Prisma.TeamStandingCreateManySeasonInputEnvelope;
+    connect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+};
+export type TeamStandingUncheckedCreateNestedManyWithoutSeasonInput = {
+    create?: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput> | Prisma.TeamStandingCreateWithoutSeasonInput[] | Prisma.TeamStandingUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.TeamStandingCreateOrConnectWithoutSeasonInput | Prisma.TeamStandingCreateOrConnectWithoutSeasonInput[];
+    createMany?: Prisma.TeamStandingCreateManySeasonInputEnvelope;
+    connect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+};
+export type TeamStandingUpdateManyWithoutSeasonNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput> | Prisma.TeamStandingCreateWithoutSeasonInput[] | Prisma.TeamStandingUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.TeamStandingCreateOrConnectWithoutSeasonInput | Prisma.TeamStandingCreateOrConnectWithoutSeasonInput[];
+    upsert?: Prisma.TeamStandingUpsertWithWhereUniqueWithoutSeasonInput | Prisma.TeamStandingUpsertWithWhereUniqueWithoutSeasonInput[];
+    createMany?: Prisma.TeamStandingCreateManySeasonInputEnvelope;
+    set?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    disconnect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    delete?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    connect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    update?: Prisma.TeamStandingUpdateWithWhereUniqueWithoutSeasonInput | Prisma.TeamStandingUpdateWithWhereUniqueWithoutSeasonInput[];
+    updateMany?: Prisma.TeamStandingUpdateManyWithWhereWithoutSeasonInput | Prisma.TeamStandingUpdateManyWithWhereWithoutSeasonInput[];
+    deleteMany?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
+};
+export type TeamStandingUncheckedUpdateManyWithoutSeasonNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput> | Prisma.TeamStandingCreateWithoutSeasonInput[] | Prisma.TeamStandingUncheckedCreateWithoutSeasonInput[];
+    connectOrCreate?: Prisma.TeamStandingCreateOrConnectWithoutSeasonInput | Prisma.TeamStandingCreateOrConnectWithoutSeasonInput[];
+    upsert?: Prisma.TeamStandingUpsertWithWhereUniqueWithoutSeasonInput | Prisma.TeamStandingUpsertWithWhereUniqueWithoutSeasonInput[];
+    createMany?: Prisma.TeamStandingCreateManySeasonInputEnvelope;
+    set?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    disconnect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    delete?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    connect?: Prisma.TeamStandingWhereUniqueInput | Prisma.TeamStandingWhereUniqueInput[];
+    update?: Prisma.TeamStandingUpdateWithWhereUniqueWithoutSeasonInput | Prisma.TeamStandingUpdateWithWhereUniqueWithoutSeasonInput[];
+    updateMany?: Prisma.TeamStandingUpdateManyWithWhereWithoutSeasonInput | Prisma.TeamStandingUpdateManyWithWhereWithoutSeasonInput[];
+    deleteMany?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
 };
 export type TeamStandingCreateNestedManyWithoutGroupInput = {
     create?: Prisma.XOR<Prisma.TeamStandingCreateWithoutGroupInput, Prisma.TeamStandingUncheckedCreateWithoutGroupInput> | Prisma.TeamStandingCreateWithoutGroupInput[] | Prisma.TeamStandingUncheckedCreateWithoutGroupInput[];
@@ -654,6 +700,78 @@ export type TeamStandingUncheckedUpdateManyWithoutTeamNestedInput = {
     updateMany?: Prisma.TeamStandingUpdateManyWithWhereWithoutTeamInput | Prisma.TeamStandingUpdateManyWithWhereWithoutTeamInput[];
     deleteMany?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
 };
+export type TeamStandingCreateWithoutSeasonInput = {
+    position: number;
+    matches_played?: number;
+    wins?: number;
+    draws?: number;
+    losses?: number;
+    goals_for?: number;
+    goals_against?: number;
+    points?: number;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team: Prisma.TeamCreateNestedOneWithoutTeamStandingsInput;
+    group: Prisma.GroupCreateNestedOneWithoutTeamStandingsInput;
+};
+export type TeamStandingUncheckedCreateWithoutSeasonInput = {
+    id?: number;
+    team_id: number;
+    group_id: number;
+    position: number;
+    matches_played?: number;
+    wins?: number;
+    draws?: number;
+    losses?: number;
+    goals_for?: number;
+    goals_against?: number;
+    points?: number;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+};
+export type TeamStandingCreateOrConnectWithoutSeasonInput = {
+    where: Prisma.TeamStandingWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput>;
+};
+export type TeamStandingCreateManySeasonInputEnvelope = {
+    data: Prisma.TeamStandingCreateManySeasonInput | Prisma.TeamStandingCreateManySeasonInput[];
+    skipDuplicates?: boolean;
+};
+export type TeamStandingUpsertWithWhereUniqueWithoutSeasonInput = {
+    where: Prisma.TeamStandingWhereUniqueInput;
+    update: Prisma.XOR<Prisma.TeamStandingUpdateWithoutSeasonInput, Prisma.TeamStandingUncheckedUpdateWithoutSeasonInput>;
+    create: Prisma.XOR<Prisma.TeamStandingCreateWithoutSeasonInput, Prisma.TeamStandingUncheckedCreateWithoutSeasonInput>;
+};
+export type TeamStandingUpdateWithWhereUniqueWithoutSeasonInput = {
+    where: Prisma.TeamStandingWhereUniqueInput;
+    data: Prisma.XOR<Prisma.TeamStandingUpdateWithoutSeasonInput, Prisma.TeamStandingUncheckedUpdateWithoutSeasonInput>;
+};
+export type TeamStandingUpdateManyWithWhereWithoutSeasonInput = {
+    where: Prisma.TeamStandingScalarWhereInput;
+    data: Prisma.XOR<Prisma.TeamStandingUpdateManyMutationInput, Prisma.TeamStandingUncheckedUpdateManyWithoutSeasonInput>;
+};
+export type TeamStandingScalarWhereInput = {
+    AND?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
+    OR?: Prisma.TeamStandingScalarWhereInput[];
+    NOT?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
+    id?: Prisma.IntFilter<"TeamStanding"> | number;
+    team_id?: Prisma.IntFilter<"TeamStanding"> | number;
+    group_id?: Prisma.IntFilter<"TeamStanding"> | number;
+    season_id?: Prisma.IntNullableFilter<"TeamStanding"> | number | null;
+    position?: Prisma.IntFilter<"TeamStanding"> | number;
+    matches_played?: Prisma.IntFilter<"TeamStanding"> | number;
+    wins?: Prisma.IntFilter<"TeamStanding"> | number;
+    draws?: Prisma.IntFilter<"TeamStanding"> | number;
+    losses?: Prisma.IntFilter<"TeamStanding"> | number;
+    goals_for?: Prisma.IntFilter<"TeamStanding"> | number;
+    goals_against?: Prisma.IntFilter<"TeamStanding"> | number;
+    points?: Prisma.IntFilter<"TeamStanding"> | number;
+    created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
+    updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
+    deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
+};
 export type TeamStandingCreateWithoutGroupInput = {
     position: number;
     matches_played?: number;
@@ -663,15 +781,16 @@ export type TeamStandingCreateWithoutGroupInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     team: Prisma.TeamCreateNestedOneWithoutTeamStandingsInput;
+    season?: Prisma.SeasonCreateNestedOneWithoutTeamStandingsInput;
 };
 export type TeamStandingUncheckedCreateWithoutGroupInput = {
     id?: number;
     team_id: number;
+    season_id?: number | null;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -680,7 +799,6 @@ export type TeamStandingUncheckedCreateWithoutGroupInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -706,26 +824,6 @@ export type TeamStandingUpdateManyWithWhereWithoutGroupInput = {
     where: Prisma.TeamStandingScalarWhereInput;
     data: Prisma.XOR<Prisma.TeamStandingUpdateManyMutationInput, Prisma.TeamStandingUncheckedUpdateManyWithoutGroupInput>;
 };
-export type TeamStandingScalarWhereInput = {
-    AND?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
-    OR?: Prisma.TeamStandingScalarWhereInput[];
-    NOT?: Prisma.TeamStandingScalarWhereInput | Prisma.TeamStandingScalarWhereInput[];
-    id?: Prisma.IntFilter<"TeamStanding"> | number;
-    team_id?: Prisma.IntFilter<"TeamStanding"> | number;
-    group_id?: Prisma.IntFilter<"TeamStanding"> | number;
-    position?: Prisma.IntFilter<"TeamStanding"> | number;
-    matches_played?: Prisma.IntFilter<"TeamStanding"> | number;
-    wins?: Prisma.IntFilter<"TeamStanding"> | number;
-    draws?: Prisma.IntFilter<"TeamStanding"> | number;
-    losses?: Prisma.IntFilter<"TeamStanding"> | number;
-    goals_for?: Prisma.IntFilter<"TeamStanding"> | number;
-    goals_against?: Prisma.IntFilter<"TeamStanding"> | number;
-    points?: Prisma.IntFilter<"TeamStanding"> | number;
-    is_active?: Prisma.BoolFilter<"TeamStanding"> | boolean;
-    created_at?: Prisma.DateTimeFilter<"TeamStanding"> | Date | string;
-    updated_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"TeamStanding"> | Date | string | null;
-};
 export type TeamStandingCreateWithoutTeamInput = {
     position: number;
     matches_played?: number;
@@ -735,15 +833,16 @@ export type TeamStandingCreateWithoutTeamInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     group: Prisma.GroupCreateNestedOneWithoutTeamStandingsInput;
+    season?: Prisma.SeasonCreateNestedOneWithoutTeamStandingsInput;
 };
 export type TeamStandingUncheckedCreateWithoutTeamInput = {
     id?: number;
     group_id: number;
+    season_id?: number | null;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -752,7 +851,6 @@ export type TeamStandingUncheckedCreateWithoutTeamInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -778,9 +876,10 @@ export type TeamStandingUpdateManyWithWhereWithoutTeamInput = {
     where: Prisma.TeamStandingScalarWhereInput;
     data: Prisma.XOR<Prisma.TeamStandingUpdateManyMutationInput, Prisma.TeamStandingUncheckedUpdateManyWithoutTeamInput>;
 };
-export type TeamStandingCreateManyGroupInput = {
+export type TeamStandingCreateManySeasonInput = {
     id?: number;
     team_id: number;
+    group_id: number;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -789,7 +888,69 @@ export type TeamStandingCreateManyGroupInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+};
+export type TeamStandingUpdateWithoutSeasonInput = {
+    position?: Prisma.IntFieldUpdateOperationsInput | number;
+    matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
+    wins?: Prisma.IntFieldUpdateOperationsInput | number;
+    draws?: Prisma.IntFieldUpdateOperationsInput | number;
+    losses?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
+    points?: Prisma.IntFieldUpdateOperationsInput | number;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team?: Prisma.TeamUpdateOneRequiredWithoutTeamStandingsNestedInput;
+    group?: Prisma.GroupUpdateOneRequiredWithoutTeamStandingsNestedInput;
+};
+export type TeamStandingUncheckedUpdateWithoutSeasonInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    position?: Prisma.IntFieldUpdateOperationsInput | number;
+    matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
+    wins?: Prisma.IntFieldUpdateOperationsInput | number;
+    draws?: Prisma.IntFieldUpdateOperationsInput | number;
+    losses?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
+    points?: Prisma.IntFieldUpdateOperationsInput | number;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+};
+export type TeamStandingUncheckedUpdateManyWithoutSeasonInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    position?: Prisma.IntFieldUpdateOperationsInput | number;
+    matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
+    wins?: Prisma.IntFieldUpdateOperationsInput | number;
+    draws?: Prisma.IntFieldUpdateOperationsInput | number;
+    losses?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
+    goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
+    points?: Prisma.IntFieldUpdateOperationsInput | number;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+};
+export type TeamStandingCreateManyGroupInput = {
+    id?: number;
+    team_id: number;
+    season_id?: number | null;
+    position: number;
+    matches_played?: number;
+    wins?: number;
+    draws?: number;
+    losses?: number;
+    goals_for?: number;
+    goals_against?: number;
+    points?: number;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -803,15 +964,16 @@ export type TeamStandingUpdateWithoutGroupInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamStandingsNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutTeamStandingsNestedInput;
 };
 export type TeamStandingUncheckedUpdateWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -820,7 +982,6 @@ export type TeamStandingUncheckedUpdateWithoutGroupInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -828,6 +989,7 @@ export type TeamStandingUncheckedUpdateWithoutGroupInput = {
 export type TeamStandingUncheckedUpdateManyWithoutGroupInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -836,7 +998,6 @@ export type TeamStandingUncheckedUpdateManyWithoutGroupInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -844,6 +1005,7 @@ export type TeamStandingUncheckedUpdateManyWithoutGroupInput = {
 export type TeamStandingCreateManyTeamInput = {
     id?: number;
     group_id: number;
+    season_id?: number | null;
     position: number;
     matches_played?: number;
     wins?: number;
@@ -852,7 +1014,6 @@ export type TeamStandingCreateManyTeamInput = {
     goals_for?: number;
     goals_against?: number;
     points?: number;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
@@ -866,15 +1027,16 @@ export type TeamStandingUpdateWithoutTeamInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     group?: Prisma.GroupUpdateOneRequiredWithoutTeamStandingsNestedInput;
+    season?: Prisma.SeasonUpdateOneWithoutTeamStandingsNestedInput;
 };
 export type TeamStandingUncheckedUpdateWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -883,7 +1045,6 @@ export type TeamStandingUncheckedUpdateWithoutTeamInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -891,6 +1052,7 @@ export type TeamStandingUncheckedUpdateWithoutTeamInput = {
 export type TeamStandingUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     position?: Prisma.IntFieldUpdateOperationsInput | number;
     matches_played?: Prisma.IntFieldUpdateOperationsInput | number;
     wins?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -899,7 +1061,6 @@ export type TeamStandingUncheckedUpdateManyWithoutTeamInput = {
     goals_for?: Prisma.IntFieldUpdateOperationsInput | number;
     goals_against?: Prisma.IntFieldUpdateOperationsInput | number;
     points?: Prisma.IntFieldUpdateOperationsInput | number;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -908,6 +1069,7 @@ export type TeamStandingSelect<ExtArgs extends runtime.Types.Extensions.Internal
     id?: boolean;
     team_id?: boolean;
     group_id?: boolean;
+    season_id?: boolean;
     position?: boolean;
     matches_played?: boolean;
     wins?: boolean;
@@ -916,17 +1078,18 @@ export type TeamStandingSelect<ExtArgs extends runtime.Types.Extensions.Internal
     goals_for?: boolean;
     goals_against?: boolean;
     points?: boolean;
-    is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>;
+    season?: boolean | Prisma.TeamStanding$seasonArgs<ExtArgs>;
 }, ExtArgs["result"]["teamStanding"]>;
 export type TeamStandingSelectScalar = {
     id?: boolean;
     team_id?: boolean;
     group_id?: boolean;
+    season_id?: boolean;
     position?: boolean;
     matches_played?: boolean;
     wins?: boolean;
@@ -935,26 +1098,28 @@ export type TeamStandingSelectScalar = {
     goals_for?: boolean;
     goals_against?: boolean;
     points?: boolean;
-    is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
     deleted_at?: boolean;
 };
-export type TeamStandingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "group_id" | "position" | "matches_played" | "wins" | "draws" | "losses" | "goals_for" | "goals_against" | "points" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["teamStanding"]>;
+export type TeamStandingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "group_id" | "season_id" | "position" | "matches_played" | "wins" | "draws" | "losses" | "goals_for" | "goals_against" | "points" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["teamStanding"]>;
 export type TeamStandingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>;
+    season?: boolean | Prisma.TeamStanding$seasonArgs<ExtArgs>;
 };
 export type $TeamStandingPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "TeamStanding";
     objects: {
         team: Prisma.$TeamPayload<ExtArgs>;
         group: Prisma.$GroupPayload<ExtArgs>;
+        season: Prisma.$SeasonPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
         team_id: number;
         group_id: number;
+        season_id: number | null;
         position: number;
         matches_played: number;
         wins: number;
@@ -963,7 +1128,6 @@ export type $TeamStandingPayload<ExtArgs extends runtime.Types.Extensions.Intern
         goals_for: number;
         goals_against: number;
         points: number;
-        is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
@@ -1246,6 +1410,7 @@ export interface Prisma__TeamStandingClient<T, Null = never, ExtArgs extends run
     readonly [Symbol.toStringTag]: "PrismaPromise";
     team<T extends Prisma.TeamDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeamDefaultArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     group<T extends Prisma.GroupDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GroupDefaultArgs<ExtArgs>>): Prisma.Prisma__GroupClient<runtime.Types.Result.GetResult<Prisma.$GroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
+    season<T extends Prisma.TeamStanding$seasonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeamStanding$seasonArgs<ExtArgs>>): Prisma.Prisma__SeasonClient<runtime.Types.Result.GetResult<Prisma.$SeasonPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1274,6 +1439,7 @@ export interface TeamStandingFieldRefs {
     readonly id: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly team_id: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly group_id: Prisma.FieldRef<"TeamStanding", 'Int'>;
+    readonly season_id: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly position: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly matches_played: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly wins: Prisma.FieldRef<"TeamStanding", 'Int'>;
@@ -1282,7 +1448,6 @@ export interface TeamStandingFieldRefs {
     readonly goals_for: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly goals_against: Prisma.FieldRef<"TeamStanding", 'Int'>;
     readonly points: Prisma.FieldRef<"TeamStanding", 'Int'>;
-    readonly is_active: Prisma.FieldRef<"TeamStanding", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"TeamStanding", 'DateTime'>;
@@ -1617,6 +1782,24 @@ export type TeamStandingDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
      * Limit how many TeamStandings to delete.
      */
     limit?: number;
+};
+/**
+ * TeamStanding.season
+ */
+export type TeamStanding$seasonArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Season
+     */
+    select?: Prisma.SeasonSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Season
+     */
+    omit?: Prisma.SeasonOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.SeasonInclude<ExtArgs> | null;
+    where?: Prisma.SeasonWhereInput;
 };
 /**
  * TeamStanding without action

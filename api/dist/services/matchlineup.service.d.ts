@@ -3,9 +3,11 @@ import { RegisterLineupDto, UpdateLineupEntryDto } from '../dtos/matchlineup.sch
 export declare class MatchLineupService {
     private readonly prisma;
     constructor(prisma: PrismaClient);
-    private getScheduledAtOrFail;
+    private getMatchContextOrFail;
+    private assertTeamInMatch;
     private assertCanRegister;
     private assertCanUpdate;
+    private assertSingleCaptain;
     getByMatch(matchId: number): Promise<MatchLineup[]>;
     getByTeam(matchId: number, teamId: number): Promise<MatchLineup[]>;
     register(dto: RegisterLineupDto): Promise<MatchLineup[]>;

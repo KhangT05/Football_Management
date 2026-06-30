@@ -84,13 +84,13 @@ export declare class SeasonController extends Controller {
         is_suspended: boolean;
     }>>;
     getSuspendedPlayers(id: number): Promise<({
-        team: {
-            id: number;
-            name: string;
-        };
         player: {
             id: number;
             name: never;
+        };
+        team: {
+            id: number;
+            name: string;
         };
     } & {
         id: number;

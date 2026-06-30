@@ -229,6 +229,7 @@ export const TeamScalarFieldEnum = {
 export const MatchJerseyAssignmentScalarFieldEnum = {
     id: 'id',
     match_id: 'match_id',
+    team_id: 'team_id',
     season_jersey_id: 'season_jersey_id'
 };
 export const PlayerScalarFieldEnum = {
@@ -365,6 +366,7 @@ export const TeamStandingScalarFieldEnum = {
     id: 'id',
     team_id: 'team_id',
     group_id: 'group_id',
+    season_id: 'season_id',
     position: 'position',
     matches_played: 'matches_played',
     wins: 'wins',
@@ -373,7 +375,6 @@ export const TeamStandingScalarFieldEnum = {
     goals_for: 'goals_for',
     goals_against: 'goals_against',
     points: 'points',
-    is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at'

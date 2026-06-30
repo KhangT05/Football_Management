@@ -2291,6 +2291,7 @@ export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof Team
 export declare const MatchJerseyAssignmentScalarFieldEnum: {
     readonly id: "id";
     readonly match_id: "match_id";
+    readonly team_id: "team_id";
     readonly season_jersey_id: "season_jersey_id";
 };
 export type MatchJerseyAssignmentScalarFieldEnum = (typeof MatchJerseyAssignmentScalarFieldEnum)[keyof typeof MatchJerseyAssignmentScalarFieldEnum];
@@ -2437,6 +2438,7 @@ export declare const TeamStandingScalarFieldEnum: {
     readonly id: "id";
     readonly team_id: "team_id";
     readonly group_id: "group_id";
+    readonly season_id: "season_id";
     readonly position: "position";
     readonly matches_played: "matches_played";
     readonly wins: "wins";
@@ -2445,7 +2447,6 @@ export declare const TeamStandingScalarFieldEnum: {
     readonly goals_for: "goals_for";
     readonly goals_against: "goals_against";
     readonly points: "points";
-    readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
