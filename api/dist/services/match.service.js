@@ -576,7 +576,7 @@ export class MatchLifecycleService {
         if (event.match_id !== matchId)
             throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
         const newType = input.type ?? event.type;
-        const newPlayerId = input.playerId ?? event.player_id;
+        const newPlayerId = input.playerId !== undefined ? input.playerId : event.player_id;
         if (newType === MatchEventType.yellow_card && newPlayerId) {
             const existingYellow = await this.prisma.matchEvent.findFirst({
                 where: {
@@ -590,13 +590,30 @@ export class MatchLifecycleService {
             if (existingYellow)
                 throw createAppError('VALIDATION_ERROR', `Player ${newPlayerId} đã có thẻ vàng — dùng type 'second_yellow'`);
         }
+        if (input.playerId != null) {
+            const exists = await this.prisma.player.findUnique({ where: { id: input.playerId }, select: { id: true } });
+            if (!exists)
+                throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} không tồn tại`);
+        }
+        if (input.teamId != null) {
+            const exists = await this.prisma.team.findUnique({ where: { id: input.teamId }, select: { id: true } });
+            if (!exists)
+                throw createAppError('VALIDATION_ERROR', `Team ${input.teamId} không tồn tại`);
+        }
+        if (input.subOutPlayerId != null) {
+            const exists = await this.prisma.player.findUnique({ where: { id: input.subOutPlayerId }, select: { id: true } });
+            if (!exists)
+                throw createAppError('VALIDATION_ERROR', `Player ${input.subOutPlayerId} (subOut) không tồn tại`);
+        }
         const updateData = {};
         if (input.type !== undefined) {
             updateData.type = input.type;
             updateData.card_color = this._deriveCardColor(input.type) ?? null;
         }
-        // if (input.playerId !== undefined) updateData.player_id = input.playerId;
-        // if (input.teamId !== undefined) updateData.team_id = input.teamId;
+        if (input.playerId !== undefined)
+            updateData.player_id = input.playerId;
+        if (input.teamId !== undefined)
+            updateData.team_id = input.teamId;
         if (input.minute !== undefined)
             updateData.minute = input.minute;
         if (input.addedMinute !== undefined)
@@ -605,7 +622,8 @@ export class MatchLifecycleService {
             updateData.period = input.period;
         if (input.note !== undefined)
             updateData.note = input.note;
-        // if (input.subOutPlayerId !== undefined) updateData.sub_out_player_id = input.subOutPlayerId;
+        if (input.subOutPlayerId !== undefined)
+            updateData.sub_out_player_id = input.subOutPlayerId;
         await this.prisma.matchEvent.update({
             where: { id: eventId },
             data: updateData,
