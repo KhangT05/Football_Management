@@ -103,7 +103,10 @@ export class StandingsService {
             : 'position';
         const sortDir = req.direction === 'desc' ? 'desc' : 'asc';
 
-        const where = { group_id: groupId, is_active: true };
+        // FIX: TeamStanding không có field `is_active` trong schema — chỉ có soft-delete
+        // `deleted_at`. Filter cũ `is_active: true` sai schema, gây Prisma validation error
+        // runtime (PrismaClientValidationError: Unknown argument `is_active`).
+        const where = { group_id: groupId, deleted_at: null };
 
         const [data, total] = await Promise.all([
             this.prisma.teamStanding.findMany({
@@ -153,7 +156,8 @@ export class StandingsService {
 
         const rows = await this.prisma.teamStanding.findMany({
             where: {
-                is_active: true,
+                // FIX: cùng lỗi is_active -> deleted_at như listGroupStandings
+                deleted_at: null,
                 group: { phase: { season_id: seasonId } },
             },
             select: {
@@ -423,6 +427,10 @@ export class StandingsService {
                     create: {
                         group_id: groupId,
                         team_id: s.teamId,
+                        // FIX: schema có field `season_id` (optional FK) trên TeamStanding,
+                        // code cũ bỏ trống → mọi truy vấn lọc TeamStanding theo season_id trực
+                        // tiếp (không qua group->phase->season join) sẽ miss row này.
+                        season_id: seasonId,
                         position: idx + 1,
                         matches_played: s.played,
                         wins: s.wins,
@@ -441,6 +449,8 @@ export class StandingsService {
                         goals_for: s.goalsFor,
                         goals_against: s.goalsAgainst,
                         points: s.points,
+                        // season_id không update — group không đổi season giữa các lần recompute,
+                        // và update field FK không cần thiết tốn thêm write.
                     },
                 }),
             ),
