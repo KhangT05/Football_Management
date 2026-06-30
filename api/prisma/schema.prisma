@@ -183,10 +183,10 @@ model BracketSlot {
 
   is_bye Boolean @default(false) // true = one team advances automatically
 
-  phase    Phase         @relation(fields: [phase_id], references: [id])
-  match    Match?        @relation(fields: [match_id], references: [id])
-  source_a BracketSlot?  @relation("SlotFeed_A", fields: [source_a_slot_id], references: [id])
-  source_b BracketSlot?  @relation("SlotFeed_B", fields: [source_b_slot_id], references: [id])
+  phase    Phase         @relation(fields: [phase_id], references: [id], onDelete: Cascade) // xoá phase → xoá luôn bracket
+  match    Match?        @relation(fields: [match_id], references: [id], onDelete: SetNull) // xoá match không nên phá cấu trúc bracket
+  source_a BracketSlot?  @relation("SlotFeed_A", fields: [source_a_slot_id], references: [id], onDelete: SetNull)
+  source_b BracketSlot?  @relation("SlotFeed_B", fields: [source_b_slot_id], references: [id], onDelete: SetNull)
   fed_as_a BracketSlot[] @relation("SlotFeed_A")
   fed_as_b BracketSlot[] @relation("SlotFeed_B")
 
@@ -234,6 +234,7 @@ model Season {
   playerStatistics PlayerStatistic[]
   notifications    Notification[]
   articles         Article[]
+  teamStandings    TeamStanding[]
 
   @@map("seasons")
 }
@@ -281,19 +282,21 @@ model Team {
 
   deleted_at DateTime?
 
-  team_players     TeamPlayer[]
-  season_teams     SeasonTeam[]
-  home_matches     Match[]           @relation("Match_homeTeam")
-  away_matches     Match[]           @relation("Match_awayTeam")
-  user             User?             @relation(fields: [user_id], references: [id])
-  user_id          Int?
-  teamLeaders      TeamLeader[]
-  teamStandings    TeamStanding[]
-  playerStatistics PlayerStatistic[]
-  notifications    Notification[]
-  matchResults     MatchResult[]
-  articles         Article[]
-  matchLineups     MatchLineup[]
+  team_players           TeamPlayer[]
+  season_teams           SeasonTeam[]
+  home_matches           Match[]                 @relation("Match_homeTeam")
+  away_matches           Match[]                 @relation("Match_awayTeam")
+  user                   User?                   @relation(fields: [user_id], references: [id])
+  user_id                Int?
+  teamLeaders            TeamLeader[]
+  teamStandings          TeamStanding[]
+  playerStatistics       PlayerStatistic[]
+  notifications          Notification[]
+  matchResults           MatchResult[]
+  articles               Article[]
+  matchLineups           MatchLineup[]
+  matchEvents            MatchEvent[]
+  matchJerseyAssignments MatchJerseyAssignment[]
 
   @@map("teams")
 }
@@ -301,11 +304,13 @@ model Team {
 model MatchJerseyAssignment {
   id               Int              @id @default(autoincrement())
   match_id         Int
+  team_id          Int
   season_jersey_id Int // FK thẳng vào SeasonTeamJersey — không cần resolve lại
+  team             Team             @relation(fields: [team_id], references: [id], onDelete: Cascade)
   match            Match            @relation(fields: [match_id], references: [id], onDelete: Cascade)
   season_jersey    SeasonTeamJersey @relation(fields: [season_jersey_id], references: [id])
 
-  @@unique([match_id])
+  @@unique([match_id, team_id])
   @@map("match_jersey_assignments")
 }
 
@@ -344,9 +349,11 @@ model Player {
   user_id Int  @unique
   user    User @relation(fields: [user_id], references: [id], onDelete: Restrict)
 
-  team_players     TeamPlayer[]
-  playerStatistics PlayerStatistic[]
-  matchLineups     MatchLineup[]
+  team_players      TeamPlayer[]
+  playerStatistics  PlayerStatistic[]
+  matchLineups      MatchLineup[]
+  matchEvents       MatchEvent[]      @relation("EventPlayer")
+  matchEventsSubOut MatchEvent[]      @relation("EventSubOut")
 
   @@map("players")
 }
@@ -443,7 +450,7 @@ model SeasonTeam {
 
   season Season @relation(fields: [season_id], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Restrict)
-  group  Group? @relation(fields: [group_id], references: [id], onDelete: SetNull)
+  group  Group? @relation(fields: [group_id], references: [id], onDelete: Restrict)
 
   user     User?     @relation(fields: [user_id], references: [id])
   user_id  Int?
@@ -578,17 +585,17 @@ model Match {
   away_team Team   @relation("Match_awayTeam", fields: [away_team_id], references: [id])
 
   events                MatchEvent[]
-  user                  User?                  @relation(fields: [user_id], references: [id])
+  user                  User?                   @relation(fields: [user_id], references: [id])
   user_id               Int?
   venue_id              Int?
   matchResult           MatchResult?
-  venue                 Venue?                 @relation(fields: [venue_id], references: [id])
-  is_published          Boolean                @default(false)
+  venue                 Venue?                  @relation(fields: [venue_id], references: [id])
+  is_published          Boolean                 @default(false)
   referee               String?
   articles              Article[]
   bracketSlot           BracketSlot?
   matchLineups          MatchLineup[]
-  matchJerseyAssignment MatchJerseyAssignment?
+  matchJerseyAssignment MatchJerseyAssignment[]
 
   @@unique([venue_id, scheduled_at])
   @@map("matches")
@@ -624,6 +631,9 @@ model MatchEvent {
   added_minute      Int?
   card_color        CardColor?
   sub_out_player_id Int?
+  player            Player?        @relation("EventPlayer", fields: [player_id], references: [id], onDelete: SetNull)
+  team              Team?          @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  sub_out_player    Player?        @relation("EventSubOut", fields: [sub_out_player_id], references: [id], onDelete: SetNull)
   created_at        DateTime       @default(now())
 
   match Match @relation(fields: [match_id], references: [id], onDelete: Cascade)
@@ -655,6 +665,7 @@ model TeamStanding {
   id             Int       @id @default(autoincrement())
   team_id        Int
   group_id       Int
+  season_id      Int?
   position       Int
   matches_played Int       @default(0)
   wins           Int       @default(0)
@@ -663,13 +674,13 @@ model TeamStanding {
   goals_for      Int       @default(0)
   goals_against  Int       @default(0)
   points         Int       @default(0)
-  is_active      Boolean   @default(true)
   created_at     DateTime  @default(now())
   updated_at     DateTime? @updatedAt
   deleted_at     DateTime?
 
-  team  Team  @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  team   Team    @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  group  Group   @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  season Season? @relation(fields: [season_id], references: [id], onDelete: Cascade)
 
   @@unique([group_id, team_id])
   @@map("team_standings")
