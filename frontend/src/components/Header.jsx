@@ -5,7 +5,7 @@ import useAuthStore from '../store/authStore';
 import ThemeSwitcher from './ThemeSwitcher';
 import {
   User, ChevronDown, LogOut, UserCircle, Shield, Trophy,
-  Menu, X, CalendarDays, BarChart3, Home
+  Menu, X, CalendarDays, BarChart3, Home, Newspaper
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -29,6 +29,7 @@ export default function Header() {
     { to: '/', label: 'Trang Chủ', icon: Home },
     { to: '/lich-thi-dau', label: 'Lịch Thi Đấu', icon: CalendarDays },
     { to: '/bang-xep-hang', label: 'Bảng Xếp Hạng', icon: BarChart3 },
+    { to: '/tin-tuc', label: 'Tin Tức', icon: Newspaper },
   ];
 
   return (

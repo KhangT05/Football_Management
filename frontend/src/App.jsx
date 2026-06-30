@@ -32,6 +32,13 @@ const UpdateResults = lazy(() => import("./pages/admin/UpdateResults"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
+const ManageArticles = lazy(() => import("./pages/admin/ManageArticles"));
+const ManageUsers = lazy(() => import("./pages/admin/ManageUsers"));
+const ManageRoles = lazy(() => import("./pages/admin/ManageRoles"));
+
+// News pages
+const News = lazy(() => import("./pages/News"));
+const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
 
 // ── Loading Fallback ───────────────────────────────────────
 function PageLoader() {
@@ -96,6 +103,8 @@ function App() {
             <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
             <Route path="/doi-bong/:id" element={<TeamDetail />} />
             <Route path="/tran-dau/:id" element={<MatchDetail />} />
+            <Route path="/tin-tuc" element={<News />} />
+            <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
 
             {/* Protected routes – cần đăng nhập */}
             <Route path="/dang-ky-doi-bong" element={
@@ -145,6 +154,15 @@ function App() {
           } />
           <Route path="/quan-ly-giai-dau/cai-dat" element={
             <AdminRoute><Settings /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/bai-viet" element={
+            <AdminRoute><ManageArticles /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/nguoi-dung" element={
+            <AdminRoute><ManageUsers /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/phan-quyen" element={
+            <AdminRoute><ManageRoles /></AdminRoute>
           } />
 
           {/* 404 — phải để cuối cùng */}

@@ -3,14 +3,15 @@ import AdminLayout from '../../layouts/AdminLayout';
 import {
   Search, Plus, Edit, Trash2,
   ChevronLeft, ChevronRight, User, Loader2, AlertTriangle, CheckCircle2,
-  RefreshCw, Phone, Mail, ShieldCheck
+  RefreshCw, Phone, Mail, ShieldCheck, Check, X, Building2
 } from 'lucide-react';
-import { userApi } from '../../api';
+import { userApi, teamApi, playerApi } from '../../api';
 import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import AdminModal from '../../components/admin/AdminModal';
 import Pagination from '../../components/ui/Pagination';
+import ApprovePlayersTab from '../../components/admin/ApprovePlayersTab';
 import { getInitials, AVATAR_COLORS } from '../../utils/constants';
 
 const EMPTY_FORM = { name: '', email: '', password: '', phone: '' };
@@ -19,6 +20,8 @@ const EMPTY_EDIT_FORM = { name: '', phone: '' };
 export default function ManagePlayers() {
   const toast = useToastStore();
   const PAGE_SIZE = 10;
+  
+  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'approve'
 
   // ── Data: Users (useApiQuery) ──────────────────────────
   const { data: users, meta, isLoading, error: fetchError, fetch: fetchUsers } = useApiQuery(
@@ -133,29 +136,51 @@ export default function ManagePlayers() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">Quản lý Người Dùng</h2>
+            <h2 className="text-2xl font-extrabold text-white tracking-tight">Quản lý Tài khoản & Cầu thủ</h2>
             <p className="text-gray-400 text-sm mt-1">
-              <span className="font-bold text-neon">{meta.total}</span> người dùng trong hệ thống
+              Quản lý người dùng hệ thống và xét duyệt đăng ký cầu thủ.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => refetchUsers(currentPage)}
-              disabled={isLoading}
-              title="Tải lại"
-              className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={openAdd}
-              className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md hover:shadow-emerald-500/20 transition-all"
-            >
-              <Plus className="w-5 h-5" /> Thêm người dùng
-            </button>
+            {activeTab === 'users' && (
+              <>
+                <button
+                  onClick={() => refetchUsers(currentPage)}
+                  disabled={isLoading}
+                  title="Tải lại"
+                  className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={openAdd}
+                  className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md hover:shadow-emerald-500/20 transition-all"
+                >
+                  <Plus className="w-5 h-5" /> Thêm người dùng
+                </button>
+              </>
+            )}
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="flex bg-navy border-b border-navy-light">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'users' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+          >
+            <User className="w-4 h-4" /> Danh sách Người dùng
+          </button>
+          <button
+            onClick={() => setActiveTab('approve')}
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'approve' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+          >
+            <ShieldCheck className="w-4 h-4" /> Duyệt Đăng ký Cầu thủ
+          </button>
+        </div>
+
+        {activeTab === 'users' ? (
+          <>
         {/* Toolbar */}
         <div className="bg-navy p-4 rounded-xl border border-navy-light flex flex-col sm:flex-row gap-3 shadow-lg shadow-black/20">
           <div className="relative flex-1">
@@ -306,6 +331,10 @@ export default function ManagePlayers() {
             </div>
           )}
         </div>
+        </>
+      ) : (
+          <ApprovePlayersTab />
+        )}
       </div>
 
       {/* Add/Edit Modal */}

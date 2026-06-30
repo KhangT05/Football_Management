@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, Shield, Activity, Users } from 'lucide-react';
-import { teamApi } from '../api';
+import { teamApi, matchApi } from '../api';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -16,30 +16,6 @@ const STATUS_LABEL = {
   finished: 'Đã kết thúc',
   ongoing: 'Đang diễn ra',
 };
-
-// ─── Mock events (placeholder until real API) ─────────────────────────────────
-
-function mockEvents(match, home, away) {
-  const pick = (list) => list.length
-    ? list[Math.floor(Math.random() * list.length)]
-    : { player: { name: 'Cầu thủ' }, player_id: '?' };
-  const name = (p) => p.player?.name ?? p.player?.player?.name ?? `#${p.player_id}`;
-
-  const evs = [];
-  let t = 10;
-  const push = (team, type, player) => { evs.push({ time: t, team, type, player }); t += Math.floor(Math.random() * 10) + 5; };
-
-  for (let i = 0; i < (match.home_score || 0); i++) push('home', 'goal', name(pick(home)));
-  for (let i = 0; i < (match.away_score || 0); i++) push('away', 'goal', name(pick(away)));
-
-  const n = Math.floor(Math.random() * 3) + 1;
-  for (let i = 0; i < n; i++) {
-    const isHome = Math.random() > 0.5;
-    push(isHome ? 'home' : 'away', Math.random() > 0.8 ? 'red_card' : 'yellow_card', name(pick(isHome ? home : away)));
-  }
-
-  return evs.sort((a, b) => a.time - b.time);
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -81,6 +57,9 @@ const EVENT_ICON = {
   goal: <span className="text-lg leading-none">⚽</span>,
   yellow_card: <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" />,
   red_card: <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />,
+  substitution_in: <span className="text-lg leading-none">🔄</span>,
+  substitution_out: <span className="text-lg leading-none">🔄</span>,
+  own_goal: <span className="text-lg leading-none">⚽</span>,
 };
 
 function EventTimeline({ events, status }) {
@@ -118,11 +97,25 @@ function EventTimeline({ events, status }) {
   );
 }
 
+const TeamAvatar = ({ name, side, logo }) => {
+  const borderCls = side === 'home' ? 'border-blue-500/30 from-blue-700 to-cyan-800 shadow-blue-900/30' : 'border-rose-500/30 from-amber-700 to-orange-800 shadow-amber-900/30';
+  return (
+    <div className="flex flex-col items-center flex-1 max-w-[150px]">
+      {logo
+        ? <img src={logo} alt={name} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg border-2 ${borderCls.split(' ')[0]}`} />
+        : <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 bg-linear-to-br flex items-center justify-center font-black text-2xl text-white shadow-lg ${borderCls}`}>{getInitials(name)}</div>
+      }
+      <h2 className="mt-3 text-center font-bold text-sm sm:text-base text-white uppercase line-clamp-2">{name}</h2>
+    </div>
+  );
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function MatchModal({ match, onClose }) {
   const [playerState, setPlayerState] = useState({ home: [], away: [], loading: true });
   const [activeTab, setActiveTab] = useState('events');
+  const [events, setEvents] = useState([]);
 
   const { home: homePlayers, away: awayPlayers, loading: loadingPlayers } = playerState;
 
@@ -159,10 +152,26 @@ export default function MatchModal({ match, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [match, onClose]);
 
-  const events = useMemo(() => {
-    if (loadingPlayers || !match || match.status === 'scheduled' || match.status === 'cancelled') return [];
-    return mockEvents(match, homePlayers, awayPlayers);
-  }, [match, homePlayers, awayPlayers, loadingPlayers]);
+  // Fetch events
+  useEffect(() => {
+    if (!match || match.status === 'scheduled' || match.status === 'cancelled') return;
+    let cancelled = false;
+    matchApi.getMatchEvents(match.id, { per_page: 100 }).then(res => {
+      if (cancelled) return;
+      const evs = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      // map backend event row to UI timeline format
+      const mappedEvents = evs.map(ev => ({
+        time: ev.minute,
+        team: ev.team_id === match.home_team_id ? 'home' : 'away',
+        type: ev.type,
+        player: ev.player?.name ?? `Cầu thủ #${ev.player_id}`,
+      }));
+      setEvents(mappedEvents.sort((a, b) => a.time - b.time));
+    }).catch(err => {
+        console.error('Fetch match events failed', err);
+    });
+    return () => { cancelled = true; };
+  }, [match]);
 
   if (!match) return null;
 
@@ -171,19 +180,7 @@ export default function MatchModal({ match, onClose }) {
   const hasScore = match.home_score != null && match.away_score != null;
   const statusLabel = STATUS_LABEL[match.status] ?? 'Sắp diễn ra';
 
-  const TeamAvatar = ({ name, side }) => {
-    const borderCls = side === 'home' ? 'border-blue-500/30 from-blue-700 to-cyan-800 shadow-blue-900/30' : 'border-rose-500/30 from-amber-700 to-orange-800 shadow-amber-900/30';
-    const logo = side === 'home' ? match.home_team?.logo : match.away_team?.logo;
-    return (
-      <div className="flex flex-col items-center flex-1 max-w-[150px]">
-        {logo
-          ? <img src={logo} alt={name} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg border-2 ${borderCls.split(' ')[0]}`} />
-          : <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 bg-linear-to-br flex items-center justify-center font-black text-2xl text-white shadow-lg ${borderCls}`}>{getInitials(name)}</div>
-        }
-        <h2 className="mt-3 text-center font-bold text-sm sm:text-base text-white uppercase line-clamp-2">{name}</h2>
-      </div>
-    );
-  };
+
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
@@ -198,7 +195,7 @@ export default function MatchModal({ match, onClose }) {
           </button>
 
           <div className="flex items-center justify-center w-full gap-4 sm:gap-10 pt-2">
-            <TeamAvatar name={homeName} side="home" />
+            <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} />
 
             <div className="flex flex-col items-center shrink-0">
               {hasScore
@@ -216,15 +213,15 @@ export default function MatchModal({ match, onClose }) {
               </div>
             </div>
 
-            <TeamAvatar name={awayName} side="away" />
+            <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} />
           </div>
         </div>
 
         {/* Mobile tab nav */}
         <div className="lg:hidden flex border-b border-navy-light/50 bg-navy-dark/50">
-          {[['events', Activity, 'Diễn biến', 'text-neon border-neon bg-neon/5'], ['lineup', Users, 'Đội hình', 'text-blue-400 border-blue-400 bg-blue-400/5']].map(([key, Icon, label, activeCls]) => (
+          {[['events', Activity, 'Diễn biến', 'text-neon border-neon bg-neon/5'], ['lineup', Users, 'Đội hình', 'text-blue-400 border-blue-400 bg-blue-400/5']].map(([key, TabIcon, label, activeCls]) => (
             <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider flex justify-center items-center gap-2 transition-colors ${activeTab === key ? `${activeCls} border-b-2` : 'text-gray-400'}`}>
-              <Icon className="w-4 h-4" /> {label}
+              <TabIcon className="w-4 h-4" /> {label}
             </button>
           ))}
         </div>

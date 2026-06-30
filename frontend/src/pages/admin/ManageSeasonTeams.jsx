@@ -3,14 +3,17 @@ import AdminLayout from '../../layouts/AdminLayout';
 import {
   Users, Calendar, Trophy, Plus, CheckCircle2, XCircle,
   Trash2, RefreshCw, AlertTriangle, Loader2, Save, Dices,
-  Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight
+  Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight,
+  Search, Shirt
 } from 'lucide-react';
-import { seasonApi, seasonTeamApi, teamApi, groupApi } from '../../api';
-import { useApiQuery, useApiMutation, useCrudModal } from '../../hooks';
+import { seasonApi, seasonTeamApi, teamApi } from '../../api';
+import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import GroupDrawUI from '../../components/admin/GroupDrawUI';
+import KnockoutUI from '../../components/admin/KnockoutUI';
+import ManageJerseysModal from '../../components/admin/ManageJerseysModal';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 import Pagination from '../../components/ui/Pagination';
@@ -76,11 +79,21 @@ export default function ManageSeasonTeams() {
 
   useEffect(() => { reloadTeams(); }, [reloadTeams, selectedSeason]);
 
-  // ── Client-side filter by status ───────────────────────────
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+
+  // ── Client-side filter by status and search ───────────────────────────
   const seasonTeams = useMemo(() => {
-    if (!filterStatus) return allSeasonTeams;
-    return allSeasonTeams.filter(st => st.status === filterStatus);
-  }, [allSeasonTeams, filterStatus]);
+    let filtered = allSeasonTeams;
+    if (filterStatus) {
+      filtered = filtered.filter(st => st.status === filterStatus);
+    }
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(st => st.team?.name?.toLowerCase().includes(lower));
+    }
+    return filtered;
+  }, [allSeasonTeams, filterStatus, debouncedSearch]);
 
   // ── Pagination ───────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,10 +105,8 @@ export default function ManageSeasonTeams() {
   };
   
   useEffect(() => {
-    setTimeout(() => {
-      setCurrentPage(1);
-    }, 0);
-  }, [filterStatus, selectedSeason]);
+    setTimeout(() => setCurrentPage(1), 0);
+  }, [filterStatus, selectedSeason, debouncedSearch]);
 
   const totalPages = Math.ceil(seasonTeams.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
@@ -124,6 +135,7 @@ export default function ManageSeasonTeams() {
   // ── Actions: Delete ─────────────────────────────────────────
   const deleteMutation = useApiMutation();
   const [deletingId, setDeletingId] = useState(null);
+  const [jerseyModalTeam, setJerseyModalTeam] = useState(null);
   const confirmDelete = () => {
     deleteMutation.mutate(async () => {
       await seasonTeamApi.delete(deletingId);
@@ -281,6 +293,12 @@ export default function ManageSeasonTeams() {
               >
                 <Dices className="w-4 h-4" /> Bốc thăm chia bảng
               </button>
+              <button
+                className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'knockout' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+                onClick={() => setActiveTab('knockout')}
+              >
+                <Trophy className="w-4 h-4" /> Vòng Knockout
+              </button>
             </div>
 
             {/* ── Tab: Teams ─────────────────────────────────────── */}
@@ -294,20 +312,31 @@ export default function ManageSeasonTeams() {
                     Danh sách ({seasonTeams.length}
                     {filterStatus && <span className="text-gray-400"> / {allSeasonTeams.length}</span>})
                   </h3>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    {/* Search */}
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Tìm đội bóng..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm transition-colors"
+                      />
+                    </div>
                     {/* Status filter */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto shrink-0">
                       <select
+                        className="w-full sm:w-auto bg-navy border border-navy-light rounded-lg pl-8 pr-8 py-2 text-white font-bold outline-none focus:border-neon text-sm appearance-none cursor-pointer"
                         value={filterStatus}
-                        onChange={e => setFilterStatus(e.target.value)}
-                        className="pl-8 pr-8 py-2 bg-navy border border-navy-light rounded-lg text-white text-xs font-bold focus:outline-none focus:border-neon appearance-none cursor-pointer transition-all"
+                        onChange={(e) => setFilterStatus(e.target.value)}
                       >
                         {STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
                       <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
                     {filterStatus && (
                       <button onClick={() => setFilterStatus('')} className="p-2 rounded-lg text-gray-400 hover:text-white border border-navy-light hover:border-gray-500 transition-all">
@@ -409,6 +438,13 @@ export default function ManageSeasonTeams() {
                             <td className="py-4 px-6">
                               <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
+                                  onClick={() => setJerseyModalTeam(st)}
+                                  className="p-1.5 rounded-lg bg-navy-light text-emerald-400 hover:text-white hover:bg-emerald-600 border border-emerald-500/20 hover:border-emerald-500 shadow-sm transition-all active:scale-90"
+                                  title="Quản lý áo đấu"
+                                >
+                                  <Shirt className="w-4 h-4" />
+                                </button>
+                                <button
                                   onClick={() => openAssignGroup(st)}
                                   className="p-1.5 rounded-lg bg-navy-light text-blue-400 hover:text-white hover:bg-blue-600 border border-blue-500/20 hover:border-blue-500 shadow-sm transition-all active:scale-90"
                                   title="Xếp bảng thủ công"
@@ -451,6 +487,11 @@ export default function ManageSeasonTeams() {
             {activeTab === 'draw' && (
               <GroupDrawUI seasonId={selectedSeason ? Number(selectedSeason) : null} />
             )}
+            {/* ── Tab: Knockout ──────────────────────────────────── */}
+            {activeTab === 'knockout' && (
+              <KnockoutUI seasonId={selectedSeason} />
+            )}
+
           </>
         </div>
 
@@ -536,6 +577,13 @@ export default function ManageSeasonTeams() {
           isLoading={deleteMutation.isLoading}
         />
       )}
+      {/* Jersey Modal */}
+      <ManageJerseysModal
+        isOpen={!!jerseyModalTeam}
+        onClose={() => setJerseyModalTeam(null)}
+        seasonTeam={jerseyModalTeam}
+      />
+
     </AdminLayout>
   );
 }

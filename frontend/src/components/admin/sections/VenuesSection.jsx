@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapPin, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { venueApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
 import useToastStore from '../../../store/toastStore';
@@ -14,28 +14,60 @@ const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-
 
 export default function VenuesSection() {
   const toast = useToastStore();
-  const { data: items, isLoading, fetch } = useApiQuery(
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const { data: items, meta, isLoading, fetch: fetchVenues } = useApiQuery(
     (params) => venueApi.getAll(params),
-    { perPage: 100, errorMsg: 'Không tải được danh sách sân.' }
+    { 
+      autoFetch: false, 
+      errorMsg: 'Không tải được danh sách sân.' 
+    }
   );
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchVenues({
+        page: currentPage,
+        per_page: itemsPerPage,
+        sort: 'id',
+        direction: 'desc',
+        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
+      });
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [currentPage, itemsPerPage, searchTerm, fetchVenues]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const { invalidate: invalidateVenueStore } = useVenueStore(useShallow(state => ({ invalidate: state.invalidate })));
   const crud = useCrudModal({
-    emptyForm: { name: '', address: '' },
-    onSuccess: () => { fetch(); invalidateVenueStore(); },
+    emptyForm: { name: '', address: '', is_active: true },
+    onSuccess: () => { 
+      invalidateVenueStore(); 
+      setCurrentPage(1);
+      fetchVenues({
+        page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
+        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
+      });
+    },
   });
 
   const openAdd = () => crud.openAdd();
-  const openEdit = (item) => crud.openEdit(item, { name: item.name, address: item.address ?? '' });
+  const openEdit = (item) => crud.openEdit(item, { name: item.name, address: item.address ?? '', is_active: item.is_active ?? true });
 
   const handleSave = () => {
     if (!crud.form.name.trim()) { crud.setFormError('Tên sân không được bỏ trống.'); return; }
     crud.save(async () => {
       if (crud.modal === 'add') {
-        await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined });
+        await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
         toast.success(`Đã thêm sân "${crud.form.name.trim()}"!`);
       } else {
-        await venueApi.update(crud.editing.id, { name: crud.form.name.trim(), address: crud.form.address.trim() || undefined });
+        await venueApi.update(crud.editing.id, { name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
         toast.success(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
       }
     });
@@ -50,29 +82,43 @@ export default function VenuesSection() {
       toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
     });
   };
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(items.length / itemsPerPage) || 1;
+  const totalPages = meta?.last_page || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedItems = items.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginatedItems = items || [];
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
-        <h3 className="font-bold text-white text-base flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-emerald-400" /> Sân thi đấu ({items.length})
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
+        <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
+          <MapPin className="w-4 h-4 text-emerald-400" /> Sân thi đấu ({meta?.total || 0})
         </h3>
-        <div className="flex gap-2">
-          <button onClick={fetch} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="Tìm sân thi đấu..." 
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+            />
+          </div>
+          <button 
+            onClick={() => fetchVenues()} 
+            disabled={isLoading} 
+            className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0"
+          >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm transition-colors">
+          <button 
+            onClick={openAdd} 
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
+          >
             <Plus className="w-4 h-4" /> Thêm sân
           </button>
         </div>
@@ -136,6 +182,15 @@ export default function VenuesSection() {
           <FormField label="Địa chỉ">
             <input className={INPUT} value={crud.form.address} onChange={e => crud.setForm(f => ({ ...f, address: e.target.value }))} placeholder="VD: 65 Huỳnh Thúc Kháng, TP.HCM" />
           </FormField>
+          <div className="flex items-center gap-3 py-2">
+            <label className="flex items-center cursor-pointer gap-3">
+              <div className="relative">
+                <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
+                <div className="w-11 h-6 bg-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </div>
+              <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
+            </label>
+          </div>
         </AdminModal>
       )}
 

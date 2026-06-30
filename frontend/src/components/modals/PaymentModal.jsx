@@ -22,23 +22,17 @@ export default function PaymentModal({ teamName, seasonTeamId, amount = 500000, 
     setIsLoadingVnpay(true);
     setVnpayError('');
     try {
-      // TODO: Bỏ comment phần dưới khi Backend sẵn sàng
-      // const res = await paymentApi.createPaymentUrl({
-      //   season_team_id: seasonTeamId,
-      //   amount,
-      //   order_info: `Le phi ${teamName}`,
-      // });
-      // const paymentUrl = res.data?.paymentUrl;
-      // if (paymentUrl) {
-      //   window.location.href = paymentUrl;
-      // } else {
-      //   throw new Error('Không nhận được URL thanh toán từ máy chủ.');
-      // }
-
-      // ── Giả lập chờ API ──────────────────────────────────────
-      await new Promise(r => setTimeout(r, 1200));
-      setVnpayError('⚠️ Tính năng đang được tích hợp. Backend API chưa sẵn sàng.');
-      // ─────────────────────────────────────────────────────────
+      const res = await paymentApi.initiatePayment({
+        season_team_id: seasonTeamId,
+        return_url: `${window.location.origin}/thanh-toan/ket-qua`,
+      });
+      
+      const paymentUrl = res.data?.payment_url;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+      } else {
+        throw new Error('Không nhận được URL thanh toán từ máy chủ.');
+      }
     } catch (err) {
       setVnpayError(err?.response?.data?.message || 'Không thể kết nối tới cổng thanh toán. Vui lòng thử lại.');
     } finally {

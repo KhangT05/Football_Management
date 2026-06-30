@@ -1,19 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Home, ReceiptText, AlertTriangle } from 'lucide-react';
-// import { paymentApi } from '../api/paymentApi';
+import { paymentApi } from '../api/paymentApi';
 
 /**
  * PaymentResultPage — Trang kết quả sau khi VNPay callback về
  *
  * URL pattern: /thanh-toan/ket-qua?vnp_ResponseCode=00&vnp_TxnRef=...&...
- *
- * Cách hoạt động:
- * 1. VNPay redirect về trang này kèm query params
- * 2. Trang này gọi API verifyPayment() để Backend xác nhận
- * 3. Hiển thị kết quả thành công hoặc thất bại
- *
- * TODO: Khi Backend sẵn sàng, bỏ comment phần gọi paymentApi.verifyPayment()
  */
 export default function PaymentResultPage() {
   const [searchParams] = useSearchParams();
@@ -30,41 +23,30 @@ export default function PaymentResultPage() {
 
   useEffect(() => {
     const verify = async () => {
-      // Nếu không có params từ VNPay → redirect về trang chủ
       if (!responseCode) {
         navigate('/');
         return;
       }
 
-      // --- TODO: Bỏ comment phần dưới khi Backend sẵn sàng ---
-      // try {
-      //   const res = await paymentApi.verifyPayment(Object.fromEntries(searchParams));
-      //   if (res.data?.success) {
-      //     setStatus('success');
-      //     setTxnInfo(res.data.transaction);
-      //   } else {
-      //     setStatus('failed');
-      //   }
-      // } catch {
-      //   setStatus('error');
-      // }
-      // --------------------------------------------------------
-
-      // Hiện tại: đọc trực tiếp từ VNPay params (chưa xác thực Backend)
-      await new Promise(r => setTimeout(r, 1500)); // Simulate loading
-      if (responseCode === '00') {
-        setStatus('success');
-        setTxnInfo({
-          txnRef,
-          amount: amount ? parseInt(amount) / 100 : 0,
-          bankCode,
-          orderInfo,
-          payDate: payDate
-            ? `${payDate.slice(6, 8)}/${payDate.slice(4, 6)}/${payDate.slice(0, 4)} ${payDate.slice(8, 10)}:${payDate.slice(10, 12)}:${payDate.slice(12, 14)}`
-            : null,
-        });
-      } else {
-        setStatus('failed');
+      try {
+        const res = await paymentApi.verifyReturn(Object.fromEntries(searchParams));
+        
+        if (res.data?.is_verified && res.data?.is_success) {
+          setStatus('success');
+          setTxnInfo({
+            txnRef,
+            amount: amount ? parseInt(amount) / 100 : 0,
+            bankCode,
+            orderInfo,
+            payDate: payDate
+              ? `${payDate.slice(6, 8)}/${payDate.slice(4, 6)}/${payDate.slice(0, 4)} ${payDate.slice(8, 10)}:${payDate.slice(10, 12)}:${payDate.slice(12, 14)}`
+              : null,
+          });
+        } else {
+          setStatus('failed');
+        }
+      } catch {
+        setStatus('error');
       }
     };
 

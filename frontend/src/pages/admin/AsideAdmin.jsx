@@ -7,9 +7,12 @@ const VI_LABELS = {
   'Dashboard':           'Tổng quan',
   'Manage Teams':        'Quản lý đội',
   'Manage Players':      'Quản lý cầu thủ',
+  'Manage Users':        'Quản lý người dùng',
+  'Manage Roles':        'Phân quyền',
   'Season Teams':        'Đăng ký giải đấu',
   'Manage Matches':      'Quản lý trận đấu',
   'Update Results':      'Cập nhật kết quả',
+  'Manage Articles':     'Quản lý bài viết',
   'Tournament Settings': 'Cấu hình giải đấu',
 };
 

@@ -4,7 +4,7 @@ import {
   Save, CheckCircle2, Plus, Trash2, Clock, Activity,
   Loader2, AlertTriangle, RefreshCw,
   RotateCcw, Minus, ChevronDown, CalendarDays,
-  Flag, Zap, Target, ArrowLeftRight, Shield,
+  Flag, Zap, Target, ArrowLeftRight, Shield, Search
 } from 'lucide-react';
 import { teamApi, matchApi, matchLineupApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
@@ -14,6 +14,13 @@ import useToastStore from '../../store/toastStore';
 import EventCard from '../../components/admin/EventCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
+import { 
+  TransitionPeriodModal, 
+  ForfeitMatchModal, 
+  AbandonMatchModal, 
+  DisputeModal, 
+  ResolveAppealModal 
+} from '../../components/admin/AdvancedMatchControlModals';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -76,8 +83,9 @@ export default function UpdateResults() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
-    } else {
-      seasons.forEach(s => fetchBySeason(s.id));
+    } else if (seasons.length > 0) {
+      const active = seasons.find(s => s.status === 'ongoing' || s.status === 'registration_open') || seasons[0];
+      setSelectedSeasonId(String(active.id));
     }
   }, [selectedSeasonId, seasons, fetchBySeason]);
 
@@ -94,10 +102,19 @@ export default function UpdateResults() {
     ? isSeasonLoading(Number(effectiveSeasonId))
     : seasons.some(s => isSeasonLoading(s.id));
 
-  const matches = useMemo(
-    () => allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing'),
-    [allSeasonMatches],
-  );
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const matches = useMemo(() => {
+    let list = allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      list = list.filter(m => 
+        m.home_team?.name?.toLowerCase().includes(lower) || 
+        m.away_team?.name?.toLowerCase().includes(lower)
+      );
+    }
+    return list;
+  }, [allSeasonMatches, searchTerm]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -169,6 +186,8 @@ export default function UpdateResults() {
   const [isStarting, setIsStarting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+
+  const [activeModal, setActiveModal] = useState(null); // 'period', 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
 
   // Use the timer hook
   useTimer(timerRunning, setTimerSeconds);
@@ -347,9 +366,16 @@ export default function UpdateResults() {
     toast.info('Đã đặt lại form.');
   };
 
-  const isOngoing  = matchStatus === 'ongoing';
-  const isScheduled = matchStatus === 'scheduled';
+  const isOngoing  = matchStatus === 'ongoing' || matchStatus === 'pending_official' || matchStatus === 'needs_review';
+  const isScheduled = matchStatus === 'scheduled' || matchStatus === 'postponed';
   const isFinished  = matchStatus === 'finished';
+  const isProtested = matchStatus === 'protested';
+  
+  const handleModalSuccess = (msg) => {
+    toast.success(msg);
+    setActiveModal(null);
+    handleRefresh();
+  };
 
   const timerMins = Math.floor(timerSeconds / 60);
   const timerSecs = timerSeconds % 60;
@@ -396,33 +422,52 @@ export default function UpdateResults() {
         <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Season */}
-            <div className="flex-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <CalendarDays className="w-3.5 h-3.5 text-emerald-400" /> Mùa giải
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedSeasonId}
-                  onChange={handleSeasonChange}
-                  disabled={seasonsLoading}
-                  className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 text-sm appearance-none disabled:opacity-60 transition-colors"
-                >
-                  <option value="">— Tất cả các Mùa giải —</option>
-                  {seasons.map(s => {
-                    const lbl = { registration_open: '🟢 Mở đăng ký', ongoing: '🔴 Đang diễn ra', finished: '✓ Kết thúc', upcoming: '⏳ Sắp diễn ra', cancelled: '❌ Đã hủy' }[s.status] ?? s.status;
-                    return <option key={s.id} value={s.id}>{s.name} — {lbl}</option>;
-                  })}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            <div className="flex-1 flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <CalendarDays className="w-3.5 h-3.5 text-emerald-400" /> Mùa giải
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedSeasonId}
+                    onChange={handleSeasonChange}
+                    disabled={seasonsLoading}
+                    className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 text-sm appearance-none disabled:opacity-60 transition-colors"
+                  >
+                    <option value="">— Đang chọn Mùa giải —</option>
+                    {seasons.map(s => {
+                      const lbl = { registration_open: '🟢 Mở đăng ký', ongoing: '🔴 Đang diễn ra', finished: '✓ Kết thúc', upcoming: '⏳ Sắp diễn ra', cancelled: '❌ Đã hủy' }[s.status] ?? s.status;
+                      return <option key={s.id} value={s.id}>{s.name} — {lbl}</option>;
+                    })}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="flex-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên đội..."
+                    value={searchTerm}
+                    onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Refresh */}
             <div className="flex items-end">
               <button
-                onClick={handleRefresh}
+                onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
                 disabled={isLoadingMatches}
-                className="p-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
+                className="p-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40 h-[46px]"
                 title="Tải lại danh sách trận"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
@@ -658,6 +703,26 @@ export default function UpdateResults() {
                     </div>
                   )}
                 </div>
+
+                {/* ── Advanced Match Controls ── */}
+                <div className="mt-4 pt-4 border-t border-navy-light flex flex-wrap gap-2 justify-center">
+                  {(isScheduled || isOngoing) && (
+                    <>
+                      <button onClick={() => setActiveModal('period')} className="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg text-xs font-bold border border-blue-500/20 transition-colors">Đổi Hiệp</button>
+                      <button onClick={() => setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
+                      <button onClick={() => setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
+                    </>
+                  )}
+                  {(isFinished || isProtested) && (
+                    <>
+                      <button onClick={() => setActiveModal('appeal')} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-bold border border-purple-500/20 transition-colors">Kháng cáo</button>
+                      <button onClick={() => setActiveModal('protest')} className="px-3 py-1.5 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 rounded-lg text-xs font-bold border border-pink-500/20 transition-colors">Khiếu nại</button>
+                      {isProtested && (
+                        <button onClick={() => setActiveModal('resolve')} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-xs font-bold border border-emerald-500/20 transition-colors">Giải quyết Khiếu nại</button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -759,6 +824,13 @@ export default function UpdateResults() {
         </div>
       )}
 
+      {/* Advanced Control Modals */}
+      <TransitionPeriodModal isOpen={activeModal === 'period'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
+      <ForfeitMatchModal isOpen={activeModal === 'forfeit'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
+      <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} currentMinute={timerMins} onSuccess={handleModalSuccess} />
+      <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
+      <ResolveAppealModal isOpen={activeModal === 'resolve'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
+      
     </AdminLayout>
   );
 }

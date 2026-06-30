@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, Users,
@@ -8,14 +8,12 @@ import {
 import { useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
-import useSeasonStore from '../../store/seasonStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
 import Pagination from '../../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
-import useSeasonTeamStore from '../../store/seasonTeamStore';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -24,7 +22,7 @@ const POSITIONS = [
   { value: 'FW', label: 'FW – Tiền đạo' },
 ];
 
-const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null };
+const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, is_active: true };
 const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
 
 export default function ManageTeams() {
@@ -39,44 +37,7 @@ export default function ManageTeams() {
     fetchPlayers, getPlayersFromCache, playersLoading,
     addNewPlayerToTeam, removePlayers, } = useTeamStore(useShallow(state => ({ teams: state.teams, meta: state.meta, isLoading: state.isLoading, error: state.error, fetchAll: state.fetchAll, create: state.create, update: state.update, softDelete: state.softDelete, fetchPlayers: state.fetchPlayers, getPlayersFromCache: state.getPlayersFromCache, playersLoading: state.playersLoading, addNewPlayerToTeam: state.addNewPlayerToTeam, removePlayers: state.removePlayers })));
 
-  // ── Season filter ────────────────────────────────────
-  const { seasons, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, fetchAll: state.fetchAll })));
-  const [selectedSeasonId, setSelectedSeasonId] = useState('');
-
-  // removed auto-select mùa tốt nhất
-  const effectiveSeasonId = selectedSeasonId;
-
-  // Dữ liệu đội theo mùa giải
-  const { fetchSeasonTeams, loadingSeasons, errors, getSeasonTeamsFromCache } = useSeasonTeamStore(useShallow(state => ({
-    fetchSeasonTeams: state.fetchSeasonTeams,
-    loadingSeasons: state.loadingSeasons,
-    errors: state.errors,
-    getSeasonTeamsFromCache: state.getSeasonTeamsFromCache,
-  })));
-
-  const loadingSeasonTeams = loadingSeasons[effectiveSeasonId] || false;
-  const seasonTeamsError = errors[effectiveSeasonId] || null;
-  const seasonTeams = getSeasonTeamsFromCache(effectiveSeasonId);
-
-  // Khi season thay đổi: load lại (realtime force reload để chuẩn thông tin)
-  useEffect(() => {
-    if (effectiveSeasonId) {
-      fetchSeasonTeams(effectiveSeasonId, { force: true });
-    }
-  }, [effectiveSeasonId, fetchSeasonTeams]);
-
-  // Lọc teams: khi có mùa giải → chỉ lấy đội đã được duyệt (approved)
-  const approvedSeasonTeamIds = useMemo(
-    () => new Set(seasonTeams.filter(st => st.status === 'approved').map(st => st.team_id)),
-    [seasonTeams]
-  );
-  const filteredTeams = useMemo(
-    () => effectiveSeasonId
-      ? teams.filter(t => approvedSeasonTeamIds.has(t.id))
-      : teams,
-    [teams, effectiveSeasonId, approvedSeasonTeamIds]
-  );
-
+  // ── Pagination & Search ────────────────────────────────────
   const { teamFilters, setTeamFilters } = useAdminUIStore(useShallow(state => ({
     teamFilters: state.teamFilters,
     setTeamFilters: state.setTeamFilters,
@@ -85,28 +46,29 @@ export default function ManageTeams() {
   
   const setSearchTerm = useCallback((val) => setTeamFilters({ search: typeof val === 'function' ? val(searchTerm) : val }), [searchTerm, setTeamFilters]);
   const setCurrentPage = useCallback((val) => setTeamFilters({ page: typeof val === 'function' ? val(currentPage) : val }), [currentPage, setTeamFilters]);
-
   const setItemsPerPage = useCallback((val) => setTeamFilters({ limit: val, page: 1 }), [setTeamFilters]);
-  // ── Debounced search ──────────────────────────────────
+
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, effectiveSeasonId, setCurrentPage]);
-
-  const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  }, [debouncedSearch, setCurrentPage]);
 
   const refetchTeams = useCallback(() => {
-    fetchTeamsStore({ q: debouncedSearch || undefined, sort: 'id', direction: 'asc', per_page: 200, force: true });
-  }, [fetchTeamsStore, debouncedSearch]);
+    fetchTeamsStore({ 
+      page: currentPage, 
+      per_page: itemsPerPage, 
+      q: debouncedSearch || undefined, 
+      sort: 'id', 
+      direction: 'desc', 
+      force: true 
+    });
+  }, [fetchTeamsStore, debouncedSearch, currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    fetchSeasons();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refetchTeams(); }, [refetchTeams]); 
 
-  useEffect(() => { refetchTeams(); }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const totalPages = meta?.last_page || 1;
+  const paginatedTeams = teams || [];
 
   // ── CRUD Modal: Team (useCrudModal) ───────────────────
   const teamCrud = useCrudModal({ emptyForm: EMPTY_TEAM, onSuccess: refetchTeams });
@@ -124,6 +86,7 @@ export default function ManageTeams() {
       coach_name: team.coach_name ?? '',
       description: team.description ?? '',
       logo: null,
+      is_active: team.is_active ?? true,
     });
   };
 
@@ -148,6 +111,7 @@ export default function ManageTeams() {
       coach_name: teamCrud.form.coach_name.trim() || undefined,
       description: teamCrud.form.description.trim() || undefined,
       logo: teamCrud.form.logo instanceof File ? teamCrud.form.logo : undefined,
+      is_active: teamCrud.form.is_active,
     };
     teamCrud.save(async () => {
       if (teamCrud.modal === 'add') {
@@ -240,8 +204,7 @@ export default function ManageTeams() {
           <div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight">Quản lý Đội Bóng</h2>
             <p className="text-gray-400 text-sm mt-1">
-              <span className="font-bold text-neon">{effectiveSeasonId ? filteredTeams.length : meta.total}</span>
-              {effectiveSeasonId ? ' đội đã được duyệt trong mùa giải' : ' đội trong hệ thống'}
+              <span className="font-bold text-neon">{meta?.total || 0}</span> đội trong hệ thống
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -262,25 +225,8 @@ export default function ManageTeams() {
           </div>
         </div>
 
-        {/* Season Selector + Search */}
+        {/* Search */}
         <div className="bg-navy p-4 rounded-xl border border-navy-light flex flex-col sm:flex-row gap-3 shadow-lg shadow-black/20">
-          {/* Season select */}
-          <div className="relative shrink-0">
-            <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400 pointer-events-none" />
-            <select
-              value={selectedSeasonId}
-              onChange={e => { setSelectedSeasonId(e.target.value); setExpandedTeamId(null); }}
-              className="pl-10 pr-8 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white font-bold focus:outline-none focus:border-neon text-sm appearance-none min-w-[200px]"
-            >
-              <option value="">-- Tất cả mùa giải --</option>
-              {seasons.map(s => {
-                const icon = { registration_open: '✅', ongoing: '🔴', finished: '✓', upcoming: '⏳', cancelled: '❌' }[s.status] ?? '';
-                return <option key={s.id} value={s.id}>{icon} {s.name}</option>;
-              })}
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-          </div>
-          {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -288,7 +234,7 @@ export default function ManageTeams() {
               placeholder="Tìm theo tên đội..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm transition-colors"
             />
           </div>
         </div>
@@ -302,12 +248,12 @@ export default function ManageTeams() {
                   <th className="py-4 px-6 w-16 text-center">Logo</th>
                   <th className="py-4 px-6">Đội bóng</th>
                   <th className="py-4 px-6">HLV</th>
-                  <th className="py-4 px-6 text-center">{effectiveSeasonId ? 'Trạng thái mùa giải' : 'Trạng thái'}</th>
+                  <th className="py-4 px-6 text-center">Trạng thái</th>
                   <th className="py-4 px-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading || loadingSeasonTeams ? (
+                {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-navy-light">
                       {[1, 2, 3, 4, 5].map(j => (
@@ -317,12 +263,12 @@ export default function ManageTeams() {
                       ))}
                     </tr>
                   ))
-                ) : fetchError || seasonTeamsError ? (
+                ) : fetchError ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-red-400">
                       <div className="flex flex-col items-center gap-3">
                         <AlertTriangle className="w-10 h-10 text-red-500/50" />
-                        <p className="font-semibold">{fetchError || seasonTeamsError}</p>
+                        <p className="font-semibold">{fetchError}</p>
                         <button
                           onClick={refetchTeams}
                           className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
@@ -330,7 +276,7 @@ export default function ManageTeams() {
                       </div>
                     </td>
                   </tr>
-                ) : filteredTeams.length === 0 ? (
+                ) : paginatedTeams.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-gray-400">
                       <div className="flex flex-col items-center gap-3">
@@ -338,9 +284,7 @@ export default function ManageTeams() {
                         <p className="font-semibold">
                           {searchTerm
                             ? `Không tìm thấy đội nào cho "${searchTerm}"`
-                            : effectiveSeasonId
-                              ? 'Không có đội nào đăng ký trong mùa giải này.'
-                              : 'Chưa có đội bóng nào.'}
+                            : 'Chưa có đội bóng nào.'}
                         </p>
                       </div>
                     </td>
@@ -365,22 +309,13 @@ export default function ManageTeams() {
                         </td>
                         <td className="py-4 px-6 text-gray-300 text-sm">{team.coach_name || '—'}</td>
                         <td className="py-4 px-6 text-center">
-                          {effectiveSeasonId ? (
-                            /* Khi lọc theo mùa: chỉ hiện badge Đã duyệt */
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
-                              <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                              Đã duyệt
-                            </span>
-                          ) : (
-                            /* Khi xem tất cả: hiện Active/Inactive */
-                            <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                              team.is_active
-                                ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                                : 'bg-red-400/10 text-red-400 border-red-400/30'
-                            }`}>
-                              {team.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          )}
+                          <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
+                            team.is_active
+                              ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                              : 'bg-red-400/10 text-red-400 border-red-400/30'
+                          }`}>
+                            {team.is_active ? 'Active' : 'Inactive'}
+                          </span>
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-2">

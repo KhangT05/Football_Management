@@ -26,8 +26,8 @@ export const tournamentRuleApi = {
    * GET /tournamentrules
    * @returns {TournamentRuleDto[]}
    */
-  getAll: () => {
-    return axiosClient.get('/tournamentrules');
+  getAll: (params = {}) => {
+    return axiosClient.get('/tournamentrules', { params });
   },
 
   /**

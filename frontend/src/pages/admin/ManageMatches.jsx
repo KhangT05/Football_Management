@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { 
   CalendarDays, CalendarPlus, Zap, Edit3, X, Save, 
-  MapPin, Clock, Loader2, RefreshCw
+  MapPin, Clock, Loader2, RefreshCw, Search
 } from 'lucide-react';
 import useSeasonStore from '../../store/seasonStore';
 import useScheduleStore from '../../store/scheduleStore';
@@ -247,7 +247,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
 export default function ManageMatches() {
   const toast = useToastStore();
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
-  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache, generateSchedule, rescheduleMatch } = useScheduleStore();
+  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, generateSchedule, rescheduleMatch } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
 
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
@@ -256,6 +256,7 @@ export default function ManageMatches() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSeasonChange = (e) => {
     setSelectedSeasonId(e.target.value);
@@ -270,17 +271,25 @@ export default function ManageMatches() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId), { force: true });
-    } else {
-      // Load for all if none selected to populate dropdown logic if needed
-      seasons.forEach(s => fetchBySeason(s.id, { force: true }));
+    } else if (seasons.length > 0) {
+      const active = seasons.find(s => s.status === 'ongoing' || s.status === 'registration_open') || seasons[0];
+      setTimeout(() => setSelectedSeasonId(String(active.id)), 0);
     }
   }, [selectedSeasonId, seasons, fetchBySeason]);
 
   const effectiveSeasonId = selectedSeasonId;
   const matches = useMemo(() => {
-    if (effectiveSeasonId) return getMatchesFromCache(Number(effectiveSeasonId));
-    return seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
-  }, [effectiveSeasonId, seasons, scheduleCache, getMatchesFromCache]);
+    if (!effectiveSeasonId) return [];
+    let list = getMatchesFromCache(Number(effectiveSeasonId));
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      list = list.filter(m => 
+        m.home_team?.name?.toLowerCase().includes(lower) || 
+        m.away_team?.name?.toLowerCase().includes(lower)
+      );
+    }
+    return list;
+  }, [effectiveSeasonId, getMatchesFromCache, searchTerm]);
 
   const isLoading = effectiveSeasonId 
     ? isSeasonLoading(Number(effectiveSeasonId)) 
@@ -292,8 +301,6 @@ export default function ManageMatches() {
   const handleRefresh = () => {
     if (effectiveSeasonId) {
       fetchBySeason(Number(effectiveSeasonId), { force: true });
-    } else {
-      seasons.forEach(s => fetchBySeason(s.id, { force: true }));
     }
   };
 
@@ -337,18 +344,30 @@ export default function ManageMatches() {
 
         {/* Filters & Actions */}
         <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <select
-              value={selectedSeasonId}
-              onChange={handleSeasonChange}
-              disabled={seasonsLoading}
-              className="w-full px-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon appearance-none"
-            >
-              <option value="">— Tất cả các Mùa giải —</option>
-              {seasons.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.status})</option>
-              ))}
-            </select>
+          <div className="flex-1 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <select
+                value={selectedSeasonId}
+                onChange={handleSeasonChange}
+                disabled={seasonsLoading}
+                className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon appearance-none transition-colors"
+              >
+                <option value="">— Đang chọn Mùa giải —</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.status})</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm trận đấu (theo tên đội)..."
+                value={searchTerm}
+                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon transition-colors text-sm"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button

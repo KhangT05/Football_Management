@@ -36,8 +36,12 @@ export { tournamentRuleApi } from './tournamentRuleApi';
 export { seasonTeamApi } from './seasonTeamApi';
 export { groupApi } from './groupApi';
 export { knockoutApi } from './knockoutApi';
+export { jerseyApi } from './jerseyApi';
 export { matchLineupApi } from './matchLineupApi';
 export { paymentApi } from './paymentApi';
+export { articleApi } from './articleApi';
+export { uploadApi } from './uploadApi';
+export { roleApi } from './roleApi';
 
 // Re-export token utilities để dùng ngoài axiosClient nếu cần
 export { setAccessToken, getAccessToken, clearAccessToken } from './axiosClient';

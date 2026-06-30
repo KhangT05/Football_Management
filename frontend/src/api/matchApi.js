@@ -144,6 +144,26 @@ export const matchApi = {
   editScore: (id, body) =>
     axiosClient.patch(`/matches/${id}/score`, body),
 
+  // ── Advanced Match Controls (Appeals, Protests, Corrections) ─────────────
+
+  appeal: (id, body) =>
+    axiosClient.post(`/matches/${id}/appeal`, body),
+
+  protest: (id, body) =>
+    axiosClient.post(`/matches/${id}/protest`, body),
+
+  resolveAppeal: (id, body) =>
+    axiosClient.post(`/matches/${id}/resolve-appeal`, body),
+
+  addCorrectionEvent: (id, body) =>
+    axiosClient.post(`/matches/${id}/correction/events`, body),
+
+  editCorrectionEvent: (id, eventId, body) =>
+    axiosClient.patch(`/matches/${id}/correction/events/${eventId}`, body),
+
+  deleteCorrectionEvent: (id, eventId) =>
+    axiosClient.delete(`/matches/${id}/correction/events/${eventId}`),
+
   // ── TODO ─────────────────────────────────────────────────────────────────────
 
   // voidResult — CHƯA IMPLEMENT.
@@ -153,17 +173,17 @@ export const matchApi = {
 
   // ── Deprecated ───────────────────────────────────────────────────────────────
 
-  getMatches: (_params = {}) => {
+  getMatches: () => {
     console.warn('[matchApi] getMatches() deprecated. Dùng getScheduleBySeason(seasonId).');
     return Promise.reject(new Error('API /matches không tồn tại.'));
   },
 
-  create: (_data) =>
+  create: () =>
     Promise.reject(new Error('POST /matches không tồn tại. Dùng generateSchedule() hoặc autoSchedule().')),
 
-  update: (_id, _data) =>
+  update: () =>
     Promise.reject(new Error('PATCH /matches/{id} không tồn tại. Dùng rescheduleMatch().')),
 
-  delete: (_id) =>
+  delete: () =>
     Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.')),
 };

@@ -15,43 +15,67 @@
 import axiosClient from './axiosClient';
 
 export const paymentApi = {
-
   /**
-   * Tạo URL thanh toán VNPay
-   * POST /payments/vnpay/create-url
+   * Khởi tạo thanh toán VNPay
+   * POST /payments/initiate
    *
-   * @param {{ season_team_id: number, amount: number, order_info?: string }} data
-   * @returns {{ paymentUrl: string, orderId: string }}
-   *
-   * TODO: Kết nối khi Backend endpoint sẵn sàng.
+   * @param {{ season_team_id: number, return_url: string }} data
+   * @returns {{ payment_id: number, transaction_ref: string, amount: number, payment_url: string }}
    */
-  createPaymentUrl: (data) => {
-    return axiosClient.post('/payments/vnpay/create-url', data);
+  initiatePayment: (data) => {
+    return axiosClient.post('/payments/initiate', data);
   },
 
   /**
    * Xác minh giao dịch sau khi VNPay callback về Frontend
-   * GET /payments/vnpay/verify?vnp_ResponseCode=...&vnp_TxnRef=...&...
+   * GET /payments/return?vnp_ResponseCode=...&vnp_TxnRef=...&...
    *
-   * @param {URLSearchParams | object} params — Query params từ VNPay callback URL
-   * @returns {{ success: boolean, message: string, transaction: object }}
-   *
-   * TODO: Kết nối khi Backend endpoint sẵn sàng.
+   * @param {URLSearchParams | object} params
+   * @returns {{ is_verified: boolean, is_success: boolean, payment_id: number | null, status: string | null }}
    */
-  verifyPayment: (params) => {
-    return axiosClient.get('/payments/vnpay/verify', { params });
+  verifyReturn: (params) => {
+    return axiosClient.get('/payments/return', { params });
   },
 
   /**
-   * Lấy lịch sử giao dịch của team
-   * GET /payments/history?season_team_id={id}
+   * Lấy trạng thái thanh toán của team (dành cho user/leader)
+   * GET /payments/status?season_team_id={id}
    *
    * @param {number} seasonTeamId
-   * @returns {{ data: PaymentRecord[] }}
-   *
-   * TODO: Kết nối khi Backend endpoint sẵn sàng.
    */
-  getHistory: (seasonTeamId) => {
-    return axiosClient.get('/payments/history', { params: { season_team_id: seasonTeamId } });
+  getStatus: (seasonTeamId) => {
+    return axiosClient.get('/payments/status', { params: { season_team_id: seasonTeamId } });
+  },
+
+  /**
+   * Admin: Lấy danh sách thanh toán
+   * GET /payments
+   */
+  getPayments: (params) => {
+    return axiosClient.get('/payments', { params });
+  },
+
+  /**
+   * Admin: Xác nhận thanh toán thủ công
+   * PATCH /payments/{id}/confirm
+   */
+  confirmManual: (id, data) => {
+    return axiosClient.patch(`/payments/${id}/confirm`, data);
+  },
+
+  /**
+   * Admin: Hoàn tiền
+   * POST /payments/{id}/refund
+   */
+  refundPayment: (id, data) => {
+    return axiosClient.post(`/payments/${id}/refund`, data);
+  },
+
+  /**
+   * Admin: Truy vấn trạng thái giao dịch
+   * GET /payments/{id}/query
+   */
+  queryTransaction: (id) => {
+    return axiosClient.get(`/payments/${id}/query`);
   },
 };

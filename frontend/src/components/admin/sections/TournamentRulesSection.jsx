@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { tournamentApi, tournamentRuleApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
 import useToastStore from '../../../store/toastStore';
@@ -30,26 +30,49 @@ const DEFAULT_RULE_FORM = {
   min_players_per_team: 11,
   teams_advance_per_group: 2,
   tiebreaker_order: ['goal_diff', 'goals_scored', 'head_to_head'],
+  is_active: true,
 };
 
 export default function TournamentRulesSection() {
   const toast = useToastStore();
-  const { data: items, isLoading, fetch: fetchRules } = useApiQuery(
-    () => tournamentRuleApi.getAll(),
-    { perPage: 50, errorMsg: 'Không tải được dữ liệu luật giải.' }
-  );
-
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const { data: items, meta, isLoading, fetch: fetchRules } = useApiQuery(
+    (params) => tournamentRuleApi.getAll(params),
+    { 
+      autoFetch: false, 
+      errorMsg: 'Không tải được dữ liệu luật giải.' 
+    }
+  );
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchRules({
+        page: currentPage,
+        per_page: itemsPerPage,
+        sort: 'id',
+        direction: 'desc',
+        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
+      });
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [currentPage, itemsPerPage, searchTerm, fetchRules]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
+  const totalPages = meta?.last_page || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginatedItems = items || [];
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
@@ -59,7 +82,16 @@ export default function TournamentRulesSection() {
     }).catch(() => {});
   }, []);
 
-  const crud = useCrudModal({ emptyForm: DEFAULT_RULE_FORM, onSuccess: () => fetchRules() });
+  const crud = useCrudModal({ 
+    emptyForm: DEFAULT_RULE_FORM, 
+    onSuccess: () => {
+      setCurrentPage(1);
+      fetchRules({
+        page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
+        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
+      });
+    }
+  });
 
   const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
 
@@ -75,6 +107,7 @@ export default function TournamentRulesSection() {
     min_players_per_team: item.min_players_per_team,
     teams_advance_per_group: item.teams_advance_per_group,
     tiebreaker_order: item.tiebreaker_order ?? DEFAULT_RULE_FORM.tiebreaker_order,
+    is_active: item.is_active ?? true,
   });
 
   const toggleTiebreaker = (value) => {
@@ -101,6 +134,7 @@ export default function TournamentRulesSection() {
         max_players_per_team: Number(crud.form.max_players_per_team),
         min_players_per_team: Number(crud.form.min_players_per_team),
         teams_advance_per_group: Number(crud.form.teams_advance_per_group),
+        is_active: crud.form.is_active,
       };
       if (crud.modal === 'add') {
         await tournamentRuleApi.create(payload);
@@ -124,15 +158,32 @@ export default function TournamentRulesSection() {
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
-        <h3 className="font-bold text-white text-base flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-orange-400" /> Luật giải ({items.length})
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
+        <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
+          <CheckCircle2 className="w-4 h-4 text-orange-400" /> Luật giải ({meta?.total || 0})
         </h3>
-        <div className="flex gap-2">
-          <button onClick={fetchRules} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="Tìm luật giải..." 
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+            />
+          </div>
+          <button 
+            onClick={() => fetchRules()} 
+            disabled={isLoading} 
+            className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0"
+          >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-sm transition-colors">
+          <button 
+            onClick={openAdd} 
+            className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
+          >
             <Plus className="w-4 h-4" /> Thêm luật
           </button>
         </div>
@@ -149,7 +200,12 @@ export default function TournamentRulesSection() {
         ) : paginatedItems.map(item => (
           <div key={item.id} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-navy-light/10 transition-colors">
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-white truncate">{getTournamentName(item.tournament_id)}</p>
+              <p className="font-bold text-white truncate flex items-center gap-2">
+                {getTournamentName(item.tournament_id)}
+                {!item.is_active && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-500/20 text-gray-400 border border-gray-500/30 uppercase">Tạm ẩn</span>
+                )}
+              </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
                 <span className="text-xs text-gray-400">Thắng: <strong className="text-emerald-400">{item.points_per_win}pts</strong></span>
                 <span className="text-xs text-gray-400">Hòa: <strong className="text-amber-400">{item.points_per_draw}pts</strong></span>
@@ -252,6 +308,16 @@ export default function TournamentRulesSection() {
               </p>
             )}
           </FormField>
+          
+          <div className="flex items-center gap-3 py-2">
+            <label className="flex items-center cursor-pointer gap-3">
+              <div className="relative">
+                <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
+                <div className="w-11 h-6 bg-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+              </div>
+              <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
+            </label>
+          </div>
         </AdminModal>
       )}
 

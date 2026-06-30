@@ -14,4 +14,11 @@ export const knockoutApi = {
    */
   advanceWinner: (seasonId, phaseId, data) => 
     axiosClient.post(`/seasons/${seasonId}/phases/${phaseId}/knockout/advance`, data),
+
+  /**
+   * Lấy sơ đồ bracket
+   * GET /phases/{phaseId}/knockout/bracket
+   */
+  getBracket: (phaseId) => 
+    axiosClient.get(`/phases/${phaseId}/knockout/bracket`),
 };
