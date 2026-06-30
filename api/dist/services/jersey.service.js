@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { SeasonStatus, } from "../generated/prisma/client.js";
+import { Prisma, SeasonStatus, } from "../generated/prisma/client.js";
 export class JerseyService {
     prisma;
     constructor(prisma) {
@@ -7,25 +7,18 @@ export class JerseyService {
     }
     // ─── SeasonTeamJersey ──────────────────────────────────────────────────────
     async getSeasonTeamJerseys(seasonTeamId) {
+        const exists = await this.prisma.seasonTeam.findFirst({
+            where: { id: seasonTeamId, deleted_at: null },
+            select: { id: true },
+        });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamId} not found`);
         return this.prisma.seasonTeamJersey.findMany({
             where: { season_team_id: seasonTeamId },
         });
     }
     async upsertSeasonTeamJersey(seasonTeamId, data, auth) {
-        const seasonTeam = await this.prisma.seasonTeam.findUnique({
-            where: { id: seasonTeamId },
-            select: {
-                id: true,
-                team_id: true,
-                season: { select: { status: true } },
-            },
-        });
-        if (!seasonTeam)
-            throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamId} not found`);
-        if (seasonTeam.season.status === SeasonStatus.finished)
-            throw createAppError("CONFLICT", "Cannot update jersey for a finished season");
-        if (!auth.is_admin)
-            await this.assertTeamOwnership(seasonTeam.team_id, auth.user_id);
+        await this.assertEditable(seasonTeamId, auth);
         return this.prisma.seasonTeamJersey.upsert({
             where: { season_team_id_type: { season_team_id: seasonTeamId, type: data.type } },
             create: {
@@ -43,27 +36,36 @@ export class JerseyService {
         });
     }
     async deleteSeasonTeamJersey(seasonTeamId, type, auth) {
-        const seasonTeam = await this.prisma.seasonTeam.findUnique({
-            where: { id: seasonTeamId },
-            select: { team_id: true, season: { select: { status: true } } },
+        await this.assertEditable(seasonTeamId, auth);
+        try {
+            await this.prisma.seasonTeamJersey.delete({
+                where: { season_team_id_type: { season_team_id: seasonTeamId, type } },
+            });
+        }
+        catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError) {
+                if (err.code === "P2025")
+                    throw createAppError("NOT_FOUND", "SeasonTeamJersey not found");
+                if (err.code === "P2003")
+                    throw createAppError("CONFLICT", "Jersey already assigned to a match, cannot delete");
+            }
+            throw err;
+        }
+    }
+    // ─── Guard chung: existence + season lock + ownership ──────────────────────
+    async assertEditable(seasonTeamId, auth) {
+        const seasonTeam = await this.prisma.seasonTeam.findFirst({
+            where: { id: seasonTeamId, deleted_at: null },
+            select: { id: true, team_id: true, season: { select: { status: true } } },
         });
         if (!seasonTeam)
             throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamId} not found`);
         if (seasonTeam.season.status === SeasonStatus.finished)
-            throw createAppError("CONFLICT", "Cannot delete jersey for a finished season");
+            throw createAppError("CONFLICT", "Cannot modify jersey for a finished season");
         if (!auth.is_admin)
             await this.assertTeamOwnership(seasonTeam.team_id, auth.user_id);
-        const existing = await this.prisma.seasonTeamJersey.findUnique({
-            where: { season_team_id_type: { season_team_id: seasonTeamId, type: type } },
-            select: { id: true },
-        });
-        if (!existing)
-            throw createAppError("NOT_FOUND", "SeasonTeamJersey not found");
-        await this.prisma.seasonTeamJersey.delete({
-            where: { season_team_id_type: { season_team_id: seasonTeamId, type: type } },
-        });
+        return seasonTeam;
     }
-    // ─── Auth helper ───────────────────────────────────────────────────────────
     async assertTeamOwnership(teamId, userId) {
         const access = await this.prisma.team.findFirst({
             where: {

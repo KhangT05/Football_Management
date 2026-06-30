@@ -595,10 +595,8 @@ export class MatchLifecycleService {
             updateData.type = input.type;
             updateData.card_color = this._deriveCardColor(input.type) ?? null;
         }
-        if (input.playerId !== undefined)
-            updateData.player_id = input.playerId;
-        if (input.teamId !== undefined)
-            updateData.team_id = input.teamId;
+        // if (input.playerId !== undefined) updateData.player_id = input.playerId;
+        // if (input.teamId !== undefined) updateData.team_id = input.teamId;
         if (input.minute !== undefined)
             updateData.minute = input.minute;
         if (input.addedMinute !== undefined)
@@ -607,8 +605,7 @@ export class MatchLifecycleService {
             updateData.period = input.period;
         if (input.note !== undefined)
             updateData.note = input.note;
-        if (input.subOutPlayerId !== undefined)
-            updateData.sub_out_player_id = input.subOutPlayerId;
+        // if (input.subOutPlayerId !== undefined) updateData.sub_out_player_id = input.subOutPlayerId;
         await this.prisma.matchEvent.update({
             where: { id: eventId },
             data: updateData,

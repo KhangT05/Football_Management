@@ -249,6 +249,9 @@ export type MatchEventWhereInput = {
     card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
     sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
+    player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
+    team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
+    sub_out_player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
     match?: Prisma.XOR<Prisma.MatchScalarRelationFilter, Prisma.MatchWhereInput>;
 };
 export type MatchEventOrderByWithRelationInput = {
@@ -264,6 +267,9 @@ export type MatchEventOrderByWithRelationInput = {
     card_color?: Prisma.SortOrderInput | Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
+    player?: Prisma.PlayerOrderByWithRelationInput;
+    team?: Prisma.TeamOrderByWithRelationInput;
+    sub_out_player?: Prisma.PlayerOrderByWithRelationInput;
     match?: Prisma.MatchOrderByWithRelationInput;
     _relevance?: Prisma.MatchEventOrderByRelevanceInput;
 };
@@ -283,6 +289,9 @@ export type MatchEventWhereUniqueInput = Prisma.AtLeast<{
     card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
     sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
+    player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
+    team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null;
+    sub_out_player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
     match?: Prisma.XOR<Prisma.MatchScalarRelationFilter, Prisma.MatchWhereInput>;
 }, "id">;
 export type MatchEventOrderByWithAggregationInput = {
@@ -322,16 +331,16 @@ export type MatchEventScalarWhereWithAggregatesInput = {
     created_at?: Prisma.DateTimeWithAggregatesFilter<"MatchEvent"> | Date | string;
 };
 export type MatchEventCreateInput = {
-    player_id?: number | null;
-    team_id?: number | null;
     type: $Enums.MatchEventType;
     minute?: number | null;
     note?: string | null;
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
-    sub_out_player_id?: number | null;
     created_at?: Date | string;
+    player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
+    team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
+    sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
     match: Prisma.MatchCreateNestedOneWithoutEventsInput;
 };
 export type MatchEventUncheckedCreateInput = {
@@ -349,16 +358,16 @@ export type MatchEventUncheckedCreateInput = {
     created_at?: Date | string;
 };
 export type MatchEventUpdateInput = {
-    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
     minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
-    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
+    team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
+    sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
     match?: Prisma.MatchUpdateOneRequiredWithoutEventsNestedInput;
 };
 export type MatchEventUncheckedUpdateInput = {
@@ -390,15 +399,12 @@ export type MatchEventCreateManyInput = {
     created_at?: Date | string;
 };
 export type MatchEventUpdateManyMutationInput = {
-    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
     minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
-    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type MatchEventUncheckedUpdateManyInput = {
@@ -488,6 +494,120 @@ export type MatchEventSumOrderByAggregateInput = {
     added_minute?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrder;
 };
+export type MatchEventCreateNestedManyWithoutTeamInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput> | Prisma.MatchEventCreateWithoutTeamInput[] | Prisma.MatchEventUncheckedCreateWithoutTeamInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutTeamInput | Prisma.MatchEventCreateOrConnectWithoutTeamInput[];
+    createMany?: Prisma.MatchEventCreateManyTeamInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventUncheckedCreateNestedManyWithoutTeamInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput> | Prisma.MatchEventCreateWithoutTeamInput[] | Prisma.MatchEventUncheckedCreateWithoutTeamInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutTeamInput | Prisma.MatchEventCreateOrConnectWithoutTeamInput[];
+    createMany?: Prisma.MatchEventCreateManyTeamInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventUpdateManyWithoutTeamNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput> | Prisma.MatchEventCreateWithoutTeamInput[] | Prisma.MatchEventUncheckedCreateWithoutTeamInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutTeamInput | Prisma.MatchEventCreateOrConnectWithoutTeamInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutTeamInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutTeamInput[];
+    createMany?: Prisma.MatchEventCreateManyTeamInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutTeamInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutTeamInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutTeamInput | Prisma.MatchEventUpdateManyWithWhereWithoutTeamInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
+export type MatchEventUncheckedUpdateManyWithoutTeamNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput> | Prisma.MatchEventCreateWithoutTeamInput[] | Prisma.MatchEventUncheckedCreateWithoutTeamInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutTeamInput | Prisma.MatchEventCreateOrConnectWithoutTeamInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutTeamInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutTeamInput[];
+    createMany?: Prisma.MatchEventCreateManyTeamInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutTeamInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutTeamInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutTeamInput | Prisma.MatchEventUpdateManyWithWhereWithoutTeamInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
+export type MatchEventCreateNestedManyWithoutPlayerInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput> | Prisma.MatchEventCreateWithoutPlayerInput[] | Prisma.MatchEventUncheckedCreateWithoutPlayerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutPlayerInput | Prisma.MatchEventCreateOrConnectWithoutPlayerInput[];
+    createMany?: Prisma.MatchEventCreateManyPlayerInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventCreateNestedManyWithoutSub_out_playerInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput> | Prisma.MatchEventCreateWithoutSub_out_playerInput[] | Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput | Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput[];
+    createMany?: Prisma.MatchEventCreateManySub_out_playerInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventUncheckedCreateNestedManyWithoutPlayerInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput> | Prisma.MatchEventCreateWithoutPlayerInput[] | Prisma.MatchEventUncheckedCreateWithoutPlayerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutPlayerInput | Prisma.MatchEventCreateOrConnectWithoutPlayerInput[];
+    createMany?: Prisma.MatchEventCreateManyPlayerInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventUncheckedCreateNestedManyWithoutSub_out_playerInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput> | Prisma.MatchEventCreateWithoutSub_out_playerInput[] | Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput | Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput[];
+    createMany?: Prisma.MatchEventCreateManySub_out_playerInputEnvelope;
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+};
+export type MatchEventUpdateManyWithoutPlayerNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput> | Prisma.MatchEventCreateWithoutPlayerInput[] | Prisma.MatchEventUncheckedCreateWithoutPlayerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutPlayerInput | Prisma.MatchEventCreateOrConnectWithoutPlayerInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutPlayerInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutPlayerInput[];
+    createMany?: Prisma.MatchEventCreateManyPlayerInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutPlayerInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutPlayerInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutPlayerInput | Prisma.MatchEventUpdateManyWithWhereWithoutPlayerInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
+export type MatchEventUpdateManyWithoutSub_out_playerNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput> | Prisma.MatchEventCreateWithoutSub_out_playerInput[] | Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput | Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutSub_out_playerInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutSub_out_playerInput[];
+    createMany?: Prisma.MatchEventCreateManySub_out_playerInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutSub_out_playerInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutSub_out_playerInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutSub_out_playerInput | Prisma.MatchEventUpdateManyWithWhereWithoutSub_out_playerInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
+export type MatchEventUncheckedUpdateManyWithoutPlayerNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput> | Prisma.MatchEventCreateWithoutPlayerInput[] | Prisma.MatchEventUncheckedCreateWithoutPlayerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutPlayerInput | Prisma.MatchEventCreateOrConnectWithoutPlayerInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutPlayerInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutPlayerInput[];
+    createMany?: Prisma.MatchEventCreateManyPlayerInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutPlayerInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutPlayerInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutPlayerInput | Prisma.MatchEventUpdateManyWithWhereWithoutPlayerInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
+export type MatchEventUncheckedUpdateManyWithoutSub_out_playerNestedInput = {
+    create?: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput> | Prisma.MatchEventCreateWithoutSub_out_playerInput[] | Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput[];
+    connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput | Prisma.MatchEventCreateOrConnectWithoutSub_out_playerInput[];
+    upsert?: Prisma.MatchEventUpsertWithWhereUniqueWithoutSub_out_playerInput | Prisma.MatchEventUpsertWithWhereUniqueWithoutSub_out_playerInput[];
+    createMany?: Prisma.MatchEventCreateManySub_out_playerInputEnvelope;
+    set?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    disconnect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    delete?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    connect?: Prisma.MatchEventWhereUniqueInput | Prisma.MatchEventWhereUniqueInput[];
+    update?: Prisma.MatchEventUpdateWithWhereUniqueWithoutSub_out_playerInput | Prisma.MatchEventUpdateWithWhereUniqueWithoutSub_out_playerInput[];
+    updateMany?: Prisma.MatchEventUpdateManyWithWhereWithoutSub_out_playerInput | Prisma.MatchEventUpdateManyWithWhereWithoutSub_out_playerInput[];
+    deleteMany?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+};
 export type MatchEventCreateNestedManyWithoutMatchInput = {
     create?: Prisma.XOR<Prisma.MatchEventCreateWithoutMatchInput, Prisma.MatchEventUncheckedCreateWithoutMatchInput> | Prisma.MatchEventCreateWithoutMatchInput[] | Prisma.MatchEventUncheckedCreateWithoutMatchInput[];
     connectOrCreate?: Prisma.MatchEventCreateOrConnectWithoutMatchInput | Prisma.MatchEventCreateOrConnectWithoutMatchInput[];
@@ -532,8 +652,84 @@ export type EnumMatchEventTypeFieldUpdateOperationsInput = {
 export type NullableEnumCardColorFieldUpdateOperationsInput = {
     set?: $Enums.CardColor | null;
 };
-export type MatchEventCreateWithoutMatchInput = {
+export type MatchEventCreateWithoutTeamInput = {
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+    player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
+    sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
+    match: Prisma.MatchCreateNestedOneWithoutEventsInput;
+};
+export type MatchEventUncheckedCreateWithoutTeamInput = {
+    id?: number;
+    match_id: number;
     player_id?: number | null;
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    sub_out_player_id?: number | null;
+    created_at?: Date | string;
+};
+export type MatchEventCreateOrConnectWithoutTeamInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput>;
+};
+export type MatchEventCreateManyTeamInputEnvelope = {
+    data: Prisma.MatchEventCreateManyTeamInput | Prisma.MatchEventCreateManyTeamInput[];
+    skipDuplicates?: boolean;
+};
+export type MatchEventUpsertWithWhereUniqueWithoutTeamInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    update: Prisma.XOR<Prisma.MatchEventUpdateWithoutTeamInput, Prisma.MatchEventUncheckedUpdateWithoutTeamInput>;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutTeamInput, Prisma.MatchEventUncheckedCreateWithoutTeamInput>;
+};
+export type MatchEventUpdateWithWhereUniqueWithoutTeamInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateWithoutTeamInput, Prisma.MatchEventUncheckedUpdateWithoutTeamInput>;
+};
+export type MatchEventUpdateManyWithWhereWithoutTeamInput = {
+    where: Prisma.MatchEventScalarWhereInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateManyMutationInput, Prisma.MatchEventUncheckedUpdateManyWithoutTeamInput>;
+};
+export type MatchEventScalarWhereInput = {
+    AND?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+    OR?: Prisma.MatchEventScalarWhereInput[];
+    NOT?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
+    id?: Prisma.IntFilter<"MatchEvent"> | number;
+    match_id?: Prisma.IntFilter<"MatchEvent"> | number;
+    player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
+    team_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
+    type?: Prisma.EnumMatchEventTypeFilter<"MatchEvent"> | $Enums.MatchEventType;
+    minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
+    note?: Prisma.StringNullableFilter<"MatchEvent"> | string | null;
+    period?: Prisma.EnumMatchPeriodNullableFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
+    card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
+    sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
+    created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
+};
+export type MatchEventCreateWithoutPlayerInput = {
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+    team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
+    sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
+    match: Prisma.MatchCreateNestedOneWithoutEventsInput;
+};
+export type MatchEventUncheckedCreateWithoutPlayerInput = {
+    id?: number;
+    match_id: number;
     team_id?: number | null;
     type: $Enums.MatchEventType;
     minute?: number | null;
@@ -543,6 +739,85 @@ export type MatchEventCreateWithoutMatchInput = {
     card_color?: $Enums.CardColor | null;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
+};
+export type MatchEventCreateOrConnectWithoutPlayerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput>;
+};
+export type MatchEventCreateManyPlayerInputEnvelope = {
+    data: Prisma.MatchEventCreateManyPlayerInput | Prisma.MatchEventCreateManyPlayerInput[];
+    skipDuplicates?: boolean;
+};
+export type MatchEventCreateWithoutSub_out_playerInput = {
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+    player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
+    team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
+    match: Prisma.MatchCreateNestedOneWithoutEventsInput;
+};
+export type MatchEventUncheckedCreateWithoutSub_out_playerInput = {
+    id?: number;
+    match_id: number;
+    player_id?: number | null;
+    team_id?: number | null;
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+};
+export type MatchEventCreateOrConnectWithoutSub_out_playerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput>;
+};
+export type MatchEventCreateManySub_out_playerInputEnvelope = {
+    data: Prisma.MatchEventCreateManySub_out_playerInput | Prisma.MatchEventCreateManySub_out_playerInput[];
+    skipDuplicates?: boolean;
+};
+export type MatchEventUpsertWithWhereUniqueWithoutPlayerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    update: Prisma.XOR<Prisma.MatchEventUpdateWithoutPlayerInput, Prisma.MatchEventUncheckedUpdateWithoutPlayerInput>;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutPlayerInput, Prisma.MatchEventUncheckedCreateWithoutPlayerInput>;
+};
+export type MatchEventUpdateWithWhereUniqueWithoutPlayerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateWithoutPlayerInput, Prisma.MatchEventUncheckedUpdateWithoutPlayerInput>;
+};
+export type MatchEventUpdateManyWithWhereWithoutPlayerInput = {
+    where: Prisma.MatchEventScalarWhereInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateManyMutationInput, Prisma.MatchEventUncheckedUpdateManyWithoutPlayerInput>;
+};
+export type MatchEventUpsertWithWhereUniqueWithoutSub_out_playerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    update: Prisma.XOR<Prisma.MatchEventUpdateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedUpdateWithoutSub_out_playerInput>;
+    create: Prisma.XOR<Prisma.MatchEventCreateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedCreateWithoutSub_out_playerInput>;
+};
+export type MatchEventUpdateWithWhereUniqueWithoutSub_out_playerInput = {
+    where: Prisma.MatchEventWhereUniqueInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateWithoutSub_out_playerInput, Prisma.MatchEventUncheckedUpdateWithoutSub_out_playerInput>;
+};
+export type MatchEventUpdateManyWithWhereWithoutSub_out_playerInput = {
+    where: Prisma.MatchEventScalarWhereInput;
+    data: Prisma.XOR<Prisma.MatchEventUpdateManyMutationInput, Prisma.MatchEventUncheckedUpdateManyWithoutSub_out_playerInput>;
+};
+export type MatchEventCreateWithoutMatchInput = {
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+    player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
+    team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
+    sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
 };
 export type MatchEventUncheckedCreateWithoutMatchInput = {
     id?: number;
@@ -578,22 +853,158 @@ export type MatchEventUpdateManyWithWhereWithoutMatchInput = {
     where: Prisma.MatchEventScalarWhereInput;
     data: Prisma.XOR<Prisma.MatchEventUpdateManyMutationInput, Prisma.MatchEventUncheckedUpdateManyWithoutMatchInput>;
 };
-export type MatchEventScalarWhereInput = {
-    AND?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
-    OR?: Prisma.MatchEventScalarWhereInput[];
-    NOT?: Prisma.MatchEventScalarWhereInput | Prisma.MatchEventScalarWhereInput[];
-    id?: Prisma.IntFilter<"MatchEvent"> | number;
-    match_id?: Prisma.IntFilter<"MatchEvent"> | number;
-    player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
-    team_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
-    type?: Prisma.EnumMatchEventTypeFilter<"MatchEvent"> | $Enums.MatchEventType;
-    minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
-    note?: Prisma.StringNullableFilter<"MatchEvent"> | string | null;
-    period?: Prisma.EnumMatchPeriodNullableFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
-    added_minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
-    card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
-    sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
-    created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
+export type MatchEventCreateManyTeamInput = {
+    id?: number;
+    match_id: number;
+    player_id?: number | null;
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    sub_out_player_id?: number | null;
+    created_at?: Date | string;
+};
+export type MatchEventUpdateWithoutTeamInput = {
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
+    sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
+    match?: Prisma.MatchUpdateOneRequiredWithoutEventsNestedInput;
+};
+export type MatchEventUncheckedUpdateWithoutTeamInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type MatchEventUncheckedUpdateManyWithoutTeamInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type MatchEventCreateManyPlayerInput = {
+    id?: number;
+    match_id: number;
+    team_id?: number | null;
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    sub_out_player_id?: number | null;
+    created_at?: Date | string;
+};
+export type MatchEventCreateManySub_out_playerInput = {
+    id?: number;
+    match_id: number;
+    player_id?: number | null;
+    team_id?: number | null;
+    type: $Enums.MatchEventType;
+    minute?: number | null;
+    note?: string | null;
+    period?: $Enums.MatchPeriod | null;
+    added_minute?: number | null;
+    card_color?: $Enums.CardColor | null;
+    created_at?: Date | string;
+};
+export type MatchEventUpdateWithoutPlayerInput = {
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
+    sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
+    match?: Prisma.MatchUpdateOneRequiredWithoutEventsNestedInput;
+};
+export type MatchEventUncheckedUpdateWithoutPlayerInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type MatchEventUncheckedUpdateManyWithoutPlayerInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type MatchEventUpdateWithoutSub_out_playerInput = {
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
+    team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
+    match?: Prisma.MatchUpdateOneRequiredWithoutEventsNestedInput;
+};
+export type MatchEventUncheckedUpdateWithoutSub_out_playerInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type MatchEventUncheckedUpdateManyWithoutSub_out_playerInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    match_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
+    minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
+    added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type MatchEventCreateManyMatchInput = {
     id?: number;
@@ -609,16 +1020,16 @@ export type MatchEventCreateManyMatchInput = {
     created_at?: Date | string;
 };
 export type MatchEventUpdateWithoutMatchInput = {
-    player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    team_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     type?: Prisma.EnumMatchEventTypeFieldUpdateOperationsInput | $Enums.MatchEventType;
     minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
-    sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
+    team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
+    sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
 };
 export type MatchEventUncheckedUpdateWithoutMatchInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -659,6 +1070,9 @@ export type MatchEventSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     card_color?: boolean;
     sub_out_player_id?: boolean;
     created_at?: boolean;
+    player?: boolean | Prisma.MatchEvent$playerArgs<ExtArgs>;
+    team?: boolean | Prisma.MatchEvent$teamArgs<ExtArgs>;
+    sub_out_player?: boolean | Prisma.MatchEvent$sub_out_playerArgs<ExtArgs>;
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["matchEvent"]>;
 export type MatchEventSelectScalar = {
@@ -677,11 +1091,17 @@ export type MatchEventSelectScalar = {
 };
 export type MatchEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "player_id" | "team_id" | "type" | "minute" | "note" | "period" | "added_minute" | "card_color" | "sub_out_player_id" | "created_at", ExtArgs["result"]["matchEvent"]>;
 export type MatchEventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    player?: boolean | Prisma.MatchEvent$playerArgs<ExtArgs>;
+    team?: boolean | Prisma.MatchEvent$teamArgs<ExtArgs>;
+    sub_out_player?: boolean | Prisma.MatchEvent$sub_out_playerArgs<ExtArgs>;
     match?: boolean | Prisma.MatchDefaultArgs<ExtArgs>;
 };
 export type $MatchEventPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "MatchEvent";
     objects: {
+        player: Prisma.$PlayerPayload<ExtArgs> | null;
+        team: Prisma.$TeamPayload<ExtArgs> | null;
+        sub_out_player: Prisma.$PlayerPayload<ExtArgs> | null;
         match: Prisma.$MatchPayload<ExtArgs>;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -974,6 +1394,9 @@ export interface MatchEventDelegate<ExtArgs extends runtime.Types.Extensions.Int
  */
 export interface Prisma__MatchEventClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
+    player<T extends Prisma.MatchEvent$playerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchEvent$playerArgs<ExtArgs>>): Prisma.Prisma__PlayerClient<runtime.Types.Result.GetResult<Prisma.$PlayerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    team<T extends Prisma.MatchEvent$teamArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchEvent$teamArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    sub_out_player<T extends Prisma.MatchEvent$sub_out_playerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchEvent$sub_out_playerArgs<ExtArgs>>): Prisma.Prisma__PlayerClient<runtime.Types.Result.GetResult<Prisma.$PlayerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     match<T extends Prisma.MatchDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MatchDefaultArgs<ExtArgs>>): Prisma.Prisma__MatchClient<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1343,6 +1766,60 @@ export type MatchEventDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
      * Limit how many MatchEvents to delete.
      */
     limit?: number;
+};
+/**
+ * MatchEvent.player
+ */
+export type MatchEvent$playerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Player
+     */
+    select?: Prisma.PlayerSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Player
+     */
+    omit?: Prisma.PlayerOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlayerInclude<ExtArgs> | null;
+    where?: Prisma.PlayerWhereInput;
+};
+/**
+ * MatchEvent.team
+ */
+export type MatchEvent$teamArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Team
+     */
+    select?: Prisma.TeamSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Team
+     */
+    omit?: Prisma.TeamOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TeamInclude<ExtArgs> | null;
+    where?: Prisma.TeamWhereInput;
+};
+/**
+ * MatchEvent.sub_out_player
+ */
+export type MatchEvent$sub_out_playerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Player
+     */
+    select?: Prisma.PlayerSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Player
+     */
+    omit?: Prisma.PlayerOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlayerInclude<ExtArgs> | null;
+    where?: Prisma.PlayerWhereInput;
 };
 /**
  * MatchEvent without action
