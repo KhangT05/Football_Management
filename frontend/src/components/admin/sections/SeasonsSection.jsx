@@ -47,14 +47,40 @@ const statusTransitionLabel = {
   cancelled: 'Hủy giải',
 };
 
+// ── Date helpers — chuẩn hoá theo giờ VN (+07:00), không phụ thuộc TZ máy client ──
+
+// "YYYY-MM-DD" (từ <input type="date">) → ISO string tại 00:00:00 +07:00
+// Dùng khi build payload gửi lên backend.
+const dateInputToVNISOString = (dateStr) => {
+  if (!dateStr) return undefined;
+  return `${dateStr}T00:00:00+07:00`;
+};
+
+// "YYYY-MM-DD" → Date object local-midnight (theo TZ trình duyệt).
+// Dùng để so sánh trong validate() — chỉ cần đúng tương đối giữa các mốc trong cùng form,
+// không cần khớp tuyệt đối với backend vì backend tự validate lại.
+const dateInputToLocalDate = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0);
+};
+
+// ISO string từ server (UTC) → "YYYY-MM-DD" theo giờ VN (+07:00)
+// Dùng khi load data có sẵn vào form Edit.
+const isoToVNDateInput = (isoStr) => {
+  if (!isoStr) return '';
+  const utcDate = new Date(isoStr);
+  const vnDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
+  return vnDate.toISOString().slice(0, 10);
+};
+
 export default function SeasonsSection() {
   const toast = useToastStore();
   const { data: items, isLoading, fetch: fetchSeasons } = useApiQuery(
     (params) => seasonApi.getAll(params),
-    { 
-      perPage: 50, 
+    {
+      perPage: 50,
       params: { sort: 'id', direction: 'desc' },
-      errorMsg: 'Không tải được dữ liệu mùa giải.' 
+      errorMsg: 'Không tải được dữ liệu mùa giải.'
     }
   );
 
@@ -89,16 +115,14 @@ export default function SeasonsSection() {
   const [statusChanging, setStatusChanging] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
-  const toDateInput = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
-
   const openAdd = () => crud.openAdd({ ...EMPTY_SEASON, tournament_id: tournaments[0]?.id ?? '' });
   const openEdit = (item) => crud.openEdit(item, {
     name: item.name,
     description: item.description ?? '',
     tournament_id: item.tournament_id ?? '',
-    start_date: toDateInput(item.start_date),
-    end_date: toDateInput(item.end_date),
-    registration_deadline: toDateInput(item.registration_deadline),
+    start_date: isoToVNDateInput(item.start_date),
+    end_date: isoToVNDateInput(item.end_date),
+    registration_deadline: isoToVNDateInput(item.registration_deadline),
     max_teams: item.max_teams,
   });
 
@@ -111,16 +135,12 @@ export default function SeasonsSection() {
     if (!registration_deadline) return 'Vui lòng nhập hạn đăng ký.';
     if (Number(max_teams) < 2) return 'Số đội tham dự tối thiểu là 2.';
 
-    const toLocalDate = (str) => {
-      const [y, m, d] = str.split('-').map(Number);
-      return new Date(y, m - 1, d); // local midnight, không lệch UTC
-    };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const sd = toLocalDate(start_date);
-    const rd = toLocalDate(registration_deadline);
-    const ed = new Date(end_date);
+    const sd = dateInputToLocalDate(start_date);
+    const rd = dateInputToLocalDate(registration_deadline);
+    const ed = dateInputToLocalDate(end_date);
 
     // Backend: start_date must be in the future
     if (sd <= today) return 'Ngày bắt đầu phải là ngày trong tương lai.';
@@ -144,9 +164,9 @@ export default function SeasonsSection() {
       const basePayload = {
         name: crud.form.name.trim(),
         description: crud.form.description.trim() || undefined,
-        start_date: new Date(crud.form.start_date).toISOString(),
-        end_date: new Date(crud.form.end_date).toISOString(),
-        registration_deadline: new Date(crud.form.registration_deadline).toISOString(),
+        start_date: dateInputToVNISOString(crud.form.start_date),
+        end_date: dateInputToVNISOString(crud.form.end_date),
+        registration_deadline: dateInputToVNISOString(crud.form.registration_deadline),
         max_teams: Number(crud.form.max_teams),
         is_active: true,
       };
