@@ -21,7 +21,7 @@ export class StandingsService {
             select: PLAYER_STATISTIC_SELECT,
             sortable: ['goals_scored', 'yellow_cards', 'red_cards', 'matches_played', 'id'],
             defaultSort: { column: 'goals_scored', direction: 'desc' },
-            filterable: [],
+            filterable: ['season_id', 'team_id'],
             defaultPerPage: 20,
             maxPerPage: 100,
         };
@@ -139,6 +139,49 @@ export class StandingsService {
      * seasonId là context chính — PlayerStatistic có season_id FK trực tiếp.
      * team_id optional filter, inject từ req.filter.
      */
+    // Không có transfer giữa mùa (confirmed) → mỗi player chỉ có đúng 1 row/season
+    // trong PlayerStatistic. Aggregate trực tiếp theo player_id, không cần dedupe
+    // theo team.
+    async getPlayerCareerStats(playerId) {
+        const player = await this.prisma.player.findUnique({
+            where: { id: playerId },
+            select: { id: true, name: true },
+        });
+        if (!player)
+            throw createAppError('NOT_FOUND', `Player ${playerId} không tồn tại`);
+        const [aggregate, bySeasonRows] = await Promise.all([
+            this.prisma.playerStatistic.aggregate({
+                where: { player_id: playerId },
+                _sum: {
+                    matches_played: true,
+                    goals_scored: true,
+                    assists: true,
+                    yellow_cards: true,
+                    red_cards: true,
+                },
+            }),
+            this.prisma.playerStatistic.findMany({
+                where: { player_id: playerId },
+                select: {
+                    season_id: true,
+                    team_id: true,
+                    matches_played: true,
+                    goals_scored: true,
+                    assists: true,
+                    yellow_cards: true,
+                    red_cards: true,
+                    season: { select: { name: true, start_date: true } },
+                    team: { select: { name: true } },
+                },
+                orderBy: { season: { start_date: 'desc' } },
+            }),
+        ]);
+        return {
+            player,
+            career: aggregate._sum,
+            seasons: bySeasonRows,
+        };
+    }
     async listPlayerStats(seasonId, req) {
         const queryReq = {
             ...req,

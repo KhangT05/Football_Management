@@ -56,7 +56,6 @@ export declare const matchDetailSelect: {
     postponed_from: true;
     postponed_reason: true;
     abandoned_minute: true;
-    replay_of_match_id: true;
     matchResult: {
         select: {
             id: true;
@@ -236,7 +235,6 @@ export declare const Select: {
     postponed_from: true;
     postponed_reason: true;
     abandoned_minute: true;
-    replay_of_match_id: true;
     events: {
         select: {
             id: true;

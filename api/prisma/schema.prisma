@@ -151,6 +151,7 @@ model Phase {
   min_rest_days_per_team Int           @default(3)
   is_active              Boolean       @default(true)
   legs                   Int           @default(1) // 1 = single-leg, 2 = two-legged
+  teams_per_group        Int?
   bracket_slots          BracketSlot[]
   status                 PhaseStatus   @default(draft)
 
@@ -563,7 +564,6 @@ model Match {
   current_period          MatchPeriod? // sub-state khi ongoing: extra_time_first, penalty_shootout...
   postponed_from          DateTime? // original scheduled_at
   postponed_reason        String?
-  replay_of_match_id      Int? // self-ref: trận này là replay của trận nào
   abandoned_minute        Int? // abandoned tại phút mấy
   pending_official_at     DateTime?
   finalize_result_type    MatchResultType?
@@ -597,7 +597,7 @@ model Match {
   matchLineups          MatchLineup[]
   matchJerseyAssignment MatchJerseyAssignment[]
 
-  @@unique([venue_id, scheduled_at])
+  @@unique([phase_id, group_id, leg, home_team_id, away_team_id], name: "uniq_fixture_per_leg")
   @@map("matches")
 }
 

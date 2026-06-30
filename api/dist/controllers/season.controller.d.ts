@@ -71,6 +71,35 @@ export declare class SeasonController extends Controller {
      *   ?page=1&per_page=20
      *   ?sort=goals_scored&direction=desc
      */
+    getPlayerCareerStats(playerId: number): Promise<{
+        player: {
+            id: number;
+            name: never;
+        };
+        career: {
+            matches_played: number | null;
+            goals_scored: number | null;
+            assists: number | null;
+            yellow_cards: number | null;
+            red_cards: number | null;
+        };
+        seasons: {
+            team_id: number;
+            team: {
+                name: string;
+            };
+            season_id: number;
+            season: {
+                name: string;
+                start_date: Date | null;
+            };
+            matches_played: number;
+            goals_scored: number;
+            assists: number;
+            yellow_cards: number;
+            red_cards: number;
+        }[];
+    }>;
     getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
         player_id: number;

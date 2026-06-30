@@ -1774,6 +1774,15 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PlayerPosition": {
+				"type": "string",
+				"enum": [
+					"goalkeeper",
+					"defender",
+					"midfielder",
+					"forward"
+				]
+			},
 			"PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
 				"properties": {
 					"data": {
@@ -2051,10 +2060,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"replay_of_match_id": {
-						"type": "number",
-						"format": "double"
-					},
 					"postponed_reason": {
 						"type": "string"
 					},
@@ -2144,7 +2149,6 @@
 					"finalize_result_type",
 					"pending_official_at",
 					"abandoned_minute",
-					"replay_of_match_id",
 					"postponed_reason",
 					"postponed_from",
 					"current_period",
@@ -2352,15 +2356,6 @@
 			},
 			"UpdateRoleDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateRoleSchema_"
-			},
-			"PlayerPosition": {
-				"type": "string",
-				"enum": [
-					"goalkeeper",
-					"defender",
-					"midfielder",
-					"forward"
-				]
 			},
 			"PlayerDto": {
 				"properties": {
@@ -7254,6 +7249,213 @@
 				]
 			}
 		},
+		"/seasons/players/{playerId}/career-stats": {
+			"get": {
+				"operationId": "GetPlayerCareerStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"seasons": {
+											"items": {
+												"properties": {
+													"assists": {
+														"type": "number",
+														"format": "double"
+													},
+													"matches_played": {
+														"type": "number",
+														"format": "double"
+													},
+													"season": {
+														"properties": {
+															"start_date": {
+																"type": "string",
+																"format": "date-time"
+															},
+															"name": {
+																"type": "string"
+															}
+														},
+														"required": [
+															"start_date",
+															"name"
+														],
+														"type": "object"
+													},
+													"season_id": {
+														"type": "number",
+														"format": "double"
+													},
+													"team_id": {
+														"type": "number",
+														"format": "double"
+													},
+													"team": {
+														"properties": {
+															"name": {
+																"type": "string"
+															}
+														},
+														"required": [
+															"name"
+														],
+														"type": "object"
+													},
+													"red_cards": {
+														"type": "number",
+														"format": "double"
+													},
+													"yellow_cards": {
+														"type": "number",
+														"format": "double"
+													},
+													"goals_scored": {
+														"type": "number",
+														"format": "double"
+													}
+												},
+												"required": [
+													"assists",
+													"matches_played",
+													"season",
+													"season_id",
+													"team_id",
+													"team",
+													"red_cards",
+													"yellow_cards",
+													"goals_scored"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										},
+										"career": {
+											"properties": {
+												"red_cards": {
+													"type": "number",
+													"format": "double"
+												},
+												"yellow_cards": {
+													"type": "number",
+													"format": "double"
+												},
+												"assists": {
+													"type": "number",
+													"format": "double"
+												},
+												"goals_scored": {
+													"type": "number",
+													"format": "double"
+												},
+												"matches_played": {
+													"type": "number",
+													"format": "double"
+												}
+											},
+											"required": [
+												"red_cards",
+												"yellow_cards",
+												"assists",
+												"goals_scored",
+												"matches_played"
+											],
+											"type": "object"
+										},
+										"player": {
+											"properties": {
+												"avatar": {
+													"type": "string"
+												},
+												"nationality": {
+													"type": "string"
+												},
+												"weight": {
+													"$ref": "#/components/schemas/Decimal"
+												},
+												"height": {
+													"$ref": "#/components/schemas/Decimal"
+												},
+												"date_of_birth": {
+													"type": "string",
+													"format": "date-time"
+												},
+												"position": {
+													"$ref": "#/components/schemas/PlayerPosition"
+												},
+												"user_id": {
+													"type": "number",
+													"format": "double"
+												},
+												"deleted_at": {
+													"type": "string",
+													"format": "date-time"
+												},
+												"updated_at": {
+													"type": "string",
+													"format": "date-time"
+												},
+												"created_at": {
+													"type": "string",
+													"format": "date-time"
+												},
+												"is_active": {
+													"type": "boolean"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												}
+											},
+											"required": [
+												"avatar",
+												"nationality",
+												"weight",
+												"height",
+												"date_of_birth",
+												"position",
+												"user_id",
+												"deleted_at",
+												"updated_at",
+												"created_at",
+												"is_active",
+												"id"
+											],
+											"type": "object"
+										}
+									},
+									"required": [
+										"seasons",
+										"career",
+										"player"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Thống kê cầu thủ trong season.\n\nQuery params:\n  ?teamId=1\n  ?page=1&per_page=20\n  ?sort=goals_scored&direction=desc",
+				"tags": [
+					"Seasons"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "playerId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
 		"/seasons/{id}/player-stats": {
 			"get": {
 				"operationId": "GetPlayerStats",
@@ -7269,7 +7471,6 @@
 						}
 					}
 				},
-				"description": "Thống kê cầu thủ trong season.\n\nQuery params:\n  ?teamId=1\n  ?page=1&per_page=20\n  ?sort=goals_scored&direction=desc",
 				"tags": [
 					"Seasons"
 				],
