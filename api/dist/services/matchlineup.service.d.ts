@@ -5,9 +5,11 @@ export declare class MatchLineupService {
     constructor(prisma: PrismaClient);
     private getMatchContextOrFail;
     private assertTeamInMatch;
+    private assertMatchMutable;
     private assertCanRegister;
     private assertCanUpdate;
     private assertSingleCaptain;
+    private assertNoDuplicatePlayerId;
     getByMatch(matchId: number): Promise<MatchLineup[]>;
     getByTeam(matchId: number, teamId: number): Promise<MatchLineup[]>;
     register(dto: RegisterLineupDto): Promise<MatchLineup[]>;

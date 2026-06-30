@@ -8,10 +8,15 @@ export declare class ScheduleService extends ScheduleEngine {
     findAll(req?: QueryRequest): Promise<PaginatedResult<Match>>;
     findMatchesByTeam(seasonId: number, teamId: number, req?: QueryRequest): Promise<PaginatedResult<MatchByTeamRow>>;
     generateGroupsAndSchedule(seasonId: number, options: GenerateOptions): Promise<GenerateResult>;
-    autoScheduleMatches(seasonId: number, options: ScheduleOptions): Promise<{
+    autoScheduleMatches(seasonId: number, options: ScheduleOptions & {
+        allowPastDate?: boolean;
+    }): Promise<{
         matchesScheduled: number;
         failedMatchIds: number[];
     }>;
+    private runGreedyPass;
+    private orderByMostConstrained;
+    private isRestDaysSatisfied;
     rescheduleMatch(matchId: number, input: RescheduleInput): Promise<void>;
     getSeasonSchedule(seasonId: number): Promise<SeasonSchedule>;
     private resolveGroupCount;

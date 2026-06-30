@@ -16,15 +16,15 @@ const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-
 
 // Mirror backend STATUS_TRANSITIONS
 const STATUS_TRANSITIONS = {
-  upcoming:          ['registration_open', 'cancelled'],
+  upcoming: ['registration_open', 'cancelled'],
   registration_open: ['ongoing', 'cancelled'],
-  ongoing:           ['finished', 'cancelled'],
-  finished:          [],
-  cancelled:         [],
+  ongoing: ['finished', 'cancelled'],
+  finished: [],
+  cancelled: [],
 };
 
 // Mirror backend validateStatusAllowsEdit — chỉ upcoming được sửa/xóa
-const canEdit   = (status) => status === 'upcoming';
+const canEdit = (status) => status === 'upcoming';
 const canDelete = (status) => status === 'upcoming';
 
 const EMPTY_SEASON = {
@@ -33,35 +33,44 @@ const EMPTY_SEASON = {
 };
 
 const statusMeta = {
-  upcoming:          { label: 'Sắp diễn ra',  cls: 'bg-slate-400/10 text-slate-300 border-slate-500/30' },
-  registration_open: { label: 'Mở đăng ký',   cls: 'bg-blue-400/10 text-blue-400 border-blue-400/30' },
-  ongoing:           { label: 'Đang diễn ra',  cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' },
-  finished:          { label: 'Kết thúc',      cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30' },
-  cancelled:         { label: 'Đã hủy',        cls: 'bg-red-400/10 text-red-400 border-red-400/30' },
+  upcoming: { label: 'Sắp diễn ra', cls: 'bg-slate-400/10 text-slate-300 border-slate-500/30' },
+  registration_open: { label: 'Mở đăng ký', cls: 'bg-blue-400/10 text-blue-400 border-blue-400/30' },
+  ongoing: { label: 'Đang diễn ra', cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' },
+  finished: { label: 'Kết thúc', cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30' },
+  cancelled: { label: 'Đã hủy', cls: 'bg-red-400/10 text-red-400 border-red-400/30' },
 };
 
 const statusTransitionLabel = {
   registration_open: 'Mở đăng ký',
-  ongoing:           'Bắt đầu giải',
-  finished:          'Kết thúc giải',
-  cancelled:         'Hủy giải',
+  ongoing: 'Bắt đầu giải',
+  finished: 'Kết thúc giải',
+  cancelled: 'Hủy giải',
 };
 
-const DateInput = ({ value, onChange, className }) => {
-  const [type, setType] = useState('text');
-  const displayValue = value ? value.split('-').reverse().join('/') : '';
+// ── Date helpers — chuẩn hoá theo giờ VN (+07:00), không phụ thuộc TZ máy client ──
 
-  return (
-    <input
-      type={type}
-      className={className}
-      value={type === 'date' ? value : displayValue}
-      placeholder="dd/mm/yyyy"
-      onFocus={() => setType('date')}
-      onBlur={() => setType('text')}
-      onChange={onChange}
-    />
-  );
+// "YYYY-MM-DD" (từ <input type="date">) → ISO string tại 00:00:00 +07:00
+// Dùng khi build payload gửi lên backend.
+const dateInputToVNISOString = (dateStr) => {
+  if (!dateStr) return undefined;
+  return `${dateStr}T00:00:00+07:00`;
+};
+
+// "YYYY-MM-DD" → Date object local-midnight (theo TZ trình duyệt).
+// Dùng để so sánh trong validate() — chỉ cần đúng tương đối giữa các mốc trong cùng form,
+// không cần khớp tuyệt đối với backend vì backend tự validate lại.
+const dateInputToLocalDate = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0);
+};
+
+// ISO string từ server (UTC) → "YYYY-MM-DD" theo giờ VN (+07:00)
+// Dùng khi load data có sẵn vào form Edit.
+const isoToVNDateInput = (isoStr) => {
+  if (!isoStr) return '';
+  const utcDate = new Date(isoStr);
+  const vnDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
+  return vnDate.toISOString().slice(0, 10);
 };
 
 export default function SeasonsSection() {
@@ -72,9 +81,10 @@ export default function SeasonsSection() {
 
   const { data: items, meta, isLoading, fetch: fetchSeasons } = useApiQuery(
     (params) => seasonApi.getAll(params),
-    { 
-      autoFetch: false,
-      errorMsg: 'Không tải được dữ liệu mùa giải.' 
+    {
+      perPage: 50,
+      params: { sort: 'id', direction: 'desc' },
+      errorMsg: 'Không tải được dữ liệu mùa giải.'
     }
   );
 
@@ -110,7 +120,7 @@ export default function SeasonsSection() {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       setTournaments(Array.isArray(payload?.data) ? payload.data : []);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const { invalidate: invalidateSeasonStore } = useSeasonStore();
@@ -131,18 +141,15 @@ export default function SeasonsSection() {
   const [statusChanging, setStatusChanging] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
-  const toDateInput = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
-
   const openAdd = () => crud.openAdd({ ...EMPTY_SEASON, tournament_id: tournaments[0]?.id ?? '' });
   const openEdit = (item) => crud.openEdit(item, {
-    name:                   item.name,
-    description:            item.description ?? '',
-    tournament_id:          item.tournament_id ?? '',
-    start_date:             toDateInput(item.start_date),
-    end_date:               toDateInput(item.end_date),
-    registration_deadline:  toDateInput(item.registration_deadline),
-    max_teams:              item.max_teams,
-    is_active:              item.is_active ?? true,
+    name: item.name,
+    description: item.description ?? '',
+    tournament_id: item.tournament_id ?? '',
+    start_date: isoToVNDateInput(item.start_date),
+    end_date: isoToVNDateInput(item.end_date),
+    registration_deadline: isoToVNDateInput(item.registration_deadline),
+    max_teams: item.max_teams,
   });
 
   // ── Validate khớp backend validateDatesIfPresent ───
@@ -157,16 +164,18 @@ export default function SeasonsSection() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const sd  = new Date(start_date);
-    const ed  = new Date(end_date);
-    const rd  = new Date(registration_deadline);
+    const sd = dateInputToLocalDate(start_date);
+    const rd = dateInputToLocalDate(registration_deadline);
+    const ed = dateInputToLocalDate(end_date);
 
-    // Cho phép chọn ngày hôm nay
-    if (sd < today) return 'Ngày bắt đầu không được trong quá khứ.';
-    if (rd < today) return 'Hạn đăng ký không được trong quá khứ.';
+    // Backend: start_date must be in the future
+    if (sd <= today) return 'Ngày bắt đầu phải là ngày trong tương lai.';
+    // Backend: registration_deadline must be in the future
+    if (rd <= today) return 'Hạn đăng ký phải là ngày trong tương lai.';
+    // Backend: start_date must be before end_date
     if (sd >= ed) return 'Ngày kết thúc phải sau ngày bắt đầu.';
-    if (rd >= sd) return 'Hạn đăng ký phải trước ngày bắt đầu.';
-
+    // Backend: registration_deadline must be before start_date
+    if (rd > sd) return 'Hạn đăng ký phải trước hoặc trong ngày bắt đầu.';
     return '';
   };
 
@@ -179,22 +188,22 @@ export default function SeasonsSection() {
       // as required fields even though Zod schema has .default() for them.
       // Not sending them causes 422 Unprocessable Entity from tsoa validation.
       const basePayload = {
-        name:                   crud.form.name.trim(),
-        description:            crud.form.description.trim() || undefined,
-        start_date:             new Date(crud.form.start_date).toISOString(),
-        end_date:               new Date(crud.form.end_date).toISOString(),
-        registration_deadline:  new Date(crud.form.registration_deadline).toISOString(),
-        max_teams:              Number(crud.form.max_teams),
-        is_active:              crud.form.is_active,
+        name: crud.form.name.trim(),
+        description: crud.form.description.trim() || undefined,
+        start_date: dateInputToVNISOString(crud.form.start_date),
+        end_date: dateInputToVNISOString(crud.form.end_date),
+        registration_deadline: dateInputToVNISOString(crud.form.registration_deadline),
+        max_teams: Number(crud.form.max_teams),
+        is_active: true,
       };
 
       if (crud.modal === 'add') {
         // Create: cần thêm tournament_id, status, is_registration_open
         const createPayload = {
           ...basePayload,
-          tournament_id:         Number(crud.form.tournament_id),
-          status:                'upcoming',         // Mùa giải mới luôn bắt đầu ở upcoming
-          is_registration_open:  false,              // Chưa mở đăng ký
+          tournament_id: Number(crud.form.tournament_id),
+          status: 'upcoming',         // Mùa giải mới luôn bắt đầu ở upcoming
+          is_registration_open: false,              // Chưa mở đăng ký
         };
         await seasonApi.create(createPayload);
         toast.success(`Đã tạo mùa giải "${crud.form.name.trim()}"!`);
@@ -280,7 +289,7 @@ export default function SeasonsSection() {
         ) : paginatedItems.map(item => {
           const sm = statusMeta[item.status] ?? statusMeta.upcoming;
           const nextStatuses = STATUS_TRANSITIONS[item.status] ?? [];
-          const editable  = canEdit(item.status);
+          const editable = canEdit(item.status);
           const deletable = canDelete(item.status);
 
           return (
@@ -320,11 +329,10 @@ export default function SeasonsSection() {
                       key={target}
                       onClick={() => openStatusModal(item, target)}
                       title={`Chuyển sang: ${statusTransitionLabel[target]}`}
-                      className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${
-                        target === 'cancelled'
-                          ? 'text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50'
-                          : 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50'
-                      }`}
+                      className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${target === 'cancelled'
+                        ? 'text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50'
+                        : 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50'
+                        }`}
                     >
                       <ArrowRight className="w-3 h-3" />
                       {statusTransitionLabel[target]}
@@ -505,11 +513,10 @@ export default function SeasonsSection() {
                 <button
                   onClick={handleStatusChange}
                   disabled={statusChanging}
-                  className={`px-5 py-2.5 font-bold text-white rounded-xl flex items-center gap-2 transition-all disabled:opacity-70 ${
-                    statusModal.target === 'cancelled'
-                      ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
-                      : 'bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20'
-                  }`}
+                  className={`px-5 py-2.5 font-bold text-white rounded-xl flex items-center gap-2 transition-all disabled:opacity-70 ${statusModal.target === 'cancelled'
+                    ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
+                    : 'bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20'
+                    }`}
                 >
                   {statusChanging ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Xác nhận

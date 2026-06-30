@@ -527,6 +527,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPosition": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
         "dataType": "refObject",
         "properties": {
@@ -583,7 +588,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_MatchPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"referee":{"dataType":"string","required":true},"is_published":{"dataType":"boolean","required":true},"venue_id":{"dataType":"double","required":true},"manual_away_score":{"dataType":"double","required":true},"manual_home_score":{"dataType":"double","required":true},"finalize_away_penalty":{"dataType":"double","required":true},"finalize_home_penalty":{"dataType":"double","required":true},"finalize_away_half_time":{"dataType":"double","required":true},"finalize_home_half_time":{"dataType":"double","required":true},"finalize_result_type":{"ref":"MatchResultType","required":true},"pending_official_at":{"dataType":"datetime","required":true},"abandoned_minute":{"dataType":"double","required":true},"replay_of_match_id":{"dataType":"double","required":true},"postponed_reason":{"dataType":"string","required":true},"postponed_from":{"dataType":"datetime","required":true},"current_period":{"ref":"MatchPeriod","required":true},"leg":{"dataType":"double","required":true},"round":{"dataType":"string","required":true},"away_score":{"dataType":"double","required":true},"home_score":{"dataType":"double","required":true},"played_at":{"dataType":"datetime","required":true},"scheduled_at":{"dataType":"datetime","required":true},"away_team_id":{"dataType":"double","required":true},"home_team_id":{"dataType":"double","required":true},"phase_id":{"dataType":"double","required":true},"group_id":{"dataType":"double","required":true},"status":{"ref":"MatchStatus","required":true},"user_id":{"dataType":"double","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"referee":{"dataType":"string","required":true},"is_published":{"dataType":"boolean","required":true},"venue_id":{"dataType":"double","required":true},"manual_away_score":{"dataType":"double","required":true},"manual_home_score":{"dataType":"double","required":true},"finalize_away_penalty":{"dataType":"double","required":true},"finalize_home_penalty":{"dataType":"double","required":true},"finalize_away_half_time":{"dataType":"double","required":true},"finalize_home_half_time":{"dataType":"double","required":true},"finalize_result_type":{"ref":"MatchResultType","required":true},"pending_official_at":{"dataType":"datetime","required":true},"abandoned_minute":{"dataType":"double","required":true},"postponed_reason":{"dataType":"string","required":true},"postponed_from":{"dataType":"datetime","required":true},"current_period":{"ref":"MatchPeriod","required":true},"leg":{"dataType":"double","required":true},"round":{"dataType":"string","required":true},"away_score":{"dataType":"double","required":true},"home_score":{"dataType":"double","required":true},"played_at":{"dataType":"datetime","required":true},"scheduled_at":{"dataType":"datetime","required":true},"away_team_id":{"dataType":"double","required":true},"home_team_id":{"dataType":"double","required":true},"phase_id":{"dataType":"double","required":true},"group_id":{"dataType":"double","required":true},"status":{"ref":"MatchStatus","required":true},"user_id":{"dataType":"double","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchModel": {
@@ -666,11 +671,6 @@ const models: TsoaRoute.Models = {
     "UpdateRoleDto": {
         "dataType": "refAlias",
         "type": {"ref":"infer_typeofupdateRoleSchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PlayerPosition": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerDto": {
@@ -3212,6 +3212,41 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'getGroupStandings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonController_getPlayerCareerStats: Record<string, TsoaRoute.ParameterSchema> = {
+                playerId: {"in":"path","name":"playerId","required":true,"dataType":"double"},
+        };
+        app.get('/seasons/players/:playerId/career-stats',
+            ...(fetchMiddlewares<RequestHandler>(SeasonController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonController.prototype.getPlayerCareerStats)),
+
+            async function SeasonController_getPlayerCareerStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonController_getPlayerCareerStats, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonController>(SeasonController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getPlayerCareerStats',
                 controller,
                 response,
                 next,

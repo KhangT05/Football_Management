@@ -135,7 +135,7 @@ export class SeasonService {
         }
 
         if (registration_deadline && start_date) {
-            if (registration_deadline >= start_date)
+            if (registration_deadline > start_date)
                 throw createAppError('VALIDATION_ERROR', 'registration_deadline must be before start_date');
         }
 

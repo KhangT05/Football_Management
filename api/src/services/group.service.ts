@@ -174,8 +174,8 @@ export class GroupService {
             const currentCount = await tx.seasonTeam.count({
                 where: { group_id: groupId, deleted_at: null },
             });
-            if (currentCount >= phase.teams_per_group)
-                throw createAppError("CONFLICT", `Group ${groupId} đã full (${phase.teams_per_group} teams)`);
+            // if (currentCount >= phase.teams_per_group)
+            //     throw createAppError("CONFLICT", `Group ${groupId} đã full (${phase.teams_per_group} teams)`);
 
             await tx.seasonTeam.update({
                 where: { id: seasonTeamId },

@@ -142,6 +142,7 @@ export const PhaseScalarFieldEnum = {
     min_rest_days_per_team: 'min_rest_days_per_team',
     is_active: 'is_active',
     legs: 'legs',
+    teams_per_group: 'teams_per_group',
     status: 'status',
     created_at: 'created_at',
     updated_at: 'updated_at'
@@ -301,7 +302,6 @@ export const MatchScalarFieldEnum = {
     current_period: 'current_period',
     postponed_from: 'postponed_from',
     postponed_reason: 'postponed_reason',
-    replay_of_match_id: 'replay_of_match_id',
     abandoned_minute: 'abandoned_minute',
     pending_official_at: 'pending_official_at',
     finalize_result_type: 'finalize_result_type',
