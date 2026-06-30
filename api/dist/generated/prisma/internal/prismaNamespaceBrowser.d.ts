@@ -133,6 +133,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly min_rest_days_per_team: "min_rest_days_per_team";
     readonly is_active: "is_active";
     readonly legs: "legs";
+    readonly teams_per_group: "teams_per_group";
     readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -305,7 +306,6 @@ export declare const MatchScalarFieldEnum: {
     readonly current_period: "current_period";
     readonly postponed_from: "postponed_from";
     readonly postponed_reason: "postponed_reason";
-    readonly replay_of_match_id: "replay_of_match_id";
     readonly abandoned_minute: "abandoned_minute";
     readonly pending_official_at: "pending_official_at";
     readonly finalize_result_type: "finalize_result_type";

@@ -126,6 +126,9 @@ let SeasonController = class SeasonController extends Controller {
      *   ?page=1&per_page=20
      *   ?sort=goals_scored&direction=desc
      */
+    async getPlayerCareerStats(playerId) {
+        return this.standingsService.getPlayerCareerStats(playerId);
+    }
     async getPlayerStats(id, teamId, page, per_page, sort, direction) {
         const req = buildPlayerStatsQueryRequest({ teamId, page, per_page, sort, direction });
         return this.standingsService.listPlayerStats(id, req);
@@ -213,6 +216,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, Number, Number, String, String]),
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "getGroupStandings", null);
+__decorate([
+    Get("players/{playerId}/career-stats"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonController.prototype, "getPlayerCareerStats", null);
 __decorate([
     Get("{id}/player-stats"),
     __param(0, Path()),

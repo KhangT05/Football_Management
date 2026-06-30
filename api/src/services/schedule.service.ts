@@ -23,6 +23,33 @@ import {
 import { PaginatedResult, QueryRequest, SortDir } from '../types/queryable.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
 
+// Match duration giả định cho overlap check khi reschedule.
+// Nếu giải có duration khác (futsal 2x20p, sân 11 người 2x45p+nghỉ), chỉnh
+// lại hằng số này hoặc đưa thành config theo tournament/season.
+const ASSUMED_MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h (đá + nghỉ + dự phòng)
+
+// Số lần thử lại greedy scheduling với thứ tự match xáo trộn khác nhau,
+// giữ lại kết quả có ít match thất bại nhất. Greedy chọn-slot-sớm-nhất theo
+// 1 thứ tự cố định KHÔNG đảm bảo tìm ra lịch khả thi dù lịch đó tồn tại —
+// đây là cách giảm rủi ro "failedMatchIds giả" với chi phí thấp, không cần
+// CSP solver thật. Đủ cho scale vài chục match/giải sinh viên; nếu quy mô
+// lớn hơn nhiều (hàng trăm match, ràng buộc phức tạp hơn) nên thay bằng
+// constraint solver thật thay vì tăng số restart vô hạn.
+const SCHEDULE_RESTARTS = 20;
+
+type ScheduleCandidateMatch = {
+    id: number;
+    home_team_id: number;
+    away_team_id: number;
+    round: string | null;
+    group_id: number | null;
+};
+
+type GreedyPassResult = {
+    updates: { id: number; scheduledAt: Date; venueId: number }[];
+    unscheduled: number[];
+};
+
 export class ScheduleService extends ScheduleEngine {
     private readonly query: Queryable<Match>;
 
@@ -169,6 +196,13 @@ export class ScheduleService extends ScheduleEngine {
 
                 const distributed = this.assignTeamsToGroups(teamIds, groupCount);
 
+                // teams_per_group là approximate nominal capacity (groups có thể lệch
+                // ±1 team do assignTeamsToGroups dùng snake-draft). Dùng giá trị lớn
+                // nhất trong các group làm capacity — assignTeamToGroup (admin thêm 1
+                // team lẻ sau draw) dùng số này để chặn group vượt quá. Yêu cầu field
+                // Phase.teams_per_group (Int?) đã có trong schema.
+                const nominalTeamsPerGroup = Math.max(...distributed.map(g => g.length));
+
                 const phase = await tx.phase.create({
                     data: {
                         season_id: seasonId,
@@ -178,6 +212,7 @@ export class ScheduleService extends ScheduleEngine {
                         order: 1,
                         status: PhaseStatus.in_progress,
                         min_rest_days_per_team: options.minRestDaysPerTeam ?? 3,
+                        teams_per_group: nominalTeamsPerGroup,
                     },
                 });
 
@@ -187,6 +222,11 @@ export class ScheduleService extends ScheduleEngine {
                     is_active: teams.length >= 2,
                 }));
 
+                // N round-trip riêng (không phải N+1: không có query lồng trong loop
+                // dựa trên kết quả query trước). Không gộp được thành 1 createMany vì
+                // cần group.id trả về ngay để gán group_id cho seasonTeam/match draft
+                // bên dưới — MySQL createMany không có RETURNING. Ở scale vài group/
+                // giải sinh viên, N round-trip song song (Promise.all) không đáng lo.
                 const groups = await Promise.all(
                     groupCreateData.map(data => tx.group.create({ data })),
                 );
@@ -232,7 +272,8 @@ export class ScheduleService extends ScheduleEngine {
 
         if (scheduleResult.failedMatchIds.length > 0) {
             warnings.push(
-                `${scheduleResult.failedMatchIds.length} match chưa xếp lịch (thiếu slot): ` +
+                `${scheduleResult.failedMatchIds.length} match chưa xếp lịch (thiếu slot hoặc ` +
+                `thuật toán không tìm ra phương án — xem lại venueIds/matchTimes/minRestDays): ` +
                 `IDs [${scheduleResult.failedMatchIds.join(', ')}]`,
             );
         }
@@ -242,11 +283,12 @@ export class ScheduleService extends ScheduleEngine {
 
     async autoScheduleMatches(
         seasonId: number,
-        options: ScheduleOptions,
+        // allowPastDate optional — mặc định false (throw nếu start_date đã qua).
+        // Trước đây chỉ console.warn rồi vẫn chạy tiếp, sinh ra slot pool toàn
+        // nằm trong quá khứ — sai lặng lẽ, không observable qua log structured.
+        options: ScheduleOptions & { allowPastDate?: boolean },
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
-        // Fetch không orderBy round ở DB — round là String, sort sai khi >= 10.
-        // Sort ở app layer sau khi parseInt.
-        const matches = await this.prisma.match.findMany({
+        const matches: ScheduleCandidateMatch[] = await this.prisma.match.findMany({
             where: {
                 phase: { season_id: seasonId },
                 scheduled_at: null,
@@ -260,8 +302,7 @@ export class ScheduleService extends ScheduleEngine {
                 round: true,
                 group_id: true,
             },
-            // Không orderBy round ở DB — lexicographic sai. Sort ở app layer bên dưới.
-            orderBy: { id: 'asc' }, // stable secondary sort để output deterministic
+            orderBy: { id: 'asc' }, // stable base order trước khi áp dụng MRV/restart
         });
 
         if (matches.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
@@ -287,8 +328,16 @@ export class ScheduleService extends ScheduleEngine {
         const minRestDays = phase.min_rest_days_per_team ?? 3;
         const startDate = season.start_date;
 
-        if (startDate < new Date())
-            console.warn(`[autoSchedule] season ${seasonId} start_date đã qua: ${startDate.toISOString()}`);
+        // Throw thay vì chỉ warn — trừ khi caller chủ động bypass bằng
+        // allowPastDate (vd backfill lịch sử có chủ đích).
+        if (startDate < new Date() && !options.allowPastDate) {
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Season ${seasonId} có start_date đã qua (${startDate.toISOString()}) — ` +
+                `slot pool sẽ rơi vào quá khứ. Cập nhật start_date hoặc gọi với allowPastDate=true ` +
+                `nếu đây là backfill có chủ đích.`,
+            );
+        }
 
         const rangeEnd = new Date(startDate);
         rangeEnd.setMonth(rangeEnd.getMonth() + 6);
@@ -306,13 +355,54 @@ export class ScheduleService extends ScheduleEngine {
             );
         }
 
+        // Greedy chọn-slot-sớm-nhất theo 1 thứ tự cố định KHÔNG đảm bảo tìm ra
+        // lịch khả thi dù lịch đó tồn tại (greedy không backtrack — 1 lựa chọn
+        // sớm có thể khoá chết slot mà 1 match sau bắt buộc cần). Hai kỹ thuật
+        // bù đắp, không cần CSP solver thật:
+        //
+        // 1. MRV ordering trong mỗi round: match nào có ÍT slot hợp lệ nhất
+        //    (do ràng buộc rest-days của team đó) được xếp TRƯỚC — giảm khả
+        //    năng nó bị "khoá chết" bởi match khác xếp trước nó. Đây là
+        //    standard CSP heuristic (Minimum Remaining Values).
+        // 2. Multi-restart: chạy toàn bộ pass greedy nhiều lần với random
+        //    tie-break, giữ lại kết quả failedMatchIds ít nhất. Chi phí
+        //    O(restarts × n), chấp nhận được vì đây là batch job chạy 1 lần,
+        //    không phải hot path.
+        let best: GreedyPassResult | null = null;
+
+        for (let attempt = 0; attempt < SCHEDULE_RESTARTS; attempt++) {
+            const result = this.runGreedyPass(matches, pool, minRestDays, attempt);
+            if (!best || result.unscheduled.length < best.unscheduled.length) {
+                best = result;
+                if (best.unscheduled.length === 0) break; // tìm được lịch hoàn chỉnh, dừng sớm
+            }
+        }
+
+        const { updates, unscheduled } = best!;
+
+        const failedFromCollision = await this.writeScheduleBatch(updates);
+        const finalUnscheduled = [...unscheduled, ...failedFromCollision];
+
+        return {
+            matchesScheduled: updates.length - failedFromCollision.length,
+            failedMatchIds: finalUnscheduled,
+        };
+    }
+
+    // ─── Greedy scheduling pass (1 lần thử, dùng nội bộ bởi multi-restart) ─────
+
+    private runGreedyPass(
+        matches: ScheduleCandidateMatch[],
+        pool: ReturnType<ScheduleEngine['buildSlotPool']>,
+        minRestDays: number,
+        attemptSeed: number,
+    ): GreedyPassResult {
         const lastPlayedAt = new Map<number, number>();
         const usedSlotIdx = new Set<number>();
         const updates: { id: number; scheduledAt: Date; venueId: number }[] = [];
         const unscheduled: number[] = [];
 
-        // Group by round (parseInt để sort đúng thứ tự số).
-        const byRound = new Map<number, typeof matches>();
+        const byRound = new Map<number, ScheduleCandidateMatch[]>();
         for (const m of matches) {
             const r = parseInt(m.round ?? '0', 10);
             const bucket = byRound.get(r) ?? [];
@@ -321,7 +411,18 @@ export class ScheduleService extends ScheduleEngine {
         }
 
         for (const round of [...byRound.keys()].sort((a, b) => a - b)) {
-            for (const match of byRound.get(round)!) {
+            const roundMatches = byRound.get(round)!;
+
+            // attempt 0 = thứ tự gốc (deterministic, dễ debug/reproduce).
+            // attempt > 0 = MRV ordering trên bản shuffle khác nhau mỗi lần,
+            // để tránh tie-break luôn rơi vào cùng 1 cục bộ tối ưu.
+            const ordered = attemptSeed === 0
+                ? roundMatches
+                : this.orderByMostConstrained(
+                    shuffle([...roundMatches]), pool, usedSlotIdx, lastPlayedAt, minRestDays,
+                );
+
+            for (const match of ordered) {
                 const slotIdx = this.findEarliestValidSlot(
                     pool, usedSlotIdx,
                     match.home_team_id, match.away_team_id,
@@ -340,13 +441,51 @@ export class ScheduleService extends ScheduleEngine {
             }
         }
 
-        const failedFromCollision = await this.writeScheduleBatch(updates);
-        unscheduled.push(...failedFromCollision);
+        return { updates, unscheduled };
+    }
 
-        return {
-            matchesScheduled: updates.length - failedFromCollision.length,
-            failedMatchIds: unscheduled,
-        };
+    // MRV heuristic: với mỗi match còn lại trong round, đếm số slot hợp lệ
+    // (chưa bị used, thoả rest-days cho cả 2 team) TẠI THỜI ĐIỂM HIỆN TẠI —
+    // không commit, chỉ đếm để sort. Match nào có ít lựa chọn nhất xử lý
+    // trước, giảm rủi ro nó bị match khác "tiện tay" chiếm mất slot duy nhất
+    // nó cần. Đây là proxy, không phải đếm chính xác theo lý thuyết CSP đầy
+    // đủ (không tính ảnh hưởng dây chuyền các match sau), nhưng đủ tốt để
+    // cải thiện tỷ lệ thành công so với thứ tự cố định ban đầu.
+    private orderByMostConstrained(
+        candidates: ScheduleCandidateMatch[],
+        pool: ReturnType<ScheduleEngine['buildSlotPool']>,
+        usedSlotIdx: Set<number>,
+        lastPlayedAt: Map<number, number>,
+        minRestDays: number,
+    ): ScheduleCandidateMatch[] {
+        const withDegree = candidates.map(match => {
+            let degree = 0;
+            for (let idx = 0; idx < pool.length; idx++) {
+                if (usedSlotIdx.has(idx)) continue;
+                const slot = pool[idx]!;
+                const candidateAt = this.vnTimeToUtc(slot.date, slot.time).getTime();
+                if (this.isRestDaysSatisfied(match.home_team_id, candidateAt, lastPlayedAt, minRestDays)
+                    && this.isRestDaysSatisfied(match.away_team_id, candidateAt, lastPlayedAt, minRestDays)) {
+                    degree++;
+                }
+            }
+            return { match, degree };
+        });
+
+        withDegree.sort((a, b) => a.degree - b.degree);
+        return withDegree.map(w => w.match);
+    }
+
+    private isRestDaysSatisfied(
+        teamId: number,
+        candidateAtMs: number,
+        lastPlayedAt: Map<number, number>,
+        minRestDays: number,
+    ): boolean {
+        const last = lastPlayedAt.get(teamId);
+        if (last === undefined) return true;
+        const diffDays = Math.abs(candidateAtMs - last) / (24 * 60 * 60 * 1000);
+        return diffDays >= minRestDays;
     }
 
     async rescheduleMatch(matchId: number, input: RescheduleInput): Promise<void> {
@@ -364,7 +503,6 @@ export class ScheduleService extends ScheduleEngine {
         if (!match)
             throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
 
-        // Whitelist status hợp lệ để reschedule — tránh silent accept trên ongoing/finished.
         const RESCHEDULABLE: MatchStatus[] = [MatchStatus.scheduled, MatchStatus.postponed];
         if (!RESCHEDULABLE.includes(match.status))
             throw createAppError(
@@ -372,13 +510,19 @@ export class ScheduleService extends ScheduleEngine {
                 `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`,
             );
 
-        // Conflict check: exact-time overlap cho venue hoặc team.
-        // Note: không check rest days ở đây — manual reschedule là override có chủ đích,
-        // caller (admin) chịu trách nhiệm. Nếu muốn enforce thì cần thêm flag strictRestDays.
+        // Trước đây chỉ check exact-time equality, không bắt được overlap thực
+        // tế (trận trước chưa kết thúc, trận sau đã bắt đầu ở cùng sân/cùng
+        // đội nhưng lệch giờ). Đổi sang window check ±ASSUMED_MATCH_DURATION_MS.
+        // Note: không check rest-days ở đây — manual reschedule là override có
+        // chủ đích, caller (admin) chịu trách nhiệm. Nếu muốn enforce, thêm
+        // flag strictRestDays riêng.
+        const windowStart = new Date(input.scheduledAt.getTime() - ASSUMED_MATCH_DURATION_MS);
+        const windowEnd = new Date(input.scheduledAt.getTime() + ASSUMED_MATCH_DURATION_MS);
+
         const conflict = await this.prisma.match.findFirst({
             where: {
                 id: { not: matchId },
-                scheduled_at: input.scheduledAt,
+                scheduled_at: { gte: windowStart, lte: windowEnd },
                 status: { notIn: [MatchStatus.cancelled, MatchStatus.forfeited] },
                 OR: [
                     { venue_id: input.venueId },
@@ -386,13 +530,15 @@ export class ScheduleService extends ScheduleEngine {
                     { away_team_id: { in: [match.home_team_id, match.away_team_id] } },
                 ],
             },
-            select: { id: true, status: true },
+            select: { id: true, status: true, scheduled_at: true },
         });
 
         if (conflict)
             throw createAppError(
                 'CONFLICT',
-                `Venue ${input.venueId} hoặc 1 trong 2 team đã có trận lúc ${input.scheduledAt.toISOString()}`,
+                `Venue ${input.venueId} hoặc 1 trong 2 team đã có trận trong khoảng ` +
+                `±${ASSUMED_MATCH_DURATION_MS / 60000} phút quanh ${input.scheduledAt.toISOString()} ` +
+                `(match ${conflict.id} lúc ${conflict.scheduled_at?.toISOString()})`,
             );
 
         await this.prisma.match.update({
@@ -400,13 +546,12 @@ export class ScheduleService extends ScheduleEngine {
             data: {
                 scheduled_at: input.scheduledAt,
                 venue_id: input.venueId,
-                status: MatchStatus.scheduled, // transition: postponed → scheduled hợp lệ
+                status: MatchStatus.scheduled,
             },
         });
     }
 
     async getSeasonSchedule(seasonId: number): Promise<SeasonSchedule> {
-        // match không có season_id trực tiếp — join qua phase.
         const matches = await this.prisma.match.findMany({
             where: {
                 phase: { season_id: seasonId },
@@ -417,16 +562,13 @@ export class ScheduleService extends ScheduleEngine {
                 home_team_id: true, away_team_id: true,
                 scheduled_at: true, venue_id: true, status: true,
             },
-            // round là String → không sort ở DB. Sort ở app layer bên dưới.
             orderBy: [{ scheduled_at: 'asc' }, { id: 'asc' }],
         });
 
-        // Sort theo round (số) + scheduled_at làm secondary.
         matches.sort((a, b) => {
             const ra = parseInt(a.round ?? '0', 10);
             const rb = parseInt(b.round ?? '0', 10);
             if (ra !== rb) return ra - rb;
-            // secondary: scheduled_at asc (null cuối)
             const ta = a.scheduled_at?.getTime() ?? Infinity;
             const tb = b.scheduled_at?.getTime() ?? Infinity;
             return ta - tb;

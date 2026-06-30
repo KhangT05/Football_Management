@@ -99,7 +99,6 @@ export const matchDetailSelect = {
     postponed_from: true,
     postponed_reason: true,
     abandoned_minute: true,
-    replay_of_match_id: true,
     matchResult: matchResultSelect,
     events: {
         select: {
