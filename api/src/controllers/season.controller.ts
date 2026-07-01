@@ -73,7 +73,7 @@ export class SeasonController extends Controller {
     @Query() q?: string,
     @Query() sort?: string,
     @Query() direction?: 'asc' | 'desc',
-    @Query() status?: 'ongoing' | 'finished' | 'cancelled',
+    @Query() status?: 'ongoing' | 'finished' | 'cancelled' | 'registration_open' | 'upcoming',
     @Query() tournamentId?: number,
   ): Promise<PaginatedResult<SeasonListItem>> {
     return this.standingsService.listSeasons({ status, tournamentId, page, per_page, q, sort, direction });

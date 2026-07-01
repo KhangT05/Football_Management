@@ -11,6 +11,12 @@ export declare class GroupService {
      * Cross-phase guard: chặn draw nếu approved team đang giữ group_id thuộc
      * MỘT PHASE KHÁC (xem note ở SeasonTeamService.assignGroup) — bắt buộc
      * clear draw phase đó trước.
+     *
+     * FIX: persist opts.teams_per_group vào phase.teams_per_group sau khi draw
+     * thành công — trước đây giá trị này chỉ tồn tại tạm thời trong request,
+     * khiến assignTeamToGroup() (thêm 1 team lẻ sau draw) không có cách nào
+     * biết group đã đầy chưa (field phase.teams_per_group không tồn tại trong
+     * schema gốc, đã thêm ở schema.diff.prisma).
      */
     drawGroups(phaseId: number, opts: DrawGroupsOptions): Promise<DrawAssignment[]>;
     clearDraw(phaseId: number): Promise<void>;
@@ -25,6 +31,12 @@ export declare class GroupService {
      *
      * Cross-phase guard: group phải thuộc cùng season với seasonTeam; nếu team
      * đang giữ group thuộc phase khác → reject, caller phải clear draw phase đó trước.
+     *
+     * FIX: phase.teams_per_group giờ tồn tại thật trong schema (xem
+     * schema.diff.prisma). Vẫn giữ fallback nếu null (phase chưa từng qua
+     * drawGroups, vd group được tạo + team gán thủ công từ đầu) — dùng
+     * Infinity nghĩa là "không giới hạn", an toàn hơn throw cứng vì caller
+     * (admin) có thể đang cố tình build group thủ công không qua draw flow.
      */
     assignTeamToGroup(seasonTeamId: number, groupId: number): Promise<void>;
     /**
@@ -42,19 +54,7 @@ export declare class GroupService {
     swapTeams(seasonTeamIdA: number, seasonTeamIdB: number): Promise<void>;
     /**
      * Seeded draw: chia team vào group theo pot dựa trên field `seed`.
-     *
-     * Pot tính runtime (không persist): pot = ceil(seed / potSize).
-     * Unseeded team (seed = null) được shuffle vào pot cuối.
-     *
-     * Constraint (UEFA-style): num_pots === teams_per_group — mỗi pot assign
-     * đúng 1 team/group. Ví dụ: 4 groups x 3 teams/group → num_pots = 3,
-     * potSize = 4 (= groups.length).
-     *   Pot 1: top 4 seeds → shuffle → 1 team/group
-     *   Pot 2: seed 5-8   → shuffle → 1 team/group
-     *   Pot 3: seed 9-12  → shuffle → 1 team/group
-     *
-     * Nếu muốn relaxed constraint (pot cuối ít hơn groups.length), bỏ
-     * validation potSize và handle partial fill riêng.
+     * FIX: persist teams_per_group lên Phase, đồng nhất với drawGroups().
      */
     drawGroupsSeeded(phaseId: number, opts: DrawGroupsOptions & {
         num_pots: number;
