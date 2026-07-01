@@ -113,7 +113,7 @@ export declare class StandingsService {
      * Không load standings ở đây — lazy load khi user chọn season.
      */
     listSeasons(params: {
-        status?: 'ongoing' | 'finished' | 'cancelled';
+        status?: 'ongoing' | 'finished' | 'cancelled' | 'registration_open' | 'upcoming';
         tournamentId?: number;
         page?: number;
         per_page?: number;
