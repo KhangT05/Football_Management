@@ -6,9 +6,7 @@ import { NavLink, Link } from 'react-router-dom';
 const VI_LABELS = {
   'Dashboard':           'Tổng quan',
   'Manage Teams':        'Quản lý đội',
-  'Manage Players':      'Quản lý cầu thủ',
-  'Manage Users':        'Quản lý người dùng',
-  'Manage Roles':        'Phân quyền',
+  'Manage Accounts':     'Tài khoản & Phân quyền',
   'Season Teams':        'Đăng ký giải đấu',
   'Manage Matches':      'Quản lý trận đấu',
   'Update Results':      'Cập nhật kết quả',

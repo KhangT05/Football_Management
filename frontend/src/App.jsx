@@ -27,14 +27,12 @@ const PaymentResultPage = lazy(() => import("./pages/PaymentResultPage"));
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
 const ManageTeams = lazy(() => import("./pages/admin/ManageTeams"));
-const ManagePlayers = lazy(() => import("./pages/admin/ManagePlayers"));
 const UpdateResults = lazy(() => import("./pages/admin/UpdateResults"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
 const ManageArticles = lazy(() => import("./pages/admin/ManageArticles"));
-const ManageUsers = lazy(() => import("./pages/admin/ManageUsers"));
-const ManageRoles = lazy(() => import("./pages/admin/ManageRoles"));
+const ManageAccounts = lazy(() => import("./pages/admin/ManageAccounts"));
 
 // News pages
 const News = lazy(() => import("./pages/News"));
@@ -146,8 +144,8 @@ function App() {
           <Route path="/quan-ly-giai-dau/doi-bong" element={
             <AdminRoute><ManageTeams /></AdminRoute>
           } />
-          <Route path="/quan-ly-giai-dau/cau-thu" element={
-            <AdminRoute><ManagePlayers /></AdminRoute>
+          <Route path="/quan-ly-giai-dau/tai-khoan" element={
+            <AdminRoute><ManageAccounts /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/dang-ky-giai" element={
             <AdminRoute><ManageSeasonTeams /></AdminRoute>
@@ -157,12 +155,6 @@ function App() {
           } />
           <Route path="/quan-ly-giai-dau/bai-viet" element={
             <AdminRoute><ManageArticles /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/nguoi-dung" element={
-            <AdminRoute><ManageUsers /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/phan-quyen" element={
-            <AdminRoute><ManageRoles /></AdminRoute>
           } />
 
           {/* 404 — phải để cuối cùng */}

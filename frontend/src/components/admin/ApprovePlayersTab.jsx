@@ -31,7 +31,7 @@ export default function ApprovePlayersTab() {
     if (!teamId) return setPlayers([]);
     setLoading(true);
     try {
-      const res = await playerApi.listTeamPlayers(teamId, { per_page: 100 });
+      const res = await playerApi.listTeamPlayers(teamId, { per_page: 100, approval_status: 'pending' });
       const data = res.data?.data || res.data || [];
       setPlayers(data);
     } catch {
@@ -74,7 +74,7 @@ export default function ApprovePlayersTab() {
     }
   };
 
-  const pendingPlayers = players.filter(p => p.approval_status === 'pending');
+  const pendingPlayers = players.filter(p => p.approval_status === 'pending' || p.status === 'pending');
 
   return (
     <div className="bg-navy p-6 rounded-xl border border-navy-light shadow-xl">

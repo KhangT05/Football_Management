@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
-  Plus, Edit, Trash2, Users,
+  Plus, Edit, Trash2, Users, CheckCircle2,
   ChevronDown, ChevronUp, AlertTriangle, Loader2,
   UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight
 } from 'lucide-react';
@@ -135,6 +135,15 @@ export default function ManageTeams() {
     });
   };
 
+  const handleApproveTeam = async (team) => {
+    try {
+      await updateTeam(team.id, { is_active: true });
+      toast.success(`Đã duyệt đội bóng "${team.name}". Đội bóng hiện có thể đăng ký giải đấu.`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Lỗi khi duyệt đội bóng.');
+    }
+  };
+
   // ── Expand: Team Roster ────────────────────────────────
   const [expandedTeamId, setExpandedTeamId] = useState(null);
 
@@ -247,7 +256,7 @@ export default function ManageTeams() {
                 <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                   <th className="py-4 px-6 w-16 text-center">Logo</th>
                   <th className="py-4 px-6">Đội bóng</th>
-                  <th className="py-4 px-6">HLV</th>
+                  <th className="py-4 px-6">HLV / Đội trưởng</th>
                   <th className="py-4 px-6 text-center">Trạng thái</th>
                   <th className="py-4 px-6 text-right">Thao tác</th>
                 </tr>
@@ -309,16 +318,24 @@ export default function ManageTeams() {
                         </td>
                         <td className="py-4 px-6 text-gray-300 text-sm">{team.coach_name || '—'}</td>
                         <td className="py-4 px-6 text-center">
-                          <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                            team.is_active
-                              ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                              : 'bg-red-400/10 text-red-400 border-red-400/30'
-                          }`}>
-                            {team.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          {team.is_active ? (
+                            <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
+                              Đã Duyệt
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-yellow-400/10 text-yellow-400 border-yellow-400/30">
+                              Chờ Duyệt
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-2">
+                            {!team.is_active && (
+                              <button onClick={() => handleApproveTeam(team)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors" title="Duyệt Đội bóng">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span className="text-xs font-bold">Duyệt</span>
+                              </button>
+                            )}
                             <button onClick={() => openEditTeam(team)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors" title="Chỉnh sửa">
                               <Edit className="w-4 h-4" />
                             </button>

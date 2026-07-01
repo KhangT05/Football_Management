@@ -3,9 +3,7 @@ import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, News
 export const navItems = [
   { name: 'Dashboard', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
   { name: 'Manage Teams', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
-  { name: 'Manage Players', path: '/quan-ly-giai-dau/cau-thu', icon: UserPlus },
-  { name: 'Manage Users', path: '/quan-ly-giai-dau/nguoi-dung', icon: UserPlus },
-  { name: 'Manage Roles', path: '/quan-ly-giai-dau/phan-quyen', icon: Shield },
+  { name: 'Manage Accounts', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
   { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
   { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Update Results', path: '/quan-ly-giai-dau/ket-qua', icon: CheckSquare },

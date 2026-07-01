@@ -6,7 +6,7 @@ import {
   Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight,
   Search, Shirt
 } from 'lucide-react';
-import { seasonApi, seasonTeamApi, teamApi } from '../../api';
+import { seasonApi, seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import AdminModal from '../../components/admin/AdminModal';
@@ -125,8 +125,35 @@ export default function ManageSeasonTeams() {
   // ── Actions: Status ─────────────────────────────────────────
   const statusMutation = useApiMutation();
   const handleUpdateStatus = (id, newStatus) => {
+    const st = allSeasonTeams.find(s => s.id === id);
     statusMutation.mutate(async () => {
       await seasonTeamApi.updateStatus(id, { status: newStatus });
+      
+      if (newStatus === 'approved' && st?.team?.user_id) {
+        try {
+          const rolesRes = await roleApi.getRoles();
+          const rPayload = (typeof rolesRes?.status === 'boolean') ? rolesRes.data : rolesRes;
+          const roles = Array.isArray(rPayload?.data) ? rPayload.data : Array.isArray(rPayload) ? rPayload : [];
+          
+          const leaderRole = roles.find(r => ['leader', 'đội trưởng', 'doitruong'].includes(r.name.toLowerCase()));
+          
+          if (leaderRole) {
+            const userRes = await userApi.getUserById(st.team.user_id);
+            const uPayload = (typeof userRes?.status === 'boolean') ? userRes.data : userRes;
+            const user = uPayload?.data || uPayload;
+            
+            const currentRoleIds = user?.roles?.map(r => r.id) || [];
+            
+            if (!currentRoleIds.includes(leaderRole.id)) {
+              await userApi.updateProfile(st.team.user_id, { role_ids: [...currentRoleIds, leaderRole.id] });
+              toast.success(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
+            }
+          }
+        } catch (e) {
+          console.error("Lỗi khi cấp quyền Leader", e);
+        }
+      }
+      
       toast.success(`Đã cập nhật trạng thái thành "${newStatus}"!`);
       reloadTeams();
     }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
