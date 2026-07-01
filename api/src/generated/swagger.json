@@ -6847,7 +6847,9 @@
 							"enum": [
 								"ongoing",
 								"finished",
-								"cancelled"
+								"cancelled",
+								"registration_open",
+								"upcoming"
 							]
 						}
 					},

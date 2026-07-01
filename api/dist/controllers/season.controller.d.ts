@@ -25,7 +25,7 @@ export declare class SeasonController extends Controller {
      *   ?page=1&per_page=20
      *   ?q=keyword&sort=start_date&direction=desc
      */
-    listSeasons(page?: number, per_page?: number, q?: string, sort?: string, direction?: 'asc' | 'desc', status?: 'ongoing' | 'finished' | 'cancelled', tournamentId?: number): Promise<PaginatedResult<SeasonListItem>>;
+    listSeasons(page?: number, per_page?: number, q?: string, sort?: string, direction?: 'asc' | 'desc', status?: 'ongoing' | 'finished' | 'cancelled' | 'registration_open' | 'upcoming', tournamentId?: number): Promise<PaginatedResult<SeasonListItem>>;
     findById(id: number): Promise<Season>;
     create(body: seasonSchema.CreateSeasonDto, req: AuthRequest): Promise<Season>;
     update(id: number, body: seasonSchema.UpdateSeasonDto): Promise<Season>;
