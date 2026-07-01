@@ -8,7 +8,7 @@ import { z } from "zod";
  * SeasonTeamController riêng (đã có sẵn), không lẫn vào draw API này.
  */
 export const DrawGroupsSchema = z.object({
-    teams_per_group: z.number().int().min(2),
+    teams_per_group: z.number().int().min(2).optional(),
 });
 export type DrawGroupsDto = z.infer<typeof DrawGroupsSchema>;
 
