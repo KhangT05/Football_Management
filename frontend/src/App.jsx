@@ -27,7 +27,7 @@ const PaymentResultPage = lazy(() => import("./pages/PaymentResultPage"));
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
 const ManageTeams = lazy(() => import("./pages/admin/ManageTeams"));
-const UpdateResults = lazy(() => import("./pages/admin/UpdateResults"));
+
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
@@ -137,9 +137,6 @@ function App() {
           } />
           <Route path="/quan-ly-giai-dau/tran-dau" element={
             <AdminRoute><ManageMatches /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/ket-qua" element={
-            <AdminRoute><UpdateResults /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/doi-bong" element={
             <AdminRoute><ManageTeams /></AdminRoute>

@@ -12,6 +12,7 @@ import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
 import Pagination from '../../components/ui/Pagination';
+import ApproveTeamsTab from '../../components/admin/ApproveTeamsTab';
 import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
 
@@ -27,6 +28,7 @@ const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
 
 export default function ManageTeams() {
   const toast = useToastStore();
+  const [activeTab, setActiveTab] = useState('teams');
 
   // ── Zustand store ──────────────────────────────────────────────
   const { teams, meta, isLoading, error: fetchError,
@@ -60,7 +62,7 @@ export default function ManageTeams() {
       per_page: itemsPerPage, 
       q: debouncedSearch || undefined, 
       sort: 'id', 
-      direction: 'desc', 
+      direction: 'asc', 
       force: true 
     });
   }, [fetchTeamsStore, debouncedSearch, currentPage, itemsPerPage]);
@@ -234,7 +236,33 @@ export default function ManageTeams() {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Tabs Navigation */}
+        <div className="flex bg-navy border-b border-navy-light overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setActiveTab('teams')}
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'teams'
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-gray-400 hover:text-white hover:bg-navy-light/50'
+            }`}
+          >
+            <Users className="w-4 h-4" /> Danh sách Đội bóng
+          </button>
+          <button
+            onClick={() => setActiveTab('approve_teams')}
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'approve_teams'
+                ? 'border-neon text-neon'
+                : 'border-transparent text-gray-400 hover:text-white hover:bg-navy-light/50'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" /> Duyệt Đội bóng đăng ký giải
+          </button>
+        </div>
+
+        {activeTab === 'teams' ? (
+          <div className="space-y-6 animate-fade-in">
+            {/* Search */}
         <div className="bg-navy p-4 rounded-xl border border-navy-light flex flex-col sm:flex-row gap-3 shadow-lg shadow-black/20">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -467,6 +495,10 @@ export default function ManageTeams() {
           )}
 
         </div>
+          </div>
+        ) : (
+          <ApproveTeamsTab />
+        )}
       </div>
 
       {/* Team Add/Edit Modal */}

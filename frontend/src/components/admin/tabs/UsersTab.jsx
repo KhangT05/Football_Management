@@ -36,10 +36,15 @@ export default function UsersTab() {
         per_page: itemsPerPage,
         q: debouncedSearch || undefined,
         sort: 'created_at',
-        direction: 'desc'
+        direction: 'asc'
       });
-      setUsers(res.data.data || []);
-      setMeta(res.data.meta);
+      
+      const payload = (typeof res?.status === 'boolean') ? res.data : res;
+      const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      const resultMeta = Array.isArray(payload) ? null : payload?.meta;
+      
+      setUsers(items);
+      setMeta(resultMeta);
     } catch (err) {
       console.error(err);
       setFetchError(err?.response?.data?.message || 'Lỗi khi tải danh sách người dùng');

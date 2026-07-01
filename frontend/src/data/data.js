@@ -6,7 +6,6 @@ export const navItems = [
   { name: 'Manage Accounts', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
   { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
   { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
-  { name: 'Update Results', path: '/quan-ly-giai-dau/ket-qua', icon: CheckSquare },
   { name: 'Manage Articles', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
   { name: 'Tournament Settings', path: '/quan-ly-giai-dau/cai-dat', icon: Settings },
 ];

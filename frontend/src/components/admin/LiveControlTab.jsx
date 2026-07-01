@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
 import {
   Save, CheckCircle2, Plus, Trash2, Clock, Activity,
   Loader2, AlertTriangle, RefreshCw,
@@ -70,37 +69,24 @@ function useTimer(isRunning, onTick) {
   }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main Component: LiveControlTab ──────────────────────────────────────────
 
-export default function UpdateResults() {
+export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId }) {
   const toast = useToastStore();
-
-  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
-
-  const [selectedSeasonId, setSelectedSeasonId] = useState('');
-
-  useEffect(() => {
-    if (selectedSeasonId) {
-      fetchBySeason(Number(selectedSeasonId));
-    } else if (seasons.length > 0) {
-      const active = seasons.find(s => s.status === 'ongoing' || s.status === 'registration_open') || seasons[0];
-      setSelectedSeasonId(String(active.id));
-    }
-  }, [selectedSeasonId, seasons, fetchBySeason]);
 
   const effectiveSeasonId = selectedSeasonId;
 
   const allSeasonMatches = useMemo(
     () => effectiveSeasonId
       ? getMatchesFromCache(Number(effectiveSeasonId))
-      : seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []),
-    [effectiveSeasonId, seasons, scheduleCache, getMatchesFromCache],
+      : [],
+    [effectiveSeasonId, scheduleCache, getMatchesFromCache],
   );
 
   const isLoadingMatches = effectiveSeasonId
     ? isSeasonLoading(Number(effectiveSeasonId))
-    : seasons.some(s => isSeasonLoading(s.id));
+    : false;
 
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -119,15 +105,8 @@ export default function UpdateResults() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  const handleSeasonChange = (e) => {
-    setSelectedSeasonId(e.target.value);
-    setCurrentPage(1);
-  };
-
   const totalPages = Math.ceil(matches.length / itemsPerPage);
   const displayedMatches = matches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const [selectedMatchId, setSelectedMatchId] = useState('');
 
   const selectedMatch = useMemo(
     () => matches.find(m => String(m.id) === String(selectedMatchId)) ?? null,
@@ -191,8 +170,6 @@ export default function UpdateResults() {
 
   // Use the timer hook
   useTimer(timerRunning, setTimerSeconds);
-
-  useEffect(() => { fetchSeasons(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prevSeasonRef = useRef(effectiveSeasonId);
   useEffect(() => {
@@ -389,92 +366,41 @@ export default function UpdateResults() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-5 pb-32 animate-fade-in">
-
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-red-600 to-orange-600 flex items-center justify-center shadow-lg shadow-red-900/40">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-white tracking-tight">Quản lý Trận Đấu</h2>
-              <p className="text-gray-500 text-xs">Cập nhật tỷ số, sự kiện &amp; kết thúc trận theo thời gian thực</p>
+    <>
+      <div className="space-y-5 animate-fade-in">
+        {/* ── Search & Refresh ── */}
+      <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="flex-1">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận Live
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên đội..."
+                value={searchTerm}
+                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+              />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {isDirty && (
-              <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 rounded-full animate-pulse">
-                <AlertTriangle className="w-3.5 h-3.5" /> Chưa lưu
-              </div>
-            )}
-            {isOngoing && (
-              <div className="flex items-center gap-1.5 text-red-400 text-xs font-black bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block" />
-                LIVE
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* ── Season + Match Selectors ── */}
-        <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Season */}
-            <div className="flex-1 flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5 text-emerald-400" /> Mùa giải
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedSeasonId}
-                    onChange={handleSeasonChange}
-                    disabled={seasonsLoading}
-                    className="w-full pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 text-sm appearance-none disabled:opacity-60 transition-colors"
-                  >
-                    <option value="">— Đang chọn Mùa giải —</option>
-                    {seasons.map(s => {
-                      const lbl = { registration_open: '🟢 Mở đăng ký', ongoing: '🔴 Đang diễn ra', finished: '✓ Kết thúc', upcoming: '⏳ Sắp diễn ra', cancelled: '❌ Đã hủy' }[s.status] ?? s.status;
-                      return <option key={s.id} value={s.id}>{s.name} — {lbl}</option>;
-                    })}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="flex-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên đội..."
-                    value={searchTerm}
-                    onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Refresh */}
-            <div className="flex items-end">
-              <button
-                onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
-                disabled={isLoadingMatches}
-                className="p-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40 h-[46px]"
-                title="Tải lại danh sách trận"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
+          {/* Refresh */}
+          <div className="flex items-end">
+            <button
+              onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
+              disabled={isLoadingMatches}
+              className="px-5 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
+              title="Tải lại danh sách trận"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
+      </div>
 
         {/* ── Match Cards ── */}
         <div>
@@ -830,8 +756,7 @@ export default function UpdateResults() {
       <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} currentMinute={timerMins} onSuccess={handleModalSuccess} />
       <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
       <ResolveAppealModal isOpen={activeModal === 'resolve'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
-      
-    </AdminLayout>
+    </>
   );
 }
 

@@ -5,11 +5,10 @@ import { NavLink, Link } from 'react-router-dom';
 // Map tên tiếng Anh → tiếng Việt cho nav items
 const VI_LABELS = {
   'Dashboard':           'Tổng quan',
-  'Manage Teams':        'Quản lý đội',
+  'Manage Teams':        'Quản lý đội bóng',
   'Manage Accounts':     'Tài khoản & Phân quyền',
-  'Season Teams':        'Đăng ký giải đấu',
-  'Manage Matches':      'Quản lý trận đấu',
-  'Update Results':      'Cập nhật kết quả',
+  'Season Teams':        'Quản lý Mùa giải & Bốc thăm',
+  'Manage Matches':      'Lịch thi đấu & Kết quả',
   'Manage Articles':     'Quản lý bài viết',
   'Tournament Settings': 'Cấu hình giải đấu',
 };
