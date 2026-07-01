@@ -147,7 +147,7 @@ export class StandingsService {
         if (!season)
             throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
 
-        const allowedStatuses: SeasonStatus[] = ['ongoing', 'finished', 'cancelled'];
+        const allowedStatuses: SeasonStatus[] = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
         if (!allowedStatuses.includes(season.status as SeasonStatus))
             throw createAppError(
                 'FORBIDDEN',
@@ -536,7 +536,7 @@ export class StandingsService {
         const skip = (page - 1) * per_page;
 
         // Allowed statuses — loại upcoming và registration_open
-        const allowedStatuses: SeasonStatus[] = ['ongoing', 'finished', 'cancelled'];
+        const allowedStatuses: SeasonStatus[] = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
         const statusFilter = status && allowedStatuses.includes(status as SeasonStatus)
             ? [status as SeasonStatus]
             : allowedStatuses;

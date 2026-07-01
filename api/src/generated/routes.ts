@@ -2931,7 +2931,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 q: {"in":"query","name":"q","dataType":"string"},
                 sort: {"in":"query","name":"sort","dataType":"string"},
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
-                status: {"in":"query","name":"status","dataType":"union","subSchemas":[{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}]},
+                status: {"in":"query","name":"status","dataType":"union","subSchemas":[{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["upcoming"]}]},
                 tournamentId: {"in":"query","name":"tournamentId","dataType":"double"},
         };
         app.get('/seasons',
