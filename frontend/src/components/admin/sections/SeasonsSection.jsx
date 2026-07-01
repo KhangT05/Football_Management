@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Calendar, Plus, Edit, Trash2, Save, Loader2, AlertTriangle,
-  RefreshCw, ArrowRight, Lock, CheckCircle2, XCircle, Search
+  RefreshCw, ArrowRight, Lock, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { tournamentApi, seasonApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
@@ -29,7 +29,7 @@ const canDelete = (status) => status === 'upcoming';
 
 const EMPTY_SEASON = {
   name: '', description: '', tournament_id: '', start_date: '', end_date: '',
-  registration_deadline: '', max_teams: 8, is_active: true,
+  registration_deadline: '', max_teams: 8,
 };
 
 const statusMeta = {
@@ -75,11 +75,7 @@ const isoToVNDateInput = (isoStr) => {
 
 export default function SeasonsSection() {
   const toast = useToastStore();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-
-  const { data: items, meta, isLoading, fetch: fetchSeasons } = useApiQuery(
+  const { data: items, isLoading, fetch: fetchSeasons } = useApiQuery(
     (params) => seasonApi.getAll(params),
     {
       perPage: 50,
@@ -88,32 +84,17 @@ export default function SeasonsSection() {
     }
   );
 
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      fetchSeasons({
-        page: currentPage,
-        per_page: itemsPerPage,
-        sort: 'id',
-        direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
-    }, 300);
-    return () => clearTimeout(delay);
-  }, [currentPage, itemsPerPage, searchTerm, fetchSeasons]);
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
   };
 
-  const paginatedItems = items || [];
-  const totalPages = meta?.last_page || 1;
+  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
@@ -126,14 +107,7 @@ export default function SeasonsSection() {
   const { invalidate: invalidateSeasonStore } = useSeasonStore();
   const crud = useCrudModal({
     emptyForm: EMPTY_SEASON,
-    onSuccess: () => { 
-      invalidateSeasonStore(); 
-      setCurrentPage(1); 
-      fetchSeasons({
-        page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
-    },
+    onSuccess: () => { fetchSeasons(); invalidateSeasonStore(); },
   });
 
   // ── Status Change Modal ─────────────────────────────
@@ -254,26 +228,16 @@ export default function SeasonsSection() {
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
-        <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
-          <Calendar className="w-4 h-4 text-purple-400" /> Mùa giải ({meta?.total || 0})
+      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
+        <h3 className="font-bold text-white text-base flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-purple-400" /> Mùa giải ({items.length})
         </h3>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Tìm mùa giải..." 
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm transition-colors"
-            />
-          </div>
-          <button onClick={() => fetchSeasons()} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0">
+        <div className="flex gap-2">
+          <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0">
-            <Plus className="w-4 h-4" /> Thêm mới
+          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors">
+            <Plus className="w-4 h-4" /> Thêm mùa giải
           </button>
         </div>
       </div>
@@ -301,12 +265,7 @@ export default function SeasonsSection() {
                     {item.name?.[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-bold text-white truncate flex items-center gap-2">
-                      {item.name}
-                      {!item.is_active && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-500/20 text-gray-400 border border-gray-500/30 uppercase">Tạm ẩn</span>
-                      )}
-                    </p>
+                    <p className="font-bold text-white truncate">{item.name}</p>
                     <p className="text-xs text-gray-500">
                       {item.start_date ? new Date(item.start_date).toLocaleDateString('vi-VN') : '—'}
                       {' — '}
@@ -422,28 +381,19 @@ export default function SeasonsSection() {
           </FormField>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Ngày bắt đầu" required>
-              <DateInput className={INPUT} value={crud.form.start_date} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.start_date} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
             </FormField>
             <FormField label="Ngày kết thúc" required>
-              <DateInput className={INPUT} value={crud.form.end_date} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.end_date} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Hạn đăng ký" required>
-              <DateInput className={INPUT} value={crud.form.registration_deadline} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.registration_deadline} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
             </FormField>
             <FormField label="Tối đa đội">
               <input type="number" min="2" max="64" className={INPUT} value={crud.form.max_teams} onChange={e => crud.setForm(f => ({ ...f, max_teams: e.target.value }))} />
             </FormField>
-          </div>
-          <div className="flex items-center gap-3 py-2">
-            <label className="flex items-center cursor-pointer gap-3">
-              <div className="relative">
-                <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
-                <div className="w-11 h-6 bg-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-              </div>
-              <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động (is_active)</span>
-            </label>
           </div>
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-400/80">
             ⚠️ Ngày bắt đầu và hạn đăng ký phải là ngày trong tương lai. Hạn đăng ký phải trước ngày bắt đầu.
