@@ -7,7 +7,7 @@ import { z } from "zod";
  * SeasonTeamController riêng (đã có sẵn), không lẫn vào draw API này.
  */
 export declare const DrawGroupsSchema: z.ZodObject<{
-    teams_per_group: z.ZodNumber;
+    teams_per_group: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export type DrawGroupsDto = z.infer<typeof DrawGroupsSchema>;
 export interface DrawGroupsResultDto {
