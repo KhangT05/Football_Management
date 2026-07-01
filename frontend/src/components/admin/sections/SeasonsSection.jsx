@@ -149,7 +149,7 @@ export default function SeasonsSection() {
     // Backend: start_date must be before end_date
     if (sd >= ed) return 'Ngày kết thúc phải sau ngày bắt đầu.';
     // Backend: registration_deadline must be before start_date
-    if (rd > sd) return 'Hạn đăng ký phải trước hoặc trong ngày bắt đầu.';
+    if (rd >= sd) return 'Hạn đăng ký phải trước hoặc trong ngày bắt đầu.';
     return '';
   };
 

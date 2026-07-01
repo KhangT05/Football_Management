@@ -14,6 +14,12 @@ export class GroupService {
      * Cross-phase guard: chặn draw nếu approved team đang giữ group_id thuộc
      * MỘT PHASE KHÁC (xem note ở SeasonTeamService.assignGroup) — bắt buộc
      * clear draw phase đó trước.
+     *
+     * FIX: persist opts.teams_per_group vào phase.teams_per_group sau khi draw
+     * thành công — trước đây giá trị này chỉ tồn tại tạm thời trong request,
+     * khiến assignTeamToGroup() (thêm 1 team lẻ sau draw) không có cách nào
+     * biết group đã đầy chưa (field phase.teams_per_group không tồn tại trong
+     * schema gốc, đã thêm ở schema.diff.prisma).
      */
     async drawGroups(phaseId: number, opts: DrawGroupsOptions): Promise<DrawAssignment[]> {
         if (opts.teams_per_group < 2)
@@ -63,14 +69,18 @@ export class GroupService {
                 return { seasonTeamId: st.id, team_id: st.team_id, group_id: group.id };
             });
 
-            // N update riêng lẻ — chấp nhận được ở scale vài chục team/phase. N lớn
-            // (vài trăm+), đổi sang raw SQL UPDATE ... CASE WHEN id IN (...) (MySQL
-            // không có UPDATE ... FROM VALUES như Postgres).
             await Promise.all(
                 assignments.map((a) =>
                     tx.seasonTeam.update({ where: { id: a.seasonTeamId }, data: { group_id: a.group_id } })
                 )
             );
+
+            // FIX: persist teams_per_group lên Phase — assignTeamToGroup cần field
+            // này để biết group đã đầy chưa khi thêm 1 team lẻ sau draw.
+            await tx.phase.update({
+                where: { id: phaseId },
+                data: { teams_per_group: opts.teams_per_group },
+            });
 
             return assignments.map(({ group_id, team_id }) => ({ group_id, team_id }));
         });
@@ -94,6 +104,14 @@ export class GroupService {
                 where: { group_id: { in: groups.map((g) => g.id) } },
                 data: { group_id: null },
             });
+
+            // FIX: clear draw cũng nên clear nominal capacity — phase coi như
+            // chưa có cấu hình group size, tránh assignTeamToGroup dùng số cũ
+            // (vd nếu re-draw sau đó với teams_per_group khác).
+            await tx.phase.update({
+                where: { id: phaseId },
+                data: { teams_per_group: null },
+            });
         });
     }
 
@@ -108,10 +126,15 @@ export class GroupService {
      *
      * Cross-phase guard: group phải thuộc cùng season với seasonTeam; nếu team
      * đang giữ group thuộc phase khác → reject, caller phải clear draw phase đó trước.
+     *
+     * FIX: phase.teams_per_group giờ tồn tại thật trong schema (xem
+     * schema.diff.prisma). Vẫn giữ fallback nếu null (phase chưa từng qua
+     * drawGroups, vd group được tạo + team gán thủ công từ đầu) — dùng
+     * Infinity nghĩa là "không giới hạn", an toàn hơn throw cứng vì caller
+     * (admin) có thể đang cố tình build group thủ công không qua draw flow.
      */
     async assignTeamToGroup(seasonTeamId: number, groupId: number): Promise<void> {
         return this.prisma.$transaction(async (tx) => {
-            // Lock theo id order để tránh deadlock khi concurrent assign
             await tx.$queryRaw`
                 SELECT id FROM season_teams WHERE id = ${seasonTeamId} FOR UPDATE
             `;
@@ -137,19 +160,18 @@ export class GroupService {
 
             const phase = await tx.phase.findUnique({
                 where: { id: group.phase_id },
+                // FIX: field teams_per_group giờ tồn tại — xem schema.diff.prisma
                 select: { id: true, season_id: true, is_active: true, teams_per_group: true },
             });
             if (!phase) throw createAppError("NOT_FOUND", `Phase of group ${groupId} not found`);
             if (!phase.is_active) throw createAppError("CONFLICT", "Phase đã deactivate");
 
-            // Cross-phase guard: group phải thuộc cùng season với seasonTeam
             if (phase.season_id !== seasonTeam.season_id)
                 throw createAppError(
                     "CONFLICT",
                     "Group thuộc season khác với SeasonTeam — cross-season assign bị chặn"
                 );
 
-            // Cross-phase guard: nếu team đang giữ group_id, group đó phải thuộc phase này
             if (seasonTeam.group_id !== null) {
                 const currentGroup = await tx.group.findUnique({
                     where: { id: seasonTeam.group_id },
@@ -162,8 +184,6 @@ export class GroupService {
                     );
             }
 
-            // clearDraw trước khi assign: unset group hiện tại nếu có
-            // (tránh team xuất hiện ở 2 group cùng lúc khi re-assign)
             if (seasonTeam.group_id !== null && seasonTeam.group_id !== groupId) {
                 await tx.seasonTeam.update({
                     where: { id: seasonTeamId },
@@ -171,11 +191,15 @@ export class GroupService {
                 });
             }
 
+            // FIX: fallback Infinity nếu phase chưa từng draw (teams_per_group null)
+            // — không chặn admin build group thủ công không qua draw flow.
+            const capacity = phase.teams_per_group ?? Infinity;
+
             const currentCount = await tx.seasonTeam.count({
                 where: { group_id: groupId, deleted_at: null },
             });
-            // if (currentCount >= phase.teams_per_group)
-            //     throw createAppError("CONFLICT", `Group ${groupId} đã full (${phase.teams_per_group} teams)`);
+            if (currentCount >= capacity)
+                throw createAppError("CONFLICT", `Group ${groupId} đã full (${capacity} teams)`);
 
             await tx.seasonTeam.update({
                 where: { id: seasonTeamId },
@@ -201,7 +225,6 @@ export class GroupService {
             throw createAppError("VALIDATION_ERROR", "Không thể swap team với chính nó");
 
         return this.prisma.$transaction(async (tx) => {
-            // Lock theo id ascending để tránh deadlock khi 2 request swap ngược nhau
             const [first, second] = [seasonTeamIdA, seasonTeamIdB].sort((a, b) => a - b);
             await tx.$queryRaw`
                 SELECT id FROM season_teams
@@ -223,7 +246,6 @@ export class GroupService {
             if (!teamA) throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamIdA} not found`);
             if (!teamB) throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamIdB} not found`);
 
-            // Status check: cả 2 phải approved mới được tham gia draw
             if (teamA.status !== SeasonTeamStatus.approved)
                 throw createAppError("CONFLICT", `SeasonTeam ${seasonTeamIdA} chưa approved`);
             if (teamB.status !== SeasonTeamStatus.approved)
@@ -234,7 +256,6 @@ export class GroupService {
             if (teamA.group_id === teamB.group_id)
                 throw createAppError("CONFLICT", "2 team đang cùng group");
 
-            // Cross-phase guard: 2 group phải thuộc cùng phase
             const [groupA, groupB] = await Promise.all([
                 tx.group.findUnique({ where: { id: teamA.group_id }, select: { phase_id: true } }),
                 tx.group.findUnique({ where: { id: teamB.group_id }, select: { phase_id: true } }),
@@ -262,19 +283,7 @@ export class GroupService {
 
     /**
      * Seeded draw: chia team vào group theo pot dựa trên field `seed`.
-     *
-     * Pot tính runtime (không persist): pot = ceil(seed / potSize).
-     * Unseeded team (seed = null) được shuffle vào pot cuối.
-     *
-     * Constraint (UEFA-style): num_pots === teams_per_group — mỗi pot assign
-     * đúng 1 team/group. Ví dụ: 4 groups x 3 teams/group → num_pots = 3,
-     * potSize = 4 (= groups.length).
-     *   Pot 1: top 4 seeds → shuffle → 1 team/group
-     *   Pot 2: seed 5-8   → shuffle → 1 team/group
-     *   Pot 3: seed 9-12  → shuffle → 1 team/group
-     *
-     * Nếu muốn relaxed constraint (pot cuối ít hơn groups.length), bỏ
-     * validation potSize và handle partial fill riêng.
+     * FIX: persist teams_per_group lên Phase, đồng nhất với drawGroups().
      */
     async drawGroupsSeeded(
         phaseId: number,
@@ -305,8 +314,6 @@ export class GroupService {
             if (groups.length === 0)
                 throw createAppError("CONFLICT", "Phase chưa có group");
 
-            // num_pots phải bằng teams_per_group:
-            // mỗi group nhận đúng 1 team từ mỗi pot → tổng slot/group = num_pots = teams_per_group
             if (opts.num_pots !== opts.teams_per_group)
                 throw createAppError(
                     "VALIDATION_ERROR",
@@ -327,8 +334,6 @@ export class GroupService {
 
             await this.assertNoForeignGroupAssignment(tx, phaseId, approvedTeams);
 
-            // Sort: seeded trước (seed ASC), unseeded sau (shuffle)
-            // potSize = groups.length — mỗi pot có đúng 1 team/group
             const seeded = [...approvedTeams]
                 .filter(t => t.seed !== null)
                 .sort((a, b) => (a.seed ?? 0) - (b.seed ?? 0));
@@ -339,7 +344,6 @@ export class GroupService {
             const pots: typeof approvedTeams[] = [];
             for (let p = 0; p < opts.num_pots; p++) {
                 const pot = sorted.slice(p * potSize, (p + 1) * potSize);
-                // Validate đủ team cho pot — thiếu là misconfiguration seed data
                 if (pot.length !== potSize)
                     throw createAppError(
                         "CONFLICT",
@@ -351,8 +355,6 @@ export class GroupService {
             const assignments: { seasonTeamId: number; group_id: number; team_id: number }[] = [];
 
             for (const pot of pots) {
-                // Shuffle trong pot trước khi assign — giữ nguyên constraint 1 team/pot/group
-                // nhưng random hoá group nào nhận team nào trong pot
                 const shuffledPot = shuffle(pot);
                 shuffledPot.forEach((st, i) => {
                     const group = groups[i];
@@ -361,20 +363,22 @@ export class GroupService {
                 });
             }
 
-            // N update riêng lẻ — chấp nhận được ở scale vài chục team/phase. N lớn
-            // (vài trăm+), đổi sang raw SQL UPDATE ... CASE WHEN id IN (...) (MySQL
-            // không có UPDATE ... FROM VALUES như Postgres).
             await Promise.all(
                 assignments.map(a =>
                     tx.seasonTeam.update({ where: { id: a.seasonTeamId }, data: { group_id: a.group_id } })
                 )
             );
 
+            // FIX: persist teams_per_group — đồng nhất với drawGroups()
+            await tx.phase.update({
+                where: { id: phaseId },
+                data: { teams_per_group: opts.teams_per_group },
+            });
+
             return assignments.map(({ group_id, team_id }) => ({ group_id, team_id }));
         });
     }
 
-    // group.service.ts
     async findByIdWithTeams(id: number) {
         const group = await this.prisma.group.findUnique({
             where: { id },
@@ -385,8 +389,6 @@ export class GroupService {
                         format: true, is_active: true
                     }
                 },
-                // ⚠ verify đúng tên relation field trong schema.prisma (back-relation
-                // từ Group -> SeasonTeam), tạm đặt là `seasonTeams`
                 seasonTeams: {
                     where: { deleted_at: null, is_active: true },
                     select: {
