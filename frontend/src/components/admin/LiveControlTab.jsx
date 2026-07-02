@@ -13,21 +13,21 @@ import useToastStore from '../../store/toastStore';
 import EventCard from '../../components/admin/EventCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
-import { 
-  TransitionPeriodModal, 
-  ForfeitMatchModal, 
-  AbandonMatchModal, 
-  DisputeModal, 
-  ResolveAppealModal 
+import {
+  TransitionPeriodModal,
+  ForfeitMatchModal,
+  AbandonMatchModal,
+  DisputeModal,
+  ResolveAppealModal
 } from '../../components/admin/AdvancedMatchControlModals';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
-  { key: 'goal',         label: 'Bàn thắng',  icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-400' },
-  { key: 'yellow',       label: 'Thẻ Vàng',   icon: '🟨', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
-  { key: 'red',          label: 'Thẻ Đỏ',     icon: '🟥', cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
-  { key: 'substitution', label: 'Thay người',  icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
+  { key: 'goal', label: 'Bàn thắng', icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-400' },
+  { key: 'yellow', label: 'Thẻ Vàng', icon: '🟨', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
+  { key: 'red', label: 'Thẻ Đỏ', icon: '🟥', cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
+  { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
 ];
 
 // ─── Payload builders ─────────────────────────────────────────────────────────
@@ -35,11 +35,11 @@ const EVENT_TYPES = [
 function buildEventPayload(evt, teamId) {
   const base = { teamId, minute: Number(evt.minute) || 1 };
   switch (evt.type) {
-    case 'goal':         return [{ ...base, type: 'goal',             playerId: evt.player || undefined }];
-    case 'yellow':       return [{ ...base, type: 'yellow_card',      playerId: evt.player || undefined }];
-    case 'red':          return [{ ...base, type: 'red_card',         playerId: evt.player || undefined }];
+    case 'goal': return [{ ...base, type: 'goal', playerId: evt.player || undefined }];
+    case 'yellow': return [{ ...base, type: 'yellow_card', playerId: evt.player || undefined }];
+    case 'red': return [{ ...base, type: 'red_card', playerId: evt.player || undefined }];
     case 'substitution': return [
-      { ...base, type: 'substitution_in',  playerId: evt.playerIn  || undefined },
+      { ...base, type: 'substitution_in', playerId: evt.playerIn || undefined },
       { ...base, type: 'substitution_out', playerId: evt.playerOut || undefined },
     ];
     default: return [];
@@ -48,10 +48,10 @@ function buildEventPayload(evt, teamId) {
 
 function countEvents(events) {
   return {
-    goals:  events.filter(e => e.type === 'goal').length,
+    goals: events.filter(e => e.type === 'goal').length,
     yellow: events.filter(e => e.type === 'yellow').length,
-    red:    events.filter(e => e.type === 'red').length,
-    subs:   events.filter(e => e.type === 'substitution').length,
+    red: events.filter(e => e.type === 'red').length,
+    subs: events.filter(e => e.type === 'substitution').length,
   };
 }
 
@@ -73,6 +73,7 @@ function useTimer(isRunning, onTick) {
 
 export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId }) {
   const toast = useToastStore();
+  const { seasons } = useSeasonStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
 
   const effectiveSeasonId = selectedSeasonId;
@@ -81,7 +82,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     () => effectiveSeasonId
       ? getMatchesFromCache(Number(effectiveSeasonId))
       : [],
-    [effectiveSeasonId, scheduleCache, getMatchesFromCache],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [effectiveSeasonId, scheduleCache, getMatchesFromCache]
   );
 
   const isLoadingMatches = effectiveSeasonId
@@ -94,8 +96,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     let list = allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
-      list = list.filter(m => 
-        m.home_team?.name?.toLowerCase().includes(lower) || 
+      list = list.filter(m =>
+        m.home_team?.name?.toLowerCase().includes(lower) ||
         m.away_team?.name?.toLowerCase().includes(lower)
       );
     }
@@ -137,7 +139,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         if (cancelled) return;
         setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
         setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
-        
+
         const allLineups = lineupRes.status === 'fulfilled' && Array.isArray(lineupRes.value?.data) ? lineupRes.value.data : [];
         setLineups({
           home: allLineups.filter(l => l.team_id === selectedMatch.home_team_id),
@@ -325,7 +327,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         homeScore: Number(homeScore), awayScore: Number(awayScore),
         scorers: [...homeScorers, ...awayScorers], resultType: 'full_time',
       });
-      await syncUnsavedEvents().catch(() => {});
+      await syncUnsavedEvents().catch(() => { });
       setTimerRunning(false);
       setMatchStatus('finished');
       toast.success('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
@@ -343,11 +345,11 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     toast.info('Đã đặt lại form.');
   };
 
-  const isOngoing  = matchStatus === 'ongoing' || matchStatus === 'pending_official' || matchStatus === 'needs_review';
+  const isOngoing = matchStatus === 'ongoing' || matchStatus === 'pending_official' || matchStatus === 'needs_review';
   const isScheduled = matchStatus === 'scheduled' || matchStatus === 'postponed';
-  const isFinished  = matchStatus === 'finished';
+  const isFinished = matchStatus === 'finished';
   const isProtested = matchStatus === 'protested';
-  
+
   const handleModalSuccess = (msg) => {
     toast.success(msg);
     setActiveModal(null);
@@ -356,7 +358,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const timerMins = Math.floor(timerSeconds / 60);
   const timerSecs = timerSeconds % 60;
-  const timerDisplay = `${timerMins.toString().padStart(2,'0')}:${timerSecs.toString().padStart(2,'0')}`;
+  const timerDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
 
   // ── Formatted scheduled_at ─────────────────────────────────────────────────
   const fmtMatchDate = (m) => m?.scheduled_at
@@ -369,63 +371,63 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     <>
       <div className="space-y-5 animate-fade-in">
         {/* ── Search & Refresh ── */}
-      <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="flex-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận Live
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm theo tên đội..."
-                value={searchTerm}
-                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-              />
+        <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="flex-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận Live
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên đội..."
+                  value={searchTerm}
+                  onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Refresh */}
+            <div className="flex items-end">
+              <button
+                onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
+                disabled={isLoadingMatches}
+                className="px-5 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
+                title="Tải lại danh sách trận"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
-
-          {/* Refresh */}
-          <div className="flex items-end">
-            <button
-              onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
-              disabled={isLoadingMatches}
-              className="px-5 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
-              title="Tải lại danh sách trận"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
         </div>
-      </div>
 
         {/* ── Match Cards ── */}
         <div>
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-blue-400" />
-              Chọn Trận Đấu
-              {matches.length > 0 && (
-                <span className="ml-auto text-gray-600 font-normal">{matches.length} trận</span>
-              )}
-            </h3>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-blue-400" />
+            Chọn Trận Đấu
+            {matches.length > 0 && (
+              <span className="ml-auto text-gray-600 font-normal">{matches.length} trận</span>
+            )}
+          </h3>
 
-            {isLoadingMatches ? (
+          {isLoadingMatches ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {[1, 2, 3].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-navy-light rounded-2xl">
+              <div className="text-3xl mb-3">🏟️</div>
+              <p className="text-gray-500 text-sm">Không có trận nào đang <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc <span className="text-red-400 font-bold">đang diễn ra</span>.</p>
+            </div>
+          ) : (
+            <div>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {[1,2,3].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
-              </div>
-            ) : matches.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-navy-light rounded-2xl">
-                <div className="text-3xl mb-3">🏟️</div>
-                <p className="text-gray-500 text-sm">Không có trận nào đang <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc <span className="text-red-400 font-bold">đang diễn ra</span>.</p>
-              </div>
-            ) : (
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {displayedMatches.map(m => {
-                    const isSelected = String(m.id) === String(selectedMatchId);
+                {displayedMatches.map(m => {
+                  const isSelected = String(m.id) === String(selectedMatchId);
                   const isLive = m.status === 'ongoing';
                   const homeName = m.home_team?.name ?? `Đội #${m.home_team_id}`;
                   const awayName = m.away_team?.name ?? `Đội #${m.away_team_id}`;
@@ -433,11 +435,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     <button
                       key={m.id}
                       onClick={() => handleMatchSelect(String(m.id))}
-                      className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${
-                        isSelected
+                      className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${isSelected
                           ? 'bg-blue-600/10 border-blue-500/60 shadow-lg shadow-blue-900/20'
                           : 'bg-navy border-navy-light hover:border-gray-500 hover:bg-navy-light/40'
-                      }`}
+                        }`}
                     >
                       {/* Live pulse glow */}
                       {isLive && (
@@ -445,11 +446,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                       )}
 
                       <div className="flex items-center justify-between mb-3">
-                        <div className={`text-xs font-black px-2.5 py-1 rounded-full ${
-                          isLive
+                        <div className={`text-xs font-black px-2.5 py-1 rounded-full ${isLive
                             ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                             : 'bg-navy-dark text-gray-500 border border-navy-light'
-                        }`}>
+                          }`}>
                           {isLive ? (
                             <span className="flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
@@ -482,19 +482,19 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     </button>
                   );
                 })}
-                </div>
-                {totalPages > 1 && (
-                  <div className="mt-8 flex justify-center">
-                    <Pagination 
-                      currentPage={currentPage} 
-                      totalPages={totalPages} 
-                      onPageChange={setCurrentPage} 
-                    />
-                  </div>
-                )}
               </div>
-            )}
-          </div>
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Main Workspace ── */}
         {selectedMatch && (
@@ -563,11 +563,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     </div>
 
                     {/* Timer */}
-                    <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono font-black text-lg sm:text-2xl tracking-widest transition-all ${
-                      isOngoing
+                    <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono font-black text-lg sm:text-2xl tracking-widest transition-all ${isOngoing
                         ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
                         : 'bg-navy-dark border-navy-light text-gray-500'
-                    }`}>
+                      }`}>
                       <Clock className="w-4 h-4 opacity-70" />
                       {timerDisplay}
                     </div>
@@ -705,9 +704,9 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
               </div>
               <div className="text-gray-600 hidden sm:block">•</div>
               <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
-                <span>⚽ {homeEvents.filter(e=>e.type==='goal').length + awayEvents.filter(e=>e.type==='goal').length} bàn</span>
-                <span>🟨 {homeEvents.filter(e=>e.type==='yellow').length + awayEvents.filter(e=>e.type==='yellow').length} thẻ vàng</span>
-                <span>🔄 {homeEvents.filter(e=>e.type==='substitution').length + awayEvents.filter(e=>e.type==='substitution').length} thay</span>
+                <span>⚽ {homeEvents.filter(e => e.type === 'goal').length + awayEvents.filter(e => e.type === 'goal').length} bàn</span>
+                <span>🟨 {homeEvents.filter(e => e.type === 'yellow').length + awayEvents.filter(e => e.type === 'yellow').length} thẻ vàng</span>
+                <span>🔄 {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length} thay</span>
               </div>
             </div>
 
@@ -789,10 +788,10 @@ function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers
         {/* Event counters */}
         <div className="grid grid-cols-4 gap-1.5">
           {[
-            { icon: '⚽', val: c.goals,  label: 'Bàn',  color: 'emerald' },
-            { icon: '🟨', val: c.yellow, label: 'Vàng', color: 'yellow'  },
-            { icon: '🟥', val: c.red,    label: 'Đỏ',   color: 'red'     },
-            { icon: '🔄', val: c.subs,   label: 'Thay', color: 'blue'    },
+            { icon: '⚽', val: c.goals, label: 'Bàn', color: 'emerald' },
+            { icon: '🟨', val: c.yellow, label: 'Vàng', color: 'yellow' },
+            { icon: '🟥', val: c.red, label: 'Đỏ', color: 'red' },
+            { icon: '🔄', val: c.subs, label: 'Thay', color: 'blue' },
           ].map(({ icon, val, label, color }) => (
             <div key={label} className={`flex flex-col items-center py-2 rounded-xl bg-${color}-500/10 border border-${color}-500/20`}>
               <span className="text-base">{icon}</span>

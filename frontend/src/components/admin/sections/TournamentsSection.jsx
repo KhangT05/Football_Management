@@ -93,6 +93,12 @@ export default function TournamentsSection() {
       if (crud.modal === 'add') {
         await tournamentApi.create({ name, description, logo: crud.form.logo, is_active: crud.form.is_active });
         toast.success(`Đã tạo giải đấu "${name}"!`);
+        if (window.confirm(`Bạn có muốn tạo mùa giải mới cho giải đấu "${name}" ngay bây giờ không?`)) {
+          setTimeout(() => {
+            const el = document.getElementById('seasons-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
+        }
       } else {
         await tournamentApi.update(crud.editing.id, { name, description, logo: crud.form.logo, is_active: crud.form.is_active });
         toast.success(`Đã cập nhật "${name}"!`);

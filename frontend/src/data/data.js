@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy } from 'lucide-react';
 
 export const navItems = [
   { name: 'Dashboard', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
@@ -7,7 +7,8 @@ export const navItems = [
   { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
   { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Manage Articles', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
-  { name: 'Tournament Settings', path: '/quan-ly-giai-dau/cai-dat', icon: Settings },
+  { name: 'Manage Tournaments', path: '/quan-ly-giai-dau/giai-dau', icon: Trophy },
+  { name: 'Venue Rules Settings', path: '/quan-ly-giai-dau/san-bong-luat', icon: Settings },
 ];
 
 export const getRowStyle = (rank) => {

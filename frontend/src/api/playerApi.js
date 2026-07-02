@@ -145,4 +145,15 @@ export const playerApi = {
    */
   downloadImportTemplate: () =>
     axiosClient.get('/players/import-template', { responseType: 'blob' }),
+
+  /**
+   * Import danh sách cầu thủ từ Excel (Draft)
+   * POST /players/{teamId}/team-players/import
+   * @param {number} teamId
+   * @param {FormData} formData
+   */
+  importTeamPlayers: (teamId, formData) =>
+    axiosClient.post(`/players/${teamId}/team-players/import`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };

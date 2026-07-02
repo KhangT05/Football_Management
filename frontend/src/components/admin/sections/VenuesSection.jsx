@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MapPin, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import { venueApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
@@ -18,31 +18,34 @@ export default function VenuesSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { data: items, meta, isLoading, fetch: fetchVenues } = useApiQuery(
+  const { data: items, isLoading, fetch: fetchVenues } = useApiQuery(
     (params) => venueApi.getAll(params),
     { 
-      autoFetch: false, 
+      perPage: 100,
+      params: { sort: 'id', direction: 'desc' },
       errorMsg: 'Không tải được danh sách sân.' 
     }
   );
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      fetchVenues({
-        page: currentPage,
-        per_page: itemsPerPage,
-        sort: 'id',
-        direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
-    }, 300);
-    return () => clearTimeout(delay);
-  }, [currentPage, itemsPerPage, searchTerm, fetchVenues]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
+
+  const filteredItems = (items || [])
+    .filter(item => {
+      if (!searchTerm.trim()) return true;
+      const lowerSearch = searchTerm.trim().toLowerCase();
+      return (
+        item.name?.toLowerCase().includes(lowerSearch) ||
+        item.address?.toLowerCase().includes(lowerSearch)
+      );
+    })
+    .sort((a, b) => {
+      // Active lên đầu, Inactive xuống cuối
+      if (a.is_active === b.is_active) return 0;
+      return a.is_active ? -1 : 1;
+    });
 
   const { invalidate: invalidateVenueStore } = useVenueStore(useShallow(state => ({ invalidate: state.invalidate })));
   const crud = useCrudModal({
@@ -50,10 +53,7 @@ export default function VenuesSection() {
     onSuccess: () => { 
       invalidateVenueStore(); 
       setCurrentPage(1);
-      fetchVenues({
-        page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
+      fetchVenues();
     },
   });
 
@@ -87,15 +87,15 @@ export default function VenuesSection() {
     setCurrentPage(1);
   };
 
-  const totalPages = meta?.last_page || 1;
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedItems = items || [];
+  const paginatedItems = filteredItems.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
         <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
-          <MapPin className="w-4 h-4 text-emerald-400" /> Sân thi đấu ({meta?.total || 0})
+          <MapPin className="w-4 h-4 text-emerald-400" /> Sân thi đấu ({filteredItems.length})
         </h3>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
@@ -126,8 +126,8 @@ export default function VenuesSection() {
       <div className="divide-y divide-navy-light">
         {isLoading ? (
           <div className="p-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-12 rounded-lg" />)}</div>
-        ) : items.length === 0 ? (
-          <div className="py-10 text-center text-gray-500"><MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" /><p>Chưa có sân thi đấu nào</p></div>
+        ) : filteredItems.length === 0 ? (
+          <div className="py-10 text-center text-gray-500"><MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" /><p>Không tìm thấy sân thi đấu</p></div>
         ) : paginatedItems.map(item => (
           <div key={item.id} className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-navy-light/10 transition-colors">
             <div className="flex items-center gap-3 min-w-0">
@@ -149,7 +149,7 @@ export default function VenuesSection() {
           </div>
         ))}
       </div>
-      {totalPages > 1 && items.length > 0 && !isLoading && (
+      {totalPages > 1 && filteredItems.length > 0 && !isLoading && (
         <div className="px-6 py-4 border-t border-navy-light flex justify-center bg-navy-dark/30">
           <Pagination
             currentPage={safePage}

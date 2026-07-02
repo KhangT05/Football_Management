@@ -29,10 +29,11 @@ const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
 const ManageTeams = lazy(() => import("./pages/admin/ManageTeams"));
 
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
-const Settings = lazy(() => import("./pages/admin/Settings"));
+const ManageVenuesRules = lazy(() => import("./pages/admin/ManageVenuesRules"));
 const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
 const ManageArticles = lazy(() => import("./pages/admin/ManageArticles"));
 const ManageAccounts = lazy(() => import("./pages/admin/ManageAccounts"));
+const ManageTournaments = lazy(() => import("./pages/admin/ManageTournaments"));
 
 // News pages
 const News = lazy(() => import("./pages/News"));
@@ -147,8 +148,11 @@ function App() {
           <Route path="/quan-ly-giai-dau/dang-ky-giai" element={
             <AdminRoute><ManageSeasonTeams /></AdminRoute>
           } />
-          <Route path="/quan-ly-giai-dau/cai-dat" element={
-            <AdminRoute><Settings /></AdminRoute>
+          <Route path="/quan-ly-giai-dau/giai-dau" element={
+            <AdminRoute><ManageTournaments /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/san-bong-luat" element={
+            <AdminRoute><ManageVenuesRules /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/bai-viet" element={
             <AdminRoute><ManageArticles /></AdminRoute>

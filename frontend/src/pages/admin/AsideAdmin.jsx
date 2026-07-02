@@ -10,7 +10,8 @@ const VI_LABELS = {
   'Season Teams':        'Quản lý Mùa giải & Bốc thăm',
   'Manage Matches':      'Lịch thi đấu & Kết quả',
   'Manage Articles':     'Quản lý bài viết',
-  'Tournament Settings': 'Cấu hình giải đấu',
+  'Manage Tournaments':  'Giải đấu & Mùa giải',
+  'Venue Rules Settings': 'Sân bóng & Luật giải',
 };
 
 export default function AsideAdmin({ onClose }) {

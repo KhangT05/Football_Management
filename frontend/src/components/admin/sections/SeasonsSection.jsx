@@ -92,9 +92,16 @@ export default function SeasonsSection() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil((items || []).length / itemsPerPage) || 1;
+  const [filterStatus, setFilterStatus] = useState('');
+
+  const filteredItems = (items || []).filter(item => {
+    if (filterStatus && item.status !== filterStatus) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedItems = (items || []).slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginatedItems = filteredItems.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
@@ -228,16 +235,27 @@ export default function SeasonsSection() {
 
   return (
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark">
-        <h3 className="font-bold text-white text-base flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-purple-400" /> Mùa giải ({items.length})
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
+        <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
+          <Calendar className="w-4 h-4 text-purple-400" /> Mùa giải ({filteredItems.length})
         </h3>
-        <div className="flex gap-2">
-          <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <select
+            value={filterStatus}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+            className="px-3 py-2 bg-navy border border-navy-light rounded-lg text-sm text-gray-300 focus:outline-none focus:border-purple-500"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(statusMeta).map(([key, val]) => (
+              <option key={key} value={key}>{val.label}</option>
+            ))}
+          </select>
+
+          <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors ml-auto sm:ml-0 shrink-0">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors">
-            <Plus className="w-4 h-4" /> Thêm mùa giải
+          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors shrink-0">
+            <Plus className="w-4 h-4" /> Thêm mới
           </button>
         </div>
       </div>
@@ -245,10 +263,10 @@ export default function SeasonsSection() {
       <div className="divide-y divide-navy-light">
         {isLoading ? (
           <div className="p-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-16 rounded-lg" />)}</div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="py-10 text-center text-gray-500">
             <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p>Chưa có mùa giải nào</p>
+            <p>Không tìm thấy mùa giải nào phù hợp</p>
           </div>
         ) : paginatedItems.map(item => {
           const sm = statusMeta[item.status] ?? statusMeta.upcoming;
@@ -338,7 +356,7 @@ export default function SeasonsSection() {
             </div>
           );
         })}
-        {totalPages > 1 && (items || []).length > 0 && !isLoading && (
+        {totalPages > 1 && filteredItems.length > 0 && !isLoading && (
           <div className="mt-4 mb-2 flex justify-center">
             <Pagination
               currentPage={safePage}

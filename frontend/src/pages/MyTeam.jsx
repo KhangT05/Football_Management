@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   ShieldOff, ArrowRight, X, Loader2, AlertTriangle,
-  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode
+  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode, UploadCloud
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
@@ -71,7 +71,7 @@ function ConfirmDeleteModal({ playerName, onConfirm, onCancel, isDeleting }) {
 }
 
 // ─── Player Add/Edit Modal ────────────────────────────────
-function PlayerModal({ mode, player, onSave, onClose, isSaving, error }) {
+function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport }) {
   const [form, setForm] = useState({
     name: player?.name || '',
     number: player?.number || '',
@@ -188,18 +188,30 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error }) {
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
-          <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
-            Hủy bỏ
-          </button>
-          <button
-            onClick={() => onSave(form)}
-            disabled={isSaving}
-            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm"
-          >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-            {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
-          </button>
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-between gap-4 relative z-10">
+          <div className="flex items-center">
+            {mode === 'add' && onImport && (
+              <div className="relative">
+                <input type="file" id="import-excel-modal" accept=".xlsx,.xls" className="hidden" onChange={onImport} disabled={isSaving} />
+                <label htmlFor="import-excel-modal" className={`px-5 py-3.5 font-bold bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-2xl flex items-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 ${isSaving ? 'opacity-70 pointer-events-none' : ''}`}>
+                  <UploadCloud className="w-5 h-5" /> Import Excel
+                </label>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
+              Hủy bỏ
+            </button>
+            <button
+              onClick={() => onSave(form)}
+              disabled={isSaving}
+              className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
+            >
+              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+              {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -465,6 +477,20 @@ export default function MyTeam() {
     }
   };
 
+  const handleDeleteTeam = async (teamId) => {
+    setIsSaving(true);
+    try {
+      await teamApi.delete(teamId);
+      toast.success('Đã giải tán đội bóng thành công!');
+      setEditTeamModalOpen(false);
+      await loadTeamData();
+    } catch (apiErr) {
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi xóa đội bóng.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // ── ADD Player ───────────────────────────────────────────
   const openAddModal = () => {
     setEditingPlayer(null);
@@ -496,6 +522,26 @@ export default function MyTeam() {
       setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      setIsSaving(true);
+      await playerApi.importTeamPlayers(team.id, formData);
+      toast.success('Nhập dữ liệu thành công! (Mock UI)');
+      await loadTeamData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'API chưa hỗ trợ tính năng này. Hãy nhắc đội Backend cập nhật nhé!');
+    } finally {
+      setIsSaving(false);
+      e.target.value = null;
     }
   };
 
@@ -1024,6 +1070,7 @@ export default function MyTeam() {
           onClose={() => { setPlayerModal(null); setModalError(''); }}
           isSaving={isSaving}
           error={modalError}
+          onImport={handleImportExcel}
         />
       )}
 
@@ -1053,6 +1100,7 @@ export default function MyTeam() {
           onClose={() => setEditTeamModalOpen(false)}
           isSaving={isSaving}
           error={modalError}
+          onDelete={handleDeleteTeam}
         />
       )}
 

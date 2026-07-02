@@ -9,6 +9,7 @@ import {
 import { seasonApi, seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import useSeasonStore from '../../store/seasonStore';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import GroupDrawUI from '../../components/admin/GroupDrawUI';
@@ -42,20 +43,14 @@ export default function ManageSeasonTeams() {
   const [activeTab, setActiveTab] = useState('teams');
 
   // ── Seasons ─────────────────────────────────────────────────
-  const [seasons, setSeasons]             = useState([]);
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
   const [selectedSeason, setSelectedSeason] = useState('');
   const [filterStatus, setFilterStatus]   = useState('');
   const [filterSeasonStatus, setFilterSeasonStatus] = useState('');
 
   useEffect(() => {
-    seasonApi.getAll({ per_page: 100, sort: 'id', direction: 'desc' })
-      .then(res => {
-        const payload = (typeof res?.status === 'boolean') ? res.data : res;
-        const data = Array.isArray(payload?.data) ? payload.data : [];
-        setSeasons(data);
-      })
-      .catch(() => toast.error('Lỗi khi tải danh sách mùa giải.'));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' });
+  }, [fetchSeasons]);
 
   // ── Filtered seasons (dropdown filter) ────────────────────
   const filteredSeasons = useMemo(() => {
@@ -85,6 +80,9 @@ export default function ManageSeasonTeams() {
   // ── Client-side filter by status and search ───────────────────────────
   const seasonTeams = useMemo(() => {
     let filtered = allSeasonTeams;
+    if (selectedSeason) {
+      filtered = filtered.filter(st => String(st.season_id) === String(selectedSeason));
+    }
     if (filterStatus) {
       filtered = filtered.filter(st => st.status === filterStatus);
     }
@@ -93,7 +91,7 @@ export default function ManageSeasonTeams() {
       filtered = filtered.filter(st => st.team?.name?.toLowerCase().includes(lower));
     }
     return filtered;
-  }, [allSeasonTeams, filterStatus, debouncedSearch]);
+  }, [allSeasonTeams, selectedSeason, filterStatus, debouncedSearch]);
 
   // ── Pagination ───────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
@@ -113,14 +111,20 @@ export default function ManageSeasonTeams() {
   const paginatedTeams = seasonTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   // ── Summary stats ───────────────────────────────────────────
-  const stats = useMemo(() => ({
-    total:     allSeasonTeams.length,
-    pending:   allSeasonTeams.filter(s => s.status === 'pending').length,
-    approved:  allSeasonTeams.filter(s => s.status === 'approved').length,
-    active:    allSeasonTeams.filter(s => s.status === 'active').length,
-    rejected:  allSeasonTeams.filter(s => s.status === 'rejected').length,
-    withdrawn: allSeasonTeams.filter(s => s.status === 'withdrawn').length,
-  }), [allSeasonTeams]);
+  const stats = useMemo(() => {
+    let base = allSeasonTeams;
+    if (selectedSeason) {
+      base = base.filter(st => String(st.season_id) === String(selectedSeason));
+    }
+    return {
+      total:     base.length,
+      pending:   base.filter(s => s.status === 'pending').length,
+      approved:  base.filter(s => s.status === 'approved').length,
+      active:    base.filter(s => s.status === 'active').length,
+      rejected:  base.filter(s => s.status === 'rejected').length,
+      withdrawn: base.filter(s => s.status === 'withdrawn').length,
+    };
+  }, [allSeasonTeams, selectedSeason]);
 
   // ── Actions: Status ─────────────────────────────────────────
   const statusMutation = useApiMutation();

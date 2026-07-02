@@ -31,10 +31,11 @@ export default function GroupDrawUI({ seasonId }) {
 
   const loadTotalTeams = async () => {
     try {
-      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 100 });
+      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 500 });
       const payload = typeof res?.status === 'boolean' ? res.data : res;
       const allTeams = Array.isArray(payload?.data) ? payload.data : [];
-      const approved = allTeams.filter(st => st.status === 'approved');
+      const seasonTeams = allTeams.filter(st => String(st.season_id) === String(seasonId));
+      const approved = seasonTeams.filter(st => st.status === 'approved');
       setTotalTeams(approved.length);
     } catch (err) {
       console.error(err);

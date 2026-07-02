@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react';
-import { X, Save, Loader2, Camera, AlertTriangle } from 'lucide-react';
+import { X, Save, Loader2, Camera, AlertTriangle, Trash2 } from 'lucide-react';
 
-export default function EditTeamModal({ team, onSave, onClose, isSaving, error }) {
+export default function EditTeamModal({ team, onSave, onClose, isSaving, error, onDelete }) {
   const [form, setForm] = useState({
     name: team?.name || '',
-    coach_name: team?.captain || '', // mapped from myTeam
+    coach_name: team?.captain !== '—' ? team?.captain : '',
+    phone: team?.phone !== '—' ? team?.phone : '',
+    primary_color: team?.primaryColor !== '—' ? team?.primaryColor : '',
+    color_hex: team?.colorHex !== '—' ? team?.colorHex : '#334155',
     description: team?.description || '',
     logo: null,
   });
@@ -30,7 +33,7 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error }
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden">
+      <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-lg max-h-[90vh] animate-scale-in flex flex-col overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
         
         {/* Header */}
@@ -44,7 +47,7 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error }
         </div>
 
         {/* Body */}
-        <div className="p-8 space-y-6 relative z-10">
+        <div className="p-8 space-y-6 relative z-10 overflow-y-auto custom-scrollbar">
           
           <div className="flex flex-col items-center gap-2">
             <div 
@@ -80,15 +83,60 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error }
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold"
               />
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Đội trưởng</label>
-              <input
-                name="coach_name"
-                value={form.coach_name}
-                onChange={handleChange}
-                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold"
-              />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Đội trưởng</label>
+                <input
+                  name="coach_name"
+                  value={form.coach_name}
+                  onChange={handleChange}
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">SĐT liên hệ</label>
+                <input
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold"
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Màu áo chính</label>
+                <input
+                  name="primary_color"
+                  value={form.primary_color}
+                  onChange={handleChange}
+                  placeholder="VD: Xanh dương"
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mã màu (Hex)</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    name="color_hex"
+                    value={form.color_hex}
+                    onChange={handleChange}
+                    className="w-12 h-12 rounded-xl cursor-pointer bg-transparent border-0 shrink-0"
+                  />
+                  <input
+                    name="color_hex"
+                    value={form.color_hex}
+                    onChange={handleChange}
+                    placeholder="#334155"
+                    className="w-full px-4 py-3 bg-navy/50 border border-navy-light rounded-2xl text-white focus:border-neon focus:ring-4 focus:ring-neon/20 outline-none transition-all font-bold uppercase"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Giới thiệu ngắn</label>
               <textarea
@@ -103,18 +151,35 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error }
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
-          <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all">
-            Hủy bỏ
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-8 py-3.5 font-black bg-linear-to-r from-neon to-emerald-500 text-black rounded-2xl flex items-center gap-3 hover:from-emerald-400 hover:to-teal-500 transition-all disabled:opacity-70 shadow-[0_0_20px_rgba(57,255,20,0.3)] uppercase tracking-wider text-sm"
-          >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            LƯU THAY ĐỔI
-          </button>
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-between gap-4 relative z-10 items-center">
+          <div>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Bạn có chắc chắn muốn xóa đội bóng này? Hành động này không thể hoàn tác.')) {
+                    onDelete(team.id);
+                  }
+                }}
+                className="px-5 py-3.5 font-bold text-red-400 hover:text-white hover:bg-red-500 rounded-2xl transition-all flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(239,68,68,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)] hover:-translate-y-0.5"
+              >
+                <Trash2 className="w-5 h-5" /> Xóa Đội
+              </button>
+            )}
+          </div>
+          <div className="flex gap-4">
+            <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all">
+              Hủy bỏ
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-8 py-3.5 font-black bg-linear-to-r from-neon to-emerald-500 text-black rounded-2xl flex items-center gap-3 hover:from-emerald-400 hover:to-teal-500 transition-all disabled:opacity-70 shadow-[0_0_20px_rgba(57,255,20,0.3)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
+            >
+              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              LƯU THAY ĐỔI
+            </button>
+          </div>
         </div>
       </div>
     </div>

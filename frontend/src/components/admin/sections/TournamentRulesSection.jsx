@@ -39,26 +39,13 @@ export default function TournamentRulesSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  const { data: items, meta, isLoading, fetch: fetchRules } = useApiQuery(
+  const { data: items, isLoading, fetch: fetchRules } = useApiQuery(
     (params) => tournamentRuleApi.getAll(params),
     { 
-      autoFetch: false, 
+      autoFetch: true, 
       errorMsg: 'Không tải được dữ liệu luật giải.' 
     }
   );
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      fetchRules({
-        page: currentPage,
-        per_page: itemsPerPage,
-        sort: 'id',
-        direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
-    }, 300);
-    return () => clearTimeout(delay);
-  }, [currentPage, itemsPerPage, searchTerm, fetchRules]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -70,10 +57,6 @@ export default function TournamentRulesSection() {
     setCurrentPage(1);
   };
 
-  const totalPages = meta?.last_page || 1;
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedItems = items || [];
-
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
@@ -82,18 +65,29 @@ export default function TournamentRulesSection() {
     }).catch(() => {});
   }, []);
 
+  const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
+
+  const filteredItems = (items || []).filter(item => {
+    if (!searchTerm.trim()) return true;
+    const lowerSearch = searchTerm.trim().toLowerCase();
+    const tournamentName = getTournamentName(item.tournament_id)?.toLowerCase() || '';
+    return tournamentName.includes(lowerSearch);
+  });
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = filteredItems.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
   const crud = useCrudModal({ 
     emptyForm: DEFAULT_RULE_FORM, 
     onSuccess: () => {
       setCurrentPage(1);
-      fetchRules({
-        page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
-        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
-      });
+      fetchRules();
     }
   });
 
-  const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
+  // getTournamentName cần được khai báo TRƯỚC khi dùng trong filteredItems, 
+  // nên đã di chuyển nó lên trên ở logic thực tế. Ghi đè lại để an toàn.
 
   const openAdd = () => crud.openAdd({ ...DEFAULT_RULE_FORM, tournament_id: tournaments[0]?.id ?? '' });
   const openEdit = (item) => crud.openEdit(item, {
@@ -160,7 +154,7 @@ export default function TournamentRulesSection() {
     <section className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark gap-4">
         <h3 className="font-bold text-white text-base flex items-center gap-2 shrink-0">
-          <CheckCircle2 className="w-4 h-4 text-orange-400" /> Luật giải ({meta?.total || 0})
+          <CheckCircle2 className="w-4 h-4 text-orange-400" /> Luật giải ({filteredItems.length})
         </h3>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
@@ -192,10 +186,10 @@ export default function TournamentRulesSection() {
       <div className="divide-y divide-navy-light">
         {isLoading ? (
           <div className="p-6 space-y-3">{[1, 2].map(i => <div key={i} className="skeleton h-16 rounded-lg" />)}</div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="py-10 text-center text-gray-500">
             <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p>Chưa có luật giải nào. Nhấn "Thêm luật" để bắt đầu.</p>
+            <p>Không tìm thấy luật giải nào phù hợp.</p>
           </div>
         ) : paginatedItems.map(item => (
           <div key={item.id} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-navy-light/10 transition-colors">
@@ -221,7 +215,7 @@ export default function TournamentRulesSection() {
             </div>
           </div>
         ))}
-        {totalPages > 1 && (items || []).length > 0 && !isLoading && (
+        {totalPages > 1 && filteredItems.length > 0 && !isLoading && (
           <div className="mt-4 mb-2 flex justify-center">
             <Pagination
               currentPage={safePage}

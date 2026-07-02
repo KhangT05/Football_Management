@@ -2060,6 +2060,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"replay_of_match_id": {
+						"type": "number",
+						"format": "double"
+					},
 					"postponed_reason": {
 						"type": "string"
 					},
@@ -2149,6 +2153,7 @@
 					"finalize_result_type",
 					"pending_official_at",
 					"abandoned_minute",
+					"replay_of_match_id",
 					"postponed_reason",
 					"postponed_from",
 					"current_period",
@@ -2792,9 +2797,7 @@
 				"enum": [
 					"pending",
 					"rejected",
-					"confirmed",
-					"refund_pending",
-					"refunded"
+					"confirmed"
 				]
 			},
 			"PaymentRow": {
@@ -3192,6 +3195,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					},
 					"player_id": {
 						"type": "number",
 						"format": "double"
@@ -3221,6 +3228,7 @@
 					"is_captain",
 					"lineup_type",
 					"match_id",
+					"jersey_number",
 					"player_id",
 					"position",
 					"status",
@@ -6522,6 +6530,32 @@
 								"desc"
 							]
 						}
+					},
+					{
+						"in": "query",
+						"name": "season_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "team_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
 					}
 				]
 			},
@@ -6784,7 +6818,7 @@
 						}
 					}
 				},
-				"description": "List seasons có thể xem standings.\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\n\nQuery params:\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\n  ?tournamentId=1\n  ?page=1&per_page=20\n  ?q=keyword&sort=start_date&direction=desc",
+				"description": "List seasons có thể xem standings.\r\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\r\n\r\nQuery params:\r\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\r\n  ?tournamentId=1\r\n  ?page=1&per_page=20\r\n  ?q=keyword&sort=start_date&direction=desc",
 				"tags": [
 					"Seasons"
 				],
@@ -7153,7 +7187,7 @@
 						}
 					}
 				},
-				"description": "Overview standings toàn season — tất cả groups, kiểu World Cup group stage.\nKhông paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).\nTrả về array grouped theo group, mỗi group có teams sorted by position.\n\nChỉ serve season ở status: ongoing / finished / cancelled.",
+				"description": "Overview standings toàn season — tất cả groups, kiểu World Cup group stage.\r\nKhông paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).\r\nTrả về array grouped theo group, mỗi group có teams sorted by position.\r\n\r\nChỉ serve season ở status: ongoing / finished / cancelled.",
 				"tags": [
 					"Seasons"
 				],
@@ -7186,7 +7220,7 @@
 						}
 					}
 				},
-				"description": "Standings chi tiết của 1 group — validate group thuộc season.\n\nQuery params:\n  ?page=1&per_page=20\n  ?sort=position|points|goals_for|wins&direction=asc|desc",
+				"description": "Standings chi tiết của 1 group — validate group thuộc season.\r\n\r\nQuery params:\r\n  ?page=1&per_page=20\r\n  ?sort=position|points|goals_for|wins&direction=asc|desc",
 				"tags": [
 					"Seasons"
 				],
@@ -7440,7 +7474,7 @@
 						}
 					}
 				},
-				"description": "Thống kê cầu thủ trong season.\n\nQuery params:\n  ?teamId=1\n  ?page=1&per_page=20\n  ?sort=goals_scored&direction=desc",
+				"description": "Thống kê cầu thủ trong season.\r\n\r\nQuery params:\r\n  ?teamId=1\r\n  ?page=1&per_page=20\r\n  ?sort=goals_scored&direction=desc",
 				"tags": [
 					"Seasons"
 				],

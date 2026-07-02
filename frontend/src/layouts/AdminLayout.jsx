@@ -4,9 +4,10 @@ import AsideAdmin from '../pages/admin/AsideAdmin';
 import useAuthStore from '../store/authStore';
 import {
   LogOut, Home, ChevronRight, Bell, User, Settings,
-  Shield, Menu, X
+  Shield, Menu, X, UserCog
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+import ProfileSettingsModal from '../components/admin/ProfileSettingsModal';
 
 // Map path → tên trang hiển thị trên breadcrumb
 const PAGE_NAMES = {
@@ -26,6 +27,7 @@ export default function AdminLayout({ children }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Đóng dropdown khi click ra ngoài
@@ -199,14 +201,16 @@ export default function AdminLayout({ children }) {
                       Về trang chủ
                     </Link>
 
-                    <Link
-                      to="/quan-ly-giai-dau/cai-dat"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-navy-light transition-colors text-sm font-medium"
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        setProfileModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-navy-light transition-colors text-sm font-medium"
                     >
-                      <Settings className="w-4 h-4 text-gray-400" />
-                      Cài đặt giải đấu
-                    </Link>
+                      <UserCog className="w-4 h-4 text-gray-400" />
+                      Cấu hình hệ thống
+                    </button>
                   </div>
 
                   {/* Logout */}
@@ -230,6 +234,10 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
       </main>
+
+      {profileModalOpen && (
+        <ProfileSettingsModal onClose={() => setProfileModalOpen(false)} />
+      )}
     </div>
   );
 }
