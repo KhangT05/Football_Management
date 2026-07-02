@@ -3078,6 +3078,24 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ConfirmResultOutputWithWarnings": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/ConfirmResultOutput"
+					},
+					{
+						"properties": {
+							"postCommitWarnings": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							}
+						},
+						"type": "object"
+					}
+				]
+			},
 			"ConfirmResultInput": {
 				"properties": {
 					"homeScore": {
@@ -3117,6 +3135,11 @@
 					},
 					"notes": {
 						"type": "string"
+					},
+					"explicitWinnerTeamId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
 					}
 				},
 				"required": [
@@ -3721,6 +3744,46 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_": {
+				"type": "string",
+				"enum": [
+					"yellow_card",
+					"red_card",
+					"second_yellow"
+				],
+				"description": "Extract from T those types that are assignable to U"
+			},
+			"AdminCardInput": {
+				"properties": {
+					"playerId": {
+						"type": "number",
+						"format": "double"
+					},
+					"teamId": {
+						"type": "number",
+						"format": "double"
+					},
+					"type": {
+						"$ref": "#/components/schemas/Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_",
+						"description": "substitution KHÔNG nằm trong scope này — chưa có UI/requirement rõ,\r\nthêm sau nếu cần, tránh field rỗng không dùng"
+					},
+					"minute": {
+						"type": "number",
+						"format": "double"
+					},
+					"period": {
+						"$ref": "#/components/schemas/MatchPeriod"
+					}
+				},
+				"required": [
+					"playerId",
+					"teamId",
+					"type",
+					"minute"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"AdminRecordResultInput": {
 				"properties": {
 					"homeScore": {
@@ -3738,6 +3801,13 @@
 						},
 						"type": "array",
 						"description": "Metadata tùy chọn, không ảnh hưởng score computation"
+					},
+					"cards": {
+						"items": {
+							"$ref": "#/components/schemas/AdminCardInput"
+						},
+						"type": "array",
+						"description": "Card events — KHÔNG đi qua recordEvent()'s per-write guard,\r\nvalidate theo batch ở service layer (xem adminRecordResult)"
 					},
 					"resultType": {
 						"$ref": "#/components/schemas/MatchResultType",
@@ -9663,7 +9733,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/ConfirmResultOutput"
+									"$ref": "#/components/schemas/ConfirmResultOutputWithWarnings"
 								}
 							}
 						}
