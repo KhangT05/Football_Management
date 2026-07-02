@@ -11,6 +11,7 @@ export interface ConfirmResultInput {
     homePenalty?: number;
     awayPenalty?: number;
     notes?: string;
+    explicitWinnerTeamId?: number | null;
 }
 export interface ConfirmResultOutput {
     matchResultId: number;

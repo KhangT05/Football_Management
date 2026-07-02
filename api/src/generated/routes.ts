@@ -421,12 +421,22 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofadminAddSeasonTeamSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["approved"]},{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["eliminated"]},{"dataType":"enum","enums":["withdrawn"]}],"required":true},"team_id":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["approved"]},{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["eliminated"]},{"dataType":"enum","enums":["withdrawn"]}]},"team_id":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AdminAddSeasonTeamDto": {
         "dataType": "refAlias",
         "type": {"ref":"infer_typeofadminAddSeasonTeamSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofTransferSeasonTeamSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"season_id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TransferSeasonTeamDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofTransferSeasonTeamSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateSeasonTeamStatusSchema_": {
@@ -907,6 +917,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfirmResultOutputWithWarnings": {
+        "dataType": "refAlias",
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"ConfirmResultOutput"},{"dataType":"nestedObjectLiteral","nestedProperties":{"postCommitWarnings":{"dataType":"array","array":{"dataType":"string"}}}}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ConfirmResultInput": {
         "dataType": "refObject",
         "properties": {
@@ -920,6 +935,7 @@ const models: TsoaRoute.Models = {
             "homePenalty": {"dataType":"double"},
             "awayPenalty": {"dataType":"double"},
             "notes": {"dataType":"string"},
+            "explicitWinnerTeamId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}]},
         },
         "additionalProperties": false,
     },
@@ -1132,12 +1148,30 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["yellow_card"]},{"dataType":"enum","enums":["red_card"]},{"dataType":"enum","enums":["second_yellow"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminCardInput": {
+        "dataType": "refObject",
+        "properties": {
+            "playerId": {"dataType":"double","required":true},
+            "teamId": {"dataType":"double","required":true},
+            "type": {"ref":"Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_","required":true},
+            "minute": {"dataType":"double","required":true},
+            "period": {"ref":"MatchPeriod"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AdminRecordResultInput": {
         "dataType": "refObject",
         "properties": {
             "homeScore": {"dataType":"double","required":true},
             "awayScore": {"dataType":"double","required":true},
             "scorers": {"dataType":"array","array":{"dataType":"refObject","ref":"AdminScorerInput"}},
+            "cards": {"dataType":"array","array":{"dataType":"refObject","ref":"AdminCardInput"}},
             "resultType": {"ref":"MatchResultType"},
             "homeHalfTimeScore": {"dataType":"double"},
             "awayHalfTimeScore": {"dataType":"double"},
@@ -2815,12 +2849,87 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonTeamController_approve: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.patch('/seasonteams/:id/approve',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.approve)),
+
+            async function SeasonTeamController_approve(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_approve, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonTeamController>(SeasonTeamController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'approve',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonTeamController_transferSeason: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"TransferSeasonTeamDto"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.patch('/seasonteams/:id/transfer',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.transferSeason)),
+
+            async function SeasonTeamController_transferSeason(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_transferSeason, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonTeamController>(SeasonTeamController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'transferSeason',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSeasonTeamController_updateStatus: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateSeasonTeamStatusDto"},
         };
         app.patch('/seasonteams/:id/status',
-            authenticateMiddleware([{"jwt":["admin"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.updateStatus)),
 

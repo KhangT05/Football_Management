@@ -10,6 +10,30 @@ export declare class SeasonTeamService {
     findByIdOrFail(id: number): Promise<SeasonTeamWithRelations>;
     selfRegister(data: SelfRegisterSeasonTeamDto, userId: number): Promise<SeasonTeamWithRelations>;
     adminAdd(data: AdminAddSeasonTeamDto, userId: number): Promise<SeasonTeamWithRelations>;
+    /**
+     * Duyệt team (ban tổ chức / admin). Tách khỏi updateStatus vì có
+     * capacity check + season-state check riêng, không phải generic write.
+     */
+    approve(id: number, requesterId: number): Promise<SeasonTeamWithRelations>;
+    /**
+     * Chuyển season_team sang season khác (ban tổ chức / admin).
+     * - Chỉ cho phép từ pending|approved — active/eliminated đã có match/group
+     *   phụ thuộc (group_id, playerStatistics, matchLineups...), transfer sẽ
+     *   orphan reference. Nếu sau này audit thấy FK an toàn, có thể nới.
+     * - Deactivate record cũ (soft-delete) rồi createOrReactivate ở season đích,
+     *   dùng lại đúng logic revive khi unique(season_id, team_id) đã tồn tại
+     *   (case: team từng ở season đích rồi withdraw).
+     * - Reset về pending ở season đích — buộc duyệt lại vì capacity/eligibility
+     *   season mới có thể khác.
+     */
+    transferSeason(id: number, targetSeasonId: number, requesterId: number): Promise<SeasonTeamWithRelations>;
+    /**
+     * Generic status update (eliminated/withdrawn...). KHÔNG dùng cho approve —
+     * dùng approve() riêng vì có capacity check. Có transition guard tối thiểu,
+     * chưa lock — các transition ở đây không cạnh tranh capacity nên rủi ro
+     * race thấp hơn approve, nhưng nếu thêm transition ảnh hưởng slot count
+     * (vd revert approved -> pending) phải bọc transaction + lock như approve.
+     */
     updateStatus(id: number, data: UpdateSeasonTeamStatusDto): Promise<SeasonTeamWithRelations>;
     /**
      * group_id trên SeasonTeam season-scoped, Group phase-scoped — season có
@@ -23,8 +47,9 @@ export declare class SeasonTeamService {
     private assertSlotAvailable;
     /**
      * @@unique([season_id, team_id]) không exclude deleted_at (MySQL không có
-     * partial unique index). Team withdraw rồi đăng ký lại phải reactivate row
-     * cũ, không create mới — create thẳng sẽ đụng unique constraint.
+     * partial unique index). Team withdraw rồi đăng ký lại (hoặc được transfer
+     * đến) phải reactivate row cũ, không create mới — create thẳng sẽ đụng
+     * unique constraint.
      */
     private createOrReactivate;
 }

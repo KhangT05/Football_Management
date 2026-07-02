@@ -101,7 +101,7 @@ export class StandingsService {
         });
         if (!season)
             throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
-        const allowedStatuses = ['ongoing', 'finished', 'cancelled'];
+        const allowedStatuses = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
         if (!allowedStatuses.includes(season.status))
             throw createAppError('FORBIDDEN', `Season ${seasonId} ở trạng thái '${season.status}' — không có standings để xem`);
         const rows = await this.prisma.teamStanding.findMany({
@@ -439,7 +439,7 @@ export class StandingsService {
         const per_page = Math.min(Math.max(1, Number(params.per_page) || 20), 50);
         const skip = (page - 1) * per_page;
         // Allowed statuses — loại upcoming và registration_open
-        const allowedStatuses = ['ongoing', 'finished', 'cancelled'];
+        const allowedStatuses = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
         const statusFilter = status && allowedStatuses.includes(status)
             ? [status]
             : allowedStatuses;
