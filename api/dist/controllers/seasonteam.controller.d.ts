@@ -19,6 +19,11 @@ export declare class SeasonTeamController extends Controller {
     selfRegister(body: seasonTeamSchema.SelfRegisterSeasonTeamDto, req: AuthRequest): Promise<SeasonTeamWithRelations>;
     /** Admin add team trực tiếp */
     adminAdd(body: seasonTeamSchema.AdminAddSeasonTeamDto, req: AuthRequest): Promise<SeasonTeamWithRelations>;
+    /** Duyệt team pending -> approved. Ban tổ chức hoặc admin. */
+    approve(id: number, req: AuthRequest): Promise<SeasonTeamWithRelations>;
+    /** Chuyển team sang season khác. Ban tổ chức hoặc admin. */
+    transferSeason(id: number, body: seasonTeamSchema.TransferSeasonTeamDto, req: AuthRequest): Promise<SeasonTeamWithRelations>;
+    /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
     updateStatus(id: number, body: seasonTeamSchema.UpdateSeasonTeamStatusDto): Promise<SeasonTeamWithRelations>;
     /** Assign team vào group sau draw */
     assignGroup(id: number, body: seasonTeamSchema.AssignGroupDto): Promise<SeasonTeamWithRelations>;
