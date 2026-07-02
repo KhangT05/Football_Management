@@ -35,6 +35,15 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
         this.setStatus(201);
         return this.service.adminAdd(body, req.user.user_id);
     }
+    /** Duyệt team pending -> approved. Ban tổ chức hoặc admin. */
+    async approve(id, req) {
+        return this.service.approve(id, req.user.user_id);
+    }
+    /** Chuyển team sang season khác. Ban tổ chức hoặc admin. */
+    async transferSeason(id, body, req) {
+        return this.service.transferSeason(id, body.season_id, req.user.user_id);
+    }
+    /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
     async updateStatus(id, body) {
         return this.service.updateStatus(id, body);
     }
@@ -86,7 +95,26 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "adminAdd", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["admin", "organizing"]),
+    Patch("{id}/approve"),
+    __param(0, Path()),
+    __param(1, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "approve", null);
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
+    Patch("{id}/transfer"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __param(2, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "transferSeason", null);
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
     Patch("{id}/status"),
     __param(0, Path()),
     __param(1, Body()),

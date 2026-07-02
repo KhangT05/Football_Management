@@ -8,7 +8,7 @@ export const selfRegisterSeasonTeamSchema = z.object({
 export const adminAddSeasonTeamSchema = z.object({
     season_id: z.number().int().positive(),
     team_id: z.number().int().positive(),
-    status: z.nativeEnum(SeasonTeamStatus).optional().default(SeasonTeamStatus.approved),
+    status: z.nativeEnum(SeasonTeamStatus).optional(),
 });
 
 export const updateSeasonTeamStatusSchema = z.object({
@@ -18,7 +18,10 @@ export const updateSeasonTeamStatusSchema = z.object({
 export const assignGroupSchema = z.object({
     group_id: z.number().int().positive(),
 });
-
+export const TransferSeasonTeamSchema = z.object({
+    season_id: z.number().int().positive(),
+});
+export type TransferSeasonTeamDto = z.infer<typeof TransferSeasonTeamSchema>;
 export type SelfRegisterSeasonTeamDto = z.infer<typeof selfRegisterSeasonTeamSchema>;
 export type AdminAddSeasonTeamDto = z.infer<typeof adminAddSeasonTeamSchema>;
 export type UpdateSeasonTeamStatusDto = z.infer<typeof updateSeasonTeamStatusSchema>;

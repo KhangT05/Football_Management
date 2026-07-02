@@ -1340,7 +1340,6 @@
                     }
                 },
                 "required": [
-                    "status",
                     "team_id",
                     "season_id"
                 ],
@@ -1348,6 +1347,21 @@
             },
             "AdminAddSeasonTeamDto": {
                 "$ref": "#/components/schemas/infer_typeofadminAddSeasonTeamSchema_"
+            },
+            "infer_typeofTransferSeasonTeamSchema_": {
+                "properties": {
+                    "season_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "season_id"
+                ],
+                "type": "object"
+            },
+            "TransferSeasonTeamDto": {
+                "$ref": "#/components/schemas/infer_typeofTransferSeasonTeamSchema_"
             },
             "infer_typeofupdateSeasonTeamStatusSchema_": {
                 "properties": {
@@ -6672,6 +6686,96 @@
                 }
             }
         },
+        "/seasonteams/{id}/approve": {
+            "patch": {
+                "operationId": "Approve",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SeasonTeamWithRelations"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Duyệt team pending -> approved. Ban tổ chức hoặc admin.",
+                "tags": [
+                    "SeasonTeams"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/seasonteams/{id}/transfer": {
+            "patch": {
+                "operationId": "TransferSeason",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SeasonTeamWithRelations"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Chuyển team sang season khác. Ban tổ chức hoặc admin.",
+                "tags": [
+                    "SeasonTeams"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TransferSeasonTeamDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/seasonteams/{id}/status": {
             "patch": {
                 "operationId": "UpdateStatus",
@@ -6687,13 +6791,15 @@
                         }
                     }
                 },
+                "description": "Update status generic (eliminated/withdrawn). KHÔNG dùng để approve.",
                 "tags": [
                     "SeasonTeams"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],

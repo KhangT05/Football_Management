@@ -55,7 +55,26 @@ export class SeasonTeamController extends Controller {
     return this.service.adminAdd(body, req.user.user_id);
   }
 
-  @Security("jwt", ["admin"])
+  /** Duyệt team pending -> approved. Ban tổ chức hoặc admin. */
+  @Security("jwt", ["admin", "organizing"])
+  @Patch("{id}/approve")
+  async approve(@Path() id: number, @Request() req: AuthRequest): Promise<SeasonTeamWithRelations> {
+    return this.service.approve(id, req.user.user_id);
+  }
+
+  /** Chuyển team sang season khác. Ban tổ chức hoặc admin. */
+  @Security("jwt", ["admin", "organizing"])
+  @Patch("{id}/transfer")
+  async transferSeason(
+    @Path() id: number,
+    @Body() body: seasonTeamSchema.TransferSeasonTeamDto,
+    @Request() req: AuthRequest
+  ): Promise<SeasonTeamWithRelations> {
+    return this.service.transferSeason(id, body.season_id, req.user.user_id);
+  }
+
+  /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
+  @Security("jwt", ["admin", "organizing"])
   @Patch("{id}/status")
   async updateStatus(
     @Path() id: number,
@@ -63,7 +82,6 @@ export class SeasonTeamController extends Controller {
   ): Promise<SeasonTeamWithRelations> {
     return this.service.updateStatus(id, body);
   }
-
 
   /** Assign team vào group sau draw */
   @Security("jwt", ["admin"])
