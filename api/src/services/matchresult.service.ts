@@ -31,6 +31,21 @@ import {
 } from '../helper/match.helper.js';
 import { EditScoreInput } from '../types/match.type.js';
 
+// FIX: ConfirmResultInput cần thêm field optional này trong types/matchResult.type.js
+// để forfeitMatch() pass winner tường minh thay vì để _resolveWinner suy luận qua
+// so sánh score.
+//   export interface ConfirmResultInput {
+//     ...
+//     explicitWinnerTeamId?: number | null;
+//   }
+type ConfirmResultInputWithExplicitWinner = ConfirmResultInput & {
+    explicitWinnerTeamId?: number | null;
+};
+
+type ConfirmResultOutputWithWarnings = ConfirmResultOutput & {
+    postCommitWarnings?: string[];
+};
+
 export class MatchResultService {
     private matchEventQueryable: Queryable<MatchEventRow>;
 
@@ -39,7 +54,6 @@ export class MatchResultService {
         private readonly knockoutService: KnockoutService,
         private readonly standingsService: StandingsService,
     ) {
-        // Queryable cho match events — match_id inject từ caller qua filter
         const matchEventConfig: QueryableConfig = {
             select: MATCH_EVENT_SELECT,
             sortable: ['minute', 'added_minute', 'created_at', 'id'],
@@ -78,10 +92,6 @@ export class MatchResultService {
     // READ — MATCH EVENTS (paginated)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * List events của 1 trận, hỗ trợ pagination, sort, filter theo type/period.
-     * match_id inject vào filter — không thể sort/filter trực tiếp trên FK.
-     */
     async listMatchEvents(
         matchId: number,
         req: QueryRequest,
@@ -119,22 +129,21 @@ export class MatchResultService {
     /**
      * Finalize 1 trận: tạo MatchResult, update Match status, update player stats.
      *
-     * Flow:
-     *   1. Load match + guard (status, existing result, knockout draw check)
-     *   2. Transaction: create MatchResult + update Match + update PlayerStatistics
-     *   3. Recompute group standings (nếu group phase) — ngoài transaction
-     *   4. Advance knockout (nếu knockout phase) — ngoài transaction
+     * Idempotency: tx.matchResult.create() catch P2002 trên unique constraint
+     * match_id — nguồn correctness thật cho race "2 caller cùng confirm 1 match",
+     * không phải bất kỳ lock/claim nào ở tầng gọi.
      *
-     * Bước 3 và 4 ngoài transaction là chủ ý:
-     *   - Nếu standings/knockout fail, match vẫn finalized
-     *   - Eventually consistent — acceptable cho scale này
-     *   - Tránh transaction timeout do standings recompute scan nhiều rows
+     * Post-commit steps (standings, knockout advance) chạy try-catch riêng,
+     * gom lỗi vào postCommitWarnings thay vì throw — match đã finalize thành
+     * công thì response phải phản ánh đúng, không để lỗi phụ khiến caller
+     * tưởng cả request fail rồi retry (retry sẽ đụng _guardConfirm reject vì
+     * MatchResult đã tồn tại).
      */
     async confirmResult(
         matchId: number,
-        input: ConfirmResultInput,
+        input: ConfirmResultInputWithExplicitWinner,
         scheduleOptions: OptionalScheduleOptions,
-    ): Promise<ConfirmResultOutput> {
+    ): Promise<ConfirmResultOutputWithWarnings> {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
             select: matchForConfirmSelect,
@@ -153,66 +162,81 @@ export class MatchResultService {
         }
 
         const yellowSuspension = match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
+        // FIX (tie-score forfeit/walkover): _resolveWinner giờ throw
+        // VALIDATION_ERROR nếu resultType=forfeit/walkover mà homeScore===awayScore
+        // và không có explicitWinnerTeamId — thay vì silent default winner=away.
+        // Xem comment trong _resolveWinner.
         const resolution = this._resolveWinner(match.home_team_id, match.away_team_id, input);
         const targetMatchStatus = STATUS_BY_RESULT_TYPE[input.resultType] ?? MatchStatus.finished;
 
-        const matchResultId = await this.prisma.$transaction(async tx => {
-            const result = await tx.matchResult.create({
-                data: toMatchResultCreateInput(matchId, input, resolution),
-                select: { id: true },
+        let matchResultId: number;
+        try {
+            matchResultId = await this.prisma.$transaction(async tx => {
+                const result = await tx.matchResult.create({
+                    data: toMatchResultCreateInput(matchId, input, resolution),
+                    select: { id: true },
+                });
+
+                await tx.match.update({
+                    where: { id: matchId },
+                    data: toMatchUpdateOnConfirm(resolution, targetMatchStatus),
+                });
+
+                await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
+
+                return result.id;
             });
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+                throw createAppError('CONFLICT', `Match ${matchId} đã có MatchResult (race condition detected)`);
+            throw err;
+        }
 
-            await tx.match.update({
-                where: { id: matchId },
-                data: toMatchUpdateOnConfirm(resolution, targetMatchStatus),
-            });
+        const postCommitWarnings: string[] = [];
 
-            // Update player stats trong transaction để đảm bảo atomic với match finalization.
-            // Nếu stats fail → toàn bộ rollback, match không bị finalized với stats sai.
-            await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
-
-            return result.id;
-        });
-
-        const standingUpdated = await this._tryRecomputeStandings(isKnockout, match.group_id);
+        let standingUpdated = false;
+        try {
+            standingUpdated = await this._tryRecomputeStandings(isKnockout, match.group_id);
+        } catch (err) {
+            const msg = `Recompute standings thất bại cho group ${match.group_id}: ${err instanceof Error ? err.message : String(err)}`;
+            console.error(`[confirmResult] ${msg}`);
+            postCommitWarnings.push(msg);
+        }
 
         let knockoutAdvanced = false;
         let newMatchId: number | undefined;
 
         if (isKnockout && resolution.winnerTeamId) {
-            const advance = await this.knockoutService.advanceWinner(
-                match.phase_id,
-                seasonId,
-                { matchId, winnerTeamId: resolution.winnerTeamId },
-                scheduleOptions,
-            );
-            knockoutAdvanced = advance.matchCreated;
-            newMatchId = advance.newMatchId;
+            try {
+                const advance = await this.knockoutService.advanceWinner(
+                    match.phase_id,
+                    seasonId,
+                    { matchId, winnerTeamId: resolution.winnerTeamId },
+                    scheduleOptions,
+                );
+                knockoutAdvanced = advance.matchCreated;
+                newMatchId = advance.newMatchId;
+            } catch (err) {
+                const msg = `Advance bracket thất bại cho match ${matchId}: ${err instanceof Error ? err.message : String(err)}`;
+                console.error(`[confirmResult] ${msg}`);
+                postCommitWarnings.push(msg);
+            }
         }
 
-        return { matchResultId, winnerTeamId: resolution.winnerTeamId, standingUpdated, knockoutAdvanced, newMatchId };
+        return {
+            matchResultId,
+            winnerTeamId: resolution.winnerTeamId,
+            standingUpdated,
+            knockoutAdvanced,
+            newMatchId,
+            ...(postCommitWarnings.length > 0 && { postCommitWarnings }),
+        };
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // WRITE — OVERRIDE RESULT (admin correction)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Admin sửa score sau khi match đã finalized.
-     *
-     * Override chỉ sửa scores (final, extra time, penalty, half-time) và winner.
-     * KHÔNG sửa MatchEvents — nếu cần sửa events, dùng editEvent/deleteEvent riêng.
-     *
-     * Sau khi sửa score:
-     *   - Standings recompute (group phase)
-     *   - Player stats recompute từ đầu (vì goals_scored derive từ events, không phải score)
-     *     → Thực ra goals không đổi khi chỉ sửa score. Nhưng nếu override được gọi cùng
-     *     với event correction, stats cần consistent. Recompute để safe.
-     *
-     * NOTE: Knockout bracket KHÔNG tự cập nhật khi override —
-     * nếu winner thay đổi, admin phải handle bracket manually.
-     * Lý do: bracket advancement có thể đã tạo match mới → side effect phức tạp.
-     */
     async overrideResult(
         matchId: number,
         input: EditScoreInput,
@@ -264,6 +288,11 @@ export class MatchResultService {
                 throw createAppError('VALIDATION_ERROR', `overrideResult: penalty không được hoà — ${input.homePenalty}-${input.awayPenalty}`);
         }
 
+        // FIX: overrideResult đi qua CÙNG _resolveWinner như confirmResult —
+        // trước đây đây là 1 trong 2 lối vào bị bỏ sót khi patch chỉ ở
+        // forfeitMatch(). Admin đổi resultType sang forfeit/walkover với
+        // homeScore===awayScore giờ bị chặn ngay tại _resolveWinner, không
+        // còn silent-default winner=away.
         const resolution = this._resolveWinner(
             match.home_team_id,
             match.away_team_id,
@@ -307,37 +336,25 @@ export class MatchResultService {
             });
         });
 
-        // Standings phụ thuộc vào scores — recompute sau mỗi override
         if (match.phase.format !== PhaseFormat.knockout && match.group_id) {
-            await this.standingsService.recomputeGroupStandings(match.group_id);
+            try {
+                await this.standingsService.recomputeGroupStandings(match.group_id);
+            } catch (err) {
+                console.error(`[overrideResult] recompute standings failed for group ${match.group_id}:`, err);
+            }
         }
 
-        // Player stats recompute: goals/cards derive từ events, không phải score.
-        // Score override không thay đổi events → goals/cards không đổi.
-        // Tuy nhiên nếu override đi kèm event correction (editEvent/deleteEvent),
-        // stats đã được update bởi recomputePlayerStats riêng.
-        // Giữ call này để đảm bảo consistency — cost thấp (scan events của 1 match).
-        await this.recomputePlayerStats(matchId);
+        try {
+            await this.recomputePlayerStats(matchId);
+        } catch (err) {
+            console.error(`[overrideResult] recompute player stats failed for match ${matchId}:`, err);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // WRITE — RECOMPUTE PLAYER STATS (admin correction)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Recompute player stats của 1 match từ events hiện tại.
-     *
-     * Dùng khi:
-     *   - Admin edit/delete event sau khi match finalized
-     *   - Admin override score (gọi từ overrideResult)
-     *
-     * Logic accumulated_yellow_cards:
-     *   - `accumulated_yellow_cards` = tổng thẻ vàng từ đầu season, có thể reset sau khi
-     *     bị treo giò (theo quy định giải). Field này KHÔNG tự reset ở đây.
-     *   - Recompute tính lại từ toàn bộ events của season cho player đó.
-     *   - Reset logic (khi nào reset sau suspension) phải implement riêng nếu giải có quy định.
-     *   - Hiện tại: accumulated = tổng yellow_cards của season (không reset).
-     */
     async recomputePlayerStats(matchId: number): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -368,7 +385,6 @@ export class MatchResultService {
 
         const yellowSuspension = match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
 
-        // Load events của match này để biết players nào cần recompute
         const events = await this.prisma.matchEvent.findMany({
             where: { match_id: matchId },
             select: { player_id: true, team_id: true, type: true },
@@ -382,7 +398,6 @@ export class MatchResultService {
             return { player_id: pid!, team_id: tid! };
         });
 
-        // Recompute từ toàn bộ events của season cho các players này
         await this._recomputeStatsForPlayers(playerKeys, seasonId, yellowSuspension);
     }
 
@@ -398,7 +413,7 @@ export class MatchResultService {
     // PRIVATE HELPERS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private _guardConfirm(match: MatchForConfirmFull, input: ConfirmResultInput): void {
+    private _guardConfirm(match: MatchForConfirmFull, input: ConfirmResultInputWithExplicitWinner): void {
         if (match.status === MatchStatus.finished || match.status === MatchStatus.cancelled)
             throw createAppError('CONFLICT', `Match ${match.id} đã ở status '${match.status}'`);
 
@@ -428,8 +443,16 @@ export class MatchResultService {
     private _resolveWinner(
         homeTeamId: number,
         awayTeamId: number,
-        input: ConfirmResultInput,
+        input: ConfirmResultInputWithExplicitWinner,
     ): WinnerResolution {
+        if (input.explicitWinnerTeamId !== undefined && input.explicitWinnerTeamId !== null) {
+            return {
+                winnerTeamId: input.explicitWinnerTeamId,
+                homeFinal: input.homeScore,
+                awayFinal: input.awayScore,
+            };
+        }
+
         switch (input.resultType) {
             case MatchResultType.full_time: {
                 const winnerTeamId =
@@ -445,7 +468,6 @@ export class MatchResultService {
                 return { winnerTeamId, homeFinal: h, awayFinal: a };
             }
             case MatchResultType.penalty: {
-                // homeFinal = score sau extra time (không phải penalty score)
                 const winnerTeamId = input.homePenalty! > input.awayPenalty! ? homeTeamId : awayTeamId;
                 const h = input.homeExtraTime ?? input.homeScore;
                 const a = input.awayExtraTime ?? input.awayScore;
@@ -453,28 +475,26 @@ export class MatchResultService {
             }
             case MatchResultType.forfeit:
             case MatchResultType.walkover: {
-                // Score được set manual bởi admin (thường 3-0 hoặc theo quy định)
+                // FIX: đây là root cause thật của bug forfeit_score=0. Trước đây
+                // `input.homeScore > input.awayScore ? home : away` silent default
+                // về awayTeamId khi hoà — sai hoàn toàn nếu forfeit_score config = 0
+                // (0 > 0 === false). explicitWinnerTeamId (checked ở trên) là cách
+                // caller AVOID rơi vào nhánh này, nhưng nếu caller nào đó (override,
+                // adminRecordResult) không truyền, phải FAIL LOUD thay vì đoán sai.
+                if (input.homeScore === input.awayScore) {
+                    throw createAppError(
+                        'VALIDATION_ERROR',
+                        `resultType=${input.resultType}: homeScore === awayScore (${input.homeScore}) và không có ` +
+                        `explicitWinnerTeamId — không xác định được winner. Kiểm tra TournamentRule.forfeit_score, ` +
+                        `hoặc truyền explicitWinnerTeamId tường minh.`,
+                    );
+                }
                 const winnerTeamId = input.homeScore > input.awayScore ? homeTeamId : awayTeamId;
                 return { winnerTeamId, homeFinal: input.homeScore, awayFinal: input.awayScore };
             }
         }
     }
 
-    /**
-     * Update player statistics trong transaction — chạy cùng với match finalization.
-     *
-     * Logic accumulated_yellow_cards:
-     *   - Load accumulated hiện tại của player trong season
-     *   - Cộng thêm yellow cards từ trận này
-     *   - Nếu accumulated >= yellowSuspension hoặc có red_card → is_suspended = true
-     *
-     * NOTE: Không có reset logic ở đây.
-     *   accumulated_yellow_cards chỉ tăng, không reset.
-     *   Nếu giải có quy định reset sau khi lĩnh án treo giò (common trong FIFA/UEFA),
-     *   cần implement reset endpoint riêng (admin action).
-     *   Lý do không auto-reset: quy định reset khác nhau giữa các giải,
-     *   và cần audit trail rõ ràng khi admin reset.
-     */
     private async _updatePlayerStatistics(
         tx: Prisma.TransactionClient,
         matchId: number,
@@ -496,7 +516,6 @@ export class MatchResultService {
             return { player_id: pid!, team_id: tid!, season_id: seasonId };
         });
 
-        // Load existing accumulated counts — cần để tính suspension threshold
         const existingStats = await tx.playerStatistic.findMany({
             where: { OR: playerKeys },
             select: { player_id: true, team_id: true, accumulated_yellow_cards: true },
@@ -507,7 +526,6 @@ export class MatchResultService {
             accumMap.set(statKey(s.player_id, s.team_id), s.accumulated_yellow_cards);
         }
 
-        // Sequential upserts — tránh deadlock với Promise.all trong MySQL transaction
         for (const k of played) {
             const [pidStr, tidStr] = k.split(':');
             const playerId = Number(pidStr);
@@ -517,7 +535,6 @@ export class MatchResultService {
             const prevAccum = accumMap.get(k) ?? 0;
             const newAccum = prevAccum + d.yellowCards;
 
-            // is_suspended = true nếu đạt ngưỡng accumulated HOẶC nhận thẻ đỏ trực tiếp
             const isSuspended = newAccum >= yellowSuspension || d.redCards > 0;
 
             await tx.playerStatistic.upsert({
@@ -551,23 +568,11 @@ export class MatchResultService {
         }
     }
 
-    /**
-     * Full recompute player stats từ tất cả events của season cho các players chỉ định.
-     *
-     * Dùng cho admin correction (sau editEvent, deleteEvent, overrideResult).
-     * Scan toàn bộ events của season cho players đó — không incremental.
-     * Acceptable vì: số players per team nhỏ (≤ 25), số matches per season nhỏ (≤ 50).
-     *
-     * accumulated_yellow_cards trong recompute = tổng yellow_cards của season (không reset).
-     * Nếu cần reset logic, implement riêng (xem note trong _updatePlayerStatistics).
-     */
     private async _recomputeStatsForPlayers(
         players: { player_id: number; team_id: number }[],
         seasonId: number,
         yellowSuspension: number,
     ): Promise<void> {
-        // Load tất cả events của season cho các players này
-        // Path: matchEvent → match → phase → season_id
         const allEventsWithMatch = await this.prisma.matchEvent.findMany({
             where: {
                 player_id: { in: players.map(p => p.player_id) },
@@ -576,7 +581,6 @@ export class MatchResultService {
             select: { player_id: true, team_id: true, type: true, match_id: true },
         });
 
-        // Aggregate stats per player-team pair
         const statsMap = new Map<string, StatDelta & { matchIds: Set<number> }>();
 
         for (const ev of allEventsWithMatch) {
@@ -600,13 +604,10 @@ export class MatchResultService {
                 case MatchEventType.second_yellow:
                     entry.redCards++;
                     break;
-                // own_goal, substitution, card_rescinded, goal_disallowed, penalty_missed:
-                // không ảnh hưởng goals/cards của player (own_goal tính cho team, không phải player stat)
             }
             statsMap.set(k, entry);
         }
 
-        // Upsert từng player — set (không increment) vì recompute from scratch
         for (const { player_id, team_id } of players) {
             const k = statKey(player_id, team_id);
             const entry = statsMap.get(k);
@@ -616,7 +617,6 @@ export class MatchResultService {
             const redCards = entry?.redCards ?? 0;
             const matchesPlayed = entry?.matchIds.size ?? 0;
 
-            // accumulated = tổng yellow cards của season (không có reset logic)
             const isSuspended = yellowCards >= yellowSuspension || redCards > 0;
 
             await this.prisma.playerStatistic.upsert({

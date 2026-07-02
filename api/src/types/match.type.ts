@@ -120,15 +120,27 @@ export interface AdminScorerInput {
     period?: MatchPeriod;
 }
 
+export interface AdminCardInput {
+    playerId: number;
+    teamId: number;
+    /** substitution KHÔNG nằm trong scope này — chưa có UI/requirement rõ,
+     * thêm sau nếu cần, tránh field rỗng không dùng */
+    type: Extract<MatchEventType, 'yellow_card' | 'red_card' | 'second_yellow'>;
+    minute: number;
+    period?: MatchPeriod;
+}
+
 export interface AdminRecordResultInput {
     /** Source of truth — KHÔNG derive từ scorers */
     homeScore: number;
     awayScore: number;
     /** Metadata tùy chọn, không ảnh hưởng score computation */
     scorers?: AdminScorerInput[];
+    /** Card events — KHÔNG đi qua recordEvent()'s per-write guard,
+     * validate theo batch ở service layer (xem adminRecordResult) */
+    cards?: AdminCardInput[];
     /** Default: full_time */
     resultType?: MatchResultType;
     homeHalfTimeScore?: number;
     awayHalfTimeScore?: number;
 }
-

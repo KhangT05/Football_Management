@@ -906,6 +906,11 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfirmResultOutputWithWarnings": {
+        "dataType": "refAlias",
+        "type": { "dataType": "intersection", "subSchemas": [{ "ref": "ConfirmResultOutput" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "postCommitWarnings": { "dataType": "array", "array": { "dataType": "string" } } } }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ConfirmResultInput": {
         "dataType": "refObject",
         "properties": {
@@ -919,6 +924,7 @@ const models = {
             "homePenalty": { "dataType": "double" },
             "awayPenalty": { "dataType": "double" },
             "notes": { "dataType": "string" },
+            "explicitWinnerTeamId": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }] },
         },
         "additionalProperties": false,
     },
@@ -1131,12 +1137,30 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["yellow_card"] }, { "dataType": "enum", "enums": ["red_card"] }, { "dataType": "enum", "enums": ["second_yellow"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdminCardInput": {
+        "dataType": "refObject",
+        "properties": {
+            "playerId": { "dataType": "double", "required": true },
+            "teamId": { "dataType": "double", "required": true },
+            "type": { "ref": "Extract_MatchEventType.yellow_card-or-red_card-or-second_yellow_", "required": true },
+            "minute": { "dataType": "double", "required": true },
+            "period": { "ref": "MatchPeriod" },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AdminRecordResultInput": {
         "dataType": "refObject",
         "properties": {
             "homeScore": { "dataType": "double", "required": true },
             "awayScore": { "dataType": "double", "required": true },
             "scorers": { "dataType": "array", "array": { "dataType": "refObject", "ref": "AdminScorerInput" } },
+            "cards": { "dataType": "array", "array": { "dataType": "refObject", "ref": "AdminCardInput" } },
             "resultType": { "ref": "MatchResultType" },
             "homeHalfTimeScore": { "dataType": "double" },
             "awayHalfTimeScore": { "dataType": "double" },

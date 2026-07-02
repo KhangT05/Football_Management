@@ -55,6 +55,8 @@ export declare class MatchResultController extends Controller {
             type: number;
         };
     })[]>;
-    confirmResult(id: number, body: matchResultType.ConfirmOfficialBody): Promise<matchResultType.ConfirmResultOutput>;
+    confirmResult(id: number, body: matchResultType.ConfirmOfficialBody): Promise<matchResultType.ConfirmResultOutput & {
+        postCommitWarnings?: string[];
+    }>;
 }
 //# sourceMappingURL=matchResult.controller.d.ts.map

@@ -111,11 +111,10 @@ export class SeasonTeamService {
             const st = await tx.seasonTeam.findUnique({ where: { id } });
             if (!st)
                 throw createAppError("NOT_FOUND", `SeasonTeam ${id} not found`);
-            // if (![SeasonTeamStatus.pending, SeasonTeamStatus.approved].includes(st.status))
-            //     throw createAppError(
-            //         "CONFLICT",
-            //         `Cannot transfer team in status ${st.status} — match/group data may depend on it`
-            //     );
+            if (st.group_id !== null)
+                throw createAppError("CONFLICT", `Cannot transfer team already assigned to group ${st.group_id}`);
+            if (st.status !== SeasonTeamStatus.pending && st.status !== SeasonTeamStatus.approved)
+                throw createAppError("CONFLICT", `Cannot transfer team in status ${st.status}`);
             if (st.season_id === targetSeasonId)
                 throw createAppError("BAD_REQUEST", "Team already in this season");
             // Lock cả season nguồn và đích theo thứ tự cố định (id tăng dần)

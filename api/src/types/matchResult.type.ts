@@ -20,6 +20,7 @@ export interface ConfirmResultInput {
     awayPenalty?: number;
 
     notes?: string;
+    explicitWinnerTeamId?: number | null;
 }
 
 export interface ConfirmResultOutput {
