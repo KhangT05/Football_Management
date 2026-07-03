@@ -73,4 +73,9 @@ export class TournamentController extends Controller {
     this.setStatus(204);
     return this.service.softDelete(id);
   }
+
+  @Patch("{id}/restore")
+  async restore(@Path() id: number): Promise<Tournament> {
+    return this.service.restore(id);
+  }
 }
