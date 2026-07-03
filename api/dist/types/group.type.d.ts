@@ -22,7 +22,7 @@ export type GroupWithTeams = Group & {
         format: string;
         is_active: boolean;
     };
-    seasonTeams: {
+    season_teams: {
         id: number;
         status: string;
         team: {

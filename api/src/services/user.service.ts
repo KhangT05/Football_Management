@@ -150,4 +150,16 @@ export class UserService {
             this.rolesRelationService.sync(userId, roleIds, tx)
         );
     }
+    async restore(id: number): Promise<SafeUser> {
+        const result = await this.prisma.user.updateMany({
+            where: { id, is_active: false },
+            data: {
+                is_active: true,
+            },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `user ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
+    }
 }

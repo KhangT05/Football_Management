@@ -75,16 +75,17 @@ let SeasonController = class SeasonController extends Controller {
     async update(id, body) {
         return this.service.update(id, body);
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // DELETE — SOFT DELETE (admin only)
-    // ═══════════════════════════════════════════════════════════════════════════
     async softDelete(id) {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PATCH — UPDATE STATUS (admin only)
-    // ═══════════════════════════════════════════════════════════════════════════
+    /**
+   * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
+   * (theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.
+   */
+    async cancelSeason(id, body) {
+        return this.service.cancel(id, body);
+    }
     async updateStatus(id, body) {
         return this.service.updateStatus(id, body.status, { cancel_reason: body.cancel_reason });
     }
@@ -188,6 +189,15 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "softDelete", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Patch("{id}/cancel"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], SeasonController.prototype, "cancelSeason", null);
 __decorate([
     Security("jwt", ["admin"]),
     Patch("{id}/status"),

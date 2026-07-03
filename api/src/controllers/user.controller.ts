@@ -49,4 +49,8 @@ export class UserController extends Controller {
     this.setStatus(204);
     return this.service.softDelete(id);
   }
+  @Patch("{id}/restore")
+  async restore(@Path() id: number): Promise<SafeUser> {
+    return this.service.restore(id);
+  }
 }

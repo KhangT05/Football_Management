@@ -30,6 +30,11 @@ export declare class SeasonController extends Controller {
     create(body: seasonSchema.CreateSeasonDto, req: AuthRequest): Promise<Season>;
     update(id: number, body: seasonSchema.UpdateSeasonDto): Promise<Season>;
     softDelete(id: number): Promise<void>;
+    /**
+   * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
+   * (theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.
+   */
+    cancelSeason(id: number, body: seasonSchema.CancelSeasonDto): Promise<Season>;
     updateStatus(id: number, body: seasonSchema.UpdateSeasonStatusDto): Promise<Season>;
     /**
      * Overview standings toàn season — tất cả groups, kiểu World Cup group stage.

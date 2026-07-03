@@ -15,6 +15,7 @@ export declare class TournamentRuleController extends Controller {
     create(body: CreateTournamentRuleDto, req: AuthRequest): Promise<CreateTournamentRuleDto>;
     update(id: number, body: UpdateTournamentRuleDto): Promise<UpdateTournamentRuleDto>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<TournamentRuleDto>;
 }
 export {};
 //# sourceMappingURL=tournamentrule.controller.d.ts.map

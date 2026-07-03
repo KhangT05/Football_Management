@@ -1,4 +1,5 @@
 
+import { createAppError } from "../common/app.error.js";
 import { CreateVenueDto, UpdateVenueDto } from "../dtos/venue.schema.js";
 import { PrismaClient, Venue } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
@@ -62,5 +63,17 @@ export class VenueService {
             where: { id },
             data: { is_active: false },
         });
+    }
+    async restore(id: number): Promise<Venue> {
+        const result = await this.prisma.venue.updateMany({
+            where: { id, deleted_at: { not: null } },
+            data: {
+                deleted_at: null,
+            },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `Venue ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
     }
 }

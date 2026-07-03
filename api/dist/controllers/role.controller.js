@@ -35,6 +35,9 @@ let RoleController = class RoleController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+    async restore(id) {
+        return this.service.restore(id);
+    }
 };
 __decorate([
     Get("/"),
@@ -78,6 +81,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], RoleController.prototype, "softDelete", null);
+__decorate([
+    Patch("{id}/restore"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], RoleController.prototype, "restore", null);
 RoleController = __decorate([
     Security("jwt", ['admin']),
     Route("roles"),

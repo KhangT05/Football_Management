@@ -62,5 +62,17 @@ export class TournamentRuleService {
             },
         });
     }
+    async restore(id) {
+        const result = await this.prisma.tournamentRule.updateMany({
+            where: { id, deleted_at: { not: null } },
+            data: {
+                deleted_at: null,
+            },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `TournamentRule ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
+    }
 }
 //# sourceMappingURL=tournamentRule.service.js.map

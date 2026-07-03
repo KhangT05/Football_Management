@@ -22,5 +22,6 @@ export declare class UserService {
     detachRoles(userId: number, roleIds: number[]): Promise<void>;
     /** Replace toàn bộ role set — wrap $transaction enforce bởi RelationService.sync */
     syncRoles(userId: number, roleIds: number[]): Promise<void>;
+    restore(id: number): Promise<SafeUser>;
 }
 //# sourceMappingURL=user.service.d.ts.map

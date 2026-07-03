@@ -35,6 +35,9 @@ let TournamentRuleController = class TournamentRuleController extends Controller
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+    async restore(id) {
+        return this.service.restore(id);
+    }
 };
 __decorate([
     Get("/"),
@@ -51,6 +54,7 @@ __decorate([
 ], TournamentRuleController.prototype, "findById", null);
 __decorate([
     Post("/"),
+    Security("jwt", ["admin", "organizing"]),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
     __param(1, Request()),
@@ -60,6 +64,7 @@ __decorate([
 ], TournamentRuleController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
+    Security("jwt", ["admin", "organizing"]),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),
@@ -68,14 +73,22 @@ __decorate([
 ], TournamentRuleController.prototype, "update", null);
 __decorate([
     Delete("{id}"),
+    Security("jwt", ["admin", "organizing"]),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TournamentRuleController.prototype, "softDelete", null);
+__decorate([
+    Patch("{id}/restore"),
+    Security("jwt", ["admin", "organizing"]),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], TournamentRuleController.prototype, "restore", null);
 TournamentRuleController = __decorate([
-    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("tournamentrules"),
     Tags("TournamentRules"),
     __metadata("design:paramtypes", [TournamentRuleService])

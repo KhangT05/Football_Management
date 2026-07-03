@@ -116,10 +116,6 @@ export class SeasonController extends Controller {
     return this.service.update(id, body);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DELETE — SOFT DELETE (admin only)
-  // ═══════════════════════════════════════════════════════════════════════════
-
   @Security("jwt", ["admin"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
@@ -127,10 +123,18 @@ export class SeasonController extends Controller {
     this.setStatus(204);
     return this.service.softDelete(id);
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PATCH — UPDATE STATUS (admin only)
-  // ═══════════════════════════════════════════════════════════════════════════
+  /**
+ * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
+ * (theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.
+ */
+  @Security("jwt", ["admin"])
+  @Patch("{id}/cancel")
+  async cancelSeason(
+    @Path() id: number,
+    @Body() body: seasonSchema.CancelSeasonDto,
+  ): Promise<Season> {
+    return this.service.cancel(id, body);
+  }
 
   @Security("jwt", ["admin"])
   @Patch("{id}/status")

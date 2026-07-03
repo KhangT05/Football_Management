@@ -389,7 +389,7 @@ export class GroupService {
                         format: true, is_active: true
                     }
                 },
-                seasonTeams: {
+                season_teams: {
                     where: { deleted_at: null, is_active: true },
                     select: {
                         id: true,
