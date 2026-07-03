@@ -62,9 +62,25 @@ export class TournamentController extends Controller {
   @Patch("{id}")
   async update(
     @Path() id: number,
-    @Body() body: UpdateTournamentDto
+    @Request() req: AuthRequest,
+    @FormField() name?: string,
+    @FormField() description?: string,
+    @UploadedFile("logo") logo?: Express.Multer.File,
   ): Promise<Tournament> {
-    return this.service.update(id, body);
+    const existing = await this.service.findByIdOrFail(id);
+    let logo_url: string | undefined = existing.logo ?? undefined;
+
+    if (logo) {
+      const result = await storageService.upload({
+        namespace: "tournaments",
+        kind: "logo",
+        file: logo,
+      });
+      storageService.replaceAsset(existing.logo, result.url);
+      logo_url = result.url;
+    }
+
+    return this.service.update(id, { name, description, logo: logo_url });
   }
 
   @Delete("{id}")
