@@ -2,24 +2,17 @@ import * as XLSX from "xlsx";
 import { importPlayerRowSchema } from "../dtos/player.schema.js";
 import { Queryable } from "../libs/queryable.js";
 import { createAppError } from "../common/app.error.js";
-import { ApprovalStatus } from "../generated/prisma/client.js";
+import { ApprovalStatus, PlayerPosition, Prisma } from "../generated/prisma/client.js";
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PLAYER_SELECT, TEAM_PLAYER_SELECT } from "../types/player.type.js";
+const MAX_IMPORT_ROWS = 200;
 // ─── Service ──────────────────────────────────────────────────────────────────
 export class PlayerService {
     prisma;
     teamPlayerQuery;
     constructor(prisma) {
         this.prisma = prisma;
-        // KHÔNG đặt beforeBuild ở baseConfig: team_id chỉ có tại thời điểm
-        // gọi run(), không có tại constructor. beforeBuild thật sự dùng để
-        // filter team_id + deleted_at được truyền qua overrideConfig trong
-        // listTeamPlayers() — xem comment ở đó.
-        //
-        // searchFields/sortable chỉ support flat field trên TeamPlayer
-        // (QueryBuilder dùng {[field]: value} trực tiếp) — không join qua
-        // player.user. Search theo tên/email phải tự query riêng nếu cần.
         this.teamPlayerQuery = new Queryable(prisma.teamPlayer, {
             select: TEAM_PLAYER_SELECT,
             sortable: ["jersey_number", "id", "created_at"],
@@ -53,12 +46,7 @@ export class PlayerService {
         return player;
     }
     async updatePlayer(id, dto) {
-        // getPlayerByIdOrFail thay cho assertPlayerExists — tránh 2 round trip,
-        // vừa validate exists vừa lấy avatar cũ để replaceAsset.
         const existing = await this.getPlayerByIdOrFail(id);
-        // Fire-and-forget: không block update nếu Cloudinary fail.
-        // existing.avatar là publicId-based URL, StorageService.extractPublicId
-        // parse ra publicId trước khi delete.
         storageService.replaceAsset(existing.avatar, dto.avatar, logger);
         const player = await this.prisma.player.update({
             where: { id },
@@ -69,7 +57,6 @@ export class PlayerService {
     }
     async softDeletePlayer(id) {
         const existing = await this.getPlayerByIdOrFail(id);
-        // Avatar không còn accessible sau soft delete — cleanup Cloudinary luôn.
         if (existing.avatar) {
             storageService.replaceAsset(existing.avatar, null, logger);
         }
@@ -83,9 +70,6 @@ export class PlayerService {
     // ----------------------------------------------------------
     listTeamPlayers(query) {
         const { team_id, ...req } = query;
-        // overrideConfig REPLACE toàn bộ baseConfig.beforeBuild, không merge —
-        // nên phải tự push đủ điều kiện fixed (team_id + deleted_at) ở đây,
-        // không thể assume base có sẵn deleted_at filter nào khác.
         return this.teamPlayerQuery
             .run(req, {
             beforeBuild: (where) => {
@@ -105,22 +89,45 @@ export class PlayerService {
         return tp ? this.mapTeamPlayer(tp) : null;
     }
     async addPlayerToTeam(team_id, dto, user_id) {
-        // P2002 trên [team_id, player_id] hoặc [team_id, jersey_number]
-        // — KHÔNG catch ở đây, để caller (controller) map P2002 → 409 Conflict.
-        // Catch + rethrow generic Error ở đây sẽ làm mất prisma error code,
-        // controller không phân biệt được lý do conflict (player vs jersey).
-        const tp = await this.prisma.teamPlayer.create({
-            data: {
-                team_id,
-                player_id: dto.player_id,
-                jersey_number: dto.jersey_number,
-                position: dto.position,
-                role: dto.role,
-                ...(user_id && { user_id }),
-            },
-            select: TEAM_PLAYER_SELECT,
-        });
-        return this.mapTeamPlayer(tp);
+        // FIX: pre-check duplicate trước khi insert để trả message VN rõ ràng,
+        // thay vì phụ thuộc controller/middleware map P2002 (không tồn tại trong
+        // PlayerController hiện tại → race trước fix này trả raw Prisma 500).
+        // Vẫn giữ @@unique DB làm lưới an toàn cuối cho race condition thật.
+        const [dupPlayer, dupJersey] = await Promise.all([
+            this.prisma.teamPlayer.findFirst({
+                where: { team_id, player_id: dto.player_id, deleted_at: null },
+                select: { id: true },
+            }),
+            this.prisma.teamPlayer.findFirst({
+                where: { team_id, jersey_number: dto.jersey_number, deleted_at: null },
+                select: { id: true },
+            }),
+        ]);
+        if (dupPlayer)
+            throw createAppError("CONFLICT", "Player already in team");
+        if (dupJersey)
+            throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
+        try {
+            const tp = await this.prisma.teamPlayer.create({
+                data: {
+                    team_id,
+                    player_id: dto.player_id,
+                    jersey_number: dto.jersey_number,
+                    position: dto.position,
+                    role: dto.role,
+                    ...(user_id && { user_id }),
+                },
+                select: TEAM_PLAYER_SELECT,
+            });
+            return this.mapTeamPlayer(tp);
+        }
+        catch (err) {
+            // Race window giữa pre-check và create (2 request đồng thời) → P2002 thật.
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+                throw createAppError("CONFLICT", "Trùng dữ liệu — request khác vừa thêm player/số áo này");
+            }
+            throw err;
+        }
     }
     async updateTeamPlayer(id, dto) {
         const exists = await this.prisma.teamPlayer.findFirst({
@@ -161,7 +168,6 @@ export class PlayerService {
         });
         return { deleted: existingIds.size, notFound };
     }
-    /** Hard delete — admin/cleanup only. Cascade schema xử lý seasonTeamPlayers. */
     async hardDeleteTeamPlayers(team_id, dto) {
         const result = await this.prisma.teamPlayer.deleteMany({
             where: { id: { in: dto.ids }, team_id },
@@ -202,30 +208,68 @@ export class PlayerService {
         XLSX.utils.book_append_sheet(wb, ws, "Players");
         return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
     }
-    exportImportTemplate() {
-        const headers = [
-            {
-                jersey_number: 10, user_email: "player@example.com", date_of_birth: "2000-01-15",
-                position: "goalkeeper|defender|midfielder|forward", height: 175, weight: 70, nationality: "Vietnam",
-            },
+    /**
+     * Template có sẵn `minRows` dòng trống (mặc định 7 — số cầu thủ tối thiểu/đội)
+     * + sheet "Instructions" tách riêng enum hint khỏi vùng data, tránh leader
+     * hiểu nhầm "goalkeeper|defender|..." là 1 giá trị hợp lệ để nguyên.
+     * Enum lấy trực tiếp từ Prisma generated client — không hardcode string,
+     * tránh drift khi schema.prisma đổi.
+     */
+    exportImportTemplate(minRows = 7) {
+        const wb = XLSX.utils.book_new();
+        const sampleRow = {
+            jersey_number: 10, user_email: "player1@example.com",
+            date_of_birth: "2000-01-15", position: PlayerPosition.forward,
+            height: 175, weight: 70, nationality: "Vietnam",
+        };
+        const blankRow = {
+            jersey_number: "", user_email: "", date_of_birth: "",
+            position: "", height: "", weight: "", nationality: "",
+        };
+        const rows = [
+            sampleRow,
+            ...Array.from({ length: Math.max(minRows - 1, 0) }, () => ({ ...blankRow })),
         ];
-        const ws = XLSX.utils.json_to_sheet(headers);
+        const ws = XLSX.utils.json_to_sheet(rows);
         ws["!cols"] = [
-            { wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 36 },
+            { wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
             { wch: 8 }, { wch: 8 }, { wch: 14 },
         ];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.utils.book_append_sheet(wb, ws, "Players");
+        const positionHint = Object.values(PlayerPosition).join(" | ");
+        const instructions = [
+            { field: "jersey_number", note: "Số nguyên 1-99, duy nhất trong đội" },
+            { field: "user_email", note: "Email tài khoản đã đăng ký trong hệ thống" },
+            { field: "date_of_birth", note: "Định dạng YYYY-MM-DD" },
+            { field: "position", note: positionHint },
+            { field: "height", note: "cm, có thể để trống" },
+            { field: "weight", note: "kg, có thể để trống" },
+            { field: "nationality", note: "Có thể để trống" },
+            { field: "", note: `Đội cần tối thiểu ${minRows} cầu thủ` },
+            { field: "", note: `Tối đa ${MAX_IMPORT_ROWS} dòng / file` },
+        ];
+        const wsInfo = XLSX.utils.json_to_sheet(instructions);
+        wsInfo["!cols"] = [{ wch: 16 }, { wch: 55 }];
+        XLSX.utils.book_append_sheet(wb, wsInfo, "Instructions");
         return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
     }
     // ----------------------------------------------------------
     // IMPORT EXCEL
     // ----------------------------------------------------------
     /**
-     * Per-row transaction → partial success. KHÔNG dùng 1 transaction bọc
-     * toàn bộ loop: file lớn (vài trăm row) sẽ giữ transaction mở quá lâu,
-     * tăng lock contention trên teamPlayer/player table. Trade-off: mất
-     * atomicity toàn file, đổi lại import 500 dòng không block ghi khác.
+     * Per-row transaction → partial success.
+     *
+     * playerByUserId / teamPlayerSet / usedJerseyNumbers chỉ được cập nhật SAU KHI
+     * transaction commit thành công (ngoài closure). Set state trong tx callback
+     * trước throw ở bước sau sẽ khiến rollback không đồng bộ với local cache, làm
+     * row kế tiếp tưởng player đã tồn tại → insert teamPlayer trỏ player_id không
+     * có thật trong DB.
+     *
+     * OPTION A (đã chốt): TeamPlayer.position là nguồn sự thật cho context team này,
+     * ĐỘC LẬP với Player.position. Khi player đã tồn tại (existingPlayerId có sẵn),
+     * KHÔNG update Player.position dù dto.position khác — đây là intent, không phải bug.
+     * Lý do: 1 player có thể đăng ký nhiều đội với vị trí thi đấu khác nhau, hồ sơ gốc
+     * (Player.position) chỉ set 1 lần lúc tạo mới, không bị leader import ghi đè.
      */
     async importTeamPlayersFromExcel(team_id, fileBuffer) {
         const wb = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
@@ -236,6 +280,11 @@ export class PlayerService {
         if (!ws)
             throw createAppError('BAD_REQUEST', `Sheet "${sheetName}" is empty or corrupted`);
         const raw = XLSX.utils.sheet_to_json(ws, { defval: null });
+        // FIX: cap số dòng trước khi validate/loop — tránh block event loop nếu
+        // leader paste nhầm file lớn.
+        if (raw.length > MAX_IMPORT_ROWS) {
+            throw createAppError('BAD_REQUEST', `File has ${raw.length} rows, max ${MAX_IMPORT_ROWS} allowed`);
+        }
         const result = { success: 0, failed: 0, errors: [] };
         const validRows = [];
         for (let i = 0; i < raw.length; i++) {
@@ -257,13 +306,15 @@ export class PlayerService {
         if (validRows.length === 0)
             return result;
         // ── Phase 2: batch pre-fetch snapshot ───────────────────────────────────
+        // user_email đã normalize lowercase/trim ở schema (zod transform), nên
+        // match ở đây consistent nếu DB cũng lưu lowercase. Nếu DB không enforce
+        // lowercase, cân nhắc unique index case-insensitive (citext / lower(email)).
         const emails = [...new Set(validRows.map((r) => r.dto.user_email))];
         const users = await this.prisma.user.findMany({
             where: { email: { in: emails } },
             select: { id: true, email: true },
         });
         const userByEmail = new Map(users.map((u) => [u.email, u.id]));
-        // Re-fetch players after we have user ids
         const userIds = users.map(u => u.id);
         const [players, existingTeamPlayers] = await Promise.all([
             userIds.length
@@ -274,12 +325,13 @@ export class PlayerService {
                 : Promise.resolve([]),
             this.prisma.teamPlayer.findMany({
                 where: { team_id, deleted_at: null },
-                select: { player_id: true },
+                select: { player_id: true, jersey_number: true },
             }),
         ]);
         const playerByUserId = new Map(players.map((p) => [p.user_id, p.id]));
         const teamPlayerSet = new Set(existingTeamPlayers.map((tp) => tp.player_id));
-        // ── Phase 3: per-row transaction — chỉ còn create, không có lookup ──────
+        const usedJerseyNumbers = new Set(existingTeamPlayers.map((tp) => tp.jersey_number));
+        // ── Phase 3: per-row transaction ─────────────────────────────────────────
         for (const { rowNum, dto } of validRows) {
             const userId = userByEmail.get(dto.user_email);
             if (!userId) {
@@ -287,10 +339,27 @@ export class PlayerService {
                 result.errors.push({ row: rowNum, reason: `User not found: ${dto.user_email}` });
                 continue;
             }
+            if (dto.jersey_number == null) {
+                result.failed++;
+                result.errors.push({ row: rowNum, reason: 'jersey_number required for team assignment' });
+                continue;
+            }
+            if (usedJerseyNumbers.has(dto.jersey_number)) {
+                result.failed++;
+                result.errors.push({ row: rowNum, reason: `Jersey number ${dto.jersey_number} đã được sử dụng trong đội` });
+                continue;
+            }
+            const existingPlayerId = playerByUserId.get(userId);
+            if (existingPlayerId && teamPlayerSet.has(existingPlayerId)) {
+                result.failed++;
+                result.errors.push({ row: rowNum, reason: 'Player already in team' });
+                continue;
+            }
             try {
-                await this.prisma.$transaction(async (tx) => {
-                    let playerId = playerByUserId.get(userId);
+                const committedPlayerId = await this.prisma.$transaction(async (tx) => {
+                    let playerId = existingPlayerId;
                     if (!playerId) {
+                        // Player mới → Player.position set từ dto (1 lần duy nhất lúc tạo).
                         const created = await tx.player.create({
                             data: {
                                 user_id: userId,
@@ -303,47 +372,40 @@ export class PlayerService {
                             select: { id: true },
                         });
                         playerId = created.id;
-                        playerByUserId.set(userId, playerId); // update local snapshot
                     }
-                    if (teamPlayerSet.has(playerId)) {
-                        throw createAppError('CONFLICT', 'Player already in team');
-                    }
-                    if (!dto.jersey_number) {
-                        throw createAppError('BAD_REQUEST', 'jersey_number required for team assignment');
-                    }
+                    // else: player đã tồn tại → KHÔNG update Player.position (Option A, xem docstring).
                     await tx.teamPlayer.create({
                         data: {
                             team_id,
                             player_id: playerId,
                             jersey_number: dto.jersey_number,
-                            position: dto.position,
+                            position: dto.position, // luôn set — context vị trí riêng cho team này
                             role: 'player',
                         },
                     });
-                    teamPlayerSet.add(playerId); // prevent duplicate trong cùng file
+                    return playerId;
                 });
+                playerByUserId.set(userId, committedPlayerId);
+                teamPlayerSet.add(committedPlayerId);
+                usedJerseyNumbers.add(dto.jersey_number);
                 result.success++;
             }
             catch (err) {
                 result.failed++;
+                const isDuplicate = err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
                 result.errors.push({
                     row: rowNum,
-                    reason: err instanceof Error ? err.message : 'Unknown error',
+                    reason: isDuplicate
+                        ? 'Trùng dữ liệu (jersey_number hoặc player đã có trong đội — race condition với request khác)'
+                        : (err instanceof Error ? err.message : 'Unknown error'),
                 });
             }
         }
         return result;
     }
     // ----------------------------------------------------------
-    // MAPPERS — typed theo select payload, không còn `any`
+    // MAPPERS
     // ----------------------------------------------------------
-    /**
-     * Không map field-by-field vì PlayerRow (Prisma payload) đã match
-     * PlayerDto 1:1 nhờ PLAYER_SELECT satisfies Prisma.PlayerSelect.
-     * Chỉ height/weight cần convert Decimal -> number, còn lại spread
-     * thẳng. Nếu PlayerDto thêm field tính toán (vd: age từ date_of_birth)
-     * thì thêm vào đây, không quay lại copy hết field như cũ.
-     */
     mapPlayer(p) {
         return {
             ...p,

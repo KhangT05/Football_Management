@@ -1,17 +1,6 @@
-// services/team.service.ts
 import { createAppError } from "../common/app.error.js";
 import { Queryable } from "../libs/queryable.js";
-// ─── Projections ──────────────────────────────────────────────────────────────
-const USER_SELECT = {
-    select: { id: true, name: true, email: true, phone: true },
-};
-const TEAM_WITH_OWNER = {
-    include: { user: USER_SELECT },
-};
-const CAPTAIN_WITH_USER = {
-    include: { user: USER_SELECT },
-};
-// ─── Service ──────────────────────────────────────────────────────────────────
+import { CAPTAIN_WITH_USER, TEAM_WITH_OWNER, USER_SELECT } from "../types/team.type.js";
 export class TeamService {
     prisma;
     query;
@@ -134,6 +123,29 @@ export class TeamService {
                 ...CAPTAIN_WITH_USER,
             });
         });
+    }
+    async restore(id) {
+        const team = await this.prisma.team.findUnique({
+            where: { id },
+            select: { id: true, is_active: true, name: true },
+        });
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team ${id} not found`);
+        if (team.is_active)
+            throw createAppError("BAD_REQUEST", "Team đang active, không cần restore");
+        try {
+            return await this.prisma.team.update({
+                where: { id },
+                data: { is_active: true, deleted_at: null },
+                ...TEAM_WITH_OWNER,
+            });
+        }
+        catch (err) {
+            // Failure mode: tên bị team khác chiếm trong lúc soft-deleted
+            if (err.code === "P2002")
+                throw createAppError("CONFLICT", `Tên "${team.name}" đã bị đội khác sử dụng, không thể restore`);
+            throw err;
+        }
     }
 }
 //# sourceMappingURL=team.service.js.map

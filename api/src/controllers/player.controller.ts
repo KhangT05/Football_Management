@@ -1,6 +1,7 @@
 import {
   Controller, Get, Path, Tags, Route, Post, Patch, Body,
-  SuccessResponse, Delete, Query, Security, Request
+  SuccessResponse, Delete, Query, Security, Request,
+  UploadedFile, Consumes
 } from "tsoa";
 import type { Request as ExRequest } from "express";
 
@@ -17,7 +18,9 @@ import {
   type BulkDeleteDto,
 } from "../dtos/player.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-import { ListTeamPlayersQuery } from "../types/player.type.js";
+import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
+
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 
 @Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("players")
@@ -111,7 +114,6 @@ export class PlayerController extends Controller {
     @Path() id: number,
     @Body() body: UpdateTeamPlayerDto
   ): Promise<TeamPlayerDto> {
-    // team_id validate qua getTeamPlayerById trước để tránh update nhầm team
     const exists = await this.service.getTeamPlayerById(id, team_id);
     if (!exists) {
       this.setStatus(404);
@@ -166,11 +168,31 @@ export class PlayerController extends Controller {
   }
 
   @Get("import-template")
-  async downloadImportTemplate(): Promise<void> {
-    const buffer = this.service.exportImportTemplate();
+  async downloadImportTemplate(@Query() minRows = 7): Promise<void> {
+    const buffer = this.service.exportImportTemplate(minRows);
     const res = (this as any).res as ExRequest["res"];
     res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res!.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
     res!.send(buffer);
+  }
+
+  // FIX: endpoint import trước đây thiếu hoàn toàn — service.importTeamPlayersFromExcel()
+  // không có route nào gọi tới, flow import không thể trigger qua API.
+  @Post("{team_id}/team-players/import")
+  @Consumes("multipart/form-data")
+  async importTeamPlayers(
+    @Path() team_id: number,
+    @UploadedFile() file: Express.Multer.File
+  ): Promise<ImportResult> {
+    if (!file || file.size === 0) {
+      this.setStatus(400);
+      throw Object.assign(new Error("File is required"), { status: 400 });
+    }
+    // Guard trước khi vào XLSX.read (đồng bộ, block CPU) — reject sớm file quá khổ.
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      this.setStatus(413);
+      throw Object.assign(new Error(`File too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024}MB)`), { status: 413 });
+    }
+    return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
   }
 }
