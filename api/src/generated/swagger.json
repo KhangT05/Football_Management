@@ -1061,6 +1061,322 @@
 				"$ref": "#/components/schemas/TeamLeaderModel",
 				"description": "Model TeamLeader"
 			},
+			"UserRegistrationPoint": {
+				"properties": {
+					"day": {
+						"type": "string"
+					},
+					"count": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"day",
+					"count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UserRegistrationStats": {
+				"properties": {
+					"range_days": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_new_users": {
+						"type": "number",
+						"format": "double"
+					},
+					"daily": {
+						"items": {
+							"$ref": "#/components/schemas/UserRegistrationPoint"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"range_days",
+					"total_new_users",
+					"daily"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeasonRevenue": {
+				"properties": {
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_name": {
+						"type": "string"
+					},
+					"confirmed_revenue": {
+						"type": "number",
+						"format": "double"
+					},
+					"refunded_amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"net_revenue": {
+						"type": "number",
+						"format": "double"
+					},
+					"pending_amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"payment_count": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"season_id",
+					"season_name",
+					"confirmed_revenue",
+					"refunded_amount",
+					"net_revenue",
+					"pending_amount",
+					"payment_count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeasonRevenueStats": {
+				"properties": {
+					"seasons": {
+						"items": {
+							"$ref": "#/components/schemas/SeasonRevenue"
+						},
+						"type": "array"
+					},
+					"total_net_revenue": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"seasons",
+					"total_net_revenue"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TournamentOverviewStats": {
+				"properties": {
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_name": {
+						"type": "string"
+					},
+					"season_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"active_season_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_matches": {
+						"type": "number",
+						"format": "double"
+					},
+					"finished_matches": {
+						"type": "number",
+						"format": "double"
+					},
+					"ongoing_matches": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"tournament_id",
+					"tournament_name",
+					"season_count",
+					"active_season_count",
+					"total_matches",
+					"finished_matches",
+					"ongoing_matches"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TeamRegistrationFunnel": {
+				"properties": {
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_name": {
+						"type": "string"
+					},
+					"pending_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"approved_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"active_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"eliminated_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"withdrawn_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_count": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"season_id",
+					"season_name",
+					"pending_count",
+					"approved_count",
+					"active_count",
+					"eliminated_count",
+					"withdrawn_count",
+					"total_count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TeamRegistrationStats": {
+				"properties": {
+					"seasons": {
+						"items": {
+							"$ref": "#/components/schemas/TeamRegistrationFunnel"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"seasons"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TopScorerEntry": {
+				"properties": {
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_name": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"goal_count": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"player_id",
+					"player_name",
+					"team_id",
+					"team_name",
+					"goal_count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TopScorerStats": {
+				"properties": {
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"limit": {
+						"type": "number",
+						"format": "double"
+					},
+					"scorers": {
+						"items": {
+							"$ref": "#/components/schemas/TopScorerEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"season_id",
+					"limit",
+					"scorers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TeamDisciplineEntry": {
+				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"yellow_card_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"red_card_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"disciplinary_points": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"team_id",
+					"team_name",
+					"yellow_card_count",
+					"red_card_count",
+					"disciplinary_points"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TeamDisciplineStats": {
+				"properties": {
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"teams": {
+						"items": {
+							"$ref": "#/components/schemas/TeamDisciplineEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"season_id",
+					"teams"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SeasonTeamStatus": {
 				"type": "string",
 				"enum": [
@@ -6665,6 +6981,246 @@
 					{
 						"in": "path",
 						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/users/registrations": {
+			"get": {
+				"operationId": "GetUserRegistrationStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserRegistrationStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "days",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/revenue": {
+			"get": {
+				"operationId": "GetSeasonRevenue",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SeasonRevenueStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "season_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/tournaments/{id}/overview": {
+			"get": {
+				"operationId": "GetTournamentOverview",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TournamentOverviewStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/teams/registrations": {
+			"get": {
+				"operationId": "GetTeamRegistrationStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamRegistrationStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizer"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/top-scorers": {
+			"get": {
+				"operationId": "GetTopScorers",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TopScorerStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizer"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/discipline": {
+			"get": {
+				"operationId": "GetTeamDisciplineStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamDisciplineStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizer"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
 						"required": true,
 						"schema": {
 							"format": "double",

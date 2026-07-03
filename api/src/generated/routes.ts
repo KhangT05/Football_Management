@@ -18,6 +18,8 @@ import { TournamentController } from './../controllers/tournament.controller.js'
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TeamController } from './../controllers/team.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { StatisticsController } from './../controllers/statistics.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SeasonTeamController } from './../controllers/seasonteam.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SeasonController } from './../controllers/season.controller.js';
@@ -356,6 +358,128 @@ const models: TsoaRoute.Models = {
     "TeamLeader": {
         "dataType": "refAlias",
         "type": {"ref":"TeamLeaderModel","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UserRegistrationPoint": {
+        "dataType": "refObject",
+        "properties": {
+            "day": {"dataType":"string","required":true},
+            "count": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UserRegistrationStats": {
+        "dataType": "refObject",
+        "properties": {
+            "range_days": {"dataType":"double","required":true},
+            "total_new_users": {"dataType":"double","required":true},
+            "daily": {"dataType":"array","array":{"dataType":"refObject","ref":"UserRegistrationPoint"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonRevenue": {
+        "dataType": "refObject",
+        "properties": {
+            "season_id": {"dataType":"double","required":true},
+            "season_name": {"dataType":"string","required":true},
+            "confirmed_revenue": {"dataType":"double","required":true},
+            "refunded_amount": {"dataType":"double","required":true},
+            "net_revenue": {"dataType":"double","required":true},
+            "pending_amount": {"dataType":"double","required":true},
+            "payment_count": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonRevenueStats": {
+        "dataType": "refObject",
+        "properties": {
+            "seasons": {"dataType":"array","array":{"dataType":"refObject","ref":"SeasonRevenue"},"required":true},
+            "total_net_revenue": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TournamentOverviewStats": {
+        "dataType": "refObject",
+        "properties": {
+            "tournament_id": {"dataType":"double","required":true},
+            "tournament_name": {"dataType":"string","required":true},
+            "season_count": {"dataType":"double","required":true},
+            "active_season_count": {"dataType":"double","required":true},
+            "total_matches": {"dataType":"double","required":true},
+            "finished_matches": {"dataType":"double","required":true},
+            "ongoing_matches": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamRegistrationFunnel": {
+        "dataType": "refObject",
+        "properties": {
+            "season_id": {"dataType":"double","required":true},
+            "season_name": {"dataType":"string","required":true},
+            "pending_count": {"dataType":"double","required":true},
+            "approved_count": {"dataType":"double","required":true},
+            "active_count": {"dataType":"double","required":true},
+            "eliminated_count": {"dataType":"double","required":true},
+            "withdrawn_count": {"dataType":"double","required":true},
+            "total_count": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamRegistrationStats": {
+        "dataType": "refObject",
+        "properties": {
+            "seasons": {"dataType":"array","array":{"dataType":"refObject","ref":"TeamRegistrationFunnel"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TopScorerEntry": {
+        "dataType": "refObject",
+        "properties": {
+            "player_id": {"dataType":"double","required":true},
+            "player_name": {"dataType":"string","required":true},
+            "team_id": {"dataType":"double","required":true},
+            "team_name": {"dataType":"string","required":true},
+            "goal_count": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TopScorerStats": {
+        "dataType": "refObject",
+        "properties": {
+            "season_id": {"dataType":"double","required":true},
+            "limit": {"dataType":"double","required":true},
+            "scorers": {"dataType":"array","array":{"dataType":"refObject","ref":"TopScorerEntry"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamDisciplineEntry": {
+        "dataType": "refObject",
+        "properties": {
+            "team_id": {"dataType":"double","required":true},
+            "team_name": {"dataType":"string","required":true},
+            "yellow_card_count": {"dataType":"double","required":true},
+            "red_card_count": {"dataType":"double","required":true},
+            "disciplinary_points": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamDisciplineStats": {
+        "dataType": "refObject",
+        "properties": {
+            "season_id": {"dataType":"double","required":true},
+            "teams": {"dataType":"array","array":{"dataType":"refObject","ref":"TeamDisciplineEntry"},"required":true},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonTeamStatus": {
@@ -2851,6 +2975,223 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getUserRegistrationStats: Record<string, TsoaRoute.ParameterSchema> = {
+                days: {"in":"query","name":"days","dataType":"double"},
+        };
+        app.get('/statistics/users/registrations',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getUserRegistrationStats)),
+
+            async function StatisticsController_getUserRegistrationStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getUserRegistrationStats, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getUserRegistrationStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getSeasonRevenue: Record<string, TsoaRoute.ParameterSchema> = {
+                season_id: {"in":"query","name":"season_id","dataType":"double"},
+        };
+        app.get('/statistics/seasons/revenue',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getSeasonRevenue)),
+
+            async function StatisticsController_getSeasonRevenue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getSeasonRevenue, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getSeasonRevenue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTournamentOverview: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"double"},
+        };
+        app.get('/statistics/tournaments/:id/overview',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTournamentOverview)),
+
+            async function StatisticsController_getTournamentOverview(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTournamentOverview, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTournamentOverview',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTeamRegistrationStats: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/teams/registrations',
+            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTeamRegistrationStats)),
+
+            async function StatisticsController_getTeamRegistrationStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTeamRegistrationStats, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTeamRegistrationStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTopScorers: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                limit: {"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/top-scorers',
+            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTopScorers)),
+
+            async function StatisticsController_getTopScorers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTopScorers, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTopScorers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTeamDisciplineStats: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/discipline',
+            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTeamDisciplineStats)),
+
+            async function StatisticsController_getTeamDisciplineStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTeamDisciplineStats, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTeamDisciplineStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
               });
             } catch (err) {
                 return next(err);
