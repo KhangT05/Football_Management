@@ -87,6 +87,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "findById", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, FormField()),
@@ -99,6 +100,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "create", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Patch("{id}"),
     __param(0, Path()),
     __param(1, FormField()),
@@ -110,6 +112,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "update", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -135,7 +138,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "restore", null);
 TeamController = __decorate([
-    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("teams"),
     Tags("Teams"),
     __metadata("design:paramtypes", [TeamService])

@@ -29,9 +29,6 @@ export class ArticleController extends Controller {
         super();
     }
 
-    // ─── Article CRUD ──────────────────────────────────────────────────────────
-
-    @Security("jwt", ["admin", "organizing", "guest"])
     @Get("/")
     async findAll(
         @Query() page = 1,
@@ -61,13 +58,10 @@ export class ArticleController extends Controller {
         });
     }
 
-    @Security("jwt", ["admin", "organizing", "guest"])
     @Get("{id}")
     async findById(@Path() id: number): Promise<SafeArticle> {
         return this.service.findByIdOrFail(id);
     }
-
-    @Security("jwt", ["admin", "organizing", "guest"])
     @Get("slug/{slug}")
     async findBySlug(@Path() slug: string): Promise<SafeArticle> {
         return this.service.findBySlugOrFail(slug);
@@ -109,11 +103,6 @@ export class ArticleController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
-
-    // ─── Tags ──────────────────────────────────────────────────────────────────
-
-    /** Distinct tags toàn hệ thống — dùng cho autocomplete */
-    @Security("jwt", ["admin", "organizing", "guest"])
     @Get("tags")
     async listTags(): Promise<string[]> {
         return this.service.listDistinctTags();
@@ -155,9 +144,6 @@ export class ArticleController extends Controller {
         return this.service.removeTag(article_id, tag);
     }
 
-    // ─── Media ─────────────────────────────────────────────────────────────────
-
-    @Security("jwt", ["admin", "organizing", "guest"])
     @Get("{article_id}/media")
     async getMedia(@Path() article_id: number): Promise<ArticleMedia[]> {
         return this.service.getMedia(article_id);

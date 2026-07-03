@@ -3,11 +3,9 @@ import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentService } from "../services/tournament.service.js";
 import type { Tournament } from "../generated/prisma/client.js";
-import { type UpdateTournamentDto } from "../dtos/tournament.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("tournaments")
 @Tags("Tournaments")
 export class TournamentController extends Controller {
@@ -30,7 +28,7 @@ export class TournamentController extends Controller {
   async findById(@Path() id: number): Promise<Tournament> {
     return this.service.findByIdOrFail(id);
   }
-
+  @Security("jwt", ["admin", "organizing"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(
@@ -59,30 +57,18 @@ export class TournamentController extends Controller {
     }, req.user.user_id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Patch("{id}")
   async update(
     @Path() id: number,
-    @Request() req: AuthRequest,
     @FormField() name?: string,
     @FormField() description?: string,
     @UploadedFile("logo") logo?: Express.Multer.File,
   ): Promise<Tournament> {
-    const existing = await this.service.findByIdOrFail(id);
-    let logo_url: string | undefined = existing.logo ?? undefined;
-
-    if (logo) {
-      const result = await storageService.upload({
-        namespace: "tournaments",
-        kind: "logo",
-        file: logo,
-      });
-      storageService.replaceAsset(existing.logo, result.url);
-      logo_url = result.url;
-    }
-
-    return this.service.update(id, { name, description, logo: logo_url });
+    return this.service.updateWithLogo(id, { name, description }, logo);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -90,6 +76,7 @@ export class TournamentController extends Controller {
     return this.service.softDelete(id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Patch("{id}/restore")
   async restore(@Path() id: number): Promise<Tournament> {
     return this.service.restore(id);

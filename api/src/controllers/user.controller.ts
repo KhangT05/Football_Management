@@ -4,7 +4,7 @@ import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
+@Security("jwt", ["admin", "user", "organizing"])
 @Route("users")
 @Tags("Users")
 export class UserController extends Controller {

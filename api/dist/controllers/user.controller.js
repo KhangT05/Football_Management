@@ -89,7 +89,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "restore", null);
 UserController = __decorate([
-    Security("jwt", ["admin", "user", "organizing", "guest"]),
+    Security("jwt", ["admin", "user", "organizing"]),
     Route("users"),
     Tags("Users"),
     __metadata("design:paramtypes", [UserService])

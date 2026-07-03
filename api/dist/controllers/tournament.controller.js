@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, UploadedFile, FormField } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, SuccessResponse, Delete, Query, Security, Request, UploadedFile, FormField } from "tsoa";
 import { TournamentService } from "../services/tournament.service.js";
 import { storageService } from "../services/storage.service.js";
 let TournamentController = class TournamentController extends Controller {
@@ -43,8 +43,8 @@ let TournamentController = class TournamentController extends Controller {
             is_active: true,
         }, req.user.user_id);
     }
-    async update(id, body) {
-        return this.service.update(id, body);
+    async update(id, name, description, logo) {
+        return this.service.updateWithLogo(id, { name, description }, logo);
     }
     async softDelete(id) {
         this.setStatus(204);
@@ -73,6 +73,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "findById", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, FormField()),
@@ -84,14 +85,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "create", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Patch("{id}"),
     __param(0, Path()),
-    __param(1, Body()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, UploadedFile("logo")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "update", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -100,6 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "softDelete", null);
 __decorate([
+    Security("jwt", ["admin", "organizing"]),
     Patch("{id}/restore"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -107,7 +113,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "restore", null);
 TournamentController = __decorate([
-    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("tournaments"),
     Tags("Tournaments"),
     __metadata("design:paramtypes", [TournamentService])

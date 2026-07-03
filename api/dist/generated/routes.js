@@ -300,16 +300,6 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofupdateTournamentSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "logo": { "dataType": "string" }, "description": { "dataType": "string" }, "name": { "dataType": "string" } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateTournamentDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofupdateTournamentSchema_", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_TeamPayload_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "coach_name": { "dataType": "string", "required": true }, "user_id": { "dataType": "double", "required": true }, "logo": { "dataType": "string", "required": true }, "description": { "dataType": "string", "required": true }, "deleted_at": { "dataType": "datetime", "required": true }, "updated_at": { "dataType": "datetime", "required": true }, "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
@@ -1877,7 +1867,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/users', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findAll)), async function UserController_findAll(request, response, next) {
+    app.get('/users', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findAll)), async function UserController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1904,7 +1894,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findById)), async function UserController_findById(request, response, next) {
+    app.get('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.findById)), async function UserController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1931,7 +1921,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreateUserDto" },
     };
-    app.post('/users', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.create)), async function UserController_create(request, response, next) {
+    app.post('/users', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.create)), async function UserController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1959,7 +1949,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateUserDto" },
     };
-    app.patch('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.update)), async function UserController_update(request, response, next) {
+    app.patch('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.update)), async function UserController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -1986,7 +1976,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.softDelete)), async function UserController_softDelete(request, response, next) {
+    app.delete('/users/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.softDelete)), async function UserController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2013,7 +2003,7 @@ export function RegisterRoutes(app, opts) {
     const argsUserController_restore = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.patch('/users/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.restore)), async function UserController_restore(request, response, next) {
+    app.patch('/users/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.restore)), async function UserController_restore(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2275,7 +2265,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/tournaments', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.findAll)), async function TournamentController_findAll(request, response, next) {
+    app.get('/tournaments', ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.findAll)), async function TournamentController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2302,7 +2292,7 @@ export function RegisterRoutes(app, opts) {
     const argsTournamentController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/tournaments/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.findById)), async function TournamentController_findById(request, response, next) {
+    app.get('/tournaments/:id', ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.findById)), async function TournamentController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2332,7 +2322,7 @@ export function RegisterRoutes(app, opts) {
         logo: { "in": "formData", "name": "logo", "required": true, "dataType": "file" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
-    app.post('/tournaments', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), upload.fields([
+    app.post('/tournaments', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
         {
             name: "logo",
             maxCount: 1
@@ -2363,9 +2353,16 @@ export function RegisterRoutes(app, opts) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentController_update = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
-        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTournamentDto" },
+        name: { "in": "formData", "name": "name", "dataType": "string" },
+        description: { "in": "formData", "name": "description", "dataType": "string" },
+        logo: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.patch('/tournaments/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.update)), async function TournamentController_update(request, response, next) {
+    app.patch('/tournaments/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+        {
+            name: "logo",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.update)), async function TournamentController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2392,7 +2389,7 @@ export function RegisterRoutes(app, opts) {
     const argsTournamentController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/tournaments/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.softDelete)), async function TournamentController_softDelete(request, response, next) {
+    app.delete('/tournaments/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.softDelete)), async function TournamentController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2419,7 +2416,7 @@ export function RegisterRoutes(app, opts) {
     const argsTournamentController_restore = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.patch('/tournaments/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.restore)), async function TournamentController_restore(request, response, next) {
+    app.patch('/tournaments/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TournamentController)), ...(fetchMiddlewares(TournamentController.prototype.restore)), async function TournamentController_restore(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2450,7 +2447,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/teams', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.findAll)), async function TeamController_findAll(request, response, next) {
+    app.get('/teams', ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.findAll)), async function TeamController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2477,7 +2474,7 @@ export function RegisterRoutes(app, opts) {
     const argsTeamController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.findById)), async function TeamController_findById(request, response, next) {
+    app.get('/teams/:id', ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.findById)), async function TeamController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2508,7 +2505,7 @@ export function RegisterRoutes(app, opts) {
         description: { "in": "formData", "name": "description", "dataType": "string" },
         logo: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.post('/teams', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), upload.fields([
+    app.post('/teams', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
         {
             name: "logo",
             maxCount: 1
@@ -2544,7 +2541,7 @@ export function RegisterRoutes(app, opts) {
         description: { "in": "formData", "name": "description", "dataType": "string" },
         logoFile: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), upload.fields([
+    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
         {
             name: "logo",
             maxCount: 1
@@ -2576,7 +2573,7 @@ export function RegisterRoutes(app, opts) {
     const argsTeamController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.softDelete)), async function TeamController_softDelete(request, response, next) {
+    app.delete('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.softDelete)), async function TeamController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2603,7 +2600,7 @@ export function RegisterRoutes(app, opts) {
     const argsTeamController_getCaptain = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/teams/:id/captain', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.getCaptain)), async function TeamController_getCaptain(request, response, next) {
+    app.get('/teams/:id/captain', ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.getCaptain)), async function TeamController_getCaptain(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2824,7 +2821,7 @@ export function RegisterRoutes(app, opts) {
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
     };
-    app.get('/seasonteams', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.findAll)), async function SeasonTeamController_findAll(request, response, next) {
+    app.get('/seasonteams', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.findAll)), async function SeasonTeamController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2851,7 +2848,7 @@ export function RegisterRoutes(app, opts) {
     const argsSeasonTeamController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/seasonteams/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.findById)), async function SeasonTeamController_findById(request, response, next) {
+    app.get('/seasonteams/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.findById)), async function SeasonTeamController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3732,7 +3729,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.findById)), async function PlayerController_findById(request, response, next) {
+    app.get('/players/:id', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.findById)), async function PlayerController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3759,7 +3756,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreatePlayerDto" },
     };
-    app.post('/players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.create)), async function PlayerController_create(request, response, next) {
+    app.post('/players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.create)), async function PlayerController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3787,7 +3784,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdatePlayerDto" },
     };
-    app.patch('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.update)), async function PlayerController_update(request, response, next) {
+    app.patch('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.update)), async function PlayerController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3814,7 +3811,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.softDelete)), async function PlayerController_softDelete(request, response, next) {
+    app.delete('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.softDelete)), async function PlayerController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3848,7 +3845,7 @@ export function RegisterRoutes(app, opts) {
         status: { "in": "query", "name": "status", "dataType": "string" },
         approval_status: { "in": "query", "name": "approval_status", "dataType": "string" },
     };
-    app.get('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.listTeamPlayers)), async function PlayerController_listTeamPlayers(request, response, next) {
+    app.get('/players/:team_id/team-players', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.listTeamPlayers)), async function PlayerController_listTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3876,7 +3873,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.getTeamPlayer)), async function PlayerController_getTeamPlayer(request, response, next) {
+    app.get('/players/:team_id/team-players/:id', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.getTeamPlayer)), async function PlayerController_getTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3905,7 +3902,7 @@ export function RegisterRoutes(app, opts) {
         body: { "in": "body", "name": "body", "required": true, "ref": "AddPlayerToTeamDto" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
-    app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
+    app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3934,7 +3931,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTeamPlayerDto" },
     };
-    app.patch('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.updateTeamPlayer)), async function PlayerController_updateTeamPlayer(request, response, next) {
+    app.patch('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.updateTeamPlayer)), async function PlayerController_updateTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3962,7 +3959,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.post('/players/:team_id/team-players/:id/approve', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.approveTeamPlayer)), async function PlayerController_approveTeamPlayer(request, response, next) {
+    app.post('/players/:team_id/team-players/:id/approve', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.approveTeamPlayer)), async function PlayerController_approveTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -3990,7 +3987,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.post('/players/:team_id/team-players/:id/reject', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.rejectTeamPlayer)), async function PlayerController_rejectTeamPlayer(request, response, next) {
+    app.post('/players/:team_id/team-players/:id/reject', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.rejectTeamPlayer)), async function PlayerController_rejectTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4018,7 +4015,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "BulkDeleteDto" },
     };
-    app.delete('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.bulkDeleteTeamPlayers)), async function PlayerController_bulkDeleteTeamPlayers(request, response, next) {
+    app.delete('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.bulkDeleteTeamPlayers)), async function PlayerController_bulkDeleteTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4045,7 +4042,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_exportTeamPlayers = {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
     };
-    app.get('/players/:team_id/team-players/export', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
+    app.get('/players/:team_id/team-players/export', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4072,7 +4069,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_downloadImportTemplate = {
         minRows: { "default": 7, "in": "query", "name": "minRows", "dataType": "double" },
     };
-    app.get('/players/import-template', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.downloadImportTemplate)), async function PlayerController_downloadImportTemplate(request, response, next) {
+    app.get('/players/import-template', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.downloadImportTemplate)), async function PlayerController_downloadImportTemplate(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4100,7 +4097,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         file: { "in": "formData", "name": "file", "required": true, "dataType": "file" },
     };
-    app.post('/players/:team_id/team-players/import', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing", "guest"] }]), upload.fields([
+    app.post('/players/:team_id/team-players/import', upload.fields([
         {
             name: "file",
             maxCount: 1
@@ -5547,7 +5544,7 @@ export function RegisterRoutes(app, opts) {
         user_id: { "in": "query", "name": "user_id", "dataType": "double" },
         tag: { "in": "query", "name": "tag", "dataType": "string" },
     };
-    app.get('/articles', authenticateMiddleware([{ "jwt": ["admin", "organizing", "guest"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findAll)), async function ArticleController_findAll(request, response, next) {
+    app.get('/articles', ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findAll)), async function ArticleController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -5574,7 +5571,7 @@ export function RegisterRoutes(app, opts) {
     const argsArticleController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.get('/articles/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing", "guest"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findById)), async function ArticleController_findById(request, response, next) {
+    app.get('/articles/:id', ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findById)), async function ArticleController_findById(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -5601,7 +5598,7 @@ export function RegisterRoutes(app, opts) {
     const argsArticleController_findBySlug = {
         slug: { "in": "path", "name": "slug", "required": true, "dataType": "string" },
     };
-    app.get('/articles/slug/:slug', authenticateMiddleware([{ "jwt": ["admin", "organizing", "guest"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findBySlug)), async function ArticleController_findBySlug(request, response, next) {
+    app.get('/articles/slug/:slug', ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.findBySlug)), async function ArticleController_findBySlug(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -5737,7 +5734,7 @@ export function RegisterRoutes(app, opts) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsArticleController_listTags = {};
-    app.get('/articles/tags', authenticateMiddleware([{ "jwt": ["admin", "organizing", "guest"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.listTags)), async function ArticleController_listTags(request, response, next) {
+    app.get('/articles/tags', ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.listTags)), async function ArticleController_listTags(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -5848,7 +5845,7 @@ export function RegisterRoutes(app, opts) {
     const argsArticleController_getMedia = {
         article_id: { "in": "path", "name": "article_id", "required": true, "dataType": "double" },
     };
-    app.get('/articles/:article_id/media', authenticateMiddleware([{ "jwt": ["admin", "organizing", "guest"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.getMedia)), async function ArticleController_getMedia(request, response, next) {
+    app.get('/articles/:article_id/media', ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.getMedia)), async function ArticleController_getMedia(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {

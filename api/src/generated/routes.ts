@@ -311,16 +311,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofupdateTournamentSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"is_active":{"dataType":"boolean"},"logo":{"dataType":"string"},"description":{"dataType":"string"},"name":{"dataType":"string"}},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateTournamentDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofupdateTournamentSchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_TeamPayload_": {
         "dataType": "refAlias",
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"coach_name":{"dataType":"string","required":true},"user_id":{"dataType":"double","required":true},"logo":{"dataType":"string","required":true},"description":{"dataType":"string","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
@@ -1958,7 +1948,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/users',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findAll)),
 
@@ -1994,7 +1984,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findById)),
 
@@ -2030,7 +2020,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreateUserDto"},
         };
         app.post('/users',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.create)),
 
@@ -2067,7 +2057,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateUserDto"},
         };
         app.patch('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.update)),
 
@@ -2103,7 +2093,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.softDelete)),
 
@@ -2139,7 +2129,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.patch('/users/:id/restore',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.restore)),
 
@@ -2483,7 +2473,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/tournaments',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.findAll)),
 
@@ -2519,7 +2508,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/tournaments/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.findById)),
 
@@ -2558,7 +2546,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/tournaments',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2598,10 +2586,18 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsTournamentController_update: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateTournamentDto"},
+                name: {"in":"formData","name":"name","dataType":"string"},
+                description: {"in":"formData","name":"description","dataType":"string"},
+                logo: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.patch('/tournaments/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            upload.fields([
+                {
+                    name: "logo",
+                    maxCount: 1
+                }
+            ]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.update)),
 
@@ -2637,7 +2633,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/tournaments/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.softDelete)),
 
@@ -2673,7 +2669,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.patch('/tournaments/:id/restore',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(TournamentController)),
             ...(fetchMiddlewares<RequestHandler>(TournamentController.prototype.restore)),
 
@@ -2713,7 +2709,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/teams',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.findAll)),
 
@@ -2749,7 +2744,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/teams/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.findById)),
 
@@ -2789,7 +2783,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logo: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.post('/teams',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2835,7 +2829,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logoFile: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.patch('/teams/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -2877,7 +2871,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/teams/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.softDelete)),
 
@@ -2913,7 +2907,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/teams/:id/captain',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.getCaptain)),
 
@@ -3206,7 +3199,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/seasonteams',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findAll)),
 
@@ -3242,7 +3235,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/seasonteams/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findById)),
 
@@ -4393,7 +4386,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/players/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.findById)),
 
@@ -4429,7 +4421,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePlayerDto"},
         };
         app.post('/players',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.create)),
 
@@ -4466,7 +4458,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePlayerDto"},
         };
         app.patch('/players/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.update)),
 
@@ -4502,7 +4494,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/players/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.softDelete)),
 
@@ -4545,7 +4537,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 approval_status: {"in":"query","name":"approval_status","dataType":"string"},
         };
         app.get('/players/:team_id/team-players',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.listTeamPlayers)),
 
@@ -4582,7 +4573,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/players/:team_id/team-players/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.getTeamPlayer)),
 
@@ -4620,7 +4610,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/players/:team_id/team-players',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.addPlayerToTeam)),
 
@@ -4658,7 +4648,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateTeamPlayerDto"},
         };
         app.patch('/players/:team_id/team-players/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.updateTeamPlayer)),
 
@@ -4695,7 +4685,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.post('/players/:team_id/team-players/:id/approve',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.approveTeamPlayer)),
 
@@ -4732,7 +4722,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.post('/players/:team_id/team-players/:id/reject',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.rejectTeamPlayer)),
 
@@ -4769,7 +4759,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"BulkDeleteDto"},
         };
         app.delete('/players/:team_id/team-players',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.bulkDeleteTeamPlayers)),
 
@@ -4805,7 +4795,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 team_id: {"in":"path","name":"team_id","required":true,"dataType":"double"},
         };
         app.get('/players/:team_id/team-players/export',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.exportTeamPlayers)),
 
@@ -4841,7 +4830,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 minRows: {"default":7,"in":"query","name":"minRows","dataType":"double"},
         };
         app.get('/players/import-template',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.downloadImportTemplate)),
 
@@ -4878,7 +4866,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 file: {"in":"formData","name":"file","required":true,"dataType":"file"},
         };
         app.post('/players/:team_id/team-players/import',
-            authenticateMiddleware([{"jwt":["admin","user","organizing","guest"]}]),
             upload.fields([
                 {
                     name: "file",
@@ -6773,7 +6760,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 tag: {"in":"query","name":"tag","dataType":"string"},
         };
         app.get('/articles',
-            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(ArticleController)),
             ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findAll)),
 
@@ -6809,7 +6795,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/articles/:id',
-            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(ArticleController)),
             ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findById)),
 
@@ -6845,7 +6830,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 slug: {"in":"path","name":"slug","required":true,"dataType":"string"},
         };
         app.get('/articles/slug/:slug',
-            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(ArticleController)),
             ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.findBySlug)),
 
@@ -7027,7 +7011,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         const argsArticleController_listTags: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/articles/tags',
-            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(ArticleController)),
             ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.listTags)),
 
@@ -7174,7 +7157,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 article_id: {"in":"path","name":"article_id","required":true,"dataType":"double"},
         };
         app.get('/articles/:article_id/media',
-            authenticateMiddleware([{"jwt":["admin","organizing","guest"]}]),
             ...(fetchMiddlewares<RequestHandler>(ArticleController)),
             ...(fetchMiddlewares<RequestHandler>(ArticleController.prototype.getMedia)),
 

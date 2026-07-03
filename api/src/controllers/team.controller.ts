@@ -21,7 +21,6 @@ import type { Team, TeamLeader } from "../generated/prisma/client.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { storageService } from "../services/storage.service.js";
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("teams")
 @Tags("Teams")
 export class TeamController extends Controller {
@@ -45,6 +44,7 @@ export class TeamController extends Controller {
     return this.service.findByIdOrFail(id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(
@@ -67,6 +67,7 @@ export class TeamController extends Controller {
     return this.service.create({ name, coach_name, description, logo: logo_url }, req.user.user_id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -92,6 +93,7 @@ export class TeamController extends Controller {
     });
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {

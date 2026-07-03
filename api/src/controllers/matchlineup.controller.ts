@@ -56,8 +56,6 @@ export class MatchLineupController extends Controller {
         return this.lineupService.getByTeam(matchId, teamId);
     }
 
-    // ─── Register ─────────────────────────────────────────────────────────────
-
     /**
      * Đăng ký lineup cho team — bulk replace, idempotent.
      * Chỉ được gọi trước giờ thi đấu ít nhất 1 giờ.
