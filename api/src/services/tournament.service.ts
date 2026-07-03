@@ -91,7 +91,7 @@ export class TournamentService {
         const activeSeasonCount = await this.prisma.season.count({
             where: {
                 tournament_id: id,
-                is_active: false,
+                is_active: true,   // FIX: đang là false, guard bị vô hiệu hóa
                 status: { in: ['registration_open', 'ongoing'] },
             },
         });
@@ -101,6 +101,18 @@ export class TournamentService {
         await this.prisma.tournament.update({
             where: { id },
             data: { is_active: false },
+        });
+    }
+
+    async restore(id: number): Promise<Tournament> {
+        const tournament = await this.findByIdOrFail(id); // không filter is_active nên tìm được record đã soft-delete
+
+        if (tournament.is_active)
+            throw createAppError('VALIDATION_ERROR', `Tournament ${id} is not deleted`);
+
+        return this.prisma.tournament.update({
+            where: { id },
+            data: { is_active: true },
         });
     }
 }
