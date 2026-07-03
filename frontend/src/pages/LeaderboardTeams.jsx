@@ -3,17 +3,15 @@ import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } fr
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
 // APIs and constants (if any)
-
 import { useShallow } from 'zustand/react/shallow';
 import useSeasonTeamStore from '../store/seasonTeamStore';
-
+import useAuthStore from '../store/authStore';
 // Shared imports
 import LeaderboardSkeleton from '../components/skeletons/LeaderboardSkeleton';
 import TeamCardSkeleton from '../components/skeletons/TeamCardSkeleton';
 import StandingRow from '../components/StandingRow';
 import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 import Pagination from '../components/ui/Pagination';
-
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
   // ── Zustand stores ─────────────────────────────────────────
@@ -25,7 +23,6 @@ export default function LeaderboardTeams() {
       fetchPublicTeamsBySeason: state.fetchPublicTeamsBySeason,
     }))
   );
-
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons, fetchStandings, standingsLoading, standingsError, getStandingsFromCache } = useSeasonStore(
     useShallow((state) => ({
       seasons: state.seasons,
@@ -37,7 +34,6 @@ export default function LeaderboardTeams() {
       getStandingsFromCache: state.getStandingsFromCache,
     }))
   );
-
   const { fetchSeasonTeams, loadingSeasons: seasonTeamsLoading, getSeasonTeamsFromCache } = useSeasonTeamStore(
     useShallow((state) => ({
       fetchSeasonTeams: state.fetchSeasonTeams,
@@ -45,28 +41,22 @@ export default function LeaderboardTeams() {
       getSeasonTeamsFromCache: state.getSeasonTeamsFromCache,
     }))
   );
-
   // ── Standings state ────────────────────────────────────────
+  const { user } = useAuthStore();
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [activeTab, setActiveTab] = useState('group'); // 'group' or 'knockout'
-
   const groupedStandings = getStandingsFromCache(selectedSeasonId);
   const isLoadingStandings = standingsLoading[selectedSeasonId] || false;
   const currentStandingsError = standingsError[selectedSeasonId] || null;
-
   const seasonTeams = getSeasonTeamsFromCache(selectedSeasonId);
   const loadingSeasonTeams = seasonTeamsLoading[selectedSeasonId] || false;
-
   const isLoading = teamsLoading || seasonsLoading || loadingSeasonTeams;
-
   // Removed auto-select logic to default to All/Empty
   const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
-
   useEffect(() => {
     fetchTeams({ sort: 'name', direction: 'asc' });
     fetchSeasons();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Auto-select latest season on mount
   useEffect(() => {
     if (!selectedSeasonId && seasons?.length > 0) {
@@ -95,38 +85,54 @@ export default function LeaderboardTeams() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId]);
-
   const filteredTeams = useMemo(() => {
     if (!selectedSeasonId) return teams;
-    if (seasonTeams.length === 0) return teams; // Guest fallback
-    const approvedSeasonTeamIds = new Set(seasonTeams.filter(st => st.status === 'approved').map(st => st.team_id));
-    return teams.filter(t => approvedSeasonTeamIds.has(t.id));
-  }, [teams, seasonTeams, selectedSeasonId]);
-
+    // Nếu có seasonTeams (có quyền truy cập API hoặc có dữ liệu), lọc theo status 'approved'
+    if (seasonTeams.length > 0) {
+      const approvedSeasonTeamIds = new Set(
+        seasonTeams
+          .filter(st => st.status === 'approved' && String(st.season_id) === String(selectedSeasonId))
+          .map(st => st.team_id)
+      );
+      return teams.filter(t => approvedSeasonTeamIds.has(t.id));
+    }
+    // Guest fallback: Nếu không có seasonTeams (vd: lỗi 401 khi chưa login),
+    // cố gắng trích xuất danh sách team_id từ groupedStandings (công khai).
+    if (!user) {
+      const standingTeamIds = new Set();
+      (groupedStandings || []).forEach(group => {
+        (group.standings || []).forEach(row => {
+          if (row.team_id) standingTeamIds.add(row.team_id);
+        });
+      });
+      if (standingTeamIds.size > 0) {
+        return teams.filter(t => standingTeamIds.has(t.id));
+      }
+      
+      // Nếu bảng xếp hạng trống, trả về mảng rỗng thay vì hiển thị toàn bộ đội bóng.
+      return [];
+    }
+    return [];
+  }, [teams, seasonTeams, selectedSeasonId, user, groupedStandings]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
   };
-
   const [prevSeasonId, setPrevSeasonId] = useState(selectedSeasonId);
   if (prevSeasonId !== selectedSeasonId) {
     setPrevSeasonId(selectedSeasonId);
     setCurrentPage(1);
   }
-
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
   const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
-
   const handleRefresh = () => {
     fetchTeams({ sort: 'name', direction: 'asc', force: true });
     fetchSeasons({ force: true });
     if (selectedSeasonId) fetchStandings(selectedSeasonId);
   };
-
   return (
     <div className="py-12 bg-navy-dark min-h-screen relative">
       {/* Background ambient lights */}
@@ -134,9 +140,7 @@ export default function LeaderboardTeams() {
         <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px]"></div>
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px]"></div>
       </div>
-
       <div className="container mx-auto px-4 xl:px-8 relative z-10">
-
         {/* ─── LEADERBOARD ─────────────────────────────── */}
         <section className="mb-16 lg:mb-24 max-w-6xl mx-auto">
           <div className="flex items-center justify-between gap-4 mb-8 animate-slide-up flex-wrap bg-navy/40 backdrop-blur-md border border-navy-light p-6 rounded-3xl shadow-xl">
@@ -180,7 +184,6 @@ export default function LeaderboardTeams() {
               </button>
             </div>
           </div>
-
           {/* Tabs */}
           <div className="flex items-center gap-8 mb-8 border-b border-navy-light px-2">
             <button
@@ -200,7 +203,6 @@ export default function LeaderboardTeams() {
               Vòng loại trực tiếp
             </button>
           </div>
-
           {activeTab === 'knockout' ? (
             <div className="bg-navy/40 backdrop-blur-md border border-navy-light p-16 rounded-3xl text-center">
               <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -289,7 +291,6 @@ export default function LeaderboardTeams() {
             </div>
           )}
         </section>
-
         {/* ─── TEAMS ───────────────────────────────────── */}
         <section className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8 animate-slide-up flex-wrap gap-4">
@@ -305,7 +306,6 @@ export default function LeaderboardTeams() {
               )}
             </h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
             {isLoading ? (
               <>{[1,2,3,4,5,6].map(i => <TeamCardSkeleton key={i} />)}</>
@@ -335,7 +335,6 @@ export default function LeaderboardTeams() {
             </div>
           )}
         </section>
-
       </div>
     </div>
   );

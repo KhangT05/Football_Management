@@ -131,9 +131,15 @@ export default function ManageSeasonTeams() {
   const handleUpdateStatus = (id, newStatus) => {
     const st = allSeasonTeams.find(s => s.id === id);
     statusMutation.mutate(async () => {
-      await seasonTeamApi.updateStatus(id, { status: newStatus });
+      if (newStatus === 'approved') {
+        await seasonTeamApi.approve(id);
+      } else if (newStatus === 'rejected') {
+        await seasonTeamApi.delete(id);
+      } else {
+        await seasonTeamApi.updateStatus(id, { status: newStatus });
+      }
       
-      if (newStatus === 'approved' && st?.team?.user_id) {
+      if (newStatus === 'approved' && st?.user_id) {
         try {
           const rolesRes = await roleApi.getRoles();
           const rPayload = (typeof rolesRes?.status === 'boolean') ? rolesRes.data : rolesRes;
@@ -142,14 +148,14 @@ export default function ManageSeasonTeams() {
           const leaderRole = roles.find(r => ['leader', 'đội trưởng', 'doitruong'].includes(r.name.toLowerCase()));
           
           if (leaderRole) {
-            const userRes = await userApi.getUserById(st.team.user_id);
+            const userRes = await userApi.getUserById(st.user_id);
             const uPayload = (typeof userRes?.status === 'boolean') ? userRes.data : userRes;
             const user = uPayload?.data || uPayload;
             
             const currentRoleIds = user?.roles?.map(r => r.id) || [];
             
             if (!currentRoleIds.includes(leaderRole.id)) {
-              await userApi.updateProfile(st.team.user_id, { role_ids: [...currentRoleIds, leaderRole.id] });
+              await userApi.updateProfile(st.user_id, { role_ids: [...currentRoleIds, leaderRole.id] });
               toast.success(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
             }
           }
@@ -158,7 +164,7 @@ export default function ManageSeasonTeams() {
         }
       }
       
-      toast.success(`Đã cập nhật trạng thái thành "${newStatus}"!`);
+      toast.success(newStatus === 'rejected' ? 'Đã từ chối đội bóng.' : `Đã cập nhật trạng thái thành "${newStatus}"!`);
       reloadTeams();
     }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
   };
@@ -397,7 +403,7 @@ export default function ManageSeasonTeams() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left whitespace-nowrap min-w-[700px]">
+                  <table className="w-full text-left whitespace-nowrap min-w-[900px]">
                     <thead>
                       <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                         <th className="py-4 px-6 w-16 text-center">ID</th>

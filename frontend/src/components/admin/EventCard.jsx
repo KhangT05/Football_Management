@@ -70,11 +70,14 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
   const benchPlayers = players.filter(p => currentBenchIds.has(String(p.id)));
 
   const renderPlayerOptions = (list) => {
-    return list.map(p => (
-      <option key={p.id} value={String(p.id)}>
-        {p.name || p.player?.name} ({p.jersey_number ?? p.number ?? '?'})
-      </option>
-    ));
+    return list.map(p => {
+      const name = p.name || p.player?.name || p.player?.user?.name || `Cầu thủ #${p.player_id || p.id}`;
+      return (
+        <option key={p.id} value={String(p.id)}>
+          {name} ({p.jersey_number ?? p.number ?? '?'})
+        </option>
+      );
+    });
   };
 
   return (

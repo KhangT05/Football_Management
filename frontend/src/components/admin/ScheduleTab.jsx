@@ -3,14 +3,16 @@ import {
   CalendarDays, CalendarPlus, Zap, Edit3, X, Save, 
   MapPin, Clock, Loader2, RefreshCw, Search
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
 import useVenueStore from '../../store/venueStore';
+import useTeamStore from '../../store/teamStore';
 import useToastStore from '../../store/toastStore';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
-function RescheduleModal({ match, venues, onClose, onSave }) {
+function RescheduleModal({ match, venues, teams, onClose, onSave }) {
   const [scheduledAt, setScheduledAt] = useState(() => {
     if (match?.scheduled_at) {
       const dateObj = new Date(match.scheduled_at);
@@ -33,8 +35,13 @@ function RescheduleModal({ match, venues, onClose, onSave }) {
   };
 
   if (!match) return null;
-  const homeName = match.home_team?.name ?? `Đội ${match.home_team_id}`;
-  const awayName = match.away_team?.name ?? `Đội ${match.away_team_id}`;
+  const homeTeam = match.home_team || teams?.find(t => t.id === match.home_team_id);
+  const awayTeam = match.away_team || teams?.find(t => t.id === match.away_team_id);
+
+  const homeName = homeTeam?.name ?? `Đội ${match.home_team_id}`;
+  const awayName = awayTeam?.name ?? `Đội ${match.away_team_id}`;
+  const homeLogo = homeTeam?.logo;
+  const awayLogo = awayTeam?.logo;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -47,10 +54,28 @@ function RescheduleModal({ match, venues, onClose, onSave }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="text-center mb-6">
-            <p className="text-sm font-black text-emerald-400">{homeName}</p>
-            <p className="text-xs font-bold text-gray-500 my-1">VS</p>
-            <p className="text-sm font-black text-blue-400">{awayName}</p>
+          <div className="flex items-center gap-2 justify-between mb-6">
+            <div className="flex-1 text-center min-w-0">
+              {homeLogo ? (
+                <img src={homeLogo} alt={homeName} className="w-12 h-12 mx-auto rounded-xl object-contain bg-white mb-2 border border-emerald-500/30 shadow-md" />
+              ) : (
+                <div className="w-12 h-12 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-2 border border-emerald-500/30 shadow-md text-lg">
+                  {homeName[0]}
+                </div>
+              )}
+              <p className="text-emerald-400 font-black text-sm truncate" title={homeName}>{homeName}</p>
+            </div>
+            <span className="text-gray-500 font-black text-xs shrink-0 px-2">VS</span>
+            <div className="flex-1 text-center min-w-0">
+              {awayLogo ? (
+                <img src={awayLogo} alt={awayName} className="w-12 h-12 mx-auto rounded-xl object-contain bg-white mb-2 border border-blue-500/30 shadow-md" />
+              ) : (
+                <div className="w-12 h-12 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-2 border border-blue-500/30 shadow-md text-lg">
+                  {awayName[0]}
+                </div>
+              )}
+              <p className="text-blue-400 font-black text-sm truncate" title={awayName}>{awayName}</p>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -100,12 +125,12 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
     desiredGroupCount: 1,
     minGroupSize: 4,
     maxGroupSize: 4,
-    doubleRound: true,
     minRestDaysPerTeam: 2,
     matchTimes: "08:00, 15:00",
+    startDate: "", // Ngày bắt đầu thi đấu
   });
   
-  const [selectedVenues, setSelectedVenues] = useState(() => venues.map(v => String(v.id)));
+    const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleChange = (e) => {
@@ -136,12 +161,20 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
       desiredGroupCount: Number(formData.desiredGroupCount),
       minGroupSize: Number(formData.minGroupSize),
       maxGroupSize: Number(formData.maxGroupSize),
-      doubleRound: formData.doubleRound,
+      doubleRound: false, // Bỏ doubleRound trên UI, mặc định gửi false hoặc không gửi
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
       matchTimes: timesArray,
     };
     
+    if (formData.startDate) {
+      // Chuyển startDate sang ISO (UTC)
+      const dateObj = new Date(formData.startDate);
+      if (!isNaN(dateObj.getTime())) {
+        payload.startDate = dateObj.toISOString();
+      }
+    }
+
     await onGenerate(seasonId, payload);
     setIsGenerating(false);
   };
@@ -169,15 +202,12 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Lượt đi & về (Double Round)</label>
-              <div className="flex items-center gap-3 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl h-[42px]">
-                <input 
-                  type="checkbox" 
-                  name="doubleRound" checked={formData.doubleRound} onChange={handleChange}
-                  className="w-4 h-4 accent-neon"
-                />
-                <span className="text-sm font-bold text-white">Đá 2 lượt</span>
-              </div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ngày bắt đầu</label>
+              <input 
+                type="date"
+                name="startDate" value={formData.startDate} onChange={handleChange}
+                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
@@ -246,6 +276,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const toast = useToastStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, generateSchedule, rescheduleMatch } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
+  const { teams, fetchAll: fetchTeams } = useTeamStore();
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null); // stores match object if open
@@ -256,7 +287,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
   useEffect(() => {
     fetchVenues();
-  }, [fetchVenues]);
+    fetchTeams({ per_page: 500 });
+  }, [fetchVenues, fetchTeams]);
 
   useEffect(() => {
     if (selectedSeasonId) {
@@ -270,13 +302,14 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     let list = getMatchesFromCache(Number(effectiveSeasonId));
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
-      list = list.filter(m => 
-        m.home_team?.name?.toLowerCase().includes(lower) || 
-        m.away_team?.name?.toLowerCase().includes(lower)
-      );
+      list = list.filter(m => {
+        const hName = m.home_team?.name || teams.find(t => t.id === m.home_team_id)?.name || '';
+        const aName = m.away_team?.name || teams.find(t => t.id === m.away_team_id)?.name || '';
+        return hName.toLowerCase().includes(lower) || aName.toLowerCase().includes(lower);
+      });
     }
     return list;
-  }, [effectiveSeasonId, getMatchesFromCache, searchTerm]);
+  }, [effectiveSeasonId, getMatchesFromCache, searchTerm, teams]);
 
   const isLoading = effectiveSeasonId 
     ? isSeasonLoading(Number(effectiveSeasonId)) 
@@ -371,8 +404,14 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {displayedMatches.map(m => {
-                const homeName = m.home_team?.name ?? `Đội ${m.home_team_id}`;
-                const awayName = m.away_team?.name ?? `Đội ${m.away_team_id}`;
+                const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
+                const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
+                
+                const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
+                const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
+                
+                const homeLogo = homeTeam?.logo;
+                const awayLogo = awayTeam?.logo;
                 return (
                   <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
                     <div className="flex justify-between items-start mb-3">
@@ -388,17 +427,25 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
                     <div className="flex items-center gap-2 justify-between mb-4 mt-2">
                       <div className="flex-1 text-center min-w-0">
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
-                          {homeName[0]}
-                        </div>
-                        <p className="text-white font-bold text-sm truncate">{homeName}</p>
+                        {homeLogo ? (
+                          <img src={homeLogo} alt={homeName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-emerald-500/30" />
+                        ) : (
+                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
+                            {homeName[0]}
+                          </div>
+                        )}
+                        <p className="text-white font-bold text-sm truncate" title={homeName}>{homeName}</p>
                       </div>
                       <span className="text-gray-600 font-black text-xs shrink-0">VS</span>
                       <div className="flex-1 text-center min-w-0">
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
-                          {awayName[0]}
-                        </div>
-                        <p className="text-white font-bold text-sm truncate">{awayName}</p>
+                        {awayLogo ? (
+                          <img src={awayLogo} alt={awayName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-blue-500/30" />
+                        ) : (
+                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
+                            {awayName[0]}
+                          </div>
+                        )}
+                        <p className="text-white font-bold text-sm truncate" title={awayName}>{awayName}</p>
                       </div>
                     </div>
 
@@ -436,22 +483,25 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       </div>
 
       {/* Modals */}
-      {generateModalOpen && (
+      {generateModalOpen && createPortal(
         <GenerateScheduleModal 
           seasonId={Number(selectedSeasonId)} 
           venues={venues}
           onClose={() => setGenerateModalOpen(false)}
           onGenerate={handleGenerateSchedule}
-        />
+        />,
+        document.body
       )}
 
-      {rescheduleMatchData && (
+      {rescheduleMatchData && createPortal(
         <RescheduleModal
           match={rescheduleMatchData}
           venues={venues}
+          teams={teams}
           onClose={() => setRescheduleMatchData(null)}
           onSave={handleReschedule}
-        />
+        />,
+        document.body
       )}
     </>
   );

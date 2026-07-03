@@ -307,12 +307,13 @@ export default function ManageTeams() {
         {/* Teams Table */}
         <div className="bg-navy border border-navy-light rounded-xl shadow-lg shadow-black/20 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap min-w-[700px]">
+            <table className="w-full text-left whitespace-nowrap min-w-[1000px]">
               <thead>
                 <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                   <th className="py-4 px-6 w-16 text-center">Logo</th>
                   <th className="py-4 px-6">Đội bóng</th>
                   <th className="py-4 px-6">HLV / Đội trưởng</th>
+                  <th className="py-4 px-6">Tham gia mùa giải</th>
                   <th className="py-4 px-6 text-center">Trạng thái</th>
                   <th className="py-4 px-6 text-right">Thao tác</th>
                 </tr>
@@ -321,7 +322,7 @@ export default function ManageTeams() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-navy-light">
-                      {[1, 2, 3, 4, 5].map(j => (
+                      {[1, 2, 3, 4, 5, 6].map(j => (
                         <td key={j} className="py-4 px-6">
                           <div className="skeleton h-4 w-full rounded" />
                         </td>
@@ -330,7 +331,7 @@ export default function ManageTeams() {
                   ))
                 ) : fetchError ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-red-400">
+                    <td colSpan={6} className="py-16 text-center text-red-400">
                       <div className="flex flex-col items-center gap-3">
                         <AlertTriangle className="w-10 h-10 text-red-500/50" />
                         <p className="font-semibold">{fetchError}</p>
@@ -343,7 +344,7 @@ export default function ManageTeams() {
                   </tr>
                 ) : paginatedTeams.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-gray-400">
+                    <td colSpan={6} className="py-16 text-center text-gray-400">
                       <div className="flex flex-col items-center gap-3">
                         <Users className="w-10 h-10 text-gray-600" />
                         <p className="font-semibold">
@@ -380,6 +381,19 @@ export default function ManageTeams() {
                             </div>
                           ) : (
                             <span className="text-gray-300 text-sm">{team.coach_name || '—'}</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6">
+                          {team.season_teams && team.season_teams.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5 max-w-xs">
+                              {team.season_teams.map(st => (
+                                <span key={st.season.id} className="px-2 py-1 bg-navy-light rounded-md text-[11px] font-medium text-gray-300 border border-navy-light/50 whitespace-nowrap">
+                                  {st.season.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-xs">—</span>
                           )}
                         </td>
                         <td className="py-4 px-6 text-center">
@@ -426,7 +440,7 @@ export default function ManageTeams() {
                       {/* Expanded Roster */}
                       {expandedTeamId === team.id && (
                         <tr className="border-b border-navy-light">
-                          <td colSpan={5} className="p-0">
+                          <td colSpan={6} className="p-0">
                             <div className="bg-navy-dark/60 border-l-4 border-blue-600 px-6 py-5 animate-fade-in">
                               <div className="flex items-center justify-between mb-4">
                                 <h4 className="font-bold text-white flex items-center gap-2">
