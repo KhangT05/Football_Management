@@ -19,7 +19,6 @@ let PlayerController = class PlayerController extends Controller {
         super();
         this.service = service;
     }
-    // ─── Player CRUD ──────────────────────────────────────────────────────────
     async findById(id) {
         return this.service.getPlayerByIdOrFail(id);
     }
