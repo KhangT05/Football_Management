@@ -1,5 +1,6 @@
 import { createAppError } from "../common/app.error.js";
 import { Queryable } from "../libs/queryable.js";
+import { storageService } from "./storage.service.js";
 /**
  * Upload logo → lưu url + publicId vào DB trong cùng 1 flow.
  *
@@ -66,12 +67,24 @@ export class TournamentService {
             data: { ...data, user_id: userId }
         });
     }
-    async update(id, data) {
-        await this.findByIdOrFail(id);
-        return this.prisma.tournament.update({
+    // tournament.service.ts
+    async updateWithLogo(id, data, logoFile) {
+        const existing = logoFile ? await this.findByIdOrFail(id) : null;
+        let logo;
+        if (logoFile) {
+            const result = await storageService.upload({ namespace: "tournaments", kind: "logo", file: logoFile });
+            logo = result.url;
+        }
+        const updated = await this.prisma.tournament.update({
             where: { id },
-            data,
+            data: { ...data, ...(logo !== undefined && { logo }) },
         });
+        if (existing?.logo && logo) {
+            storageService.replaceAsset(existing.logo, logo);
+            throw createAppError('NOT_IMPLEMENTED', `Logo replacement is not fully implemented yet. 
+                The old logo may remain on the storage.`);
+        }
+        return updated;
     }
     async softDelete(id) {
         await this.findByIdOrFail(id);

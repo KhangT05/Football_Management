@@ -22,7 +22,6 @@ import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
 
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("players")
 @Tags("Players")
 export class PlayerController extends Controller {
@@ -35,6 +34,7 @@ export class PlayerController extends Controller {
     return this.service.getPlayerByIdOrFail(id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(@Body() body: CreatePlayerDto): Promise<PlayerDto> {
@@ -42,6 +42,7 @@ export class PlayerController extends Controller {
     return this.service.createPlayer(body);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -50,6 +51,7 @@ export class PlayerController extends Controller {
     return this.service.updatePlayer(id, body);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -95,6 +97,7 @@ export class PlayerController extends Controller {
     return tp;
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Post("{team_id}/team-players")
   @SuccessResponse(201, "Created")
   async addPlayerToTeam(
@@ -106,6 +109,7 @@ export class PlayerController extends Controller {
     return this.service.addPlayerToTeam(team_id, body, req.user.user_id);
   }
 
+  @Security("jwt", ["organizing"])
   @Patch("{team_id}/team-players/{id}")
   async updateTeamPlayer(
     @Path() team_id: number,
@@ -120,6 +124,7 @@ export class PlayerController extends Controller {
     return this.service.updateTeamPlayer(id, body);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Post("{team_id}/team-players/{id}/approve")
   async approveTeamPlayer(
     @Path() team_id: number,
@@ -133,6 +138,7 @@ export class PlayerController extends Controller {
     return this.service.approveTeamPlayer(id);
   }
 
+  @Security("jwt", ["organizing"])
   @Post("{team_id}/team-players/{id}/reject")
   async rejectTeamPlayer(
     @Path() team_id: number,
@@ -146,6 +152,7 @@ export class PlayerController extends Controller {
     return this.service.rejectTeamPlayer(id);
   }
 
+  @Security("jwt", ["admin", "organizing"])
   @Delete("{team_id}/team-players")
   async bulkDeleteTeamPlayers(
     @Path() team_id: number,

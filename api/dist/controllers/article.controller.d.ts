@@ -20,7 +20,6 @@ export declare class ArticleController extends Controller {
     update(id: number, body: articleSchema.UpdateArticleDto): Promise<SafeArticle>;
     updateStatus(id: number, body: articleSchema.UpdateArticleStatusDto): Promise<SafeArticle>;
     softDelete(id: number): Promise<void>;
-    /** Distinct tags toàn hệ thống — dùng cho autocomplete */
     listTags(): Promise<string[]>;
     /** Add 1 tag vào article */
     addTag(article_id: number, body: articleSchema.AddTagDto): Promise<void>;

@@ -19,7 +19,6 @@ let ArticleController = class ArticleController extends Controller {
         super();
         this.service = service;
     }
-    // ─── Article CRUD ──────────────────────────────────────────────────────────
     async findAll(page = 1, per_page = 20, q, sort, direction, status, season_id, match_id, team_id, user_id, tag) {
         return this.service.findAll({
             page,
@@ -55,8 +54,6 @@ let ArticleController = class ArticleController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
-    // ─── Tags ──────────────────────────────────────────────────────────────────
-    /** Distinct tags toàn hệ thống — dùng cho autocomplete */
     async listTags() {
         return this.service.listDistinctTags();
     }
@@ -75,7 +72,6 @@ let ArticleController = class ArticleController extends Controller {
         this.setStatus(204);
         return this.service.removeTag(article_id, tag);
     }
-    // ─── Media ─────────────────────────────────────────────────────────────────
     async getMedia(article_id) {
         return this.service.getMedia(article_id);
     }
@@ -95,7 +91,6 @@ let ArticleController = class ArticleController extends Controller {
     }
 };
 __decorate([
-    Security("jwt", ["admin", "organizing", "guest"]),
     Get("/"),
     __param(0, Query()),
     __param(1, Query()),
@@ -113,7 +108,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "findAll", null);
 __decorate([
-    Security("jwt", ["admin", "organizing", "guest"]),
     Get("{id}"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -121,7 +115,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "findById", null);
 __decorate([
-    Security("jwt", ["admin", "organizing", "guest"]),
     Get("slug/{slug}"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -166,7 +159,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "softDelete", null);
 __decorate([
-    Security("jwt", ["admin", "organizing", "guest"]),
     Get("tags"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -203,7 +195,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "removeTag", null);
 __decorate([
-    Security("jwt", ["admin", "organizing", "guest"]),
     Get("{article_id}/media"),
     __param(0, Path()),
     __metadata("design:type", Function),

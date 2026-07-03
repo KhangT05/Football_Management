@@ -3,6 +3,7 @@ import { CreateTournamentDto, UpdateTournamentDto } from "../dtos/tournament.sch
 import { PrismaClient, Tournament } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
+import { storageService } from "./storage.service.js";
 
 /**
  * Upload logo → lưu url + publicId vào DB trong cùng 1 flow.
@@ -77,12 +78,32 @@ export class TournamentService {
         });
     }
 
-    async update(id: number, data: UpdateTournamentDto): Promise<Tournament> {
-        await this.findByIdOrFail(id);
-        return this.prisma.tournament.update({
+    // tournament.service.ts
+    async updateWithLogo(
+        id: number,
+        data: UpdateTournamentDto,
+        logoFile?: Express.Multer.File
+    ): Promise<Tournament> {
+        const existing = logoFile ? await this.findByIdOrFail(id) : null;
+
+        let logo: string | undefined;
+        if (logoFile) {
+            const result = await storageService.upload({ namespace: "tournaments", kind: "logo", file: logoFile });
+            logo = result.url;
+        }
+
+        const updated = await this.prisma.tournament.update({
             where: { id },
-            data,
+            data: { ...data, ...(logo !== undefined && { logo }) },
         });
+
+        if (existing?.logo && logo) {
+            storageService.replaceAsset(existing.logo, logo)
+            throw createAppError('NOT_IMPLEMENTED', `Logo replacement is not fully implemented yet. 
+                The old logo may remain on the storage.`);
+        }
+
+        return updated;
     }
 
     async softDelete(id: number): Promise<void> {

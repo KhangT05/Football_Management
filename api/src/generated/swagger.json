@@ -913,26 +913,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"infer_typeofupdateTournamentSchema_": {
-				"properties": {
-					"is_active": {
-						"type": "boolean"
-					},
-					"logo": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					}
-				},
-				"type": "object"
-			},
-			"UpdateTournamentDto": {
-				"$ref": "#/components/schemas/infer_typeofupdateTournamentSchema_"
-			},
 			"DefaultSelection__36_TeamPayload_": {
 				"properties": {
 					"coach_name": {
@@ -5752,8 +5732,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -5830,8 +5809,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -5871,8 +5849,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -5910,8 +5887,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -5952,8 +5928,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -5993,8 +5968,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6350,16 +6324,7 @@
 				"tags": [
 					"Tournaments"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "query",
@@ -6432,9 +6397,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6486,16 +6449,7 @@
 				"tags": [
 					"Tournaments"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -6529,9 +6483,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6547,11 +6499,23 @@
 					}
 				],
 				"requestBody": {
-					"required": true,
+					"required": false,
 					"content": {
-						"application/json": {
+						"multipart/form-data": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateTournamentDto"
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"logo": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
 							}
 						}
 					}
@@ -6571,9 +6535,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6612,9 +6574,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6649,16 +6609,7 @@
 				"tags": [
 					"Teams"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "query",
@@ -6731,9 +6682,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6786,16 +6735,7 @@
 				"tags": [
 					"Teams"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -6829,9 +6769,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6886,9 +6824,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -6928,16 +6864,7 @@
 				"tags": [
 					"Teams"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -7253,8 +7180,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -7370,8 +7296,7 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9161,16 +9086,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -9204,9 +9120,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9246,9 +9160,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9287,9 +9199,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9324,16 +9234,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -9431,9 +9332,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9497,9 +9396,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9544,16 +9441,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -9595,10 +9483,7 @@
 				"security": [
 					{
 						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9656,9 +9541,7 @@
 					{
 						"jwt": [
 							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9705,10 +9588,7 @@
 				"security": [
 					{
 						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
+							"organizing"
 						]
 					}
 				],
@@ -9745,16 +9625,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -9779,16 +9650,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "query",
@@ -9821,16 +9683,7 @@
 				"tags": [
 					"Players"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"user",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -12275,15 +12128,7 @@
 				"tags": [
 					"Articles"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "query",
@@ -12443,15 +12288,7 @@
 				"tags": [
 					"Articles"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -12559,15 +12396,7 @@
 				"tags": [
 					"Articles"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
@@ -12647,19 +12476,10 @@
 						}
 					}
 				},
-				"description": "Distinct tags toàn hệ thống — dùng cho autocomplete",
 				"tags": [
 					"Articles"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": []
 			}
 		},
@@ -12827,15 +12647,7 @@
 				"tags": [
 					"Articles"
 				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"guest"
-						]
-					}
-				],
+				"security": [],
 				"parameters": [
 					{
 						"in": "path",
