@@ -77,17 +77,23 @@ export default function ContentSection() {
 
                     // -- Process Matches --
                     const rawMatches = extractItems(matchRes);
-                    const mappedMatches = rawMatches.map(m => ({
-                        id: m.id,
-                        status: m.status === 'ongoing' ? 'LIVE' : (m.status === 'completed' ? 'FT' : 'UPCOMING'),
-                        time: formatMatchTime(m.scheduled_at),
-                        teamA: teamMap[m.home_team_id] || `Đội ${m.home_team_id}`,
-                        teamB: teamMap[m.away_team_id] || `Đội ${m.away_team_id}`,
-                        scoreA: m.home_score ?? 0,
-                        scoreB: m.away_score ?? 0,
-                        isUpcoming: m.status === 'scheduled',
-                        scheduled_at: new Date(m.scheduled_at || 0).getTime()
-                    }));
+                    const mappedMatches = rawMatches.map(m => {
+                        let displayStatus = 'UPCOMING';
+                        if (m.status === 'ongoing') displayStatus = 'LIVE';
+                        else if (['finished', 'abandoned', 'forfeited', 'cancelled', 'completed'].includes(m.status)) displayStatus = 'FT';
+                        
+                        return {
+                            id: m.id,
+                            status: displayStatus,
+                            time: formatMatchTime(m.scheduled_at),
+                            teamA: teamMap[m.home_team_id] || `Đội ${m.home_team_id}`,
+                            teamB: teamMap[m.away_team_id] || `Đội ${m.away_team_id}`,
+                            scoreA: m.home_score ?? 0,
+                            scoreB: m.away_score ?? 0,
+                            isUpcoming: displayStatus === 'UPCOMING',
+                            scheduled_at: new Date(m.scheduled_at || 0).getTime()
+                        };
+                    });
 
                     const live = mappedMatches
                         .filter(m => m.status === 'LIVE')

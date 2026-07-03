@@ -2,6 +2,36 @@ import { useState, useRef } from 'react';
 import { X, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { uploadApi } from '../../api';
 
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+  ClassicEditor, Bold, Italic, Essentials, Heading, Link, Paragraph, List,
+  Image, ImageUpload, ImageToolbar, ImageCaption, ImageStyle, ImageResize,
+  BlockQuote, Indent, IndentBlock
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
+import '../../assets/ckeditor-dark.css';
+import { MyCustomUploadAdapterPlugin } from '../../utils/UploadAdapter';
+
+const EDITOR_CONFIG = {
+  licenseKey: 'GPL',
+  plugins: [
+    Essentials, Bold, Italic, Heading, Link, Paragraph, List,
+    Image, ImageUpload, ImageToolbar, ImageCaption, ImageStyle, ImageResize,
+    BlockQuote, Indent, IndentBlock, MyCustomUploadAdapterPlugin
+  ],
+  toolbar: [
+    'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|',
+    'link', 'uploadImage', 'blockQuote', '|',
+    'bulletedList', 'numberedList', 'outdent', 'indent'
+  ],
+  image: {
+    toolbar: [
+      'imageTextAlternative', 'toggleImageCaption', 'imageStyle:inline',
+      'imageStyle:block', 'imageStyle:side'
+    ]
+  }
+};
+
 export default function ArticleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState(initialData);
   const [formError, setFormError] = useState('');
@@ -176,16 +206,19 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
             {/* Content (HTML) */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
-                Nội dung (HTML) <span className="text-red-400">*</span>
+                Nội dung bài viết <span className="text-red-400">*</span>
               </label>
-              <textarea
-                name="content"
-                value={form.content}
-                onChange={handleChange}
-                placeholder="Nhập nội dung bài viết. Bạn có thể sử dụng các thẻ HTML..."
-                rows="15"
-                className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors font-mono text-sm resize-y custom-scrollbar"
-              />
+              <div className="prose prose-invert max-w-none">
+                <CKEditor
+                  editor={ClassicEditor}
+                  config={EDITOR_CONFIG}
+                  data={form.content}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    setForm(prev => ({ ...prev, content: data }));
+                  }}
+                />
+              </div>
             </div>
           </form>
         </div>

@@ -15,9 +15,9 @@ const PAGE_NAMES = {
   '/quan-ly-giai-dau/doi-bong':     { label: 'Quản lý Đội bóng', sub: 'Danh sách & đội hình' },
   '/quan-ly-giai-dau/cau-thu':      { label: 'Quản lý Người dùng', sub: 'Tài khoản hệ thống' },
   '/quan-ly-giai-dau/dang-ky-giai': { label: 'Đăng ký Giải',     sub: 'Quản lý đội tham gia mùa giải' },
-  '/quan-ly-giai-dau/tran-dau':     { label: 'Trận đấu',          sub: 'Lịch thi đấu' },
+  '/quan-ly-giai-dau/tran-dau':     { label: 'Quản lý Trận đấu',          sub: 'Lịch thi đấu' },
   '/quan-ly-giai-dau/ket-qua':      { label: 'Cập nhật Kết quả', sub: 'Nhập tỉ số trận đấu' },
-  '/quan-ly-giai-dau/cai-dat':      { label: 'Cài đặt Giải đấu',  sub: 'Tournament & Seasons' },
+  '/quan-ly-giai-dau/giai-dau&mua-giai':      { label: 'Quản lý Giải đấu & Mùa giải',  sub: 'Tournament & Seasons' },
 };
 
 export default function AdminLayout({ children }) {

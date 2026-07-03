@@ -37,7 +37,7 @@ export default function ManageTeams() {
     update: updateTeam,
     softDelete: deleteTeam,
     fetchPlayers, getPlayersFromCache, playersLoading,
-    addNewPlayerToTeam, removePlayers, } = useTeamStore(useShallow(state => ({ teams: state.teams, meta: state.meta, isLoading: state.isLoading, error: state.error, fetchAll: state.fetchAll, create: state.create, update: state.update, softDelete: state.softDelete, fetchPlayers: state.fetchPlayers, getPlayersFromCache: state.getPlayersFromCache, playersLoading: state.playersLoading, addNewPlayerToTeam: state.addNewPlayerToTeam, removePlayers: state.removePlayers })));
+    addNewPlayerToTeam, updatePlayerInTeam, removePlayers, } = useTeamStore(useShallow(state => ({ teams: state.teams, meta: state.meta, isLoading: state.isLoading, error: state.error, fetchAll: state.fetchAll, create: state.create, update: state.update, softDelete: state.softDelete, fetchPlayers: state.fetchPlayers, getPlayersFromCache: state.getPlayersFromCache, playersLoading: state.playersLoading, addNewPlayerToTeam: state.addNewPlayerToTeam, updatePlayerInTeam: state.updatePlayerInTeam, removePlayers: state.removePlayers })));
 
   // ── Pagination & Search ────────────────────────────────────
   const { teamFilters, setTeamFilters } = useAdminUIStore(useShallow(state => ({
@@ -170,17 +170,45 @@ export default function ManageTeams() {
     playerCrud.openAdd();
   };
 
+  const openEditPlayer = (teamId, player) => {
+    setPlayerTargetTeamId(teamId);
+    playerCrud.openEdit(player, {
+      name: player.player?.user?.name ?? player.player?.name ?? player.name ?? '',
+      email: player.player?.user?.email ?? '',
+      number: player.jersey_number ?? player.number,
+      position: player.position || 'forward',
+      role: player.role || 'player',
+      date_of_birth: player.player?.date_of_birth ?? null,
+      height: player.player?.height ?? '',
+      weight: player.player?.weight ?? '',
+      nationality: player.player?.nationality ?? '',
+    });
+  };
+
   const handleSavePlayer = () => {
     if (!playerCrud.form.name.trim()) { playerCrud.setFormError('Vui lòng nhập tên cầu thủ.'); return; }
     if (!playerCrud.form.number || isNaN(playerCrud.form.number)) { playerCrud.setFormError('Vui lòng nhập số áo hợp lệ.'); return; }
+    
+    const payload = {
+      name: playerCrud.form.name.trim(),
+      email: playerCrud.form.email?.trim() || undefined,
+      jersey_number: parseInt(playerCrud.form.number),
+      position: playerCrud.form.position,
+      role: playerCrud.form.role,
+      date_of_birth: playerCrud.form.date_of_birth || undefined,
+      height: playerCrud.form.height ? parseFloat(playerCrud.form.height) : undefined,
+      weight: playerCrud.form.weight ? parseFloat(playerCrud.form.weight) : undefined,
+      nationality: playerCrud.form.nationality?.trim() || undefined,
+    };
+
     playerCrud.save(async () => {
-      // Dùng addNewPlayerToTeam từ teamStore (2 bước: tạo Player + addToTeam)
-      await addNewPlayerToTeam(playerTargetTeamId, {
-        name: playerCrud.form.name.trim(),
-        jersey_number: parseInt(playerCrud.form.number),
-        position: playerCrud.form.position,
-      });
-      toast.success(`Đã thêm cầu thủ "${playerCrud.form.name.trim()}" vào đội!`);
+      if (playerCrud.modal === 'add') {
+        await addNewPlayerToTeam(playerTargetTeamId, payload);
+        toast.success(`Đã thêm cầu thủ "${payload.name}" vào đội!`);
+      } else {
+        await updatePlayerInTeam(playerTargetTeamId, playerCrud.editing.id, playerCrud.editing.player_id, playerCrud.editing.player?.user_id, payload);
+        toast.success(`Đã cập nhật cầu thủ "${payload.name}".`);
+      }
     });
   };
 
@@ -344,7 +372,16 @@ export default function ManageTeams() {
                           <p className="font-bold text-white">{team.name}</p>
                           <p className="text-xs text-gray-500 mt-0.5">#{team.id}</p>
                         </td>
-                        <td className="py-4 px-6 text-gray-300 text-sm">{team.coach_name || '—'}</td>
+                        <td className="py-4 px-6">
+                          {team.user?.name ? (
+                            <div>
+                              <span className="font-bold text-white">{team.user.name}</span>
+                              <span className="block text-xs text-gray-500 mt-0.5">Người đăng ký (Đội trưởng)</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-300 text-sm">{team.coach_name || '—'}</span>
+                          )}
+                        </td>
                         <td className="py-4 px-6 text-center">
                           {team.is_active ? (
                             <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
@@ -416,14 +453,17 @@ export default function ManageTeams() {
                                   Chưa có cầu thủ nào. Nhấn "Thêm cầu thủ" để bắt đầu.
                                 </div>
                               ) : (
-                                <div className="bg-navy border border-navy-light rounded-xl overflow-hidden">
-                                  <table className="w-full text-sm text-left">
+                                <div className="bg-navy border border-navy-light rounded-xl overflow-hidden overflow-x-auto">
+                                  <table className="w-full text-sm text-left whitespace-nowrap min-w-[900px]">
                                     <thead>
                                       <tr className="bg-navy-dark text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
                                         <th className="py-3 px-4 w-16 text-center">Số</th>
                                         <th className="py-3 px-4">Cầu thủ</th>
-                                        <th className="py-3 px-4">Vị trí</th>
-                                        <th className="py-3 px-4">Vai trò</th>
+                                        <th className="py-3 px-4 text-center">Ngày sinh</th>
+                                        <th className="py-3 px-4 text-center">Chiều cao / Cân nặng</th>
+                                        <th className="py-3 px-4 text-center">Quốc tịch</th>
+                                        <th className="py-3 px-4 text-center">Vị trí</th>
+                                        <th className="py-3 px-4 text-center">Vai trò</th>
                                         <th className="py-3 px-4 text-right">Thao tác</th>
                                       </tr>
                                     </thead>
@@ -436,25 +476,51 @@ export default function ManageTeams() {
                                               <div className="w-7 h-7 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center text-xs font-bold text-gray-300">
                                                 {(player.player?.name ?? player.name ?? '?')[0]?.toUpperCase()}
                                               </div>
-                                              <span className="font-semibold text-white">{player.player?.name ?? player.name ?? '—'}</span>
+                                              <div>
+                                                <span className="font-semibold text-white block">{player.player?.name ?? player.name ?? '—'}</span>
+                                                {player.player?.user?.email && <span className="text-xs text-gray-500">{player.player.user.email}</span>}
+                                              </div>
                                             </div>
                                           </td>
-                                          <td className="py-3 px-4">
+                                          <td className="py-3 px-4 text-center text-gray-300">
+                                            {player.player?.date_of_birth ? new Date(player.player.date_of_birth).toLocaleDateString('vi-VN') : '—'}
+                                          </td>
+                                          <td className="py-3 px-4 text-center text-gray-300 text-xs">
+                                            {player.player?.height || player.player?.weight ? (
+                                              <>
+                                                {player.player?.height ? `${player.player.height}cm` : '—'} / {player.player?.weight ? `${player.player.weight}kg` : '—'}
+                                              </>
+                                            ) : '—'}
+                                          </td>
+                                          <td className="py-3 px-4 text-center text-gray-300">
+                                            {player.player?.nationality || '—'}
+                                          </td>
+                                          <td className="py-3 px-4 text-center">
                                             <span className="px-2 py-0.5 text-xs font-bold rounded bg-navy-dark text-gray-300 border border-navy-light">
-                                              {player.position ?? '—'}
+                                              {player.position === 'goalkeeper' ? 'Thủ môn' : 
+                                               player.position === 'defender' ? 'Hậu vệ' : 
+                                               player.position === 'midfielder' ? 'Tiền vệ' : 
+                                               player.position === 'forward' ? 'Tiền đạo' : player.position ?? '—'}
                                             </span>
                                           </td>
-                                          <td className="py-3 px-4">
-                                            <span className={`px-2 py-0.5 text-xs font-bold rounded border ${
+                                          <td className="py-3 px-4 text-center">
+                                            <span className={`px-2 py-0.5 text-xs font-bold rounded border inline-block ${
                                               player.role === 'captain'
                                                 ? 'bg-amber-400/10 text-amber-400 border-amber-400/30'
                                                 : 'bg-navy-dark text-gray-400 border-navy-light'
                                             }`}>
-                                              {player.role === 'captain' ? '⭐ Đội trưởng' : player.role === 'vice_captain' ? 'Phó' : 'TV'}
+                                              {player.role === 'captain' ? '⭐ Đội trưởng' : player.role === 'vice_captain' ? 'Phó' : 'Thành viên'}
                                             </span>
                                           </td>
                                           <td className="py-3 px-4 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <button
+                                                onClick={() => openEditPlayer(team.id, player)}
+                                                className="p-1.5 rounded text-blue-400 hover:bg-blue-500/10 transition-colors"
+                                                title="Sửa thông tin"
+                                              >
+                                                <Edit className="w-3.5 h-3.5" />
+                                              </button>
                                               <button
                                                 onClick={() => setDeletePlayerState({ player, teamId: team.id })}
                                                 className="p-1.5 rounded text-red-400 hover:bg-red-500/10 transition-colors"

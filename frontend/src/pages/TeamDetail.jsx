@@ -19,6 +19,16 @@ const POSITION_COLORS = {
   FW:  'bg-red-400/10 text-red-400 border-red-400/30',
 };
 
+const normalizePosition = (posStr) => {
+  if (!posStr) return 'OTHER';
+  let p = posStr.toUpperCase().trim();
+  if (p === 'GOALKEEPER' || p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
+  if (p === 'DEFENDER' || p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
+  if (p === 'MIDFIELDER' || p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
+  if (p === 'FORWARD' || p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
+  return p;
+};
+
 // ── StatBox ───────────────────────────────────────────────────
 function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
   return (
@@ -33,13 +43,15 @@ function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
 // ── Player Card ───────────────────────────────────────────────
 function PlayerCard({ tp, idx }) {
   const player = tp.player ?? tp;
-  const name = tp.player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
+  const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
   const initial = getInitials(name);
   const colorIdx = (tp.player_id ?? idx) % AVATAR_COLORS.length;
-  const pos = tp.position ?? player.position;
+  const rawPos = tp.position ?? player.position;
+  const pos = normalizePosition(rawPos);
   const jerseyNum = tp.jersey_number ?? '?';
   const isCaptain = tp.role === 'captain';
   const isVice = tp.role === 'vice_captain';
+  const avatarUrl = player?.avatar ?? player?.user?.avatar;
 
   return (
     <div
@@ -48,8 +60,12 @@ function PlayerCard({ tp, idx }) {
     >
       <div className="flex items-center gap-3">
         {/* Avatar */}
-        <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative`}>
-          {initial}
+        <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative overflow-hidden`}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            initial
+          )}
           {isCaptain && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow">
               <Crown className="w-2.5 h-2.5 text-yellow-900" />
@@ -121,18 +137,7 @@ export default function TeamDetail() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = players.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // Normalize position helper
-  const normalizePosition = (posStr) => {
-    if (!posStr) return 'OTHER';
-    let p = posStr.toUpperCase().trim();
-    if (p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
-    if (p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
-    if (p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
-    if (p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
-    return p;
-  };
-
-  // Calculate total stats by position across ALL players
+  // Group paginated players by position for roster display
   const totalByPosition = players.reduce((acc, tp) => {
     const player = tp.player ?? tp;
     const rawPos = tp.position ?? player.position;

@@ -144,10 +144,6 @@ export default function BannerSection() {
                     </h2>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto">
-                        <Link to="/quan-ly-giai-dau/cai-dat" className="px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-2 sm:gap-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-center transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-1 text-sm sm:text-base">
-                            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                            Tạo giải đấu
-                        </Link>
                         <button onClick={() => setShowSearchModal(true)} className="px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-2 sm:gap-3 bg-navy-dark border border-navy-light hover:bg-navy text-white font-bold rounded-2xl text-center transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base">
                             <Search className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                             Tìm giải đấu

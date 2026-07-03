@@ -227,7 +227,12 @@ export default function SeasonsSection() {
       fetchSeasons();
       invalidateSeasonStore();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể thay đổi trạng thái.');
+      const msg = err?.response?.data?.message || '';
+      if (msg.includes('registration_deadline has already passed')) {
+         toast.error('Không thể mở đăng ký: Hạn đăng ký đã qua! Vui lòng cập nhật lại hạn đăng ký.');
+      } else {
+         toast.error(msg || 'Không thể thay đổi trạng thái.');
+      }
     } finally {
       setStatusChanging(false);
     }
@@ -290,6 +295,9 @@ export default function SeasonsSection() {
                       {item.end_date ? new Date(item.end_date).toLocaleDateString('vi-VN') : '—'}
                       {' · '}Max {item.max_teams} đội
                     </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Hạn ĐK: {item.registration_deadline ? new Date(item.registration_deadline).toLocaleDateString('vi-VN') : 'Chưa có'}
+                    </p>
                   </div>
                 </div>
 
@@ -301,20 +309,26 @@ export default function SeasonsSection() {
                   </span>
 
                   {/* Status Transition Buttons */}
-                  {nextStatuses.map(target => (
+                  {nextStatuses.map(target => {
+                    const isDeadlinePassed = target === 'registration_open' && (!item.registration_deadline || new Date(item.registration_deadline) <= new Date());
+                    return (
                     <button
                       key={target}
-                      onClick={() => openStatusModal(item, target)}
-                      title={`Chuyển sang: ${statusTransitionLabel[target]}`}
-                      className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${target === 'cancelled'
-                        ? 'text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50'
-                        : 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50'
+                      onClick={() => !isDeadlinePassed && openStatusModal(item, target)}
+                      disabled={isDeadlinePassed}
+                      title={isDeadlinePassed ? 'Hạn đăng ký đã qua hoặc chưa được thiết lập. Hãy cập nhật lại!' : `Chuyển sang: ${statusTransitionLabel[target]}`}
+                      className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${
+                        isDeadlinePassed ? 'opacity-50 cursor-not-allowed bg-gray-500/10 text-gray-500 border-gray-500/30' :
+                        target === 'cancelled'
+                          ? 'text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50'
+                          : 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50'
                         }`}
                     >
                       <ArrowRight className="w-3 h-3" />
                       {statusTransitionLabel[target]}
                     </button>
-                  ))}
+                    );
+                  })}
 
                   {/* Edit — chỉ upcoming */}
                   {editable ? (

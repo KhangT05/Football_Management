@@ -7,7 +7,7 @@ export const navItems = [
   { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
   { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Manage Articles', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
-  { name: 'Manage Tournaments', path: '/quan-ly-giai-dau/giai-dau', icon: Trophy },
+  { name: 'Manage Tournaments', path: '/quan-ly-giai-dau/giai-dau&mua-giai', icon: Trophy },
   { name: 'Venue Rules Settings', path: '/quan-ly-giai-dau/san-bong-luat', icon: Settings },
 ];
 

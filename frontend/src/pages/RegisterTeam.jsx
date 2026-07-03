@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { UploadCloud, ShieldCheck, CheckCircle2, Trophy, Loader2, ArrowRight, X, Users, Plus, Trash2, Info } from 'lucide-react';
+import { UploadCloud, ShieldCheck, CheckCircle2, Trophy, Loader2, ArrowRight, X, Users, Plus, Trash2, Info, FileSpreadsheet, Upload } from 'lucide-react';
 import useToastStore from '../store/toastStore';
 import { teamApi } from '../api/teamApi';
 import { seasonTeamApi } from '../api/seasonTeamApi';
+import { playerApi } from '../api/playerApi';
+import { userApi } from '../api/userApi';
 import useSeasonStore from '../store/seasonStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,6 +32,11 @@ export default function RegisterTeam() {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
+
+  // ── Phương thức nhập cầu thủ ──
+  const [playerInputMode, setPlayerInputMode] = useState('manual'); // 'manual' or 'excel'
+  const [excelFile, setExcelFile] = useState(null);
+  const [excelFileName, setExcelFileName] = useState('');
 
   // ── Danh sách cầu thủ Draft ──
   const [players, setPlayers] = useState([
@@ -80,6 +87,30 @@ export default function RegisterTeam() {
     setLogoPreview(null);
   };
 
+  const handleExcelChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error('Vui lòng chọn file Excel hợp lệ (.xlsx, .xls)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước file tối đa là 5MB');
+      return;
+    }
+    setExcelFile(file);
+    setExcelFileName(file.name);
+  };
+
+  const removeExcelFile = () => {
+    setExcelFile(null);
+    setExcelFileName('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!teamInfo.name.trim()) {
@@ -99,7 +130,69 @@ export default function RegisterTeam() {
         payload.logo = logoFile;
       }
 
-      await teamApi.registerTeam(payload);
+      const teamRes = await teamApi.registerTeam(payload);
+      const newTeamId = teamRes?.data?.id || teamRes?.id || (Array.isArray(teamRes?.data?.data) ? teamRes?.data?.data[0]?.id : null);
+
+      if (newTeamId) {
+        // Xử lý thêm cầu thủ
+        if (playerInputMode === 'excel' && excelFile) {
+          try {
+            const formData = new FormData();
+            formData.append('file', excelFile);
+            await playerApi.importTeamPlayers(newTeamId, formData);
+          } catch (err) {
+            console.error('Lỗi khi import excel:', err);
+            toast.error(err?.response?.data?.message || 'Có lỗi khi import file Excel.');
+          }
+        } else if (playerInputMode === 'manual') {
+          const validPlayers = players.filter(p => p.email.trim() || p.name.trim());
+          for (const p of validPlayers) {
+            try {
+              let userId = null;
+              const emailToUse = p.email?.trim() || `player_${Date.now()}_${Math.random().toString(36).substr(2,5)}@temp.local`;
+              
+              if (p.email?.trim()) {
+                try {
+                  const searchRes = await userApi.getAll({ q: p.email.trim() });
+                  const payload = typeof searchRes?.status === 'boolean' ? searchRes.data : searchRes;
+                  const users = Array.isArray(payload?.data) ? payload.data : [];
+                  const exactUser = users.find(u => u.email === p.email.trim());
+                  if (exactUser) userId = exactUser.id;
+                } catch (e) { console.error('Lỗi tìm user:', e); }
+              }
+
+              if (!userId) {
+                const createRes = await userApi.create({
+                  name: p.name || 'Unknown',
+                  email: emailToUse,
+                  password: 'Password123!',
+                  phone: '0000000000'
+                });
+                const userPayload = typeof createRes?.status === 'boolean' ? createRes.data : createRes;
+                userId = userPayload.id;
+              }
+
+              const playerRes = await playerApi.create({
+                user_id: userId,
+                date_of_birth: "2000-01-01",
+                position: p.position || 'forward',
+              });
+              const pId = playerRes?.data?.id || playerRes?.id;
+              
+              if (pId) {
+                await playerApi.addToTeam(newTeamId, {
+                  player_id: pId,
+                  jersey_number: parseInt(p.number) || 0,
+                  position: p.position || 'forward',
+                  role: 'player'
+                });
+              }
+            } catch (e) {
+              console.error('Lỗi thêm cầu thủ manual:', e);
+            }
+          }
+        }
+      }
 
       // 2. Nếu có chọn mùa giải thì đăng ký tham gia
       if (selectedSeasonId) {
@@ -109,14 +202,18 @@ export default function RegisterTeam() {
       setIsSuccess(true);
       
       // Kiểm tra xem có nhập cầu thủ không
-      const hasPlayers = players.some(p => p.email.trim() || p.name.trim());
-      if (hasPlayers) {
-        toast.success('Đội bóng đã tạo thành công! Danh sách cầu thủ Draft đang chờ Backend hỗ trợ Import.', 6000);
+      if (playerInputMode === 'excel' && excelFile) {
+        toast.success('Đội bóng đã tạo và import danh sách cầu thủ thành công!', 6000);
       } else {
-        if (selectedSeasonId) {
-          toast.success('Đã tạo đội và nộp đơn đăng ký giải đấu thành công!', 4000);
+        const hasPlayers = players.some(p => p.email.trim() || p.name.trim());
+        if (hasPlayers) {
+          toast.success('Đội bóng và danh sách cầu thủ đã được tạo thành công!', 6000);
         } else {
-          toast.success('Tạo đội bóng thành công!', 4000);
+          if (selectedSeasonId) {
+            toast.success('Đã tạo đội và nộp đơn đăng ký giải đấu thành công!', 4000);
+          } else {
+            toast.success('Tạo đội bóng thành công!', 4000);
+          }
         }
       }
       
@@ -328,23 +425,104 @@ export default function RegisterTeam() {
                   <p className="text-gray-400 text-sm mt-1">Lưu trữ danh sách cầu thủ ban đầu (Tùy chọn)</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={addPlayer}
-                className="flex items-center justify-center gap-2 bg-navy-dark border border-navy-light hover:border-emerald-500 text-gray-300 hover:text-emerald-400 px-5 py-3 rounded-xl transition-all font-medium text-sm"
-              >
-                <Plus className="w-4 h-4" /> Thêm Cầu Thủ
-              </button>
-            </div>
-
-            <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
-              <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-200/80 leading-relaxed">
-                Để thêm cầu thủ vào hệ thống, cầu thủ cần có <strong>Tài khoản đã đăng ký</strong>. Form dưới đây giúp bạn lập danh sách nháp. Khi hệ thống Backend nâng cấp tính năng tự động gửi lời mời qua Email, danh sách này sẽ được tự động xử lý. Bạn cũng có thể bỏ trống và vào trang Quản Lý Đội để Import trực tiếp từ file Excel sau.
+              
+              <div className="flex bg-navy-dark border border-navy-light rounded-xl p-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPlayerInputMode('manual')}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                    playerInputMode === 'manual' 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Nhập Thủ Công
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPlayerInputMode('excel')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                    playerInputMode === 'excel' 
+                      ? 'bg-emerald-600 text-white shadow-md' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4" /> Import Excel
+                </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto custom-scrollbar">
+            {playerInputMode === 'excel' ? (
+              <div className="animate-fade-in">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
+                  <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="text-sm text-emerald-200/80 leading-relaxed">
+                    Tải lên file Excel (.xlsx, .xls) chứa danh sách cầu thủ của bạn. Hệ thống sẽ tự động đọc và gửi lời mời đến email của từng cầu thủ để họ xác nhận tham gia.
+                    <br/>
+                    <a href="#" className="text-emerald-400 hover:text-emerald-300 underline font-medium mt-2 inline-block">Tải file mẫu tại đây</a>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-navy-light rounded-3xl bg-navy-dark/50 hover:border-emerald-500/50 transition-colors relative group">
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleExcelChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  
+                  {excelFile ? (
+                    <div className="text-center relative z-20 pointer-events-none">
+                      <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+                        <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-1">{excelFileName}</h3>
+                      <p className="text-emerald-400 text-sm font-medium">Đã tải lên thành công • {(excelFile.size / 1024).toFixed(1)} KB</p>
+                      
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          removeExcelFile();
+                        }}
+                        className="mt-6 px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-bold transition-colors pointer-events-auto flex items-center gap-2 mx-auto"
+                      >
+                        <Trash2 className="w-4 h-4" /> Xóa file
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center pointer-events-none">
+                      <div className="w-16 h-16 bg-navy rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Upload className="w-8 h-8 text-emerald-400" />
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-2">Kéo thả file Excel vào đây</h3>
+                      <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                        Hoặc click để chọn file từ máy tính của bạn (Tối đa 5MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="animate-fade-in">
+                <div className="flex justify-end mb-4">
+                  <button
+                    type="button"
+                    onClick={addPlayer}
+                    className="flex items-center justify-center gap-2 bg-navy-dark border border-navy-light hover:border-blue-500 text-gray-300 hover:text-blue-400 px-5 py-3 rounded-xl transition-all font-medium text-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Thêm Cầu Thủ
+                  </button>
+                </div>
+                
+                <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
+                  <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-200/80 leading-relaxed">
+                    Để thêm cầu thủ vào hệ thống, cầu thủ cần có <strong>Tài khoản đã đăng ký</strong>. Form dưới đây giúp bạn lập danh sách nháp. Khi hệ thống Backend nâng cấp tính năng tự động gửi lời mời qua Email, danh sách này sẽ được tự động xử lý. Bạn cũng có thể bỏ trống và vào trang Quản Lý Đội để Import trực tiếp từ file Excel sau.
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left min-w-[700px]">
                 <thead>
                   <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
@@ -414,6 +592,8 @@ export default function RegisterTeam() {
                 </tbody>
               </table>
             </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

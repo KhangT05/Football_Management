@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { teamApi } from '../api/teamApi';
 import { playerApi } from '../api/playerApi';
 import { matchApi } from '../api/matchApi';
+import { userApi } from '../api/userApi';
 
 /**
  * ============================================================
@@ -22,7 +23,7 @@ import { matchApi } from '../api/matchApi';
 function parsePaginatedResponse(res) {
   if (!res) return { items: [], total: 0, meta: {} };
   const payload = typeof res.status === 'boolean' ? res.data : res;
-  const items = Array.isArray(payload?.data) ? payload.data : [];
+  const items = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []);
   const meta = payload?.meta ?? {};
   return { items, total: meta.total ?? items.length, meta };
 }
@@ -278,24 +279,120 @@ const useTeamStore = create((set, get) => ({
   },
 
   /**
-   * Thêm cầu thủ mới vào đội (2 bước: tạo Player + addToTeam)
+   * Thêm cầu thủ mới vào đội (tạo User nếu cần + tạo Player + addToTeam)
    * @param {number} teamId
-   * @param {{ name: string, jersey_number: number, position: string, role? }} data
+   * @param {object} data
    */
   addNewPlayerToTeam: async (teamId, data) => {
-    // Bước 1: Tạo Player record
-    const player = await playerApi.create({ name: data.name });
-    const playerPayload = typeof player?.status === 'boolean' ? player.data : player;
+    let userId = null;
 
-    // Bước 2: Gắn vào đội
+    if (data.email) {
+      // Tìm user theo email
+      try {
+        const searchRes = await userApi.getAll({ q: data.email });
+        const payload = typeof searchRes?.status === 'boolean' ? searchRes.data : searchRes;
+        const users = Array.isArray(payload?.data) ? payload.data : [];
+        const exactUser = users.find(u => u.email === data.email);
+        if (exactUser) {
+          userId = exactUser.id;
+        }
+      } catch (e) {
+        console.error('Error finding user by email', e);
+      }
+    }
+
+    if (!userId) {
+      // Tạo user mới
+      const dummyEmail = data.email || `player_${Date.now()}@temp.local`;
+      const createRes = await userApi.create({
+        name: data.name,
+        email: dummyEmail,
+        password: 'Password123!',
+        phone: '0000000000'
+      });
+      const userPayload = typeof createRes?.status === 'boolean' ? createRes.data : createRes;
+      userId = userPayload.id;
+    }
+
+    // Bước 2: Tạo Player record
+    let playerId = null;
+    try {
+      // Cố gắng tạo Player
+      const playerPayloadData = {
+        user_id: userId,
+        date_of_birth: data.date_of_birth || "2000-01-01",
+        position: data.position || 'FW',
+        ...(data.height && { height: parseFloat(data.height) }),
+        ...(data.weight && { weight: parseFloat(data.weight) }),
+        ...(data.nationality && { nationality: data.nationality })
+      };
+      const playerRes = await playerApi.create(playerPayloadData);
+      const playerPayload = typeof playerRes?.status === 'boolean' ? playerRes.data : playerRes;
+      playerId = playerPayload.id;
+    } catch (e) {
+      // Nếu đã có Player (do User_id bị trùng), cần lấy thông tin player ra
+      // Thực tế thì playerApi không có endpoint lấy Player by userId, nhưng backend có thể báo lỗi
+      // Tạm thời nếu lỗi, ta không thể lấy được playerId từ user_id bằng API hiện tại trừ khi có route.
+      // Giải pháp: API importTeamPlayers từ excel đã tạo sẵn, API này hiện tại throw nếu trùng.
+      // Việc này xử lý rất phức tạp nếu không có endpoint getPlayerByUserId, ta log lỗi.
+      console.error('Lỗi khi tạo Player (có thể đã tồn tại):', e);
+      throw e;
+    }
+
+    if (!playerId) throw new Error('Không thể tạo Player');
+
+    // Bước 3: Gắn vào đội
     await playerApi.addToTeam(teamId, {
-      player_id: playerPayload.id,
+      player_id: playerId,
       jersey_number: parseInt(data.jersey_number),
       position: data.position,
       role: data.role ?? 'player',
     });
 
     // Invalidate cache của team này
+    get().invalidatePlayers(teamId);
+    await get().fetchPlayers(teamId, { force: true });
+  },
+
+  /**
+   * Cập nhật thông tin cầu thủ
+   * @param {number} teamId
+   * @param {number} teamPlayerId
+   * @param {number} playerId
+   * @param {number} userId
+   * @param {object} data
+   */
+  updatePlayerInTeam: async (teamId, teamPlayerId, playerId, userId, data) => {
+    // 0. Cập nhật User profile (name)
+    if (userId && data.name !== undefined) {
+      try {
+        await userApi.update(userId, { name: data.name });
+      } catch (e) {
+        console.error('Failed to update User name', e);
+      }
+    }
+
+    // 1. Cập nhật Player profile (dob, height, weight, nationality)
+    const playerPatch = {};
+    if (data.date_of_birth !== undefined) playerPatch.date_of_birth = data.date_of_birth;
+    if (data.height !== undefined) playerPatch.height = parseFloat(data.height) || null;
+    if (data.weight !== undefined) playerPatch.weight = parseFloat(data.weight) || null;
+    if (data.nationality !== undefined) playerPatch.nationality = data.nationality;
+
+    if (Object.keys(playerPatch).length > 0) {
+      await playerApi.update(playerId, playerPatch);
+    }
+
+    // 2. Cập nhật TeamPlayer (jersey_number, position, role)
+    const tpPatch = {};
+    if (data.jersey_number !== undefined) tpPatch.jersey_number = parseInt(data.jersey_number);
+    if (data.position !== undefined) tpPatch.position = data.position;
+    if (data.role !== undefined) tpPatch.role = data.role;
+
+    if (Object.keys(tpPatch).length > 0) {
+      await playerApi.updateTeamPlayer(teamId, teamPlayerId, tpPatch);
+    }
+
     get().invalidatePlayers(teamId);
     await get().fetchPlayers(teamId, { force: true });
   },

@@ -2,33 +2,7 @@ import { useState, useEffect } from 'react';
 import { ShieldCheck, CheckCircle2, XCircle, Search, Loader2, Building2, Calendar } from 'lucide-react';
 import useToastStore from '../../store/toastStore';
 
-// MOCK DATA for pending teams registering to a tournament
-const MOCK_PENDING_TEAMS = [
-  {
-    id: 101,
-    team_name: 'FC Galaxy',
-    coach: 'Nguyễn Văn A',
-    season_name: 'Giải Vô Địch Mùa Hè 2026',
-    requested_at: '2026-06-25T10:00:00Z',
-    status: 'pending',
-  },
-  {
-    id: 102,
-    team_name: 'Hanoi Lions',
-    coach: 'Lê Đình B',
-    season_name: 'Giải Vô Địch Mùa Hè 2026',
-    requested_at: '2026-06-28T14:30:00Z',
-    status: 'pending',
-  },
-  {
-    id: 103,
-    team_name: 'Saigon Phantoms',
-    coach: 'Trần Văn C',
-    season_name: 'Cúp Mùa Thu 2026',
-    requested_at: '2026-07-01T08:15:00Z',
-    status: 'pending',
-  }
-];
+import { seasonTeamApi } from '../../api';
 
 export default function ApproveTeamsTab() {
   const toast = useToastStore();
@@ -36,31 +10,76 @@ export default function ApproveTeamsTab() {
   const [loading, setLoading] = useState(true);
   const [loadingActionId, setLoadingActionId] = useState(null);
 
+  const fetchPendingTeams = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const res = await seasonTeamApi.getAll({ status: 'pending', limit: 100 });
+      const data = res?.data?.data || res?.data || [];
+      // map the data to the format used in UI
+      const mapped = data.map(st => ({
+        id: st.id,
+        team_name: st.team?.name || 'Đội bóng ẩn',
+        coach: st.team?.coach_name || st.team?.user?.name || 'Không rõ',
+        season_name: st.season?.name || 'Giải đấu ẩn',
+        requested_at: st.created_at,
+        status: st.status
+      }));
+      setPendingTeams(mapped);
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách đội bóng chờ duyệt:', error);
+      if (!silent) toast.error('Không thể tải danh sách chờ duyệt.');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Simulate API fetch
-    const timer = setTimeout(() => {
-      setPendingTeams(MOCK_PENDING_TEAMS);
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    fetchPendingTeams();
   }, []);
 
   const handleApprove = async (id) => {
-    setLoadingActionId(id);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 600));
-    setPendingTeams(prev => prev.filter(t => t.id !== id));
-    toast.success('Đã duyệt đội bóng tham gia giải!');
-    setLoadingActionId(null);
+    try {
+      setLoadingActionId(id);
+      await seasonTeamApi.approve(id);
+      toast.success('Đã duyệt đội bóng tham gia giải!');
+    } catch (error) {
+      console.error('Lỗi duyệt:', error);
+      const msg = error.response?.data?.message || 'Lỗi khi duyệt đội bóng.';
+      const details = error.response?.data?.details;
+      let errorText = msg;
+      if (details) {
+         if (typeof details === 'string') errorText += ` - ${details}`;
+         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
+         else errorText += ` - ${JSON.stringify(details)}`;
+      }
+      toast.error(errorText);
+    } finally {
+      await fetchPendingTeams(true);
+      setLoadingActionId(null);
+    }
   };
 
   const handleReject = async (id) => {
-    setLoadingActionId(id);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 600));
-    setPendingTeams(prev => prev.filter(t => t.id !== id));
-    toast.success('Đã từ chối đội bóng!');
-    setLoadingActionId(null);
+    try {
+      setLoadingActionId(id);
+      // Backend does not have "rejected" status, soft-delete the pending registration to reject it
+      await seasonTeamApi.delete(id);
+      toast.success('Đã từ chối yêu cầu tham gia giải!');
+    } catch (error) {
+      console.error('Lỗi từ chối:', error);
+      const msg = error.response?.data?.message || 'Lỗi khi từ chối đội bóng.';
+      const details = error.response?.data?.details;
+      let errorText = msg;
+      if (details) {
+         if (typeof details === 'string') errorText += ` - ${details}`;
+         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
+         else errorText += ` - ${JSON.stringify(details)}`;
+      }
+      toast.error(errorText);
+    } finally {
+      await fetchPendingTeams(true);
+      setLoadingActionId(null);
+    }
   };
 
   return (
@@ -71,7 +90,7 @@ export default function ApproveTeamsTab() {
           Duyệt Đội bóng đăng ký giải đấu
         </h2>
         <p className="text-sm text-gray-400 mt-1">
-          Lưu ý: Chức năng đang dùng dữ liệu mô phỏng do API chưa khả dụng.
+          Danh sách các đội bóng đang chờ bạn duyệt để tham gia vào giải đấu.
         </p>
       </div>
 

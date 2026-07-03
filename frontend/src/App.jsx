@@ -148,7 +148,7 @@ function App() {
           <Route path="/quan-ly-giai-dau/dang-ky-giai" element={
             <AdminRoute><ManageSeasonTeams /></AdminRoute>
           } />
-          <Route path="/quan-ly-giai-dau/giai-dau" element={
+          <Route path="/quan-ly-giai-dau/giai-dau&mua-giai" element={
             <AdminRoute><ManageTournaments /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/san-bong-luat" element={

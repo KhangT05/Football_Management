@@ -6,7 +6,7 @@ import {
   Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight,
   Search, Shirt
 } from 'lucide-react';
-import { seasonApi, seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
+import { seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -178,7 +178,7 @@ export default function ManageSeasonTeams() {
 
   // ── Actions: Add Team ───────────────────────────────────────
   const [allTeams, setAllTeams] = useState([]);
-  const addTeamModal = useCrudModal({ emptyForm: { team_id: '' } });
+  const addTeamModal = useCrudModal({ emptyForm: { team_id: '', season_id: '' } });
 
   const openAddTeam = () => {
     if (allTeams.length === 0) {
@@ -187,16 +187,15 @@ export default function ManageSeasonTeams() {
         setAllTeams(Array.isArray(payload?.data) ? payload.data : []);
       });
     }
-    addTeamModal.openAdd();
+    addTeamModal.openAdd({ team_id: '', season_id: selectedSeason || '' });
   };
 
   const handleAddTeam = () => {
-    if (!addTeamModal.form.team_id) {
-      addTeamModal.setFormError('Vui lòng chọn đội bóng.'); return;
-    }
+    if (!addTeamModal.form.season_id) { addTeamModal.setFormError('Vui lòng chọn mùa giải.'); return; }
+    if (!addTeamModal.form.team_id) { addTeamModal.setFormError('Vui lòng chọn đội bóng.'); return; }
     addTeamModal.save(async () => {
       await seasonTeamApi.adminAdd({
-        season_id: Number(selectedSeason),
+        season_id: Number(addTeamModal.form.season_id),
         team_id: Number(addTeamModal.form.team_id),
         status: 'approved',
       });
@@ -215,6 +214,20 @@ export default function ManageSeasonTeams() {
       toast.success('Đã xếp đội vào bảng thủ công!');
       reloadTeams();
     }).catch(err => assignModal.setFormError(err?.response?.data?.message || 'Lỗi khi xếp bảng.'));
+  };
+
+  // ── Actions: Transfer Team ──────────────────────────────────
+  const transferModal = useCrudModal({ emptyForm: { target_season_id: '' } });
+  const openTransferTeam = (st) => {
+    transferModal.openEdit(st, { target_season_id: '' });
+  };
+  const handleTransferTeam = () => {
+    if (!transferModal.form.target_season_id) { transferModal.setFormError('Vui lòng chọn mùa giải đích.'); return; }
+    transferModal.save(async () => {
+      await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
+      toast.success('Đã chuyển đội sang mùa giải mới!');
+      reloadTeams();
+    }).catch(err => transferModal.setFormError(err?.response?.data?.message || 'Lỗi khi chuyển đội.'));
   };
 
   const selectedSeasonObj = seasons.find(s => String(s.id) === String(selectedSeason));
@@ -483,6 +496,13 @@ export default function ManageSeasonTeams() {
                                   <Edit className="w-4 h-4" />
                                 </button>
                                 <button
+                                  onClick={() => openTransferTeam(st)}
+                                  className="p-1.5 rounded-lg bg-navy-light text-purple-400 hover:text-white hover:bg-purple-600 border border-purple-500/20 hover:border-purple-500 shadow-sm transition-all active:scale-90"
+                                  title="Chuyển giải"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                                <button
                                   onClick={() => setDeletingId(st.id)}
                                   className="p-1.5 rounded-lg bg-navy-light text-red-400 hover:text-white hover:bg-red-600 border border-red-500/20 hover:border-red-500 shadow-sm transition-all active:scale-90"
                                   title="Xóa khỏi giải"
@@ -545,18 +565,39 @@ export default function ManageSeasonTeams() {
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{addTeamModal.formError}
             </div>
           )}
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Chọn đội bóng <span className="text-red-400">*</span>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Chọn mùa giải <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={addTeamModal.form.season_id}
+                  onChange={e => addTeamModal.setForm({ ...addTeamModal.form, season_id: e.target.value })}
+                  className={INPUT}
+                >
+                  <option value="">-- Chọn mùa giải --</option>
+                  {seasons.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} - {s.status}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Chọn đội bóng <span className="text-red-400">*</span>
             </label>
             <select
               className={INPUT}
               value={addTeamModal.form.team_id}
-              onChange={e => addTeamModal.setForm({ team_id: e.target.value })}
+              onChange={e => addTeamModal.setForm({ ...addTeamModal.form, team_id: e.target.value })}
             >
               <option value="">-- Chọn một đội --</option>
               {allTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
+            </div>
           </div>
         </AdminModal>
       )}
@@ -593,6 +634,51 @@ export default function ManageSeasonTeams() {
             />
             <p className="text-xs text-gray-500 mt-2">
               Đội <strong className="text-white">{assignModal.editing?.team?.name}</strong> sẽ được xếp vào bảng mang ID này.
+            </p>
+          </div>
+        </AdminModal>
+      )}
+
+      {/* ── Transfer Team Modal ─────────────────────────────────── */}
+      {transferModal.modal && (
+        <AdminModal
+          title="Chuyển mùa giải"
+          icon={RefreshCw} iconClass="text-purple-400"
+          onClose={transferModal.closeModal}
+          footer={<>
+            <button onClick={transferModal.closeModal} className={BTN_SECONDARY}>Hủy</button>
+            <button onClick={handleTransferTeam} disabled={transferModal.isSaving} className="flex items-center gap-2 px-6 py-2.5 font-bold bg-purple-600 hover:bg-purple-500 text-white rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all active:scale-[.98] disabled:opacity-70">
+              {transferModal.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Xác nhận chuyển
+            </button>
+          </>}
+        >
+          {transferModal.formError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{transferModal.formError}
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+              Mùa giải đích <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={transferModal.form.target_season_id}
+                onChange={e => transferModal.setForm({ target_season_id: e.target.value })}
+                className={INPUT}
+              >
+                <option value="">-- Chọn mùa giải --</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id} disabled={s.id === transferModal.editing?.season_id}>
+                    {s.name} - {s.status} {s.id === transferModal.editing?.season_id ? '(Hiện tại)' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Đội <strong className="text-white">{transferModal.editing?.team?.name}</strong> sẽ được chuyển khỏi mùa giải hiện tại và sang mùa giải này với trạng thái Chờ duyệt.
             </p>
           </div>
         </AdminModal>

@@ -59,7 +59,7 @@ function ToastItem({ toast }) {
     <div
       className={`
         flex items-start gap-3 px-4 py-3.5 rounded-xl border shadow-2xl shadow-black/50
-        backdrop-blur-xl min-w-[280px] max-w-[380px] relative overflow-hidden
+        backdrop-blur-xl min-w-[280px] max-w-md relative overflow-hidden
         transition-all duration-300 ease-out
         ${color.border} ${color.bg}
         ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}
@@ -73,9 +73,26 @@ function ToastItem({ toast }) {
 
       <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${color.icon}`} />
 
-      <p className="text-sm font-medium text-white leading-relaxed flex-1">
-        {toast.message}
-      </p>
+      <div className="flex-1 min-w-0">
+        {toast.title && <p className="text-sm font-bold text-white mb-0.5">{toast.title}</p>}
+        <p className={`text-sm font-medium leading-relaxed text-wrap ${toast.title ? 'text-gray-300' : 'text-white'}`}>
+          {toast.message}
+        </p>
+        {toast.details && (
+          <ul className="mt-2 text-xs text-gray-400 list-disc list-inside space-y-1 bg-black/20 p-2 rounded-lg">
+            {Array.isArray(toast.details) 
+              ? toast.details.map((d, i) => <li key={i}>{d}</li>)
+              : typeof toast.details === 'object'
+                ? Object.entries(toast.details).map(([k, v]) => (
+                    <li key={k} className="break-all">
+                      <span className="font-semibold text-gray-300">{k}:</span> {Array.isArray(v) ? v.join(', ') : String(v)}
+                    </li>
+                  ))
+                : <li>{String(toast.details)}</li>
+            }
+          </ul>
+        )}
+      </div>
 
       <button
         onClick={handleClose}

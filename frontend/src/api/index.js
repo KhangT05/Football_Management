@@ -42,6 +42,6 @@ export { paymentApi } from './paymentApi';
 export { articleApi } from './articleApi';
 export { uploadApi } from './uploadApi';
 export { roleApi } from './roleApi';
-
+export { statisticsApi } from './statisticsApi';
 // Re-export token utilities để dùng ngoài axiosClient nếu cần
 export { setAccessToken, getAccessToken, clearAccessToken } from './axiosClient';

@@ -7,13 +7,24 @@ import {
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, seasonApi, matchApi } from '../api';
+import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
 
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import LineupBuilderModal from '../components/modals/LineupBuilderModal';
 import EditTeamModal from '../components/modals/EditTeamModal';
+import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
+
+const normalizePosition = (posStr) => {
+  if (!posStr) return 'OTHER';
+  let p = posStr.toUpperCase().trim();
+  if (p === 'GOALKEEPER' || p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
+  if (p === 'DEFENDER' || p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
+  if (p === 'MIDFIELDER' || p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
+  if (p === 'FORWARD' || p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
+  return p;
+};
 
 // ─── Empty State ──────────────────────────────────────────
 function NoTeamState() {
@@ -220,6 +231,7 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport 
 
 // ─── Position Badge ───────────────────────────────────────
 function PosBadge({ pos }) {
+  const normPos = normalizePosition(pos);
   const styles = {
     GK:  'bg-yellow-400/10 text-yellow-400 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.1)]',
     DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.1)]',
@@ -227,8 +239,8 @@ function PosBadge({ pos }) {
     FW:  'bg-red-400/10 text-red-400 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.1)]',
   };
   return (
-    <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${styles[pos] || 'bg-gray-400/10 text-gray-400 border-gray-400/30'}`}>
-      {pos}
+    <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${styles[normPos] || 'bg-gray-400/10 text-gray-400 border-gray-400/30'}`}>
+      {POSITION_LABELS[normPos] || normPos}
     </span>
   );
 }
@@ -380,7 +392,9 @@ export default function MyTeam() {
         id: myTeam.id,
         name: myTeam.name,
         emoji: '🛡️',
-        status: myTeam.is_active ? 'approved' : 'pending',
+        status: myTeam.is_active ? 'approved' : 'pending', // Trạng thái của đội
+        registrationStatus: null, // Trạng thái tham gia giải
+        activeSeasonId: null,
         captain: myTeam.coach_name ?? '—',
         phone: myTeam.phone ?? '—',
         primaryColor: myTeam.primary_color ?? '—',
@@ -405,9 +419,36 @@ export default function MyTeam() {
         const activeSeason = allSeasons.find(s => ['registration_open', 'ongoing', 'upcoming'].includes(s.status)) || allSeasons[0];
         
         if (activeSeason) {
-          setTeam(prev => ({ ...prev, season: activeSeason.name }));
-          const scheduleRes = await matchApi.getTeamSchedule(activeSeason.id, myTeam.id);
-          setMatches(parseList(scheduleRes));
+          // Check season registration status
+          const stRes = await seasonTeamApi.getAll({ team_id: myTeam.id, season_id: activeSeason.id });
+          const stData = stRes?.data?.data || stRes?.data || [];
+          const currentSt = stData[0];
+
+          let homeJersey = null;
+          if (currentSt) {
+            try {
+              const jRes = await jerseyApi.getBySeasonTeam(currentSt.id);
+              const jerseys = Array.isArray(jRes?.data?.data) ? jRes.data.data : Array.isArray(jRes?.data) ? jRes.data : Array.isArray(jRes) ? jRes : [];
+              homeJersey = jerseys.find(j => j.type === 'home');
+            } catch (err) {
+              console.warn('Không thể lấy thông tin áo đấu:', err);
+            }
+          }
+
+          setTeam(prev => ({ 
+            ...prev, 
+            season: activeSeason.name,
+            activeSeasonId: activeSeason.id,
+            activeSeasonTeamId: currentSt ? currentSt.id : null,
+            registrationStatus: currentSt ? currentSt.status : null,
+            primaryColor: homeJersey?.secondary_color || prev.primaryColor,
+            colorHex: homeJersey?.primary_color || prev.colorHex,
+          }));
+          
+          if (currentSt && ['approved', 'active'].includes(currentSt.status)) {
+            const scheduleRes = await matchApi.getTeamSchedule(activeSeason.id, myTeam.id);
+            setMatches(parseList(scheduleRes));
+          }
         }
       } catch (seasonErr) {
         console.warn('Cannot fetch season or schedule for team:', seasonErr);
@@ -467,6 +508,18 @@ export default function MyTeam() {
     setIsSaving(true);
     try {
       await teamApi.update(team.id, form);
+      
+      if (team.activeSeasonTeamId && form.color_hex) {
+        try {
+          await jerseyApi.upsert(team.activeSeasonTeamId, {
+            type: 'home',
+            primary_color: form.color_hex
+          });
+        } catch (e) {
+          console.warn('Could not update jersey color:', e);
+        }
+      }
+
       toast.success('Đã cập nhật thông tin đội bóng thành công!');
       setEditTeamModalOpen(false);
       await loadTeamData();
@@ -535,10 +588,10 @@ export default function MyTeam() {
       
       setIsSaving(true);
       await playerApi.importTeamPlayers(team.id, formData);
-      toast.success('Nhập dữ liệu thành công! (Mock UI)');
+      toast.success('Nhập dữ liệu từ file Excel thành công!');
       await loadTeamData();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'API chưa hỗ trợ tính năng này. Hãy nhắc đội Backend cập nhật nhé!');
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi nhập dữ liệu từ file Excel.');
     } finally {
       setIsSaving(false);
       e.target.value = null;
@@ -630,7 +683,52 @@ export default function MyTeam() {
           </div>
         )}
 
-        {!isLoading && team.status === 'approved' && (
+        {!isLoading && team.status === 'approved' && team.registrationStatus === 'pending' && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 animate-slide-up shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="p-2 bg-amber-500/20 rounded-xl shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-amber-400 font-black text-lg mb-1 tracking-tight">Chờ duyệt tham gia giải</p>
+                <p className="text-amber-500/80 font-medium">Yêu cầu tham gia giải {team.season} đang chờ Admin xác nhận.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && team.status === 'approved' && !team.registrationStatus && team.activeSeasonId && (
+          <div className="bg-blue-500/10 border border-blue-500/30 p-5 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 animate-slide-up shadow-[0_0_30px_rgba(59,130,246,0.1)]">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="p-2 bg-blue-500/20 rounded-xl shrink-0">
+                <Info className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-blue-400 font-black text-lg mb-1 tracking-tight">Giải đấu đang mở đăng ký</p>
+                <p className="text-blue-500/80 font-medium">Đội bóng của bạn chưa đăng ký tham gia giải {team.season}.</p>
+              </div>
+            </div>
+            <button 
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  await seasonTeamApi.register({ season_id: team.activeSeasonId });
+                  toast.success('Đã gửi yêu cầu tham gia giải!');
+                  loadTeamData();
+                } catch (err) {
+                  toast.error(err?.response?.data?.message || 'Không thể đăng ký tham gia giải.');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="px-6 py-3.5 shrink-0 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5"
+            >
+              <UserPlus className="w-5 h-5" /> Đăng ký ngay
+            </button>
+          </div>
+        )}
+
+        {!isLoading && team.status === 'approved' && ['approved', 'active'].includes(team.registrationStatus) && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 animate-slide-up shadow-[0_0_30px_rgba(16,185,129,0.1)]">
             <div className="flex items-start sm:items-center gap-4">
               <div className="p-2 bg-emerald-500/20 rounded-xl shrink-0">
@@ -638,7 +736,7 @@ export default function MyTeam() {
               </div>
               <div>
                 <p className="text-emerald-400 font-black text-lg mb-1 tracking-tight">Đăng ký thành công!</p>
-                <p className="text-emerald-500/80 font-medium">Đội bóng đã được duyệt. Hãy thanh toán lệ phí để tham gia bốc thăm chia bảng.</p>
+                <p className="text-emerald-500/80 font-medium">Đội bóng đã được duyệt tham gia {team.season}. Hãy thanh toán lệ phí để bốc thăm chia bảng.</p>
               </div>
             </div>
             <button 
@@ -879,11 +977,17 @@ export default function MyTeam() {
                             <div className="flex items-center gap-4">
                               <div className="relative">
                                 <div className="absolute inset-0 bg-blue-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                                <img
-                                  src={player.avatar}
-                                  alt={player.name}
-                                  className="w-12 h-12 rounded-full bg-navy-dark border-2 border-navy-light shrink-0 relative z-10"
-                                />
+                                {player.avatar ? (
+                                  <img
+                                    src={player.avatar}
+                                    alt={player.name}
+                                    className="w-12 h-12 rounded-full bg-navy-dark border-2 border-navy-light shrink-0 relative z-10 object-cover"
+                                  />
+                                ) : (
+                                  <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[(player.id || idx) % AVATAR_COLORS.length]} border-2 border-navy-light flex items-center justify-center font-black text-white text-sm relative z-10`}>
+                                    {getInitials(player.name)}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <p className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">{player.name}</p>
@@ -1019,41 +1123,32 @@ export default function MyTeam() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4 relative z-10">
-                  {[
-                    {
-                      label: 'Cầu thủ',
-                      value: players.length,
-                      color: 'text-white',
-                      bg: 'bg-navy-dark border-navy-light'
-                    },
-                    {
-                      label: 'Bàn thắng',
-                      value: players.reduce((s, p) => s + (p.goals || 0), 0),
-                      color: 'text-neon drop-shadow-[0_0_8px_rgba(57,255,20,0.3)]',
-                      bg: 'bg-neon/5 border-neon/20'
-                    },
-                    {
-                      label: 'Đã duyệt',
-                      value: players.filter(p => p.approval_status === 'approved').length,
-                      color: 'text-emerald-400',
-                      bg: 'bg-emerald-500/5 border-emerald-500/20'
-                    },
-                    {
-                      label: 'Chờ duyệt',
-                      value: players.filter(p => p.approval_status === 'pending').length,
-                      color: 'text-amber-400',
-                      bg: 'bg-amber-400/5 border-amber-400/20'
-                    },
-                  ].map((stat, idx) => (
-                    <div
-                      key={stat.label}
-                      className={`${stat.bg || 'bg-navy-dark'} p-5 rounded-2xl border text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
-                      style={{ animationDelay: `${200 + idx * 50}ms` }}
-                    >
-                      <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
-                      <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-                    </div>
-                  ))}
+                  {(() => {
+                    const totalByPosition = players.reduce((acc, p) => {
+                      const pos = normalizePosition(p.position);
+                      acc[pos] = (acc[pos] || 0) + 1;
+                      return acc;
+                    }, {});
+                    return [
+                      { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
+                      { label: 'Bàn thắng', value: players.reduce((s, p) => s + (p.goals || 0), 0), color: 'text-neon drop-shadow-[0_0_8px_rgba(57,255,20,0.3)]', bg: 'bg-neon/5 border-neon/20' },
+                      { label: 'Đã duyệt', value: players.filter(p => p.approval_status === 'approved').length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/20' },
+                      { label: 'Chờ duyệt', value: players.filter(p => p.approval_status === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-400/5 border-amber-400/20' },
+                      { label: 'Thủ môn', value: totalByPosition['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
+                      { label: 'Hậu vệ', value: totalByPosition['DEF'] || 0, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/30' },
+                      { label: 'Tiền vệ', value: totalByPosition['MID'] || 0, color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
+                      { label: 'Tiền đạo', value: totalByPosition['FW'] || 0, color: 'text-red-400', bg: 'bg-red-400/10 border-red-400/30' },
+                    ].map((stat, idx) => (
+                      <div
+                        key={stat.label}
+                        className={`${stat.bg || 'bg-navy-dark'} p-5 rounded-2xl border text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
+                        style={{ animationDelay: `${200 + idx * 50}ms` }}
+                      >
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
+                        <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+                      </div>
+                    ));
+                  })()}
                 </div>
               )}
             </div>
