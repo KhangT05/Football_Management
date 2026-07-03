@@ -1,4 +1,4 @@
-import { CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
+import { CancelSeasonDto, CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
 import { PrismaClient, Season, SeasonStatus } from "../generated/prisma/client.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class SeasonService {
@@ -9,6 +9,7 @@ export declare class SeasonService {
     findByIdOrFail(id: number): Promise<Season>;
     create(data: CreateSeasonDto, userId: number): Promise<Season>;
     update(id: number, data: UpdateSeasonDto): Promise<Season>;
+    cancel(id: number, data: CancelSeasonDto): Promise<Season>;
     updateStatus(id: number, newStatus: SeasonStatus, meta?: {
         cancel_reason?: string;
     }): Promise<Season>;

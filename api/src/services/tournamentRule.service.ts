@@ -82,37 +82,17 @@ export class TournamentRuleService {
             },
         });
     }
-    // async importPDF(
-    //     fileBuffer: Buffer,
-    //     fileUrl: string,
-    //     tournamentId: number,
-    //     userId: number
-    // ): Promise<CreateTournamentRuleDto> {
-    //     const rawText = await extractTextFromPdf(fileBuffer);
-    //     if (!rawText || rawText.trim().length < 20) {
-    //         throw createAppError("VALIDATION_ERROR", "PDF không extract được text, kiểm tra OCR/scan quality");
-    //     }
-    //     const evidence = await extractEvidenceWithLLM(rawText);
-    //     const finalResult = runRuleEngine(evidence); // throw sớm -> chưa có write nào, không cần rollback gì
 
-    //     return this.prisma.$transaction(async (tx) => {
-    //         await tx.tournamentRule.updateMany({
-    //             where: { tournament_id: tournamentId, is_active: true },
-    //             data: { is_active: false, deleted_at: new Date() },
-    //         });
-
-    //         return tx.tournamentRule.create({
-    //             data: {
-    //                 ...finalResult,
-    //                 tournament_id: tournamentId,
-    //                 user_id: userId,
-    //                 is_active: true,
-    //                 source: "pdf_import",
-    //                 source_file_url: fileUrl,
-    //                 evidence_json: evidence,
-    //             },
-    //         });
-    //     });
-    //     // throw trong transaction (vd constraint violation) -> Prisma rollback cả updateMany + create
-    // }
+    async restore(id: number): Promise<TournamentRuleDto> {
+        const result = await this.prisma.tournamentRule.updateMany({
+            where: { id, deleted_at: { not: null } },
+            data: {
+                deleted_at: null,
+            },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `TournamentRule ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
+    }
 }

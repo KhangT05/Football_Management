@@ -19,7 +19,7 @@ export interface SwapTeamsBody {
 }
 export type GroupWithTeams = Group & {
     phase: { id: number; name: string; season_id: number; format: string; is_active: boolean };
-    seasonTeams: {
+    season_teams: {
         id: number;
         status: string;
         team: { id: number; name: string; logo: string | null };

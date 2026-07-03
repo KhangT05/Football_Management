@@ -174,6 +174,7 @@ export const SeasonScalarFieldEnum = {
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
     registration_fee: 'registration_fee',
+    cancel_reason: 'cancel_reason',
     tournament_id: 'tournament_id',
     user_id: 'user_id'
 };
@@ -492,7 +493,8 @@ export const PhaseOrderByRelevanceFieldEnum = {
 };
 export const SeasonOrderByRelevanceFieldEnum = {
     name: 'name',
-    description: 'description'
+    description: 'description',
+    cancel_reason: 'cancel_reason'
 };
 export const GroupOrderByRelevanceFieldEnum = {
     name: 'name'

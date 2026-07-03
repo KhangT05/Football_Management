@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
+import { CancelSeasonDto, CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
 import { PrismaClient, Season, SeasonStatus } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
@@ -85,13 +85,32 @@ export class SeasonService {
         });
     }
 
+    async cancel(id: number, data: CancelSeasonDto): Promise<Season> {
+        const existing = await this.findByIdOrFail(id);
+        this.validateStatusTransition(existing.status, SeasonStatus.cancelled);
+
+        return this.prisma.season.update({
+            where: { id },
+            data: {
+                status: SeasonStatus.cancelled,
+                is_active: false,
+                cancel_reason: data.cancel_reason,
+            },
+        });
+    }
+
     async updateStatus(
         id: number,
         newStatus: SeasonStatus,
         meta?: { cancel_reason?: string }
     ): Promise<Season> {
-        const existing = await this.findByIdOrFail(id);
+        if (newStatus === SeasonStatus.cancelled) {
+            // Bắt buộc dùng endpoint /cancel riêng — enforce reason tại đây luôn
+            // để không có đường tắt bypass validation qua generic status update
+            return this.cancel(id, { cancel_reason: meta?.cancel_reason ?? '' });
+        }
 
+        const existing = await this.findByIdOrFail(id);
         this.validateStatusTransition(existing.status, newStatus);
         this.validateStatusPreConditions(existing, newStatus);
 
@@ -99,13 +118,7 @@ export class SeasonService {
             where: { id },
             data: {
                 status: newStatus,
-                ...(newStatus === 'cancelled' && {
-                    is_active: false,
-                    cancel_reason: meta?.cancel_reason ?? null,
-                }),
-                ...(newStatus === 'finished' && {
-                    is_active: false,
-                }),
+                ...(newStatus === 'finished' && { is_active: false }),
             },
         });
     }

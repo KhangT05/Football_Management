@@ -11,5 +11,6 @@ export declare class RoleController extends Controller {
     create(body: CreateRoleDto): Promise<Role>;
     update(id: number, body: UpdateRoleDto): Promise<Role>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Role>;
 }
 //# sourceMappingURL=role.controller.d.ts.map

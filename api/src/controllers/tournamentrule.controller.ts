@@ -4,7 +4,6 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentRuleDto, type CreateTournamentRuleDto, type UpdateTournamentRuleDto } from "../dtos/tournamentRule.schema.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("tournamentrules")
 @Tags("TournamentRules")
 export class TournamentRuleController extends Controller {
@@ -23,6 +22,7 @@ export class TournamentRuleController extends Controller {
   }
 
   @Post("/")
+  @Security("jwt", ["admin", "organizing"])
   @SuccessResponse(201, "Created")
   async create(
     @Body() body: CreateTournamentRuleDto,
@@ -33,6 +33,7 @@ export class TournamentRuleController extends Controller {
   }
 
   @Patch("{id}")
+  @Security("jwt", ["admin", "organizing"])
   async update(
     @Path() id: number,
     @Body() body: UpdateTournamentRuleDto
@@ -41,9 +42,16 @@ export class TournamentRuleController extends Controller {
   }
 
   @Delete("{id}")
+  @Security("jwt", ["admin", "organizing"])
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
     this.setStatus(204);
     return this.service.softDelete(id);
+  }
+
+  @Patch("{id}/restore")
+  @Security("jwt", ["admin", "organizing"])
+  async restore(@Path() id: number): Promise<TournamentRuleDto> {
+    return this.service.restore(id);
   }
 }

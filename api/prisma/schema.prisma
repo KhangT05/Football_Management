@@ -223,8 +223,8 @@ model Season {
 
   deleted_at       DateTime?
   registration_fee Decimal   @default(0) @db.Decimal(10, 2)
-
-  tournament_id Int
+  cancel_reason    String?
+  tournament_id    Int
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
 

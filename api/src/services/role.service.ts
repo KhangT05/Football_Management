@@ -70,5 +70,16 @@ export class RoleService {
         });
         if (result.count === 0) throw createAppError('NOT_FOUND', `Role not found: ${id}`);
     }
-
+    async restore(id: number): Promise<Role> {
+        const result = await this.prisma.role.updateMany({
+            where: { id, deleted_at: { not: null } },
+            data: {
+                deleted_at: null,
+            },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `Role ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
+    }
 }

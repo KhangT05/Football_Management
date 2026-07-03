@@ -4,8 +4,6 @@ import type { Venue } from "../generated/prisma/client.js";
 import { type CreateVenueDto, type UpdateVenueDto } from "../dtos/venue.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 
-
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("venues")
 @Tags("Venues")
 export class VenueController extends Controller {
@@ -30,6 +28,7 @@ export class VenueController extends Controller {
   }
 
   @Post("/")
+  @Security("jwt", ["admin"])
   @SuccessResponse(201, "Created")
   async create(@Body() body: CreateVenueDto): Promise<Venue> {
     this.setStatus(201);
@@ -37,6 +36,7 @@ export class VenueController extends Controller {
   }
 
   @Patch("{id}")
+  @Security("jwt", ["admin"])
   async update(
     @Path() id: number,
     @Body() body: UpdateVenueDto
@@ -45,9 +45,16 @@ export class VenueController extends Controller {
   }
 
   @Delete("{id}")
+  @Security("jwt", ["admin"])
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
     this.setStatus(204);
     return this.service.softDelete(id);
+  }
+
+  @Patch("{id}/restore")
+  @Security("jwt", ["admin"])
+  async restore(@Path() id: number): Promise<Venue> {
+    return this.service.restore(id);
   }
 }

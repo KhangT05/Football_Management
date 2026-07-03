@@ -35,6 +35,9 @@ let UserController = class UserController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+    async restore(id) {
+        return this.service.restore(id);
+    }
 };
 __decorate([
     Get("/"),
@@ -78,6 +81,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "softDelete", null);
+__decorate([
+    Patch("{id}/restore"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "restore", null);
 UserController = __decorate([
     Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("users"),

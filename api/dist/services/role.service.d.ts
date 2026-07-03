@@ -24,5 +24,6 @@ export declare class RoleService {
      */
     update(id: number, data: UpdateRoleDto): Promise<Role>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Role>;
 }
 //# sourceMappingURL=role.service.d.ts.map

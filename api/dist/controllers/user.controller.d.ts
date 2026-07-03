@@ -10,5 +10,6 @@ export declare class UserController extends Controller {
     create(body: CreateUserDto): Promise<SafeUser>;
     update(id: number, body: UpdateUserDto): Promise<SafeUser>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<SafeUser>;
 }
 //# sourceMappingURL=user.controller.d.ts.map

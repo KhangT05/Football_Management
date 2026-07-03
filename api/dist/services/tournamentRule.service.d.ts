@@ -9,5 +9,6 @@ export declare class TournamentRuleService {
     create(data: CreateTournamentRuleDto, userId: number): Promise<CreateTournamentRuleDto>;
     update(id: number, data: UpdateTournamentRuleDto): Promise<TournamentRuleDto>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<TournamentRuleDto>;
 }
 //# sourceMappingURL=tournamentRule.service.d.ts.map

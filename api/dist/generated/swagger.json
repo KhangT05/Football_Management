@@ -1495,6 +1495,9 @@
             },
             "DefaultSelection__36_SeasonPayload_": {
                 "properties": {
+                    "cancel_reason": {
+                        "type": "string"
+                    },
                     "registration_fee": {
                         "$ref": "#/components/schemas/Decimal"
                     },
@@ -1555,6 +1558,7 @@
                     }
                 },
                 "required": [
+                    "cancel_reason",
                     "registration_fee",
                     "is_registration_open",
                     "max_teams",
@@ -1686,6 +1690,20 @@
             "UpdateSeasonDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateSeasonSchema_"
             },
+            "infer_typeofCancelSeasonSchema_": {
+                "properties": {
+                    "cancel_reason": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "cancel_reason"
+                ],
+                "type": "object"
+            },
+            "CancelSeasonDto": {
+                "$ref": "#/components/schemas/infer_typeofCancelSeasonSchema_"
+            },
             "infer_typeofUpdateSeasonStatusSchema_": {
                 "properties": {
                     "cancel_reason": {
@@ -1697,8 +1715,7 @@
                             "upcoming",
                             "registration_open",
                             "ongoing",
-                            "finished",
-                            "cancelled"
+                            "finished"
                         ]
                     }
                 },
@@ -4138,7 +4155,7 @@
                     },
                     {
                         "properties": {
-                            "seasonTeams": {
+                            "season_teams": {
                                 "items": {
                                     "properties": {
                                         "team": {
@@ -4210,7 +4227,7 @@
                             }
                         },
                         "required": [
-                            "seasonTeams",
+                            "season_teams",
                             "phase"
                         ],
                         "type": "object"
@@ -5124,16 +5141,7 @@
                 "tags": [
                     "Venues"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "query",
@@ -5205,10 +5213,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "admin"
                         ]
                     }
                 ],
@@ -5243,16 +5248,7 @@
                 "tags": [
                     "Venues"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -5285,10 +5281,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "admin"
                         ]
                     }
                 ],
@@ -5327,10 +5320,45 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/venues/{id}/restore": {
+            "patch": {
+                "operationId": "Restore",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Venue"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
                         ]
                     }
                 ],
@@ -5588,6 +5616,47 @@
                 ]
             }
         },
+        "/users/{id}/restore": {
+            "patch": {
+                "operationId": "Restore",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SafeUser"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Users"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "user",
+                            "organizing",
+                            "guest"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
         "/upload/single": {
             "post": {
                 "operationId": "UploadSingle",
@@ -5720,16 +5789,7 @@
                 "tags": [
                     "TournamentRules"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": []
             },
             "post": {
@@ -5753,9 +5813,7 @@
                     {
                         "jwt": [
                             "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "organizing"
                         ]
                     }
                 ],
@@ -5790,16 +5848,7 @@
                 "tags": [
                     "TournamentRules"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -5833,9 +5882,7 @@
                     {
                         "jwt": [
                             "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "organizing"
                         ]
                     }
                 ],
@@ -5875,9 +5922,46 @@
                     {
                         "jwt": [
                             "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/tournamentrules/{id}/restore": {
+            "patch": {
+                "operationId": "Restore",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TournamentRuleDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "TournamentRules"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -7184,6 +7268,55 @@
                 ]
             }
         },
+        "/seasons/{id}/cancel": {
+            "patch": {
+                "operationId": "CancelSeason",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Season"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\n(theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.",
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelSeasonDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/seasons/{id}/status": {
             "patch": {
                 "operationId": "UpdateStatus",
@@ -8331,6 +8464,44 @@
                 "responses": {
                     "204": {
                         "description": "Deleted"
+                    }
+                },
+                "tags": [
+                    "Roles"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/roles/{id}/restore": {
+            "patch": {
+                "operationId": "Restore",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Role"
+                                }
+                            }
+                        }
                     }
                 },
                 "tags": [

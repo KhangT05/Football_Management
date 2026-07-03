@@ -7,6 +7,9 @@ export declare const SeasonStatusSchema: z.ZodEnum<{
     upcoming: "upcoming";
     registration_open: "registration_open";
 }>;
+export declare const CancelSeasonSchema: z.ZodObject<{
+    cancel_reason: z.ZodString;
+}, z.core.$strip>;
 export declare const createSeasonSchema: z.ZodObject<{
     name: z.ZodString;
     description: z.ZodOptional<z.ZodString>;
@@ -46,7 +49,6 @@ export declare const UpdateSeasonStatusSchema: z.ZodObject<{
     status: z.ZodEnum<{
         ongoing: "ongoing";
         finished: "finished";
-        cancelled: "cancelled";
         upcoming: "upcoming";
         registration_open: "registration_open";
     }>;
@@ -69,4 +71,5 @@ export type SeasonListItem = {
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>;
 export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>;
 export type UpdateSeasonStatusDto = z.infer<typeof UpdateSeasonStatusSchema>;
+export type CancelSeasonDto = z.infer<typeof CancelSeasonSchema>;
 //# sourceMappingURL=season.schema.d.ts.map

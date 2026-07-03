@@ -11,5 +11,6 @@ export declare class VenueController extends Controller {
     create(body: CreateVenueDto): Promise<Venue>;
     update(id: number, body: UpdateVenueDto): Promise<Venue>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Venue>;
 }
 //# sourceMappingURL=venue.controller.d.ts.map

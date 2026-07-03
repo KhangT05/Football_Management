@@ -1,4 +1,4 @@
-import { PhaseFormat, PrismaClient } from "../generated/prisma/client.js";
+import { PhaseFormat, PrismaClient, SeasonTeamStatus } from "../generated/prisma/client.js";
 import { DrawAssignment, DrawGroupsOptions } from "../types/group.type.js";
 export declare class GroupService {
     private readonly prisma;
@@ -67,7 +67,15 @@ export declare class GroupService {
             name: string;
             season_id: number;
         };
-        seasonTeams: never;
+        season_teams: {
+            id: number;
+            status: SeasonTeamStatus;
+            team: {
+                id: number;
+                name: string;
+                logo: string | null;
+            };
+        }[];
     } & {
         id: number;
         phase_id: number;

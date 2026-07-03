@@ -8,7 +8,9 @@ export const SeasonStatusSchema = z.enum([
     "finished",
     "cancelled",
 ])
-
+export const CancelSeasonSchema = z.object({
+    cancel_reason: z.string().trim().min(1, "cancel_reason is required").max(500),
+});
 const baseSeasonSchema = z.object({
     name: z.string().min(1).max(255),
     description: z.string().optional(),
@@ -27,7 +29,7 @@ export const updateSeasonSchema = baseSeasonSchema
     .omit({ tournament_id: true })
     .partial();
 export const UpdateSeasonStatusSchema = z.object({
-    status: SeasonStatusSchema,
+    status: SeasonStatusSchema.exclude(["cancelled"]),
     cancel_reason: z.string().max(500).optional(),
 });
 
@@ -44,3 +46,4 @@ export type SeasonListItem = {
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>
 export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>
 export type UpdateSeasonStatusDto = z.infer<typeof UpdateSeasonStatusSchema>
+export type CancelSeasonDto = z.infer<typeof CancelSeasonSchema>;
