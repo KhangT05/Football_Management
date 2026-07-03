@@ -1,26 +1,9 @@
-// services/team.service.ts
 import { createAppError } from "../common/app.error.js";
 import { CreateTeamDto, UpdateTeamDto } from "../dtos/team.schema.js";
 import { PrismaClient, Team, TeamLeader } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
-
-// ─── Projections ──────────────────────────────────────────────────────────────
-
-const USER_SELECT = {
-    select: { id: true, name: true, email: true, phone: true },
-} as const;
-
-const TEAM_WITH_OWNER = {
-    include: { user: USER_SELECT },
-} as const;
-
-const CAPTAIN_WITH_USER = {
-    include: { user: USER_SELECT },
-} as const;
-
-// ─── Service ──────────────────────────────────────────────────────────────────
-
+import { CAPTAIN_WITH_USER, TEAM_WITH_OWNER, USER_SELECT } from "../types/team.type.js";
 export class TeamService {
     private readonly query: Queryable<Team>;
 
@@ -163,5 +146,28 @@ export class TeamService {
                 ...CAPTAIN_WITH_USER,
             });
         });
+    }
+
+    async restore(id: number): Promise<Team> {
+        const team = await this.prisma.team.findUnique({
+            where: { id },
+            select: { id: true, is_active: true, name: true },
+        });
+        if (!team) throw createAppError("NOT_FOUND", `Team ${id} not found`);
+        if (team.is_active)
+            throw createAppError("BAD_REQUEST", "Team đang active, không cần restore");
+
+        try {
+            return await this.prisma.team.update({
+                where: { id },
+                data: { is_active: true, deleted_at: null },
+                ...TEAM_WITH_OWNER,
+            });
+        } catch (err: any) {
+            // Failure mode: tên bị team khác chiếm trong lúc soft-deleted
+            if (err.code === "P2002")
+                throw createAppError("CONFLICT", `Tên "${team.name}" đã bị đội khác sử dụng, không thể restore`);
+            throw err;
+        }
     }
 }

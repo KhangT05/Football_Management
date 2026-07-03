@@ -21,26 +21,34 @@ export declare class PlayerService {
         deleted: number;
         notFound: number[];
     }>;
-    /** Hard delete — admin/cleanup only. Cascade schema xử lý seasonTeamPlayers. */
     hardDeleteTeamPlayers(team_id: number, dto: BulkDeleteDto): Promise<{
         deleted: number;
     }>;
     exportTeamPlayersExcel(team_id: number): Promise<Buffer>;
-    exportImportTemplate(): Buffer;
     /**
-     * Per-row transaction → partial success. KHÔNG dùng 1 transaction bọc
-     * toàn bộ loop: file lớn (vài trăm row) sẽ giữ transaction mở quá lâu,
-     * tăng lock contention trên teamPlayer/player table. Trade-off: mất
-     * atomicity toàn file, đổi lại import 500 dòng không block ghi khác.
+     * Template có sẵn `minRows` dòng trống (mặc định 7 — số cầu thủ tối thiểu/đội)
+     * + sheet "Instructions" tách riêng enum hint khỏi vùng data, tránh leader
+     * hiểu nhầm "goalkeeper|defender|..." là 1 giá trị hợp lệ để nguyên.
+     * Enum lấy trực tiếp từ Prisma generated client — không hardcode string,
+     * tránh drift khi schema.prisma đổi.
+     */
+    exportImportTemplate(minRows?: number): Buffer;
+    /**
+     * Per-row transaction → partial success.
+     *
+     * playerByUserId / teamPlayerSet / usedJerseyNumbers chỉ được cập nhật SAU KHI
+     * transaction commit thành công (ngoài closure). Set state trong tx callback
+     * trước throw ở bước sau sẽ khiến rollback không đồng bộ với local cache, làm
+     * row kế tiếp tưởng player đã tồn tại → insert teamPlayer trỏ player_id không
+     * có thật trong DB.
+     *
+     * OPTION A (đã chốt): TeamPlayer.position là nguồn sự thật cho context team này,
+     * ĐỘC LẬP với Player.position. Khi player đã tồn tại (existingPlayerId có sẵn),
+     * KHÔNG update Player.position dù dto.position khác — đây là intent, không phải bug.
+     * Lý do: 1 player có thể đăng ký nhiều đội với vị trí thi đấu khác nhau, hồ sơ gốc
+     * (Player.position) chỉ set 1 lần lúc tạo mới, không bị leader import ghi đè.
      */
     importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer): Promise<ImportResult>;
-    /**
-     * Không map field-by-field vì PlayerRow (Prisma payload) đã match
-     * PlayerDto 1:1 nhờ PLAYER_SELECT satisfies Prisma.PlayerSelect.
-     * Chỉ height/weight cần convert Decimal -> number, còn lại spread
-     * thẳng. Nếu PlayerDto thêm field tính toán (vd: age từ date_of_birth)
-     * thì thêm vào đây, không quay lại copy hết field như cũ.
-     */
     private mapPlayer;
     private mapTeamPlayer;
 }

@@ -1,4 +1,4 @@
-import { Controller } from "tsoa";
+import * as tsoa from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & {
     user: {
@@ -8,7 +8,7 @@ type AuthRequest = ExRequest & {
 import { TeamService } from "../services/team.service.js";
 import type { Team, TeamLeader } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-export declare class TeamController extends Controller {
+export declare class TeamController extends tsoa.Controller {
     private service;
     constructor(service: TeamService);
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Team>>;
@@ -17,9 +17,7 @@ export declare class TeamController extends Controller {
     update(id: number, name?: string, coach_name?: string, description?: string, logoFile?: Express.Multer.File): Promise<Team>;
     softDelete(id: number): Promise<void>;
     getCaptain(id: number): Promise<TeamLeader | null>;
-    assignCaptain(id: number, body: {
-        user_id: number;
-    }, req: AuthRequest): Promise<TeamLeader>;
+    restore(id: number): Promise<Team>;
 }
 export {};
 //# sourceMappingURL=team.controller.d.ts.map

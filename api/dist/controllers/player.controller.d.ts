@@ -8,6 +8,7 @@ type AuthRequest = ExRequest & {
 import { PlayerService } from "../services/player.service.js";
 import { type CreatePlayerDto, type UpdatePlayerDto, type PlayerDto, type TeamPlayerDto, type AddPlayerToTeamDto, type UpdateTeamPlayerDto, type BulkDeleteDto } from "../dtos/player.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
+import { ImportResult } from "../types/player.type.js";
 export declare class PlayerController extends Controller {
     private readonly service;
     constructor(service: PlayerService);
@@ -26,7 +27,8 @@ export declare class PlayerController extends Controller {
         notFound: number[];
     }>;
     exportTeamPlayers(team_id: number): Promise<void>;
-    downloadImportTemplate(): Promise<void>;
+    downloadImportTemplate(minRows?: number): Promise<void>;
+    importTeamPlayers(team_id: number, file: Express.Multer.File): Promise<ImportResult>;
 }
 export {};
 //# sourceMappingURL=player.controller.d.ts.map

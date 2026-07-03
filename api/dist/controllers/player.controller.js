@@ -10,8 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request, UploadedFile, Consumes } from "tsoa";
 import { PlayerService } from "../services/player.service.js";
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 let PlayerController = class PlayerController extends Controller {
     service;
     constructor(service) {
@@ -59,7 +60,6 @@ let PlayerController = class PlayerController extends Controller {
         return this.service.addPlayerToTeam(team_id, body, req.user.user_id);
     }
     async updateTeamPlayer(team_id, id, body) {
-        // team_id validate qua getTeamPlayerById trước để tránh update nhầm team
         const exists = await this.service.getTeamPlayerById(id, team_id);
         if (!exists) {
             this.setStatus(404);
@@ -94,12 +94,26 @@ let PlayerController = class PlayerController extends Controller {
         res.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
         res.send(buffer);
     }
-    async downloadImportTemplate() {
-        const buffer = this.service.exportImportTemplate();
+    async downloadImportTemplate(minRows = 7) {
+        const buffer = this.service.exportImportTemplate(minRows);
         const res = this.res;
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
         res.send(buffer);
+    }
+    // FIX: endpoint import trước đây thiếu hoàn toàn — service.importTeamPlayersFromExcel()
+    // không có route nào gọi tới, flow import không thể trigger qua API.
+    async importTeamPlayers(team_id, file) {
+        if (!file || file.size === 0) {
+            this.setStatus(400);
+            throw Object.assign(new Error("File is required"), { status: 400 });
+        }
+        // Guard trước khi vào XLSX.read (đồng bộ, block CPU) — reject sớm file quá khổ.
+        if (file.size > MAX_IMPORT_FILE_BYTES) {
+            this.setStatus(413);
+            throw Object.assign(new Error(`File too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024}MB)`), { status: 413 });
+        }
+        return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
     }
 };
 __decorate([
@@ -207,10 +221,20 @@ __decorate([
 ], PlayerController.prototype, "exportTeamPlayers", null);
 __decorate([
     Get("import-template"),
+    __param(0, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "downloadImportTemplate", null);
+__decorate([
+    Post("{team_id}/team-players/import"),
+    Consumes("multipart/form-data"),
+    __param(0, Path()),
+    __param(1, UploadedFile()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "importTeamPlayers", null);
 PlayerController = __decorate([
     Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("players"),

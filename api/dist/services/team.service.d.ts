@@ -15,5 +15,6 @@ export declare class TeamService {
     softDelete(id: number): Promise<void>;
     getCaptain(teamId: number): Promise<TeamLeader | null>;
     assignCaptain(teamId: number, newUserId: number, requesterId: number, requesterIsAdmin: boolean): Promise<TeamLeader>;
+    restore(id: number): Promise<Team>;
 }
 //# sourceMappingURL=team.service.d.ts.map

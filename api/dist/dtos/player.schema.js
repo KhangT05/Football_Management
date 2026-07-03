@@ -31,13 +31,15 @@ export const updateTeamPlayerSchema = z.object({
 export const bulkDeleteSchema = z.object({
     ids: z.array(z.number().int().positive()).min(1).max(100),
 });
+// FIX: .trim().toLowerCase() — Excel do leader nhập tay dễ dính khoảng trắng/case
+// khác DB, gây false negative "User not found" ở Phase 2 matching trong service.
 export const importPlayerRowSchema = z.object({
-    user_email: z.string().email(),
+    user_email: z.string().trim().toLowerCase().email(),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,
     height: z.number().positive().max(999.99).nullable().optional(),
     weight: z.number().positive().max(999.99).nullable().optional(),
     nationality: z.string().trim().max(100).nullable().optional(),
-    jersey_number: z.number().int().min(1).max(99).optional(),
+    jersey_number: z.number().int().min(1).max(99).optional(), // required logic ở service (team assignment)
 });
 //# sourceMappingURL=player.schema.js.map
