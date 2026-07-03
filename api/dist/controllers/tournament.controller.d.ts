@@ -17,6 +17,7 @@ export declare class TournamentController extends Controller {
     create(name: string, description: string, logo: Express.Multer.File | undefined, req: AuthRequest): Promise<Tournament>;
     update(id: number, body: UpdateTournamentDto): Promise<Tournament>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Tournament>;
 }
 export {};
 //# sourceMappingURL=tournament.controller.d.ts.map

@@ -30,8 +30,6 @@ export class PlayerController extends Controller {
     super();
   }
 
-  // ─── Player CRUD ──────────────────────────────────────────────────────────
-
   @Get("{id}")
   async findById(@Path() id: number): Promise<PlayerDto> {
     return this.service.getPlayerByIdOrFail(id);

@@ -933,6 +933,134 @@
 			"UpdateTournamentDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateTournamentSchema_"
 			},
+			"DefaultSelection__36_TeamPayload_": {
+				"properties": {
+					"coach_name": {
+						"type": "string"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"logo": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"coach_name",
+					"user_id",
+					"logo",
+					"description",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id",
+					"name"
+				],
+				"type": "object"
+			},
+			"TeamModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_TeamPayload_",
+				"description": "Model Team"
+			},
+			"Team": {
+				"$ref": "#/components/schemas/TeamModel",
+				"description": "Model Team"
+			},
+			"PaginatedResult_Team_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/Team"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DefaultSelection__36_TeamLeaderPayload_": {
+				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"user_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"deleted_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"team_id",
+					"user_id",
+					"deleted_at",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id"
+				],
+				"type": "object"
+			},
+			"TeamLeaderModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_TeamLeaderPayload_",
+				"description": "Model TeamLeader"
+			},
+			"TeamLeader": {
+				"$ref": "#/components/schemas/TeamLeaderModel",
+				"description": "Model TeamLeader"
+			},
 			"SeasonTeamStatus": {
 				"type": "string",
 				"enum": [
@@ -956,11 +1084,11 @@
 					"status": {
 						"$ref": "#/components/schemas/SeasonTeamStatus"
 					},
-					"team_id": {
+					"season_id": {
 						"type": "number",
 						"format": "double"
 					},
-					"season_id": {
+					"team_id": {
 						"type": "number",
 						"format": "double"
 					},
@@ -992,8 +1120,8 @@
 					"group_id",
 					"seed",
 					"status",
-					"team_id",
 					"season_id",
+					"team_id",
 					"user_id",
 					"deleted_at",
 					"updated_at",
@@ -1686,7 +1814,7 @@
 					"forward"
 				]
 			},
-			"PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--season_id-number--team_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+			"PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
 				"properties": {
 					"data": {
 						"items": {
@@ -1706,11 +1834,11 @@
 									"type": "number",
 									"format": "double"
 								},
-								"team_id": {
+								"season_id": {
 									"type": "number",
 									"format": "double"
 								},
-								"season_id": {
+								"team_id": {
 									"type": "number",
 									"format": "double"
 								},
@@ -1736,8 +1864,8 @@
 								"accumulated_yellow_cards",
 								"player_id",
 								"matches_played",
-								"team_id",
 								"season_id",
+								"team_id",
 								"red_cards",
 								"yellow_cards",
 								"goals_scored",
@@ -4399,11 +4527,11 @@
 						"type": "number",
 						"format": "double"
 					},
-					"season_id": {
+					"team_id": {
 						"type": "number",
 						"format": "double"
 					},
-					"team_id": {
+					"season_id": {
 						"type": "number",
 						"format": "double"
 					},
@@ -4435,8 +4563,8 @@
 					"updated_at",
 					"deleted_at",
 					"user_id",
-					"season_id",
 					"team_id",
+					"season_id",
 					"status",
 					"match_id",
 					"title",
@@ -4562,11 +4690,11 @@
 					"status": {
 						"$ref": "#/components/schemas/ArticleStatus"
 					},
-					"team_id": {
+					"season_id": {
 						"type": "number",
 						"format": "double"
 					},
-					"season_id": {
+					"team_id": {
 						"type": "number",
 						"format": "double"
 					},
@@ -4602,8 +4730,8 @@
 					"title",
 					"match_id",
 					"status",
-					"team_id",
 					"season_id",
+					"team_id",
 					"user_id",
 					"deleted_at",
 					"updated_at",
@@ -6146,6 +6274,406 @@
 				]
 			}
 		},
+		"/tournaments/{id}/restore": {
+			"patch": {
+				"operationId": "Restore",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Tournament"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tournaments"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/teams": {
+			"get": {
+				"operationId": "FindAll",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_Team_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "q",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Team"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"coach_name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"logo": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/teams/{id}": {
+			"get": {
+				"operationId": "FindById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Team"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Team"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": false,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"coach_name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"logo": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "SoftDelete",
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/teams/{id}/captain": {
+			"get": {
+				"operationId": "GetCaptain",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/TeamLeader"
+										}
+									],
+									"nullable": true
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"user",
+							"organizing",
+							"guest"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/teams/{id}/restore": {
+			"patch": {
+				"operationId": "Restore",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Team"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
 		"/seasonteams": {
 			"get": {
 				"operationId": "FindAll",
@@ -7109,17 +7637,6 @@
 														"type": "number",
 														"format": "double"
 													},
-													"team": {
-														"properties": {
-															"name": {
-																"type": "string"
-															}
-														},
-														"required": [
-															"name"
-														],
-														"type": "object"
-													},
 													"matches_played": {
 														"type": "number",
 														"format": "double"
@@ -7140,13 +7657,24 @@
 														],
 														"type": "object"
 													},
+													"season_id": {
+														"type": "number",
+														"format": "double"
+													},
 													"team_id": {
 														"type": "number",
 														"format": "double"
 													},
-													"season_id": {
-														"type": "number",
-														"format": "double"
+													"team": {
+														"properties": {
+															"name": {
+																"type": "string"
+															}
+														},
+														"required": [
+															"name"
+														],
+														"type": "object"
 													},
 													"red_cards": {
 														"type": "number",
@@ -7163,11 +7691,11 @@
 												},
 												"required": [
 													"assists",
-													"team",
 													"matches_played",
 													"season",
-													"team_id",
 													"season_id",
+													"team_id",
+													"team",
 													"red_cards",
 													"yellow_cards",
 													"goals_scored"
@@ -7308,7 +7836,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--season_id-number--team_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
+									"$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
 								}
 							}
 						}
@@ -7412,11 +7940,11 @@
 												"type": "number",
 												"format": "double"
 											},
-											"team_id": {
+											"season_id": {
 												"type": "number",
 												"format": "double"
 											},
-											"season_id": {
+											"team_id": {
 												"type": "number",
 												"format": "double"
 											},
@@ -7452,8 +7980,8 @@
 											"assists",
 											"player_id",
 											"matches_played",
-											"team_id",
 											"season_id",
+											"team_id",
 											"red_cards",
 											"yellow_cards",
 											"goals_scored",

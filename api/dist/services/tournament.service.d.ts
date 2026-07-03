@@ -21,5 +21,6 @@ export declare class TournamentService {
     create(data: CreateTournamentDto, userId: number): Promise<Tournament>;
     update(id: number, data: UpdateTournamentDto): Promise<Tournament>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Tournament>;
 }
 //# sourceMappingURL=tournament.service.d.ts.map

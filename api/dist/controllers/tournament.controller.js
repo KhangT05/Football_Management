@@ -50,6 +50,9 @@ let TournamentController = class TournamentController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+    async restore(id) {
+        return this.service.restore(id);
+    }
 };
 __decorate([
     Get("/"),
@@ -96,6 +99,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "softDelete", null);
+__decorate([
+    Patch("{id}/restore"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], TournamentController.prototype, "restore", null);
 TournamentController = __decorate([
     Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("tournaments"),

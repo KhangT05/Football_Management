@@ -1,4 +1,4 @@
-import * as tsoa from "tsoa";
+import { Controller } from 'tsoa';
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & {
     user: {
@@ -8,7 +8,7 @@ type AuthRequest = ExRequest & {
 import { TeamService } from "../services/team.service.js";
 import type { Team, TeamLeader } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-export declare class TeamController extends tsoa.Controller {
+export declare class TeamController extends Controller {
     private service;
     constructor(service: TeamService);
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Team>>;
