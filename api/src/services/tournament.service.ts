@@ -91,7 +91,7 @@ export class TournamentService {
         const activeSeasonCount = await this.prisma.season.count({
             where: {
                 tournament_id: id,
-                is_deleted: false,
+                is_active: false,
                 status: { in: ['registration_open', 'ongoing'] },
             },
         });
@@ -100,7 +100,7 @@ export class TournamentService {
 
         await this.prisma.tournament.update({
             where: { id },
-            data: { is_active: false, deleted_at: new Date() },
+            data: { is_active: false },
         });
     }
 }
