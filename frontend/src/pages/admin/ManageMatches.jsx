@@ -7,7 +7,7 @@ import { CalendarDays, ChevronDown, Activity, Calendar } from 'lucide-react';
 
 export default function ManageMatches() {
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore();
-  
+
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedMatchId, setSelectedMatchId] = useState('');
@@ -19,7 +19,8 @@ export default function ManageMatches() {
   useEffect(() => {
     if (!selectedSeasonId && seasons.length > 0) {
       const active = seasons.find(s => s.status === 'ongoing' || s.status === 'registration_open') || seasons[0];
-      setTimeout(() => setSelectedSeasonId(String(active.id)), 0);
+      // setTimeout(...,0) trước đây không giải quyết race nào thật — set thẳng.
+      setSelectedSeasonId(String(active.id));
     }
   }, [selectedSeasonId, seasons]);
 
@@ -47,13 +48,13 @@ export default function ManageMatches() {
             </div>
           </div>
           <div className="flex items-center bg-navy-dark p-1.5 rounded-xl border border-navy-light">
-            <button 
+            <button
               onClick={() => setActiveTab('schedule')}
               className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeTab === 'schedule' ? 'bg-navy border border-navy-light shadow-sm text-white' : 'text-gray-400 hover:text-white'}`}
             >
               <Calendar className="w-4 h-4" /> Lịch thi đấu
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('live')}
               className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeTab === 'live' ? 'bg-navy border border-navy-light shadow-sm text-white' : 'text-gray-400 hover:text-white'}`}
             >
@@ -88,12 +89,12 @@ export default function ManageMatches() {
 
         {/* Tab Content */}
         {activeTab === 'schedule' ? (
-          <ScheduleTab 
+          <ScheduleTab
             selectedSeasonId={selectedSeasonId}
             onGoToLiveControl={handleGoToLiveControl}
           />
         ) : (
-          <LiveControlTab 
+          <LiveControlTab
             selectedSeasonId={selectedSeasonId}
             selectedMatchId={selectedMatchId}
             setSelectedMatchId={setSelectedMatchId}

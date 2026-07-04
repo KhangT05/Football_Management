@@ -13,14 +13,35 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
+import { SeasonTeamStatus } from "../generated/prisma/client.js";
 let SeasonTeamController = class SeasonTeamController extends Controller {
     service;
     constructor(service) {
         super();
         this.service = service;
     }
-    async findAll(page = 1, per_page = 20, q, sort, direction) {
-        return this.service.findAll({ page, per_page, q, sort, direction });
+    /**
+     * FIX: thiếu season_id/status/team_id trong signature khiến tsoa strip
+     * các query param này trước khi vào service.findAll() — Queryable đọc
+     * filter qua req[field] PHẲNG (xem QueryBuilder.applySimpleFilter:
+     * `const value = req[field]`), không phải nested req.filters.field.
+     * Route handler trước đây chưa bao giờ forward season_id/status vào
+     * QueryRequest → mọi call GET /seasonteams?season_id=X&status=approved
+     * chạy KHÔNG filter gì, count/list trả về TOÀN BỘ season_teams trong DB
+     * across mọi season — sai lệch số liệu "đội đã duyệt" ở FE (GroupDrawUI
+     * dùng con số này để validate trước khi cho phép draw).
+     *
+     * is_active KHÔNG forward ở đây dù nằm trong filterable config, vì
+     * SeasonTeamService.beforeBuild đã hardcode `is_active: true` — AND
+     * chồng lên bất kỳ giá trị nào applySimpleFilter push vào sẽ tạo where
+     * mâu thuẫn (is_active=false từ client AND is_active=true từ beforeBuild
+     * -> luôn rỗng, silent, không lỗi). Field này chỉ nên control nội bộ.
+     */
+    async findAll(page = 1, per_page = 20, q, sort, direction, season_id, team_id, status) {
+        return this.service.findAll({
+            page, per_page, q, sort, direction,
+            season_id, team_id, status,
+        });
     }
     async findById(id) {
         return this.service.findByIdOrFail(id);
@@ -68,8 +89,11 @@ __decorate([
     __param(2, Query()),
     __param(3, Query()),
     __param(4, Query()),
+    __param(5, Query()),
+    __param(6, Query()),
+    __param(7, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, String, Number, Number, String]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "findAll", null);
 __decorate([

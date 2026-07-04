@@ -16,11 +16,17 @@ function unwrapResponse(res, label) {
 
 function extractTotalCount(payload) {
   const meta = payload?.meta ?? payload?.pagination ?? null;
-  const candidates = [meta?.total, meta?.total_items, meta?.count, payload?.total];
+  const candidates = [
+    meta?.total, meta?.total_items, meta?.totalItems,
+    meta?.total_count, meta?.totalCount, meta?.count, meta?.itemCount,
+    payload?.total,
+  ];
   const found = candidates.find((v) => typeof v === 'number');
   if (typeof found === 'number') return found;
-  if (Array.isArray(payload?.data)) return payload.data.length;
-  if (Array.isArray(payload)) return payload.length;
+
+  // Không có meta.total tin cậy được -> KHÔNG suy ra từ data.length khi ta
+  // chủ động giới hạn per_page, vì data.length lúc đó chỉ phản ánh per_page,
+  // không phải tổng thật. Trả về null để UI báo lỗi thay vì hiển thị số sai.
   return null;
 }
 

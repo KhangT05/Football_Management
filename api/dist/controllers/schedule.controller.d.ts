@@ -8,6 +8,16 @@ export declare class ScheduleController extends Controller {
     private service;
     constructor(service: ScheduleService);
     generateSchedule(seasonId: number, body: scheduleSchema.GenerateScheduleDto): Promise<GenerateResult>;
+    /**
+     * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
+     * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc
+     * /draw-seeded). KHÔNG tạo lại bảng, KHÔNG tự chia đội — chỉ sinh match
+     * round-robin cho các group hiện có rồi xếp giờ/sân.
+     *
+     * Dùng endpoint này thay vì /generate khi season.phases.length > 0
+     * (endpoint /generate sẽ throw CONFLICT trong trường hợp đó).
+     */
+    generateFromGroups(seasonId: number, body: scheduleSchema.GenerateFromGroupsDto): Promise<GenerateResult>;
     autoSchedule(seasonId: number, body: scheduleSchema.AutoScheduleDto): Promise<{
         matchesScheduled: number;
         failedMatchIds: number[];

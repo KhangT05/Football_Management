@@ -36,8 +36,6 @@ const SEASON_STATUS_COLORS = {
   cancelled: 'text-gray-500',
 };
 
-
-
 export default function ManageSeasonTeams() {
   const toast = useToastStore();
   const [activeTab, setActiveTab] = useState('teams');

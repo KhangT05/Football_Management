@@ -109,7 +109,8 @@ export class ScheduleService extends ScheduleEngine {
             if (season.status !== SeasonStatus.registration_open)
                 throw createAppError('CONFLICT', `Season phải ở 'registration_open' để generate, hiện tại: '${season.status}'`);
             if (season.phases.length > 0)
-                throw createAppError('CONFLICT', `Season ${seasonId} đã có phase — không generate lại`);
+                throw createAppError('CONFLICT', `Season ${seasonId} đã có phase — không generate lại. Nếu bảng đã được tạo/bốc ` +
+                    `thăm qua GroupService, dùng endpoint generate-from-groups thay vì endpoint này.`);
             const teamIds = season.season_teams.map(st => st.team_id);
             if (teamIds.length < 2)
                 throw createAppError('VALIDATION_ERROR', `Chỉ có ${teamIds.length} team active — cần ít nhất 2`);
@@ -171,6 +172,115 @@ export class ScheduleService extends ScheduleEngine {
             return { groupCount, groupIds: createdGroupIds };
         }, { timeout: 30_000 });
         const scheduleResult = await this.autoScheduleMatches(seasonId, options);
+        if (scheduleResult.failedMatchIds.length > 0) {
+            warnings.push(`${scheduleResult.failedMatchIds.length} match chưa xếp lịch (thiếu slot hoặc ` +
+                `thuật toán không tìm ra phương án — xem lại venueIds/matchTimes/minRestDays): ` +
+                `IDs [${scheduleResult.failedMatchIds.join(', ')}]`);
+        }
+        return { groupCount, groupIds, ...scheduleResult, warnings };
+    }
+    /**
+     * NEW: Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
+     * GroupService (createGroupsBulk + drawGroups/drawGroupsSeeded), rồi
+     * auto-schedule giờ/sân. Dùng cho luồng: admin tạo bảng + bốc thăm trước
+     * (GroupDrawUI) → sau đó bấm "Tạo lịch thi đấu" ở ScheduleTab.
+     *
+     * KHÁC generateGroupsAndSchedule(): method đó tự tạo Phase + Group + tự
+     * chia đội (assignTeamsToGroups) và sẽ throw CONFLICT nếu season đã có
+     * phase — nên không dùng được sau khi đã bốc thăm thủ công. Method này
+     * ngược lại: BẮT BUỘC phải có phase + group + season_team.group_id đã
+     * set sẵn, và KHÔNG tự tạo hay tự chia đội.
+     *
+     * Tiêu chí resolve Phase (format round_robin, type group_stage,
+     * is_active true) và tiêu chí lọc season_teams hợp lệ trong group
+     * (deleted_at null, is_active true, status approved) được giữ ĐỒNG BỘ
+     * với GroupService (getOrCreateRoundRobinPhase / buildGroupsPayload) —
+     * để 2 service luôn nhìn cùng 1 Phase/Group, tránh lệch trạng thái.
+     */
+    async generateMatchesFromDrawnGroups(seasonId, options) {
+        const warnings = [];
+        if (options.venueIds.length === 0)
+            throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
+        if (options.matchTimes.length === 0)
+            throw createAppError('VALIDATION_ERROR', 'matchTimes không được rỗng');
+        const { groupCount, groupIds } = await this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw `SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
+            const season = await tx.season.findUnique({ where: { id: seasonId } });
+            if (!season)
+                throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+            // Cùng tiêu chí resolve phase với GroupService — KHÔNG tự tạo phase
+            // (đây là read/generate-path, không phải create-path).
+            const phase = await tx.phase.findFirst({
+                where: {
+                    season_id: seasonId,
+                    format: PhaseFormat.round_robin,
+                    type: PhaseType.group_stage,
+                    is_active: true,
+                },
+            });
+            if (!phase)
+                throw createAppError('CONFLICT', `Season ${seasonId} chưa có bảng đấu — tạo bảng & bốc thăm qua GroupService ` +
+                    `trước khi tạo lịch, hoặc dùng endpoint generate (tự tạo bảng) nếu chưa từng tạo.`);
+            if (phase.status === PhaseStatus.locked)
+                throw createAppError('CONFLICT', `Phase ${phase.id} đã locked`);
+            const existingMatches = await tx.match.count({
+                where: { phase_id: phase.id, deleted_at: null },
+            });
+            if (existingMatches > 0)
+                throw createAppError('CONFLICT', `Season ${seasonId} đã có lịch thi đấu (${existingMatches} match) — xoá lịch cũ ` +
+                    `trước khi tạo lại.`);
+            // Filter giống hệt GroupService.buildGroupsPayload — đảm bảo chỉ tính
+            // các season_team thực sự "đã bốc thăm và còn hợp lệ".
+            const groups = await tx.group.findMany({
+                where: { phase_id: phase.id, is_active: true },
+                include: {
+                    season_teams: {
+                        where: {
+                            deleted_at: null,
+                            is_active: true,
+                            status: SeasonTeamStatus.approved,
+                        },
+                        select: { team_id: true },
+                    },
+                },
+                orderBy: { id: 'asc' },
+            });
+            if (groups.length === 0)
+                throw createAppError('CONFLICT', `Phase ${phase.id} chưa có group nào`);
+            const allMatches = [];
+            const usedGroupIds = [];
+            for (const group of groups) {
+                const teamIds = group.season_teams.map(st => st.team_id);
+                if (teamIds.length < 2) {
+                    warnings.push(`${group.name}: chỉ có ${teamIds.length} đội đã bốc thăm — bỏ qua generate match`);
+                    continue;
+                }
+                const matches = this.generateRoundRobin(teamIds, group.id, phase.id, options.doubleRound ?? false);
+                allMatches.push(...matches);
+                usedGroupIds.push(group.id);
+            }
+            if (allMatches.length === 0)
+                throw createAppError('CONFLICT', 'Không bảng nào đủ >= 2 đội đã bốc thăm — bốc thăm bảng trước khi tạo lịch.');
+            await tx.match.createMany({ data: allMatches });
+            if (options.minRestDaysPerTeam !== undefined) {
+                await tx.phase.update({
+                    where: { id: phase.id },
+                    data: { min_rest_days_per_team: options.minRestDaysPerTeam },
+                });
+            }
+            if (season.status === SeasonStatus.registration_open) {
+                await tx.season.update({
+                    where: { id: seasonId },
+                    data: { status: SeasonStatus.ongoing },
+                });
+            }
+            return { groupCount: usedGroupIds.length, groupIds: usedGroupIds };
+        }, { timeout: 30_000 });
+        const scheduleResult = await this.autoScheduleMatches(seasonId, {
+            venueIds: options.venueIds,
+            matchTimes: options.matchTimes,
+            allowPastDate: options.allowPastDate,
+        });
         if (scheduleResult.failedMatchIds.length > 0) {
             warnings.push(`${scheduleResult.failedMatchIds.length} match chưa xếp lịch (thiếu slot hoặc ` +
                 `thuật toán không tìm ra phương án — xem lại venueIds/matchTimes/minRestDays): ` +

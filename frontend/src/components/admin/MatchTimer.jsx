@@ -10,19 +10,23 @@ import { Clock } from 'lucide-react';
  * @param {number}  seconds    - giá trị hiện tại (controlled)
  * @param {Function} onTick    - callback mỗi giây: (newSeconds) => void
  */
-export default function MatchTimer({ isRunning, seconds, onTick }) {
-  const timerRef = useRef(null);
+
+export default function MatchTimer({ isRunning, startedAt, pausedSeconds = 0, onTick }) {
+  // startedAt: timestamp (ms) server trả về lúc bắt đầu/resume period hiện tại
+  // pausedSeconds: tổng giây đã tích lũy trước lần start/resume này
+  const [seconds, setSeconds] = useState(pausedSeconds);
 
   useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        onTick(prev => prev + 1);
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isRunning || !startedAt) return;
+    const tick = () => {
+      const elapsed = pausedSeconds + Math.floor((Date.now() - startedAt) / 1000);
+      setSeconds(elapsed);
+      onTick?.(elapsed);
+    };
+    tick(); // sync ngay, không đợi 1s đầu
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [isRunning, startedAt, pausedSeconds]); // deps đầy đủ, không cần eslint-disable
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

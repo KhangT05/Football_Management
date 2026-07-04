@@ -2,7 +2,6 @@ import {
     Controller, Route, Tags, Post, Patch, Get,
     Path, Body, Query, Security, SuccessResponse,
 } from 'tsoa';
-
 import { ScheduleService } from '../services/schedule.service.js';
 import * as scheduleSchema from '../dtos/schedule.schema.js';
 import { GenerateResult, MatchByTeamRow } from '../types/schedule.type.js';
@@ -16,6 +15,7 @@ export class ScheduleController extends Controller {
     constructor(private service: ScheduleService) {
         super();
     }
+
     @Security('jwt', ['admin'])
     @Post('seasons/{seasonId}/generate')
     @SuccessResponse(201, 'Created')
@@ -26,6 +26,27 @@ export class ScheduleController extends Controller {
         const parsed = scheduleSchema.generateScheduleSchema.parse(body);
         this.setStatus(201);
         return this.service.generateGroupsAndSchedule(seasonId, parsed);
+    }
+
+    /**
+     * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
+     * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc
+     * /draw-seeded). KHÔNG tạo lại bảng, KHÔNG tự chia đội — chỉ sinh match
+     * round-robin cho các group hiện có rồi xếp giờ/sân.
+     *
+     * Dùng endpoint này thay vì /generate khi season.phases.length > 0
+     * (endpoint /generate sẽ throw CONFLICT trong trường hợp đó).
+     */
+    @Security('jwt', ['admin'])
+    @Post('seasons/{seasonId}/generate-from-groups')
+    @SuccessResponse(201, 'Created')
+    async generateFromGroups(
+        @Path() seasonId: number,
+        @Body() body: scheduleSchema.GenerateFromGroupsDto,
+    ): Promise<GenerateResult> {
+        const parsed = scheduleSchema.generateFromGroupsSchema.parse(body);
+        this.setStatus(201);
+        return this.service.generateMatchesFromDrawnGroups(seasonId, parsed);
     }
 
     @Security('jwt', ['admin'])
