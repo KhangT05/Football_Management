@@ -12,16 +12,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Security, Query, } from "tsoa";
 import { StatisticsService } from "../services/statistics.service.js";
-import { parseDaysParam } from "../helper/statistics.helper.js";
 let StatisticsController = class StatisticsController extends Controller {
     statisticsService;
     constructor(statisticsService) {
         super();
         this.statisticsService = statisticsService;
     }
-    async getUserRegistrationStats(days) {
-        const parsedDays = parseDaysParam(days);
-        return this.statisticsService.getUserRegistrationStats(parsedDays);
+    async getUserRegistrationStats(period) {
+        return this.statisticsService.getUserRegistrationStats(period);
     }
     // ═══════════════════════════════════════════════════════════════════════
     // GET — SEASON REVENUE (ADMIN only — dữ liệu tài chính, không public)
@@ -50,7 +48,7 @@ __decorate([
     Get("users/registrations"),
     __param(0, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getUserRegistrationStats", null);
 __decorate([

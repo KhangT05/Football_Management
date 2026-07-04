@@ -10,4 +10,6 @@ export const seasonTeamApi = {
   assignGroup: (id, data) => axiosClient.patch(`/seasonteams/${id}/group`, data),   // { group_id }
   transferSeason: (id, data) => axiosClient.patch(`/seasonteams/${id}/transfer`, data), // { season_id }
   delete: (id) => axiosClient.delete(`/seasonteams/${id}`),
+  getOrCreateGroupPhase: (seasonId) =>
+    axiosClient.post(`/seasonteams/season/${seasonId}/group-phase`),
 };

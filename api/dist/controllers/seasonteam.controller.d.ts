@@ -28,6 +28,25 @@ export declare class SeasonTeamController extends Controller {
     /** Assign team vào group sau draw */
     assignGroup(id: number, body: seasonTeamSchema.AssignGroupDto): Promise<SeasonTeamWithRelations>;
     softDelete(id: number): Promise<void>;
+    /** Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.
+   *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
+    getOrCreateGroupPhase(seasonId: number): Promise<{
+        type: import("../generated/prisma/enums.js").PhaseType;
+        format: import("../generated/prisma/enums.js").PhaseFormat;
+        legs: number;
+        id: number;
+        status: import("../generated/prisma/enums.js").PhaseStatus;
+        is_active: boolean;
+        created_at: Date;
+        updated_at: Date | null;
+        name: string;
+        season_id: number;
+        order: number;
+        start_date: Date | null;
+        end_date: Date | null;
+        min_rest_days_per_team: number;
+        teams_per_group: number | null;
+    }>;
 }
 export {};
 //# sourceMappingURL=seasonteam.controller.d.ts.map

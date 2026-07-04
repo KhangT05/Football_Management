@@ -1695,6 +1695,32 @@
             "AssignGroupDto": {
                 "$ref": "#/components/schemas/infer_typeofassignGroupSchema_"
             },
+            "PhaseType": {
+                "type": "string",
+                "enum": [
+                    "group_stage",
+                    "round_of_16",
+                    "quarter_final",
+                    "semi_final",
+                    "third_place",
+                    "final"
+                ]
+            },
+            "PhaseFormat": {
+                "type": "string",
+                "enum": [
+                    "round_robin",
+                    "knockout"
+                ]
+            },
+            "PhaseStatus": {
+                "type": "string",
+                "enum": [
+                    "draft",
+                    "in_progress",
+                    "locked"
+                ]
+            },
             "SeasonStatus": {
                 "type": "string",
                 "enum": [
@@ -4430,6 +4456,63 @@
                     "SCHEDULE_FAILED"
                 ]
             },
+            "CreateGroupBody": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "CreateGroupsBulkBody": {
+                "properties": {
+                    "count": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Số group cần tạo — map thành \"Bảng A\"..\"Bảng Z\", max 26"
+                    }
+                },
+                "required": [
+                    "count"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "DrawAssignment": {
+                "properties": {
+                    "group_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "team_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "group_id",
+                    "team_id"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "DrawGroupsOptions": {
+                "properties": {
+                    "teams_per_group": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "teams_per_group"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "DefaultSelection__36_GroupPayload_": {
                 "properties": {
                     "scheduleGeneratedAt": {
@@ -4567,37 +4650,6 @@
                         "type": "object"
                     }
                 ]
-            },
-            "DrawAssignment": {
-                "properties": {
-                    "group_id": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "team_id": {
-                        "type": "number",
-                        "format": "double"
-                    }
-                },
-                "required": [
-                    "group_id",
-                    "team_id"
-                ],
-                "type": "object",
-                "additionalProperties": false
-            },
-            "DrawGroupsOptions": {
-                "properties": {
-                    "teams_per_group": {
-                        "type": "number",
-                        "format": "double"
-                    }
-                },
-                "required": [
-                    "teams_per_group"
-                ],
-                "type": "object",
-                "additionalProperties": false
             },
             "AssignTeamToGroupBody": {
                 "properties": {
@@ -5054,10 +5106,6 @@
             },
             "DefaultSelection__36_ArticleMediaPayload_": {
                 "properties": {
-                    "order": {
-                        "type": "number",
-                        "format": "double"
-                    },
                     "caption": {
                         "type": "string"
                     },
@@ -5067,6 +5115,10 @@
                     },
                     "url": {
                         "type": "string"
+                    },
+                    "order": {
+                        "type": "number",
+                        "format": "double"
                     },
                     "type": {
                         "$ref": "#/components/schemas/MediaType"
@@ -5081,10 +5133,10 @@
                     }
                 },
                 "required": [
-                    "order",
                     "caption",
                     "article_id",
                     "url",
+                    "order",
                     "type",
                     "created_at",
                     "id"
@@ -6945,11 +6997,18 @@
                 "parameters": [
                     {
                         "in": "query",
-                        "name": "days",
+                        "name": "period",
                         "required": false,
                         "schema": {
-                            "format": "double",
-                            "type": "number"
+                            "type": "string",
+                            "enum": [
+                                "7d",
+                                "30d",
+                                "90d",
+                                "3m",
+                                "6m",
+                                "1y"
+                            ]
                         }
                     }
                 ]
@@ -7175,15 +7234,7 @@
                 "tags": [
                     "SeasonTeams"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "query",
@@ -7291,15 +7342,7 @@
                 "tags": [
                     "SeasonTeams"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -7568,6 +7611,119 @@
                         }
                     }
                 }
+            }
+        },
+        "/seasonteams/season/{seasonId}/group-phase": {
+            "post": {
+                "operationId": "GetOrCreateGroupPhase",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "teams_per_group": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "legs": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "min_rest_days_per_team": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "end_date": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "start_date": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "order": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "status": {
+                                            "$ref": "#/components/schemas/PhaseStatus"
+                                        },
+                                        "season_id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "format": {
+                                            "$ref": "#/components/schemas/PhaseFormat"
+                                        },
+                                        "type": {
+                                            "$ref": "#/components/schemas/PhaseType"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "is_active": {
+                                            "type": "boolean"
+                                        },
+                                        "id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "teams_per_group",
+                                        "legs",
+                                        "min_rest_days_per_team",
+                                        "end_date",
+                                        "start_date",
+                                        "order",
+                                        "status",
+                                        "season_id",
+                                        "format",
+                                        "type",
+                                        "updated_at",
+                                        "created_at",
+                                        "is_active",
+                                        "id",
+                                        "name"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.\r\nMỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có.",
+                "tags": [
+                    "SeasonTeams"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
             }
         },
         "/seasons": {
@@ -11723,22 +11879,106 @@
                 ]
             }
         },
-        "/groups/{id}": {
+        "/groups/season/{seasonId}": {
             "get": {
-                "operationId": "FindByIdWithTeams",
+                "operationId": "FindAllBySeason",
                 "responses": {
                     "200": {
                         "description": "Ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/GroupWithTeams"
+                                    "properties": {
+                                        "groups": {
+                                            "items": {
+                                                "properties": {
+                                                    "season_teams": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "team_id": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                },
+                                                                "id": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "team_id",
+                                                                "id"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "status": {
+                                                        "$ref": "#/components/schemas/GroupStatus"
+                                                    },
+                                                    "id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "season_teams",
+                                                    "status",
+                                                    "id",
+                                                    "name"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "phase": {
+                                            "properties": {
+                                                "season_id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "teams_per_group": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "status": {
+                                                    "$ref": "#/components/schemas/PhaseStatus"
+                                                },
+                                                "format": {
+                                                    "$ref": "#/components/schemas/PhaseFormat"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                }
+                                            },
+                                            "required": [
+                                                "season_id",
+                                                "teams_per_group",
+                                                "status",
+                                                "format",
+                                                "name",
+                                                "id"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "groups",
+                                        "phase"
+                                    ],
+                                    "type": "object"
                                 }
                             }
                         }
                     }
                 },
-                "description": "Public: xem group + list team approved đang thuộc group (kèm phase info)",
+                "description": "Public: list group của season — service tự resolve phase round_robin active, không tự tạo",
                 "tags": [
                     "Groups"
                 ],
@@ -11746,7 +11986,189 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "CreateGroup",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "phase_id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "phase_id",
+                                        "name",
+                                        "id"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Admin: tạo 1 group — service tự get-or-create phase round_robin của season",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateGroupBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/phase/{phaseId}": {
+            "get": {
+                "operationId": "FindAllByPhase",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "groups": {
+                                            "items": {
+                                                "properties": {
+                                                    "season_teams": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "team_id": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                },
+                                                                "id": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "team_id",
+                                                                "id"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "status": {
+                                                        "$ref": "#/components/schemas/GroupStatus"
+                                                    },
+                                                    "id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "season_teams",
+                                                    "status",
+                                                    "id",
+                                                    "name"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "phase": {
+                                            "properties": {
+                                                "season_id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "teams_per_group": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "status": {
+                                                    "$ref": "#/components/schemas/PhaseStatus"
+                                                },
+                                                "format": {
+                                                    "$ref": "#/components/schemas/PhaseFormat"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                }
+                                            },
+                                            "required": [
+                                                "season_id",
+                                                "teams_per_group",
+                                                "status",
+                                                "format",
+                                                "name",
+                                                "id"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "groups",
+                                        "phase"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Public: list group theo phase cụ thể — dùng khi FE đã biết phaseId\r\n(VD sau khi tạo phase mới, hoặc UI quản lý nhiều phase cùng season).\r\nFIX: trước đây gọi nhầm findAllBySeason(phaseId) — sai semantic,\r\nvì findAllBySeason filter theo season_id + format + is_active,\r\nkhông phải theo phase_id trực tiếp. Nếu 1 season có >1 active\r\nround_robin phase (multi-phase-with-groups), route này sẽ trả sai\r\ndata. Tách hẳn method riêng trong service.",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "phaseId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -11756,7 +12178,72 @@
                 ]
             }
         },
-        "/groups/{phaseId}/draw": {
+        "/groups/season/{seasonId}/bulk": {
+            "post": {
+                "operationId": "CreateGroupsBulk",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "id"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Admin: tạo N group cùng lúc (Bảng A, B, C...)",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateGroupsBulkBody"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/season/{seasonId}/draw": {
             "post": {
                 "operationId": "DrawGroups",
                 "responses": {
@@ -11774,7 +12261,7 @@
                         }
                     }
                 },
-                "description": "Admin: random draw toàn bộ approved team vào các group của phase",
+                "description": "Admin: random draw toàn bộ approved team vào group của season",
                 "tags": [
                     "Groups"
                 ],
@@ -11788,7 +12275,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "phaseId",
+                        "name": "seasonId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -11814,7 +12301,7 @@
                         "description": "No content"
                     }
                 },
-                "description": "Admin: xoá toàn bộ kết quả draw của phase (reset group_id về null)",
+                "description": "Admin: xoá toàn bộ kết quả draw của season (reset group_id về null)",
                 "tags": [
                     "Groups"
                 ],
@@ -11828,7 +12315,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "phaseId",
+                        "name": "seasonId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -11838,7 +12325,7 @@
                 ]
             }
         },
-        "/groups/{phaseId}/draw/seeded": {
+        "/groups/season/{seasonId}/draw/seeded": {
             "post": {
                 "operationId": "DrawGroupsSeeded",
                 "responses": {
@@ -11870,7 +12357,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "phaseId",
+                        "name": "seasonId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -11904,6 +12391,71 @@
                         }
                     }
                 }
+            }
+        },
+        "/groups/{id}": {
+            "get": {
+                "operationId": "FindByIdWithTeams",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupWithTeams"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Public: xem group + list team approved đang thuộc group (kèm phase info)",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups/{groupId}": {
+            "delete": {
+                "operationId": "DeactivateGroup",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                },
+                "description": "Admin: deactivate group (soft-delete, chặn nếu đã có match)",
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "groupId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
             }
         },
         "/groups/assign": {

@@ -201,6 +201,10 @@ export class ScheduleService extends ScheduleEngine {
         });
         if (matches.length === 0)
             return { matchesScheduled: 0, failedMatchIds: [] };
+        // FIX: select thêm end_date — trước đây rangeEnd luôn hardcode
+        // start_date + 6 tháng, bỏ qua hoàn toàn thời điểm season thực sự kết
+        // thúc. Match có thể bị xếp lịch sau khi season đã đóng. end_date giờ
+        // là hard boundary bắt buộc, không có fallback im lặng.
         const [phase, season] = await Promise.all([
             this.prisma.phase.findFirst({
                 where: { season_id: seasonId, type: PhaseType.group_stage },
@@ -208,7 +212,7 @@ export class ScheduleService extends ScheduleEngine {
             }),
             this.prisma.season.findUnique({
                 where: { id: seasonId },
-                select: { start_date: true },
+                select: { start_date: true, end_date: true },
             }),
         ]);
         if (!phase)
@@ -217,8 +221,14 @@ export class ScheduleService extends ScheduleEngine {
             throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
         if (!season.start_date)
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date`);
+        if (!season.end_date)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có end_date`);
         const minRestDays = phase.min_rest_days_per_team ?? 3;
         const startDate = season.start_date;
+        const rangeEnd = season.end_date;
+        if (rangeEnd <= startDate)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} end_date (${rangeEnd.toISOString()}) phải sau start_date ` +
+                `(${startDate.toISOString()})`);
         // Throw thay vì chỉ warn — trừ khi caller chủ động bypass bằng
         // allowPastDate (vd backfill lịch sử có chủ đích).
         if (startDate < new Date() && !options.allowPastDate) {
@@ -226,13 +236,11 @@ export class ScheduleService extends ScheduleEngine {
                 `slot pool sẽ rơi vào quá khứ. Cập nhật start_date hoặc gọi với allowPastDate=true ` +
                 `nếu đây là backfill có chủ đích.`);
         }
-        const rangeEnd = new Date(startDate);
-        rangeEnd.setMonth(rangeEnd.getMonth() + 6);
         const takenSet = await this.loadTakenSlots(options.venueIds, startDate, rangeEnd);
         const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
         if (pool.length < matches.length) {
             throw createAppError('VALIDATION_ERROR', `Không đủ slot: cần ${matches.length}, chỉ có ${pool.length}. ` +
-                `Thêm venueId / matchTime hoặc đẩy startDate sớm hơn.`);
+                `Thêm venueId / matchTime, đẩy startDate sớm hơn, hoặc mở rộng end_date của season.`);
         }
         // Greedy chọn-slot-sớm-nhất theo 1 thứ tự cố định KHÔNG đảm bảo tìm ra
         // lịch khả thi dù lịch đó tồn tại (greedy không backtrack — 1 lựa chọn

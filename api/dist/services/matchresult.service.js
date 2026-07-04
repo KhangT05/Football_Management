@@ -168,28 +168,37 @@ export class MatchResultService {
                         season: {
                             select: {
                                 id: true,
-                                tournament: {
-                                    select: {
-                                        tournamentRule: {
-                                            select: { yellow_cards_suspension: true },
-                                        },
-                                    },
-                                },
+                                tournament: { select: { tournamentRule: { select: { yellow_cards_suspension: true } } } },
                             },
                         },
                     },
                 },
-                matchResult: {
-                    select: { id: true, result_type: true },
-                },
+                matchResult: { select: { id: true, result_type: true } },
             },
         });
         if (!match.matchResult)
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
-        const seasonId = match.phase.season?.id;
-        if (!seasonId) {
-            throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
+        // FIX: guard mới — chặn override winner nếu bracket round kế tiếp đã tạo.
+        // resolveAppeal() đã có guard tương đương (chặn overturn cho knockout hoàn
+        // toàn), overrideResult (correction window) trước đây không có gì, cho phép
+        // đổi tỉ số → đổi winner trong khi round sau đã cầm sẵn đội cũ, data lệch
+        // im lặng, không cascade, không cảnh báo.
+        if (match.phase.format === PhaseFormat.knockout) {
+            const slot = await this.prisma.bracketSlot.findFirst({
+                where: { match_id: matchId },
+                select: {
+                    fed_as_a: { select: { match_id: true } },
+                    fed_as_b: { select: { match_id: true } },
+                },
+            });
+            const parentHasMatch = slot?.fed_as_a?.[0]?.match_id ?? slot?.fed_as_b?.[0]?.match_id;
+            if (parentHasMatch)
+                throw createAppError('CONFLICT', `Match ${matchId}: round kế tiếp đã được tạo (match ${parentHasMatch}) — ` +
+                    `không thể override winner qua correction window. Dùng resolveAppeal (hiện chưa hỗ trợ overturn cho knockout).`);
         }
+        const seasonId = match.phase.season?.id;
+        if (!seasonId)
+            throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
         const resultType = input.resultType ?? match.matchResult.result_type;
         if (resultType === MatchResultType.penalty) {
             if (input.homePenalty === undefined || input.awayPenalty === undefined)

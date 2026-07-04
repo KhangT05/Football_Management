@@ -32,4 +32,11 @@ export type GroupWithTeams = Group & {
         };
     }[];
 };
+export interface CreateGroupBody {
+    name: string;
+}
+export interface CreateGroupsBulkBody {
+    /** Số group cần tạo — map thành "Bảng A".."Bảng Z", max 26 */
+    count: number;
+}
 //# sourceMappingURL=group.type.d.ts.map

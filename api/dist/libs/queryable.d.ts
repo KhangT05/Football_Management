@@ -12,5 +12,7 @@ export declare class Queryable<T, Delegate extends {
     constructor(delegate: Delegate, baseConfig: QueryableConfig);
     run(req: QueryRequest, overrideConfig?: Partial<QueryableConfig>): Promise<PaginatedResult<T>>;
     runScroll(req: CursorQueryRequest, overrideConfig?: Partial<QueryableConfig>): Promise<CursorPage<T>>;
+    count(req: Pick<QueryRequest, "filter" | "q" | "period"> & Partial<Record<string, unknown>>, overrideConfig?: Partial<QueryableConfig>): Promise<number>;
 }
+export declare const PERIOD_DAYS: Record<string, number>;
 //# sourceMappingURL=queryable.d.ts.map

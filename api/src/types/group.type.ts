@@ -25,3 +25,12 @@ export type GroupWithTeams = Group & {
         team: { id: number; name: string; logo: string | null };
     }[];
 };
+
+export interface CreateGroupBody {
+    name: string;
+}
+
+export interface CreateGroupsBulkBody {
+    /** Số group cần tạo — map thành "Bảng A".."Bảng Z", max 26 */
+    count: number;
+}

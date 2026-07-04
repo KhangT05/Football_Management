@@ -1,5 +1,6 @@
 // ─── Builder ──────────────────────────────────────────────────────────────────
 
+import { createAppError } from "../common/app.error.js";
 import {
     CursorPage,
     CursorQueryRequest,
@@ -120,6 +121,13 @@ class QueryBuilder {
 
     getCursorColumn(): string { return this.cursorColumn; }
 
+    applyPeriod(period?: string): this {
+        const { dateField } = this.config;
+        if (!period || !dateField) return this; // opt-in: config phải khai báo dateField
+        this.wheres.push({ [dateField]: { gte: parsePeriod(period) } });
+        return this;
+    }
+
     buildScroll(limit: number) {
         this.config.beforeBuild?.(this.wheres);
         return {
@@ -171,6 +179,7 @@ export class Queryable<T, Delegate extends {
             .applySimpleFilter(req)
             .applyComplexFilter(req.filter)
             .applySearch(req.q)
+            .applyPeriod(req.period)
             .applySort(req.sort, req.direction)
             .applyPagination(req.page, req.per_page)
             .build();
@@ -199,6 +208,7 @@ export class Queryable<T, Delegate extends {
             .applySimpleFilter(req)
             .applyComplexFilter(req.filter)
             .applySearch(req.q)
+            .applyPeriod(req.period)
             .applyScrollSort(req.sort, req.direction)
             .applyCursor(req.cursor)
             .buildScroll(limit);
@@ -225,8 +235,47 @@ export class Queryable<T, Delegate extends {
             nextCursor: hasMore && last ? encodeCursor(last[builder.getCursorColumn()], last.id) : null,
         };
     }
+
+    async count(
+        req: Pick<QueryRequest, "filter" | "q" | "period"> & Partial<Record<string, unknown>>,
+        overrideConfig?: Partial<QueryableConfig>
+    ): Promise<number> {
+        const config = overrideConfig ? { ...this.baseConfig, ...overrideConfig } : this.baseConfig;
+        const builder = new QueryBuilder(config);
+
+        const { where } = builder
+            .applySimpleFilter(req as QueryRequest)
+            .applyComplexFilter(req.filter)
+            .applySearch(req.q)
+            .applyPeriod(req.period)
+            .build();
+
+        return this.delegate.count({ where });
+    }
 }
 // ─── Utils ────────────────────────────────────────────────────────────────────
+// queryable.ts
+
+export const PERIOD_DAYS: Record<string, number> = {
+    "7d": 7,
+    "30d": 30,
+    "90d": 90,
+    "3m": 90,
+    "6m": 180,
+    "1y": 365,
+};
+
+function parsePeriod(period: string): Date {
+    const days = PERIOD_DAYS[period];
+    if (!days) {
+        throw createAppError(
+            "VALIDATION_ERROR",
+            `Invalid period: ${period}`,
+            "period không hợp lệ, dùng: 7d, 30d, 90d, 3m, 6m, 1y",
+        );
+    }
+    return new Date(Date.now() - days * 86_400_000);
+}
 
 function toArray(value: unknown): unknown[] {
     if (Array.isArray(value)) return value;
