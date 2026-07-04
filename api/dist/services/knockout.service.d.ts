@@ -9,24 +9,23 @@ export declare class KnockoutService extends ScheduleEngine {
         matchCreated: boolean;
         newMatchId?: number;
     }>;
-    getBracket(phaseId: number): Promise<BracketSlotNode[]>;
     /**
-     * FIX (idempotency): thêm guard `parentSlot.match_id !== null` ngay sau khi
-     * xác nhận cả 2 slot con đã có winner, TRƯỚC khi tạo match mới.
-     *
-     * Trước đây nếu propagateWinner bị gọi 2 lần cho cùng matchId (retry sau
-     * timeout dù request đầu đã commit, hoặc cron grace-period chen vào) —
-     * lần gọi thứ 2 vẫn set lại seeded_home/away_team_id (vô hại, giá trị
-     * giống cũ), nhưng sau đó vẫn tạo THÊM 1 match mới cho round kế tiếp vì
-     * code cũ không check parent slot đã có match_id chưa. Bug này trước đây
-     * được "cứu" gián tiếp qua _guardConfirm ở MatchResultService — nhưng đó
-     * là phòng thủ ở tầng khác, không phải invariant của chính hàm này.
-     *
-     * NOTE: slotWithParentLinksSelect cần đảm bảo fed_as_a/fed_as_b nested
-     * select có include match_id — nếu chưa, thêm vào types/knockout.type.ts.
+     * Tính winner theo aggregate 2 lượt. Away-goals KHÔNG áp dụng (assumption —
+     * đổi lại nếu giải dùng luật cũ). Nếu aggregate hoà, winner quyết bằng
+     * penalty của leg 2 (rule chuẩn: ET/pen chỉ đá ở lượt về khi cần) — nếu leg 2
+     * không có penalty score, fail loud thay vì đoán.
      */
+    private _computeAggregateWinner;
+    getBracket(phaseId: number): Promise<BracketSlotNode[]>;
     private propagateWinner;
     private createRound1Matches;
+    /**
+     * FIX: trước đây không query season — startDate = new Date() và rangeEnd
+     * luôn hardcode +6 tháng, bỏ qua hoàn toàn season.end_date. Match knockout
+     * có thể bị xếp lịch sau khi season đã đóng. Giờ end_date là hard boundary
+     * bắt buộc (throw nếu thiếu), startDate = max(now, season.start_date) vì
+     * knockout luôn diễn ra sau group stage.
+     */
     private scheduleMatchBatch;
     private buildAllSlotCreateData;
     private bulkLinkSlots;

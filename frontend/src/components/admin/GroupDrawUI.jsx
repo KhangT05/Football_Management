@@ -1,225 +1,473 @@
-import { useState, useEffect } from 'react';
-import { Users, Shuffle, Save, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-import { seasonTeamApi, groupApi, seasonApi } from '../../api';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Users, Shuffle, AlertTriangle, Loader2, Trash2, LayoutGrid, Hash, ListChecks } from 'lucide-react';
+import { seasonTeamApi, groupApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 
+// FIX: bỏ hẳn phaseId khỏi frontend. Backend (GroupService) giờ nhận
+// thẳng seasonId cho mọi entrypoint (findAllBySeason, createGroupsBulk,
+// drawGroups, drawGroupsSeeded, clearDraw) và tự get-or-create phase
+// round_robin bên trong transaction. phaseId là chi tiết triển khai nội
+// bộ của backend — frontend không cần biết, không cần state riêng, và
+// không cần round-trip getOrCreateGroupPhase() trước khi load data.
+
+const DEBUG_RESPONSE_SHAPE = false;
+
+function unwrapResponse(res, label) {
+  if (DEBUG_RESPONSE_SHAPE) {
+    // eslint-disable-next-line no-console
+    console.log(`[GroupDrawUI][DEBUG raw response] ${label}:`, res);
+  }
+  return typeof res?.status === 'boolean' ? res.data : res;
+}
+
+/**
+ * FIX: null = "không xác định được" (response shape lạ / lỗi), khác
+ * với 0 = "xác định được, và đúng là 0 đội approved". Không được gộp
+ * 2 ý nghĩa này lại thành cùng 1 con số 0.
+ */
+function extractTotalCount(payload) {
+  const meta = payload?.meta ?? payload?.pagination ?? null;
+  const candidates = [meta?.total, meta?.total_items, meta?.count, payload?.total];
+  const found = candidates.find((v) => typeof v === 'number');
+  if (typeof found === 'number') return found;
+  if (Array.isArray(payload?.data)) return payload.data.length;
+  if (Array.isArray(payload)) return payload.length;
+  return null;
+}
+
 export default function GroupDrawUI({ seasonId }) {
-  const toast = useToastStore();
+  // FIX (infinite-loading bug): useToastStore() trước đây subscribe
+  // TOÀN BỘ store object không qua selector. Nếu toast store dùng
+  // `set({ toasts: [...] })` (gần như chắc chắn, cần re-render list
+  // toast), MỌI lần có toast bắn ra — kể cả do request khác trong app —
+  // object trả về đổi reference. `loadData` (useCallback dep [seasonId,
+  // toast]) bị tạo lại mỗi lần đó -> effect [seasonId, loadData] chạy
+  // lại -> reset toàn bộ state về rỗng + gọi lại loadData() -> nếu có
+  // 1 lỗi thật đang xảy ra (network/500), toast.error() trong catch lại
+  // trigger vòng lặp kế tiếp -> UI stuck ở "Đang tải..." vĩnh viễn dù
+  // response đã về từ lâu.
+  //
+  // Chỉ subscribe action, không subscribe cả object. Nếu store implement
+  // action bằng arrow function tạo mới mỗi lần set() (một số impl dở),
+  // dùng getState() trong handler thay vì subscribe action qua hook.
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
+
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
-  
+
+  // FIX: teams.find() trong render loop là O(n) mỗi dòng — với nhiều
+  // group x nhiều team sẽ thành O(n*m). Map 1 lần, lookup O(1).
+  const teamMap = useMemo(() => {
+    const map = new Map();
+    for (const t of teams) map.set(t.id, t);
+    return map;
+  }, [teams]);
+  const getTeamName = (teamId) => teamMap.get(Number(teamId))?.name ?? `Đội #${teamId}`;
+
   const [loading, setLoading] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  
-  // States cho API call
-  const [phaseId, setPhaseId] = useState('');
+  const [isCreatingGroups, setIsCreatingGroups] = useState(false);
+
   const [teamsPerGroup, setTeamsPerGroup] = useState(4);
   const [numPots, setNumPots] = useState(4);
-  
-  // Hiển thị kết quả bốc thăm
-  const [assignedGroups, setAssignedGroups] = useState([]);
-  const [totalTeams, setTotalTeams] = useState(0);
+  const [groupCount, setGroupCount] = useState(4);
 
-  useEffect(() => {
-    if (phaseId) {
-      loadStandings();
-      loadTotalTeams();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phaseId, seasonId]);
+  const [persistedTeamsPerGroup, setPersistedTeamsPerGroup] = useState(null);
+  // FIX: phaseInfo === null giờ có 2 nghĩa cần phân biệt bằng groupsLoadError:
+  // (a) load thành công, season chưa từng tạo group -> trạng thái hợp lệ
+  // (b) load thất bại (network/500) -> lỗi thật, groupsLoadError = true
+  const [phaseInfo, setPhaseInfo] = useState(null);
 
-  const loadTotalTeams = async () => {
-    try {
-      const res = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 500 });
-      const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const allTeams = Array.isArray(payload?.data) ? payload.data : [];
-      const seasonTeams = allTeams.filter(st => String(st.season_id) === String(seasonId));
-      const approved = seasonTeams.filter(st => st.status === 'approved');
-      setTotalTeams(approved.length);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const [groups, setGroups] = useState([]);
+  const [totalTeams, setTotalTeams] = useState(null);
+  const [groupsLoadError, setGroupsLoadError] = useState(false);
+  const [teamsCountError, setTeamsCountError] = useState(false);
 
-  const loadStandings = async () => {
+  const requestIdRef = useRef(0);
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
+
+  const loadData = useCallback(async () => {
+    if (!seasonId) return;
+    const reqId = ++requestIdRef.current;
     setLoading(true);
     try {
-      // Dùng API standings để lấy cấu trúc groups hiện tại của season
-      const res = await seasonApi.getStandings(seasonId);
-      const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const standings = Array.isArray(payload) ? payload : [];
-      setAssignedGroups(standings);
-    } catch (err) {
-      console.error(err);
-      toast.error('Không thể tải danh sách bảng đấu');
+      const [groupsRes, teamsRes] = await Promise.allSettled([
+        groupApi.listBySeason(seasonId),
+        seasonTeamApi.getAll({ season_id: seasonId, status: 'approved', per_page: 1 }),
+      ]);
+
+      if (reqId !== requestIdRef.current || !isMountedRef.current) return;
+
+      if (groupsRes.status === 'fulfilled') {
+        const payload = unwrapResponse(groupsRes.value, 'groupApi.listBySeason');
+        setGroupsLoadError(false);
+        // payload.phase === null là hợp lệ (chưa tạo group) — không log
+        // warn, không phải bug, khác hẳn trường hợp payload undefined.
+        setPhaseInfo(payload?.phase ?? null);
+        setGroups(Array.isArray(payload?.groups) ? payload.groups : []);
+        setPersistedTeamsPerGroup(
+          typeof payload?.phase?.teams_per_group === 'number' ? payload.phase.teams_per_group : null
+        );
+      } else {
+        console.error('[GroupDrawUI] loadGroups failed:', groupsRes.reason);
+        toastError(groupsRes.reason?.response?.data?.message || 'Không thể tải danh sách bảng đấu');
+        setGroups([]);
+        setPersistedTeamsPerGroup(null);
+        setPhaseInfo(null);
+        setGroupsLoadError(true);
+      }
+
+      if (teamsRes.status === 'fulfilled') {
+        const payload = unwrapResponse(teamsRes.value, 'seasonTeamApi.getAll');
+        const total = extractTotalCount(payload);
+        if (total === null) {
+          console.warn(
+            '[GroupDrawUI] Không xác định được tổng số team approved từ response. Raw payload:',
+            payload
+          );
+          setTeamsCountError(true);
+          setTotalTeams(null);
+        } else {
+          setTeamsCountError(false);
+          setTotalTeams(total);
+        }
+      } else {
+        console.error('[GroupDrawUI] loadTotalTeams failed:', teamsRes.reason);
+        toastError(teamsRes.reason?.response?.data?.message || 'Không thể tải số lượng đội đã duyệt');
+        setTeamsCountError(true);
+        setTotalTeams(null);
+      }
     } finally {
-      setLoading(false);
+      if (reqId === requestIdRef.current && isMountedRef.current) setLoading(false);
+    }
+  }, [seasonId, toastError]);
+
+  // Bước 1: mỗi khi đổi season, reset state rồi load thẳng — không còn
+  // bước trung gian getOrCreateGroupPhase().
+  useEffect(() => {
+    setGroups([]);
+    setGroupsLoadError(false);
+    setTeamsCountError(false);
+    setTotalTeams(null);
+    setPersistedTeamsPerGroup(null);
+    setPhaseInfo(null);
+    if (seasonId) loadData();
+  }, [seasonId, loadData]);
+
+  const handleCreateGroups = async () => {
+    if (!seasonId) return toastError('Chưa chọn season');
+    if (groups.length > 0) return toastError('Season đã có bảng — xoá hết trước khi tạo lại');
+    const count = Number(groupCount);
+    if (!Number.isInteger(count) || count < 1 || count > 26)
+      return toastError('Số bảng phải là số nguyên từ 1 đến 26');
+    setIsCreatingGroups(true);
+    try {
+      await groupApi.createGroupsBulk(seasonId, count);
+      toastSuccess(`Đã tạo ${count} bảng`);
+      loadData();
+    } catch (error) {
+      console.error('[GroupDrawUI] createGroupsBulk failed:', error);
+      toastError(
+        error?.response?.data?.message || `Lỗi tạo bảng (HTTP ${error?.response?.status ?? '?'})`
+      );
+    } finally {
+      setIsCreatingGroups(false);
     }
   };
 
   const handleDrawRandom = async () => {
-    if (!phaseId) return toast.error('Vui lòng nhập ID Vòng bảng (Phase ID)');
+    if (!seasonId) return toastError('Chưa chọn season');
+    if (groups.length === 0) return toastError('Chưa có bảng — tạo bảng trước khi bốc thăm');
     setIsDrawing(true);
     try {
-      await groupApi.drawGroups(phaseId, { teams_per_group: Number(teamsPerGroup) });
-      toast.success('Bốc thăm ngẫu nhiên thành công!');
-      loadStandings();
+      await groupApi.drawGroups(seasonId, { teams_per_group: Number(teamsPerGroup) });
+      toastSuccess('Bốc thăm ngẫu nhiên thành công!');
+      loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Lỗi bốc thăm ngẫu nhiên');
+      console.error('[GroupDrawUI] drawGroups failed:', error);
+      toastError(error?.response?.data?.message || 'Lỗi bốc thăm ngẫu nhiên');
     } finally {
       setIsDrawing(false);
     }
   };
 
   const handleDrawSeeded = async () => {
-    if (!phaseId) return toast.error('Vui lòng nhập ID Vòng bảng (Phase ID)');
+    if (!seasonId) return toastError('Chưa chọn season');
+    if (groups.length === 0) return toastError('Chưa có bảng — tạo bảng trước khi bốc thăm');
+
+    const pots = Number(numPots);
+    if (!Number.isInteger(pots) || pots < 1)
+      return toastError('Số pot phải là số nguyên >= 1');
+
+    if (typeof totalTeams === 'number') {
+      const maxPotSize = Math.ceil(totalTeams / pots);
+      if (maxPotSize > groups.length) {
+        return toastError(
+          `Pot lớn nhất ước tính ~${maxPotSize} team > ${groups.length} bảng — giảm số pot hoặc tăng số bảng`
+        );
+      }
+    }
+
     setIsDrawing(true);
     try {
-      await groupApi.drawSeeded(phaseId, { teams_per_group: Number(teamsPerGroup), num_pots: Number(numPots) });
-      toast.success('Bốc thăm hạt giống thành công!');
-      loadStandings();
+      await groupApi.drawSeeded(seasonId, { teams_per_group: Number(teamsPerGroup), num_pots: pots });
+      toastSuccess('Bốc thăm hạt giống thành công!');
+      loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Lỗi bốc thăm hạt giống');
+      console.error('[GroupDrawUI] drawGroupsSeeded failed:', error);
+      toastError(error?.response?.data?.message || 'Lỗi bốc thăm hạt giống');
     } finally {
       setIsDrawing(false);
     }
   };
 
   const handleClearDraw = async () => {
-    if (!phaseId) return toast.error('Vui lòng nhập ID Vòng bảng (Phase ID)');
+    if (!seasonId) return toastError('Chưa chọn season');
     if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ kết quả bốc thăm của vòng này?')) return;
     setIsDrawing(true);
     try {
-      await groupApi.clearDraw(phaseId);
-      toast.success('Đã xóa kết quả bốc thăm!');
-      setAssignedGroups([]);
-      loadStandings();
+      await groupApi.clearDraw(seasonId);
+      toastSuccess('Đã xóa kết quả bốc thăm!');
+      loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Lỗi xóa bốc thăm');
+      console.error('[GroupDrawUI] clearDraw failed:', error);
+      toastError(error?.response?.data?.message || 'Lỗi xóa bốc thăm');
     } finally {
       setIsDrawing(false);
     }
   };
 
-  const getTeamName = (teamId) => {
-    return teams.find(t => t.id === Number(teamId))?.name ?? `Đội #${teamId}`;
-  };
+  const hasTeamCount = typeof totalTeams === 'number';
+  const minRequired = groups.length * 2;
+  const maxAllowed = groups.length * Number(teamsPerGroup || 0);
+  const belowMin = hasTeamCount && groups.length > 0 && totalTeams < minRequired;
+  const aboveMax = hasTeamCount && groups.length > 0 && totalTeams > maxAllowed;
+  const outOfRange = belowMin || aboveMax;
+
+  const displayedCapacity = persistedTeamsPerGroup ?? Number(teamsPerGroup || 0);
+
+  // FIX: chỉ còn 3 trạng thái header thay vì 4 — không còn "load phase
+  // riêng" nên không còn case stuck-loading do phaseLoadError.
+  let headerSubtitle;
+  if (loading) {
+    headerSubtitle = 'Đang tải vòng đấu...';
+  } else if (groupsLoadError) {
+    headerSubtitle = 'Không tải được thông tin vòng đấu — thử tải lại trang';
+  } else if (phaseInfo) {
+    headerSubtitle = `Vòng đấu: ${phaseInfo.name}`;
+  } else {
+    headerSubtitle = 'Chưa có vòng đấu — tạo bảng để bắt đầu';
+  }
 
   return (
     <div className="space-y-6">
-      <div className="bg-navy border border-navy-light p-5 rounded-2xl shadow-xl shadow-black/20">
-        <h3 className="text-lg font-extrabold text-white flex items-center gap-2 mb-4">
-          <Shuffle className="w-5 h-5 text-purple-400" /> API Bốc thăm chia bảng
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="col-span-1">
-            <label className="block text-xs font-bold text-gray-400 mb-1">Phase ID (Bắt buộc)</label>
-            <input 
-              type="number"
-              value={phaseId}
-              onChange={e => setPhaseId(e.target.value)}
-              placeholder="VD: 1, 2"
-              className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500"
-            />
-            <p className="text-[10px] text-gray-500 mt-1">ID của Phase loại Group trong DB</p>
+      <div className="bg-navy border border-navy-light rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-navy-light">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0">
+            <Shuffle className="w-4.5 h-4.5 text-purple-400" />
           </div>
-          <div className="col-span-1">
-            <label className="block text-xs font-bold text-gray-400 mb-1">Số đội mỗi bảng</label>
-            <input 
-              type="number"
-              value={teamsPerGroup}
-              onChange={e => setTeamsPerGroup(e.target.value)}
-              className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="block text-xs font-bold text-gray-400 mb-1">Số hạt giống (Seeded)</label>
-            <input 
-              type="number"
-              value={numPots}
-              onChange={e => setNumPots(e.target.value)}
-              className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="block text-xs font-bold text-gray-400 mb-1">Tổng đội tham gia</label>
-            <div className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2 text-emerald-400 font-bold">
-              {totalTeams} đội
-            </div>
+          <div>
+            <h3 className="text-base font-extrabold text-white leading-none">Bốc thăm chia bảng</h3>
+            <p className="text-xs text-gray-500 mt-1">{headerSubtitle}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={handleDrawRandom} 
-            disabled={isDrawing || loading}
-            className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50"
-          >
-            {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
-            Bốc thăm Ngẫu nhiên
-          </button>
+        <div className="p-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5">Số đội mỗi bảng (capacity)</label>
+              <input
+                type="number"
+                min={2}
+                value={teamsPerGroup}
+                onChange={e => setTeamsPerGroup(e.target.value)}
+                className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-colors"
+              />
+              <p className="text-[11px] text-gray-500 mt-1.5">
+                Upper bound để validate — số thật lưu sau draw có thể thấp hơn nếu team lệch số.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5">Số pot (chỉ dùng cho bốc thăm hạt giống)</label>
+              <input
+                type="number"
+                min={1}
+                value={numPots}
+                onChange={e => setNumPots(e.target.value)}
+                className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors"
+              />
+              <p className="text-[11px] text-gray-500 mt-1.5">
+                Độc lập với số bảng — pot lớn nhất phải ≤ số bảng, ngược lại server sẽ từ chối.
+              </p>
+            </div>
+          </div>
 
-          <button 
-            onClick={handleDrawSeeded} 
-            disabled={isDrawing || loading}
-            className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
-          >
-            {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-            Bốc thăm Có Hạt Giống
-          </button>
+          <div className="grid grid-cols-3 gap-3">
+            <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${outOfRange ? 'bg-amber-500/10 border-amber-500/30' : 'bg-navy-dark border-navy-light'}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${outOfRange ? 'bg-amber-500/20' : 'bg-emerald-500/15'}`}>
+                <Users className={`w-4 h-4 ${outOfRange ? 'text-amber-400' : 'text-emerald-400'}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-gray-500 font-medium leading-none">Đội đã duyệt</p>
+                <p className={`text-lg font-black leading-tight mt-0.5 ${outOfRange ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {hasTeamCount ? totalTeams : teamsCountError ? '—' : <Loader2 className="w-4 h-4 animate-spin inline" />}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-navy-dark border-navy-light">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+                <LayoutGrid className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-gray-500 font-medium leading-none">Số bảng hiện có</p>
+                <p className="text-lg font-black text-white leading-tight mt-0.5">{groups.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-navy-dark border-navy-light">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0">
+                <Hash className="w-4 h-4 text-purple-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-gray-500 font-medium leading-none">Capacity thật (đã lưu)</p>
+                <p className="text-lg font-black text-white leading-tight mt-0.5">
+                  {persistedTeamsPerGroup ?? '—'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <button 
-            onClick={handleClearDraw} 
-            disabled={isDrawing || loading || assignedGroups.length === 0}
-            className="flex items-center gap-2 bg-navy-dark border border-red-500/30 text-red-400 hover:bg-red-500/10 px-4 py-2 rounded-xl font-bold transition-all disabled:opacity-50 ml-auto"
-          >
-            <Trash2 className="w-4 h-4" /> Xóa Bốc Thăm
-          </button>
+          {teamsCountError && (
+            <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Không xác định được số đội đã duyệt từ server (response shape không như mong đợi). Mở console
+                (F12) để xem log <code>Raw payload</code>, hoặc bật <code>DEBUG_RESPONSE_SHAPE = true</code> ở
+                đầu file này để log toàn bộ response.
+              </span>
+            </div>
+          )}
+
+          {outOfRange && (
+            <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              {belowMin ? (
+                <span>
+                  Cần ít nhất <strong>{minRequired}</strong> đội cho <strong>{groups.length}</strong> bảng
+                  (2 đội/bảng tối thiểu), hiện chỉ có <strong>{totalTeams}</strong>. Bốc thăm sẽ bị từ chối.
+                </span>
+              ) : (
+                <span>
+                  <strong>{totalTeams}</strong> đội vượt capacity <strong>{groups.length}</strong> bảng ×{' '}
+                  <strong>{teamsPerGroup}</strong> = <strong>{maxAllowed}</strong>. Tăng số đội/bảng hoặc tạo thêm bảng.
+                </span>
+              )}
+            </div>
+          )}
+
+          {groups.length === 0 && seasonId && !loading && (
+            <div className="flex flex-wrap items-end gap-3 bg-navy-dark/60 border border-dashed border-navy-light rounded-xl p-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1.5">Số bảng cần tạo</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={26}
+                  value={groupCount}
+                  onChange={e => setGroupCount(e.target.value)}
+                  className="w-28 bg-navy-dark border border-navy-light rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-colors"
+                />
+              </div>
+              <button
+                onClick={handleCreateGroups}
+                disabled={isCreatingGroups || loading}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreatingGroups ? <Loader2 className="w-4 h-4 animate-spin" /> : <LayoutGrid className="w-4 h-4" />}
+                Tạo bảng (Bảng A, B, C...)
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              onClick={handleDrawRandom}
+              disabled={isDrawing || loading || groups.length === 0}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
+              Bốc thăm ngẫu nhiên
+            </button>
+
+            <button
+              onClick={handleDrawSeeded}
+              disabled={isDrawing || loading || groups.length === 0}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
+              Bốc thăm có hạt giống
+            </button>
+
+            <div className="flex-1" />
+
+            <button
+              onClick={handleClearDraw}
+              disabled={isDrawing || loading || groups.length === 0}
+              className="flex items-center gap-2 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" /> Xóa bốc thăm
+            </button>
+          </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 text-purple-500 animate-spin" /></div>
-      ) : assignedGroups.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {assignedGroups.map((group) => (
-            <div key={group.groupId} className="bg-navy border border-navy-light rounded-xl overflow-hidden shadow-lg">
-              <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-4 px-5 text-white flex justify-between items-center shadow-inner">
-                <h4 className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
-                  {group.groupName} <span className="text-blue-200 text-xs font-medium">({group.standings?.length || 0} đội)</span>
-                </h4>
+        <div className="flex justify-center p-14">
+          <Loader2 className="w-7 h-7 text-purple-500 animate-spin" />
+        </div>
+      ) : groups.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {groups.map((group) => (
+            <div key={group.id} className="bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 px-5 text-white flex justify-between items-center">
+                <h4 className="font-black text-base tracking-wide uppercase">{group.name}</h4>
+                <span className="flex items-center gap-1.5 bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                  <Users className="w-3 h-3" /> {group.season_teams?.length || 0}
+                  {displayedCapacity ? ` / ${displayedCapacity}` : ''} đội
+                </span>
               </div>
-              <div className="p-3">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead>
-                    <tr className="text-gray-500 font-bold border-b border-navy-light/50">
-                      <th className="pb-2 pl-2">#</th>
-                      <th className="pb-2">Đội</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.standings.map((st, idx) => (
-                      <tr key={st.id} className="border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10">
-                        <td className="py-2 pl-2 text-gray-400 font-mono text-xs">{idx + 1}</td>
-                        <td className="py-2 font-bold text-white">
-                          {getTeamName(st.team_id)}
-                          <span className="text-xs text-gray-500 font-normal ml-2">(ID: {st.team_id})</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-2">
+                {group.season_teams.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Hash className="w-6 h-6 text-gray-700 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">Chưa có đội — chưa bốc thăm</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-sm">
+                    <tbody>
+                      {group.season_teams.map((st, idx) => (
+                        <tr key={st.id} className="border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors">
+                          <td className="py-2.5 pl-3 pr-2 text-gray-500 font-mono text-xs w-8">{idx + 1}</td>
+                          <td className="py-2.5 pr-3 font-bold text-white">
+                            {getTeamName(st.team_id)}
+                            <span className="text-xs text-gray-500 font-normal ml-2">#{st.team_id}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-navy border border-navy-light rounded-xl border-dashed">
-          <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <h4 className="text-gray-400 font-bold">Chưa có kết quả bốc thăm</h4>
-          <p className="text-gray-500 text-sm mt-1">Sử dụng công cụ phía trên để tự động chia bảng.</p>
+        <div className="text-center py-14 bg-navy border border-dashed border-navy-light rounded-2xl">
+          <Users className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+          <h4 className="text-gray-400 font-bold text-sm">Chưa có bảng đấu</h4>
+          <p className="text-gray-500 text-xs mt-1">Tạo bảng trước khi bốc thăm.</p>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { Prisma, PrismaClient, PhaseFormat, SeasonTeamStatus, SeasonStatus } from "../generated/prisma/client.js";
+import { Prisma, PrismaClient, PhaseFormat, SeasonTeamStatus, SeasonStatus, PhaseType, PhaseStatus, Phase } from "../generated/prisma/client.js";
 import {
     AdminAddSeasonTeamDto,
     AssignGroupDto,
@@ -254,6 +254,16 @@ export class SeasonTeamService {
      * partial unique index). Team withdraw rồi đăng ký lại (hoặc được transfer
      * đến) phải reactivate row cũ, không create mới — create thẳng sẽ đụng
      * unique constraint.
+     *
+     * FIX: nhánh tạo mới (create) giờ set `is_active: true` TƯỜNG MINH thay
+     * vì phụ thuộc default của cột trong Prisma schema. Đây chính là nguyên
+     * nhân của bug "team đã approved nhưng không hiện trong danh sách" —
+     * endpoint GET /seasonteams luôn ép where { is_active: true } (xem
+     * constructor Queryable ở trên), nên bất kỳ record nào insert mà cột
+     * is_active không đúng true (default sai, hoặc insert tay qua
+     * phpMyAdmin bỏ trống cột) sẽ bị ẩn hoàn toàn khỏi mọi danh sách dù
+     * status = approved. Set tường minh ở đây đảm bảo record tạo qua API
+     * luôn đúng, không còn phụ thuộc vào default của DB.
      */
     private async createOrReactivate(
         tx: Prisma.TransactionClient,
@@ -284,8 +294,39 @@ export class SeasonTeamService {
         }
 
         return tx.seasonTeam.create({
-            data: { season_id: seasonId, team_id: teamId, user_id: userId, status },
+            data: { season_id: seasonId, team_id: teamId, user_id: userId, status, is_active: true },
             ...withRelations,
+        });
+    }
+
+    async getOrCreateGroupPhase(seasonId: number): Promise<Phase> {
+        return this.prisma.$transaction(async (tx) => {
+            // Lock season để tránh race: 2 request đồng thời cùng tạo 2 phase trùng nhau
+            await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
+
+            const season = await tx.season.findUnique({ where: { id: seasonId } });
+            if (!season) throw createAppError("NOT_FOUND", `Season ${seasonId} not found`);
+
+            const existing = await tx.phase.findFirst({
+                where: {
+                    season_id: seasonId,
+                    type: PhaseType.group_stage,
+                    format: PhaseFormat.round_robin,
+                    is_active: true,
+                },
+            });
+            if (existing) return existing;
+
+            return tx.phase.create({
+                data: {
+                    season_id: seasonId,
+                    name: "Vòng bảng",
+                    type: PhaseType.group_stage,
+                    format: PhaseFormat.round_robin,
+                    order: 0,
+                    status: PhaseStatus.draft,
+                },
+            });
         });
     }
 }

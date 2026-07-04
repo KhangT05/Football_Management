@@ -573,6 +573,21 @@ const models: TsoaRoute.Models = {
         "type": {"ref":"infer_typeofassignGroupSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PhaseType": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group_stage"]},{"dataType":"enum","enums":["round_of_16"]},{"dataType":"enum","enums":["quarter_final"]},{"dataType":"enum","enums":["semi_final"]},{"dataType":"enum","enums":["third_place"]},{"dataType":"enum","enums":["final"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PhaseFormat": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["round_robin"]},{"dataType":"enum","enums":["knockout"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PhaseStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["in_progress"]},{"dataType":"enum","enums":["locked"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}],"validators":{}},
@@ -1395,6 +1410,39 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["DRAFT"]},{"dataType":"enum","enums":["LOCKED"]},{"dataType":"enum","enums":["SCHEDULED"]},{"dataType":"enum","enums":["SCHEDULE_FAILED"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateGroupBody": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateGroupsBulkBody": {
+        "dataType": "refObject",
+        "properties": {
+            "count": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DrawAssignment": {
+        "dataType": "refObject",
+        "properties": {
+            "group_id": {"dataType":"double","required":true},
+            "team_id": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DrawGroupsOptions": {
+        "dataType": "refObject",
+        "properties": {
+            "teams_per_group": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_GroupPayload_": {
         "dataType": "refAlias",
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"scheduleGeneratedAt":{"dataType":"datetime","required":true},"phase_id":{"dataType":"double","required":true},"status":{"ref":"GroupStatus","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
@@ -1413,23 +1461,6 @@ const models: TsoaRoute.Models = {
     "GroupWithTeams": {
         "dataType": "refAlias",
         "type": {"dataType":"intersection","subSchemas":[{"ref":"Group"},{"dataType":"nestedObjectLiteral","nestedProperties":{"season_teams":{"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"team":{"dataType":"nestedObjectLiteral","nestedProperties":{"logo":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"status":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}}},"required":true},"phase":{"dataType":"nestedObjectLiteral","nestedProperties":{"is_active":{"dataType":"boolean","required":true},"format":{"dataType":"string","required":true},"season_id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true}}}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "DrawAssignment": {
-        "dataType": "refObject",
-        "properties": {
-            "group_id": {"dataType":"double","required":true},
-            "team_id": {"dataType":"double","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "DrawGroupsOptions": {
-        "dataType": "refObject",
-        "properties": {
-            "teams_per_group": {"dataType":"double","required":true},
-        },
-        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AssignTeamToGroupBody": {
@@ -1580,7 +1611,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_ArticleMediaPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"order":{"dataType":"double","required":true},"caption":{"dataType":"string","required":true},"article_id":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"type":{"ref":"MediaType","required":true},"created_at":{"dataType":"datetime","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"caption":{"dataType":"string","required":true},"article_id":{"dataType":"double","required":true},"url":{"dataType":"string","required":true},"order":{"dataType":"double","required":true},"type":{"ref":"MediaType","required":true},"created_at":{"dataType":"datetime","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ArticleMediaModel": {
@@ -2975,7 +3006,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsStatisticsController_getUserRegistrationStats: Record<string, TsoaRoute.ParameterSchema> = {
-                days: {"in":"query","name":"days","dataType":"double"},
+                period: {"in":"query","name":"period","dataType":"union","subSchemas":[{"dataType":"enum","enums":["7d"]},{"dataType":"enum","enums":["30d"]},{"dataType":"enum","enums":["90d"]},{"dataType":"enum","enums":["3m"]},{"dataType":"enum","enums":["6m"]},{"dataType":"enum","enums":["1y"]}]},
         };
         app.get('/statistics/users/registrations',
             authenticateMiddleware([{"jwt":["admin"]}]),
@@ -3199,7 +3230,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/seasonteams',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findAll)),
 
@@ -3235,7 +3265,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/seasonteams/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.findById)),
 
@@ -3520,6 +3549,42 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonTeamController_getOrCreateGroupPhase: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+        };
+        app.post('/seasonteams/season/:seasonId/group-phase',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.getOrCreateGroupPhase)),
+
+            async function SeasonTeamController_getOrCreateGroupPhase(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_getOrCreateGroupPhase, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonTeamController>(SeasonTeamController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getOrCreateGroupPhase',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
               });
             } catch (err) {
                 return next(err);
@@ -6349,6 +6414,260 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_findAllBySeason: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+        };
+        app.get('/groups/season/:seasonId',
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.findAllBySeason)),
+
+            async function GroupController_findAllBySeason(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_findAllBySeason, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'findAllBySeason',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_findAllByPhase: Record<string, TsoaRoute.ParameterSchema> = {
+                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
+        };
+        app.get('/groups/phase/:phaseId',
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.findAllByPhase)),
+
+            async function GroupController_findAllByPhase(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_findAllByPhase, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'findAllByPhase',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_createGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateGroupBody"},
+        };
+        app.post('/groups/season/:seasonId',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.createGroup)),
+
+            async function GroupController_createGroup(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_createGroup, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'createGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_createGroupsBulk: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateGroupsBulkBody"},
+        };
+        app.post('/groups/season/:seasonId/bulk',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.createGroupsBulk)),
+
+            async function GroupController_createGroupsBulk(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_createGroupsBulk, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'createGroupsBulk',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_drawGroups: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"DrawGroupsOptions"},
+        };
+        app.post('/groups/season/:seasonId/draw',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.drawGroups)),
+
+            async function GroupController_drawGroups(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_drawGroups, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'drawGroups',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_drawGroupsSeeded: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"dataType":"intersection","subSchemas":[{"ref":"DrawGroupsOptions"},{"dataType":"nestedObjectLiteral","nestedProperties":{"num_pots":{"dataType":"double","required":true}}}]},
+        };
+        app.post('/groups/season/:seasonId/draw/seeded',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.drawGroupsSeeded)),
+
+            async function GroupController_drawGroupsSeeded(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_drawGroupsSeeded, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'drawGroupsSeeded',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupController_clearDraw: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+        };
+        app.delete('/groups/season/:seasonId/draw',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.clearDraw)),
+
+            async function GroupController_clearDraw(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_clearDraw, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<GroupController>(GroupController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'clearDraw',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsGroupController_findByIdWithTeams: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
@@ -6384,22 +6703,21 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsGroupController_drawGroups: Record<string, TsoaRoute.ParameterSchema> = {
-                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
-                body: {"in":"body","name":"body","required":true,"ref":"DrawGroupsOptions"},
+        const argsGroupController_deactivateGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                groupId: {"in":"path","name":"groupId","required":true,"dataType":"double"},
         };
-        app.post('/groups/:phaseId/draw',
+        app.delete('/groups/:groupId',
             authenticateMiddleware([{"jwt":["admin"]}]),
             ...(fetchMiddlewares<RequestHandler>(GroupController)),
-            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.drawGroups)),
+            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.deactivateGroup)),
 
-            async function GroupController_drawGroups(request: ExRequest, response: ExResponse, next: any) {
+            async function GroupController_deactivateGroup(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_drawGroups, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_deactivateGroup, request, response });
 
                 const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
 
@@ -6409,80 +6727,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 }
 
               await templateService.apiHandler({
-                methodName: 'drawGroups',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsGroupController_drawGroupsSeeded: Record<string, TsoaRoute.ParameterSchema> = {
-                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
-                body: {"in":"body","name":"body","required":true,"dataType":"intersection","subSchemas":[{"ref":"DrawGroupsOptions"},{"dataType":"nestedObjectLiteral","nestedProperties":{"num_pots":{"dataType":"double","required":true}}}]},
-        };
-        app.post('/groups/:phaseId/draw/seeded',
-            authenticateMiddleware([{"jwt":["admin"]}]),
-            ...(fetchMiddlewares<RequestHandler>(GroupController)),
-            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.drawGroupsSeeded)),
-
-            async function GroupController_drawGroupsSeeded(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_drawGroupsSeeded, request, response });
-
-                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
-
-                const controller: any = await container.get<GroupController>(GroupController);
-                if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-                }
-
-              await templateService.apiHandler({
-                methodName: 'drawGroupsSeeded',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsGroupController_clearDraw: Record<string, TsoaRoute.ParameterSchema> = {
-                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
-        };
-        app.delete('/groups/:phaseId/draw',
-            authenticateMiddleware([{"jwt":["admin"]}]),
-            ...(fetchMiddlewares<RequestHandler>(GroupController)),
-            ...(fetchMiddlewares<RequestHandler>(GroupController.prototype.clearDraw)),
-
-            async function GroupController_clearDraw(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsGroupController_clearDraw, request, response });
-
-                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
-
-                const controller: any = await container.get<GroupController>(GroupController);
-                if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-                }
-
-              await templateService.apiHandler({
-                methodName: 'clearDraw',
+                methodName: 'deactivateGroup',
                 controller,
                 response,
                 next,

@@ -18,8 +18,9 @@ import {
 } from '../types/knockout.type.js';
 import { OptionalScheduleOptions, ScheduleOptions } from '../types/schedule.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
-import { KNOCKOUT_PHASE_TYPES } from '../dtos/knockout.schema.js';
 import { buildRound1Pairings, nextPowerOf2 } from '../helper/match.helper.js';
+
+const TERMINAL_MATCH_STATUSES: MatchStatus[] = [MatchStatus.finished, MatchStatus.forfeited];
 
 export class KnockoutService extends ScheduleEngine {
 
@@ -281,6 +282,8 @@ export class KnockoutService extends ScheduleEngine {
                 select: slotWithParentLinksSelect,
             });
 
+            let resolvedWinnerId = input.winnerTeamId;
+
             if (!slot) {
                 const match = await tx.match.findUnique({
                     where: { id: input.matchId },
@@ -298,7 +301,7 @@ export class KnockoutService extends ScheduleEngine {
                         leg: 1,
                         home_team_id: match.away_team_id,
                         away_team_id: match.home_team_id,
-                        status: MatchStatus.finished,
+                        status: { in: TERMINAL_MATCH_STATUSES },
                     },
                     select: { id: true },
                 });
@@ -306,7 +309,7 @@ export class KnockoutService extends ScheduleEngine {
                 if (!leg1Match)
                     throw createAppError(
                         'NOT_FOUND',
-                        `Không tìm thấy leg 1 match đã finished cho pairing ` +
+                        `Không tìm thấy leg 1 match đã kết thúc (finished/forfeited) cho pairing ` +
                         `(home=${match.away_team_id}, away=${match.home_team_id}) trong phase ${phaseId}`,
                     );
 
@@ -321,6 +324,11 @@ export class KnockoutService extends ScheduleEngine {
                         `Không tìm thấy BracketSlot cho leg 1 match ${leg1Match.id}`,
                     );
 
+                resolvedWinnerId = await this._computeAggregateWinner(
+                    tx, leg1Match.id, input.matchId,
+                    slot.seeded_home_team_id!, slot.seeded_away_team_id!,
+                );
+
             } else if (legs === 2) {
                 const leg2Pending = await tx.match.findFirst({
                     where: {
@@ -328,15 +336,37 @@ export class KnockoutService extends ScheduleEngine {
                         home_team_id: slot.seeded_away_team_id!,
                         away_team_id: slot.seeded_home_team_id!,
                         leg: 2,
-                        status: { not: MatchStatus.finished },
+                        status: { notIn: TERMINAL_MATCH_STATUSES },
                     },
                     select: { id: true },
                 });
                 if (leg2Pending)
                     return { matchCreated: false, newMatchIds: [] as number[] };
+
+                const leg2Match = await tx.match.findFirst({
+                    where: {
+                        phase_id: phaseId,
+                        home_team_id: slot.seeded_away_team_id!,
+                        away_team_id: slot.seeded_home_team_id!,
+                        leg: 2,
+                        status: { in: TERMINAL_MATCH_STATUSES },
+                    },
+                    select: { id: true },
+                });
+
+                if (leg2Match) {
+                    resolvedWinnerId = await this._computeAggregateWinner(
+                        tx, input.matchId, leg2Match.id,
+                        slot.seeded_home_team_id!, slot.seeded_away_team_id!,
+                    );
+                }
+                // leg2Match null: leg 2 chưa tồn tại — giữ resolvedWinnerId =
+                // input.winnerTeamId làm fallback (case này không nên xảy ra
+                // nếu createRound1Matches/propagateWinner luôn tạo đủ cả 2
+                // leg cùng lúc — đúng invariant hiện tại của code).
             }
 
-            return this.propagateWinner(tx, slot, input.winnerTeamId, phaseId, seasonId, legs);
+            return this.propagateWinner(tx, slot, resolvedWinnerId, phaseId, seasonId, legs);
         }, { timeout: 15_000 });
 
         if (result.matchCreated && result.newMatchIds.length > 0) {
@@ -352,6 +382,55 @@ export class KnockoutService extends ScheduleEngine {
         }
 
         return { matchCreated: result.matchCreated, newMatchId: result.newMatchId };
+    }
+
+    /**
+     * Tính winner theo aggregate 2 lượt. Away-goals KHÔNG áp dụng (assumption —
+     * đổi lại nếu giải dùng luật cũ). Nếu aggregate hoà, winner quyết bằng
+     * penalty của leg 2 (rule chuẩn: ET/pen chỉ đá ở lượt về khi cần) — nếu leg 2
+     * không có penalty score, fail loud thay vì đoán.
+     */
+    private async _computeAggregateWinner(
+        tx: Prisma.TransactionClient,
+        leg1MatchId: number,
+        leg2MatchId: number,
+        slotHomeTeamId: number,
+        slotAwayTeamId: number,
+    ): Promise<number> {
+        const [leg1Result, leg2Result] = await Promise.all([
+            tx.matchResult.findUnique({
+                where: { match_id: leg1MatchId },
+                select: { home_final_score: true, away_final_score: true },
+            }),
+            tx.matchResult.findUnique({
+                where: { match_id: leg2MatchId },
+                select: { home_final_score: true, away_final_score: true, home_penalty_score: true, away_penalty_score: true },
+            }),
+        ]);
+
+        if (!leg1Result || !leg2Result)
+            throw createAppError(
+                'CONFLICT',
+                `Thiếu MatchResult cho leg 1 (${leg1MatchId}) hoặc leg 2 (${leg2MatchId}) — không tính được aggregate`,
+            );
+
+        // leg1: slotHome = home, slotAway = away. leg2: sân đảo — slotAway = home, slotHome = away.
+        const slotHomeAgg = leg1Result.home_final_score + leg2Result.away_final_score;
+        const slotAwayAgg = leg1Result.away_final_score + leg2Result.home_final_score;
+
+        if (slotHomeAgg !== slotAwayAgg)
+            return slotHomeAgg > slotAwayAgg ? slotHomeTeamId : slotAwayTeamId;
+
+        if (leg2Result.home_penalty_score !== null && leg2Result.away_penalty_score !== null) {
+            const homeWonPenalty = leg2Result.home_penalty_score > leg2Result.away_penalty_score;
+            return homeWonPenalty ? slotAwayTeamId : slotHomeTeamId; // leg2 home = slotAway
+        }
+
+        throw createAppError(
+            'CONFLICT',
+            `Aggregate hoà ${slotHomeAgg}-${slotAwayAgg} giữa leg 1 (${leg1MatchId}) và leg 2 (${leg2MatchId}) ` +
+            `nhưng leg 2 không có penalty score — không xác định được winner.`,
+        );
     }
 
     async getBracket(phaseId: number): Promise<BracketSlotNode[]> {
@@ -383,21 +462,6 @@ export class KnockoutService extends ScheduleEngine {
 
     // ─── PRIVATE — BRACKET LOGIC ──────────────────────────────────────────────
 
-    /**
-     * FIX (idempotency): thêm guard `parentSlot.match_id !== null` ngay sau khi
-     * xác nhận cả 2 slot con đã có winner, TRƯỚC khi tạo match mới.
-     *
-     * Trước đây nếu propagateWinner bị gọi 2 lần cho cùng matchId (retry sau
-     * timeout dù request đầu đã commit, hoặc cron grace-period chen vào) —
-     * lần gọi thứ 2 vẫn set lại seeded_home/away_team_id (vô hại, giá trị
-     * giống cũ), nhưng sau đó vẫn tạo THÊM 1 match mới cho round kế tiếp vì
-     * code cũ không check parent slot đã có match_id chưa. Bug này trước đây
-     * được "cứu" gián tiếp qua _guardConfirm ở MatchResultService — nhưng đó
-     * là phòng thủ ở tầng khác, không phải invariant của chính hàm này.
-     *
-     * NOTE: slotWithParentLinksSelect cần đảm bảo fed_as_a/fed_as_b nested
-     * select có include match_id — nếu chưa, thêm vào types/knockout.type.ts.
-     */
     private async propagateWinner(
         tx: Prisma.TransactionClient,
         slot: SlotWithParentLinks,
@@ -419,15 +483,12 @@ export class KnockoutService extends ScheduleEngine {
             data: isHomeInParent
                 ? { seeded_home_team_id: winnerTeamId }
                 : { seeded_away_team_id: winnerTeamId },
-            // FIX: select thêm match_id để check idempotency ngay dưới đây
             select: { seeded_home_team_id: true, seeded_away_team_id: true, match_id: true },
         });
 
         if (!updated.seeded_home_team_id || !updated.seeded_away_team_id)
             return { matchCreated: false, newMatchIds: [] };
 
-        // FIX: idempotency guard — nếu parent slot đã có match_id (match round
-        // kế tiếp đã được tạo từ lần advance trước), không tạo thêm.
         if (updated.match_id !== null) {
             return { matchCreated: false, newMatchId: updated.match_id, newMatchIds: [] };
         }
@@ -473,13 +534,6 @@ export class KnockoutService extends ScheduleEngine {
     }
 
     // ─── createRound1Matches ──────────────────────────────────────────────────
-    //
-    // FIX: trước đây dùng createMany rồi lookup-by-key (home, away, leg) sau
-    // đó — nếu 2 slot vô tình có cùng cặp (home, away, leg), map bị ghi đè,
-    // silent wrong mapping. Không nên xảy ra với seeding chuẩn, nhưng đổi
-    // sang tạo từng match tuần tự + link slotId trực tiếp loại bỏ hẳn rủi ro
-    // này — round1Slots tối đa = bracketSize/2 (≤16 với bracket 32 đội), chi
-    // phí N round-trip nhỏ, đổi lấy correctness chắc chắn.
 
     private async createRound1Matches(
         tx: Prisma.TransactionClient,
@@ -532,6 +586,13 @@ export class KnockoutService extends ScheduleEngine {
 
     // ─── PRIVATE — SCHEDULING ─────────────────────────────────────────────────
 
+    /**
+     * FIX: trước đây không query season — startDate = new Date() và rangeEnd
+     * luôn hardcode +6 tháng, bỏ qua hoàn toàn season.end_date. Match knockout
+     * có thể bị xếp lịch sau khi season đã đóng. Giờ end_date là hard boundary
+     * bắt buộc (throw nếu thiếu), startDate = max(now, season.start_date) vì
+     * knockout luôn diễn ra sau group stage.
+     */
     private async scheduleMatchBatch(
         matchIds: number[],
         seasonId: number,
@@ -540,7 +601,7 @@ export class KnockoutService extends ScheduleEngine {
     ): Promise<{ matchesScheduled: number; failedMatchIds: number[] }> {
         if (matchIds.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
 
-        const [matches, phase] = await Promise.all([
+        const [matches, phase, season] = await Promise.all([
             this.prisma.match.findMany({
                 where: { id: { in: matchIds }, is_active: true },
                 select: { id: true, home_team_id: true, away_team_id: true },
@@ -549,12 +610,29 @@ export class KnockoutService extends ScheduleEngine {
                 where: { id: phaseId },
                 select: { min_rest_days_per_team: true },
             }),
+            this.prisma.season.findUnique({
+                where: { id: seasonId },
+                select: { start_date: true, end_date: true },
+            }),
         ]);
 
+        if (!season)
+            throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (!season.end_date)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có end_date`);
+
         const minRestDays = phase?.min_rest_days_per_team ?? 3;
-        const startDate = new Date();
-        const rangeEnd = new Date(startDate);
-        rangeEnd.setMonth(rangeEnd.getMonth() + 6);
+
+        const now = new Date();
+        const startDate = season.start_date && season.start_date > now ? season.start_date : now;
+        const rangeEnd = season.end_date;
+
+        if (rangeEnd <= startDate)
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Season ${seasonId} end_date (${rangeEnd.toISOString()}) không sau startDate ` +
+                `(${startDate.toISOString()}) — không đủ khoảng thời gian để xếp lịch knockout`,
+            );
 
         const teamIds = matches.flatMap(m => [m.home_team_id, m.away_team_id]);
 
@@ -575,6 +653,14 @@ export class KnockoutService extends ScheduleEngine {
         ]);
 
         const pool = this.buildSlotPool(options.venueIds!, startDate, rangeEnd, options.matchTimes!, takenSet);
+
+        if (pool.length < matches.length) {
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Không đủ slot cho knockout: cần ${matches.length}, chỉ có ${pool.length}. ` +
+                `Thêm venueId / matchTime hoặc mở rộng end_date của season.`,
+            );
+        }
 
         const lastPlayedAt = new Map<number, number>();
         for (const m of recentMatches) {

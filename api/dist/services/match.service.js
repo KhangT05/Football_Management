@@ -184,10 +184,11 @@ export class MatchLifecycleService {
         });
     }
     // ─── Manual score ─────────────────────────────────────────────────────────
+    // submitManualScore — thêm guard fail-fast, đặt ngay sau check eventCount
     async submitManualScore(matchId, input, _scheduleOptions) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
-            select: { status: true },
+            select: { status: true, phase: { select: { format: true, legs: true } }, leg: true, home_team_id: true, away_team_id: true, phase_id: true },
         });
         if (!match)
             throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
@@ -196,6 +197,18 @@ export class MatchLifecycleService {
         const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
         if (eventCount > 0)
             throw createAppError('CONFLICT', `Match ${matchId} đã có ${eventCount} events — dùng finalizeMatch() thay vì manual score`);
+        // FIX: fail-fast — trước đây guard này chỉ có ở finalizeMatch, manual score
+        // path đẩy lỗi xuống tận _guardConfirm ở confirmResult, tốn round-trip + admin
+        // debug ngược khó hơn.
+        const resultType = input.resultType ?? MatchResultType.full_time;
+        if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
+            const isTwoLegged = match.phase.legs === 2 && match.leg != null;
+            if (!isTwoLegged && input.homeScore === input.awayScore)
+                throw createAppError('CONFLICT', `Match ${matchId} đang hoà ${input.homeScore}-${input.awayScore} ở knockout — cần extra_time/penalty`);
+            // Two-legged: check aggregate tương tự finalizeMatch nếu cần — bỏ qua ở đây
+            // vì manual score input không có sẵn events để suy leg1 score chính xác;
+            // guard đầy đủ vẫn chạy đúng ở _guardConfirm downstream.
+        }
         await this.prisma.match.update({
             where: { id: matchId },
             data: {

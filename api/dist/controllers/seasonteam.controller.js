@@ -55,6 +55,11 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+    /** Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.
+   *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
+    async getOrCreateGroupPhase(seasonId) {
+        return this.service.getOrCreateGroupPhase(seasonId);
+    }
 };
 __decorate([
     Get("/"),
@@ -140,8 +145,15 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "softDelete", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("season/{seasonId}/group-phase"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "getOrCreateGroupPhase", null);
 SeasonTeamController = __decorate([
-    Security("jwt", ["admin", "user", "organizing"]),
     Route("seasonteams"),
     Tags("SeasonTeams"),
     __metadata("design:paramtypes", [SeasonTeamService])

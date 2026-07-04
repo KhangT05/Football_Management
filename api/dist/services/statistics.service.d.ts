@@ -2,8 +2,10 @@ import { PrismaClient } from "../generated/prisma/client.js";
 import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats } from "../types/statistics.type.js";
 export declare class StatisticsService {
     private readonly prisma;
+    private readonly userQueryable;
     constructor(prisma: PrismaClient);
-    getUserRegistrationStats(days?: number): Promise<UserRegistrationStats>;
+    getUserRegistrationStats(period?: string): Promise<UserRegistrationStats>;
+    getNewUserCount(period?: string): Promise<number>;
     getSeasonRevenue(seasonId?: number): Promise<SeasonRevenueStats>;
     getTournamentOverview(tournamentId: number): Promise<TournamentOverviewStats>;
     getTeamRegistrationStats(seasonId?: number): Promise<TeamRegistrationStats>;

@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient, Phase } from "../generated/prisma/client.js";
 import { AdminAddSeasonTeamDto, AssignGroupDto, SelfRegisterSeasonTeamDto, UpdateSeasonTeamStatusDto } from "../dtos/seasonTeam.schema.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
@@ -50,7 +50,18 @@ export declare class SeasonTeamService {
      * partial unique index). Team withdraw rồi đăng ký lại (hoặc được transfer
      * đến) phải reactivate row cũ, không create mới — create thẳng sẽ đụng
      * unique constraint.
+     *
+     * FIX: nhánh tạo mới (create) giờ set `is_active: true` TƯỜNG MINH thay
+     * vì phụ thuộc default của cột trong Prisma schema. Đây chính là nguyên
+     * nhân của bug "team đã approved nhưng không hiện trong danh sách" —
+     * endpoint GET /seasonteams luôn ép where { is_active: true } (xem
+     * constructor Queryable ở trên), nên bất kỳ record nào insert mà cột
+     * is_active không đúng true (default sai, hoặc insert tay qua
+     * phpMyAdmin bỏ trống cột) sẽ bị ẩn hoàn toàn khỏi mọi danh sách dù
+     * status = approved. Set tường minh ở đây đảm bảo record tạo qua API
+     * luôn đúng, không còn phụ thuộc vào default của DB.
      */
     private createOrReactivate;
+    getOrCreateGroupPhase(seasonId: number): Promise<Phase>;
 }
 //# sourceMappingURL=seasonTeam.service.d.ts.map

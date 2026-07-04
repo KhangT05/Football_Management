@@ -9,7 +9,6 @@ import {
 } from "tsoa";
 
 import { StatisticsService } from "../services/statistics.service.js";
-import { parseDaysParam } from "../helper/statistics.helper.js";
 
 @Route("statistics")
 @Tags("Statistics")
@@ -22,9 +21,8 @@ export class StatisticsController extends Controller {
 
     @Security("jwt", ["admin"])
     @Get("users/registrations")
-    async getUserRegistrationStats(@Query() days?: number) {
-        const parsedDays = parseDaysParam(days);
-        return this.statisticsService.getUserRegistrationStats(parsedDays);
+    async getUserRegistrationStats(@Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y") {
+        return this.statisticsService.getUserRegistrationStats(period);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -46,7 +44,7 @@ export class StatisticsController extends Controller {
     }
     @Security("jwt", ["admin", "organizer"])
     @Get("seasons/{seasonId}/teams/registrations")
-    async getTeamRegistrationStats(@Path() seasonId?: number) {
+    async getTeamRegistrationStats(@Path() seasonId: number) {
         return this.statisticsService.getTeamRegistrationStats(seasonId);
     }
 

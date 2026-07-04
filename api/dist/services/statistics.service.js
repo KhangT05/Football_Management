@@ -1,12 +1,19 @@
 import { createAppError } from "../common/app.error.js";
 import { Prisma } from "../generated/prisma/client.js";
-// Business timezone. MySQL server có thể chạy UTC → phải convert tường minh,
-// không tin session timezone default (dễ lệch ranh giới ngày khi server ở UTC).
-const BUSINESS_TZ_OFFSET = "+07:00";
+import { PERIOD_DAYS, Queryable } from "../libs/queryable.js";
+const BUSINESS_TZ_OFFSET_HOURS = 7;
+const businessNow = new Date(Date.now() + BUSINESS_TZ_OFFSET_HOURS * 60 * 60 * 1000);
 export class StatisticsService {
     prisma;
+    // Queryable dùng cho count-only path (KPI card) — không cần raw SQL,
+    // không cần bucket theo ngày. Config tối thiểu: chỉ cần dateField để
+    // applyPeriod() hoạt động; không cần searchFields/sortable vì chỉ gọi count().
+    userQueryable;
     constructor(prisma) {
         this.prisma = prisma;
+        this.userQueryable = new Queryable(this.prisma.user, {
+            dateField: "created_at",
+        });
     }
     // ═══════════════════════════════════════════════════════════════════════
     // USER REGISTRATION — new users trong N ngày gần nhất, bucket theo ngày
@@ -16,18 +23,25 @@ export class StatisticsService {
     // (hiện tại thiếu — full scan khi table lớn, cần migration trước khi ship).
     //
     // Dùng raw query vì Prisma groupBy không hỗ trợ DATE()/CONVERT_TZ trên
-    // computed expression — groupBy chỉ group theo column thật.
-    async getUserRegistrationStats(days = 30) {
-        if (days <= 0 || days > 365) {
-            throw createAppError("VALIDATION_ERROR", `getUserRegistrationStats called with invalid days=${days}`, "days phải trong khoảng 1-365");
+    // computed expression — groupBy chỉ group theo column thật. Queryable
+    // KHÔNG thay được ở đây: nó filter theo period nhưng không bucket theo
+    // ngày, đây là hai bài toán khác nhau.
+    //
+    // period: preset chung với Queryable ("7d" | "30d" | "90d" | "3m" | "6m" | "1y").
+    // Lưu ý "3m"/"6m" là rolling window cố định (90/180 ngày), KHÔNG phải
+    // calendar-aligned month — xem PERIOD_DAYS trong queryable.ts.
+    async getUserRegistrationStats(period = "30d") {
+        const days = PERIOD_DAYS[period];
+        if (!days) {
+            throw createAppError("VALIDATION_ERROR", `getUserRegistrationStats called with invalid period=${period}`, "period không hợp lệ, dùng: 7d, 30d, 90d, 3m, 6m, 1y");
         }
         const rows = await this.prisma.$queryRaw `
             SELECT
-                DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET})) AS day,
+                DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET_HOURS})) AS day,
                 COUNT(*) AS count
             FROM users
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL ${days} DAY)
-            GROUP BY DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET}))
+            WHERE created_at >= DATE_SUB(${businessNow}, INTERVAL ${days} DAY)
+            GROUP BY DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET_HOURS}))
             ORDER BY day ASC
         `;
         // Lấp ngày trống = 0 (dashboard cần continuous series, không skip ngày không có user mới)
@@ -36,10 +50,9 @@ export class StatisticsService {
             dayMap.set(r.day.toISOString().slice(0, 10), Number(r.count));
         }
         const daily = [];
-        const now = new Date();
         for (let i = days - 1; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
+            const d = new Date(businessNow);
+            d.setUTCDate(d.getUTCDate() - i); // dùng UTC methods vì đã shift thủ công
             const key = d.toISOString().slice(0, 10);
             daily.push({ day: key, count: dayMap.get(key) ?? 0 });
         }
@@ -48,6 +61,13 @@ export class StatisticsService {
             total_new_users: daily.reduce((sum, p) => sum + p.count, 0),
             daily,
         };
+    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // NEW USER COUNT — KPI card, không cần breakdown theo ngày.
+    // Dùng Queryable.count() thay vì raw query: không fetch rows, chỉ 1 COUNT.
+    // ═══════════════════════════════════════════════════════════════════════
+    async getNewUserCount(period = "30d") {
+        return this.userQueryable.count({ period });
     }
     // ═══════════════════════════════════════════════════════════════════════
     // SEASON REVENUE — net revenue = confirmed - refunded, KHÔNG tính pending

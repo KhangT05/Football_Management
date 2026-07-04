@@ -20,6 +20,7 @@ export interface QueryRequestBase {
     sort?: string;
     direction?: SortDir;
     filter?: Record<string, Record<string, unknown>>; // complexFilter
+    period?: string;
 }
 /** Index signature tách riêng để tránh TS collapse field cụ thể về unknown khi Omit/Pick */
 export interface DynamicFields {
@@ -58,6 +59,7 @@ export interface QueryableConfig<TInclude = object, TSelect = object> {
     beforeBuild?: (where: WhereClause[]) => void;
     /** Hook transform data sau khi query */
     afterFetch?: <T>(data: T[]) => T[];
+    dateField?: string;
 }
 
 export type WhereClause = Record<string, unknown>;
