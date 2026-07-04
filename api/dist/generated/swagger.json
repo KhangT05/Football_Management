@@ -2296,6 +2296,41 @@
             "GenerateScheduleDto": {
                 "$ref": "#/components/schemas/infer_typeofgenerateScheduleSchema_"
             },
+            "infer_typeofgenerateFromGroupsSchema_": {
+                "properties": {
+                    "allowPastDate": {
+                        "type": "boolean"
+                    },
+                    "minRestDaysPerTeam": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "doubleRound": {
+                        "type": "boolean"
+                    },
+                    "matchTimes": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "venueIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "matchTimes",
+                    "venueIds"
+                ],
+                "type": "object"
+            },
+            "GenerateFromGroupsDto": {
+                "$ref": "#/components/schemas/infer_typeofgenerateFromGroupsSchema_"
+            },
             "infer_typeofautoScheduleSchema_": {
                 "properties": {
                     "matchTimes": {
@@ -7231,6 +7266,7 @@
                         }
                     }
                 },
+                "description": "FIX: thiếu season_id/status/team_id trong signature khiến tsoa strip\r\ncác query param này trước khi vào service.findAll() — Queryable đọc\r\nfilter qua req[field] PHẲNG (xem QueryBuilder.applySimpleFilter:\r\n`const value = req[field]`), không phải nested req.filters.field.\r\nRoute handler trước đây chưa bao giờ forward season_id/status vào\r\nQueryRequest → mọi call GET /seasonteams?season_id=X&status=approved\r\nchạy KHÔNG filter gì, count/list trả về TOÀN BỘ season_teams trong DB\r\nacross mọi season — sai lệch số liệu \"đội đã duyệt\" ở FE (GroupDrawUI\r\ndùng con số này để validate trước khi cho phép draw).\r\n\r\nis_active KHÔNG forward ở đây dù nằm trong filterable config, vì\r\nSeasonTeamService.beforeBuild đã hardcode `is_active: true` — AND\r\nchồng lên bất kỳ giá trị nào applySimpleFilter push vào sẽ tạo where\r\nmâu thuẫn (is_active=false từ client AND is_active=true từ beforeBuild\r\n-> luôn rỗng, silent, không lỗi). Field này chỉ nên control nội bộ.",
                 "tags": [
                     "SeasonTeams"
                 ],
@@ -7282,6 +7318,32 @@
                                 "asc",
                                 "desc"
                             ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "season_id",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "team_id",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/SeasonTeamStatus"
                         }
                     }
                 ]
@@ -8693,6 +8755,55 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/GenerateScheduleDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schedules/seasons/{seasonId}/generate-from-groups": {
+            "post": {
+                "operationId": "GenerateFromGroups",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GenerateResult"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua\r\nGroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc\r\n/draw-seeded). KHÔNG tạo lại bảng, KHÔNG tự chia đội — chỉ sinh match\r\nround-robin cho các group hiện có rồi xếp giờ/sân.\r\n\r\nDùng endpoint này thay vì /generate khi season.phases.length > 0\r\n(endpoint /generate sẽ throw CONFLICT trong trường hợp đó).",
+                "tags": [
+                    "Schedules"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateFromGroupsDto"
                             }
                         }
                     }

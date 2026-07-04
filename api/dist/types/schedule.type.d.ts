@@ -50,6 +50,19 @@ export type SeasonSchedule = {
     unscheduledMatches: number;
     matches: ScheduleMatchItem[];
 };
+/**
+ * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions:
+ * không có desiredGroupCount/minGroupSize/maxGroupSize vì group đã được
+ * tạo & bốc thăm sẵn qua GroupService (GroupDrawUI). Chỉ cần thông tin
+ * xếp lịch (sân, khung giờ, số ngày nghỉ).
+ */
+export interface GenerateFromGroupsOptions {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    venueIds: number[];
+    matchTimes: string[];
+    allowPastDate?: boolean;
+}
 export declare const matchScheduleSelect: {
     readonly id: true;
     readonly round: true;

@@ -186,4 +186,13 @@ export const matchApi = {
 
   delete: () =>
     Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.')),
+
+  generateSchedule: (seasonId, body) =>
+    axiosClient.post(`/schedules/seasons/${seasonId}/generate`, body),
+
+  generateFromGroups: (seasonId, body) =>
+    axiosClient.post(`/schedules/seasons/${seasonId}/generate-from-groups`, body),
+
+  autoSchedule: (seasonId, body) =>
+    axiosClient.post(`/schedules/seasons/${seasonId}/schedule`, body),
 };

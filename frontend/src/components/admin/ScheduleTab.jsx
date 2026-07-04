@@ -8,6 +8,7 @@ import useScheduleStore from '../../store/scheduleStore';
 import useVenueStore from '../../store/venueStore';
 import useTeamStore from '../../store/teamStore';
 import useToastStore from '../../store/toastStore';
+import { groupApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 
@@ -120,18 +121,55 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
-function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
+// Modal này giờ có 2 chế độ, tự động phát hiện dựa trên GroupService:
+//  - Season CHƯA có bảng nào (hasDrawnGroups=false): hiện form cũ (tự tạo
+//    bảng + tự chia đội), gọi POST /schedules/seasons/{id}/generate.
+//  - Season ĐÃ có bảng + đã bốc thăm (hasDrawnGroups=true): ẩn phần
+//    "số bảng / kích thước bảng" (không còn ý nghĩa gì), chỉ hỏi sân/giờ/
+//    nghỉ tối thiểu, gọi POST /schedules/seasons/{id}/generate-from-groups.
+function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenerateFromGroups }) {
+  const [checkingGroups, setCheckingGroups] = useState(true);
+  const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
+  const [groupCheckError, setGroupCheckError] = useState(false);
+
   const [formData, setFormData] = useState({
     desiredGroupCount: 1,
     minGroupSize: 4,
     maxGroupSize: 4,
     minRestDaysPerTeam: 2,
     matchTimes: "08:00, 15:00",
-    startDate: "", // Ngày bắt đầu thi đấu
   });
 
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Kiểm tra season đã có bảng + đã bốc thăm (>= 2 đội/bảng) hay chưa —
+  // dùng chính API groupApi.listBySeason (GroupService.findAllBySeason),
+  // đảm bảo cùng nguồn sự thật với GroupDrawUI.
+  useEffect(() => {
+    if (!seasonId) return;
+    let cancelled = false;
+    (async () => {
+      setCheckingGroups(true);
+      setGroupCheckError(false);
+      try {
+        const res = await groupApi.listBySeason(seasonId);
+        const payload = typeof res?.status === 'boolean' ? res.data : res;
+        const groups = Array.isArray(payload?.groups) ? payload.groups : [];
+        const anyGroupHasEnoughTeams = groups.some(g => (g.season_teams?.length || 0) >= 2);
+        if (!cancelled) setHasDrawnGroups(anyGroupHasEnoughTeams);
+      } catch (err) {
+        console.error('[GenerateScheduleModal] check groups failed:', err);
+        if (!cancelled) {
+          setHasDrawnGroups(false);
+          setGroupCheckError(true);
+        }
+      } finally {
+        if (!cancelled) setCheckingGroups(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [seasonId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -157,25 +195,26 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
     setIsGenerating(true);
     const timesArray = formData.matchTimes.split(',').map(t => t.trim()).filter(Boolean);
 
-    const payload = {
-      desiredGroupCount: Number(formData.desiredGroupCount),
-      minGroupSize: Number(formData.minGroupSize),
-      maxGroupSize: Number(formData.maxGroupSize),
-      doubleRound: false, // Bỏ doubleRound trên UI, mặc định gửi false hoặc không gửi
+    const basePayload = {
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
       matchTimes: timesArray,
     };
 
-    if (formData.startDate) {
-      // Chuyển startDate sang ISO (UTC)
-      const dateObj = new Date(formData.startDate);
-      if (!isNaN(dateObj.getTime())) {
-        payload.startDate = dateObj.toISOString();
-      }
+    if (hasDrawnGroups) {
+      // Bảng đã tồn tại + đã bốc thăm — chỉ sinh match + xếp lịch
+      await onGenerateFromGroups(seasonId, { ...basePayload, doubleRound: false });
+    } else {
+      // Chưa có bảng — luồng cũ: tự tạo bảng + tự chia đội + sinh lịch
+      await onGenerate(seasonId, {
+        ...basePayload,
+        desiredGroupCount: Number(formData.desiredGroupCount),
+        minGroupSize: Number(formData.minGroupSize),
+        maxGroupSize: Number(formData.maxGroupSize),
+        doubleRound: false,
+      });
     }
 
-    await onGenerate(seasonId, payload);
     setIsGenerating(false);
   };
 
@@ -184,87 +223,116 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
       <div className="bg-navy border border-navy-light rounded-3xl w-full max-w-2xl shadow-2xl animate-slide-up overflow-hidden flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 bg-navy-dark border-b border-navy-light shrink-0">
           <h3 className="font-black text-white uppercase tracking-wider flex items-center gap-2">
-            <Zap className="w-5 h-5 text-neon" /> Tạo Lịch Thi Đấu Tự Động
+            <Zap className="w-5 h-5 text-neon" /> Tạo Lịch Thi Đấu
           </h3>
           <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
-              <input
-                type="number" min="1" required
-                name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
-                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ngày bắt đầu</label>
-              <input
-                type="date"
-                name="startDate" value={formData.startDate} onChange={handleChange}
-                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
-              <input
-                type="number" min="2" required
-                name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
-                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
-              <input
-                type="number" min="2" required
-                name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
-                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Khung giờ đá (cách nhau dấu phẩy)</label>
-              <input
-                type="text" required
-                placeholder="VD: 08:00, 15:00, 18:30"
-                name="matchTimes" value={formData.matchTimes} onChange={handleChange}
-                className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-              />
-            </div>
+        {checkingGroups ? (
+          <div className="p-10 flex flex-col items-center justify-center gap-3 text-gray-400">
+            <Loader2 className="w-6 h-6 text-neon animate-spin" />
+            <p className="text-xs font-bold">Đang kiểm tra bảng đấu hiện có...</p>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+            {groupCheckError && (
+              <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">
+                Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã bốc thăm
+                bảng, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
+              </p>
+            )}
 
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
-            {venues.length === 0 ? (
-              <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước (trong phần cài đặt sân) để có thể tạo lịch!</p>
+            {hasDrawnGroups ? (
+              <div className="text-sm text-emerald-300 bg-emerald-400/10 p-3 rounded-lg border border-emerald-400/20">
+                Season đã có bảng đấu và đã bốc thăm. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng
+                hiện có rồi xếp giờ/sân — không tạo lại bảng hay chia lại đội.
+              </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
-                {venues.map(v => (
-                  <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
-                    <input
-                      type="checkbox"
-                      checked={selectedVenues.includes(String(v.id))}
-                      onChange={() => handleVenueToggle(String(v.id))}
-                      className="accent-neon w-4 h-4"
-                    />
-                    <span className="font-bold text-sm truncate">{v.name}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
+                  <input
+                    type="number" min="1" required
+                    name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
+                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
+                  <input
+                    type="number" min="2" required
+                    name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
+                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
+                  <input
+                    type="number" min="2" required
+                    name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
+                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                  />
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="pt-4 flex justify-end gap-3 border-t border-navy-light">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors">Đóng</button>
-            <button type="submit" disabled={isGenerating || venues.length === 0} className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50">
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              Bắt đầu tạo
-            </button>
-          </div>
-        </form>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
+                <input
+                  type="number" min="0"
+                  name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
+                  className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Khung giờ đá (cách nhau dấu phẩy)</label>
+                <input
+                  type="text" required
+                  placeholder="VD: 08:00, 15:00, 18:30"
+                  name="matchTimes" value={formData.matchTimes} onChange={handleChange}
+                  className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                />
+              </div>
+            </div>
+
+            <p className="text-[11px] text-gray-500 -mt-2">
+              Khoảng thời gian xếp lịch (ngày bắt đầu/kết thúc) lấy từ <code>start_date</code>/<code>end_date</code>
+              của mùa giải — chỉnh ở phần cài đặt mùa giải nếu cần đổi.
+            </p>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
+              {venues.length === 0 ? (
+                <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước (trong phần cài đặt sân) để có thể tạo lịch!</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
+                  {venues.map(v => (
+                    <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedVenues.includes(String(v.id))}
+                        onChange={() => handleVenueToggle(String(v.id))}
+                        className="accent-neon w-4 h-4"
+                      />
+                      <span className="font-bold text-sm truncate">{v.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 flex justify-end gap-3 border-t border-navy-light">
+              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors">Đóng</button>
+              <button type="submit" disabled={isGenerating || venues.length === 0} className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50">
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                Bắt đầu tạo
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -274,7 +342,10 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
 // ─── Main Component: ScheduleTab ─────────────────────────────────────────────────
 export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const toast = useToastStore();
-  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, generateSchedule, rescheduleMatch } = useScheduleStore();
+  const {
+    getMatchesFromCache, isSeasonLoading, fetchBySeason,
+    generateSchedule, generateFromGroups, rescheduleMatch,
+  } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
 
@@ -328,6 +399,18 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     try {
       await generateSchedule(seasonId, payload);
       toast.success('Đã tạo lịch thi đấu & bốc thăm thành công!');
+      setGenerateModalOpen(false);
+      handleRefresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
+    }
+  };
+
+  // NEW: sinh lịch cho season đã có bảng + đã bốc thăm sẵn (qua GroupDrawUI).
+  const handleGenerateFromGroups = async (seasonId, payload) => {
+    try {
+      await generateFromGroups(seasonId, payload);
+      toast.success('Đã sinh lịch thi đấu từ bảng đã bốc thăm!');
       setGenerateModalOpen(false);
       handleRefresh();
     } catch (err) {
@@ -489,6 +572,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
           venues={venues}
           onClose={() => setGenerateModalOpen(false)}
           onGenerate={handleGenerateSchedule}
+          onGenerateFromGroups={handleGenerateFromGroups}
         />,
         document.body
       )}
