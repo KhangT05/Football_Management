@@ -13,8 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
 export default function VenuesSection() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -66,10 +65,10 @@ export default function VenuesSection() {
     crud.save(async () => {
       if (crud.modal === 'add') {
         await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
-        toastsuccess(`Đã thêm sân "${crud.form.name.trim()}"!`);
+        toast.success(`Đã thêm sân "${crud.form.name.trim()}"!`);
       } else {
         await venueApi.update(crud.editing.id, { name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
-        toastsuccess(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
+        toast.success(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
       }
     });
   };
@@ -78,9 +77,9 @@ export default function VenuesSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await venueApi.delete(item.id);
-      toastsuccess(`Đã xóa sân "${item.name}".`);
+      toast.success(`Đã xóa sân "${item.name}".`);
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa sân.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
     });
   };
   const handleItemsPerPageChange = (newLimit) => {

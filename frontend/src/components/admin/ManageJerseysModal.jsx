@@ -5,8 +5,7 @@ import useToastStore from '../../store/toastStore';
 import { INPUT, BTN_PRIMARY } from '../../utils/adminStyles';
 
 export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [jerseys, setJerseys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -33,7 +32,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
       const payload = typeof res?.status === 'boolean' ? res.data : res;
       setJerseys(Array.isArray(payload) ? payload : []);
     } catch (_err) {
-      toastError('Không thể tải danh sách áo đấu');
+      toast.error('Không thể tải danh sách áo đấu');
     } finally {
       setLoading(false);
     }
@@ -45,16 +44,16 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!formData.type) return toastError('Vui lòng chọn loại áo');
+    if (!formData.type) return toast.error('Vui lòng chọn loại áo');
 
     try {
       await jerseyApi.upsert(seasonTeam.id, formData);
-      toastsuccess('Lưu thông tin áo đấu thành công');
+      toast.success('Lưu thông tin áo đấu thành công');
       loadJerseys();
       setEditingIndex(null);
       resetForm();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Lỗi khi lưu áo đấu');
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu áo đấu');
     }
   };
 
@@ -62,10 +61,10 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
     if (!confirm(`Xóa áo ${type}?`)) return;
     try {
       await jerseyApi.delete(seasonTeam.id, type);
-      toastsuccess('Đã xóa áo đấu');
+      toast.success('Đã xóa áo đấu');
       loadJerseys();
     } catch (_err) {
-      toastError('Lỗi khi xóa áo đấu');
+      toast.error('Lỗi khi xóa áo đấu');
     }
   };
 

@@ -13,8 +13,7 @@ import { userApi } from '../../../api';
 const EMPTY_USER = { name: '', email: '', phone: '', password: '', role_ids: [] };
 
 export default function UsersTab() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [users, setUsers] = useState([]);
   const [meta, setMeta] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,7 +65,7 @@ export default function UsersTab() {
       userCrud.setIsSaving(true);
       if (userCrud.modal === 'add') {
         await userApi.create(payload);
-        toastsuccess(`Đã tạo người dùng "${payload.name}"`);
+        toast.success(`Đã tạo người dùng "${payload.name}"`);
       } else {
         const updateData = {
           name: payload.name,
@@ -74,13 +73,13 @@ export default function UsersTab() {
           role_ids: payload.role_ids
         };
         await userApi.updateProfile(userCrud.editing.id, updateData);
-        toastsuccess(`Đã cập nhật người dùng "${payload.name}"`);
+        toast.success(`Đã cập nhật người dùng "${payload.name}"`);
       }
       userCrud.closeModal();
       fetchUsers();
     } catch (err) {
       console.error(err);
-      toastError(err?.response?.data?.message || 'Lỗi khi lưu người dùng');
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu người dùng');
     } finally {
       userCrud.setIsSaving(false);
     }
@@ -90,11 +89,11 @@ export default function UsersTab() {
     const user = userCrud.deleting;
     userCrud.confirmDelete(async () => {
       await userApi.softDelete(user.id);
-      toastsuccess(`Đã xóa người dùng "${user.name}".`);
+      toast.success(`Đã xóa người dùng "${user.name}".`);
       fetchUsers();
     }).catch((err) => {
       console.error(err);
-      toastError(err?.response?.data?.message || 'Không thể xóa người dùng.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa người dùng.');
     });
   };
 

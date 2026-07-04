@@ -10,8 +10,7 @@ import RoleFormModal from '../RoleFormModal';
 import { roleApi } from '../../../api';
 
 export default function RolesTab() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
@@ -40,16 +39,16 @@ export default function RolesTab() {
       roleCrud.setIsSaving(true);
       if (roleCrud.modal === 'add') {
         await roleApi.createRole(payload);
-        toastsuccess(`Đã tạo vai trò "${payload.name}"`);
+        toast.success(`Đã tạo vai trò "${payload.name}"`);
       } else {
         await roleApi.updateRole(roleCrud.editing.id, payload);
-        toastsuccess(`Đã cập nhật vai trò "${payload.name}"`);
+        toast.success(`Đã cập nhật vai trò "${payload.name}"`);
       }
       roleCrud.closeModal();
       fetchRoles();
     } catch (err) {
       console.error(err);
-      toastError(err?.response?.data?.message || 'Lỗi khi lưu vai trò');
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu vai trò');
     } finally {
       roleCrud.setIsSaving(false);
     }
@@ -59,10 +58,10 @@ export default function RolesTab() {
     const role = roleCrud.deleting;
     roleCrud.confirmDelete(async () => {
       await roleApi.deleteRole(role.id);
-      toastsuccess(`Đã xóa vai trò "${role.name}".`);
+      toast.success(`Đã xóa vai trò "${role.name}".`);
       fetchRoles();
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa vai trò.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa vai trò.');
     });
   };
 

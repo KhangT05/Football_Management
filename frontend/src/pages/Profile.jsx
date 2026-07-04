@@ -9,8 +9,7 @@ const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-ligh
 
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -82,12 +81,12 @@ export default function Profile() {
         setUser({ ...user, ...res.data });
         setIsEditing(false);
         setSaveSuccess(true);
-        toastsuccess('Cập nhật thông tin thành công! 🎉');
+        toast.success('Cập nhật thông tin thành công! 🎉');
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (error) {
       console.error("Failed to update profile", error);
-      toastError(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
     } finally {
       setIsLoading(false);
     }

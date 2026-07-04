@@ -15,8 +15,7 @@ import { articleApi } from '../../api';
 const EMPTY_ARTICLE = { title: '', excerpt: '', content: '', cover_image: null, status: 'draft', tags: [] };
 
 export default function ManageArticles() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [articles, setArticles] = useState([]);
   const [meta, setMeta] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,15 +74,15 @@ export default function ManageArticles() {
       articleCrud.setIsSaving(true);
       if (articleCrud.modal === 'add') {
         await articleApi.createArticle(payload);
-        toastsuccess(`Đã tạo bài viết "${payload.title}"`);
+        toast.success(`Đã tạo bài viết "${payload.title}"`);
       } else {
         await articleApi.updateArticle(articleCrud.editing.id, payload);
-        toastsuccess(`Đã cập nhật bài viết "${payload.title}"`);
+        toast.success(`Đã cập nhật bài viết "${payload.title}"`);
       }
       articleCrud.closeModal();
       fetchArticles();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Lỗi khi lưu bài viết');
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu bài viết');
     } finally {
       articleCrud.setIsSaving(false);
     }
@@ -93,10 +92,10 @@ export default function ManageArticles() {
     const article = articleCrud.deleting;
     articleCrud.confirmDelete(async () => {
       await articleApi.deleteArticle(article.id);
-      toastsuccess(`Đã xóa bài viết "${article.title}".`);
+      toast.success(`Đã xóa bài viết "${article.title}".`);
       fetchArticles();
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa bài viết.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa bài viết.');
     });
   };
 
@@ -104,11 +103,11 @@ export default function ManageArticles() {
     try {
       const newStatus = article.status === 'published' ? 'draft' : 'published';
       await articleApi.updateStatus(article.id, newStatus);
-      toastsuccess(`Đã đổi trạng thái thành ${newStatus}`);
+      toast.success(`Đã đổi trạng thái thành ${newStatus}`);
       fetchArticles();
     } catch (err) {
       console.error(err);
-      toastError('Lỗi khi đổi trạng thái');
+      toast.error('Lỗi khi đổi trạng thái');
     }
   };
 

@@ -26,8 +26,7 @@ function extractTotalCount(payload) {
 }
 
 export default function GroupDrawUI({ seasonId }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
 
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
 
@@ -94,7 +93,7 @@ export default function GroupDrawUI({ seasonId }) {
         );
       } else {
         console.error('[GroupDrawUI] loadGroups failed:', groupsRes.reason);
-        toastError(groupsRes.reason?.response?.data?.message || 'Không thể tải danh sách bảng đấu');
+        toast.error(groupsRes.reason?.response?.data?.message || 'Không thể tải danh sách bảng đấu');
         setGroups([]);
         setPersistedTeamsPerGroup(null);
         setPhaseInfo(null);
@@ -117,14 +116,14 @@ export default function GroupDrawUI({ seasonId }) {
         }
       } else {
         console.error('[GroupDrawUI] loadTotalTeams failed:', teamsRes.reason);
-        toastError(teamsRes.reason?.response?.data?.message || 'Không thể tải số lượng đội đã duyệt');
+        toast.error(teamsRes.reason?.response?.data?.message || 'Không thể tải số lượng đội đã duyệt');
         setTeamsCountError(true);
         setTotalTeams(null);
       }
     } finally {
       if (reqId === requestIdRef.current && isMountedRef.current) setLoading(false);
     }
-  }, [seasonId, toastError]);
+  }, [seasonId, toast.error]);
 
   useEffect(() => {
     setGroups([]);
@@ -144,19 +143,19 @@ export default function GroupDrawUI({ seasonId }) {
   }, [seasonId, loadData]);
 
   const handleCreateGroups = async () => {
-    if (!seasonId) return toastError('Chưa chọn season');
-    if (groups.length > 0) return toastError('Season đã có bảng — xoá hết trước khi tạo lại');
+    if (!seasonId) return toast.error('Chưa chọn season');
+    if (groups.length > 0) return toast.error('Season đã có bảng — xoá hết trước khi tạo lại');
     const count = Number(groupCount);
     if (!Number.isInteger(count) || count < 1 || count > 26)
-      return toastError('Số bảng phải là số nguyên từ 1 đến 26');
+      return toast.error('Số bảng phải là số nguyên từ 1 đến 26');
     setIsCreatingGroups(true);
     try {
       await groupApi.createGroupsBulk(seasonId, count);
-      toastSuccess(`Đã tạo ${count} bảng`);
+      toast.success(`Đã tạo ${count} bảng`);
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] createGroupsBulk failed:', error);
-      toastError(
+      toast.error(
         error?.response?.data?.message || `Lỗi tạo bảng (HTTP ${error?.response?.status ?? '?'})`
       );
     } finally {
@@ -165,33 +164,33 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   const handleDrawRandom = async () => {
-    if (!seasonId) return toastError('Chưa chọn season');
-    if (groups.length === 0) return toastError('Chưa có bảng — tạo bảng trước khi bốc thăm');
+    if (!seasonId) return toast.error('Chưa chọn season');
+    if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
     setIsDrawing(true);
     try {
       await groupApi.drawGroups(seasonId, { teams_per_group: Number(teamsPerGroup) });
-      toastSuccess('Bốc thăm ngẫu nhiên thành công!');
+      toast.success('Bốc thăm ngẫu nhiên thành công!');
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] drawGroups failed:', error);
-      toastError(error?.response?.data?.message || 'Lỗi bốc thăm ngẫu nhiên');
+      toast.error(error?.response?.data?.message || 'Lỗi bốc thăm ngẫu nhiên');
     } finally {
       setIsDrawing(false);
     }
   };
 
   const handleDrawSeeded = async () => {
-    if (!seasonId) return toastError('Chưa chọn season');
-    if (groups.length === 0) return toastError('Chưa có bảng — tạo bảng trước khi bốc thăm');
+    if (!seasonId) return toast.error('Chưa chọn season');
+    if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
 
     const pots = Number(numPots);
     if (!Number.isInteger(pots) || pots < 1)
-      return toastError('Số pot phải là số nguyên >= 1');
+      return toast.error('Số pot phải là số nguyên >= 1');
 
     if (typeof totalTeams === 'number') {
       const maxPotSize = Math.ceil(totalTeams / pots);
       if (maxPotSize > groups.length) {
-        return toastError(
+        return toast.error(
           `Pot lớn nhất ước tính ~${maxPotSize} team > ${groups.length} bảng — giảm số pot hoặc tăng số bảng`
         );
       }
@@ -200,27 +199,27 @@ export default function GroupDrawUI({ seasonId }) {
     setIsDrawing(true);
     try {
       await groupApi.drawSeeded(seasonId, { teams_per_group: Number(teamsPerGroup), num_pots: pots });
-      toastSuccess('Bốc thăm hạt giống thành công!');
+      toast.success('Bốc thăm hạt giống thành công!');
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] drawGroupsSeeded failed:', error);
-      toastError(error?.response?.data?.message || 'Lỗi bốc thăm hạt giống');
+      toast.error(error?.response?.data?.message || 'Lỗi bốc thăm hạt giống');
     } finally {
       setIsDrawing(false);
     }
   };
 
   const handleClearDraw = async () => {
-    if (!seasonId) return toastError('Chưa chọn season');
+    if (!seasonId) return toast.error('Chưa chọn season');
     if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ kết quả bốc thăm của vòng này?')) return;
     setIsDrawing(true);
     try {
       await groupApi.clearDraw(seasonId);
-      toastSuccess('Đã xóa kết quả bốc thăm!');
+      toast.success('Đã xóa kết quả bốc thăm!');
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] clearDraw failed:', error);
-      toastError(error?.response?.data?.message || 'Lỗi xóa bốc thăm');
+      toast.error(error?.response?.data?.message || 'Lỗi xóa bốc thăm');
     } finally {
       setIsDrawing(false);
     }
@@ -245,11 +244,11 @@ export default function GroupDrawUI({ seasonId }) {
     setDeletingGroupId(group.id);
     try {
       await groupApi.deactivateGroup(group.id);
-      toastSuccess(`Đã xoá bảng "${group.name}"`);
+      toast.success(`Đã xoá bảng "${group.name}"`);
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] deactivateGroup failed:', error);
-      toastError(error?.response?.data?.message || 'Lỗi xoá bảng (có thể do bảng đã có match)');
+      toast.error(error?.response?.data?.message || 'Lỗi xoá bảng (có thể do bảng đã có match)');
     } finally {
       setDeletingGroupId(null);
     }

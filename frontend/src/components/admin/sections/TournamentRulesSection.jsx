@@ -34,8 +34,7 @@ const DEFAULT_RULE_FORM = {
 };
 
 export default function TournamentRulesSection() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -133,10 +132,10 @@ export default function TournamentRulesSection() {
       };
       if (crud.modal === 'add') {
         await tournamentRuleApi.create(payload);
-        toastsuccess('Tạo luật giải thành công!');
+        toast.success('Tạo luật giải thành công!');
       } else {
         await tournamentRuleApi.update(crud.editing.id, payload);
-        toastsuccess('Cập nhật luật giải thành công!');
+        toast.success('Cập nhật luật giải thành công!');
       }
     });
   };
@@ -145,9 +144,9 @@ export default function TournamentRulesSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await tournamentRuleApi.delete(item.id);
-      toastsuccess('Xóa luật giải thành công.');
+      toast.success('Xóa luật giải thành công.');
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa luật giải.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa luật giải.');
     });
   };
 
