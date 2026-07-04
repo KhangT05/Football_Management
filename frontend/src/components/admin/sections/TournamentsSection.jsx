@@ -13,7 +13,8 @@ import { useShallow } from 'zustand/react/shallow';
 const INPUT = 'w-full px-4 py-3 bg-navy border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm';
 
 export default function TournamentsSection() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const { invalidate: invalidateTournamentStore } = useTournamentStore(useShallow(state => ({ invalidate: state.invalidate })));
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,9 +22,9 @@ export default function TournamentsSection() {
 
   const { data: items, meta, isLoading, fetch: fetchTournaments } = useApiQuery(
     (params) => tournamentApi.getAll(params),
-    { 
-      autoFetch: false, 
-      errorMsg: 'Không tải được danh sách giải đấu.' 
+    {
+      autoFetch: false,
+      errorMsg: 'Không tải được danh sách giải đấu.'
     }
   );
 
@@ -47,8 +48,8 @@ export default function TournamentsSection() {
 
   const crud = useCrudModal({
     emptyForm: { name: '', description: '', logo: null, is_active: true },
-    onSuccess: () => { 
-      invalidateTournamentStore(); 
+    onSuccess: () => {
+      invalidateTournamentStore();
       setCurrentPage(1);
       fetchTournaments({
         page: 1, per_page: itemsPerPage, sort: 'id', direction: 'desc',
@@ -92,7 +93,7 @@ export default function TournamentsSection() {
     crud.save(async () => {
       if (crud.modal === 'add') {
         await tournamentApi.create({ name, description, logo: crud.form.logo, is_active: crud.form.is_active });
-        toast.success(`Đã tạo giải đấu "${name}"!`);
+        toastsuccess(`Đã tạo giải đấu "${name}"!`);
         if (window.confirm(`Bạn có muốn tạo mùa giải mới cho giải đấu "${name}" ngay bây giờ không?`)) {
           setTimeout(() => {
             const el = document.getElementById('seasons-section');
@@ -101,7 +102,7 @@ export default function TournamentsSection() {
         }
       } else {
         await tournamentApi.update(crud.editing.id, { name, description, logo: crud.form.logo, is_active: crud.form.is_active });
-        toast.success(`Đã cập nhật "${name}"!`);
+        toastsuccess(`Đã cập nhật "${name}"!`);
       }
     });
   };
@@ -110,9 +111,9 @@ export default function TournamentsSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await tournamentApi.delete(item.id);
-      toast.success(`Đã xóa "${item.name}".`);
+      toastsuccess(`Đã xóa "${item.name}".`);
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa giải đấu.');
+      toastError(err?.response?.data?.message || 'Không thể xóa giải đấu.');
       crud.setDeleting(null);
     });
   };
@@ -122,7 +123,7 @@ export default function TournamentsSection() {
       {/* Header */}
       <div className="relative px-6 py-5 border-b border-navy-light bg-linear-to-r from-navy-dark via-navy to-navy-dark overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between relative z-10 gap-4">
           <div className="flex items-center gap-4 shrink-0">
             <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-inner">
@@ -133,31 +134,31 @@ export default function TournamentsSection() {
               <p className="text-xs text-gray-400 mt-0.5">Tổng số: <strong className="text-blue-400">{meta?.total || 0}</strong> giải đấu</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input 
-                type="text" 
-                placeholder="Tìm giải đấu..." 
+              <input
+                type="text"
+                placeholder="Tìm giải đấu..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="w-full pl-9 pr-4 py-2.5 bg-navy-dark/80 border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm shadow-sm"
               />
             </div>
-            <button 
-              onClick={() => fetchTournaments()} 
-              disabled={isLoading} 
+            <button
+              onClick={() => fetchTournaments()}
+              disabled={isLoading}
               className="p-2.5 rounded-xl bg-navy-dark/80 border border-navy-light text-gray-400 hover:text-white hover:bg-navy-light hover:border-gray-500 transition-all shadow-sm disabled:opacity-50 shrink-0"
               title="Tải lại"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            <button 
-              onClick={openAdd} 
+            <button
+              onClick={openAdd}
               className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/50 hover:shadow-blue-900/80 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap shrink-0"
             >
-              <Plus className="w-5 h-5" /> 
+              <Plus className="w-5 h-5" />
               <span className="hidden sm:inline">Thêm mới</span>
             </button>
           </div>
@@ -181,8 +182,8 @@ export default function TournamentsSection() {
           </div>
         ) : (
           paginatedItems.map((item, idx) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className="group bg-navy border border-navy-light hover:border-blue-500/30 hover:bg-navy-dark rounded-2xl px-5 py-4 flex items-center justify-between gap-4 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-blue-900/10 animate-slide-up"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
@@ -200,15 +201,15 @@ export default function TournamentsSection() {
                   <p className="text-xs sm:text-sm text-gray-400 mt-0.5 truncate max-w-md lg:max-w-xl">{item.description || 'Không có mô tả'}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4 shrink-0">
                 <span className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider px-3 py-1.5 rounded-full border ${item.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                   {item.is_active ? <Shield className="w-3 h-3" /> : null}
                   {item.is_active ? 'Hoạt động' : 'Đã khóa'}
                 </span>
-                
+
                 <div className="w-px h-8 bg-navy-light mx-1 hidden sm:block"></div>
-                
+
                 <div className="flex gap-2">
                   <button onClick={() => openEdit(item)} className="p-2.5 rounded-xl text-gray-400 bg-navy-dark hover:text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/30 transition-all shadow-sm" title="Chỉnh sửa">
                     <Edit className="w-4 h-4" />
@@ -221,7 +222,7 @@ export default function TournamentsSection() {
             </div>
           ))
         )}
-        
+
         {totalPages > 1 && (items || []).length > 0 && !isLoading && (
           <div className="mt-4 mb-2 flex justify-center">
             <Pagination
@@ -256,7 +257,7 @@ export default function TournamentsSection() {
               <div className="font-medium mt-0.5">{crud.formError}</div>
             </div>
           )}
-          
+
           <div className="space-y-5">
             {crud.modal === 'add' && (
               <div className="text-center text-sm font-medium text-gray-400 bg-navy-dark py-2 rounded-xl border border-navy-light shadow-inner">
@@ -281,25 +282,25 @@ export default function TournamentsSection() {
             </div>
 
             <FormField label="Tên giải đấu" required>
-              <input 
-                className={INPUT} 
-                value={crud.form.name} 
-                onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))} 
-                placeholder="VD: IT Super League 2026" 
+              <input
+                className={INPUT}
+                value={crud.form.name}
+                onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="VD: IT Super League 2026"
                 autoFocus
               />
             </FormField>
-            
+
             <FormField label="Mô tả chi tiết">
-              <textarea 
-                className={`${INPUT} resize-none`} 
-                rows={4} 
-                value={crud.form.description} 
-                onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} 
-                placeholder="Nhập thông tin giới thiệu, mục đích, hoặc các ghi chú về giải đấu..." 
+              <textarea
+                className={`${INPUT} resize-none`}
+                rows={4}
+                value={crud.form.description}
+                onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Nhập thông tin giới thiệu, mục đích, hoặc các ghi chú về giải đấu..."
               />
             </FormField>
-            
+
             <div className="flex items-center gap-3 py-2">
               <label className="flex items-center cursor-pointer gap-3">
                 <div className="relative">

@@ -9,13 +9,14 @@ const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-
 
 export default function ProfileSettingsModal({ onClose }) {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
-  const toast = useToastStore();
-  
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
+
   const [form, setForm] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
   });
-  
+
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,19 +25,19 @@ export default function ProfileSettingsModal({ onClose }) {
       setError('Tên không được bỏ trống.');
       return;
     }
-    
+
     setIsSaving(true);
     setError('');
-    
+
     try {
       await userApi.updateProfile(user.id, {
         name: form.name.trim(),
         phone: form.phone.trim(),
       });
-      
+
       // Update local store
       setUser({ ...user, name: form.name.trim(), phone: form.phone.trim() });
-      toast.success('Đã cập nhật thông tin tài khoản!');
+      toastsuccess('Đã cập nhật thông tin tài khoản!');
       onClose();
     } catch (err) {
       setError(err?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật.');
@@ -49,7 +50,7 @@ export default function ProfileSettingsModal({ onClose }) {
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-sm animate-scale-in overflow-hidden flex flex-col">
-        
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-navy-light bg-navy-dark flex items-center justify-between">
           <h3 className="font-bold text-white flex items-center gap-2">

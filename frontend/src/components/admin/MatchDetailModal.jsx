@@ -229,7 +229,8 @@ function SubTab({ subs, onSubs, homeTeamName, awayTeamName }) {
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 export default function MatchDetailModal({ match, homeTeamName, awayTeamName, onClose, onUpdated }) {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [mode, setMode] = useState('view');
   const [activeTab, setActiveTab] = useState('Tỷ số');
   const [isSaving, setIsSaving] = useState(false);
@@ -246,41 +247,41 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
       setHomeScore(match.home_score ?? 0);
       setAwayScore(match.away_score ?? 0);
       setScorers([]); setYellowCards([]); setRedCards([]); setSubs([]);
-      
+
       matchApi.getMatchEvents(match.id, { per_page: 200 }).then(res => {
         const evs = Array.isArray(res?.data?.data) ? res.data.data : [];
         const newScorers = [];
         const newYellow = [];
         const newRed = [];
         const subMap = new Map();
-        
+
         evs.forEach(ev => {
-           const teamSide = ev.team_id === match.home_team_id ? 'home' : 'away';
-           const playerName = ev.player?.name ?? `Cầu thủ #${ev.player_id}`;
-           
-           if (ev.type === 'goal' || ev.type === 'own_goal') {
-             newScorers.push({
-               id: ev.id,
-               teamSide,
-               playerName,
-               minute: ev.minute,
-               isOwnGoal: ev.type === 'own_goal'
-             });
-           } else if (ev.type === 'yellow_card') {
-             newYellow.push({ id: ev.id, teamSide, playerName, minute: ev.minute });
-           } else if (ev.type === 'red_card') {
-             newRed.push({ id: ev.id, teamSide, playerName, minute: ev.minute });
-           } else if (ev.type === 'substitution_in' || ev.type === 'substitution_out') {
-             const key = `${ev.minute}-${teamSide}`;
-             if (!subMap.has(key)) subMap.set(key, { id: ev.id, teamSide, playerIn: '', playerOut: '', minute: ev.minute });
-             if (ev.type === 'substitution_in') {
-               subMap.get(key).playerIn = playerName;
-             } else {
-               subMap.get(key).playerOut = playerName;
-             }
-           }
+          const teamSide = ev.team_id === match.home_team_id ? 'home' : 'away';
+          const playerName = ev.player?.name ?? `Cầu thủ #${ev.player_id}`;
+
+          if (ev.type === 'goal' || ev.type === 'own_goal') {
+            newScorers.push({
+              id: ev.id,
+              teamSide,
+              playerName,
+              minute: ev.minute,
+              isOwnGoal: ev.type === 'own_goal'
+            });
+          } else if (ev.type === 'yellow_card') {
+            newYellow.push({ id: ev.id, teamSide, playerName, minute: ev.minute });
+          } else if (ev.type === 'red_card') {
+            newRed.push({ id: ev.id, teamSide, playerName, minute: ev.minute });
+          } else if (ev.type === 'substitution_in' || ev.type === 'substitution_out') {
+            const key = `${ev.minute}-${teamSide}`;
+            if (!subMap.has(key)) subMap.set(key, { id: ev.id, teamSide, playerIn: '', playerOut: '', minute: ev.minute });
+            if (ev.type === 'substitution_in') {
+              subMap.get(key).playerIn = playerName;
+            } else {
+              subMap.get(key).playerOut = playerName;
+            }
+          }
         });
-        
+
         setScorers(newScorers);
         setYellowCards(newYellow);
         setRedCards(newRed);
@@ -318,11 +319,11 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
         ].forEach(ev => matchApi.recordEvent(match.id, ev).catch(() => { }));
       }
 
-      toast.success('Đã lưu kết quả trận đấu!');
+      toastsuccess('Đã lưu kết quả trận đấu!');
       setMode('view');
       onUpdated?.();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể lưu kết quả.');
+      toastError(err?.response?.data?.message || 'Không thể lưu kết quả.');
     } finally {
       setIsSaving(false);
     }

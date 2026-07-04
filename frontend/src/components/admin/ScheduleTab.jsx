@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  CalendarDays, CalendarPlus, Zap, Edit3, X, Save, 
+import {
+  CalendarDays, CalendarPlus, Zap, Edit3, X, Save,
   MapPin, Clock, Loader2, RefreshCw, Search
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -17,7 +17,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
     if (match?.scheduled_at) {
       const dateObj = new Date(match.scheduled_at);
       const tzOffset = dateObj.getTimezoneOffset() * 60000;
-      return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0,16);
+      return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
     }
     return '';
   });
@@ -82,8 +82,8 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-400" /> Thời gian
             </label>
-            <input 
-              type="datetime-local" 
+            <input
+              type="datetime-local"
               value={scheduledAt}
               onChange={e => setScheduledAt(e.target.value)}
               className="w-full px-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon transition-colors scheme-dark"
@@ -129,8 +129,8 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
     matchTimes: "08:00, 15:00",
     startDate: "", // Ngày bắt đầu thi đấu
   });
-  
-    const [selectedVenues, setSelectedVenues] = useState([]);
+
+  const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleChange = (e) => {
@@ -142,7 +142,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
   };
 
   const handleVenueToggle = (vid) => {
-    setSelectedVenues(prev => 
+    setSelectedVenues(prev =>
       prev.includes(vid) ? prev.filter(id => id !== vid) : [...prev, vid]
     );
   };
@@ -153,10 +153,10 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
       alert("Vui lòng chọn ít nhất một sân thi đấu.");
       return;
     }
-    
+
     setIsGenerating(true);
     const timesArray = formData.matchTimes.split(',').map(t => t.trim()).filter(Boolean);
-    
+
     const payload = {
       desiredGroupCount: Number(formData.desiredGroupCount),
       minGroupSize: Number(formData.minGroupSize),
@@ -166,7 +166,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
       venueIds: selectedVenues.map(Number),
       matchTimes: timesArray,
     };
-    
+
     if (formData.startDate) {
       // Chuyển startDate sang ISO (UTC)
       const dateObj = new Date(formData.startDate);
@@ -195,7 +195,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
-              <input 
+              <input
                 type="number" min="1" required
                 name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
                 className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
@@ -203,7 +203,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ngày bắt đầu</label>
-              <input 
+              <input
                 type="date"
                 name="startDate" value={formData.startDate} onChange={handleChange}
                 className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
@@ -211,7 +211,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
-              <input 
+              <input
                 type="number" min="2" required
                 name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
                 className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
@@ -219,7 +219,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
-              <input 
+              <input
                 type="number" min="2" required
                 name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
                 className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
@@ -227,7 +227,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Khung giờ đá (cách nhau dấu phẩy)</label>
-              <input 
+              <input
                 type="text" required
                 placeholder="VD: 08:00, 15:00, 18:30"
                 name="matchTimes" value={formData.matchTimes} onChange={handleChange}
@@ -244,7 +244,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
               <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
                 {venues.map(v => (
                   <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
-                    <input 
+                    <input
                       type="checkbox"
                       checked={selectedVenues.includes(String(v.id))}
                       onChange={() => handleVenueToggle(String(v.id))}
@@ -273,7 +273,8 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
 
 // ─── Main Component: ScheduleTab ─────────────────────────────────────────────────
 export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, generateSchedule, rescheduleMatch } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
@@ -311,8 +312,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     return list;
   }, [effectiveSeasonId, getMatchesFromCache, searchTerm, teams]);
 
-  const isLoading = effectiveSeasonId 
-    ? isSeasonLoading(Number(effectiveSeasonId)) 
+  const isLoading = effectiveSeasonId
+    ? isSeasonLoading(Number(effectiveSeasonId))
     : false;
 
   const totalPages = Math.ceil(matches.length / itemsPerPage);
@@ -327,21 +328,21 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const handleGenerateSchedule = async (seasonId, payload) => {
     try {
       await generateSchedule(seasonId, payload);
-      toast.success('Đã tạo lịch thi đấu & bốc thăm thành công!');
+      toastsuccess('Đã tạo lịch thi đấu & bốc thăm thành công!');
       setGenerateModalOpen(false);
       handleRefresh();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
+      toastError(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
     }
   };
 
   const handleReschedule = async (matchId, payload) => {
     try {
       await rescheduleMatch(matchId, payload, Number(effectiveSeasonId));
-      toast.success('Cập nhật lịch thành công!');
+      toastsuccess('Cập nhật lịch thành công!');
       setRescheduleMatchData(null);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trận đấu.');
+      toastError(err?.response?.data?.message || 'Lỗi khi cập nhật trận đấu.');
     }
   };
 
@@ -392,7 +393,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
             <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
             {effectiveSeasonId && (
-              <button 
+              <button
                 onClick={() => setGenerateModalOpen(true)}
                 className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
               >
@@ -401,22 +402,22 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             )}
           </div>
         ) : (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayedMatches.map(m => {
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayedMatches.map(m => {
                 const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
                 const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
-                
+
                 const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
                 const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
-                
+
                 const homeLogo = homeTeam?.logo;
                 const awayLogo = awayTeam?.logo;
                 return (
                   <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
                     <div className="flex justify-between items-start mb-3">
                       <StatusBadge status={m.status} />
-                      <button 
+                      <button
                         onClick={() => setRescheduleMatchData(m)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
                         title="Đổi lịch / Sân"
@@ -458,7 +459,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                         <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                         <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
                       </div>
-                      <button 
+                      <button
                         onClick={() => onGoToLiveControl(m.id)}
                         className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
                       >
@@ -468,24 +469,24 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                   </div>
                 );
               })}
-                </div>
-              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <Pagination 
-                    currentPage={currentPage} 
-                    totalPages={totalPages} 
-                    onPageChange={setCurrentPage} 
-                  />
-                </div>
-              )}
             </div>
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Modals */}
       {generateModalOpen && createPortal(
-        <GenerateScheduleModal 
-          seasonId={Number(selectedSeasonId)} 
+        <GenerateScheduleModal
+          seasonId={Number(selectedSeasonId)}
           venues={venues}
           onClose={() => setGenerateModalOpen(false)}
           onGenerate={handleGenerateSchedule}

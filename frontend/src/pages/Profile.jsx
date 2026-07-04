@@ -9,7 +9,8 @@ const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-ligh
 
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -81,12 +82,12 @@ export default function Profile() {
         setUser({ ...user, ...res.data });
         setIsEditing(false);
         setSaveSuccess(true);
-        toast.success('Cập nhật thông tin thành công! 🎉');
+        toastsuccess('Cập nhật thông tin thành công! 🎉');
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (error) {
       console.error("Failed to update profile", error);
-      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
+      toastError(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +115,7 @@ export default function Profile() {
 
       <div className="container mx-auto px-4 xl:px-8 max-w-7xl -mt-24 md:-mt-32 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-          
+
           {/* Left Column: Avatar & Basic Info */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             {/* Profile Card */}
@@ -147,7 +148,7 @@ export default function Profile() {
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm mb-6 leading-relaxed">Cập nhật và quản lý thông tin hồ sơ của bạn để hệ thống hỗ trợ tốt hơn.</p>
-                  
+
                   {saveSuccess && (
                     <div className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-bold animate-fade-in shadow-inner">
                       <CheckCircle2 className="w-4 h-4" />
@@ -189,7 +190,7 @@ export default function Profile() {
           {/* Right Column: Settings & Form */}
           <div className="lg:col-span-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
             <div className="bg-navy/90 backdrop-blur-2xl border border-navy-light rounded-3xl shadow-2xl shadow-black/40 overflow-hidden h-full flex flex-col">
-              
+
               <div className="px-6 py-5 md:px-8 md:py-6 border-b border-navy-light flex items-center justify-between bg-navy-dark/30">
                 <div>
                   <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Chi tiết hồ sơ</h3>
@@ -218,9 +219,9 @@ export default function Profile() {
 
               <div className="p-6 md:p-8 flex-1">
                 <form onSubmit={handleSave} className="space-y-6 h-full flex flex-col">
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                    
+
                     {/* Họ và tên */}
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Họ và tên</label>

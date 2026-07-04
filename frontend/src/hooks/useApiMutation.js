@@ -22,7 +22,7 @@ import { useState, useCallback } from 'react';
  *
  * const handleApprove = (id) => mutate(async () => {
  *   await teamApi.approvePlayer(teamId, id, 'approved');
- *   toast.success('Đã duyệt!');
+ *   toastsuccess('Đã duyệt!');
  *   refetch();
  * });
  */

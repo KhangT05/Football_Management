@@ -8,16 +8,17 @@ import { useShallow } from 'zustand/react/shallow';
 import { INPUT, BTN_PRIMARY } from '../../utils/adminStyles';
 
 export default function KnockoutUI({ seasonId }) {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
-  
+
   const [phaseId, setPhaseId] = useState('');
   const [seededTeamIds, setSeededTeamIds] = useState([]);
   const [venueIds, setVenueIds] = useState([]);
   const [matchTimes, setMatchTimes] = useState('');
   const [legs, setLegs] = useState(1);
-  
+
   const [loading, setLoading] = useState(false);
   const [bracketData, setBracketData] = useState(null);
 
@@ -69,10 +70,10 @@ export default function KnockoutUI({ seasonId }) {
   }, [phaseId]);
 
   const handleGenerate = async () => {
-    if (!phaseId) return toast.error('Vui lòng chọn Phase');
-    if (seededTeamIds.length < 2) return toast.error('Vui lòng chọn ít nhất 2 đội hạt giống');
-    if (venueIds.length === 0) return toast.error('Vui lòng chọn ít nhất 1 sân đấu');
-    if (!matchTimes) return toast.error('Vui lòng nhập giờ thi đấu');
+    if (!phaseId) return toastError('Vui lòng chọn Phase');
+    if (seededTeamIds.length < 2) return toastError('Vui lòng chọn ít nhất 2 đội hạt giống');
+    if (venueIds.length === 0) return toastError('Vui lòng chọn ít nhất 1 sân đấu');
+    if (!matchTimes) return toastError('Vui lòng nhập giờ thi đấu');
 
     setLoading(true);
     try {
@@ -86,10 +87,10 @@ export default function KnockoutUI({ seasonId }) {
       };
 
       await knockoutApi.generateBracket(seasonId, phaseId, reqBody);
-      toast.success('Đã tạo sơ đồ Knockout thành công!');
+      toastsuccess('Đã tạo sơ đồ Knockout thành công!');
       fetchBracket(phaseId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || err.message || 'Lỗi tạo knockout');
+      toastError(err?.response?.data?.message || err.message || 'Lỗi tạo knockout');
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export default function KnockoutUI({ seasonId }) {
         <h3 className="text-lg font-extrabold text-white flex items-center gap-2 mb-4">
           <Trophy className="w-5 h-5 text-amber-400" /> Tạo Vòng Loại Trực Tiếp (Knockout)
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-gray-400 mb-1">Giai đoạn (Phase)</label>
@@ -118,7 +119,7 @@ export default function KnockoutUI({ seasonId }) {
           </div>
           <div className="col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-gray-400 mb-1">Giờ thi đấu (Cách nhau dấu phẩy)</label>
-            <input 
+            <input
               type="text"
               value={matchTimes}
               onChange={e => setMatchTimes(e.target.value)}
@@ -148,8 +149,8 @@ export default function KnockoutUI({ seasonId }) {
                 const team = teams.find(t => t.id === st.team_id);
                 return (
                   <label key={st.team_id} className="flex items-center gap-2 cursor-pointer hover:bg-navy p-1 rounded">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="accent-amber-500 w-4 h-4 rounded border-gray-600 bg-gray-700"
                       checked={seededTeamIds.includes(st.team_id)}
                       onChange={(e) => {
@@ -169,8 +170,8 @@ export default function KnockoutUI({ seasonId }) {
               {venues.length === 0 && <p className="text-gray-500 text-xs">Không có sân nào.</p>}
               {venues.map(v => (
                 <label key={v.id} className="flex items-center gap-2 cursor-pointer hover:bg-navy p-1 rounded">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="accent-amber-500 w-4 h-4 rounded border-gray-600 bg-gray-700"
                     checked={venueIds.includes(v.id)}
                     onChange={(e) => {
@@ -185,8 +186,8 @@ export default function KnockoutUI({ seasonId }) {
           </div>
         </div>
 
-        <button 
-          onClick={handleGenerate} 
+        <button
+          onClick={handleGenerate}
           disabled={loading || !phaseId}
           className={`${BTN_PRIMARY} bg-amber-600 hover:bg-amber-500`}
         >

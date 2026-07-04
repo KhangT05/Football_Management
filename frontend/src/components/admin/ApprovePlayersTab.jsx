@@ -5,7 +5,8 @@ import useToastStore from '../../store/toastStore';
 import { INPUT } from '../../utils/adminStyles';
 
 export default function ApprovePlayersTab() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [players, setPlayers] = useState([]);
@@ -23,7 +24,7 @@ export default function ApprovePlayersTab() {
       const data = res.data?.data || res.data || [];
       setTeams(data);
     } catch {
-      toast.error('Lỗi khi tải danh sách đội bóng');
+      toastError('Lỗi khi tải danh sách đội bóng');
     }
   };
 
@@ -35,7 +36,7 @@ export default function ApprovePlayersTab() {
       const data = res.data?.data || res.data || [];
       setPlayers(data);
     } catch {
-      toast.error('Lỗi tải danh sách cầu thủ');
+      toastError('Lỗi tải danh sách cầu thủ');
       setPlayers([]);
     } finally {
       setLoading(false);
@@ -52,10 +53,10 @@ export default function ApprovePlayersTab() {
     setLoadingActionId(playerId);
     try {
       await playerApi.approve(selectedTeamId, playerId);
-      toast.success('Đã duyệt cầu thủ!');
+      toastsuccess('Đã duyệt cầu thủ!');
       fetchTeamPlayers(selectedTeamId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi duyệt cầu thủ');
+      toastError(err?.response?.data?.message || 'Lỗi duyệt cầu thủ');
     } finally {
       setLoadingActionId(null);
     }
@@ -65,10 +66,10 @@ export default function ApprovePlayersTab() {
     setLoadingActionId(playerId);
     try {
       await playerApi.reject(selectedTeamId, playerId);
-      toast.success('Đã từ chối cầu thủ!');
+      toastsuccess('Đã từ chối cầu thủ!');
       fetchTeamPlayers(selectedTeamId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi từ chối cầu thủ');
+      toastError(err?.response?.data?.message || 'Lỗi từ chối cầu thủ');
     } finally {
       setLoadingActionId(null);
     }
@@ -83,8 +84,8 @@ export default function ApprovePlayersTab() {
           <label className="text-xs font-bold text-gray-400 mb-1 flex items-center gap-1">
             <Building2 className="w-4 h-4" /> Chọn Đội Bóng
           </label>
-          <select 
-            className={INPUT} 
+          <select
+            className={INPUT}
             value={selectedTeamId}
             onChange={handleTeamChange}
           >

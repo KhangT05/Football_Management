@@ -13,17 +13,18 @@ import { useShallow } from 'zustand/react/shallow';
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
 export default function VenuesSection() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { data: items, isLoading, fetch: fetchVenues } = useApiQuery(
     (params) => venueApi.getAll(params),
-    { 
+    {
       perPage: 100,
       params: { sort: 'id', direction: 'desc' },
-      errorMsg: 'Không tải được danh sách sân.' 
+      errorMsg: 'Không tải được danh sách sân.'
     }
   );
 
@@ -50,8 +51,8 @@ export default function VenuesSection() {
   const { invalidate: invalidateVenueStore } = useVenueStore(useShallow(state => ({ invalidate: state.invalidate })));
   const crud = useCrudModal({
     emptyForm: { name: '', address: '', is_active: true },
-    onSuccess: () => { 
-      invalidateVenueStore(); 
+    onSuccess: () => {
+      invalidateVenueStore();
       setCurrentPage(1);
       fetchVenues();
     },
@@ -65,10 +66,10 @@ export default function VenuesSection() {
     crud.save(async () => {
       if (crud.modal === 'add') {
         await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
-        toast.success(`Đã thêm sân "${crud.form.name.trim()}"!`);
+        toastsuccess(`Đã thêm sân "${crud.form.name.trim()}"!`);
       } else {
         await venueApi.update(crud.editing.id, { name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
-        toast.success(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
+        toastsuccess(`Đã cập nhật sân "${crud.form.name.trim()}"!`);
       }
     });
   };
@@ -77,9 +78,9 @@ export default function VenuesSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await venueApi.delete(item.id);
-      toast.success(`Đã xóa sân "${item.name}".`);
+      toastsuccess(`Đã xóa sân "${item.name}".`);
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
+      toastError(err?.response?.data?.message || 'Không thể xóa sân.');
     });
   };
   const handleItemsPerPageChange = (newLimit) => {
@@ -100,23 +101,23 @@ export default function VenuesSection() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Tìm sân thi đấu..." 
+            <input
+              type="text"
+              placeholder="Tìm sân thi đấu..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
             />
           </div>
-          <button 
-            onClick={() => fetchVenues()} 
-            disabled={isLoading} 
+          <button
+            onClick={() => fetchVenues()}
+            disabled={isLoading}
             className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button 
-            onClick={openAdd} 
+          <button
+            onClick={openAdd}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" /> Thêm sân
