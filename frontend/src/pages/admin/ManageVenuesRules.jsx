@@ -6,7 +6,7 @@ import TournamentRulesSection from '../../components/admin/sections/TournamentRu
 export default function ManageVenuesRules() {
   return (
     <AdminLayout>
-      <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+      <div className="w-full space-y-8 animate-fade-in">
 
         {/* Header */}
         <div>

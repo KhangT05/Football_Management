@@ -240,7 +240,7 @@ export default function ManageSeasonTeams() {
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-20">
+      <div className="w-full space-y-6 animate-fade-in pb-20">
 
         {/* ── Header ──────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">

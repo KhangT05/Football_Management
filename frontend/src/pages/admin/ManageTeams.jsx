@@ -236,7 +236,7 @@ export default function ManageTeams() {
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+      <div className="w-full space-y-6 animate-fade-in">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -467,8 +467,9 @@ export default function ManageTeams() {
                                   Chưa có cầu thủ nào. Nhấn "Thêm cầu thủ" để bắt đầu.
                                 </div>
                               ) : (
-                                <div className="bg-navy border border-navy-light rounded-xl overflow-hidden overflow-x-auto">
-                                  <table className="w-full text-sm text-left whitespace-nowrap min-w-[900px]">
+                                <div className="bg-navy border border-navy-light rounded-xl overflow-hidden">
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left whitespace-nowrap min-w-[900px]">
                                     <thead>
                                       <tr className="bg-navy-dark text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
                                         <th className="py-3 px-4 w-16 text-center">Số</th>
@@ -548,6 +549,7 @@ export default function ManageTeams() {
                                       ))}
                                     </tbody>
                                   </table>
+                                  </div>
                                 </div>
                               )}
                             </div>

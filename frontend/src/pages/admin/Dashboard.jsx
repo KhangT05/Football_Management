@@ -67,7 +67,7 @@ export default function Dashboard() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="w-full space-y-8">
 
         {/* Welcome Section */}
         <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg shadow-black/20 border-l-4 border-l-neon relative overflow-hidden">
