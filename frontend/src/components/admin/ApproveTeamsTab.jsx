@@ -5,7 +5,8 @@ import useToastStore from '../../store/toastStore';
 import { seasonTeamApi, roleApi, userApi } from '../../api';
 
 export default function ApproveTeamsTab() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [pendingTeams, setPendingTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingApproveId, setLoadingApproveId] = useState(null);
@@ -35,7 +36,7 @@ export default function ApproveTeamsTab() {
       setPendingTeams(mapped);
     } catch (error) {
       console.error('Lỗi khi tải danh sách đội bóng chờ duyệt:', error);
-      if (!silent) toast.error('Không thể tải danh sách chờ duyệt.');
+      if (!silent) toastError('Không thể tải danh sách chờ duyệt.');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -49,7 +50,7 @@ export default function ApproveTeamsTab() {
     try {
       setLoadingApproveId(id);
       await seasonTeamApi.approve(id);
-      toast.success('Đã duyệt đội bóng tham gia giải!');
+      toastsuccess('Đã duyệt đội bóng tham gia giải!');
 
       // Tự động gán quyền Leader cho người đăng ký
       if (userId) {
@@ -57,19 +58,19 @@ export default function ApproveTeamsTab() {
           const rolesRes = await roleApi.getRoles();
           const rPayload = (typeof rolesRes?.status === 'boolean') ? rolesRes.data : rolesRes;
           const roles = Array.isArray(rPayload?.data) ? rPayload.data : Array.isArray(rPayload) ? rPayload : [];
-          
+
           const leaderRole = roles.find(r => ['leader', 'đội trưởng', 'doitruong'].includes(r.name.toLowerCase()));
-          
+
           if (leaderRole) {
             const userRes = await userApi.getUserById(userId);
             const uPayload = (typeof userRes?.status === 'boolean') ? userRes.data : userRes;
             const user = uPayload?.data || uPayload;
-            
+
             const currentRoleIds = user?.roles?.map(r => r.id) || [];
-            
+
             if (!currentRoleIds.includes(leaderRole.id)) {
               await userApi.updateProfile(userId, { role_ids: [...currentRoleIds, leaderRole.id] });
-              toast.success(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
+              toastsuccess(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
             }
           }
         } catch (e) {
@@ -82,11 +83,11 @@ export default function ApproveTeamsTab() {
       const details = error.response?.data?.details;
       let errorText = msg;
       if (details) {
-         if (typeof details === 'string') errorText += ` - ${details}`;
-         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
-         else errorText += ` - ${JSON.stringify(details)}`;
+        if (typeof details === 'string') errorText += ` - ${details}`;
+        else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
+        else errorText += ` - ${JSON.stringify(details)}`;
       }
-      toast.error(errorText);
+      toastError(errorText);
     } finally {
       await fetchPendingTeams(true);
       setLoadingApproveId(null);
@@ -98,18 +99,18 @@ export default function ApproveTeamsTab() {
       setLoadingRejectId(id);
       // Backend does not have "rejected" status, soft-delete the pending registration to reject it
       await seasonTeamApi.delete(id);
-      toast.success('Đã từ chối yêu cầu tham gia giải!');
+      toastsuccess('Đã từ chối yêu cầu tham gia giải!');
     } catch (error) {
       console.error('Lỗi từ chối:', error);
       const msg = error.response?.data?.message || 'Lỗi khi từ chối đội bóng.';
       const details = error.response?.data?.details;
       let errorText = msg;
       if (details) {
-         if (typeof details === 'string') errorText += ` - ${details}`;
-         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
-         else errorText += ` - ${JSON.stringify(details)}`;
+        if (typeof details === 'string') errorText += ` - ${details}`;
+        else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
+        else errorText += ` - ${JSON.stringify(details)}`;
       }
-      toast.error(errorText);
+      toastError(errorText);
     } finally {
       await fetchPendingTeams(true);
       setLoadingRejectId(null);
@@ -127,7 +128,7 @@ export default function ApproveTeamsTab() {
   }, [pendingTeams, selectedSeason]);
 
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage);
-  
+
   const currentTeams = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredTeams.slice(startIndex, startIndex + itemsPerPage);
@@ -142,14 +143,14 @@ export default function ApproveTeamsTab() {
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-neon" /> 
+            <Building2 className="w-5 h-5 text-neon" />
             Duyệt Đội bóng đăng ký giải đấu
           </h2>
           <p className="text-sm text-gray-400 mt-1">
             Danh sách các đội bóng đang chờ bạn duyệt để tham gia vào giải đấu.
           </p>
         </div>
-        
+
         {pendingTeams.length > 0 && (
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -191,7 +192,7 @@ export default function ApproveTeamsTab() {
               Yêu cầu chờ duyệt ({filteredTeams.length})
             </h3>
           </div>
-          
+
           {/* Mobile view (Cards) */}
           <div className="md:hidden divide-y divide-navy-light/50">
             {currentTeams.map(t => (
@@ -210,7 +211,7 @@ export default function ApproveTeamsTab() {
                     Chờ duyệt
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Giải đấu:</span>
@@ -259,7 +260,7 @@ export default function ApproveTeamsTab() {
               <tbody className="divide-y divide-navy-light/50">
                 {currentTeams.map(t => {
                   const initials = t.team_name.substring(0, 2).toUpperCase();
-                  
+
                   return (
                     <tr key={t.id} className="hover:bg-navy-light/20 transition-all duration-300 group">
                       <td className="py-4 px-6">
@@ -314,7 +315,7 @@ export default function ApproveTeamsTab() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="px-6 py-4 border-t border-navy-light bg-navy-dark/80 flex items-center justify-between">
@@ -334,11 +335,10 @@ export default function ApproveTeamsTab() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center transition-colors ${
-                        currentPage === page
-                          ? 'bg-neon text-black'
-                          : 'bg-navy border border-navy-light text-gray-400 hover:text-white'
-                      }`}
+                      className={`w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center transition-colors ${currentPage === page
+                        ? 'bg-neon text-black'
+                        : 'bg-navy border border-navy-light text-gray-400 hover:text-white'
+                        }`}
                     >
                       {page}
                     </button>

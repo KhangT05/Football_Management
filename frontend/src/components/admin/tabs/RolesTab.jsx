@@ -10,7 +10,8 @@ import RoleFormModal from '../RoleFormModal';
 import { roleApi } from '../../../api';
 
 export default function RolesTab() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
@@ -39,16 +40,16 @@ export default function RolesTab() {
       roleCrud.setIsSaving(true);
       if (roleCrud.modal === 'add') {
         await roleApi.createRole(payload);
-        toast.success(`Đã tạo vai trò "${payload.name}"`);
+        toastsuccess(`Đã tạo vai trò "${payload.name}"`);
       } else {
         await roleApi.updateRole(roleCrud.editing.id, payload);
-        toast.success(`Đã cập nhật vai trò "${payload.name}"`);
+        toastsuccess(`Đã cập nhật vai trò "${payload.name}"`);
       }
       roleCrud.closeModal();
       fetchRoles();
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu vai trò');
+      toastError(err?.response?.data?.message || 'Lỗi khi lưu vai trò');
     } finally {
       roleCrud.setIsSaving(false);
     }
@@ -58,15 +59,15 @@ export default function RolesTab() {
     const role = roleCrud.deleting;
     roleCrud.confirmDelete(async () => {
       await roleApi.deleteRole(role.id);
-      toast.success(`Đã xóa vai trò "${role.name}".`);
+      toastsuccess(`Đã xóa vai trò "${role.name}".`);
       fetchRoles();
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa vai trò.');
+      toastError(err?.response?.data?.message || 'Không thể xóa vai trò.');
     });
   };
 
-  const filteredRoles = roles.filter(r => 
-    r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredRoles = roles.filter(r =>
+    r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -160,11 +161,10 @@ export default function RolesTab() {
                       {role.description || <span className="text-gray-500 italic">Không có mô tả</span>}
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                        role.is_active !== false
-                          ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                          : 'bg-red-400/10 text-red-400 border-red-400/30'
-                      }`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${role.is_active !== false
+                        ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                        : 'bg-red-400/10 text-red-400 border-red-400/30'
+                        }`}>
                         {role.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
                     </td>

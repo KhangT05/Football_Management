@@ -13,7 +13,8 @@ import { userApi } from '../../../api';
 const EMPTY_USER = { name: '', email: '', phone: '', password: '', role_ids: [] };
 
 export default function UsersTab() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [users, setUsers] = useState([]);
   const [meta, setMeta] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,11 +39,11 @@ export default function UsersTab() {
         sort: 'created_at',
         direction: 'asc'
       });
-      
+
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
       const resultMeta = Array.isArray(payload) ? null : payload?.meta;
-      
+
       setUsers(items);
       setMeta(resultMeta);
     } catch (err) {
@@ -65,7 +66,7 @@ export default function UsersTab() {
       userCrud.setIsSaving(true);
       if (userCrud.modal === 'add') {
         await userApi.create(payload);
-        toast.success(`Đã tạo người dùng "${payload.name}"`);
+        toastsuccess(`Đã tạo người dùng "${payload.name}"`);
       } else {
         const updateData = {
           name: payload.name,
@@ -73,13 +74,13 @@ export default function UsersTab() {
           role_ids: payload.role_ids
         };
         await userApi.updateProfile(userCrud.editing.id, updateData);
-        toast.success(`Đã cập nhật người dùng "${payload.name}"`);
+        toastsuccess(`Đã cập nhật người dùng "${payload.name}"`);
       }
       userCrud.closeModal();
       fetchUsers();
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu người dùng');
+      toastError(err?.response?.data?.message || 'Lỗi khi lưu người dùng');
     } finally {
       userCrud.setIsSaving(false);
     }
@@ -89,11 +90,11 @@ export default function UsersTab() {
     const user = userCrud.deleting;
     userCrud.confirmDelete(async () => {
       await userApi.softDelete(user.id);
-      toast.success(`Đã xóa người dùng "${user.name}".`);
+      toastsuccess(`Đã xóa người dùng "${user.name}".`);
       fetchUsers();
     }).catch((err) => {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Không thể xóa người dùng.');
+      toastError(err?.response?.data?.message || 'Không thể xóa người dùng.');
     });
   };
 
@@ -197,11 +198,10 @@ export default function UsersTab() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                        u.is_active !== false
-                          ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                          : 'bg-red-400/10 text-red-400 border-red-400/30'
-                      }`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${u.is_active !== false
+                        ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                        : 'bg-red-400/10 text-red-400 border-red-400/30'
+                        }`}>
                         {u.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
                     </td>

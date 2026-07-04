@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Save, Shield, Users, Loader2, AlertTriangle, 
+import {
+  ArrowLeft, Save, Shield, Users, Loader2, AlertTriangle,
   CheckCircle2, Info, Star
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,26 +13,27 @@ import { teamApi, matchLineupApi } from '../api';
 import { POSITION_LABELS } from '../utils/constants';
 
 const POS_COLORS = {
-  GK:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
+  GK: 'bg-amber-400/10 text-amber-400 border-amber-400/30',
   DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30',
   MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
-  FW:  'bg-red-400/10 text-red-400 border-red-400/30',
+  FW: 'bg-red-400/10 text-red-400 border-red-400/30',
 };
 
 export default function ManageMatchLineup() {
   const { matchId } = useParams();
   const navigate = useNavigate();
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
 
   const { fetchMatchDetail, getMatchDetailFromCache } = useScheduleStore();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [team, setTeam] = useState(null);
   const [allPlayers, setAllPlayers] = useState([]);
-  
+
   // State for the lineup form
   // key: player_id, value: { lineup_type: 'starter' | 'substitute' | null, is_captain: boolean }
   const [selections, setSelections] = useState({});
@@ -59,7 +60,7 @@ export default function ManageMatchLineup() {
         else if (isAwayLeader) myTeamId = currentMatch.away_team_id;
 
         if (!myTeamId) {
-          toast.error('Bạn không có quyền quản lý đội hình trận này');
+          toastError('Bạn không có quyền quản lý đội hình trận này');
           navigate(`/matches/${matchId}`);
           return;
         }
@@ -86,7 +87,7 @@ export default function ManageMatchLineup() {
         setSelections(initialSelections);
 
       } catch (err) {
-        toast.error(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
+        toastError(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
       } finally {
         setLoading(false);
       }
@@ -102,23 +103,23 @@ export default function ManageMatchLineup() {
     setSelections(prev => {
       const current = prev[playerId];
       const newSelections = { ...prev };
-      
+
       if (current?.lineup_type === type) {
         // Deselect
         delete newSelections[playerId];
       } else {
         // Enforce max 11 starters
         if (type === 'starter' && current?.lineup_type !== 'starter' && startersCount >= 11) {
-          toast.error('Chỉ được chọn tối đa 11 cầu thủ đá chính');
+          toastError('Chỉ được chọn tối đa 11 cầu thủ đá chính');
           return prev;
         }
-        
+
         newSelections[playerId] = {
           lineup_type: type,
           is_captain: current?.is_captain || false
         };
       }
-      
+
       return newSelections;
     });
   };
@@ -126,7 +127,7 @@ export default function ManageMatchLineup() {
   const setCaptain = (playerId) => {
     setSelections(prev => {
       if (!prev[playerId]) return prev; // Must be selected first
-      
+
       const newSelections = { ...prev };
       // Remove captain from others
       Object.keys(newSelections).forEach(id => {
@@ -140,11 +141,11 @@ export default function ManageMatchLineup() {
 
   const handleSave = async () => {
     if (startersCount === 0) {
-      toast.error('Vui lòng chọn đội hình xuất phát');
+      toastError('Vui lòng chọn đội hình xuất phát');
       return;
     }
     if (!hasCaptain) {
-      toast.error('Vui lòng chọn một đội trưởng');
+      toastError('Vui lòng chọn một đội trưởng');
       return;
     }
 
@@ -165,10 +166,10 @@ export default function ManageMatchLineup() {
     setSaving(true);
     try {
       await matchLineupApi.updateLineup(matchId, payload);
-      toast.success('Lưu đội hình thành công!');
+      toastsuccess('Lưu đội hình thành công!');
       navigate(`/matches/${matchId}`);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
+      toastError(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
     } finally {
       setSaving(false);
     }
@@ -234,7 +235,7 @@ export default function ManageMatchLineup() {
         <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl mb-8 flex items-start gap-3 shadow-lg">
           <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-400/90 font-medium leading-relaxed">
-            Bạn cần chọn tối đa 11 cầu thủ đá chính và bầu 1 Đội trưởng (nhấn biểu tượng Ngôi sao bên cạnh cầu thủ). 
+            Bạn cần chọn tối đa 11 cầu thủ đá chính và bầu 1 Đội trưởng (nhấn biểu tượng Ngôi sao bên cạnh cầu thủ).
             Đội hình có thể được thay đổi trước khi trận đấu diễn ra ít nhất 10 phút.
           </p>
         </div>
@@ -264,7 +265,7 @@ export default function ManageMatchLineup() {
                   const isStarter = sel?.lineup_type === 'starter';
                   const isSub = sel?.lineup_type === 'substitute';
                   const isCap = sel?.is_captain;
-                  
+
                   return (
                     <tr key={tp.id} className={`transition-colors ${sel ? 'bg-blue-900/10' : 'hover:bg-navy-light/30'}`}>
                       <td className="py-3 px-6 text-center">
@@ -281,44 +282,41 @@ export default function ManageMatchLineup() {
                           {POSITION_LABELS[tp.position] || tp.position}
                         </span>
                       </td>
-                      
+
                       <td className="py-3 px-6 text-center">
-                        <button 
+                        <button
                           onClick={() => toggleLineupType(pid, 'starter')}
-                          className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all mx-auto ${
-                            isStarter 
-                              ? 'bg-blue-500 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
-                              : 'bg-navy-dark border-navy-light hover:border-blue-500/50'
-                          }`}
+                          className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all mx-auto ${isStarter
+                            ? 'bg-blue-500 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                            : 'bg-navy-dark border-navy-light hover:border-blue-500/50'
+                            }`}
                         >
                           {isStarter && <CheckCircle2 className="w-4 h-4" />}
                         </button>
                       </td>
-                      
+
                       <td className="py-3 px-6 text-center">
-                        <button 
+                        <button
                           onClick={() => toggleLineupType(pid, 'substitute')}
-                          className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all mx-auto ${
-                            isSub 
-                              ? 'bg-emerald-500 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]' 
-                              : 'bg-navy-dark border-navy-light hover:border-emerald-500/50'
-                          }`}
+                          className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all mx-auto ${isSub
+                            ? 'bg-emerald-500 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                            : 'bg-navy-dark border-navy-light hover:border-emerald-500/50'
+                            }`}
                         >
                           {isSub && <CheckCircle2 className="w-4 h-4" />}
                         </button>
                       </td>
-                      
+
                       <td className="py-3 px-6 text-center">
                         <button
                           onClick={() => setCaptain(pid)}
                           disabled={!sel}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all mx-auto ${
-                            isCap
-                              ? 'bg-amber-500/20 border border-amber-500/50 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                              : sel 
-                                ? 'bg-navy-dark border border-navy-light text-gray-600 hover:text-amber-500 hover:border-amber-500/50'
-                                : 'opacity-20 cursor-not-allowed'
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all mx-auto ${isCap
+                            ? 'bg-amber-500/20 border border-amber-500/50 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                            : sel
+                              ? 'bg-navy-dark border border-navy-light text-gray-600 hover:text-amber-500 hover:border-amber-500/50'
+                              : 'opacity-20 cursor-not-allowed'
+                            }`}
                           title="Chọn làm đội trưởng"
                         >
                           <Star className={`w-4 h-4 ${isCap ? 'fill-current' : ''}`} />

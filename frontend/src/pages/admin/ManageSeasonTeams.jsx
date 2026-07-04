@@ -39,7 +39,8 @@ const SEASON_STATUS_COLORS = {
 
 
 export default function ManageSeasonTeams() {
-  const toast = useToastStore();
+  const toastError = useToastStore((state) => state.error);
+  const toastSuccess = useToastStore((state) => state.success);
   const [activeTab, setActiveTab] = useState('teams');
 
   // ── Seasons ─────────────────────────────────────────────────
