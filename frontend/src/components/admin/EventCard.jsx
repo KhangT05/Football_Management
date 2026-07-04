@@ -42,7 +42,7 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
   if (lineup && lineup.length > 0) {
     const starterIds = lineup.filter(l => l.lineup_type === 'starter').map(l => String(l.player_id));
     const subIds = lineup.filter(l => l.lineup_type === 'substitute').map(l => String(l.player_id));
-    
+
     starters = players.filter(p => starterIds.includes(String(p.id)) || starterIds.includes(String(p.player?.id)));
     subs = players.filter(p => subIds.includes(String(p.id)) || subIds.includes(String(p.player?.id)));
   }
@@ -71,7 +71,17 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
 
   const renderPlayerOptions = (list) => {
     return list.map(p => {
-      const name = p.name || p.player?.name || p.player?.user?.name || `Cầu thủ #${p.player_id || p.id}`;
+      // Display name nằm ở User, không phải Player/TeamPlayer — ưu tiên path
+      // qua user trước. 2 nhánh đầu cover 2 shape schema có thể có:
+      // - p.user?.name        : TeamPlayer join thẳng User (không lồng qua player)
+      // - p.player?.user?.name: TeamPlayer -> Player -> User
+      // p.name / p.player?.name giữ làm fallback cuối nếu API có denormalize sẵn.
+      const name =
+        p.user?.name ||
+        p.player?.user?.name ||
+        p.name ||
+        p.player?.name ||
+        `Cầu thủ #${p.player_id || p.id}`;
       return (
         <option key={p.id} value={String(p.id)}>
           {name} ({p.jersey_number ?? p.number ?? '?'})
