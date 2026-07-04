@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
@@ -10,6 +10,7 @@ import MatchRowSkeleton from '../components/skeletons/MatchRowSkeleton';
 import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
+import { groupApi } from '../api/groupApi';
 
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
@@ -17,6 +18,9 @@ export default function ScheduleResults() {
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [filterRound, setFilterRound] = useState('');
+  
+  const [groups, setGroups] = useState([]);
+  const [isGroupsLoading, setIsGroupsLoading] = useState(false);
 
   // ── Zustand stores ─────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
@@ -93,10 +97,27 @@ export default function ScheduleResults() {
     }
   }, [seasons, selectedSeasonId]);
 
-  // Khi season thay đổi: fetch lịch mới
+  // Khi season thay đổi: fetch lịch mới + groups
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
+      
+      const fetchGroups = async () => {
+        setIsGroupsLoading(true);
+        try {
+          const res = await groupApi.listBySeason(selectedSeasonId);
+          const payload = typeof res.status === 'boolean' ? res.data : res;
+          setGroups(payload?.groups || []);
+        } catch (error) {
+          console.error("Failed to fetch groups", error);
+          setGroups([]);
+        } finally {
+          setIsGroupsLoading(false);
+        }
+      };
+      fetchGroups();
+    } else {
+      setGroups([]);
     }
   }, [selectedSeasonId, fetchBySeason]);
 
@@ -258,6 +279,8 @@ export default function ScheduleResults() {
             )}
           </div>
 
+
+
           {/* Stats bar */}
           <div className="flex items-center justify-between mb-6 px-2 animate-fade-in">
             {selectedSeason && (
@@ -352,6 +375,65 @@ export default function ScheduleResults() {
           </div>
 
         </div>
+
+        {/* Groups Section (Wide Layout) */}
+        {!isGroupsLoading && groups.length > 0 && (
+          <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
+            {/* Title aligned with max-w-4xl content */}
+            <div className="max-w-4xl mx-auto mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                  <LayoutGrid className="w-5 h-5 text-blue-400" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon uppercase tracking-wider">
+                  Các bảng đấu
+                </h2>
+              </div>
+            </div>
+            
+            {/* Scrollable container taking full width of the main container */}
+            <div className="flex gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {groups.map(group => (
+                <div key={group.id} className="min-w-[280px] sm:min-w-[320px] md:min-w-[350px] bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 shadow-2xl snap-start shrink-0 hover:border-blue-500/30 transition-colors duration-300">
+                  <div className="flex items-center justify-between border-b border-navy-light/50 pb-4 mb-5">
+                    <h3 className="text-lg md:text-xl font-black text-blue-400 uppercase tracking-widest">{group.name}</h3>
+                    <span className="text-xs font-black text-gray-300 bg-navy-light/80 px-3 py-1.5 rounded-lg border border-white/5">{group.season_teams?.length || 0} Đội</span>
+                  </div>
+                  <div className="space-y-3">
+                    {(!group.season_teams || group.season_teams.length === 0) ? (
+                      <p className="text-sm text-gray-500 italic text-center py-6 bg-navy/30 rounded-2xl border border-navy-light/30">Chưa có đội nào</p>
+                    ) : (
+                      group.season_teams.map(st => {
+                        const team = teamMap[st.team_id];
+                        if (!team) return null;
+                        return (
+                          <div key={st.id} className="flex items-center gap-4 bg-navy/40 p-3 rounded-2xl border border-navy-light/30 hover:bg-navy-light/50 hover:border-blue-500/30 transition-all cursor-default group/team">
+                            <div className="w-10 h-10 rounded-xl shadow-sm group-hover/team:shadow-md transition-all relative overflow-hidden bg-linear-to-br from-gray-200 to-gray-300 border border-white/10 shrink-0">
+                              <span className="absolute inset-0 flex items-center justify-center font-black text-gray-600 text-lg">
+                                {team.name ? team.name.charAt(0).toUpperCase() : '?'}
+                              </span>
+                              {team.logo && (
+                                <div className="absolute inset-0 bg-white p-1.5 z-10 flex items-center justify-center">
+                                  <img 
+                                    src={team.logo} 
+                                    alt={team.name} 
+                                    className="w-full h-full object-contain" 
+                                    onError={(e) => { e.target.onerror = null; e.target.parentElement.style.display = 'none'; }} 
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-black group-hover/team:text-gray-600 transition-colors">{team.name}</span>
+                          </div>
+                        );  
+                      })
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <MatchModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />

@@ -12,6 +12,7 @@ import TeamCardSkeleton from '../components/skeletons/TeamCardSkeleton';
 import StandingRow from '../components/StandingRow';
 import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 import Pagination from '../components/ui/Pagination';
+import { groupApi } from '../api/groupApi';
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
   // ── Zustand stores ─────────────────────────────────────────
@@ -50,7 +51,32 @@ export default function LeaderboardTeams() {
   const currentStandingsError = standingsError[selectedSeasonId] || null;
   const seasonTeams = getSeasonTeamsFromCache(selectedSeasonId);
   const loadingSeasonTeams = seasonTeamsLoading[selectedSeasonId] || false;
-  const isLoading = teamsLoading || seasonsLoading || loadingSeasonTeams;
+  
+  const [seasonGroups, setSeasonGroups] = useState([]);
+  const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedSeasonId) {
+      const fetchGroups = async () => {
+        setIsGroupsLoading(true);
+        try {
+          const res = await groupApi.listBySeason(selectedSeasonId);
+          const payload = typeof res.status === 'boolean' ? res.data : res;
+          setSeasonGroups(payload?.groups || []);
+        } catch (error) {
+          console.error("Failed to fetch groups", error);
+          setSeasonGroups([]);
+        } finally {
+          setIsGroupsLoading(false);
+        }
+      };
+      fetchGroups();
+    } else {
+      setSeasonGroups([]);
+    }
+  }, [selectedSeasonId]);
+
+  const isLoading = teamsLoading || seasonsLoading || loadingSeasonTeams || isGroupsLoading;
   // Removed auto-select logic to default to All/Empty
   const activeSeason = seasons.find(s => String(s.id) === String(selectedSeasonId)) ?? null;
   useEffect(() => {
@@ -114,6 +140,58 @@ export default function LeaderboardTeams() {
     }
     return [];
   }, [teams, seasonTeams, selectedSeasonId, user, groupedStandings]);
+
+  const displayGroups = useMemo(() => {
+    if (seasonGroups && seasonGroups.length > 0) {
+      return seasonGroups.map(sg => {
+        const matchingStandingGroup = (groupedStandings || []).find(g => g.groupId === sg.id);
+        
+        const standings = (sg.season_teams || []).map(st => {
+          const existing = matchingStandingGroup?.standings?.find(row => row.team_id === st.team_id);
+          if (existing) return existing;
+          
+          return {
+            team_id: st.team_id,
+            played: 0, won: 0, drawn: 0, lost: 0,
+            goals_for: 0, goals_against: 0, goal_difference: 0,
+            points: 0,
+          };
+        });
+
+        standings.sort((a, b) => {
+          if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
+          const gdA = a.goal_difference ?? ((a.goals_for || 0) - (a.goals_against || 0));
+          const gdB = b.goal_difference ?? ((b.goals_for || 0) - (b.goals_against || 0));
+          if (gdB !== gdA) return gdB - gdA;
+          return (b.goals_for || 0) - (a.goals_for || 0);
+        });
+
+        return {
+          groupId: sg.id,
+          groupName: sg.name,
+          standings
+        };
+      });
+    }
+    return groupedStandings || [];
+  }, [seasonGroups, groupedStandings]);
+
+  const overallStandings = useMemo(() => {
+    if (!displayGroups || displayGroups.length === 0) return [];
+    const allTeams = displayGroups.flatMap(g => g.standings || []);
+    // Sắp xếp lại theo PTS, GD, GF
+    return allTeams.sort((a, b) => {
+      const ptsA = a.points ?? 0;
+      const ptsB = b.points ?? 0;
+      if (ptsB !== ptsA) return ptsB - ptsA;
+      const gdA = a.goal_difference ?? ((a.goals_for || 0) - (a.goals_against || 0));
+      const gdB = b.goal_difference ?? ((b.goals_for || 0) - (b.goals_against || 0));
+      if (gdB !== gdA) return gdB - gdA;
+      const gfA = a.goals_for ?? 0;
+      const gfB = b.goals_for ?? 0;
+      return gfB - gfA;
+    });
+  }, [displayGroups]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const handleItemsPerPageChange = (newLimit) => {
@@ -226,21 +304,22 @@ export default function LeaderboardTeams() {
                   <p className="text-red-400 font-bold mb-4">{currentStandingsError}</p>
                   <button onClick={() => fetchStandings(selectedSeasonId, { force: true })} className="text-sm text-blue-400 hover:text-blue-300 font-bold underline">Thử lại</button>
                 </div>
-              ) : groupedStandings.length === 0 ? (
+              ) : displayGroups.length === 0 ? (
                 <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl p-20 text-center shadow-2xl shadow-black/40">
                   <div className="w-20 h-20 mx-auto rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-inner mb-5">
                     <Trophy className="w-10 h-10 text-blue-400/50" />
                   </div>
                   <p className="text-xl font-black text-gray-400 mb-2">Chưa có dữ liệu xếp hạng</p>
                   <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
-                    Bảng xếp hạng sẽ được cập nhật khi các trận đấu bắt đầu có kết quả.
+                    Mùa giải này chưa được chia bảng đấu hoặc chưa có dữ liệu xếp hạng.
                   </p>
                 </div>
               ) : (
-                groupedStandings.map((group, groupIdx) => (
-                  <div key={group.groupId || groupIdx} className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40">
+                <>
+                  {/* BẢNG XẾP HẠNG TỔNG (MAIN BOARD) */}
+                  <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40 mb-12">
                     <div className="px-6 py-4 bg-navy-dark border-b border-navy-light">
-                      <h3 className="text-lg font-black text-white">{group.groupName || 'Bảng đấu'}</h3>
+                      <h3 className="text-lg font-black text-white">Bảng Xếp Hạng Tổng</h3>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left whitespace-nowrap min-w-[800px]">
@@ -259,12 +338,12 @@ export default function LeaderboardTeams() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-transparent">
-                          {group.standings.length === 0 ? (
+                          {overallStandings.length === 0 ? (
                             <tr>
-                              <td colSpan={10} className="py-8 text-center text-gray-500 text-sm">Chưa có đội nào trong bảng này.</td>
+                              <td colSpan={10} className="py-8 text-center text-gray-500 text-sm">Chưa có dữ liệu đội bóng.</td>
                             </tr>
                           ) : (
-                            group.standings.map((row, idx) => (
+                            overallStandings.map((row, idx) => (
                               <StandingRow key={row.team_id ?? idx} row={row} idx={idx} teams={teams} />
                             ))
                           )}
@@ -272,11 +351,97 @@ export default function LeaderboardTeams() {
                       </table>
                     </div>
                   </div>
-                ))
+
+                  {/* CÁC BẢNG GROUP (MINI CARDS) */}
+                  {displayGroups.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8">
+                      {displayGroups.map((group, groupIdx) => (
+                        <div key={group.groupId || groupIdx} className="bg-white rounded-3xl overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col transition-transform hover:-translate-y-1 duration-300">
+                          <div className="px-5 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{activeSeason?.name || 'Mùa giải'}</h3>
+                              <h4 className="text-base font-black text-gray-900 mt-0.5">{group.groupName || 'Bảng đấu'}</h4>
+                            </div>
+                            <Trophy className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <div className="flex-1 overflow-x-auto">
+                            <table className="w-full text-left whitespace-nowrap min-w-[320px]">
+                              <thead className="bg-white text-gray-400 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                                <tr>
+                                  <th className="py-3 px-4">Đội</th>
+                                  <th className="py-3 px-2 text-center" title="Số trận đã đấu">ĐĐ</th>
+                                  <th className="py-3 px-2 text-center" title="Thắng">T</th>
+                                  <th className="py-3 px-2 text-center" title="Hòa">H</th>
+                                  <th className="py-3 px-2 text-center" title="Thua">B</th>
+                                  <th className="py-3 px-2 text-center" title="Hiệu số">HS</th>
+                                  <th className="py-3 px-4 text-center text-gray-900 font-black">Đ</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50">
+                                {group.standings.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={7} className="py-6 text-center text-gray-400 text-xs">Trống</td>
+                                  </tr>
+                                ) : (
+                                  group.standings.map((row, idx) => {
+                                    const team = teams.find(t => t.id === row.team_id);
+                                    const teamName = team?.name ?? row.team_name ?? `Đội ${row.team_id}`;
+                                    const initial = teamName.substring(0, 1).toUpperCase();
+                                    
+                                    const played = row.played ?? row.matches_played ?? 0;
+                                    const won = row.won ?? row.wins ?? 0;
+                                    const drawn = row.drawn ?? row.draws ?? 0;
+                                    const lost = row.lost ?? row.losses ?? 0;
+                                    const goalsFor = row.goals_for ?? 0;
+                                    const goalsAgainst = row.goals_against ?? 0;
+                                    const goalDifference = row.goal_difference ?? (goalsFor - goalsAgainst);
+                                    const points = row.points ?? 0;
+
+                                    return (
+                                      <tr key={row.team_id ?? idx} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="py-3 px-4">
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-xs font-bold text-gray-400 w-3">{idx + 1}</span>
+                                            <div className="w-6 h-6 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-600 shrink-0 relative overflow-hidden">
+                                              <span className="absolute inset-0 flex items-center justify-center">
+                                                {initial}
+                                              </span>
+                                              {team?.logo && (
+                                                <img 
+                                                  src={team.logo} 
+                                                  alt={teamName} 
+                                                  className="w-full h-full object-contain relative z-10" 
+                                                  onError={(e) => { e.target.style.display = 'none'; }} 
+                                                />
+                                              )}
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]" title={teamName}>
+                                              {teamName}
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{played}</td>
+                                        <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{won}</td>
+                                        <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{drawn}</td>
+                                        <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{lost}</td>
+                                        <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{goalDifference}</td>
+                                        <td className="py-3 px-4 text-center text-sm font-black text-gray-900 bg-gray-50/50">{points}</td>
+                                      </tr>
+                                    );
+                                  })
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
               
               {/* Footer Legend */}
-              {groupedStandings.length > 0 && !isLoadingStandings && (
+              {displayGroups.length > 0 && !isLoadingStandings && (
                 <div className="bg-navy-dark/90 px-6 py-4 border border-navy-light rounded-2xl text-[10px] sm:text-xs text-gray-500 font-semibold flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
                   <span className="flex items-center gap-1.5"><strong className="text-gray-300">P:</strong> Played</span>
                   <span className="flex items-center gap-1.5"><strong className="text-emerald-400">W:</strong> Won</span>

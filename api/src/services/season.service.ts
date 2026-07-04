@@ -184,8 +184,7 @@ export class SeasonService {
     }
 
     private validateStatusAllowsEdit(status: SeasonStatus): void {
-        const LOCKED: SeasonStatus[] = ['registration_open', 'ongoing', 'finished', 'cancelled'];
-        if (LOCKED.includes(status))
-            throw createAppError('VALIDATION_ERROR', `Cannot modify season with status: ${status}`);
+        // Allow editing season details and status at any point to give admins full control.
+        // No longer restrict based on 'registration_open', 'ongoing', 'finished', or 'cancelled'.
     }
 }

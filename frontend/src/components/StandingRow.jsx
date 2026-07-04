@@ -53,8 +53,18 @@ export default function StandingRow({ row, idx, teams }) {
       </td>
       <td className="py-4 px-6">
         <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-sm text-white shadow-md border border-white/10 shrink-0 group-hover/row:scale-105 transition-transform`}>
-            {initial}
+          <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-sm text-white shadow-md border border-white/10 shrink-0 group-hover/row:scale-105 transition-transform relative overflow-hidden`}>
+            <span className="absolute inset-0 flex items-center justify-center select-none">
+              {initial}
+            </span>
+            {team?.logo && (
+              <img 
+                src={team.logo} 
+                alt={teamName} 
+                className="w-full h-full object-contain relative z-10" 
+                onError={(e) => { e.target.style.display = 'none'; }} 
+              />
+            )}
           </div>
           <div className="min-w-0">
             <Link

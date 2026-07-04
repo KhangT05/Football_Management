@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Search, Shield, Trophy, Users, Calendar, Swords, Loader2, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { tournamentApi, teamApi, seasonApi, matchApi } from "../../../api";
@@ -228,8 +229,8 @@ function TournamentSearchModal({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    return createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
             <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col h-[80vh] md:h-[600px] animate-scale-in">
                 <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
@@ -281,7 +282,8 @@ function TournamentSearchModal({ isOpen, onClose }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

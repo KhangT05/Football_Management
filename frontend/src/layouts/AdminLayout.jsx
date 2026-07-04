@@ -122,17 +122,6 @@ export default function AdminLayout({ children }) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-
-            {/* Notification bell */}
-            <button
-              className="relative p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light"
-              title="Thông báo"
-            >
-              <Bell className="w-4 h-4" />
-              {/* Badge */}
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-neon rounded-full ring-2 ring-navy" />
-            </button>
-
             {/* Divider */}
             <div className="h-8 w-px bg-navy-light hidden sm:block" />
 

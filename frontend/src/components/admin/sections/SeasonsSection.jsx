@@ -24,12 +24,12 @@ const STATUS_TRANSITIONS = {
 };
 
 // Mirror backend validateStatusAllowsEdit — chỉ upcoming được sửa/xóa
-const canEdit = (status) => status === 'upcoming';
+const canEdit = (status) => status !== 'cancelled';
 const canDelete = (status) => status === 'upcoming';
 
 const EMPTY_SEASON = {
   name: '', description: '', tournament_id: '', start_date: '', end_date: '',
-  registration_deadline: '', max_teams: 8, is_active: true,
+  registration_deadline: '', max_teams: 8, is_active: true, status: 'upcoming'
 };
 
 const statusMeta = {
@@ -49,11 +49,11 @@ const statusTransitionLabel = {
 
 // ── Date helpers — chuẩn hoá theo giờ VN (+07:00), không phụ thuộc TZ máy client ──
 
-// "YYYY-MM-DD" (từ <input type="date">) → ISO string tại 00:00:00 +07:00
+// "YYYY-MM-DD" (từ <input type="date">) → ISO string tại 00:00:00 +07:00 hoặc 23:59:59 +07:00
 // Dùng khi build payload gửi lên backend.
-const dateInputToVNISOString = (dateStr) => {
+const dateInputToVNISOString = (dateStr, isEndOfDay = false) => {
   if (!dateStr) return undefined;
-  return `${dateStr}T00:00:00+07:00`;
+  return isEndOfDay ? `${dateStr}T23:59:59+07:00` : `${dateStr}T00:00:00+07:00`;
 };
 
 // "YYYY-MM-DD" → Date object local-midnight (theo TZ trình duyệt).
@@ -140,7 +140,8 @@ export default function SeasonsSection() {
     end_date: isoToVNDateInput(item.end_date),
     registration_deadline: isoToVNDateInput(item.registration_deadline),
     max_teams: item.max_teams,
-    is_active: item.is_active ?? true,
+    is_active: item.is_active,
+    status: item.status,
   });
 
   // ── Validate khớp backend validateDatesIfPresent ───
@@ -174,33 +175,31 @@ export default function SeasonsSection() {
     const err = validate();
     if (err) { crud.setFormError(err); return; }
     crud.save(async () => {
-      // ── Build payload ────────────────────────────────────────
-      // tsoa generated schema requires `status`, `is_registration_open`, `is_active`
-      // as required fields even though Zod schema has .default() for them.
-      // Not sending them causes 422 Unprocessable Entity from tsoa validation.
       const basePayload = {
         name: crud.form.name.trim(),
         description: crud.form.description.trim() || undefined,
         start_date: dateInputToVNISOString(crud.form.start_date),
-        end_date: dateInputToVNISOString(crud.form.end_date),
-        registration_deadline: dateInputToVNISOString(crud.form.registration_deadline),
+        end_date: dateInputToVNISOString(crud.form.end_date, true),
+        registration_deadline: dateInputToVNISOString(crud.form.registration_deadline, true),
         max_teams: Number(crud.form.max_teams),
         is_active: crud.form.is_active,
       };
 
       if (crud.modal === 'add') {
-        // Create: cần thêm tournament_id, status, is_registration_open
         const createPayload = {
           ...basePayload,
           tournament_id: Number(crud.form.tournament_id),
-          status: 'upcoming',         // Mùa giải mới luôn bắt đầu ở upcoming
-          is_registration_open: false,              // Chưa mở đăng ký
+          status: 'upcoming',
+          is_registration_open: false,
         };
         await seasonApi.create(createPayload);
         toast.success(`Đã tạo mùa giải "${crud.form.name.trim()}"!`);
       } else {
-        // Update: updateSeasonSchema omits tournament_id (partial)
-        await seasonApi.update(crud.editing.id, basePayload);
+        const updatePayload = {
+          ...basePayload,
+          status: crud.form.status,
+        };
+        await seasonApi.update(crud.editing.id, updatePayload);
         toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
       }
     });
@@ -477,6 +476,15 @@ export default function SeasonsSection() {
           <FormField label="Mô tả">
             <textarea className={INPUT + ' resize-none'} rows={2} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
           </FormField>
+          {crud.modal === 'edit' && (
+            <FormField label="Trạng thái">
+              <select className={INPUT} value={crud.form.status} onChange={e => crud.setForm(f => ({ ...f, status: e.target.value }))}>
+                {Object.entries(statusMeta).map(([key, val]) => (
+                  <option key={key} value={key}>{val.label}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
           <div className="flex items-center gap-3 py-2">
             <label className="flex items-center cursor-pointer gap-3">
               <div className="relative">
