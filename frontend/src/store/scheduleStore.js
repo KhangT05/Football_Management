@@ -142,9 +142,9 @@ const useScheduleStore = create((set, get) => ({
       set(state => ({
         matchDetailCache: {
           ...state.matchDetailCache,
-          [matchId]: { 
-            data: { match, events, homePlayers, awayPlayers }, 
-            fetchedAt: Date.now() 
+          [matchId]: {
+            data: { match, events, homePlayers, awayPlayers },
+            fetchedAt: Date.now()
           }
         },
         matchDetailLoading: { ...state.matchDetailLoading, [matchId]: false }
@@ -153,8 +153,8 @@ const useScheduleStore = create((set, get) => ({
       set(state => ({
         matchDetailError: {
           ...state.matchDetailError,
-          [matchId]: err?.response?.status === 404 || err?.code === 'ERR_NETWORK' 
-            ? 'Match API chưa được triển khai hoặc không tìm thấy trận đấu.' 
+          [matchId]: err?.response?.status === 404 || err?.code === 'ERR_NETWORK'
+            ? 'Match API chưa được triển khai hoặc không tìm thấy trận đấu.'
             : 'Đã có lỗi xảy ra.'
         },
         matchDetailLoading: { ...state.matchDetailLoading, [matchId]: false }
@@ -217,6 +217,31 @@ const useScheduleStore = create((set, get) => ({
     return res;
   },
 
+  /**
+     * Tạo lịch thi đấu tự động (admin)
+     * POST /schedules/seasons/{seasonId}/generate
+     *
+     * @param {number} seasonId
+     * @param {object} body — GenerateScheduleDto
+     */
+  generateSchedule: async (seasonId, body) => {
+    const res = await matchApi.generateSchedule(seasonId, body);
+    get().invalidateSeason(seasonId);
+    return res;
+  },
+
+  /**
+   * Tạo lịch thi đấu từ các bảng/nhóm đã chia (admin)
+   * POST /schedules/seasons/{seasonId}/generate-from-groups
+   *
+   * @param {number} seasonId
+   * @param {object} body — GenerateFromGroupsDto
+   */
+  generateFromGroups: async (seasonId, body) => {
+    const res = await matchApi.generateFromGroups(seasonId, body);
+    get().invalidateSeason(seasonId);
+    return res;
+  },
   /**
    * Auto schedule (admin)
    * POST /schedules/seasons/{seasonId}/schedule

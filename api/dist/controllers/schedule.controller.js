@@ -25,6 +25,20 @@ let ScheduleController = class ScheduleController extends Controller {
         this.setStatus(201);
         return this.service.generateGroupsAndSchedule(seasonId, parsed);
     }
+    /**
+     * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
+     * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc
+     * /draw-seeded). KHÔNG tạo lại bảng, KHÔNG tự chia đội — chỉ sinh match
+     * round-robin cho các group hiện có rồi xếp giờ/sân.
+     *
+     * Dùng endpoint này thay vì /generate khi season.phases.length > 0
+     * (endpoint /generate sẽ throw CONFLICT trong trường hợp đó).
+     */
+    async generateFromGroups(seasonId, body) {
+        const parsed = scheduleSchema.generateFromGroupsSchema.parse(body);
+        this.setStatus(201);
+        return this.service.generateMatchesFromDrawnGroups(seasonId, parsed);
+    }
     async autoSchedule(seasonId, body) {
         const parsed = scheduleSchema.autoScheduleSchema.parse(body);
         return this.service.autoScheduleMatches(seasonId, parsed);
@@ -55,6 +69,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "generateSchedule", null);
+__decorate([
+    Security('jwt', ['admin']),
+    Post('seasons/{seasonId}/generate-from-groups'),
+    SuccessResponse(201, 'Created'),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "generateFromGroups", null);
 __decorate([
     Security('jwt', ['admin']),
     Post('seasons/{seasonId}/schedule'),

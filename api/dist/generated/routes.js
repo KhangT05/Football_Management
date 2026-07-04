@@ -694,6 +694,16 @@ const models = {
         "type": { "ref": "infer_typeofgenerateScheduleSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofgenerateFromGroupsSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "allowPastDate": { "dataType": "boolean" }, "minRestDaysPerTeam": { "dataType": "double" }, "doubleRound": { "dataType": "boolean" }, "matchTimes": { "dataType": "array", "array": { "dataType": "string" }, "required": true }, "venueIds": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GenerateFromGroupsDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofgenerateFromGroupsSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofautoScheduleSchema_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "matchTimes": { "dataType": "array", "array": { "dataType": "string" }, "required": true }, "venueIds": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
@@ -2851,6 +2861,9 @@ export function RegisterRoutes(app, opts) {
         q: { "in": "query", "name": "q", "dataType": "string" },
         sort: { "in": "query", "name": "sort", "dataType": "string" },
         direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
+        season_id: { "in": "query", "name": "season_id", "dataType": "double" },
+        team_id: { "in": "query", "name": "team_id", "dataType": "double" },
+        status: { "in": "query", "name": "status", "ref": "SeasonTeamStatus" },
     };
     app.get('/seasonteams', ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.findAll)), async function SeasonTeamController_findAll(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -3486,6 +3499,34 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'generateSchedule',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsScheduleController_generateFromGroups = {
+        seasonId: { "in": "path", "name": "seasonId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "GenerateFromGroupsDto" },
+    };
+    app.post('/schedules/seasons/:seasonId/generate-from-groups', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(ScheduleController)), ...(fetchMiddlewares(ScheduleController.prototype.generateFromGroups)), async function ScheduleController_generateFromGroups(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsScheduleController_generateFromGroups, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(ScheduleController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'generateFromGroups',
                 controller,
                 response,
                 next,

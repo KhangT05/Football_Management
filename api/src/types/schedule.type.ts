@@ -58,6 +58,19 @@ export type SeasonSchedule = {
     unscheduledMatches: number;
     matches: ScheduleMatchItem[];
 };
+/**
+ * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions:
+ * không có desiredGroupCount/minGroupSize/maxGroupSize vì group đã được
+ * tạo & bốc thăm sẵn qua GroupService (GroupDrawUI). Chỉ cần thông tin
+ * xếp lịch (sân, khung giờ, số ngày nghỉ).
+ */
+export interface GenerateFromGroupsOptions {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    venueIds: number[];
+    matchTimes: string[];
+    allowPastDate?: boolean;
+}
 // ─── Projection cho Queryable<Match> ─────────────────────────────────────────
 // Derive type trực tiếp từ Prisma schema qua MatchGetPayload thay vì khai tay
 // 1 interface song song với `select` — tránh drift khi schema đổi field/nullability.
