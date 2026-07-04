@@ -9,8 +9,7 @@ import useSeasonStore from '../store/seasonStore';
 import { useNavigate } from 'react-router-dom';
 
 export default function RegisterTeam() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const navigate = useNavigate();
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
 
@@ -72,11 +71,11 @@ export default function RegisterTeam() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      toastError('Vui lòng chọn file hình ảnh (JPG, PNG)');
+      toast.error('Vui lòng chọn file hình ảnh (JPG, PNG)');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toastError('Kích thước ảnh tối đa là 2MB');
+      toast.error('Kích thước ảnh tối đa là 2MB');
       return;
     }
     setLogoFile(file);
@@ -96,11 +95,11 @@ export default function RegisterTeam() {
       'application/vnd.ms-excel'
     ];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
-      toastError('Vui lòng chọn file Excel hợp lệ (.xlsx, .xls)');
+      toast.error('Vui lòng chọn file Excel hợp lệ (.xlsx, .xls)');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toastError('Kích thước file tối đa là 5MB');
+      toast.error('Kích thước file tối đa là 5MB');
       return;
     }
     setExcelFile(file);
@@ -115,7 +114,7 @@ export default function RegisterTeam() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!teamInfo.name.trim()) {
-      toastError('Vui lòng nhập tên đội bóng!');
+      toast.error('Vui lòng nhập tên đội bóng!');
       return;
     }
 
@@ -143,7 +142,7 @@ export default function RegisterTeam() {
             await playerApi.importTeamPlayers(newTeamId, formData);
           } catch (err) {
             console.error('Lỗi khi import excel:', err);
-            toastError(err?.response?.data?.message || 'Có lỗi khi import file Excel.');
+            toast.error(err?.response?.data?.message || 'Có lỗi khi import file Excel.');
           }
         } else if (playerInputMode === 'manual') {
           const validPlayers = players.filter(p => p.email.trim() || p.name.trim());
@@ -204,16 +203,16 @@ export default function RegisterTeam() {
 
       // Kiểm tra xem có nhập cầu thủ không
       if (playerInputMode === 'excel' && excelFile) {
-        toastsuccess('Đội bóng đã tạo và import danh sách cầu thủ thành công!', 6000);
+        toast.success('Đội bóng đã tạo và import danh sách cầu thủ thành công!', 6000);
       } else {
         const hasPlayers = players.some(p => p.email.trim() || p.name.trim());
         if (hasPlayers) {
-          toastsuccess('Đội bóng và danh sách cầu thủ đã được tạo thành công!', 6000);
+          toast.success('Đội bóng và danh sách cầu thủ đã được tạo thành công!', 6000);
         } else {
           if (selectedSeasonId) {
-            toastsuccess('Đã tạo đội và nộp đơn đăng ký giải đấu thành công!', 4000);
+            toast.success('Đã tạo đội và nộp đơn đăng ký giải đấu thành công!', 4000);
           } else {
-            toastsuccess('Tạo đội bóng thành công!', 4000);
+            toast.success('Tạo đội bóng thành công!', 4000);
           }
         }
       }
@@ -222,7 +221,7 @@ export default function RegisterTeam() {
 
     } catch (error) {
       const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!';
-      toastError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -229,8 +229,7 @@ function SubTab({ subs, onSubs, homeTeamName, awayTeamName }) {
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 export default function MatchDetailModal({ match, homeTeamName, awayTeamName, onClose, onUpdated }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [mode, setMode] = useState('view');
   const [activeTab, setActiveTab] = useState('Tỷ số');
   const [isSaving, setIsSaving] = useState(false);
@@ -319,11 +318,11 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
         ].forEach(ev => matchApi.recordEvent(match.id, ev).catch(() => { }));
       }
 
-      toastsuccess('Đã lưu kết quả trận đấu!');
+      toast.success('Đã lưu kết quả trận đấu!');
       setMode('view');
       onUpdated?.();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Không thể lưu kết quả.');
+      toast.error(err?.response?.data?.message || 'Không thể lưu kết quả.');
     } finally {
       setIsSaving(false);
     }

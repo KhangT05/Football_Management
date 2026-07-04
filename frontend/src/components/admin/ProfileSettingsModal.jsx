@@ -9,8 +9,7 @@ const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-
 
 export default function ProfileSettingsModal({ onClose }) {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
 
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -37,7 +36,7 @@ export default function ProfileSettingsModal({ onClose }) {
 
       // Update local store
       setUser({ ...user, name: form.name.trim(), phone: form.phone.trim() });
-      toastsuccess('Đã cập nhật thông tin tài khoản!');
+      toast.success('Đã cập nhật thông tin tài khoản!');
       onClose();
     } catch (err) {
       setError(err?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật.');

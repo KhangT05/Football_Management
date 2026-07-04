@@ -273,8 +273,7 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate }) {
 
 // ─── Main Component: ScheduleTab ─────────────────────────────────────────────────
 export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, generateSchedule, rescheduleMatch } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
@@ -328,21 +327,21 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const handleGenerateSchedule = async (seasonId, payload) => {
     try {
       await generateSchedule(seasonId, payload);
-      toastsuccess('Đã tạo lịch thi đấu & bốc thăm thành công!');
+      toast.success('Đã tạo lịch thi đấu & bốc thăm thành công!');
       setGenerateModalOpen(false);
       handleRefresh();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
     }
   };
 
   const handleReschedule = async (matchId, payload) => {
     try {
       await rescheduleMatch(matchId, payload, Number(effectiveSeasonId));
-      toastsuccess('Cập nhật lịch thành công!');
+      toast.success('Cập nhật lịch thành công!');
       setRescheduleMatchData(null);
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Lỗi khi cập nhật trận đấu.');
+      toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trận đấu.');
     }
   };
 

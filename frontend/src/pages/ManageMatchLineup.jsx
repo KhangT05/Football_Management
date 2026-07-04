@@ -22,8 +22,7 @@ const POS_COLORS = {
 export default function ManageMatchLineup() {
   const { matchId } = useParams();
   const navigate = useNavigate();
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
 
   const { fetchMatchDetail, getMatchDetailFromCache } = useScheduleStore();
@@ -60,7 +59,7 @@ export default function ManageMatchLineup() {
         else if (isAwayLeader) myTeamId = currentMatch.away_team_id;
 
         if (!myTeamId) {
-          toastError('Bạn không có quyền quản lý đội hình trận này');
+          toast.error('Bạn không có quyền quản lý đội hình trận này');
           navigate(`/matches/${matchId}`);
           return;
         }
@@ -87,7 +86,7 @@ export default function ManageMatchLineup() {
         setSelections(initialSelections);
 
       } catch (err) {
-        toastError(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
+        toast.error(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
       } finally {
         setLoading(false);
       }
@@ -110,7 +109,7 @@ export default function ManageMatchLineup() {
       } else {
         // Enforce max 11 starters
         if (type === 'starter' && current?.lineup_type !== 'starter' && startersCount >= 11) {
-          toastError('Chỉ được chọn tối đa 11 cầu thủ đá chính');
+          toast.error('Chỉ được chọn tối đa 11 cầu thủ đá chính');
           return prev;
         }
 
@@ -141,11 +140,11 @@ export default function ManageMatchLineup() {
 
   const handleSave = async () => {
     if (startersCount === 0) {
-      toastError('Vui lòng chọn đội hình xuất phát');
+      toast.error('Vui lòng chọn đội hình xuất phát');
       return;
     }
     if (!hasCaptain) {
-      toastError('Vui lòng chọn một đội trưởng');
+      toast.error('Vui lòng chọn một đội trưởng');
       return;
     }
 
@@ -166,10 +165,10 @@ export default function ManageMatchLineup() {
     setSaving(true);
     try {
       await matchLineupApi.updateLineup(matchId, payload);
-      toastsuccess('Lưu đội hình thành công!');
+      toast.success('Lưu đội hình thành công!');
       navigate(`/matches/${matchId}`);
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
     } finally {
       setSaving(false);
     }

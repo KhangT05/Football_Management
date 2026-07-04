@@ -40,14 +40,14 @@ import { useState, useCallback, useRef } from 'react';
  * crud.save(async () => {
  *   if (crud.modal === 'add') await api.create(payload);
  *   else await api.update(crud.editing.id, payload);
- *   toastsuccess('Done!');
+ *   toast.success('Done!');
  * });
  *
  * // Delete
  * crud.setDeleting(item);  // mở confirm dialog
  * crud.confirmDelete(async () => {
  *   await api.delete(crud.deleting.id);
- *   toastsuccess('Deleted!');
+ *   toast.success('Deleted!');
  * });
  */
 export function useCrudModal(options = {}) {

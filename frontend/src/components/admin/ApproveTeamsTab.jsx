@@ -5,8 +5,7 @@ import useToastStore from '../../store/toastStore';
 import { seasonTeamApi, roleApi, userApi } from '../../api';
 
 export default function ApproveTeamsTab() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [pendingTeams, setPendingTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingApproveId, setLoadingApproveId] = useState(null);
@@ -36,7 +35,7 @@ export default function ApproveTeamsTab() {
       setPendingTeams(mapped);
     } catch (error) {
       console.error('Lỗi khi tải danh sách đội bóng chờ duyệt:', error);
-      if (!silent) toastError('Không thể tải danh sách chờ duyệt.');
+      if (!silent) toast.error('Không thể tải danh sách chờ duyệt.');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -50,7 +49,7 @@ export default function ApproveTeamsTab() {
     try {
       setLoadingApproveId(id);
       await seasonTeamApi.approve(id);
-      toastsuccess('Đã duyệt đội bóng tham gia giải!');
+      toast.success('Đã duyệt đội bóng tham gia giải!');
 
       // Tự động gán quyền Leader cho người đăng ký
       if (userId) {
@@ -70,7 +69,7 @@ export default function ApproveTeamsTab() {
 
             if (!currentRoleIds.includes(leaderRole.id)) {
               await userApi.updateProfile(userId, { role_ids: [...currentRoleIds, leaderRole.id] });
-              toastsuccess(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
+              toast.success(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
             }
           }
         } catch (e) {
@@ -87,7 +86,7 @@ export default function ApproveTeamsTab() {
         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
         else errorText += ` - ${JSON.stringify(details)}`;
       }
-      toastError(errorText);
+      toast.error(errorText);
     } finally {
       await fetchPendingTeams(true);
       setLoadingApproveId(null);
@@ -99,7 +98,7 @@ export default function ApproveTeamsTab() {
       setLoadingRejectId(id);
       // Backend does not have "rejected" status, soft-delete the pending registration to reject it
       await seasonTeamApi.delete(id);
-      toastsuccess('Đã từ chối yêu cầu tham gia giải!');
+      toast.success('Đã từ chối yêu cầu tham gia giải!');
     } catch (error) {
       console.error('Lỗi từ chối:', error);
       const msg = error.response?.data?.message || 'Lỗi khi từ chối đội bóng.';
@@ -110,7 +109,7 @@ export default function ApproveTeamsTab() {
         else if (Array.isArray(details)) errorText += ` - ${details.map(d => typeof d === 'string' ? d : JSON.stringify(d)).join(', ')}`;
         else errorText += ` - ${JSON.stringify(details)}`;
       }
-      toastError(errorText);
+      toast.error(errorText);
     } finally {
       await fetchPendingTeams(true);
       setLoadingRejectId(null);

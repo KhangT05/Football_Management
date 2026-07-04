@@ -4,8 +4,7 @@ import { matchLineupApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 
 export default function LineupBuilderModal({ match, teamId, roster, onClose, onSave }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lineup, setLineup] = useState([]); // { player_id, is_starting, position, jersey_number }
@@ -59,11 +58,11 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
     try {
       const payload = { team_id: teamId, players: lineup };
       await matchLineupApi.updateLineup(match.id, payload);
-      toastsuccess('Đã lưu đội hình thành công!');
+      toast.success('Đã lưu đội hình thành công!');
       if (onSave) onSave();
       onClose();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu đội hình.');
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu đội hình.');
     } finally {
       setIsSaving(false);
     }

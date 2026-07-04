@@ -72,8 +72,7 @@ function useTimer(isRunning, onTick) {
 // ─── Main Component: LiveControlTab ──────────────────────────────────────────
 
 export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { seasons } = useSeasonStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
@@ -297,29 +296,29 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       setMatchStatus('ongoing');
       setTimerSeconds(0);
       setTimerRunning(true);
-      toastsuccess('Trận đấu đã bắt đầu!');
+      toast.success('Trận đấu đã bắt đầu!');
       handleRefresh();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Không thể bắt đầu trận đấu.');
+      toast.error(err?.response?.data?.message || 'Không thể bắt đầu trận đấu.');
     } finally { setIsStarting(false); }
   };
 
   const handleSaveDraft = async () => {
     const err = validate();
-    if (err) { toastError(err); return; }
+    if (err) { toast.error(err); return; }
     setIsSavingDraft(true);
     try {
       await syncUnsavedEvents();
       toast.info('Đã đồng bộ sự kiện (chưa kết thúc trận).');
       setIsDirty(false);
     } catch {
-      toastError('Lỗi khi đồng bộ sự kiện.');
+      toast.error('Lỗi khi đồng bộ sự kiện.');
     } finally { setIsSavingDraft(false); }
   };
 
   const handleFinishMatch = async () => {
     const err = validate();
-    if (err) { toastError(err); return; }
+    if (err) { toast.error(err); return; }
     setIsFinishing(true);
     try {
       // 1. Sync all unsaved events (goals, cards, subs) first while match is still ongoing
@@ -333,11 +332,11 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
       setTimerRunning(false);
       setMatchStatus('finished');
-      toastsuccess('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
+      toast.success('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
-      toastError('Lỗi khi kết thúc trận: ' + (err?.response?.data?.message || err.message));
+      toast.error('Lỗi khi kết thúc trận: ' + (err?.response?.data?.message || err.message));
     } finally { setIsFinishing(false); }
   };
 
@@ -354,7 +353,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const isProtested = matchStatus === 'protested';
 
   const handleModalSuccess = (msg) => {
-    toastsuccess(msg);
+    toast.success(msg);
     setActiveModal(null);
     handleRefresh();
   };

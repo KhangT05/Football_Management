@@ -319,8 +319,7 @@ function PaymentModal({ teamName, onClose }) {
 // ─── Main Component ───────────────────────────────────────
 export default function MyTeam() {
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
 
   const [isLoading, setIsLoading] = useState(true);
   const [team, setTeam] = useState(null);
@@ -455,7 +454,7 @@ export default function MyTeam() {
         console.warn('Cannot fetch season or schedule for team:', seasonErr);
       }
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Không thể tải dữ liệu đội bóng.');
+      toast.error(err?.response?.data?.message || 'Không thể tải dữ liệu đội bóng.');
       setTeam(null);
     } finally {
       setIsLoading(false);
@@ -521,7 +520,7 @@ export default function MyTeam() {
         }
       }
 
-      toastsuccess('Đã cập nhật thông tin đội bóng thành công!');
+      toast.success('Đã cập nhật thông tin đội bóng thành công!');
       setEditTeamModalOpen(false);
       await loadTeamData();
     } catch (apiErr) {
@@ -535,7 +534,7 @@ export default function MyTeam() {
     setIsSaving(true);
     try {
       await teamApi.delete(teamId);
-      toastsuccess('Đã giải tán đội bóng thành công!');
+      toast.success('Đã giải tán đội bóng thành công!');
       setEditTeamModalOpen(false);
       await loadTeamData();
     } catch (apiErr) {
@@ -569,7 +568,7 @@ export default function MyTeam() {
         role: 'player',
       });
 
-      toastsuccess(`Đã thêm "${form.name.trim()}" (áo số ${form.number}) vào đội!`);
+      toast.success(`Đã thêm "${form.name.trim()}" (áo số ${form.number}) vào đội!`);
       setPlayerModal(null);
       await loadTeamData();
     } catch (apiErr) {
@@ -589,10 +588,10 @@ export default function MyTeam() {
 
       setIsSaving(true);
       await playerApi.importTeamPlayers(team.id, formData);
-      toastsuccess('Nhập dữ liệu từ file Excel thành công!');
+      toast.success('Nhập dữ liệu từ file Excel thành công!');
       await loadTeamData();
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Có lỗi xảy ra khi nhập dữ liệu từ file Excel.');
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi nhập dữ liệu từ file Excel.');
     } finally {
       setIsSaving(false);
       e.target.value = null;
@@ -622,7 +621,7 @@ export default function MyTeam() {
         await playerApi.update(editingPlayer.player_id, { name: form.name.trim() });
       }
 
-      toastsuccess(`Đã cập nhật thông tin cầu thủ "${form.name}".`);
+      toast.success(`Đã cập nhật thông tin cầu thủ "${form.name}".`);
       setPlayerModal(null);
       await loadTeamData();
     } catch (apiErr) {
@@ -637,11 +636,11 @@ export default function MyTeam() {
     setIsDeleting(true);
     try {
       await playerApi.bulkRemoveFromTeam(team.id, { ids: [deletingPlayer.id] });
-      toastsuccess(`Đã xóa cầu thủ "${deletingPlayer.name}" khỏi đội.`);
+      toast.success(`Đã xóa cầu thủ "${deletingPlayer.name}" khỏi đội.`);
       setDeletingPlayer(null);
       await loadTeamData();
     } catch (apiErr) {
-      toastError(apiErr?.response?.data?.message || 'Lỗi khi xóa cầu thủ.');
+      toast.error(apiErr?.response?.data?.message || 'Lỗi khi xóa cầu thủ.');
     } finally {
       setIsDeleting(false);
     }
@@ -714,10 +713,10 @@ export default function MyTeam() {
                 try {
                   setIsLoading(true);
                   await seasonTeamApi.register({ season_id: team.activeSeasonId });
-                  toastsuccess('Đã gửi yêu cầu tham gia giải!');
+                  toast.success('Đã gửi yêu cầu tham gia giải!');
                   loadTeamData();
                 } catch (err) {
-                  toastError(err?.response?.data?.message || 'Không thể đăng ký tham gia giải.');
+                  toast.error(err?.response?.data?.message || 'Không thể đăng ký tham gia giải.');
                 } finally {
                   setIsLoading(false);
                 }

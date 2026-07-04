@@ -8,8 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { INPUT, BTN_PRIMARY } from '../../utils/adminStyles';
 
 export default function KnockoutUI({ seasonId }) {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
 
@@ -70,10 +69,10 @@ export default function KnockoutUI({ seasonId }) {
   }, [phaseId]);
 
   const handleGenerate = async () => {
-    if (!phaseId) return toastError('Vui lòng chọn Phase');
-    if (seededTeamIds.length < 2) return toastError('Vui lòng chọn ít nhất 2 đội hạt giống');
-    if (venueIds.length === 0) return toastError('Vui lòng chọn ít nhất 1 sân đấu');
-    if (!matchTimes) return toastError('Vui lòng nhập giờ thi đấu');
+    if (!phaseId) return toast.error('Vui lòng chọn Phase');
+    if (seededTeamIds.length < 2) return toast.error('Vui lòng chọn ít nhất 2 đội hạt giống');
+    if (venueIds.length === 0) return toast.error('Vui lòng chọn ít nhất 1 sân đấu');
+    if (!matchTimes) return toast.error('Vui lòng nhập giờ thi đấu');
 
     setLoading(true);
     try {
@@ -87,10 +86,10 @@ export default function KnockoutUI({ seasonId }) {
       };
 
       await knockoutApi.generateBracket(seasonId, phaseId, reqBody);
-      toastsuccess('Đã tạo sơ đồ Knockout thành công!');
+      toast.success('Đã tạo sơ đồ Knockout thành công!');
       fetchBracket(phaseId);
     } catch (err) {
-      toastError(err?.response?.data?.message || err.message || 'Lỗi tạo knockout');
+      toast.error(err?.response?.data?.message || err.message || 'Lỗi tạo knockout');
     } finally {
       setLoading(false);
     }

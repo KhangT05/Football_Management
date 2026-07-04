@@ -74,8 +74,7 @@ const isoToVNDateInput = (isoStr) => {
 };
 
 export default function SeasonsSection() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { data: items, isLoading, fetch: fetchSeasons } = useApiQuery(
     (params) => seasonApi.getAll(params),
     {
@@ -188,11 +187,11 @@ export default function SeasonsSection() {
           is_registration_open: false,              // Chưa mở đăng ký
         };
         await seasonApi.create(createPayload);
-        toastsuccess(`Đã tạo mùa giải "${crud.form.name.trim()}"!`);
+        toast.success(`Đã tạo mùa giải "${crud.form.name.trim()}"!`);
       } else {
         // Update: updateSeasonSchema omits tournament_id (partial)
         await seasonApi.update(crud.editing.id, basePayload);
-        toastsuccess(`Đã cập nhật "${crud.form.name.trim()}"!`);
+        toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
       }
     });
   };
@@ -202,9 +201,9 @@ export default function SeasonsSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await seasonApi.delete(item.id);
-      toastsuccess(`Đã xóa mùa giải "${item.name}".`);
+      toast.success(`Đã xóa mùa giải "${item.name}".`);
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa mùa giải.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa mùa giải.');
     });
   };
 
@@ -223,16 +222,16 @@ export default function SeasonsSection() {
         body.cancel_reason = cancelReason.trim();
       }
       await seasonApi.updateStatus(statusModal.season.id, body);
-      toastsuccess(`Đã chuyển sang "${statusTransitionLabel[statusModal.target] || statusModal.target}"!`);
+      toast.success(`Đã chuyển sang "${statusTransitionLabel[statusModal.target] || statusModal.target}"!`);
       setStatusModal(null);
       fetchSeasons();
       invalidateSeasonStore();
     } catch (err) {
       const msg = err?.response?.data?.message || '';
       if (msg.includes('registration_deadline has already passed')) {
-        toastError('Không thể mở đăng ký: Hạn đăng ký đã qua! Vui lòng cập nhật lại hạn đăng ký.');
+        toast.error('Không thể mở đăng ký: Hạn đăng ký đã qua! Vui lòng cập nhật lại hạn đăng ký.');
       } else {
-        toastError(msg || 'Không thể thay đổi trạng thái.');
+        toast.error(msg || 'Không thể thay đổi trạng thái.');
       }
     } finally {
       setStatusChanging(false);

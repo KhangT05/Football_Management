@@ -27,8 +27,7 @@ const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, is_a
 const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
 
 export default function ManageTeams() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const [activeTab, setActiveTab] = useState('teams');
 
   // ── Zustand store ──────────────────────────────────────────────
@@ -119,10 +118,10 @@ export default function ManageTeams() {
     teamCrud.save(async () => {
       if (teamCrud.modal === 'add') {
         await createTeam(payload);
-        toastsuccess(`Đã tạo đội "${payload.name}" thành công!`);
+        toast.success(`Đã tạo đội "${payload.name}" thành công!`);
       } else {
         await updateTeam(teamCrud.editing.id, payload);
-        toastsuccess(`Đã cập nhật thông tin đội "${payload.name}".`);
+        toast.success(`Đã cập nhật thông tin đội "${payload.name}".`);
       }
     });
   };
@@ -132,18 +131,18 @@ export default function ManageTeams() {
     teamCrud.confirmDelete(async () => {
       await deleteTeam(team.id);
       if (expandedTeamId === team.id) setExpandedTeamId(null);
-      toastsuccess(`Đã xóa đội "${team.name}".`);
+      toast.success(`Đã xóa đội "${team.name}".`);
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa đội bóng.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa đội bóng.');
     });
   };
 
   const handleApproveTeam = async (team) => {
     try {
       await updateTeam(team.id, { is_active: true });
-      toastsuccess(`Đã duyệt đội bóng "${team.name}". Đội bóng hiện có thể đăng ký giải đấu.`);
+      toast.success(`Đã duyệt đội bóng "${team.name}". Đội bóng hiện có thể đăng ký giải đấu.`);
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Lỗi khi duyệt đội bóng.');
+      toast.error(err?.response?.data?.message || 'Lỗi khi duyệt đội bóng.');
     }
   };
 
@@ -205,10 +204,10 @@ export default function ManageTeams() {
     playerCrud.save(async () => {
       if (playerCrud.modal === 'add') {
         await addNewPlayerToTeam(playerTargetTeamId, payload);
-        toastsuccess(`Đã thêm cầu thủ "${payload.name}" vào đội!`);
+        toast.success(`Đã thêm cầu thủ "${payload.name}" vào đội!`);
       } else {
         await updatePlayerInTeam(playerTargetTeamId, playerCrud.editing.id, playerCrud.editing.player_id, playerCrud.editing.player?.user_id, payload);
-        toastsuccess(`Đã cập nhật cầu thủ "${payload.name}".`);
+        toast.success(`Đã cập nhật cầu thủ "${payload.name}".`);
       }
     });
   };
@@ -223,11 +222,11 @@ export default function ManageTeams() {
     try {
       // Dùng removePlayers từ teamStore (bulk delete đúng route)
       await removePlayers(teamId, [player.id]);
-      toastsuccess('Đã xóa cầu thủ khỏi đội.');
+      toast.success('Đã xóa cầu thủ khỏi đội.');
       setDeletePlayerState(null);
       fetchPlayers(teamId, { force: true });
     } catch (err) {
-      toastError(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
     } finally {
       setIsDeletingPlayer(false);
     }

@@ -13,8 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 const INPUT = 'w-full px-4 py-3 bg-navy border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm';
 
 export default function TournamentsSection() {
-  const toastError = useToastStore((state) => state.error);
-  const toastSuccess = useToastStore((state) => state.success);
+  const toast = useToastStore();
   const { invalidate: invalidateTournamentStore } = useTournamentStore(useShallow(state => ({ invalidate: state.invalidate })));
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,7 +92,7 @@ export default function TournamentsSection() {
     crud.save(async () => {
       if (crud.modal === 'add') {
         await tournamentApi.create({ name, description, logo: crud.form.logo, is_active: crud.form.is_active });
-        toastsuccess(`Đã tạo giải đấu "${name}"!`);
+        toast.success(`Đã tạo giải đấu "${name}"!`);
         if (window.confirm(`Bạn có muốn tạo mùa giải mới cho giải đấu "${name}" ngay bây giờ không?`)) {
           setTimeout(() => {
             const el = document.getElementById('seasons-section');
@@ -102,7 +101,7 @@ export default function TournamentsSection() {
         }
       } else {
         await tournamentApi.update(crud.editing.id, { name, description, logo: crud.form.logo, is_active: crud.form.is_active });
-        toastsuccess(`Đã cập nhật "${name}"!`);
+        toast.success(`Đã cập nhật "${name}"!`);
       }
     });
   };
@@ -111,9 +110,9 @@ export default function TournamentsSection() {
     const item = crud.deleting;
     crud.confirmDelete(async () => {
       await tournamentApi.delete(item.id);
-      toastsuccess(`Đã xóa "${item.name}".`);
+      toast.success(`Đã xóa "${item.name}".`);
     }).catch((err) => {
-      toastError(err?.response?.data?.message || 'Không thể xóa giải đấu.');
+      toast.error(err?.response?.data?.message || 'Không thể xóa giải đấu.');
       crud.setDeleting(null);
     });
   };
