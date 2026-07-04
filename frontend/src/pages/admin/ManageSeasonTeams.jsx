@@ -36,8 +36,6 @@ const SEASON_STATUS_COLORS = {
   cancelled: 'text-gray-500',
 };
 
-
-
 export default function ManageSeasonTeams() {
   const toast = useToastStore();
   const [activeTab, setActiveTab] = useState('teams');
@@ -350,127 +348,17 @@ export default function ManageSeasonTeams() {
               <Trophy className="w-4 h-4" /> Vòng Knockout
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap min-w-[900px]">
-              <thead>
-                <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
-                  <th className="py-4 px-6 w-16 text-center">ID</th>
-                  <th className="py-4 px-6">Đội bóng</th>
-                  <th className="py-4 px-6 text-center">Trạng thái</th>
-                  <th className="py-4 px-6 text-center">Group</th>
-                  <th className="py-4 px-6 text-center">Duyệt</th>
-                  <th className="py-4 px-6 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-navy-light/50">
-                {loadingTeams ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i}>
-                      {[1, 2, 3, 4, 5, 6].map(j => (
-                        <td key={j} className="py-4 px-6"><div className="skeleton h-5 w-full rounded" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : seasonTeams.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-16 text-center text-gray-500">
-                      <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                      <p className="font-semibold">{filterStatus ? 'Không có đội nào với trạng thái này' : 'Chưa có đội nào đăng ký'}</p>
-                      {filterStatus && (
-                        <button onClick={() => setFilterStatus('')} className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline">
-                          Xóa bộ lọc
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedTeams.map(st => (
-                    <tr key={st.id} className="hover:bg-navy-dark/70 transition-colors group">
-                      <td className="py-4 px-6 text-center text-gray-500 text-xs font-mono">#{st.id}</td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-xs text-white shadow-md overflow-hidden">
-                            {st.team?.logo
-                              ? <img src={st.team.logo} alt="logo" className="w-full h-full object-cover" />
-                              : <span className="text-sm font-black text-neon">{st.team?.name?.[0]}</span>
-                            }
-                          </div>
-                          <div>
-                            <p className="font-bold text-white text-sm">{st.team?.name || 'Unknown Team'}</p>
-                            {st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <StatusBadge status={st.status} variant="seasonTeam" />
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        {st.group_id ? (
-                          <span className="font-bold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/30 text-xs shadow-sm shadow-purple-500/10">
-                            Bảng #{st.group_id}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        {st.status === 'pending' && (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleUpdateStatus(st.id, 'approved')}
-                              className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 shadow-sm shadow-emerald-500/10 hover:shadow-emerald-500/20 transition-all active:scale-90"
-                              title="Duyệt đăng ký"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleUpdateStatus(st.id, 'rejected')}
-                              className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 shadow-sm shadow-red-500/10 hover:shadow-red-500/20 transition-all active:scale-90"
-                              title="Từ chối"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setJerseyModalTeam(st)}
-                            className="p-1.5 rounded-lg bg-navy-light text-emerald-400 hover:text-white hover:bg-emerald-600 border border-emerald-500/20 hover:border-emerald-500 shadow-sm transition-all active:scale-90"
-                            title="Quản lý áo đấu"
-                          >
-                            <Shirt className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => openAssignGroup(st)}
-                            className="p-1.5 rounded-lg bg-navy-light text-blue-400 hover:text-white hover:bg-blue-600 border border-blue-500/20 hover:border-blue-500 shadow-sm transition-all active:scale-90"
-                            title="Xếp bảng thủ công"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => openTransferTeam(st)}
-                            className="p-1.5 rounded-lg bg-navy-light text-purple-400 hover:text-white hover:bg-purple-600 border border-purple-500/20 hover:border-purple-500 shadow-sm transition-all active:scale-90"
-                            title="Chuyển giải"
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingId(st.id)}
-                            className="p-1.5 rounded-lg bg-navy-light text-red-400 hover:text-white hover:bg-red-600 border border-red-500/20 hover:border-red-500 shadow-sm transition-all active:scale-90"
-                            title="Xóa khỏi giải"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+
+          {/*
+            FIX (duplicate list bug): trước đây ở đây có MỘT bảng <table> thứ
+            hai render lại y hệt `paginatedTeams`, KHÔNG bọc trong bất kỳ điều
+            kiện activeTab nào -> nó luôn hiển thị bất kể tab nào đang active,
+            ngay phía trên bảng chính thức trong tab "teams" bên dưới. Kết quả:
+            người dùng thấy toàn bộ danh sách đội bị lặp lại 2 lần liên tiếp
+            khi cuộn trang (cùng data, khác phần header/filter bao quanh).
+            Đã xoá hẳn khối bảng thừa đó — chỉ còn đúng 1 bảng nằm trong
+            {activeTab === 'teams' && (...)} phía dưới.
+          */}
 
           {/* ── Tab: Teams ─────────────────────────────────────── */}
           {activeTab === 'teams' && (
