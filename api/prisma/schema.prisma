@@ -451,7 +451,7 @@ model SeasonTeam {
 
   season Season @relation(fields: [season_id], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Restrict)
-  group  Group? @relation(fields: [group_id], references: [id], onDelete: Restrict)
+  group  Group? @relation(fields: [group_id], references: [id], onDelete: SetNull)
 
   user     User?     @relation(fields: [user_id], references: [id])
   user_id  Int?
