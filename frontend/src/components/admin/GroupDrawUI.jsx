@@ -9,7 +9,6 @@ const DEBUG_RESPONSE_SHAPE = false;
 
 function unwrapResponse(res, label) {
   if (DEBUG_RESPONSE_SHAPE) {
-    // eslint-disable-next-line no-console
     console.log(`[GroupDrawUI][DEBUG raw response] ${label}:`, res);
   }
   return typeof res?.status === 'boolean' ? res.data : res;
@@ -408,7 +407,7 @@ export default function GroupDrawUI({ seasonId }) {
             <button
               onClick={handleDrawRandom}
               disabled={isDrawing || loading || groups.length === 0}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
               Bốc thăm ngẫu nhiên
@@ -417,7 +416,7 @@ export default function GroupDrawUI({ seasonId }) {
             <button
               onClick={handleDrawSeeded}
               disabled={isDrawing || loading || groups.length === 0}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
               Bốc thăm có hạt giống
@@ -444,7 +443,7 @@ export default function GroupDrawUI({ seasonId }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {groups.map((group) => (
             <div key={group.id} className="bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 px-5 text-white flex justify-between items-center">
+              <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-3.5 px-5 text-white flex justify-between items-center">
                 <h4 className="font-black text-base tracking-wide uppercase">{group.name}</h4>
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1.5 bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-full">

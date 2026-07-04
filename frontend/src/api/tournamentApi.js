@@ -67,12 +67,18 @@ export const tournamentApi = {
    * Do đó Frontend tạm loại bỏ File khi update để tránh lỗi 500 ValidateError.
    */
   update: (id, data) => {
-    // Loại bỏ logo File nếu có, vì backend chưa hỗ trợ nhận form-data qua PATCH endpoint
-    const { logo, ...jsonPayload } = data;
-    if (logo instanceof File) {
-      console.warn('Backend chưa hỗ trợ upload logo qua endpoint PATCH (cần đổi sang @FormField). Logo File sẽ bị bỏ qua.');
+    const form = new FormData();
+    if (data.name !== undefined) form.append('name', data.name);
+    if (data.description !== undefined) form.append('description', data.description || '');
+    if (data.is_active !== undefined) form.append('is_active', String(data.is_active));
+    
+    if (data.logo instanceof File) {
+      form.append('logo', data.logo);
     }
-    return axiosClient.patch(`/tournaments/${id}`, jsonPayload);
+
+    return axiosClient.patch(`/tournaments/${id}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
   /**
@@ -82,5 +88,14 @@ export const tournamentApi = {
    */
   delete: (id) => {
     return axiosClient.delete(`/tournaments/${id}`);
+  },
+
+  /**
+   * Khôi phục giải đấu đã xóa
+   * PATCH /tournaments/{id}/restore
+   * @param {number} id
+   */
+  restore: (id) => {
+    return axiosClient.patch(`/tournaments/${id}/restore`);
   },
 };

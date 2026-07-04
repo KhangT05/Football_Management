@@ -16,6 +16,7 @@ export default function TournamentsSection() {
   const toast = useToastStore();
   const { invalidate: invalidateTournamentStore } = useTournamentStore(useShallow(state => ({ invalidate: state.invalidate })));
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // all, active, deleted
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -34,11 +35,12 @@ export default function TournamentsSection() {
         per_page: itemsPerPage,
         sort: 'id',
         direction: 'desc',
+        ...(statusFilter === 'active' ? { is_active: true } : statusFilter === 'deleted' ? { is_active: false } : {}),
         ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
       });
     }, 300);
     return () => clearTimeout(delay);
-  }, [currentPage, itemsPerPage, searchTerm, fetchTournaments]);
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter, fetchTournaments]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -117,6 +119,24 @@ export default function TournamentsSection() {
     });
   };
 
+  const handleRestore = async (id) => {
+    try {
+      await tournamentApi.restore(id);
+      toast.success('Đã khôi phục giải đấu!');
+      invalidateTournamentStore();
+      fetchTournaments({
+        page: currentPage,
+        per_page: itemsPerPage,
+        sort: 'id',
+        direction: 'desc',
+        ...(statusFilter === 'active' ? { is_active: true } : statusFilter === 'deleted' ? { is_active: false } : {}),
+        ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Không thể khôi phục giải đấu.');
+    }
+  };
+
   return (
     <section className="bg-navy border border-navy-light rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
       {/* Header */}
@@ -145,6 +165,16 @@ export default function TournamentsSection() {
                 className="w-full pl-9 pr-4 py-2.5 bg-navy-dark/80 border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm shadow-sm"
               />
             </div>
+            
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="bg-navy-dark/80 border border-navy-light rounded-xl text-gray-300 py-2.5 px-3 focus:outline-none focus:border-blue-500 text-sm shadow-sm"
+            >
+              <option value="all">Tất cả</option>
+              <option value="active">Hoạt động</option>
+              <option value="deleted">Đã khóa/xóa</option>
+            </select>
             <button 
               onClick={() => fetchTournaments()} 
               disabled={isLoading} 
@@ -213,9 +243,15 @@ export default function TournamentsSection() {
                   <button onClick={() => openEdit(item)} className="p-2.5 rounded-xl text-gray-400 bg-navy-dark hover:text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/30 transition-all shadow-sm" title="Chỉnh sửa">
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button onClick={() => crud.setDeleting(item)} className="p-2.5 rounded-xl text-gray-400 bg-navy-dark hover:text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/30 transition-all shadow-sm" title="Xóa">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {item.is_active ? (
+                    <button onClick={() => crud.setDeleting(item)} className="p-2.5 rounded-xl text-gray-400 bg-navy-dark hover:text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/30 transition-all shadow-sm" title="Khóa/Xóa">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button onClick={() => handleRestore(item.id)} className="p-2.5 rounded-xl text-emerald-400 bg-navy-dark hover:text-white hover:bg-emerald-500/80 border border-emerald-500/30 transition-all shadow-sm" title="Khôi phục">
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

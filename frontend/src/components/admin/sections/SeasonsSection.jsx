@@ -29,7 +29,7 @@ const canDelete = (status) => status === 'upcoming';
 
 const EMPTY_SEASON = {
   name: '', description: '', tournament_id: '', start_date: '', end_date: '',
-  registration_deadline: '', max_teams: 8,
+  registration_deadline: '', max_teams: 8, is_active: true,
 };
 
 const statusMeta = {
@@ -93,6 +93,15 @@ export default function SeasonsSection() {
   };
 
   const [filterStatus, setFilterStatus] = useState('');
+  const [activeFilter, setActiveFilter] = useState('active'); // active, deleted, all
+
+  useEffect(() => {
+    fetchSeasons({
+      sort: 'id',
+      direction: 'desc',
+      ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'deleted' ? { is_active: false } : {}),
+    });
+  }, [activeFilter, fetchSeasons]);
 
   const filteredItems = (items || []).filter(item => {
     if (filterStatus && item.status !== filterStatus) return false;
@@ -131,6 +140,7 @@ export default function SeasonsSection() {
     end_date: isoToVNDateInput(item.end_date),
     registration_deadline: isoToVNDateInput(item.registration_deadline),
     max_teams: item.max_teams,
+    is_active: item.is_active ?? true,
   });
 
   // ── Validate khớp backend validateDatesIfPresent ───
@@ -175,7 +185,7 @@ export default function SeasonsSection() {
         end_date: dateInputToVNISOString(crud.form.end_date),
         registration_deadline: dateInputToVNISOString(crud.form.registration_deadline),
         max_teams: Number(crud.form.max_teams),
-        is_active: true,
+        is_active: crud.form.is_active,
       };
 
       if (crud.modal === 'add') {
@@ -205,6 +215,21 @@ export default function SeasonsSection() {
     }).catch((err) => {
       toast.error(err?.response?.data?.message || 'Không thể xóa mùa giải.');
     });
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      await seasonApi.restore(id);
+      toast.success('Đã khôi phục mùa giải!');
+      invalidateSeasonStore();
+      fetchSeasons({
+        sort: 'id',
+        direction: 'desc',
+        ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'deleted' ? { is_active: false } : {}),
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Không thể khôi phục mùa giải.');
+    }
   };
 
   // ── Status change ────────────────────────────────
@@ -254,6 +279,16 @@ export default function SeasonsSection() {
             {Object.entries(statusMeta).map(([key, val]) => (
               <option key={key} value={key}>{val.label}</option>
             ))}
+          </select>
+
+          <select
+            value={activeFilter}
+            onChange={(e) => { setActiveFilter(e.target.value); setCurrentPage(1); }}
+            className="px-3 py-2 bg-navy border border-navy-light rounded-lg text-sm text-gray-300 focus:outline-none focus:border-purple-500"
+          >
+            <option value="all">Tất cả (Kích hoạt/Khóa)</option>
+            <option value="active">Đang kích hoạt</option>
+            <option value="deleted">Đã khóa/xóa</option>
           </select>
 
           <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors ml-auto sm:ml-0 shrink-0">
@@ -348,22 +383,32 @@ export default function SeasonsSection() {
                     </span>
                   )}
 
-                  {/* Delete — chỉ upcoming */}
-                  {deletable ? (
-                    <button
-                      onClick={() => crud.setDeleting(item)}
-                      className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  {/* Delete / Restore — chỉ upcoming hoặc khi bị xóa */}
+                  {item.is_active ? (
+                    deletable ? (
+                      <button
+                        onClick={() => crud.setDeleting(item)}
+                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <span
+                        className="p-1.5 rounded-lg text-gray-600 cursor-not-allowed"
+                        title={`Không thể xóa khi mùa giải đang "${sm.label}"`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </span>
+                    )
                   ) : (
-                    <span
-                      className="p-1.5 rounded-lg text-gray-600 cursor-not-allowed"
-                      title={`Không thể xóa khi mùa giải đang "${sm.label}"`}
+                    <button
+                      onClick={() => handleRestore(item.id)}
+                      className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/30 transition-colors"
+                      title="Khôi phục"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </span>
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -433,6 +478,15 @@ export default function SeasonsSection() {
           <FormField label="Mô tả">
             <textarea className={INPUT + ' resize-none'} rows={2} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
           </FormField>
+          <div className="flex items-center gap-3 py-2">
+            <label className="flex items-center cursor-pointer gap-3">
+              <div className="relative">
+                <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
+                <div className="w-11 h-6 bg-navy border border-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-400 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </div>
+              <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
+            </label>
+          </div>
         </AdminModal>
       )}
 

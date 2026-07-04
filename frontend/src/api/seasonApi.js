@@ -90,5 +90,14 @@ export const seasonApi = {
   delete: (id) => {
     return axiosClient.delete(`/seasons/${id}`);
   },
+
+  /**
+   * Khôi phục mùa giải đã xóa
+   * PATCH /seasons/{id}/restore
+   * @param {number} id
+   */
+  restore: (id) => {
+    return axiosClient.patch(`/seasons/${id}/restore`);
+  },
 };
 
