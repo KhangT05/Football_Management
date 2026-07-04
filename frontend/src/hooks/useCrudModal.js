@@ -116,7 +116,7 @@ export function useCrudModal(options = {}) {
     } catch (err) {
       const data = err?.response?.data;
       let msg = data?.message || 'Có lỗi xảy ra khi thực hiện tác vụ.';
-      
+
       // Extract detailed validation errors from Laravel/standard backend
       if (data?.errors && typeof data.errors === 'object') {
         const errorList = Object.values(data.errors).flat();
@@ -124,7 +124,7 @@ export function useCrudModal(options = {}) {
           msg = errorList.join(' | ');
         }
       }
-      
+
       setFormError(msg);
     } finally {
       setIsSaving(false);

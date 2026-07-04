@@ -57,7 +57,7 @@ export default function ManageArticles() {
   const articleCrud = useCrudModal({ emptyForm: EMPTY_ARTICLE, onSuccess: fetchArticles });
 
   const openAddArticle = () => articleCrud.openAdd();
-  
+
   const openEditArticle = (article) => {
     articleCrud.openEdit(article, {
       title: article.title,
@@ -209,11 +209,10 @@ export default function ManageArticles() {
                       </td>
                       <td className="py-4 px-6 text-gray-300 text-sm">{article.author?.name || 'Admin'}</td>
                       <td className="py-4 px-6 text-center">
-                        <button onClick={() => toggleStatus(article)} className={`px-2.5 py-1 text-xs font-bold rounded-lg border inline-flex items-center gap-1.5 transition-colors ${
-                          article.status === 'published'
-                            ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20'
-                            : 'bg-amber-400/10 text-amber-400 border-amber-400/30 hover:bg-amber-400/20'
-                        }`}>
+                        <button onClick={() => toggleStatus(article)} className={`px-2.5 py-1 text-xs font-bold rounded-lg border inline-flex items-center gap-1.5 transition-colors ${article.status === 'published'
+                          ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20'
+                          : 'bg-amber-400/10 text-amber-400 border-amber-400/30 hover:bg-amber-400/20'
+                          }`}>
                           {article.status === 'published' ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                           {article.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
                         </button>

@@ -11,12 +11,12 @@ import Pagination from '../../ui/Pagination';
 const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
 
 const TIEBREAKER_OPTIONS = [
-  { value: 'goal_diff',      label: 'Hiệu số bàn thắng' },
-  { value: 'goals_scored',   label: 'Tổng bàn thắng' },
-  { value: 'head_to_head',   label: 'Đối đầu trực tiếp' },
+  { value: 'goal_diff', label: 'Hiệu số bàn thắng' },
+  { value: 'goals_scored', label: 'Tổng bàn thắng' },
+  { value: 'head_to_head', label: 'Đối đầu trực tiếp' },
   { value: 'goals_conceded', label: 'Bàn thủng' },
-  { value: 'yellow_cards',   label: 'Thẻ vàng' },
-  { value: 'red_cards',      label: 'Thẻ đỏ' },
+  { value: 'yellow_cards', label: 'Thẻ vàng' },
+  { value: 'red_cards', label: 'Thẻ đỏ' },
 ];
 
 const DEFAULT_RULE_FORM = {
@@ -41,9 +41,9 @@ export default function TournamentRulesSection() {
 
   const { data: items, isLoading, fetch: fetchRules } = useApiQuery(
     (params) => tournamentRuleApi.getAll(params),
-    { 
-      autoFetch: true, 
-      errorMsg: 'Không tải được dữ liệu luật giải.' 
+    {
+      autoFetch: true,
+      errorMsg: 'Không tải được dữ liệu luật giải.'
     }
   );
 
@@ -62,7 +62,7 @@ export default function TournamentRulesSection() {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       setTournaments(Array.isArray(payload?.data) ? payload.data : []);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
@@ -78,8 +78,8 @@ export default function TournamentRulesSection() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedItems = filteredItems.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  const crud = useCrudModal({ 
-    emptyForm: DEFAULT_RULE_FORM, 
+  const crud = useCrudModal({
+    emptyForm: DEFAULT_RULE_FORM,
     onSuccess: () => {
       setCurrentPage(1);
       fetchRules();
@@ -159,23 +159,23 @@ export default function TournamentRulesSection() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Tìm luật giải..." 
+            <input
+              type="text"
+              placeholder="Tìm luật giải..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors text-sm"
             />
           </div>
-          <button 
-            onClick={() => fetchRules()} 
-            disabled={isLoading} 
+          <button
+            onClick={() => fetchRules()}
+            disabled={isLoading}
             className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button 
-            onClick={openAdd} 
+          <button
+            onClick={openAdd}
             className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" /> Thêm luật
@@ -286,11 +286,10 @@ export default function TournamentRulesSection() {
                   key={opt.value}
                   type="button"
                   onClick={() => toggleTiebreaker(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                    crud.form.tiebreaker_order.includes(opt.value)
-                      ? 'bg-orange-600 border-orange-600 text-white'
-                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${crud.form.tiebreaker_order.includes(opt.value)
+                    ? 'bg-orange-600 border-orange-600 text-white'
+                    : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -302,7 +301,7 @@ export default function TournamentRulesSection() {
               </p>
             )}
           </FormField>
-          
+
           <div className="flex items-center gap-3 py-2">
             <label className="flex items-center cursor-pointer gap-3">
               <div className="relative">

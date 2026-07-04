@@ -83,8 +83,8 @@ export default function ApprovePlayersTab() {
           <label className="text-xs font-bold text-gray-400 mb-1 flex items-center gap-1">
             <Building2 className="w-4 h-4" /> Chọn Đội Bóng
           </label>
-          <select 
-            className={INPUT} 
+          <select
+            className={INPUT}
             value={selectedTeamId}
             onChange={handleTeamChange}
           >

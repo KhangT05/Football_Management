@@ -77,7 +77,7 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 shrink-0">
           <div>
@@ -95,7 +95,7 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-6 bg-navy/20">
-          
+
           {/* Roster Selection */}
           <div className="flex-1 bg-navy/50 border border-navy-light rounded-3xl p-5 overflow-y-auto max-h-[500px] custom-scrollbar">
             <h4 className="text-lg font-black text-white mb-4 border-b border-navy-light pb-2">Danh sách đội bóng ({roster.length})</h4>
@@ -111,18 +111,17 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
                   const isSub = statusInfo && !isStarting;
 
                   return (
-                    <div 
-                      key={player.id} 
+                    <div
+                      key={player.id}
                       onClick={() => togglePlayerStatus(player)}
-                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                        isStarting ? 'bg-emerald-500/10 border-emerald-500/30' :
+                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isStarting ? 'bg-emerald-500/10 border-emerald-500/30' :
                         isSub ? 'bg-blue-500/10 border-blue-500/30' :
-                        'bg-navy-light/30 border-transparent hover:bg-navy-light/60'
-                      }`}
+                          'bg-navy-light/30 border-transparent hover:bg-navy-light/60'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-navy border border-navy-light flex items-center justify-center overflow-hidden font-black text-gray-300">
-                          {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover"/> : player.number}
+                          {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover" /> : player.number}
                         </div>
                         <div>
                           <p className={`font-bold ${isStarting ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
@@ -142,7 +141,7 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
 
           {/* Lineup View */}
           <div className="flex-1 space-y-6 flex flex-col">
-            
+
             {/* Starters */}
             <div className="bg-navy/50 border border-emerald-500/20 rounded-3xl p-5 flex-1 overflow-y-auto max-h-[250px] custom-scrollbar shadow-[0_0_20px_rgba(16,185,129,0.05)]">
               <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2 mb-4">

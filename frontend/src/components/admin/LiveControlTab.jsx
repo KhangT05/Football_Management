@@ -329,7 +329,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         homeScore: Number(homeScore), awayScore: Number(awayScore),
         resultType: 'full_time',
       });
-      
+
       setTimerRunning(false);
       setMatchStatus('finished');
       toast.success('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
@@ -438,8 +438,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                       key={m.id}
                       onClick={() => handleMatchSelect(String(m.id))}
                       className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${isSelected
-                          ? 'bg-blue-600/10 border-blue-500/60 shadow-lg shadow-blue-900/20'
-                          : 'bg-navy border-navy-light hover:border-gray-500 hover:bg-navy-light/40'
+                        ? 'bg-blue-600/10 border-blue-500/60 shadow-lg shadow-blue-900/20'
+                        : 'bg-navy border-navy-light hover:border-gray-500 hover:bg-navy-light/40'
                         }`}
                     >
                       {/* Live pulse glow */}
@@ -449,8 +449,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
                       <div className="flex items-center justify-between mb-3">
                         <div className={`text-xs font-black px-2.5 py-1 rounded-full ${isLive
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-navy-dark text-gray-500 border border-navy-light'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : 'bg-navy-dark text-gray-500 border border-navy-light'
                           }`}>
                           {isLive ? (
                             <span className="flex items-center gap-1.5">
@@ -566,8 +566,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
                     {/* Timer */}
                     <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono font-black text-lg sm:text-2xl tracking-widest transition-all ${isOngoing
-                        ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
-                        : 'bg-navy-dark border-navy-light text-gray-500'
+                      ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
+                      : 'bg-navy-dark border-navy-light text-gray-500'
                       }`}>
                       <Clock className="w-4 h-4 opacity-70" />
                       {timerDisplay}

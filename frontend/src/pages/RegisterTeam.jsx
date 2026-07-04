@@ -149,8 +149,8 @@ export default function RegisterTeam() {
           for (const p of validPlayers) {
             try {
               let userId = null;
-              const emailToUse = p.email?.trim() || `player_${Date.now()}_${Math.random().toString(36).substr(2,5)}@temp.local`;
-              
+              const emailToUse = p.email?.trim() || `player_${Date.now()}_${Math.random().toString(36).substr(2, 5)}@temp.local`;
+
               if (p.email?.trim()) {
                 try {
                   const searchRes = await userApi.getAll({ q: p.email.trim() });
@@ -178,7 +178,7 @@ export default function RegisterTeam() {
                 position: p.position || 'forward',
               });
               const pId = playerRes?.data?.id || playerRes?.id;
-              
+
               if (pId) {
                 await playerApi.addToTeam(newTeamId, {
                   player_id: pId,
@@ -200,7 +200,7 @@ export default function RegisterTeam() {
       }
 
       setIsSuccess(true);
-      
+
       // Kiểm tra xem có nhập cầu thủ không
       if (playerInputMode === 'excel' && excelFile) {
         toast.success('Đội bóng đã tạo và import danh sách cầu thủ thành công!', 6000);
@@ -216,7 +216,7 @@ export default function RegisterTeam() {
           }
         }
       }
-      
+
       setTimeout(() => navigate('/doi-cua-toi'), 3500);
 
     } catch (error) {
@@ -286,17 +286,17 @@ export default function RegisterTeam() {
                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tải Logo</span>
                           </div>
                         )}
-                        
-                        <input 
-                          type="file" 
+
+                        <input
+                          type="file"
                           accept="image/*"
                           onChange={handleLogoChange}
                           className="absolute inset-0 opacity-0 cursor-pointer"
                         />
                       </div>
                       {logoPreview && (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={removeLogo}
                           className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
                         >
@@ -374,16 +374,16 @@ export default function RegisterTeam() {
                 ) : (
                   <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                     <p className="text-gray-400 text-sm mb-4">Chọn một giải đấu đang mở đăng ký để tham gia ngay lập tức cùng đội bóng mới của bạn:</p>
-                    
+
                     {openSeasons.map(season => {
                       const isSelected = selectedSeasonId === String(season.id);
                       return (
-                        <div 
+                        <div
                           key={season.id}
                           onClick={() => setSelectedSeasonId(isSelected ? '' : String(season.id))}
                           className={`p-5 rounded-2xl border-2 transition-all cursor-pointer group flex items-center gap-4
-                            ${isSelected 
-                              ? 'bg-blue-600/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
+                            ${isSelected
+                              ? 'bg-blue-600/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
                               : 'bg-navy-dark/50 border-navy-light hover:border-gray-500 hover:bg-navy-light'
                             }`}
                         >
@@ -392,7 +392,7 @@ export default function RegisterTeam() {
                           `}>
                             {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
                           </div>
-                          
+
                           <div className="flex-1">
                             <h4 className={`font-bold text-lg mb-1 transition-colors ${isSelected ? 'text-blue-400' : 'text-gray-200 group-hover:text-white'}`}>
                               {season.name}
@@ -425,27 +425,25 @@ export default function RegisterTeam() {
                   <p className="text-gray-400 text-sm mt-1">Lưu trữ danh sách cầu thủ ban đầu (Tùy chọn)</p>
                 </div>
               </div>
-              
+
               <div className="flex bg-navy-dark border border-navy-light rounded-xl p-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => setPlayerInputMode('manual')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                    playerInputMode === 'manual' 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'manual'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Nhập Thủ Công
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlayerInputMode('excel')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                    playerInputMode === 'excel' 
-                      ? 'bg-emerald-600 text-white shadow-md' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'excel'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   <FileSpreadsheet className="w-4 h-4" /> Import Excel
                 </button>
@@ -458,7 +456,7 @@ export default function RegisterTeam() {
                   <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                   <div className="text-sm text-emerald-200/80 leading-relaxed">
                     Tải lên file Excel (.xlsx, .xls) chứa danh sách cầu thủ của bạn. Hệ thống sẽ tự động đọc và gửi lời mời đến email của từng cầu thủ để họ xác nhận tham gia.
-                    <br/>
+                    <br />
                     <a href="#" className="text-emerald-400 hover:text-emerald-300 underline font-medium mt-2 inline-block">Tải file mẫu tại đây</a>
                   </div>
                 </div>
@@ -470,7 +468,7 @@ export default function RegisterTeam() {
                     onChange={handleExcelChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  
+
                   {excelFile ? (
                     <div className="text-center relative z-20 pointer-events-none">
                       <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
@@ -478,8 +476,8 @@ export default function RegisterTeam() {
                       </div>
                       <h3 className="text-white font-bold text-lg mb-1">{excelFileName}</h3>
                       <p className="text-emerald-400 text-sm font-medium">Đã tải lên thành công • {(excelFile.size / 1024).toFixed(1)} KB</p>
-                      
-                      <button 
+
+                      <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
@@ -514,7 +512,7 @@ export default function RegisterTeam() {
                     <Plus className="w-4 h-4" /> Thêm Cầu Thủ
                   </button>
                 </div>
-                
+
                 <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
                   <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-200/80 leading-relaxed">
@@ -523,75 +521,75 @@ export default function RegisterTeam() {
                 </div>
 
                 <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left min-w-[700px]">
-                <thead>
-                  <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
-                    <th className="pb-4 pl-4">#</th>
-                    <th className="pb-4">Email Liên Kết</th>
-                    <th className="pb-4">Tên Cầu Thủ</th>
-                    <th className="pb-4">Số Áo</th>
-                    <th className="pb-4">Vị Trí</th>
-                    <th className="pb-4 text-right pr-4">Xóa</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-navy-light/50">
-                  {players.map((p, idx) => (
-                    <tr key={p.id} className="group hover:bg-navy-light/20 transition-colors">
-                      <td className="py-4 pl-4 text-gray-500 font-bold">{idx + 1}</td>
-                      <td className="py-4 pr-4">
-                        <input
-                          type="email"
-                          placeholder="Email tài khoản cầu thủ"
-                          value={p.email}
-                          onChange={(e) => updatePlayer(p.id, 'email', e.target.value)}
-                          className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                        />
-                      </td>
-                      <td className="py-4 pr-4">
-                        <input
-                          type="text"
-                          placeholder="Họ tên cầu thủ"
-                          value={p.name}
-                          onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
-                          className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                        />
-                      </td>
-                      <td className="py-4 pr-4 w-24">
-                        <input
-                          type="number"
-                          placeholder="Số"
-                          value={p.number}
-                          onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
-                          className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                        />
-                      </td>
-                      <td className="py-4 pr-4 w-40">
-                        <select
-                          value={p.position}
-                          onChange={(e) => updatePlayer(p.id, 'position', e.target.value)}
-                          className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none"
-                        >
-                          <option value="goalkeeper">Thủ Môn</option>
-                          <option value="defender">Hậu Vệ</option>
-                          <option value="midfielder">Tiền Vệ</option>
-                          <option value="forward">Tiền Đạo</option>
-                        </select>
-                      </td>
-                      <td className="py-4 pr-4 text-right w-16">
-                        <button
-                          type="button"
-                          onClick={() => removePlayer(p.id)}
-                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                          title="Xóa cầu thủ"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  <table className="w-full text-left min-w-[700px]">
+                    <thead>
+                      <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
+                        <th className="pb-4 pl-4">#</th>
+                        <th className="pb-4">Email Liên Kết</th>
+                        <th className="pb-4">Tên Cầu Thủ</th>
+                        <th className="pb-4">Số Áo</th>
+                        <th className="pb-4">Vị Trí</th>
+                        <th className="pb-4 text-right pr-4">Xóa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-navy-light/50">
+                      {players.map((p, idx) => (
+                        <tr key={p.id} className="group hover:bg-navy-light/20 transition-colors">
+                          <td className="py-4 pl-4 text-gray-500 font-bold">{idx + 1}</td>
+                          <td className="py-4 pr-4">
+                            <input
+                              type="email"
+                              placeholder="Email tài khoản cầu thủ"
+                              value={p.email}
+                              onChange={(e) => updatePlayer(p.id, 'email', e.target.value)}
+                              className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </td>
+                          <td className="py-4 pr-4">
+                            <input
+                              type="text"
+                              placeholder="Họ tên cầu thủ"
+                              value={p.name}
+                              onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
+                              className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </td>
+                          <td className="py-4 pr-4 w-24">
+                            <input
+                              type="number"
+                              placeholder="Số"
+                              value={p.number}
+                              onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
+                              className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </td>
+                          <td className="py-4 pr-4 w-40">
+                            <select
+                              value={p.position}
+                              onChange={(e) => updatePlayer(p.id, 'position', e.target.value)}
+                              className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none"
+                            >
+                              <option value="goalkeeper">Thủ Môn</option>
+                              <option value="defender">Hậu Vệ</option>
+                              <option value="midfielder">Tiền Vệ</option>
+                              <option value="forward">Tiền Đạo</option>
+                            </select>
+                          </td>
+                          <td className="py-4 pr-4 text-right w-16">
+                            <button
+                              type="button"
+                              onClick={() => removePlayer(p.id)}
+                              className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              title="Xóa cầu thủ"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

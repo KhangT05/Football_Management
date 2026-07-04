@@ -97,7 +97,7 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport 
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40">
           <div className="flex items-center gap-3">
@@ -233,10 +233,10 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport 
 function PosBadge({ pos }) {
   const normPos = normalizePosition(pos);
   const styles = {
-    GK:  'bg-yellow-400/10 text-yellow-400 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.1)]',
+    GK: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.1)]',
     DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.1)]',
     MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 shadow-[0_0_10px_rgba(52,211,153,0.1)]',
-    FW:  'bg-red-400/10 text-red-400 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.1)]',
+    FW: 'bg-red-400/10 text-red-400 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.1)]',
   };
   return (
     <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${styles[normPos] || 'bg-gray-400/10 text-gray-400 border-gray-400/30'}`}>
@@ -252,7 +252,7 @@ function PaymentModal({ teamName, onClose }) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-lg animate-scale-in flex flex-col overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-emerald-500/5 to-transparent pointer-events-none"></div>
-        
+
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 relative z-10">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
@@ -264,7 +264,7 @@ function PaymentModal({ teamName, onClose }) {
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="p-8 space-y-8 overflow-y-auto relative z-10 custom-scrollbar max-h-[70vh]">
           <div className="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl flex items-start gap-4 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
             <div className="p-2 bg-emerald-500/20 rounded-xl shrink-0 mt-0.5">
@@ -275,7 +275,7 @@ function PaymentModal({ teamName, onClose }) {
               <p className="text-emerald-500/80 font-medium leading-relaxed">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-2 shadow-xl group-hover:scale-110 transition-transform duration-300">
@@ -289,7 +289,7 @@ function PaymentModal({ teamName, onClose }) {
                 <span className="text-gray-500">ND:</span> {teamName} LE PHI
               </div>
             </div>
-            
+
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-300 group">
               <div className="w-16 h-16 bg-navy rounded-2xl border border-navy-light flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300 group-hover:border-blue-500/50">
                 <Users className="w-8 h-8 text-blue-400" />
@@ -300,12 +300,12 @@ function PaymentModal({ teamName, onClose }) {
               </div>
             </div>
           </div>
-          
+
           <p className="text-center text-xs text-gray-500 font-medium px-4">
             * Sau khi thanh toán, vui lòng liên hệ Admin qua Fanpage để được xác nhận trạng thái.
           </p>
         </div>
-        
+
         <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end relative z-10">
           <button onClick={onClose} className="px-8 py-3.5 font-bold bg-navy-light text-white rounded-2xl hover:bg-gray-700 transition-all duration-300 shadow-lg">
             Đóng cửa sổ
@@ -417,7 +417,7 @@ export default function MyTeam() {
         const seasonsRes = await seasonApi.getAll();
         const allSeasons = parseList(seasonsRes);
         const activeSeason = allSeasons.find(s => ['registration_open', 'ongoing', 'upcoming'].includes(s.status)) || allSeasons[0];
-        
+
         if (activeSeason) {
           // Check season registration status
           const stRes = await seasonTeamApi.getAll({ team_id: myTeam.id, season_id: activeSeason.id });
@@ -435,8 +435,8 @@ export default function MyTeam() {
             }
           }
 
-          setTeam(prev => ({ 
-            ...prev, 
+          setTeam(prev => ({
+            ...prev,
             season: activeSeason.name,
             activeSeasonId: activeSeason.id,
             activeSeasonTeamId: currentSt ? currentSt.id : null,
@@ -444,7 +444,7 @@ export default function MyTeam() {
             primaryColor: homeJersey?.secondary_color || prev.primaryColor,
             colorHex: homeJersey?.primary_color || prev.colorHex,
           }));
-          
+
           if (currentSt && ['approved', 'active'].includes(currentSt.status)) {
             const scheduleRes = await matchApi.getTeamSchedule(activeSeason.id, myTeam.id);
             setMatches(parseList(scheduleRes));
@@ -508,7 +508,7 @@ export default function MyTeam() {
     setIsSaving(true);
     try {
       await teamApi.update(team.id, form);
-      
+
       if (team.activeSeasonTeamId && form.color_hex) {
         try {
           await jerseyApi.upsert(team.activeSeasonTeamId, {
@@ -585,7 +585,7 @@ export default function MyTeam() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       setIsSaving(true);
       await playerApi.importTeamPlayers(team.id, formData);
       toast.success('Nhập dữ liệu từ file Excel thành công!');
@@ -708,7 +708,7 @@ export default function MyTeam() {
                 <p className="text-blue-500/80 font-medium">Đội bóng của bạn chưa đăng ký tham gia giải {team.season}.</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={async () => {
                 try {
                   setIsLoading(true);
@@ -739,7 +739,7 @@ export default function MyTeam() {
                 <p className="text-emerald-500/80 font-medium">Đội bóng đã được duyệt tham gia {team.season}. Hãy thanh toán lệ phí để bốc thăm chia bảng.</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setShowPayment(true)}
               className="px-6 py-3.5 shrink-0 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5"
             >
@@ -776,7 +776,7 @@ export default function MyTeam() {
                     {team.status === 'pending' && (
                       <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(234,179,8,0.2)]">
                         Chờ Duyệt
-                      </span> 
+                      </span>
                     )}
                   </div>
                   <p className="text-blue-400/80 font-bold tracking-wide">Khoa Công nghệ thông tin <span className="text-gray-600 mx-2">•</span> Mùa giải {team.season}</p>
@@ -787,7 +787,7 @@ export default function MyTeam() {
 
           {!isLoading && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <button 
+              <button
                 onClick={() => setEditTeamModalOpen(true)}
                 className="bg-navy/60 backdrop-blur-xl text-white font-bold px-5 py-3.5 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light text-sm shadow-lg hover:-translate-y-0.5"
               >
@@ -826,7 +826,7 @@ export default function MyTeam() {
 
           {/* ─── Players Table / Matches Table ──────────────────────────────── */}
           <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
-            
+
             {activeTab === 'matches' && (
               <div className="space-y-4">
                 {matches.length === 0 ? (
@@ -874,194 +874,194 @@ export default function MyTeam() {
             {activeTab === 'roster' && (
               <>
                 {/* Search + sort bar */}
-            {!isLoading && (
-              <div className="flex gap-4 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên hoặc số áo..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all"
-                  />
-                </div>
-                <div className="relative">
-                  <select
-                    value={sortField}
-                    onChange={e => toggleSort(e.target.value)}
-                    className="pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white text-sm font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shrink-0 appearance-none cursor-pointer transition-all"
-                  >
-                    <option value="number">Sắp xếp: Số áo</option>
-                    <option value="name">Sắp xếp: Tên</option>
-                    <option value="goals">Sắp xếp: Bàn thắng</option>
-                  </select>
-                  <ArrowUpDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-            )}
-
-            <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 overflow-hidden">
-              <div className="px-8 py-6 border-b border-navy-light/50 flex items-center justify-between bg-navy-dark/40">
-                <h2 className="text-xl font-black text-white flex items-center gap-3 tracking-tight">
-                  <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30">
-                    <Users className="w-5 h-5 text-blue-400" />
-                  </div>
-                  Danh Sách Cầu Thủ
-                </h2>
                 {!isLoading && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-black text-blue-400 bg-navy-dark px-4 py-1.5 rounded-xl border border-navy-light shadow-inner">
-                      {players.length} / 20
-                    </span>
-                    {players.length >= 20 && (
-                      <span className="text-xs text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 rounded-xl uppercase tracking-widest">
-                        Đủ quân số
-                      </span>
-                    )}
+                  <div className="flex gap-4 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Tìm theo tên hoặc số áo..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all"
+                      />
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={sortField}
+                        onChange={e => toggleSort(e.target.value)}
+                        className="pl-4 pr-10 py-3 bg-navy-dark border border-navy-light rounded-xl text-white text-sm font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shrink-0 appearance-none cursor-pointer transition-all"
+                      >
+                        <option value="number">Sắp xếp: Số áo</option>
+                        <option value="name">Sắp xếp: Tên</option>
+                        <option value="goals">Sắp xếp: Bàn thắng</option>
+                      </select>
+                      <ArrowUpDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 )}
-              </div>
 
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-navy-dark/60 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-navy-light/50">
-                      <th className="py-4 px-6 w-20 text-center">
-                        <button onClick={() => toggleSort('number')} className="flex items-center justify-center gap-1.5 w-full hover:text-white transition-colors group">
-                          Số <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                        </button>
-                      </th>
-                      <th className="py-4 px-6">
-                        <button onClick={() => toggleSort('name')} className="flex items-center gap-1.5 hover:text-white transition-colors group">
-                          Cầu thủ <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                        </button>
-                      </th>
-                      <th className="py-4 px-6 text-center">Vị trí</th>
-                      <th className="py-4 px-6 text-center">
-                        <button onClick={() => toggleSort('goals')} className="flex items-center justify-center gap-1.5 w-full hover:text-white transition-colors group">
-                          Bàn thắng <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                        </button>
-                      </th>
-                      <th className="py-4 px-6 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-navy-light/50">
-                    {isLoading ? (
-                      <>
-                        <PlayerRowSkeleton />
-                        <PlayerRowSkeleton />
-                        <PlayerRowSkeleton />
-                        <PlayerRowSkeleton />
-                        <PlayerRowSkeleton />
-                      </>
-                    ) : paginatedPlayers.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-20 text-center text-gray-500">
-                          <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
-                          <p className="font-bold text-gray-400 text-lg">Không tìm thấy cầu thủ</p>
-                          <p className="text-sm mt-1">Thử thay đổi từ khóa tìm kiếm</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedPlayers.map((player, idx) => (
-                        <tr
-                          key={player.id}
-                          className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
-                          style={{ animationDelay: `${idx * 40}ms` }}
-                        >
-                          <td className="py-5 px-6 text-center">
-                            <span className="font-black text-2xl text-transparent bg-clip-text bg-linear-to-b from-white to-gray-500">{player.number}</span>
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className="absolute inset-0 bg-blue-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                                {player.avatar ? (
-                                  <img
-                                    src={player.avatar}
-                                    alt={player.name}
-                                    className="w-12 h-12 rounded-full bg-navy-dark border-2 border-navy-light shrink-0 relative z-10 object-cover"
-                                  />
-                                ) : (
-                                  <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[(player.id || idx) % AVATAR_COLORS.length]} border-2 border-navy-light flex items-center justify-center font-black text-white text-sm relative z-10`}>
-                                    {getInitials(player.name)}
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">{player.name}</p>
-                                <p className="text-xs font-medium text-gray-500 mt-0.5">MSSV: <span className="text-gray-400">{String(player.id).padStart(8, '0')}</span></p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-5 px-6 text-center">
-                            <PosBadge pos={player.position} />
-                          </td>
-                          <td className="py-5 px-6 text-center">
-                            <span className="font-black text-neon text-xl drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
-                              {player.goals > 0 ? player.goals : <span className="text-navy-light font-normal text-base">—</span>}
-                            </span>
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-4 sm:group-hover:translate-x-0">
-                              <button
-                                onClick={() => openEditModal(player)}
-                                className="w-10 h-10 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300 shadow-sm"
-                                title="Chỉnh sửa"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setDeletingPlayer(player)}
-                                className="w-10 h-10 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm"
-                                title="Xóa"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 overflow-hidden">
+                  <div className="px-8 py-6 border-b border-navy-light/50 flex items-center justify-between bg-navy-dark/40">
+                    <h2 className="text-xl font-black text-white flex items-center gap-3 tracking-tight">
+                      <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30">
+                        <Users className="w-5 h-5 text-blue-400" />
+                      </div>
+                      Danh Sách Cầu Thủ
+                    </h2>
+                    {!isLoading && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-blue-400 bg-navy-dark px-4 py-1.5 rounded-xl border border-navy-light shadow-inner">
+                          {players.length} / 20
+                        </span>
+                        {players.length >= 20 && (
+                          <span className="text-xs text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                            Đủ quân số
+                          </span>
+                        )}
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
 
-              {!isLoading && displayed.length > 0 && (
-                <div className="px-8 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
-                  <span>Hiển thị <span className="text-white">{displayed.length}</span> / {players.length} cầu thủ</span>
-                  {search && (
-                    <button onClick={() => setSearch('')} className="text-blue-400 hover:text-blue-300 transition-colors">
-                      Xóa bộ lọc
-                    </button>
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left whitespace-nowrap">
+                      <thead>
+                        <tr className="bg-navy-dark/60 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-navy-light/50">
+                          <th className="py-4 px-6 w-20 text-center">
+                            <button onClick={() => toggleSort('number')} className="flex items-center justify-center gap-1.5 w-full hover:text-white transition-colors group">
+                              Số <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                            </button>
+                          </th>
+                          <th className="py-4 px-6">
+                            <button onClick={() => toggleSort('name')} className="flex items-center gap-1.5 hover:text-white transition-colors group">
+                              Cầu thủ <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                            </button>
+                          </th>
+                          <th className="py-4 px-6 text-center">Vị trí</th>
+                          <th className="py-4 px-6 text-center">
+                            <button onClick={() => toggleSort('goals')} className="flex items-center justify-center gap-1.5 w-full hover:text-white transition-colors group">
+                              Bàn thắng <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                            </button>
+                          </th>
+                          <th className="py-4 px-6 text-right">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-navy-light/50">
+                        {isLoading ? (
+                          <>
+                            <PlayerRowSkeleton />
+                            <PlayerRowSkeleton />
+                            <PlayerRowSkeleton />
+                            <PlayerRowSkeleton />
+                            <PlayerRowSkeleton />
+                          </>
+                        ) : paginatedPlayers.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-20 text-center text-gray-500">
+                              <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
+                              <p className="font-bold text-gray-400 text-lg">Không tìm thấy cầu thủ</p>
+                              <p className="text-sm mt-1">Thử thay đổi từ khóa tìm kiếm</p>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedPlayers.map((player, idx) => (
+                            <tr
+                              key={player.id}
+                              className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
+                              style={{ animationDelay: `${idx * 40}ms` }}
+                            >
+                              <td className="py-5 px-6 text-center">
+                                <span className="font-black text-2xl text-transparent bg-clip-text bg-linear-to-b from-white to-gray-500">{player.number}</span>
+                              </td>
+                              <td className="py-5 px-6">
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <div className="absolute inset-0 bg-blue-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                    {player.avatar ? (
+                                      <img
+                                        src={player.avatar}
+                                        alt={player.name}
+                                        className="w-12 h-12 rounded-full bg-navy-dark border-2 border-navy-light shrink-0 relative z-10 object-cover"
+                                      />
+                                    ) : (
+                                      <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[(player.id || idx) % AVATAR_COLORS.length]} border-2 border-navy-light flex items-center justify-center font-black text-white text-sm relative z-10`}>
+                                        {getInitials(player.name)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">{player.name}</p>
+                                    <p className="text-xs font-medium text-gray-500 mt-0.5">MSSV: <span className="text-gray-400">{String(player.id).padStart(8, '0')}</span></p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-5 px-6 text-center">
+                                <PosBadge pos={player.position} />
+                              </td>
+                              <td className="py-5 px-6 text-center">
+                                <span className="font-black text-neon text-xl drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+                                  {player.goals > 0 ? player.goals : <span className="text-navy-light font-normal text-base">—</span>}
+                                </span>
+                              </td>
+                              <td className="py-5 px-6">
+                                <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-4 sm:group-hover:translate-x-0">
+                                  <button
+                                    onClick={() => openEditModal(player)}
+                                    className="w-10 h-10 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300 shadow-sm"
+                                    title="Chỉnh sửa"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeletingPlayer(player)}
+                                    className="w-10 h-10 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm"
+                                    title="Xóa"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {!isLoading && displayed.length > 0 && (
+                    <div className="px-8 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
+                      <span>Hiển thị <span className="text-white">{displayed.length}</span> / {players.length} cầu thủ</span>
+                      {search && (
+                        <button onClick={() => setSearch('')} className="text-blue-400 hover:text-blue-300 transition-colors">
+                          Xóa bộ lọc
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-6">
-                <Pagination
-                  currentPage={safePage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  itemsPerPage={itemsPerPage}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              </div>
-            )}
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-6">
+                    <Pagination
+                      currentPage={safePage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      itemsPerPage={itemsPerPage}
+                      onItemsPerPageChange={handleItemsPerPageChange}
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>
 
           {/* ─── Sidebar ─────────────────────────────────────── */}
           <div className="lg:col-span-1 space-y-6 animate-slide-up" style={{ animationDelay: '150ms' }}>
-            
+
             {/* Team Info Card */}
             <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-colors duration-500"></div>
-              
+
               <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6 border-b border-navy-light/50 pb-5 relative z-10">
                 <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                   <Info className="w-5 h-5 text-indigo-400" />

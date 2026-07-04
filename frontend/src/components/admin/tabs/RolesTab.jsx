@@ -65,8 +65,8 @@ export default function RolesTab() {
     });
   };
 
-  const filteredRoles = roles.filter(r => 
-    r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredRoles = roles.filter(r =>
+    r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -160,11 +160,10 @@ export default function RolesTab() {
                       {role.description || <span className="text-gray-500 italic">Không có mô tả</span>}
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                        role.is_active !== false
-                          ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                          : 'bg-red-400/10 text-red-400 border-red-400/30'
-                      }`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${role.is_active !== false
+                        ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                        : 'bg-red-400/10 text-red-400 border-red-400/30'
+                        }`}>
                         {role.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
                     </td>

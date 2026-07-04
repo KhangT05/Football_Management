@@ -20,10 +20,10 @@ export default function VenuesSection() {
 
   const { data: items, isLoading, fetch: fetchVenues } = useApiQuery(
     (params) => venueApi.getAll(params),
-    { 
+    {
       perPage: 100,
       params: { sort: 'id', direction: 'desc' },
-      errorMsg: 'Không tải được danh sách sân.' 
+      errorMsg: 'Không tải được danh sách sân.'
     }
   );
 
@@ -50,8 +50,8 @@ export default function VenuesSection() {
   const { invalidate: invalidateVenueStore } = useVenueStore(useShallow(state => ({ invalidate: state.invalidate })));
   const crud = useCrudModal({
     emptyForm: { name: '', address: '', is_active: true },
-    onSuccess: () => { 
-      invalidateVenueStore(); 
+    onSuccess: () => {
+      invalidateVenueStore();
       setCurrentPage(1);
       fetchVenues();
     },
@@ -100,23 +100,23 @@ export default function VenuesSection() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Tìm sân thi đấu..." 
+            <input
+              type="text"
+              placeholder="Tìm sân thi đấu..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
             />
           </div>
-          <button 
-            onClick={() => fetchVenues()} 
-            disabled={isLoading} 
+          <button
+            onClick={() => fetchVenues()}
+            disabled={isLoading}
             className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button 
-            onClick={openAdd} 
+          <button
+            onClick={openAdd}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" /> Thêm sân

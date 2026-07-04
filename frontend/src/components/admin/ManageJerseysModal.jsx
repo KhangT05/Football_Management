@@ -9,7 +9,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
   const [jerseys, setJerseys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     type: 'home',
     color_primary: '#ffffff',
@@ -45,7 +45,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.type) return toast.error('Vui lòng chọn loại áo');
-    
+
     try {
       await jerseyApi.upsert(seasonTeam.id, formData);
       toast.success('Lưu thông tin áo đấu thành công');
@@ -82,14 +82,14 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-navy border border-navy-light w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        
+
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-navy-light bg-navy-dark/50 rounded-t-2xl">
           <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Shirt className="w-5 h-5 text-emerald-400" />
             Áo đấu: {seasonTeam?.team?.name}
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors"
           >
@@ -99,7 +99,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
 
         {/* Body */}
         <div className="p-5 overflow-y-auto space-y-6">
-          
+
           {/* List Existing */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-gray-400">Danh sách hiện tại</h3>
@@ -112,9 +112,9 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                 {jerseys.map((j, idx) => (
                   <div key={j.id || idx} className="flex items-center justify-between p-3 rounded-xl border border-navy-light bg-navy-dark">
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md border border-white/10"
-                        style={{ 
+                        style={{
                           background: `linear-gradient(135deg, ${j.color_primary} 50%, ${j.color_secondary} 50%)`
                         }}
                       >
@@ -123,8 +123,8 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                       <div>
                         <div className="font-bold text-white uppercase text-sm">{j.type}</div>
                         <div className="text-xs text-gray-400 font-mono flex items-center gap-2">
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{backgroundColor: j.color_primary}}></span> {j.color_primary}</span>
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{backgroundColor: j.color_secondary}}></span> {j.color_secondary}</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.color_primary }}></span> {j.color_primary}</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.color_secondary }}></span> {j.color_secondary}</span>
                         </div>
                       </div>
                     </div>
@@ -145,7 +145,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
             <h3 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
               <Plus className="w-4 h-4 text-emerald-400" /> {editingIndex !== null ? 'Cập nhật' : 'Thêm mới'}
             </h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="block text-xs font-bold text-gray-400 mb-1">Loại áo (Home, Away, Third...)</label>

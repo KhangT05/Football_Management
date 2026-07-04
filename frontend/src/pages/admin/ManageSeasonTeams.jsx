@@ -157,7 +157,7 @@ export default function ManageSeasonTeams() {
 
             if (!currentRoleIds.includes(leaderRole.id)) {
               await userApi.updateProfile(st.team.user_id, { role_ids: [...currentRoleIds, leaderRole.id] });
-              toastSuccess(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
+              toast.success(`Đã tự động cấp quyền Đội trưởng cho user đăng ký.`);
             }
           }
         } catch (e) {
@@ -165,9 +165,9 @@ export default function ManageSeasonTeams() {
         }
       }
 
-      toastSuccess(`Đã cập nhật trạng thái thành "${newStatus}"!`);
+      toast.success(`Đã cập nhật trạng thái thành "${newStatus}"!`);
       reloadTeams();
-    }).catch(err => toastError(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
+    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
   };
 
   // ── Actions: Delete ─────────────────────────────────────────
@@ -177,10 +177,10 @@ export default function ManageSeasonTeams() {
   const confirmDelete = () => {
     deleteMutation.mutate(async () => {
       await seasonTeamApi.delete(deletingId);
-      toastSuccess('Đã xóa đội khỏi mùa giải.');
+      toast.success('Đã xóa đội khỏi mùa giải.');
       setDeletingId(null);
       reloadTeams();
-    }).catch(err => toastError(err?.response?.data?.message || 'Lỗi khi xóa.'));
+    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi xóa.'));
   };
 
   // ── Actions: Add Team ───────────────────────────────────────
@@ -206,7 +206,7 @@ export default function ManageSeasonTeams() {
         team_id: Number(addTeamModal.form.team_id),
         status: 'approved',
       });
-      toastSuccess('Đã thêm đội vào mùa giải!');
+      toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
     }).catch(err => addTeamModal.setFormError(err?.response?.data?.message || 'Lỗi khi thêm đội.'));
   };
@@ -218,7 +218,7 @@ export default function ManageSeasonTeams() {
     if (!assignModal.form.group_id) { assignModal.setFormError('Vui lòng nhập ID bảng!'); return; }
     assignModal.save(async () => {
       await seasonTeamApi.assignGroup(assignModal.editing.id, { group_id: Number(assignModal.form.group_id) });
-      toastSuccess('Đã xếp đội vào bảng thủ công!');
+      toast.success('Đã xếp đội vào bảng thủ công!');
       reloadTeams();
     }).catch(err => assignModal.setFormError(err?.response?.data?.message || 'Lỗi khi xếp bảng.'));
   };
@@ -232,7 +232,7 @@ export default function ManageSeasonTeams() {
     if (!transferModal.form.target_season_id) { transferModal.setFormError('Vui lòng chọn mùa giải đích.'); return; }
     transferModal.save(async () => {
       await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
-      toastSuccess('Đã chuyển đội sang mùa giải mới!');
+      toast.success('Đã chuyển đội sang mùa giải mới!');
       reloadTeams();
     }).catch(err => transferModal.setFormError(err?.response?.data?.message || 'Lỗi khi chuyển đội.'));
   };

@@ -38,11 +38,11 @@ export default function UsersTab() {
         sort: 'created_at',
         direction: 'asc'
       });
-      
+
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
       const resultMeta = Array.isArray(payload) ? null : payload?.meta;
-      
+
       setUsers(items);
       setMeta(resultMeta);
     } catch (err) {
@@ -197,11 +197,10 @@ export default function UsersTab() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                        u.is_active !== false
-                          ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-                          : 'bg-red-400/10 text-red-400 border-red-400/30'
-                      }`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${u.is_active !== false
+                        ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
+                        : 'bg-red-400/10 text-red-400 border-red-400/30'
+                        }`}>
                         {u.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
                     </td>
