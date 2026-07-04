@@ -5,13 +5,6 @@ import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 
-// FIX: bỏ hẳn phaseId khỏi frontend. Backend (GroupService) giờ nhận
-// thẳng seasonId cho mọi entrypoint (findAllBySeason, createGroupsBulk,
-// drawGroups, drawGroupsSeeded, clearDraw) và tự get-or-create phase
-// round_robin bên trong transaction. phaseId là chi tiết triển khai nội
-// bộ của backend — frontend không cần biết, không cần state riêng, và
-// không cần round-trip getOrCreateGroupPhase() trước khi load data.
-
 const DEBUG_RESPONSE_SHAPE = false;
 
 function unwrapResponse(res, label) {
@@ -22,11 +15,6 @@ function unwrapResponse(res, label) {
   return typeof res?.status === 'boolean' ? res.data : res;
 }
 
-/**
- * FIX: null = "không xác định được" (response shape lạ / lỗi), khác
- * với 0 = "xác định được, và đúng là 0 đội approved". Không được gộp
- * 2 ý nghĩa này lại thành cùng 1 con số 0.
- */
 function extractTotalCount(payload) {
   const meta = payload?.meta ?? payload?.pagination ?? null;
   const candidates = [meta?.total, meta?.total_items, meta?.count, payload?.total];
@@ -38,27 +26,11 @@ function extractTotalCount(payload) {
 }
 
 export default function GroupDrawUI({ seasonId }) {
-  // FIX (infinite-loading bug): useToastStore() trước đây subscribe
-  // TOÀN BỘ store object không qua selector. Nếu toast store dùng
-  // `set({ toasts: [...] })` (gần như chắc chắn, cần re-render list
-  // toast), MỌI lần có toast bắn ra — kể cả do request khác trong app —
-  // object trả về đổi reference. `loadData` (useCallback dep [seasonId,
-  // toast]) bị tạo lại mỗi lần đó -> effect [seasonId, loadData] chạy
-  // lại -> reset toàn bộ state về rỗng + gọi lại loadData() -> nếu có
-  // 1 lỗi thật đang xảy ra (network/500), toast.error() trong catch lại
-  // trigger vòng lặp kế tiếp -> UI stuck ở "Đang tải..." vĩnh viễn dù
-  // response đã về từ lâu.
-  //
-  // Chỉ subscribe action, không subscribe cả object. Nếu store implement
-  // action bằng arrow function tạo mới mỗi lần set() (một số impl dở),
-  // dùng getState() trong handler thay vì subscribe action qua hook.
   const toastError = useToastStore((state) => state.error);
   const toastSuccess = useToastStore((state) => state.success);
 
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
 
-  // FIX: teams.find() trong render loop là O(n) mỗi dòng — với nhiều
-  // group x nhiều team sẽ thành O(n*m). Map 1 lần, lookup O(1).
   const teamMap = useMemo(() => {
     const map = new Map();
     for (const t of teams) map.set(t.id, t);
@@ -69,15 +41,13 @@ export default function GroupDrawUI({ seasonId }) {
   const [loading, setLoading] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isCreatingGroups, setIsCreatingGroups] = useState(false);
+  const [deletingGroupId, setDeletingGroupId] = useState(null);
 
   const [teamsPerGroup, setTeamsPerGroup] = useState(4);
   const [numPots, setNumPots] = useState(4);
   const [groupCount, setGroupCount] = useState(4);
 
   const [persistedTeamsPerGroup, setPersistedTeamsPerGroup] = useState(null);
-  // FIX: phaseInfo === null giờ có 2 nghĩa cần phân biệt bằng groupsLoadError:
-  // (a) load thành công, season chưa từng tạo group -> trạng thái hợp lệ
-  // (b) load thất bại (network/500) -> lỗi thật, groupsLoadError = true
   const [phaseInfo, setPhaseInfo] = useState(null);
 
   const [groups, setGroups] = useState([]);
@@ -87,7 +57,20 @@ export default function GroupDrawUI({ seasonId }) {
 
   const requestIdRef = useRef(0);
   const isMountedRef = useRef(true);
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+
+  // FIX (root cause "stuck loading" dưới StrictMode dev): effect cleanup-only
+  // trước đây set isMountedRef.current = false ở cleanup nhưng KHÔNG set lại
+  // true khi mount lại. StrictMode double-invoke (mount -> cleanup -> mount)
+  // khiến flag kẹt false vĩnh viễn sau lần mount thứ 2, trong khi request
+  // thật (reqId khớp) vẫn đang in-flight. Khi response về, guard
+  // `!isMountedRef.current` fail-safe sai -> bỏ qua setState -> loading kẹt
+  // true, groups/phase kẹt giá trị reset, dù network đã 200 hợp lệ.
+  // Set lại true ở mount body để lần mount thứ 2 tự sửa flag trước khi
+  // response resolve.
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!seasonId) return;
@@ -104,8 +87,6 @@ export default function GroupDrawUI({ seasonId }) {
       if (groupsRes.status === 'fulfilled') {
         const payload = unwrapResponse(groupsRes.value, 'groupApi.listBySeason');
         setGroupsLoadError(false);
-        // payload.phase === null là hợp lệ (chưa tạo group) — không log
-        // warn, không phải bug, khác hẳn trường hợp payload undefined.
         setPhaseInfo(payload?.phase ?? null);
         setGroups(Array.isArray(payload?.groups) ? payload.groups : []);
         setPersistedTeamsPerGroup(
@@ -145,8 +126,6 @@ export default function GroupDrawUI({ seasonId }) {
     }
   }, [seasonId, toastError]);
 
-  // Bước 1: mỗi khi đổi season, reset state rồi load thẳng — không còn
-  // bước trung gian getOrCreateGroupPhase().
   useEffect(() => {
     setGroups([]);
     setGroupsLoadError(false);
@@ -154,7 +133,14 @@ export default function GroupDrawUI({ seasonId }) {
     setTotalTeams(null);
     setPersistedTeamsPerGroup(null);
     setPhaseInfo(null);
-    if (seasonId) loadData();
+    if (seasonId) {
+      loadData();
+    } else {
+      // FIX (edge case): seasonId falsy -> loadData() không chạy -> không có
+      // finally nào tắt loading nếu nhánh trước đó đã set true. Guard tường
+      // minh thay vì phụ thuộc side-effect của loadData.
+      setLoading(false);
+    }
   }, [seasonId, loadData]);
 
   const handleCreateGroups = async () => {
@@ -240,6 +226,35 @@ export default function GroupDrawUI({ seasonId }) {
     }
   };
 
+  // NEW: xoá 1 group riêng lẻ (khác handleClearDraw — cái đó xoá toàn bộ
+  // kết quả draw của phase, không xoá group). Dùng khi tạo nhầm số lượng/tên
+  // bảng và muốn gỡ từng cái thay vì clear draw + xoá hết rồi bulk-create lại.
+  // Backend (deactivateGroup) chặn nếu group đã có match, nhưng KHÔNG chặn
+  // nếu group đang có team — nó set group_id=null cho các season_teams rồi
+  // mới deactivate. Vì vậy confirm phải nêu rõ số đội bị ảnh hưởng.
+  const handleDeleteGroup = async (group) => {
+    if (isDrawing || isCreatingGroups || deletingGroupId !== null) return;
+
+    const teamCount = group.season_teams?.length || 0;
+    const confirmMsg = teamCount > 0
+      ? `Bảng "${group.name}" đang có ${teamCount} đội — xoá sẽ gỡ các đội này khỏi bảng ` +
+      `(không xoá team, không ảnh hưởng match đã tồn tại). Không thể hoàn tác. Tiếp tục?`
+      : `Xoá bảng "${group.name}"?`;
+    if (!confirm(confirmMsg)) return;
+
+    setDeletingGroupId(group.id);
+    try {
+      await groupApi.deactivateGroup(group.id);
+      toastSuccess(`Đã xoá bảng "${group.name}"`);
+      loadData();
+    } catch (error) {
+      console.error('[GroupDrawUI] deactivateGroup failed:', error);
+      toastError(error?.response?.data?.message || 'Lỗi xoá bảng (có thể do bảng đã có match)');
+    } finally {
+      setDeletingGroupId(null);
+    }
+  };
+
   const hasTeamCount = typeof totalTeams === 'number';
   const minRequired = groups.length * 2;
   const maxAllowed = groups.length * Number(teamsPerGroup || 0);
@@ -249,8 +264,6 @@ export default function GroupDrawUI({ seasonId }) {
 
   const displayedCapacity = persistedTeamsPerGroup ?? Number(teamsPerGroup || 0);
 
-  // FIX: chỉ còn 3 trạng thái header thay vì 4 — không còn "load phase
-  // riêng" nên không còn case stuck-loading do phaseLoadError.
   let headerSubtitle;
   if (loading) {
     headerSubtitle = 'Đang tải vòng đấu...';
@@ -433,10 +446,22 @@ export default function GroupDrawUI({ seasonId }) {
             <div key={group.id} className="bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 px-5 text-white flex justify-between items-center">
                 <h4 className="font-black text-base tracking-wide uppercase">{group.name}</h4>
-                <span className="flex items-center gap-1.5 bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                  <Users className="w-3 h-3" /> {group.season_teams?.length || 0}
-                  {displayedCapacity ? ` / ${displayedCapacity}` : ''} đội
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5 bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    <Users className="w-3 h-3" /> {group.season_teams?.length || 0}
+                    {displayedCapacity ? ` / ${displayedCapacity}` : ''} đội
+                  </span>
+                  <button
+                    onClick={() => handleDeleteGroup(group)}
+                    disabled={deletingGroupId !== null || isDrawing || isCreatingGroups || loading}
+                    title="Xoá bảng này (tạo nhầm)"
+                    className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {deletingGroupId === group.id
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Trash2 className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
               <div className="p-2">
                 {group.season_teams.length === 0 ? (
