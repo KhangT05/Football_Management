@@ -8,13 +8,13 @@ import {
 import { teamApi, matchApi, matchLineupApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
+import useTeamStore from '../../store/teamStore';
 import useToastStore from '../../store/toastStore';
 
 import EventCard from '../../components/admin/EventCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import {
-  TransitionPeriodModal,
   ForfeitMatchModal,
   AbandonMatchModal,
   DisputeModal,
@@ -75,6 +75,11 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const toast = useToastStore();
   const { seasons } = useSeasonStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
+  const { teams, fetchAll: fetchTeams } = useTeamStore();
+
+  useEffect(() => {
+    fetchTeams({ per_page: 500 });
+  }, [fetchTeams]);
 
   const effectiveSeasonId = selectedSeasonId;
 
@@ -96,13 +101,14 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     let list = allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
-      list = list.filter(m =>
-        m.home_team?.name?.toLowerCase().includes(lower) ||
-        m.away_team?.name?.toLowerCase().includes(lower)
-      );
+      list = list.filter(m => {
+        const hName = m.home_team?.name || teams.find(t => t.id === m.home_team_id)?.name || '';
+        const aName = m.away_team?.name || teams.find(t => t.id === m.away_team_id)?.name || '';
+        return hName.toLowerCase().includes(lower) || aName.toLowerCase().includes(lower);
+      });
     }
     return list;
-  }, [allSeasonMatches, searchTerm]);
+  }, [allSeasonMatches, searchTerm, teams]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -132,8 +138,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       setLoadingPlayers(true);
       try {
         const [homeRes, awayRes, lineupRes] = await Promise.allSettled([
-          teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }),
-          teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }),
+          selectedMatch.home_team_id ? teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }) : Promise.resolve({ data: [] }),
+          selectedMatch.away_team_id ? teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }) : Promise.resolve({ data: [] }),
           matchLineupApi.getMatchLineups(selectedMatch.id)
         ]);
         if (cancelled) return;
@@ -243,8 +249,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setIsDirty(true);
   };
 
-  const getHomeName = () => selectedMatch?.home_team?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
-  const getAwayName = () => selectedMatch?.away_team?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
+  const getHomeName = () => selectedMatch?.home_team?.name ?? teams.find(t => t.id === selectedMatch?.home_team_id)?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
+  const getAwayName = () => selectedMatch?.away_team?.name ?? teams.find(t => t.id === selectedMatch?.away_team_id)?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
 
   const handleRefresh = () => {
     if (effectiveSeasonId) {
@@ -315,19 +321,15 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     if (err) { toast.error(err); return; }
     setIsFinishing(true);
     try {
-      const homeScorers = homeEvents.filter(e => e.type === 'goal').map(e => ({
-        teamId: selectedMatch.home_team_id, type: 'goal',
-        minute: Number(e.minute) || 1, playerName: e.player || undefined,
-      }));
-      const awayScorers = awayEvents.filter(e => e.type === 'goal').map(e => ({
-        teamId: selectedMatch.away_team_id, type: 'goal',
-        minute: Number(e.minute) || 1, playerName: e.player || undefined,
-      }));
+      // 1. Sync all unsaved events (goals, cards, subs) first while match is still ongoing
+      await syncUnsavedEvents();
+
+      // 2. Finalize the match result with the score
       await matchApi.adminRecordResult(selectedMatch.id, {
         homeScore: Number(homeScore), awayScore: Number(awayScore),
-        scorers: [...homeScorers, ...awayScorers], resultType: 'full_time',
+        resultType: 'full_time',
       });
-      await syncUnsavedEvents().catch(() => { });
+      
       setTimerRunning(false);
       setMatchStatus('finished');
       toast.success('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
@@ -633,7 +635,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                 <div className="mt-4 pt-4 border-t border-navy-light flex flex-wrap gap-2 justify-center">
                   {(isScheduled || isOngoing) && (
                     <>
-                      <button onClick={() => setActiveModal('period')} className="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg text-xs font-bold border border-blue-500/20 transition-colors">Đổi Hiệp</button>
                       <button onClick={() => setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
                       <button onClick={() => setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
                     </>
@@ -750,7 +751,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       )}
 
       {/* Advanced Control Modals */}
-      <TransitionPeriodModal isOpen={activeModal === 'period'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <ForfeitMatchModal isOpen={activeModal === 'forfeit'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} currentMinute={timerMins} onSuccess={handleModalSuccess} />
       <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />

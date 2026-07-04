@@ -1,14 +1,30 @@
 import { Users, Shield, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getInitials, AVATAR_COLORS } from '../utils/constants';
+import { useEffect } from 'react';
+import useTeamStore from '../store/teamStore';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * LeaderboardTeamCard — Card hiển thị thông tin đội bóng trong trang LeaderboardTeams.
  */
 export default function LeaderboardTeamCard({ team, idx }) {
+  const { fetchPlayers, cachedPlayers } = useTeamStore(
+    useShallow(state => ({
+      fetchPlayers: state.fetchPlayers,
+      cachedPlayers: state.teamPlayersCache[team.id]?.players,
+    }))
+  );
+  useEffect(() => {
+    if (cachedPlayers === undefined) {
+      fetchPlayers(team.id, { approval_status: 'approved' }).catch(() => {});
+    }
+  }, [team.id, cachedPlayers, fetchPlayers]);
+
   const initial = getInitials(team.name);
   const colorIdx = (team.id ?? idx) % AVATAR_COLORS.length;
-  const playerCount = team.players_count ?? team.players ?? '—';
+  // Ưu tiên count từ API nếu có, không thì lấy từ cache cầu thủ, sau cùng là fallback
+  const playerCount = team._count?.team_players ?? team.players_count ?? cachedPlayers?.length ?? team.players?.length ?? '—';
 
   return (
     <div

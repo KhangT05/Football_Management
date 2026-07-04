@@ -107,8 +107,6 @@ export default function MatchDetail() {
   const hasError = !matchId || (!isLoading && !matchApiError && !match);
 
   const events = detailData?.events || [];
-  const homePlayers = detailData?.homePlayers || [];
-  const awayPlayers = detailData?.awayPlayers || [];
 
   const homeName = match?.home_team?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = match?.away_team?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
@@ -289,15 +287,11 @@ export default function MatchDetail() {
                       ))}
                     </ul>
                   </>
-                ) : homePlayers.length > 0 ? (
-                  <>
-                    <p className="text-gray-500 text-xs text-center py-2 italic mb-2">Danh sách đăng ký (chưa chốt đá chính)</p>
-                    <ul>
-                      {homePlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
-                    </ul>
-                  </>
                 ) : (
-                  <p className="text-gray-500 text-xs text-center py-4">Chưa có danh sách cầu thủ</p>
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
+                    <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
+                    <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
+                  </div>
                 )}
               </div>
 
@@ -324,15 +318,11 @@ export default function MatchDetail() {
                       ))}
                     </ul>
                   </>
-                ) : awayPlayers.length > 0 ? (
-                  <>
-                    <p className="text-gray-500 text-xs text-center py-2 italic mb-2">Danh sách đăng ký (chưa chốt đá chính)</p>
-                    <ul>
-                      {awayPlayers.map(tp => <PlayerItem key={tp.id} tp={tp} />)}
-                    </ul>
-                  </>
                 ) : (
-                  <p className="text-gray-500 text-xs text-center py-4">Chưa có danh sách cầu thủ</p>
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
+                    <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
+                    <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
+                  </div>
                 )}
               </div>
             </div>

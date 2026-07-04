@@ -6,7 +6,7 @@ import SeasonsSection from '../../components/admin/sections/SeasonsSection';
 export default function ManageTournaments() {
   return (
     <AdminLayout>
-      <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+      <div className="w-full space-y-8 animate-fade-in">
         {/* Header */}
         <div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
