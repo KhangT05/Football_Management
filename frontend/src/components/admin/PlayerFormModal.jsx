@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   UserPlus, Edit, X, AlertTriangle, CheckCircle2, Loader2,
@@ -13,15 +14,15 @@ const POSITIONS = [
 
 /**
  * mode: 'add' | 'edit'
- * onSubmitAdd({ name, user_email, date_of_birth, position, number })
- * onSubmitEdit({ number, position })
+ * onSave(values) — callback DUY NHẤT, cha (MyTeam) tự dispatch theo mode.
+ *   add:  { name, user_email, date_of_birth, position, number }
+ *   edit: { number, position }
  */
 export default function PlayerFormModal({
   mode,
   player,
   usedNumbers = [],
-  onSubmitAdd,
-  onSubmitEdit,
+  onSave,
   onClose,
   isSaving,
   serverError,
@@ -31,6 +32,7 @@ export default function PlayerFormModal({
   isImporting,
 }) {
   const isAdd = mode === 'add';
+  const fileInputId = useId(); // tránh đụng id tĩnh khi có nhiều modal / HMR
 
   const {
     register,
@@ -46,8 +48,7 @@ export default function PlayerFormModal({
     usedNumbers.find((p) => String(p.number) === String(value) && p.id !== player?.id);
 
   const submit = handleSubmit((values) => {
-    if (isAdd) onSubmitAdd(values);
-    else onSubmitEdit(values);
+    onSave?.(values);
   });
 
   return (
@@ -117,14 +118,14 @@ export default function PlayerFormModal({
                 <div className="relative flex-1">
                   <input
                     type="file"
-                    id="import-excel-modal"
+                    id={fileInputId}
                     accept=".xlsx,.xls"
                     className="hidden"
                     onChange={onImportExcel}
                     disabled={isSaving || isImporting}
                   />
                   <label
-                    htmlFor="import-excel-modal"
+                    htmlFor={fileInputId}
                     className={`w-full px-4 py-3.5 font-bold bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-500 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 ${isSaving || isImporting ? 'opacity-70 pointer-events-none' : ''
                       }`}
                   >
