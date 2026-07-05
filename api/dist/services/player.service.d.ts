@@ -1,4 +1,4 @@
-import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, PlayerDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
+import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, PlayerDetailDto, PlayerDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
 import { PrismaClient } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
@@ -7,7 +7,8 @@ export declare class PlayerService {
     private readonly teamPlayerQuery;
     constructor(prisma: PrismaClient);
     createPlayer(dto: CreatePlayerDto): Promise<PlayerDto>;
-    getPlayerById(id: number): Promise<PlayerDto | null>;
+    getPlayerById(id: number): Promise<PlayerDetailDto | null>;
+    private mapPlayerWithSeasons;
     getPlayerByIdOrFail(id: number): Promise<PlayerDto>;
     updatePlayer(id: number, dto: UpdatePlayerDto): Promise<PlayerDto>;
     softDeletePlayer(id: number): Promise<void>;
