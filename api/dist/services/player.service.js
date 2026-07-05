@@ -5,7 +5,7 @@ import { createAppError } from "../common/app.error.js";
 import { ApprovalStatus, PlayerPosition, Prisma } from "../generated/prisma/client.js";
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
-import { PLAYER_SELECT, TEAM_PLAYER_SELECT } from "../types/player.type.js";
+import { PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, TEAM_PLAYER_SELECT } from "../types/player.type.js";
 const MAX_IMPORT_ROWS = 200;
 const PLAYER_ROLE_NAME = "player";
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -36,9 +36,23 @@ export class PlayerService {
     async getPlayerById(id) {
         const player = await this.prisma.player.findFirst({
             where: { id, deleted_at: null },
-            select: PLAYER_SELECT,
+            select: PLAYER_SELECT_WITH_SEASONS,
         });
-        return player ? this.mapPlayer(player) : null;
+        return player ? this.mapPlayerWithSeasons(player) : null;
+    }
+    mapPlayerWithSeasons(p) {
+        const base = this.mapPlayer(p);
+        const seasons = p.team_players.flatMap((tp) => tp.team.season_teams.map((st) => ({
+            season_id: st.season.id,
+            season_name: st.season.name,
+            season_status: st.season.status,
+            team_id: tp.team.id,
+            team_name: tp.team.name,
+            season_team_status: st.status,
+            group_id: st.group_id,
+            jersey_number: tp.jersey_number,
+        })));
+        return { ...base, seasons };
     }
     async getPlayerByIdOrFail(id) {
         const player = await this.getPlayerById(id);

@@ -3,6 +3,7 @@ import {
     AddPlayerToTeamDto, BulkDeleteDto,
     CreatePlayerDto, ImportPlayerRowDto,
     importPlayerRowSchema,
+    PlayerDetailDto,
     PlayerDto, TeamPlayerDto,
     UpdatePlayerDto, UpdateTeamPlayerDto
 } from "../dtos/player.schema.js";
@@ -12,7 +13,7 @@ import { ApprovalStatus, PlayerPosition, Prisma, PrismaClient } from "../generat
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-import { ImportResult, ListTeamPlayersQuery, PLAYER_SELECT, PlayerRow, TEAM_PLAYER_SELECT, TeamPlayerRow } from "../types/player.type.js";
+import { ImportResult, ListTeamPlayersQuery, PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, PlayerRow, PlayerSeasonInfo, PlayerWithSeasonsRow, TEAM_PLAYER_SELECT, TeamPlayerRow } from "../types/player.type.js";
 
 const MAX_IMPORT_ROWS = 200;
 const PLAYER_ROLE_NAME = "player";
@@ -47,12 +48,28 @@ export class PlayerService {
         return this.mapPlayer(player);
     }
 
-    async getPlayerById(id: number): Promise<PlayerDto | null> {
+    async getPlayerById(id: number): Promise<PlayerDetailDto | null> {
         const player = await this.prisma.player.findFirst({
             where: { id, deleted_at: null },
-            select: PLAYER_SELECT,
+            select: PLAYER_SELECT_WITH_SEASONS,
         });
-        return player ? this.mapPlayer(player) : null;
+        return player ? this.mapPlayerWithSeasons(player) : null;
+    }
+    private mapPlayerWithSeasons(p: PlayerWithSeasonsRow): PlayerDetailDto {
+        const base = this.mapPlayer(p);
+        const seasons: PlayerSeasonInfo[] = p.team_players.flatMap((tp) =>
+            tp.team.season_teams.map((st) => ({
+                season_id: st.season.id,
+                season_name: st.season.name,
+                season_status: st.season.status,
+                team_id: tp.team.id,
+                team_name: tp.team.name,
+                season_team_status: st.status,
+                group_id: st.group_id,
+                jersey_number: tp.jersey_number,
+            }))
+        );
+        return { ...base, seasons };
     }
 
     async getPlayerByIdOrFail(id: number): Promise<PlayerDto> {
