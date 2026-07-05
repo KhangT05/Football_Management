@@ -96,7 +96,14 @@ export const importPlayerRowSchema = z.object({
     nationality: z.string().trim().max(100).nullable().optional(),
     jersey_number: z.number().int().min(1).max(99).optional(), // required logic ở service (team assignment)
 });
-
+export const createPlayerForTeamSchema = z.object({
+    name: z.string().trim().min(1).max(150),
+    user_email: z.string().trim().toLowerCase().email(),
+    date_of_birth: z.coerce.date(),
+    position: PlayerPositionEnum,
+    jersey_number: z.number().int().min(1).max(99),
+});
+export type CreatePlayerForTeamDto = z.infer<typeof createPlayerForTeamSchema>;
 // ============================================================
 // TYPES
 // ============================================================

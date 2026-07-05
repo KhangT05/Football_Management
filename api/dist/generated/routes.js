@@ -1967,33 +1967,6 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsUserController_lookupByEmail = {
-        email: { "in": "query", "name": "email", "required": true, "dataType": "string" },
-    };
-    app.get('/users/lookup', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.lookupByEmail)), async function UserController_lookupByEmail(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsUserController_lookupByEmail, request, response });
-            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
-            const controller = await container.get(UserController);
-            if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-            }
-            await templateService.apiHandler({
-                methodName: 'lookupByEmail',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsUserController_findAll = {
         page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
         per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },

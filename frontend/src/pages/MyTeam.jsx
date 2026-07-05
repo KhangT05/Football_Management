@@ -365,35 +365,24 @@ export default function MyTeam() {
     setPlayerModal('add');
   };
 
-  // values: { user_email, date_of_birth, position, number } — shape từ PlayerFormModal (add mode)
+  // values: { name, user_email, date_of_birth, position, number }
   const handleAddSave = async (values) => {
     setIsSaving(true);
     setModalError('');
     try {
-      const lookupRes = await userApi.lookupByEmail(values.user_email.trim());
-      const foundUser = parseSingle(lookupRes);
-      if (!foundUser) { setModalError('Không tìm thấy tài khoản với email này.'); return; }
-
-      const createRes = await playerApi.create({
-        user_id: foundUser.id,
+      await playerApi.createForTeam(activeTeam.id, {
+        name: values.name.trim(),
+        user_email: values.user_email.trim(),
         date_of_birth: values.date_of_birth,
         position: values.position,
-      });
-      const newPlayer = parseSingle(createRes);
-
-      await playerApi.addToTeam(activeTeam.id, {
-        player_id: newPlayer.id,
         jersey_number: parseInt(values.number, 10),
-        position: values.position,
-        role: 'player',
       });
 
-      toast.success(`Đã thêm "${foundUser.name}" (áo số ${values.number}) vào đội!`);
+      toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội!`);
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      // 404 từ lookup, 409 nếu Player user_id đã tồn tại (BE chưa dedupe),
-      // hoặc 422 nếu jersey_number trùng (BE chưa xác nhận có check trùng số áo không)
+      // 409: email đã có Player profile trùng team, hoặc jersey trùng
       setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ.');
     } finally {
       setIsSaving(false);
@@ -501,8 +490,8 @@ export default function MyTeam() {
                   key={t.id}
                   onClick={() => handleSwitchTeam(t.id)}
                   className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${t.id === activeTeamId
-                      ? 'bg-neon/10 border-neon/40 text-neon shadow-[0_0_15px_rgba(57,255,20,0.2)]'
-                      : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white hover:-translate-y-0.5'
+                    ? 'bg-neon/10 border-neon/40 text-neon shadow-[0_0_15px_rgba(57,255,20,0.2)]'
+                    : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white hover:-translate-y-0.5'
                     }`}
                 >
                   <span className="text-xl">{t.emoji}</span>
@@ -687,8 +676,8 @@ export default function MyTeam() {
                         key={s.id}
                         onClick={() => setActiveMatchSeasonId(s.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all whitespace-nowrap ${s.id === activeMatchSeasonId
-                            ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                            : 'bg-navy/50 border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                          : 'bg-navy/50 border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
                           }`}
                       >
                         {s.name}

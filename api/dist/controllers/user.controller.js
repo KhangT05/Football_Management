@@ -12,18 +12,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
 import { UserService } from "../services/user.service.js";
-import { createAppError } from "../common/app.error.js";
 let UserController = class UserController extends Controller {
     service;
     constructor(service) {
         super();
         this.service = service;
-    }
-    async lookupByEmail(email) {
-        const user = await this.service.findSafeByEmail(email);
-        if (!user)
-            throw createAppError("NOT_FOUND", `User with email ${email} not found`);
-        return user;
     }
     async findAll(page = 1, per_page = 20, q, sort, direction) {
         return this.service.findAll({ page, per_page, q, sort, direction });
@@ -46,13 +39,6 @@ let UserController = class UserController extends Controller {
         return this.service.restore(id);
     }
 };
-__decorate([
-    Get("lookup"),
-    __param(0, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "lookupByEmail", null);
 __decorate([
     Get("/"),
     __param(0, Query()),

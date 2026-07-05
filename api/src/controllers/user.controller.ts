@@ -13,13 +13,6 @@ export class UserController extends Controller {
     super();
   }
 
-  @Get("lookup")
-  async lookupByEmail(@Query() email: string): Promise<SafeUser> {
-    const user = await this.service.findSafeByEmail(email);
-    if (!user) throw createAppError("NOT_FOUND", `User with email ${email} not found`);
-    return user;
-  }
-
   @Get("/")
   async findAll(
     @Query() page = 1,

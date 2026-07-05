@@ -7,7 +7,6 @@ export declare class UserService {
     private readonly query;
     private readonly rolesRelationService;
     constructor(prisma: PrismaClient);
-    findSafeByEmail(email: string): Promise<SafeUser | null>;
     findAll(req?: QueryRequest): Promise<PaginatedResult<SafeUser>>;
     findById(id: number): Promise<SafeUser | null>;
     findByIdOrFail(id: number): Promise<SafeUser>;

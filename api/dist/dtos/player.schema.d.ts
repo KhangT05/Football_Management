@@ -151,6 +151,19 @@ export declare const importPlayerRowSchema: z.ZodObject<{
     nationality: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     jersey_number: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
+export declare const createPlayerForTeamSchema: z.ZodObject<{
+    name: z.ZodString;
+    user_email: z.ZodString;
+    date_of_birth: z.ZodCoercedDate<unknown>;
+    position: z.ZodEnum<{
+        readonly goalkeeper: "goalkeeper";
+        readonly defender: "defender";
+        readonly midfielder: "midfielder";
+        readonly forward: "forward";
+    }>;
+    jersey_number: z.ZodNumber;
+}, z.core.$strip>;
+export type CreatePlayerForTeamDto = z.infer<typeof createPlayerForTeamSchema>;
 export type CreatePlayerDto = z.infer<typeof createPlayerSchema>;
 export type UpdatePlayerDto = z.infer<typeof updatePlayerSchema>;
 export type AddPlayerToTeamDto = z.infer<typeof addPlayerToTeamSchema>;
