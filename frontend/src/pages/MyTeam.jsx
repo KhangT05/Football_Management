@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
-  ShieldOff, ArrowRight, X, Loader2, AlertTriangle,
-  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard,
-  Shield, Calendar,
+  AlertTriangle, CheckCircle2, Loader2, X,
+  Search, ArrowUpDown, CreditCard, Shield, Calendar,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
+import { teamApi, playerApi, userApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,41 +14,41 @@ import LineupBuilderModal from '../components/modals/LineupBuilderModal';
 import EditTeamModal from '../components/modals/EditTeamModal';
 import NoTeamState from '../components/myteam/NoTeamState';
 import PlayerDeleteModal from '../components/myteam/PlayerDeleteModal';
-import PlayerFormModal from '../components/myteam/PlayerFormModal';
+import PlayerFormModal from '../components/myteam/PlayerFormModal'; // react-hook-form based, edit mode has no name/email field
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 
 // ─── Constants ─────────────────────────────────────────────
 const MATCH_STATUS_LABEL = {
-  scheduled:  'Chưa đấu',
-  upcoming:   'Sắp diễn ra',
-  ongoing:    'Đang diễn ra',
-  live:       'Đang diễn ra',
-  completed:  'Đã kết thúc',
-  finished:   'Đã kết thúc',
-  cancelled:  'Bị hủy',
-  postponed:  'Hoãn',
+  scheduled: 'Chưa đấu',
+  upcoming: 'Sắp diễn ra',
+  ongoing: 'Đang diễn ra',
+  live: 'Đang diễn ra',
+  completed: 'Đã kết thúc',
+  finished: 'Đã kết thúc',
+  cancelled: 'Bị hủy',
+  postponed: 'Hoãn',
 };
 
 const MATCH_STATUS_CLASS = {
-  scheduled:  'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  upcoming:   'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  ongoing:    'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
-  live:       'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
-  completed:  'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  finished:   'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  cancelled:  'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  postponed:  'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+  scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  upcoming: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  ongoing: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
+  live: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
+  completed: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  finished: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  postponed: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
 };
 
 const normalizePosition = (posStr) => {
   if (!posStr) return 'OTHER';
   const p = posStr.toUpperCase().trim();
   if (p === 'GOALKEEPER' || p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
-  if (p === 'DEFENDER'   || p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
+  if (p === 'DEFENDER' || p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
   if (p === 'MIDFIELDER' || p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
-  if (p === 'FORWARD'    || p.includes('FW')  || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
+  if (p === 'FORWARD' || p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
   return p;
 };
 
@@ -61,9 +59,9 @@ const formatMatchTime = (dateStr) => {
   return isNaN(d.getTime()) ? 'Chưa xếp lịch' : d.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 };
 
-const extractFilename = (cd, fallback) => {
-  if (!cd) return fallback;
-  const m = cd.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
+const extractFilename = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+  const m = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
   return m ? decodeURIComponent(m[1]) : fallback;
 };
 
@@ -79,61 +77,75 @@ const parseList = (res) => {
 };
 
 /** Map TeamPlayer record → normalised player object.
- *  API trả về: teamPlayer.player.user.name (tên nằm ở bảng User)
+ *  API trả về: teamPlayer.player.user.name (tên nằm ở bảng User).
+ *  goals: PlayerDto/TeamPlayerDto hiện chưa có endpoint cập nhật/persist —
+ *  hiển thị nếu BE trả sẵn field, không có form nào ghi được giá trị này.
  */
 const normalizePlayer = (tp) => ({
-  id:               tp.id,
-  player_id:        tp.player_id ?? tp.player?.id,
-  name:             tp.player?.user?.name ?? tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
-  number:           tp.jersey_number ?? tp.number ?? 0,
-  position:         tp.position ?? 'MID',
-  goals:            tp.goals_scored ?? tp.goals ?? 0,
-  status:           tp.status ?? 'active',
-  approval_status:  tp.approval_status ?? 'approved',
-  role:             tp.role ?? 'player',
-  avatar:           tp.player?.user?.avatar ?? tp.player?.avatar ?? null,
+  id: tp.id,
+  player_id: tp.player_id ?? tp.player?.id,
+  name: tp.player?.user?.name ?? tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
+  email: tp.player?.user?.email ?? null,
+  number: tp.jersey_number ?? tp.number ?? 0,
+  position: tp.position ?? 'MID',
+  goals: tp.goals_scored ?? tp.goals ?? 0,
+  status: tp.status ?? 'active',
+  approval_status: tp.approval_status ?? 'approved',
+  role: tp.role ?? 'player',
+  avatar: tp.player?.user?.avatar ?? tp.player?.avatar ?? null,
 });
 
 // ─── Main Component ────────────────────────────────────────
 export default function MyTeam() {
   const { user } = useAuthStore(useShallow(s => ({ user: s.user })));
-  const toast    = useToastStore();
+  const toast = useToastStore();
 
   // ── Multi-team state ─────────────────────────────────────
-  const [isLoading,         setIsLoading]         = useState(true);
-  const [teams,             setTeams]             = useState([]);   // basic list (all teams user owns)
-  const [activeTeamId,      setActiveTeamId]      = useState(null);
-  const [teamDetail,        setTeamDetail]        = useState(null); // enriched active-team data
-  const [players,           setPlayers]           = useState([]);
-  const [matches,           setMatches]           = useState([]);
-  const [allSeasons,        setAllSeasons]        = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [teams, setTeams] = useState([]);   // basic list (all teams user owns)
+  const [activeTeamId, setActiveTeamId] = useState(null);
+  const [teamDetail, setTeamDetail] = useState(null); // enriched active-team data
+  const [players, setPlayers] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [allSeasons, setAllSeasons] = useState([]);
   const [activeMatchSeasonId, setActiveMatchSeasonId] = useState(null);
-  const [isLoadingMatches,  setIsLoadingMatches]  = useState(false);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
-  // Derived – always use this instead of teamDetail directly
+  // Derived — always use this instead of teamDetail directly
   const activeTeam = useMemo(
     () => teamDetail ?? teams.find(t => t.id === activeTeamId) ?? null,
     [teamDetail, teams, activeTeamId],
   );
 
   // ── UI State ─────────────────────────────────────────────
-  const [activeTab,    setActiveTab]    = useState('roster');
-  const [search,       setSearch]       = useState('');
-  const [sortField,    setSortField]    = useState('number');
-  const [showPayment,  setShowPayment]  = useState(false);
+  const [activeTab, setActiveTab] = useState('roster');
+  const [search, setSearch] = useState('');
+  const [sortField, setSortField] = useState('number');
+  const [showPayment, setShowPayment] = useState(false);
 
   // Modal state
-  const [editTeamModalOpen,     setEditTeamModalOpen]     = useState(false);
-  const [lineupModalMatch,      setLineupModalMatch]      = useState(null);
-  const [playerModal,           setPlayerModal]           = useState(null); // null | 'add' | 'edit'
-  const [editingPlayer,         setEditingPlayer]         = useState(null);
-  const [modalError,            setModalError]            = useState('');
-  const [isSaving,              setIsSaving]              = useState(false);
+  const [editTeamModalOpen, setEditTeamModalOpen] = useState(false);
+  const [lineupModalMatch, setLineupModalMatch] = useState(null);
+  const [playerModal, setPlayerModal] = useState(null); // null | 'add' | 'edit'
+  const [editingPlayer, setEditingPlayer] = useState(null);
+  const [modalError, setModalError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   // Delete confirm
   const [deletingPlayer, setDeletingPlayer] = useState(null);
-  const [isDeleting,     setIsDeleting]     = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const handleItemsPerPageChange = (n) => { setItemsPerPage(n); setCurrentPage(1); };
+
+  const [prevFilter, setPrevFilter] = useState({ search, sortField });
+  if (prevFilter.search !== search || prevFilter.sortField !== sortField) {
+    setPrevFilter({ search, sortField });
+    setCurrentPage(1);
+  }
 
   // ── Load matches for active-team + selected season ────────
   const loadMatches = useCallback(async (teamId, seasonId) => {
@@ -157,33 +169,33 @@ export default function MyTeam() {
     try {
       // Re-fetch raw team list to get up-to-date data
       const teamsRes = await teamApi.getTeams({ per_page: 50 });
-      const allRaw   = parseList(teamsRes);
-      const myTeam   = allRaw.find(t => t.id === teamId);
+      const allRaw = parseList(teamsRes);
+      const myTeam = allRaw.find(t => t.id === teamId);
       if (!myTeam) return;
 
-      // Load players — use playerApi.listTeamPlayers (correct endpoint)
+      // Players — correct endpoint per PlayerDto/TeamPlayerDto join
       const playersRes = await playerApi.listTeamPlayers(teamId, { per_page: 100 });
       setPlayers(parseList(playersRes).map(normalizePlayer));
 
       // Build enriched detail object
       let enriched = {
-        id:                 myTeam.id,
-        name:               myTeam.name,
-        emoji:              '🛡️',
-        status:             myTeam.is_active ? 'approved' : 'pending',
+        id: myTeam.id,
+        name: myTeam.name,
+        emoji: '🛡️',
+        status: myTeam.is_active ? 'approved' : 'pending',
         registrationStatus: null,
-        activeSeasonId:     null,
+        activeSeasonId: null,
         activeSeasonTeamId: null,
-        captain:            myTeam.coach_name   ?? '—',
-        phone:              myTeam.phone         ?? '—',
-        primaryColor:       myTeam.primary_color ?? '—',
-        colorHex:           myTeam.color_hex     ?? '#334155',
-        registeredAt:       myTeam.created_at
-                              ? new Date(myTeam.created_at).toLocaleDateString('vi-VN')
-                              : '—',
-        season:             '—',
-        description:        myTeam.description,
-        logo:               myTeam.logo,
+        captain: myTeam.coach_name ?? '—',
+        phone: myTeam.phone ?? '—',
+        primaryColor: myTeam.primary_color ?? '—',
+        colorHex: myTeam.color_hex ?? '#334155',
+        registeredAt: myTeam.created_at
+          ? new Date(myTeam.created_at).toLocaleDateString('vi-VN')
+          : '—',
+        season: '—',
+        description: myTeam.description,
+        logo: myTeam.logo,
       };
 
       // Load season info
@@ -198,29 +210,29 @@ export default function MyTeam() {
         if (active) {
           if (!activeMatchSeasonId) setActiveMatchSeasonId(active.id);
 
-          const stRes  = await seasonTeamApi.getAll({ team_id: teamId, season_id: active.id });
+          const stRes = await seasonTeamApi.getAll({ team_id: teamId, season_id: active.id });
           const stData = stRes?.data?.data || stRes?.data || [];
-          const st     = Array.isArray(stData) ? stData[0] : stData;
+          const st = Array.isArray(stData) ? stData[0] : stData;
 
           let homeJersey = null;
           if (st) {
             try {
-              const jRes   = await jerseyApi.getBySeasonTeam(st.id);
+              const jRes = await jerseyApi.getBySeasonTeam(st.id);
               const jerseys = Array.isArray(jRes?.data?.data) ? jRes.data.data
-                            : Array.isArray(jRes?.data) ? jRes.data
-                            : Array.isArray(jRes) ? jRes : [];
+                : Array.isArray(jRes?.data) ? jRes.data
+                  : Array.isArray(jRes) ? jRes : [];
               homeJersey = jerseys.find(j => j.type === 'home');
             } catch (e) { console.warn('Cannot load jersey:', e); }
           }
 
           enriched = {
             ...enriched,
-            season:             active.name,
-            activeSeasonId:     active.id,
+            season: active.name,
+            activeSeasonId: active.id,
             activeSeasonTeamId: st?.id ?? null,
             registrationStatus: st?.status ?? null,
-            primaryColor:       homeJersey?.secondary_color || enriched.primaryColor,
-            colorHex:           homeJersey?.primary_color   || enriched.colorHex,
+            primaryColor: homeJersey?.secondary_color || enriched.primaryColor,
+            colorHex: homeJersey?.primary_color || enriched.colorHex,
           };
         }
       } catch (e) { console.warn('Cannot load season info:', e); }
@@ -238,7 +250,7 @@ export default function MyTeam() {
     if (!user?.id) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const res     = await teamApi.getTeams({ per_page: 50 });
+      const res = await teamApi.getTeams({ per_page: 50 });
       const rawList = parseList(res);
       // API returns only user's teams; filter by user_id as safety
       const myTeams = rawList.filter(t => t.user_id === user.id);
@@ -246,13 +258,13 @@ export default function MyTeam() {
       if (myTeams.length === 0) { setTeams([]); setIsLoading(false); return; }
 
       const basicTeams = myTeams.map(t => ({
-        id:    t.id,
-        name:  t.name,
+        id: t.id,
+        name: t.name,
         emoji: '🛡️',
         status: t.is_active ? 'approved' : 'pending',
       }));
       setTeams(basicTeams);
-      setActiveTeamId(basicTeams[0].id);
+      setActiveTeamId(basicTeams[0].id); // triggers loadTeamDetail effect below
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Không thể tải danh sách đội bóng.');
       setIsLoading(false);
@@ -304,45 +316,27 @@ export default function MyTeam() {
     )
     .sort((a, b) => {
       if (sortField === 'number') return (a.number ?? 0) - (b.number ?? 0);
-      if (sortField === 'name')   return (a.name ?? '').localeCompare(b.name ?? '');
-      if (sortField === 'goals')  return (b.goals ?? 0) - (a.goals ?? 0);
+      if (sortField === 'name') return (a.name ?? '').localeCompare(b.name ?? '');
+      if (sortField === 'goals') return (b.goals ?? 0) - (a.goals ?? 0);
       return 0;
     });
 
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const handleItemsPerPageChange = (n) => { setItemsPerPage(n); setCurrentPage(1); };
-
-  const [prevFilter, setPrevFilter] = useState({ search, sortField });
-  if (prevFilter.search !== search || prevFilter.sortField !== sortField) {
-    setPrevFilter({ search, sortField });
-    setCurrentPage(1);
-  }
-
-  const totalPages      = Math.ceil(displayed.length / itemsPerPage) || 1;
-  const safePage        = Math.min(currentPage, totalPages);
+  const totalPages = Math.ceil(displayed.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = displayed.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // ── Validate form ─────────────────────────────────────────
-  const validateForm = useCallback((form, excludeId = null) => {
-    if (!form.name?.trim()) return 'Vui lòng nhập họ tên cầu thủ.';
-    if (!form.number || isNaN(form.number)) return 'Vui lòng nhập số áo hợp lệ.';
-    const conflict = players.find(p => String(p.number) === String(form.number) && p.id !== excludeId);
-    if (conflict) return `Số áo ${form.number} đã được dùng bởi ${conflict.name}.`;
-    return '';
-  }, [players]);
-
-  // ── EDIT Team ─────────────────────────────────────────────
   const handleEditTeamSave = async (form) => {
     setIsSaving(true);
     try {
       await teamApi.update(activeTeam.id, form);
       if (activeTeam.activeSeasonTeamId && form.color_hex) {
-        try { await jerseyApi.upsert(activeTeam.activeSeasonTeamId, { type: 'home', primary_color: form.color_hex }); }
-        catch (e) { console.warn('Cannot update jersey:', e); }
+        try {
+          await jerseyApi.upsert(activeTeam.activeSeasonTeamId, { type: 'home', primary_color: form.color_hex });
+        } catch (e) {
+          console.warn('Could not update jersey color:', e);
+        }
       }
-      toast.success('Đã cập nhật thông tin đội bóng!');
+      toast.success('Đã cập nhật thông tin đội bóng thành công!');
       setEditTeamModalOpen(false);
       await reloadCurrent();
     } catch (apiErr) {
@@ -365,38 +359,55 @@ export default function MyTeam() {
     } finally { setIsSaving(false); }
   };
 
-  // ── ADD Player ────────────────────────────────────────────
-  const openAddModal = () => { setEditingPlayer(null); setModalError(''); setPlayerModal('add'); };
+  const openAddModal = () => {
+    setEditingPlayer(null);
+    setModalError('');
+    setPlayerModal('add');
+  };
 
-  const handleAddSave = async (form) => {
-    const err = validateForm(form);
-    if (err) { setModalError(err); return; }
+  // values: { user_email, date_of_birth, position, number } — shape từ PlayerFormModal (add mode)
+  const handleAddSave = async (values) => {
     setIsSaving(true);
+    setModalError('');
     try {
-      const createRes = await playerApi.create({ name: form.name.trim() });
-      const newPlayer = parseSingle(createRes);
-      await playerApi.addToTeam(activeTeam.id, {
-        player_id:     newPlayer.id,
-        jersey_number: parseInt(form.number),
-        position:      form.position,
-        role:          'player',
+      const lookupRes = await userApi.lookupByEmail(values.user_email.trim());
+      const foundUser = parseSingle(lookupRes);
+      if (!foundUser) { setModalError('Không tìm thấy tài khoản với email này.'); return; }
+
+      const createRes = await playerApi.create({
+        user_id: foundUser.id,
+        date_of_birth: values.date_of_birth,
+        position: values.position,
       });
-      toast.success(`Đã thêm "${form.name.trim()}" (áo số ${form.number}) vào đội!`);
+      const newPlayer = parseSingle(createRes);
+
+      await playerApi.addToTeam(activeTeam.id, {
+        player_id: newPlayer.id,
+        jersey_number: parseInt(values.number, 10),
+        position: values.position,
+        role: 'player',
+      });
+
+      toast.success(`Đã thêm "${foundUser.name}" (áo số ${values.number}) vào đội!`);
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ. Vui lòng thử lại.');
-    } finally { setIsSaving(false); }
+      // 404 từ lookup, 409 nếu Player user_id đã tồn tại (BE chưa dedupe),
+      // hoặc 422 nếu jersey_number trùng (BE chưa xác nhận có check trùng số áo không)
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const fd = new FormData();
-      fd.append('file', file);
+      const formData = new FormData();
+      formData.append('file', file);
       setIsSaving(true);
-      await playerApi.importTeamPlayers(activeTeam.id, fd);
+      await playerApi.importTeamPlayers(activeTeam.id, formData);
       toast.success('Nhập dữ liệu từ file Excel thành công!');
       await loadTeamDetail(activeTeamId);
     } catch (err) {
@@ -407,35 +418,38 @@ export default function MyTeam() {
   const handleDownloadTemplate = async () => {
     setIsDownloadingTemplate(true);
     try {
-      const res      = await playerApi.downloadImportTemplate();
-      const blob     = res.data;
+      const res = await playerApi.downloadImportTemplate();
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      if (!blob.size) throw new Error('Empty response — kiểm tra axiosClient interceptor có unwrap blob response không');
       const filename = extractFilename(res?.headers?.['content-disposition'], 'import-template.xlsx');
-      const url  = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url; link.download = filename;
       document.body.appendChild(link); link.click(); link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể tải file mẫu Excel.');
-    } finally { setIsDownloadingTemplate(false); }
+      toast.error(err?.response?.data?.message || err.message || 'Không thể tải file mẫu Excel.');
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
   };
 
-  // ── EDIT Player ───────────────────────────────────────────
-  const openEditModal = (player) => { setEditingPlayer(player); setModalError(''); setPlayerModal('edit'); };
+  const openEditModal = (player) => {
+    setEditingPlayer(player);
+    setModalError('');
+    setPlayerModal('edit');
+  };
 
-  const handleEditSave = async (form) => {
-    const err = validateForm(form, editingPlayer.id);
-    if (err) { setModalError(err); return; }
+  // values: { number, position } — mode edit của PlayerFormModal KHÔNG có name/email
+  const handleEditSave = async (values) => {
     setIsSaving(true);
+    setModalError('');
     try {
       await playerApi.updateTeamPlayer(activeTeam.id, editingPlayer.id, {
-        jersey_number: parseInt(form.number),
-        position:      form.position,
+        jersey_number: parseInt(values.number, 10),
+        position: values.position,
       });
-      if (editingPlayer.player_id && form.name.trim() !== editingPlayer.name) {
-        await playerApi.update(editingPlayer.player_id, { name: form.name.trim() });
-      }
-      toast.success(`Đã cập nhật cầu thủ "${form.name}".`);
+      toast.success(`Đã cập nhật cầu thủ "${editingPlayer.name}".`);
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
@@ -443,7 +457,6 @@ export default function MyTeam() {
     } finally { setIsSaving(false); }
   };
 
-  // ── DELETE Player ─────────────────────────────────────────
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
@@ -456,7 +469,6 @@ export default function MyTeam() {
     } finally { setIsDeleting(false); }
   };
 
-  // ── No team ───────────────────────────────────────────────
   if (!isLoading && teams.length === 0) {
     return (
       <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-16 relative overflow-hidden">
@@ -471,7 +483,6 @@ export default function MyTeam() {
   // ── Render ────────────────────────────────────────────────
   return (
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12 relative overflow-hidden">
-      {/* Background Orbs */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay z-0 pointer-events-none" />
@@ -489,11 +500,10 @@ export default function MyTeam() {
                 <button
                   key={t.id}
                   onClick={() => handleSwitchTeam(t.id)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${
-                    t.id === activeTeamId
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${t.id === activeTeamId
                       ? 'bg-neon/10 border-neon/40 text-neon shadow-[0_0_15px_rgba(57,255,20,0.2)]'
                       : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white hover:-translate-y-0.5'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl">{t.emoji}</span>
                   <span className="truncate max-w-[140px]">{t.name}</span>
@@ -508,11 +518,13 @@ export default function MyTeam() {
 
         {/* ─── Status Banners ──────────────────────────── */}
         {!isLoading && activeTeam?.status === 'pending' && (
-          <div className="bg-navy border border-navy-light p-5 rounded-2xl mb-8 flex items-start gap-4 animate-slide-up shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-            <div className="p-2 bg-red-500/20 rounded-xl shrink-0"><AlertTriangle className="w-6 h-6 text-red-500" /></div>
+          <div className="bg-yellow-500/10 border border-yellow-500/30 p-5 rounded-2xl mb-8 flex items-start gap-4 animate-slide-up shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+            <div className="p-2 bg-yellow-500/20 rounded-xl shrink-0">
+              <AlertTriangle className="w-6 h-6 text-yellow-400" />
+            </div>
             <div>
-              <p className="text-red-500 font-black text-lg mb-1 tracking-tight">Đội bóng đang chờ duyệt</p>
-              <p className="text-red-400 font-medium">Hồ sơ đăng ký đã được gửi. Vui lòng chờ Admin xác nhận. Bạn vẫn có thể chuẩn bị nhân sự trong thời gian này.</p>
+              <p className="text-yellow-400 font-black text-lg mb-1 tracking-tight">Đội bóng đang chờ duyệt</p>
+              <p className="text-yellow-500/80 font-medium">Hồ sơ đăng ký của bạn đã được gửi. Vui lòng chờ Admin xác nhận.</p>
             </div>
           </div>
         )}
@@ -574,9 +586,8 @@ export default function MyTeam() {
           </div>
         )}
 
-        {/* ─── Team Header ─────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 animate-slide-up">
-          <div className="flex items-center gap-5 min-w-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-slide-up relative">
+          <div className="flex items-center gap-6">
             {isLoading ? (
               <>
                 <div className="skeleton w-20 h-20 rounded-3xl shrink-0" />
@@ -635,11 +646,10 @@ export default function MyTeam() {
           )}
         </div>
 
-        {/* ─── Tabs ─────────────────────────────────────── */}
         {!isLoading && (
           <div className="flex items-center gap-2 border-b border-navy-light mb-8 animate-fade-in overflow-x-auto custom-scrollbar">
             {[
-              { id: 'roster',  label: `Đội hình (${players.length})` },
+              { id: 'roster', label: `Đội hình (${players.length})` },
               { id: 'matches', label: 'Lịch thi đấu' },
             ].map(tab => (
               <button
@@ -650,9 +660,8 @@ export default function MyTeam() {
                     loadMatches(activeTeamId, activeMatchSeasonId);
                   }
                 }}
-                className={`pb-4 px-3 font-black uppercase tracking-wider text-sm border-b-2 transition-all whitespace-nowrap shrink-0 ${
-                  activeTab === tab.id ? 'border-neon text-neon' : 'border-transparent text-gray-500 hover:text-gray-300'
-                }`}
+                className={`pb-4 px-3 font-black uppercase tracking-wider text-sm border-b-2 transition-all whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'border-neon text-neon' : 'border-transparent text-gray-500 hover:text-gray-300'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -662,14 +671,12 @@ export default function MyTeam() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ─── Main Content ───────────────────────────── */}
-          <div className="lg:col-span-2 space-y-5 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
 
             {/* ─── Matches Tab ──────────────────────────── */}
             {activeTab === 'matches' && (
               <div className="space-y-4">
 
-                {/* Season Switcher */}
                 {allSeasons.length > 1 && (
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
@@ -679,11 +686,10 @@ export default function MyTeam() {
                       <button
                         key={s.id}
                         onClick={() => setActiveMatchSeasonId(s.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all whitespace-nowrap ${
-                          s.id === activeMatchSeasonId
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all whitespace-nowrap ${s.id === activeMatchSeasonId
                             ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
                             : 'bg-navy/50 border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
-                        }`}
+                          }`}
                       >
                         {s.name}
                       </button>
@@ -765,9 +771,9 @@ export default function MyTeam() {
                         onChange={e => setSortField(e.target.value)}
                         className="pl-3 pr-8 py-3 bg-navy-dark border border-navy-light rounded-xl text-white text-sm font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer transition-all"
                       >
-                        <option value="number">Số áo</option>
-                        <option value="name">Tên</option>
-                        <option value="goals">Bàn thắng</option>
+                        <option value="number">Sắp xếp: Số áo</option>
+                        <option value="name">Sắp xếp: Tên</option>
+                        <option value="goals">Sắp xếp: Bàn thắng</option>
                       </select>
                       <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -795,7 +801,6 @@ export default function MyTeam() {
                       </div>
                     )}
                   </div>
-
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left whitespace-nowrap">
                       <thead>
@@ -896,7 +901,6 @@ export default function MyTeam() {
                       </tbody>
                     </table>
                   </div>
-
                   {!isLoading && displayed.length > 0 && (
                     <div className="px-6 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
                       <span>Hiển thị <span className="text-white">{displayed.length}</span>/{players.length} cầu thủ</span>
@@ -904,7 +908,6 @@ export default function MyTeam() {
                     </div>
                   )}
                 </div>
-
                 {totalPages > 1 && (
                   <div className="flex justify-center mt-6">
                     <Pagination
@@ -934,7 +937,7 @@ export default function MyTeam() {
               </h3>
               {isLoading ? (
                 <div className="space-y-4">
-                  {[1,2,3,4].map(i => (
+                  {[1, 2, 3, 4].map(i => (
                     <div key={i} className="flex justify-between items-center">
                       <div className="skeleton h-4 w-24 rounded" />
                       <div className="skeleton h-5 w-28 rounded-lg" />
@@ -981,7 +984,7 @@ export default function MyTeam() {
               </h3>
               {isLoading ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {[1,2,3,4].map(i => <div key={i} className="skeleton h-20 rounded-2xl" />)}
+                  {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-20 rounded-2xl" />)}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 relative z-10">
@@ -991,15 +994,16 @@ export default function MyTeam() {
                       acc[pos] = (acc[pos] || 0) + 1;
                       return acc;
                     }, {});
+                    const totalGoals = players.reduce((s, p) => s + (p.goals || 0), 0);
                     return [
-                      { label: 'Cầu thủ',   value: players.length,                                            color: 'text-white',       bg: 'bg-navy-dark border-navy-light' },
-                      { label: 'Bàn thắng', value: players.reduce((s, p) => s + (p.goals || 0), 0),          color: 'text-neon',        bg: 'bg-neon/5 border-neon/20' },
-                      { label: 'Đã duyệt',  value: players.filter(p => p.approval_status === 'approved').length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/20' },
-                      { label: 'Chờ duyệt', value: players.filter(p => p.approval_status === 'pending').length,  color: 'text-amber-400',   bg: 'bg-amber-400/5 border-amber-400/20' },
-                      { label: 'Thủ môn',   value: byPos['GK']  || 0,  color: 'text-yellow-400',  bg: 'bg-yellow-400/10 border-yellow-400/30' },
-                      { label: 'Hậu vệ',    value: byPos['DEF'] || 0,  color: 'text-blue-400',    bg: 'bg-blue-400/10 border-blue-400/30' },
-                      { label: 'Tiền vệ',   value: byPos['MID'] || 0,  color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
-                      { label: 'Tiền đạo',  value: byPos['FW']  || 0,  color: 'text-red-400',     bg: 'bg-red-400/10 border-red-400/30' },
+                      { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
+                      { label: 'Bàn thắng', value: totalGoals, color: 'text-neon', bg: 'bg-neon/5 border-neon/20' },
+                      { label: 'Đã duyệt', value: players.filter(p => p.approval_status === 'approved').length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/20' },
+                      { label: 'Chờ duyệt', value: players.filter(p => p.approval_status === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-400/5 border-amber-400/20' },
+                      { label: 'Thủ môn', value: byPos['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
+                      { label: 'Hậu vệ', value: byPos['DEF'] || 0, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/30' },
+                      { label: 'Tiền vệ', value: byPos['MID'] || 0, color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
+                      { label: 'Tiền đạo', value: byPos['FW'] || 0, color: 'text-red-400', bg: 'bg-red-400/10 border-red-400/30' },
                     ].map((stat, idx) => (
                       <div
                         key={stat.label}
@@ -1023,11 +1027,13 @@ export default function MyTeam() {
         <PlayerFormModal
           mode={playerModal}
           player={editingPlayer}
-          onSave={playerModal === 'add' ? handleAddSave : handleEditSave}
+          usedNumbers={players}
+          onSubmitAdd={handleAddSave}
+          onSubmitEdit={handleEditSave}
           onClose={() => { setPlayerModal(null); setModalError(''); }}
           isSaving={isSaving}
-          error={modalError}
-          onImport={handleImportExcel}
+          serverError={modalError}
+          onImportExcel={handleImportExcel}
           onDownloadTemplate={handleDownloadTemplate}
           isDownloadingTemplate={isDownloadingTemplate}
         />
@@ -1061,7 +1067,7 @@ export default function MyTeam() {
         />
       )}
 
-      {lineupModalMatch && (
+      {lineupModalMatch && activeTeam && (
         <LineupBuilderModal
           match={lineupModalMatch}
           teamId={activeTeam.id}

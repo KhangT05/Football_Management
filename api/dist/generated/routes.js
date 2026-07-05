@@ -1967,6 +1967,33 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsUserController_lookupByEmail = {
+        email: { "in": "query", "name": "email", "required": true, "dataType": "string" },
+    };
+    app.get('/users/lookup', authenticateMiddleware([{ "jwt": ["admin", "user", "organizing"] }]), ...(fetchMiddlewares(UserController)), ...(fetchMiddlewares(UserController.prototype.lookupByEmail)), async function UserController_lookupByEmail(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsUserController_lookupByEmail, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(UserController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'lookupByEmail',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsUserController_findAll = {
         page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
         per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
@@ -4065,7 +4092,6 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_addPlayerToTeam = {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "AddPlayerToTeamDto" },
-        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
     app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -4207,7 +4233,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_exportTeamPlayers = {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
     };
-    app.get('/players/:team_id/team-players/export', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
+    app.get('/players/:team_id/team-players/export', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4262,7 +4288,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         file: { "in": "formData", "name": "file", "required": true, "dataType": "file" },
     };
-    app.post('/players/:team_id/team-players/import', upload.fields([
+    app.post('/players/:team_id/team-players/import', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
         {
             name: "file",
             maxCount: 1
