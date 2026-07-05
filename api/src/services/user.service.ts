@@ -54,8 +54,9 @@ export class UserService {
         });
     }
 
-    // ─── Read ──────────────────────────────────────────────────────────────────
-
+    findSafeByEmail(email: string): Promise<SafeUser | null> {
+        return this.prisma.user.findUnique({ where: { email }, ...USER_SELECT });
+    }
     findAll(req: QueryRequest = {}): Promise<PaginatedResult<SafeUser>> {
         return this.query.run(req);
     }

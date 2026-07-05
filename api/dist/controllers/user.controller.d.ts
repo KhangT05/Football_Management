@@ -5,6 +5,7 @@ import { PaginatedResult } from "../types/queryable.type.js";
 export declare class UserController extends Controller {
     private service;
     constructor(service: UserService);
+    lookupByEmail(email: string): Promise<SafeUser>;
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<SafeUser>>;
     findById(id: number): Promise<SafeUser>;
     create(body: CreateUserDto): Promise<SafeUser>;
