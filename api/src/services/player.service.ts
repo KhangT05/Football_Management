@@ -1,6 +1,5 @@
 import * as XLSX from "xlsx";
 import crypto from "node:crypto";
-import bcrypt from "bcrypt"; // ASSUMPTION: đổi sang lib hash thật dùng trong auth.service nếu khác
 import {
     AddPlayerToTeamDto, BulkDeleteDto,
     CreatePlayerDto, CreatePlayerForTeamDto, ImportPlayerRowDto,
@@ -16,10 +15,17 @@ import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult, ListTeamPlayersQuery, PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, PlayerRow, PlayerSeasonInfo, PlayerWithSeasonsRow, TEAM_PLAYER_SELECT, TeamPlayerRow } from "../types/player.type.js";
+import { mailService } from "./mail.service.js";
+import redis from "../libs/redis.js";
+
 
 const MAX_IMPORT_ROWS = 200;
 const PLAYER_ROLE_NAME = "player";
-const BCRYPT_ROUNDS = 10; // ASSUMPTION: khớp cost factor dùng ở auth.service — check trước khi merge
+
+// FIX: đổi từ 7 ngày -> 24h theo yêu cầu. Token invite chỉ có hiệu lực tạo
+// tài khoản/đặt mật khẩu trong vòng 24h kể từ lúc admin/leader thêm player.
+// Hết hạn -> user phải được admin resend invite (tạo token mới), không tự gia hạn.
+const INVITE_TOKEN_TTL_SECONDS = 24 * 60 * 60; // 24 giờ
 
 export class PlayerService {
     private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
@@ -150,6 +156,81 @@ export class PlayerService {
     }
 
     // ----------------------------------------------------------
+    // INVITE TOKEN (Redis — thay cho cột invite_token_hash/expires_at trong DB)
+    // ----------------------------------------------------------
+
+    private inviteKey(tokenHash: string): string {
+        return `invite:token:${tokenHash}`;
+    }
+
+    /**
+     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu), lưu bản HASH
+     * (sha256) vào Redis với TTL 24h — không bao giờ lưu plaintext, không cần
+     * cột DB (invite_token_hash/invite_token_expires_at), Redis tự hết hạn.
+     * Trả về rawToken để gửi qua email (không log ra ngoài).
+     *
+     * QUAN TRỌNG: hàm này KHÔNG được gọi bên trong prisma.$transaction — Redis
+     * không tham gia rollback của Prisma. Nếu gọi trong tx mà tx rollback sau
+     * đó, token sẽ trỏ tới 1 userId "mồ côi" hoặc tệ hơn là bị tái sử dụng
+     * nhầm cho user khác nếu id được cấp lại. Luôn gọi SAU khi transaction
+     * tạo user/player/teamPlayer đã commit thành công.
+     */
+    private async issueInviteToken(userId: number): Promise<string> {
+        const rawToken = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+        await redis.set(this.inviteKey(tokenHash), String(userId), {
+            EX: INVITE_TOKEN_TTL_SECONDS,
+        });
+
+        return rawToken;
+    }
+
+    /**
+     * Xác thực raw token (dùng cho endpoint POST /auth/accept-invite — chưa
+     * có trong file này). Trả về userId nếu hợp lệ. Token là one-time-use:
+     * xoá ngay khỏi Redis sau khi đọc thành công để không dùng lại được lần 2.
+     * Hết hạn (quá 24h) hoặc sai token đều rơi vào nhánh BAD_REQUEST như nhau
+     * — không tiết lộ token đã từng tồn tại hay chưa.
+     */
+    async consumeInviteToken(rawToken: string): Promise<number> {
+        const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+        const key = this.inviteKey(tokenHash);
+
+        const userId = await redis.get(key);
+        if (!userId) {
+            throw createAppError("BAD_REQUEST", "Invite token không hợp lệ hoặc đã hết hạn (quá 24h)");
+        }
+
+        await redis.del(key);
+        return Number(userId);
+    }
+
+    /**
+     * Cho admin/leader bấm "gửi lại lời mời" khi token cũ đã hết hạn (24h).
+     * Phát hành token MỚI (token cũ nếu còn trong Redis vẫn còn hiệu lực tới
+     * khi hết TTL của chính nó — không revoke, chấp nhận có thể có 2 token
+     * sống song song trong thời gian ngắn, không phải vấn đề bảo mật vì cả
+     * hai đều one-time-use).
+     */
+    async resendInvite(userId: number): Promise<void> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, name: true, password: true },
+        });
+        if (!user) throw createAppError("NOT_FOUND", `User ${userId} not found`);
+        if (user.password !== null) {
+            throw createAppError("CONFLICT", "User đã đặt mật khẩu, không cần gửi lại lời mời");
+        }
+
+        const inviteToken = await this.issueInviteToken(user.id);
+        await mailService.sendInviteEmail(user.email, {
+            token: inviteToken,
+            name: user.name,
+        });
+    }
+
+    // ----------------------------------------------------------
     // TEAM PLAYER
     // ----------------------------------------------------------
 
@@ -232,11 +313,22 @@ export class PlayerService {
      * sẵn) — đây là entrypoint cho flow "leader nhập tên+email, hệ thống
      * tự lo phần tài khoản".
      *
-     * OPERATIONAL GAP: user mới tạo có password random không ai biết,
-     * is_active=false. Nếu hệ thống chưa có flow reset-password/invite-accept
-     * để user claim account, user này không bao giờ login được — cần xử lý
-     * trước khi ship (gửi invite email kèm token, hoặc đổi UX sang "mời user
-     * trước, gán player sau khi user đã có account thật").
+     * User mới tạo có password = null, is_active = false, kèm invite token
+     * (hash lưu Redis TTL 24h, raw token gửi qua email). Cần endpoint
+     * POST /auth/accept-invite (chưa có trong file này) để user set mật
+     * khẩu thật bằng token này rồi kích hoạt account, trong vòng 24h kể từ
+     * lúc tạo — quá hạn phải dùng resendInvite() để admin gửi lại.
+     *
+     * FIX so với bản cũ: issueInviteToken() được gọi SAU khi transaction
+     * Prisma đã commit, không còn nằm trong tx — vì Redis không rollback
+     * theo transaction DB. Nếu để trong tx và transaction rollback (vd. do
+     * lỗi jersey trùng ở bước sau), sẽ có token "mồ côi" trỏ tới user không
+     * tồn tại (hoặc trỏ nhầm user nếu id được tái sử dụng).
+     *
+     * Gửi email NGOÀI transaction: network call không nên giữ DB
+     * connection, và nếu email fail thì không nên rollback việc tạo
+     * player — leader vẫn thấy player trong đội, admin có thể gọi
+     * resendInvite() thủ công sau.
      *
      * Pre-check jersey ngoài transaction để fail sớm (UX), P2002 trong
      * catch là nguồn chân lý chống race — giả định đã có unique constraint
@@ -255,10 +347,8 @@ export class PlayerService {
             throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
         }
 
-        // Hash ngoài transaction — bcrypt cost 10 ~50-100ms, không nên giữ
-        // transaction connection trong lúc CPU-bound work này chạy.
-        const unusablePassword = crypto.randomBytes(32).toString("hex");
-        const passwordHash = await bcrypt.hash(unusablePassword, BCRYPT_ROUNDS);
+        // Chỉ đánh dấu id user mới tạo (nếu có) — KHÔNG gọi Redis trong tx.
+        let createdNewUserId: number | null = null;
 
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
@@ -272,11 +362,12 @@ export class PlayerService {
                         data: {
                             email: dto.user_email,
                             name: dto.name,
-                            password: passwordHash,
+                            password: null, // ASSUMPTION: cột password nullable — cần migration nếu đang NOT NULL
                             is_active: false,
                         },
                         select: { id: true },
                     });
+                    createdNewUserId = user.id;
                 }
 
                 let player = await tx.player.findFirst({
@@ -316,6 +407,23 @@ export class PlayerService {
                 await this.ensurePlayerRole(user.id, tx);
                 return created;
             });
+
+            // Transaction đã commit thành công -> giờ mới an toàn để phát
+            // invite token (Redis, TTL 24h) + gửi mail.
+            if (createdNewUserId) {
+                try {
+                    const inviteToken = await this.issueInviteToken(createdNewUserId);
+                    await mailService.sendInviteEmail(dto.user_email, {
+                        token: inviteToken,
+                        name: dto.name,
+                    });
+                } catch (err) {
+                    // fire-and-forget có kiểm soát: log để admin resendInvite() thủ
+                    // công sau, không throw — player đã được tạo thành công, đừng
+                    // revert vì Redis/email fail.
+                    logger.error(`Failed to issue invite / send email to ${dto.user_email}`);
+                }
+            }
 
             return this.mapTeamPlayer(tp);
         } catch (err) {

@@ -379,7 +379,7 @@ export default function MyTeam() {
         jersey_number: parseInt(values.number, 10),
       });
 
-      toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội!`);
+      toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội. Email mời đặt mật khẩu đã được gửi tới ${values.user_email.trim()}.`);
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
@@ -446,6 +446,14 @@ export default function MyTeam() {
       setModalError(parseApiError(apiErr, 'Lỗi khi cập nhật cầu thủ.'));
     } finally { setIsSaving(false); }
   };
+
+  // FIX (onSave is not a function): PlayerFormModal chỉ expose 1 callback
+  // duy nhất — dispatch theo mode ngay tại đây, không truyền onSubmitAdd/
+  // onSubmitEdit riêng lẻ nữa. Nếu PlayerFormModal source thực tế gọi tên
+  // prop khác (vd. onSubmit), đổi tên prop bên dưới cho khớp — grep
+  // `onSave(` trong PlayerFormModal.jsx để confirm.
+  const handlePlayerModalSave = (values) =>
+    playerModal === 'add' ? handleAddSave(values) : handleEditSave(values);
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
@@ -1018,8 +1026,7 @@ export default function MyTeam() {
           mode={playerModal}
           player={editingPlayer}
           usedNumbers={players}
-          onSubmitAdd={handleAddSave}
-          onSubmitEdit={handleEditSave}
+          onSave={handlePlayerModalSave}
           onClose={() => { setPlayerModal(null); setModalError(''); }}
           isSaving={isSaving}
           serverError={modalError}

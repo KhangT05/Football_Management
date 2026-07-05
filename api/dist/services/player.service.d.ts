@@ -21,6 +21,36 @@ export declare class PlayerService {
     updatePlayer(id: number, dto: UpdatePlayerDto): Promise<PlayerDto>;
     softDeletePlayer(id: number): Promise<void>;
     private ensurePlayerRole;
+    private inviteKey;
+    /**
+     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu), lưu bản HASH
+     * (sha256) vào Redis với TTL 24h — không bao giờ lưu plaintext, không cần
+     * cột DB (invite_token_hash/invite_token_expires_at), Redis tự hết hạn.
+     * Trả về rawToken để gửi qua email (không log ra ngoài).
+     *
+     * QUAN TRỌNG: hàm này KHÔNG được gọi bên trong prisma.$transaction — Redis
+     * không tham gia rollback của Prisma. Nếu gọi trong tx mà tx rollback sau
+     * đó, token sẽ trỏ tới 1 userId "mồ côi" hoặc tệ hơn là bị tái sử dụng
+     * nhầm cho user khác nếu id được cấp lại. Luôn gọi SAU khi transaction
+     * tạo user/player/teamPlayer đã commit thành công.
+     */
+    private issueInviteToken;
+    /**
+     * Xác thực raw token (dùng cho endpoint POST /auth/accept-invite — chưa
+     * có trong file này). Trả về userId nếu hợp lệ. Token là one-time-use:
+     * xoá ngay khỏi Redis sau khi đọc thành công để không dùng lại được lần 2.
+     * Hết hạn (quá 24h) hoặc sai token đều rơi vào nhánh BAD_REQUEST như nhau
+     * — không tiết lộ token đã từng tồn tại hay chưa.
+     */
+    consumeInviteToken(rawToken: string): Promise<number>;
+    /**
+     * Cho admin/leader bấm "gửi lại lời mời" khi token cũ đã hết hạn (24h).
+     * Phát hành token MỚI (token cũ nếu còn trong Redis vẫn còn hiệu lực tới
+     * khi hết TTL của chính nó — không revoke, chấp nhận có thể có 2 token
+     * sống song song trong thời gian ngắn, không phải vấn đề bảo mật vì cả
+     * hai đều one-time-use).
+     */
+    resendInvite(userId: number): Promise<void>;
     listTeamPlayers(query: ListTeamPlayersQuery): Promise<PaginatedResult<TeamPlayerDto>>;
     getTeamPlayerById(id: number, team_id: number): Promise<TeamPlayerDto | null>;
     addPlayerToTeam(team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
@@ -30,11 +60,22 @@ export declare class PlayerService {
      * sẵn) — đây là entrypoint cho flow "leader nhập tên+email, hệ thống
      * tự lo phần tài khoản".
      *
-     * OPERATIONAL GAP: user mới tạo có password random không ai biết,
-     * is_active=false. Nếu hệ thống chưa có flow reset-password/invite-accept
-     * để user claim account, user này không bao giờ login được — cần xử lý
-     * trước khi ship (gửi invite email kèm token, hoặc đổi UX sang "mời user
-     * trước, gán player sau khi user đã có account thật").
+     * User mới tạo có password = null, is_active = false, kèm invite token
+     * (hash lưu Redis TTL 24h, raw token gửi qua email). Cần endpoint
+     * POST /auth/accept-invite (chưa có trong file này) để user set mật
+     * khẩu thật bằng token này rồi kích hoạt account, trong vòng 24h kể từ
+     * lúc tạo — quá hạn phải dùng resendInvite() để admin gửi lại.
+     *
+     * FIX so với bản cũ: issueInviteToken() được gọi SAU khi transaction
+     * Prisma đã commit, không còn nằm trong tx — vì Redis không rollback
+     * theo transaction DB. Nếu để trong tx và transaction rollback (vd. do
+     * lỗi jersey trùng ở bước sau), sẽ có token "mồ côi" trỏ tới user không
+     * tồn tại (hoặc trỏ nhầm user nếu id được tái sử dụng).
+     *
+     * Gửi email NGOÀI transaction: network call không nên giữ DB
+     * connection, và nếu email fail thì không nên rollback việc tạo
+     * player — leader vẫn thấy player trong đội, admin có thể gọi
+     * resendInvite() thủ công sau.
      *
      * Pre-check jersey ngoài transaction để fail sớm (UX), P2002 trong
      * catch là nguồn chân lý chống race — giả định đã có unique constraint

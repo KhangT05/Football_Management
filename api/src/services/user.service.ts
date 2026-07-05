@@ -103,7 +103,7 @@ export class UserService {
         const user = await this.prisma.user.findUnique({ where: { id } });
         if (!user) throw createAppError("NOT_FOUND", `User ${id} not found`);
 
-        const valid = await bcrypt.compare(currentPassword, user.password);
+        const valid = await bcrypt.compare(currentPassword, user.password!);
         if (!valid) throw createAppError("UNAUTHORIZED", "Mật khẩu hiện tại không đúng");
 
         const hashed = await bcrypt.hash(newPassword, 10);
