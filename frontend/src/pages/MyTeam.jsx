@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   ShieldOff, ArrowRight, X, Loader2, AlertTriangle,
-  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode, UploadCloud
+  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode, UploadCloud, FileDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
@@ -24,6 +24,13 @@ const normalizePosition = (posStr) => {
   if (p === 'MIDFIELDER' || p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
   if (p === 'FORWARD' || p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
   return p;
+};
+
+// Trích tên file từ header Content-Disposition (nếu backend có set), fallback về tên mặc định
+const extractFilename = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+  const match = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
+  return match ? decodeURIComponent(match[1]) : fallback;
 };
 
 // ─── Empty State ──────────────────────────────────────────
@@ -82,7 +89,7 @@ function ConfirmDeleteModal({ playerName, onConfirm, onCancel, isDeleting }) {
 }
 
 // ─── Player Add/Edit Modal ────────────────────────────────
-function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport }) {
+function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate }) {
   const [form, setForm] = useState({
     name: player?.name || '',
     number: player?.number || '',
@@ -130,6 +137,37 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-[0_0_20px_rgba(239,68,68,0.1)] font-medium">
               <AlertTriangle className="w-5 h-5 shrink-0" /> {error}
+            </div>
+          )}
+
+          {/* Import Excel block (chỉ hiện khi thêm mới) */}
+          {mode === 'add' && onImport && (
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30 shrink-0 mt-0.5">
+                  <Info className="w-4 h-4 text-emerald-400" />
+                </div>
+                <p className="text-xs text-emerald-400/90 font-medium leading-relaxed">
+                  Thêm nhiều cầu thủ cùng lúc bằng file Excel. Tải file mẫu, điền thông tin rồi upload lại.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onDownloadTemplate}
+                  disabled={isDownloadingTemplate}
+                  className="flex-1 px-4 py-3.5 font-bold bg-navy-dark text-gray-200 border border-navy-light rounded-xl flex items-center justify-center gap-2 hover:bg-navy-light hover:text-white transition-all duration-300 text-sm disabled:opacity-60"
+                >
+                  {isDownloadingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+                  Tải file mẫu
+                </button>
+                <div className="relative flex-1">
+                  <input type="file" id="import-excel-modal" accept=".xlsx,.xls" className="hidden" onChange={onImport} disabled={isSaving} />
+                  <label htmlFor="import-excel-modal" className={`w-full px-4 py-3.5 font-bold bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-500 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 ${isSaving ? 'opacity-70 pointer-events-none' : ''}`}>
+                    <UploadCloud className="w-5 h-5" /> Import Excel
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 
@@ -199,30 +237,18 @@ function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport 
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-between gap-4 relative z-10">
-          <div className="flex items-center">
-            {mode === 'add' && onImport && (
-              <div className="relative">
-                <input type="file" id="import-excel-modal" accept=".xlsx,.xls" className="hidden" onChange={onImport} disabled={isSaving} />
-                <label htmlFor="import-excel-modal" className={`px-5 py-3.5 font-bold bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 rounded-2xl flex items-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 ${isSaving ? 'opacity-70 pointer-events-none' : ''}`}>
-                  <UploadCloud className="w-5 h-5" /> Import Excel
-                </label>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
-              Hủy bỏ
-            </button>
-            <button
-              onClick={() => onSave(form)}
-              disabled={isSaving}
-              className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
-            >
-              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-              {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
-            </button>
-          </div>
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
+          <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
+            Hủy bỏ
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={isSaving}
+            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
+          >
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+            {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
+          </button>
         </div>
       </div>
     </div>
@@ -339,6 +365,7 @@ export default function MyTeam() {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [modalError, setModalError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   // Delete Confirm State
   const [deletingPlayer, setDeletingPlayer] = useState(null);
@@ -595,6 +622,35 @@ export default function MyTeam() {
     } finally {
       setIsSaving(false);
       e.target.value = null;
+    }
+  };
+
+  // ── DOWNLOAD Import Template ──────────────────────────────
+  // playerApi.downloadImportTemplate() → GET /players/import-template, không nhận
+  // teamId (template dùng chung, không theo từng đội) và đã tự set responseType: 'blob'.
+  const handleDownloadTemplate = async () => {
+    setIsDownloadingTemplate(true);
+    try {
+      const res = await playerApi.downloadImportTemplate();
+      const blob = res.data;
+
+      const filename = extractFilename(
+        res?.headers?.['content-disposition'],
+        'import-template.xlsx'
+      );
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Không thể tải file mẫu Excel. Vui lòng thử lại.');
+    } finally {
+      setIsDownloadingTemplate(false);
     }
   };
 
@@ -1166,6 +1222,8 @@ export default function MyTeam() {
           isSaving={isSaving}
           error={modalError}
           onImport={handleImportExcel}
+          onDownloadTemplate={handleDownloadTemplate}
+          isDownloadingTemplate={isDownloadingTemplate}
         />
       )}
 

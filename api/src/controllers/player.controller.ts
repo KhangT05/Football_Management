@@ -106,7 +106,7 @@ export class PlayerController extends Controller {
     @Request() req: AuthRequest
   ): Promise<TeamPlayerDto> {
     this.setStatus(201);
-    return this.service.addPlayerToTeam(team_id, body, req.user.user_id);
+    return this.service.addPlayerToTeam(team_id, body);
   }
 
   @Security("jwt", ["organizing"])

@@ -1,5 +1,6 @@
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 import { MatchEventType, PhaseFormat } from "../generated/prisma/client.js";
+import { createAppError } from "../common/app.error.js";
 export function isKnockoutFormat(format) {
     return format === PhaseFormat.knockout;
 }
@@ -54,6 +55,31 @@ export const matchForConfirmSelect = {
     },
     matchResult: { select: { id: true } },
 };
+// ─── Minute rounding ──────────────────────────────────────────────────────────
+// Business rule: mọi mốc thời gian trận đấu lưu theo phút, làm tròn LÊN
+// (ceil), không floor. 0s-60s -> phút 1. Không có phút 0.
+export function toMatchMinute(elapsedSeconds) {
+    if (elapsedSeconds < 0)
+        throw createAppError('VALIDATION_ERROR', `elapsedSeconds không thể âm: ${elapsedSeconds}`);
+    return Math.max(1, Math.ceil(elapsedSeconds / 60));
+}
+// ─── Goal-minute uniqueness ───────────────────────────────────────────────────
+// Business rule: không cho phép 2 bàn thắng (goal/own_goal/penalty_scored)
+// trùng phút CHO CÙNG 1 TEAM (team_id trên MatchEvent). Khác team, cùng phút
+// vẫn hợp lệ — VD home ghi bàn phút 45 và away cũng ghi bàn phút 45 là 2 sự
+// kiện độc lập, không conflict. Không áp dụng cho thẻ/thay người.
+//
+// LƯU Ý own_goal: team_id của own_goal = team của cầu thủ đá phản lưới
+// (không phải team hưởng lợi — xem isCreditedToHomeTeam bên dưới). Guard này
+// dedup theo "team có cầu thủ ghi/phản lưới", KHÔNG phải "team được cộng vào
+// tỉ số". Nếu business muốn cấm theo team HƯỞNG LỢI, phải đảo ngược team_id
+// cho own_goal trước khi gọi guard — hiện KHÔNG làm vậy (ASSUMPTION, xem note
+// ở _assertNoGoalMinuteConflict trong match.lifecycle.service.ts).
+export const GOAL_EVENT_TYPES = [
+    MatchEventType.goal,
+    MatchEventType.own_goal,
+    MatchEventType.penalty_scored,
+];
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 export function statKey(playerId, teamId) {
     return `${playerId}:${teamId}`;
@@ -214,5 +240,70 @@ export function isCreditedToHomeTeam(homeTeamId, eventTeamId, type, wasOwnGoal) 
         return eventTeamId !== homeTeamId; // huỷ own_goal → trừ của đối thủ
     }
     return eventTeamId === homeTeamId;
+}
+export function buildMatchReportPlayerRows(lineup, jerseyLookup, events, teamId) {
+    const jerseyMap = new Map();
+    for (const j of jerseyLookup)
+        jerseyMap.set(`${j.team_id}:${j.player_id}`, j.jersey_number);
+    const eventsByPlayer = new Map();
+    for (const ev of events) {
+        if (!ev.player_id)
+            continue;
+        const arr = eventsByPlayer.get(ev.player_id) ?? [];
+        arr.push(ev);
+        eventsByPlayer.set(ev.player_id, arr);
+    }
+    const toEntries = (evs, types) => evs.filter(e => types.includes(e.type))
+        .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+        .map(e => ({ minute: e.minute, addedMinute: e.added_minute }));
+    return lineup
+        .filter(l => l.team_id === teamId)
+        .map(l => {
+        const evs = eventsByPlayer.get(l.player_id) ?? [];
+        return {
+            playerId: l.player_id,
+            jerseyNumber: jerseyMap.get(`${teamId}:${l.player_id}`) ?? null,
+            fullName: l.player.user.name,
+            position: l.position,
+            isCaptain: l.is_captain,
+            isStarting: l.lineup_type === 'starter',
+            minuteIn: l.minute_in,
+            minuteOut: l.minute_out,
+            goals: toEntries(evs, [MatchEventType.goal, MatchEventType.penalty_scored]),
+            ownGoals: toEntries(evs, [MatchEventType.own_goal]),
+            yellowCards: toEntries(evs, [MatchEventType.yellow_card]),
+            redCards: toEntries(evs, [MatchEventType.red_card, MatchEventType.second_yellow]),
+        };
+    })
+        .sort((a, b) => Number(b.isStarting) - Number(a.isStarting) || (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999));
+}
+export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLookup) {
+    const home = [];
+    const away = [];
+    for (const ev of events) {
+        if (!ev.player_id)
+            continue;
+        const isGoalType = ev.type === MatchEventType.goal || ev.type === MatchEventType.penalty_scored;
+        const isOwnGoal = ev.type === MatchEventType.own_goal;
+        if (!isGoalType && !isOwnGoal)
+            continue;
+        // creditTeam: goal thường -> team_id chính chủ. own_goal -> đảo ngược sang đối thủ.
+        const creditTeamId = isOwnGoal
+            ? (ev.team_id === homeTeamId ? awayTeamId : homeTeamId)
+            : ev.team_id;
+        const entry = {
+            playerName: playerNameLookup.get(ev.player_id) ?? 'Unknown',
+            minute: ev.minute,
+            addedMinute: ev.added_minute,
+            isOwnGoal,
+        };
+        (creditTeamId === homeTeamId ? home : away).push(entry);
+    }
+    const byMinute = (a, b) => (a.minute ?? 0) - (b.minute ?? 0);
+    return { home: home.sort(byMinute), away: away.sort(byMinute) };
+}
+export function formatMinuteLabel(e) {
+    const base = e.addedMinute ? `${e.minute}+${e.addedMinute}'` : `${e.minute}'`;
+    return e.isOwnGoal ? `${base} (OG)` : base;
 }
 //# sourceMappingURL=match.helper.js.map

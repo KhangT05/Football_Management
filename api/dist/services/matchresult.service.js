@@ -2,7 +2,7 @@ import { MatchEventType, MatchResultType, MatchStatus, PhaseFormat, Prisma, } fr
 import { createAppError } from '../common/app.error.js';
 import { STATUS_BY_RESULT_TYPE, } from '../types/matchResult.type.js';
 import { Queryable } from '../libs/queryable.js';
-import { buildStatDeltas, MATCH_EVENT_SELECT, matchForConfirmSelect, statKey, toMatchResultCreateInput, toMatchUpdateOnConfirm, } from '../helper/match.helper.js';
+import { buildGoalsTimeline, buildMatchReportPlayerRows, buildStatDeltas, MATCH_EVENT_SELECT, matchForConfirmSelect, statKey, toMatchResultCreateInput, toMatchUpdateOnConfirm, } from '../helper/match.helper.js';
 export class MatchResultService {
     prisma;
     knockoutService;
@@ -507,6 +507,95 @@ export class MatchResultService {
             return false;
         await this.standingsService.recomputeGroupStandings(groupId);
         return true;
+    }
+    async getMatchReport(matchId) {
+        const match = await this.prisma.match.findUnique({
+            where: { id: matchId },
+            select: {
+                id: true,
+                played_at: true,
+                scheduled_at: true,
+                referee: true,
+                status: true,
+                home_team_id: true,
+                away_team_id: true,
+                home_score: true,
+                away_score: true,
+                finalize_home_half_time: true,
+                finalize_away_half_time: true,
+                venue: { select: { name: true } },
+                home_team: { select: { id: true, name: true, logo: true } },
+                away_team: { select: { id: true, name: true, logo: true } },
+                matchResult: true,
+                matchJerseyAssignment: {
+                    select: {
+                        team_id: true,
+                        season_jersey: { select: { primary_color: true, secondary_color: true, image_url: true } },
+                    },
+                },
+            },
+        });
+        if (!match)
+            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+        if (!match.matchResult)
+            throw createAppError('CONFLICT', `Match ${matchId} chưa confirm kết quả, chưa thể tạo biên bản`);
+        const [lineup, events] = await Promise.all([
+            this.prisma.matchLineup.findMany({
+                where: { match_id: matchId },
+                select: {
+                    player_id: true, team_id: true, position: true, lineup_type: true,
+                    is_captain: true, minute_in: true, minute_out: true,
+                    player: { select: { user: { select: { name: true } } } },
+                },
+            }),
+            this.prisma.matchEvent.findMany({
+                where: { match_id: matchId },
+                select: { player_id: true, team_id: true, type: true, minute: true, added_minute: true },
+            }),
+        ]);
+        const teamIds = [match.home_team_id, match.away_team_id];
+        const jerseyLookup = await this.prisma.teamPlayer.findMany({
+            where: { team_id: { in: teamIds }, player_id: { in: lineup.map(l => l.player_id) } },
+            select: { team_id: true, player_id: true, jersey_number: true },
+        });
+        const jerseyOf = (teamId) => {
+            const a = match.matchJerseyAssignment.find(j => j.team_id === teamId);
+            return {
+                logoUrl: a?.season_jersey.image_url ?? (teamId === match.home_team_id ? match.home_team.logo : match.away_team.logo) ?? null,
+                primaryColor: a?.season_jersey.primary_color ?? null,
+                secondaryColor: a?.season_jersey.secondary_color ?? null,
+            };
+        };
+        const r = match.matchResult;
+        const playerNameLookup = new Map(lineup.map(l => [l.player_id, l.player.user.name]));
+        const goalsTimeline = buildGoalsTimeline(events, match.home_team_id, match.away_team_id, playerNameLookup);
+        return {
+            matchId: match.id,
+            playedAt: match.played_at ?? match.scheduled_at,
+            venueName: match.venue?.name ?? null,
+            referee: match.referee,
+            status: match.status,
+            resultType: r.result_type,
+            score: {
+                homeHalfTime: match.finalize_home_half_time,
+                awayHalfTime: match.finalize_away_half_time,
+                homeFullTime: match.home_score,
+                awayFullTime: match.away_score,
+                homeExtraTime: r.home_extra_time_score,
+                awayExtraTime: r.away_extra_time_score,
+                homePenalty: r.home_penalty_score,
+                awayPenalty: r.away_penalty_score,
+                homeFinal: r.home_final_score,
+                awayFinal: r.away_final_score,
+            },
+            winnerTeamId: r.winner_team_id,
+            home: { id: match.home_team.id, name: match.home_team.name, jersey: jerseyOf(match.home_team_id) },
+            away: { id: match.away_team.id, name: match.away_team.name, jersey: jerseyOf(match.away_team_id) },
+            lineups: {
+                home: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.home_team_id),
+                away: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.away_team_id),
+            },
+        };
     }
 }
 //# sourceMappingURL=matchresult.service.js.map

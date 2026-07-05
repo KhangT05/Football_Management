@@ -149,9 +149,8 @@ export class SeasonService {
         // ongoing, finished, cancelled: admin chủ động — không enforce date check
     }
     validateStatusAllowsEdit(status) {
-        const LOCKED = ['registration_open', 'ongoing', 'finished', 'cancelled'];
-        if (LOCKED.includes(status))
-            throw createAppError('VALIDATION_ERROR', `Cannot modify season with status: ${status}`);
+        // Allow editing season details and status at any point to give admins full control.
+        // No longer restrict based on 'registration_open', 'ongoing', 'finished', or 'cancelled'.
     }
 }
 //# sourceMappingURL=season.service.js.map
