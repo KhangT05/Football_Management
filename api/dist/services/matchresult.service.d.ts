@@ -6,6 +6,7 @@ import { StandingsService } from './standing.service.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { MatchEventRow } from '../helper/match.helper.js';
 import { EditScoreInput } from '../types/match.type.js';
+import { MatchReportOutput } from '../types/matchReport.type.js';
 type ConfirmResultInputWithExplicitWinner = ConfirmResultInput & {
     explicitWinnerTeamId?: number | null;
 };
@@ -72,6 +73,7 @@ export declare class MatchResultService {
     private _updatePlayerStatistics;
     private _recomputeStatsForPlayers;
     private _tryRecomputeStandings;
+    getMatchReport(matchId: number): Promise<MatchReportOutput>;
 }
 export {};
 //# sourceMappingURL=matchresult.service.d.ts.map

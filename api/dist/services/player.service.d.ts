@@ -11,9 +11,19 @@ export declare class PlayerService {
     getPlayerByIdOrFail(id: number): Promise<PlayerDto>;
     updatePlayer(id: number, dto: UpdatePlayerDto): Promise<PlayerDto>;
     softDeletePlayer(id: number): Promise<void>;
+    /**
+     * Gán role "player" cho user sau khi user chính thức trở thành cầu thủ
+     * của 1 đội (qua addPlayerToTeam hoặc import Excel). Idempotent — dùng
+     * upsert trên composite key (user_id, role_id) nên gọi lại nhiều lần
+     * (vd: 1 user tham gia nhiều đội) không lỗi duplicate.
+     *
+     * Nếu role "player" chưa được seed trong DB, chỉ log warning chứ không
+     * throw — việc thêm player vào đội không nên fail chỉ vì thiếu role seed.
+     */
+    private ensurePlayerRole;
     listTeamPlayers(query: ListTeamPlayersQuery): Promise<PaginatedResult<TeamPlayerDto>>;
     getTeamPlayerById(id: number, team_id: number): Promise<TeamPlayerDto | null>;
-    addPlayerToTeam(team_id: number, dto: AddPlayerToTeamDto, user_id?: number): Promise<TeamPlayerDto>;
+    addPlayerToTeam(team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
     updateTeamPlayer(id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto>;
     approveTeamPlayer(id: number): Promise<TeamPlayerDto>;
     rejectTeamPlayer(id: number): Promise<TeamPlayerDto>;
@@ -47,6 +57,11 @@ export declare class PlayerService {
      * KHÔNG update Player.position dù dto.position khác — đây là intent, không phải bug.
      * Lý do: 1 player có thể đăng ký nhiều đội với vị trí thi đấu khác nhau, hồ sơ gốc
      * (Player.position) chỉ set 1 lần lúc tạo mới, không bị leader import ghi đè.
+     *
+     * TeamPlayer.user_id luôn được set = userId (resolve từ user_email) để link
+     * trực tiếp tới user thật, không chỉ qua player_id gián tiếp. Sau khi commit
+     * thành công, user được gán role "player" (ensurePlayerRole) — idempotent nên
+     * user tham gia nhiều đội qua nhiều lần import vẫn an toàn.
      */
     importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer): Promise<ImportResult>;
     private mapPlayer;

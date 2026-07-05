@@ -3605,6 +3605,284 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "MatchReportJerseyInfo": {
+                "properties": {
+                    "logoUrl": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "primaryColor": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "secondaryColor": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "logoUrl",
+                    "primaryColor",
+                    "secondaryColor"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MatchReportTeamInfo": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "jersey": {
+                        "$ref": "#/components/schemas/MatchReportJerseyInfo"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "jersey"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MatchReportEventEntry": {
+                "properties": {
+                    "minute": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "addedMinute": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "minute",
+                    "addedMinute"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MatchReportPlayerRow": {
+                "properties": {
+                    "playerId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "jerseyNumber": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/PlayerPosition"
+                    },
+                    "isCaptain": {
+                        "type": "boolean"
+                    },
+                    "isStarting": {
+                        "type": "boolean"
+                    },
+                    "minuteIn": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "minuteOut": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "goals": {
+                        "items": {
+                            "$ref": "#/components/schemas/MatchReportEventEntry"
+                        },
+                        "type": "array"
+                    },
+                    "ownGoals": {
+                        "items": {
+                            "$ref": "#/components/schemas/MatchReportEventEntry"
+                        },
+                        "type": "array"
+                    },
+                    "yellowCards": {
+                        "items": {
+                            "$ref": "#/components/schemas/MatchReportEventEntry"
+                        },
+                        "type": "array"
+                    },
+                    "redCards": {
+                        "items": {
+                            "$ref": "#/components/schemas/MatchReportEventEntry"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "playerId",
+                    "jerseyNumber",
+                    "fullName",
+                    "position",
+                    "isCaptain",
+                    "isStarting",
+                    "minuteIn",
+                    "minuteOut",
+                    "goals",
+                    "ownGoals",
+                    "yellowCards",
+                    "redCards"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MatchReportOutput": {
+                "properties": {
+                    "matchId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "playedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "venueName": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "referee": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/MatchStatus"
+                    },
+                    "resultType": {
+                        "$ref": "#/components/schemas/MatchResultType"
+                    },
+                    "score": {
+                        "properties": {
+                            "awayFinal": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "homeFinal": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "awayPenalty": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "homePenalty": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "awayExtraTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "homeExtraTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "awayFullTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "homeFullTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "awayHalfTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "homeHalfTime": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            }
+                        },
+                        "required": [
+                            "awayFinal",
+                            "homeFinal",
+                            "awayPenalty",
+                            "homePenalty",
+                            "awayExtraTime",
+                            "homeExtraTime",
+                            "awayFullTime",
+                            "homeFullTime",
+                            "awayHalfTime",
+                            "homeHalfTime"
+                        ],
+                        "type": "object"
+                    },
+                    "winnerTeamId": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "home": {
+                        "$ref": "#/components/schemas/MatchReportTeamInfo"
+                    },
+                    "away": {
+                        "$ref": "#/components/schemas/MatchReportTeamInfo"
+                    },
+                    "lineups": {
+                        "properties": {
+                            "away": {
+                                "items": {
+                                    "$ref": "#/components/schemas/MatchReportPlayerRow"
+                                },
+                                "type": "array"
+                            },
+                            "home": {
+                                "items": {
+                                    "$ref": "#/components/schemas/MatchReportPlayerRow"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "away",
+                            "home"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "matchId",
+                    "playedAt",
+                    "venueName",
+                    "referee",
+                    "status",
+                    "resultType",
+                    "score",
+                    "winnerTeamId",
+                    "home",
+                    "away",
+                    "lineups"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "MatchPlayerStatus": {
                 "type": "string",
                 "enum": [
@@ -10746,6 +11024,38 @@
                         }
                     }
                 }
+            }
+        },
+        "/matches/{id}/report": {
+            "get": {
+                "operationId": "GetMatchReport",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MatchReportOutput"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Match Result"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
             }
         },
         "/matches/{matchId}/lineups": {

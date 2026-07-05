@@ -1,4 +1,5 @@
-import { MatchEventType, MatchStatus, PhaseFormat, Prisma } from "../generated/prisma/client.js";
+import { MatchEventType, MatchStatus, PhaseFormat, PlayerPosition, Prisma } from "../generated/prisma/client.js";
+import { MatchReportPlayerRow } from "../types/matchReport.type.js";
 import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
 import { QueryRequest } from "../types/queryable.type.js";
 export declare function isKnockoutFormat(format: PhaseFormat): boolean;
@@ -74,6 +75,8 @@ export declare const matchForConfirmSelect: {
         };
     };
 };
+export declare function toMatchMinute(elapsedSeconds: number): number;
+export declare const GOAL_EVENT_TYPES: MatchEventType[];
 export declare function statKey(playerId: number, teamId: number): string;
 export declare function buildStatDeltas(events: {
     player_id: number | null;
@@ -106,4 +109,49 @@ export declare function buildRound1Pairings(seeding: (number | null)[]): {
  * goal/penalty_scored: team ghi → credit cho chính mình
  */
 export declare function isCreditedToHomeTeam(homeTeamId: number, eventTeamId: number, type: MatchEventType, wasOwnGoal?: boolean): boolean;
+type LineupRow = {
+    player_id: number;
+    team_id: number;
+    position: PlayerPosition;
+    lineup_type: 'starter' | 'substitute';
+    is_captain: boolean;
+    minute_in: number | null;
+    minute_out: number | null;
+    player: {
+        user: {
+            name: string;
+        };
+    };
+};
+type JerseyLookupRow = {
+    team_id: number;
+    player_id: number;
+    jersey_number: number;
+};
+type EventRow = {
+    player_id: number | null;
+    team_id: number | null;
+    type: MatchEventType;
+    minute: number | null;
+    added_minute: number | null;
+};
+export declare function buildMatchReportPlayerRows(lineup: LineupRow[], jerseyLookup: JerseyLookupRow[], events: EventRow[], teamId: number): MatchReportPlayerRow[];
+export interface MatchReportGoalEntry {
+    playerName: string;
+    minute: number | null;
+    addedMinute: number | null;
+    isOwnGoal: boolean;
+}
+export declare function buildGoalsTimeline(events: {
+    player_id: number | null;
+    team_id: number | null;
+    type: MatchEventType;
+    minute: number | null;
+    added_minute: number | null;
+}[], homeTeamId: number, awayTeamId: number, playerNameLookup: Map<number, string>): {
+    home: MatchReportGoalEntry[];
+    away: MatchReportGoalEntry[];
+};
+export declare function formatMinuteLabel(e: MatchReportGoalEntry): string;
+export {};
 //# sourceMappingURL=match.helper.d.ts.map

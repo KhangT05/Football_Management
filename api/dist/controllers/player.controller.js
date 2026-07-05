@@ -56,7 +56,7 @@ let PlayerController = class PlayerController extends Controller {
     }
     async addPlayerToTeam(team_id, body, req) {
         this.setStatus(201);
-        return this.service.addPlayerToTeam(team_id, body, req.user.user_id);
+        return this.service.addPlayerToTeam(team_id, body);
     }
     async updateTeamPlayer(team_id, id, body) {
         const exists = await this.service.getTeamPlayerById(id, team_id);
