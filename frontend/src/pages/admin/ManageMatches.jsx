@@ -19,7 +19,6 @@ export default function ManageMatches() {
   useEffect(() => {
     if (!selectedSeasonId && seasons.length > 0) {
       const active = seasons.find(s => s.status === 'ongoing' || s.status === 'registration_open') || seasons[0];
-      // setTimeout(...,0) trước đây không giải quyết race nào thật — set thẳng.
       setSelectedSeasonId(String(active.id));
     }
   }, [selectedSeasonId, seasons]);
@@ -43,7 +42,7 @@ export default function ManageMatches() {
                 {activeTab === 'schedule' ? 'Lịch Thi Đấu & Bốc Thăm' : 'Trực tiếp & Kết quả'}
               </h2>
               <p className="text-gray-400 text-sm">
-                {activeTab === 'schedule' ? 'Quản lý lịch, phân lịch tự động và chỉnh sửa thời gian' : 'Cập nhật tỷ số, sự kiện & kết thúc trận theo thời gian thực'}
+                {activeTab === 'schedule' ? 'Quản lý lịch, phân lịch tự động và chỉnh sửa thời gian' : 'Cập nhật tỷ số, sự kiện & xác nhận kết quả theo thời gian thực'}
               </p>
             </div>
           </div>

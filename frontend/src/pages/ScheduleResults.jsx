@@ -11,14 +11,23 @@ import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
-
+// Thêm gần đầu file, sau imports
+function unwrapGroupsResponse(res) {
+  const candidates = [res?.data?.data, res?.data, res];
+  for (const c of candidates) {
+    if (c && Array.isArray(c.groups)) return c.groups;
+    if (Array.isArray(c)) return c;
+  }
+  console.warn('[ScheduleResults] Không parse được groups response. Shape thực tế:', res);
+  return [];
+}
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [filterRound, setFilterRound] = useState('');
-  
+
   const [groups, setGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
 
@@ -31,26 +40,26 @@ export default function ScheduleResults() {
     scheduleCache } = useScheduleStore(useShallow(state => ({ getMatchesFromCache: state.getMatchesFromCache, isSeasonLoading: state.isSeasonLoading, fetchBySeason: state.fetchBySeason, error: state.error, scheduleCache: state.scheduleCache })));
 
   // ── Lookup maps từ stores ──────────────────────────────────
-  const teamMap  = useMemo(() => Object.fromEntries((teams  || []).map(t => [t.id, t])), [teams]);
+  const teamMap = useMemo(() => Object.fromEntries((teams || []).map(t => [t.id, t])), [teams]);
   const venueMap = useMemo(() => Object.fromEntries((venues || []).map(v => [v.id, v])), [venues]);
 
 
   // ── Matches raw + enriched ─────────────────────────────────
   // Enrich: gắn home_team, away_team, venue từ store
   const allMatches = useMemo(() => {
-    const rawMatches = selectedSeasonId 
-      ? getMatchesFromCache(Number(selectedSeasonId)) 
+    const rawMatches = selectedSeasonId
+      ? getMatchesFromCache(Number(selectedSeasonId))
       : seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
     return rawMatches.map(m => ({
       ...m,
       home_team: teamMap[m.home_team_id] ?? null,
       away_team: teamMap[m.away_team_id] ?? null,
-      venue:     venueMap[m.venue_id]    ?? null,
+      venue: venueMap[m.venue_id] ?? null,
     }));
   }, [selectedSeasonId, seasons, scheduleCache, getMatchesFromCache, teamMap, venueMap]);
 
-  const isLoading = seasonsLoading || (selectedSeasonId 
-    ? isSeasonLoading(Number(selectedSeasonId)) 
+  const isLoading = seasonsLoading || (selectedSeasonId
+    ? isSeasonLoading(Number(selectedSeasonId))
     : seasons.some(s => isSeasonLoading(s.id)));
 
   // ── Tabs ───────────────────────────────────────────────────
@@ -101,13 +110,12 @@ export default function ScheduleResults() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
-      
+
       const fetchGroups = async () => {
         setIsGroupsLoading(true);
         try {
           const res = await groupApi.listBySeason(selectedSeasonId);
-          const payload = typeof res.status === 'boolean' ? res.data : res;
-          setGroups(payload?.groups || []);
+          setGroups(unwrapGroupsResponse(res));
         } catch (error) {
           console.error("Failed to fetch groups", error);
           setGroups([]);
@@ -126,7 +134,7 @@ export default function ScheduleResults() {
   };
 
   const currentData = activeTab === 'upcoming' ? upcoming : results;
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -137,8 +145,8 @@ export default function ScheduleResults() {
 
   const [prevFilterState, setPrevFilterState] = useState({ activeTab, selectedSeasonId, filterRound });
   if (
-    prevFilterState.activeTab !== activeTab || 
-    prevFilterState.selectedSeasonId !== selectedSeasonId || 
+    prevFilterState.activeTab !== activeTab ||
+    prevFilterState.selectedSeasonId !== selectedSeasonId ||
     prevFilterState.filterRound !== filterRound
   ) {
     setPrevFilterState({ activeTab, selectedSeasonId, filterRound });
@@ -176,66 +184,64 @@ export default function ScheduleResults() {
           {/* Controls Bar */}
           <div className="flex flex-col gap-4 mb-10 animate-fade-in bg-navy/40 backdrop-blur-xl border border-navy-light rounded-4xl p-6 shadow-2xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            
-            {/* Season Selector */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <label className="text-xs font-black text-blue-400 uppercase tracking-widest shrink-0 flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
-                <CalendarDays className="w-4 h-4" />
-                Mùa giải
-              </label>
-              <div className="relative w-full sm:w-64">
-                <select
-                  value={selectedSeasonId}
-                  onChange={e => setSelectedSeasonId(e.target.value)}
-                  disabled={seasonsLoading}
-                  className="w-full pl-5 pr-10 py-3 bg-navy-dark/80 border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm appearance-none disabled:opacity-60 transition-all cursor-pointer shadow-inner"
-                >
-                  <option value="">-- Chọn mùa giải --</option>
-                  {seasons.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                      {s.status === 'ongoing' ? ' 🔴' : s.status === 'registration_open' ? ' 📋' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
 
-            {/* Tab switcher */}
-            <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-full md:w-auto shadow-inner relative">
-              <div 
-                className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg transition-transform duration-300 ease-out shadow-md`}
-                style={{
-                  transform: activeTab === 'upcoming' ? 'translateX(0)' : 'translateX(100%)',
-                  left: '6px'
-                }}
-              ></div>
-              <button
-                onClick={() => setActiveTab('upcoming')}
-                className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${
-                  activeTab === 'upcoming' ? 'text-white' : 'text-gray-500 hover:text-white'
-                }`}
-              >
-                <CalendarDays className="w-4 h-4" />
-                Sắp tới
-                {!isLoading && upcoming.length > 0 && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'upcoming' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{upcoming.length}</span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('results')}
-                className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${
-                  activeTab === 'results' ? 'text-white' : 'text-gray-500 hover:text-white'
-                }`}
-              >
-                <Trophy className="w-4 h-4" />
-                Kết quả
-                {!isLoading && results.length > 0 && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'results' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{results.length}</span>
-                )}
-              </button>
-            </div>
+              {/* Season Selector */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <label className="text-xs font-black text-blue-400 uppercase tracking-widest shrink-0 flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                  <CalendarDays className="w-4 h-4" />
+                  Mùa giải
+                </label>
+                <div className="relative w-full sm:w-64">
+                  <select
+                    value={selectedSeasonId}
+                    onChange={e => setSelectedSeasonId(e.target.value)}
+                    disabled={seasonsLoading}
+                    className="w-full pl-5 pr-10 py-3 bg-navy-dark/80 border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm appearance-none disabled:opacity-60 transition-all cursor-pointer shadow-inner"
+                  >
+                    <option value="">-- Chọn mùa giải --</option>
+                    {seasons.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                        {s.status === 'ongoing' ? ' 🔴' : s.status === 'registration_open' ? ' 📋' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Tab switcher */}
+              <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-full md:w-auto shadow-inner relative">
+                <div
+                  className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg transition-transform duration-300 ease-out shadow-md`}
+                  style={{
+                    transform: activeTab === 'upcoming' ? 'translateX(0)' : 'translateX(100%)',
+                    left: '6px'
+                  }}
+                ></div>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${activeTab === 'upcoming' ? 'text-white' : 'text-gray-500 hover:text-white'
+                    }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Sắp tới
+                  {!isLoading && upcoming.length > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'upcoming' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{upcoming.length}</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${activeTab === 'results' ? 'text-white' : 'text-gray-500 hover:text-white'
+                    }`}
+                >
+                  <Trophy className="w-4 h-4" />
+                  Kết quả
+                  {!isLoading && results.length > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'results' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{results.length}</span>
+                  )}
+                </button>
+              </div>
             </div>{/* end flex row */}
 
             {/* Round filter row — chỉ hiện khi có dữ liệu */}
@@ -246,11 +252,10 @@ export default function ScheduleResults() {
                 </div>
                 <button
                   onClick={() => setFilterRound('')}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${
-                    !filterRound
-                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
-                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${!filterRound
+                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                    : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                    }`}
                 >
                   Tất cả
                 </button>
@@ -258,11 +263,10 @@ export default function ScheduleResults() {
                   <button
                     key={r}
                     onClick={() => setFilterRound(prev => String(prev) === String(r) ? '' : String(r))}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${
-                      String(filterRound) === String(r)
-                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
-                        : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${String(filterRound) === String(r)
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                      }`}
                   >
                     Vòng {r}
                   </button>
@@ -288,16 +292,16 @@ export default function ScheduleResults() {
                 <span className="flex items-center gap-1.5 text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20"><Users className="w-3.5 h-3.5" /> Max {selectedSeason.max_teams} đội</span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-4 ml-auto">
               {!isLoading && selectedSeasonId && allMatches.length > 0 && (
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden sm:block">
-                  Tổng <span className="text-white">{allMatches.length}</span> trận <span className="mx-1 text-gray-600">|</span> 
-                  <span className="text-emerald-400 ml-1">{results.length} KQ</span> <span className="mx-1 text-gray-600">|</span> 
+                  Tổng <span className="text-white">{allMatches.length}</span> trận <span className="mx-1 text-gray-600">|</span>
+                  <span className="text-emerald-400 ml-1">{results.length} KQ</span> <span className="mx-1 text-gray-600">|</span>
                   <span className="text-amber-400 ml-1">{upcoming.length} Tới</span>
                 </p>
               )}
-              
+
               <button
                 onClick={handleRefresh}
                 disabled={isLoading || !selectedSeasonId}
@@ -360,7 +364,7 @@ export default function ScheduleResults() {
                 ))}
               </div>
             )}
-            
+
             {totalPages > 1 && currentData.length > 0 && !isLoading && !scheduleError && (
               <div className="mt-8 flex justify-center">
                 <Pagination
@@ -390,7 +394,7 @@ export default function ScheduleResults() {
                 </h2>
               </div>
             </div>
-            
+
             {/* Scrollable container taking full width of the main container */}
             <div className="flex gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {groups.map(group => (
@@ -414,18 +418,18 @@ export default function ScheduleResults() {
                               </span>
                               {team.logo && (
                                 <div className="absolute inset-0 bg-white p-1.5 z-10 flex items-center justify-center">
-                                  <img 
-                                    src={team.logo} 
-                                    alt={team.name} 
-                                    className="w-full h-full object-contain" 
-                                    onError={(e) => { e.target.onerror = null; e.target.parentElement.style.display = 'none'; }} 
+                                  <img
+                                    src={team.logo}
+                                    alt={team.name}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.target.onerror = null; e.target.parentElement.style.display = 'none'; }}
                                   />
                                 </div>
                               )}
                             </div>
                             <span className="text-sm font-bold text-black group-hover/team:text-gray-600 transition-colors">{team.name}</span>
                           </div>
-                        );  
+                        );
                       })
                     )}
                   </div>
