@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import crypto from "node:crypto";
 import {
     AddPlayerToTeamDto, BulkDeleteDto,
@@ -14,7 +14,11 @@ import { ApprovalStatus, PlayerPosition, Prisma, PrismaClient } from "../generat
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-import { ImportResult, ListTeamPlayersQuery, PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, PlayerRow, PlayerSeasonInfo, PlayerWithSeasonsRow, TEAM_PLAYER_SELECT, TeamPlayerRow } from "../types/player.type.js";
+import {
+    ImportResult, ListTeamPlayersQuery, PLAYER_SELECT,
+    PLAYER_SELECT_WITH_SEASONS, PlayerRow, PlayerSeasonInfo,
+    PlayerWithSeasonsRow, TEAM_PLAYER_SELECT, TeamPlayerRow
+} from "../types/player.type.js";
 import { mailService } from "./mail.service.js";
 import redis from "../libs/redis.js";
 
@@ -26,6 +30,142 @@ const PLAYER_ROLE_NAME = "player";
 // tài khoản/đặt mật khẩu trong vòng 24h kể từ lúc admin/leader thêm player.
 // Hết hạn -> user phải được admin resend invite (tạo token mới), không tự gia hạn.
 const INVITE_TOKEN_TTL_SECONDS = 24 * 60 * 60; // 24 giờ
+
+// ----------------------------------------------------------
+// IMPORT EXCEL — HỖ TRỢ FILE THUẦN TIẾNG VIỆT
+// ----------------------------------------------------------
+
+// Map header tiếng Việt (và vài biến thể/tiếng Anh) -> key chuẩn của
+// importPlayerRowSchema. So khớp sau khi đã trim + lowercase, nên không
+// quan trọng hoa/thường hay khoảng trắng dư.
+const IMPORT_HEADER_ALIASES: Record<string, keyof ImportPlayerRowDto> = {
+    "họ và tên": "name",
+    "họ tên": "name",
+    "tên": "name",
+    "name": "name",
+
+    "email": "user_email",
+    "user_email": "user_email",
+
+    "ngày sinh": "date_of_birth",
+    "ngày sinh (yyyy-mm-dd)": "date_of_birth",
+    "date_of_birth": "date_of_birth",
+
+    "vị trí": "position",
+    "position": "position",
+
+    "số áo": "jersey_number",
+    "so ao": "jersey_number",
+    "jersey_number": "jersey_number",
+
+    "chiều cao": "height",
+    "chiều cao (cm)": "height",
+    "height": "height",
+
+    "cân nặng": "weight",
+    "cân nặng (kg)": "weight",
+    "weight": "weight",
+
+    "quốc tịch": "nationality",
+    "nationality": "nationality",
+};
+
+// Map value cột "Vị trí" (mã hoặc chữ Việt) -> enum PlayerPosition thật.
+const IMPORT_POSITION_ALIASES: Record<string, PlayerPosition> = {
+    "gk": PlayerPosition.goalkeeper,
+    "thủ môn": PlayerPosition.goalkeeper,
+    "goalkeeper": PlayerPosition.goalkeeper,
+
+    "def": PlayerPosition.defender,
+    "hậu vệ": PlayerPosition.defender,
+    "defender": PlayerPosition.defender,
+
+    "mid": PlayerPosition.midfielder,
+    "tiền vệ": PlayerPosition.midfielder,
+    "midfielder": PlayerPosition.midfielder,
+
+    "fw": PlayerPosition.forward,
+    "tiền đạo": PlayerPosition.forward,
+    "forward": PlayerPosition.forward,
+};
+
+function normalizeHeaderKey(raw: string): string {
+    return raw.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizePositionValue(raw: unknown): unknown {
+    if (typeof raw !== "string") return raw;
+    const key = normalizeHeaderKey(raw);
+    return IMPORT_POSITION_ALIASES[key] ?? raw; // không match -> giữ nguyên, để Zod tự báo lỗi rõ ràng
+}
+
+/**
+ * Nhận 1 dòng raw (key = text header gốc trong file Excel, có thể là tiếng
+ * Việt, tiếng Anh, hoặc lệch hoa/thường/khoảng trắng), trả về object với key
+ * chuẩn đúng tên field của importPlayerRowSchema. Header không nhận diện
+ * được sẽ bị bỏ qua (không throw ở bước này — để Zod báo lỗi "required" rõ
+ * ràng theo từng dòng/cột thiếu thay vì fail âm thầm).
+ */
+function normalizeImportRow(raw: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [rawKey, value] of Object.entries(raw)) {
+        const mappedKey = IMPORT_HEADER_ALIASES[normalizeHeaderKey(rawKey)];
+        if (!mappedKey) continue; // cột lạ, không map được -> bỏ qua
+        out[mappedKey] = mappedKey === "position" ? normalizePositionValue(value) : value;
+    }
+    return out;
+}
+
+/**
+ * exceljs trả cell.value có thể là string/number/Date, hoặc object phức tạp
+ * (rich text, hyperlink, formula result...) — unwrap về giá trị thuần trước
+ * khi đưa vào Zod.
+ */
+function unwrapCellValue(value: ExcelJS.CellValue): unknown {
+    if (value === null || value === undefined) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === "object") {
+        if ("richText" in (value as any)) {
+            return (value as any).richText.map((t: any) => t.text).join("");
+        }
+        if ("text" in (value as any)) return (value as any).text; // hyperlink { text, hyperlink }
+        if ("result" in (value as any)) return (value as any).result; // formula
+        return null;
+    }
+    return value;
+}
+
+/**
+ * Đọc worksheet -> mảng object thô, key = text hàng header (hàng 1).
+ * Bỏ qua các hàng trống hoàn toàn (khác với xlsx cũ luôn trả cả hàng
+ * blank-template thành object toàn null, gây fail oan ở bước validate).
+ */
+function worksheetToRawRows(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
+    const headers: Record<number, string> = {};
+    ws.getRow(1).eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const text = unwrapCellValue(cell.value);
+        if (typeof text === "string" && text.trim()) headers[colNumber] = text.trim();
+    });
+
+    const rows: Record<string, unknown>[] = [];
+    for (let r = 2; r <= ws.rowCount; r++) {
+        const row = ws.getRow(r);
+        if (row.cellCount === 0) continue;
+
+        const obj: Record<string, unknown> = {};
+        let hasValue = false;
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+            const header = headers[colNumber];
+            if (!header) return;
+            const value = unwrapCellValue(cell.value);
+            obj[header] = value;
+            if (value !== null && value !== undefined && value !== "") hasValue = true;
+        });
+
+        if (hasValue) rows.push(obj);
+    }
+    return rows;
+}
 
 export class PlayerService {
     private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
@@ -50,7 +190,9 @@ export class PlayerService {
     /**
      * FIX: trước đây không validate user_id tồn tại (→ P2003 FK raw 500 nếu
      * user_id sai) và không dedupe theo user_id (→ 2 Player row cho cùng 1
-     * user nếu Player.user_id không có @@unique DB — chưa confirm schema.prisma).
+     * user nếu Player.user_id không có @@unique DB — đã confirm schema.prisma
+     * có @unique trên Player.user_id, nên DB tự chặn ở mức constraint, nhưng
+     * vẫn check trước để trả lỗi rõ ràng thay vì raw P2002).
      * Trả CONFLICT rõ ràng thay vì raw Prisma error hoặc silent duplicate.
      * Dùng khi admin đã biết user_id có sẵn. Không dùng cho case "thêm player +
      * chưa chắc user tồn tại" — xem createPlayerForTeamWithUser.
@@ -164,7 +306,8 @@ export class PlayerService {
     }
 
     /**
-     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu), lưu bản HASH
+     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu — Player.user
+     * password nullable theo schema.prisma: `password String?`), lưu bản HASH
      * (sha256) vào Redis với TTL 24h — không bao giờ lưu plaintext, không cần
      * cột DB (invite_token_hash/invite_token_expires_at), Redis tự hết hạn.
      * Trả về rawToken để gửi qua email (không log ra ngoài).
@@ -309,21 +452,24 @@ export class PlayerService {
 
     /**
      * Thêm cầu thủ vào team, tự find-or-create User theo email nếu chưa
-     * tồn tại. Khác createPlayer()+addPlayerToTeam() cũ (bắt buộc user có
-     * sẵn) — đây là entrypoint cho flow "leader nhập tên+email, hệ thống
-     * tự lo phần tài khoản".
+     * tồn tại. Player KHÔNG có cột name/email (schema.prisma) — 2 field này
+     * thuộc về User, Player chỉ giữ user_id (@unique, 1-1). Khác
+     * createPlayer()+addPlayerToTeam() cũ (bắt buộc user có sẵn) — đây là
+     * entrypoint cho flow "leader nhập tên+email, hệ thống tự lo phần tài
+     * khoản".
      *
-     * User mới tạo có password = null, is_active = false, kèm invite token
-     * (hash lưu Redis TTL 24h, raw token gửi qua email). Cần endpoint
+     * User mới tạo có password = null (cột nullable theo schema.prisma:
+     * `password String?`), is_active = false, kèm invite token (hash lưu
+     * Redis TTL 24h, raw token gửi qua email). Cần endpoint
      * POST /auth/accept-invite (chưa có trong file này) để user set mật
      * khẩu thật bằng token này rồi kích hoạt account, trong vòng 24h kể từ
      * lúc tạo — quá hạn phải dùng resendInvite() để admin gửi lại.
      *
-     * FIX so với bản cũ: issueInviteToken() được gọi SAU khi transaction
-     * Prisma đã commit, không còn nằm trong tx — vì Redis không rollback
-     * theo transaction DB. Nếu để trong tx và transaction rollback (vd. do
-     * lỗi jersey trùng ở bước sau), sẽ có token "mồ côi" trỏ tới user không
-     * tồn tại (hoặc trỏ nhầm user nếu id được tái sử dụng).
+     * issueInviteToken() được gọi SAU khi transaction Prisma đã commit,
+     * không nằm trong tx — vì Redis không rollback theo transaction DB. Nếu
+     * để trong tx và transaction rollback (vd. do lỗi jersey trùng ở bước
+     * sau), sẽ có token "mồ côi" trỏ tới user không tồn tại (hoặc trỏ nhầm
+     * user nếu id được tái sử dụng).
      *
      * Gửi email NGOÀI transaction: network call không nên giữ DB
      * connection, và nếu email fail thì không nên rollback việc tạo
@@ -362,7 +508,7 @@ export class PlayerService {
                         data: {
                             email: dto.user_email,
                             name: dto.name,
-                            password: null, // ASSUMPTION: cột password nullable — cần migration nếu đang NOT NULL
+                            password: null,
                             is_active: false,
                         },
                         select: { id: true },
@@ -525,94 +671,128 @@ export class PlayerService {
             weight: tp.player?.weight ? Number(tp.player.weight) : "",
         }));
 
-        const ws = XLSX.utils.json_to_sheet(rows);
-        ws["!cols"] = [
-            { wch: 6 }, { wch: 24 }, { wch: 28 }, { wch: 12 },
-            { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 12 },
-            { wch: 14 }, { wch: 8 }, { wch: 8 },
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Players");
+        ws.columns = [
+            { header: "jersey_number", key: "jersey_number", width: 6 },
+            { header: "name", key: "name", width: 24 },
+            { header: "email", key: "email", width: 28 },
+            { header: "position", key: "position", width: 12 },
+            { header: "role", key: "role", width: 14 },
+            { header: "status", key: "status", width: 10 },
+            { header: "approval_status", key: "approval_status", width: 16 },
+            { header: "date_of_birth", key: "date_of_birth", width: 12 },
+            { header: "nationality", key: "nationality", width: 14 },
+            { header: "height", key: "height", width: 8 },
+            { header: "weight", key: "weight", width: 8 },
         ];
+        ws.addRows(rows);
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Players");
-        return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+        const buffer = await wb.xlsx.writeBuffer();
+        return Buffer.from(buffer);
     }
 
-    exportImportTemplate(minRows = 7): Buffer {
-        const wb = XLSX.utils.book_new();
+    // FIX: đổi từ xlsx -> exceljs. Hàm này giờ là async (writeBuffer() trả
+    // Promise) — nhớ `await playerService.exportImportTemplate(...)` ở
+    // controller, khác với bản cũ (đồng bộ).
+    async exportImportTemplate(minRows = 5): Promise<Buffer> {
+        const wb = new ExcelJS.Workbook();
 
-        const sampleRow = {
-            jersey_number: 10, user_email: "player1@example.com",
-            date_of_birth: "2000-01-15", position: PlayerPosition.forward,
-            height: 175, weight: 70, nationality: "Vietnam",
-        };
-        const blankRow = {
-            jersey_number: "", user_email: "", date_of_birth: "",
-            position: "", height: "", weight: "", nationality: "",
-        };
-        const rows = [
-            sampleRow,
-            ...Array.from({ length: Math.max(minRows - 1, 0) }, () => ({ ...blankRow })),
+        const ws = wb.addWorksheet("Danh sách cầu thủ");
+        ws.columns = [
+            { header: "Họ và tên", key: "name", width: 24 },
+            { header: "Email", key: "email", width: 28 },
+            { header: "Ngày sinh (YYYY-MM-DD)", key: "dob", width: 20 },
+            { header: "Vị trí", key: "position", width: 10 },
+            { header: "Số áo", key: "jersey_number", width: 8 },
         ];
 
-        const ws = XLSX.utils.json_to_sheet(rows);
-        ws["!cols"] = [
-            { wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
-            { wch: 8 }, { wch: 8 }, { wch: 14 },
+        ws.addRow({
+            name: "Nguyễn Văn A",
+            email: "player1@example.com",
+            dob: "2000-01-15",
+            position: "FW",
+            jersey_number: 10,
+        });
+        // Hàng ví dụ (hàng 2) — in nghiêng, màu xám để leader biết cần xoá/thay
+        const sampleRow = ws.getRow(2);
+        sampleRow.font = { italic: true, color: { argb: "FF888888" } };
+
+        for (let i = 1; i < minRows; i++) ws.addRow({});
+
+        const wsInfo = wb.addWorksheet("Hướng dẫn");
+        wsInfo.columns = [
+            { header: "Cột", key: "field", width: 24 },
+            { header: "Mô tả / Yêu cầu", key: "note", width: 60 },
         ];
-        XLSX.utils.book_append_sheet(wb, ws, "Players");
 
         const positionHint = Object.values(PlayerPosition).join(" | ");
         const instructions = [
+            { field: "name", note: "Họ và tên đầy đủ — bắt buộc. Dùng để tạo tài khoản mới nếu email chưa có trong hệ thống." },
+            { field: "email", note: "Bắt buộc. Nếu email đã có tài khoản → gắn cầu thủ vào tài khoản đó. Nếu chưa có → hệ thống tự tạo tài khoản (chưa có mật khẩu) và gửi email mời đặt mật khẩu, hiệu lực 24h." },
             { field: "jersey_number", note: "Số nguyên 1-99, duy nhất trong đội" },
-            { field: "user_email", note: "Email tài khoản đã đăng ký trong hệ thống" },
             { field: "date_of_birth", note: "Định dạng YYYY-MM-DD" },
             { field: "position", note: positionHint },
             { field: "height", note: "cm, có thể để trống" },
             { field: "weight", note: "kg, có thể để trống" },
             { field: "nationality", note: "Có thể để trống" },
-            { field: "", note: `Đội cần tối thiểu ${minRows} cầu thủ` },
+            { field: "", note: `Nên chuẩn bị tối thiểu ${minRows} dòng cầu thủ` },
             { field: "", note: `Tối đa ${MAX_IMPORT_ROWS} dòng / file` },
         ];
-        const wsInfo = XLSX.utils.json_to_sheet(instructions);
-        wsInfo["!cols"] = [{ wch: 16 }, { wch: 55 }];
-        XLSX.utils.book_append_sheet(wb, wsInfo, "Instructions");
+        wsInfo.addRows(instructions);
+        // Bold header row của cả 2 sheet cho dễ nhìn
+        ws.getRow(1).font = { bold: true };
+        wsInfo.getRow(1).font = { bold: true };
 
-        return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+        const buffer = await wb.xlsx.writeBuffer();
+        return Buffer.from(buffer);
     }
 
     // ----------------------------------------------------------
     // IMPORT EXCEL
     // ----------------------------------------------------------
 
-    async importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer): Promise<ImportResult> {
-        const wb = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
-        const sheetName = wb.SheetNames[0];
-        if (!sheetName) throw createAppError('BAD_REQUEST', 'Excel file has no sheets');
+    /**
+     * Hỗ trợ file Excel thuần tiếng Việt (header + giá trị "Vị trí" dạng
+     * GK/DEF/MID/FW hoặc "Thủ môn"/"Hậu vệ"...) lẫn file tiếng Anh cũ, thông
+     * qua normalizeImportRow() ở module-level phía trên. Nếu email chưa có
+     * tài khoản → tự tạo User (password=null, is_active=false) + phát invite
+     * token + gửi mail, đồng bộ hành vi với createPlayerForTeamWithUser().
+     * Mỗi dòng là 1 transaction riêng — 1 dòng lỗi không ảnh hưởng dòng khác.
+     */
+    async importTeamPlayersFromExcel(team_id: number,
+        fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult> {
+        const wb = new ExcelJS.Workbook();
+        try {
+            await wb.xlsx.load(fileBuffer as any);
+        } catch (err) {
+            throw createAppError("BAD_REQUEST", "File Excel không hợp lệ hoặc bị hỏng");
+        }
 
-        const ws = wb.Sheets[sheetName];
-        if (!ws) throw createAppError('BAD_REQUEST', `Sheet "${sheetName}" is empty or corrupted`);
+        const ws = wb.worksheets[0];
+        if (!ws) throw createAppError("BAD_REQUEST", "Excel file has no sheets");
 
-        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
+        const raw = worksheetToRawRows(ws);
 
         if (raw.length > MAX_IMPORT_ROWS) {
-            throw createAppError('BAD_REQUEST', `File has ${raw.length} rows, max ${MAX_IMPORT_ROWS} allowed`);
+            throw createAppError("BAD_REQUEST", `File has ${raw.length} rows, max ${MAX_IMPORT_ROWS} allowed`);
         }
 
         const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
         type ValidRow = { rowNum: number; dto: ImportPlayerRowDto };
         const validRows: ValidRow[] = [];
-
-        for (let i = 0; i < raw.length; i++) {
-            const rowNum = i + 2;
-            const parsed = importPlayerRowSchema.safeParse(raw[i]);
+        for (const [i, rawRow] of raw.entries()) {
+            const rowNum = i + 2; // +2: header ở hàng 1, data bắt đầu hàng 2
+            const normalized = normalizeImportRow(rawRow); // dịch header + value tiếng Việt trước khi validate
+            const parsed = importPlayerRowSchema.safeParse(normalized);
             if (!parsed.success) {
                 result.failed++;
                 result.errors.push({
                     row: rowNum,
                     reason: parsed.error.issues
-                        .map((e) => `${e.path.join('.')}: ${e.message}`)
-                        .join('; '),
+                        .map((e) => `${e.path.join(".")}: ${e.message}`)
+                        .join("; "),
                 });
             } else {
                 validRows.push({ rowNum, dto: parsed.data });
@@ -654,16 +834,9 @@ export class PlayerService {
         }
 
         for (const { rowNum, dto } of validRows) {
-            const userId = userByEmail.get(dto.user_email);
-            if (!userId) {
-                result.failed++;
-                result.errors.push({ row: rowNum, reason: `User not found: ${dto.user_email}` });
-                continue;
-            }
-
             if (dto.jersey_number == null) {
                 result.failed++;
-                result.errors.push({ row: rowNum, reason: 'jersey_number required for team assignment' });
+                result.errors.push({ row: rowNum, reason: "jersey_number required for team assignment" });
                 continue;
             }
 
@@ -673,18 +846,37 @@ export class PlayerService {
                 continue;
             }
 
-            const existingPlayerId = playerByUserId.get(userId);
+            const existingUserId = userByEmail.get(dto.user_email);
+            const existingPlayerId = existingUserId ? playerByUserId.get(existingUserId) : undefined;
 
             if (existingPlayerId && teamPlayerSet.has(existingPlayerId)) {
                 result.failed++;
-                result.errors.push({ row: rowNum, reason: 'Player already in team' });
+                result.errors.push({ row: rowNum, reason: "Player already in team" });
                 continue;
             }
 
-            try {
-                const committedPlayerId = await this.prisma.$transaction(async (tx) => {
-                    let playerId = existingPlayerId;
+            // Đánh dấu nếu dòng này tạo user mới — dùng để phát invite SAU tx.
+            let createdNewUserId: number | null = null;
 
+            try {
+                const { playerId, userId } = await this.prisma.$transaction(async (tx) => {
+                    let userId = existingUserId;
+
+                    if (!userId) {
+                        const newUser = await tx.user.create({
+                            data: {
+                                email: dto.user_email,
+                                name: dto.name,
+                                password: null,
+                                is_active: false,
+                            },
+                            select: { id: true },
+                        });
+                        userId = newUser.id;
+                        createdNewUserId = newUser.id;
+                    }
+
+                    let playerId = existingPlayerId;
                     if (!playerId) {
                         const created = await tx.player.create({
                             data: {
@@ -706,7 +898,7 @@ export class PlayerService {
                             player_id: playerId,
                             jersey_number: dto.jersey_number!,
                             position: dto.position,
-                            role: 'player',
+                            role: "player",
                             user_id: userId,
                         },
                     });
@@ -719,21 +911,36 @@ export class PlayerService {
                         });
                     }
 
-                    return playerId;
+                    return { playerId, userId };
                 });
 
-                playerByUserId.set(userId, committedPlayerId);
-                teamPlayerSet.add(committedPlayerId);
+                // Tx đã commit — cập nhật cache cho các dòng tiếp theo trong vòng lặp.
+                userByEmail.set(dto.user_email, userId);
+                playerByUserId.set(userId, playerId);
+                teamPlayerSet.add(playerId);
                 usedJerseyNumbers.add(dto.jersey_number);
                 result.success++;
+
+                // Redis/mail NGOÀI transaction — không tham gia rollback DB.
+                if (createdNewUserId) {
+                    try {
+                        const inviteToken = await this.issueInviteToken(createdNewUserId);
+                        await mailService.sendInviteEmail(dto.user_email, {
+                            token: inviteToken,
+                            name: dto.name,
+                        });
+                    } catch (err) {
+                        logger.error(`Failed to issue invite / send email to ${dto.user_email} (row ${rowNum})`);
+                    }
+                }
             } catch (err) {
                 result.failed++;
-                const isDuplicate = err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
+                const isDuplicate = err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
                 result.errors.push({
                     row: rowNum,
                     reason: isDuplicate
-                        ? 'Trùng dữ liệu (jersey_number hoặc player đã có trong đội — race condition với request khác)'
-                        : (err instanceof Error ? err.message : 'Unknown error'),
+                        ? "Trùng dữ liệu (jersey_number, email, hoặc player đã có trong đội — race condition với request khác)"
+                        : (err instanceof Error ? err.message : "Unknown error"),
                 });
             }
         }

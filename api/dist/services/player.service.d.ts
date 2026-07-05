@@ -9,7 +9,9 @@ export declare class PlayerService {
     /**
      * FIX: trước đây không validate user_id tồn tại (→ P2003 FK raw 500 nếu
      * user_id sai) và không dedupe theo user_id (→ 2 Player row cho cùng 1
-     * user nếu Player.user_id không có @@unique DB — chưa confirm schema.prisma).
+     * user nếu Player.user_id không có @@unique DB — đã confirm schema.prisma
+     * có @unique trên Player.user_id, nên DB tự chặn ở mức constraint, nhưng
+     * vẫn check trước để trả lỗi rõ ràng thay vì raw P2002).
      * Trả CONFLICT rõ ràng thay vì raw Prisma error hoặc silent duplicate.
      * Dùng khi admin đã biết user_id có sẵn. Không dùng cho case "thêm player +
      * chưa chắc user tồn tại" — xem createPlayerForTeamWithUser.
@@ -23,7 +25,8 @@ export declare class PlayerService {
     private ensurePlayerRole;
     private inviteKey;
     /**
-     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu), lưu bản HASH
+     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu — Player.user
+     * password nullable theo schema.prisma: `password String?`), lưu bản HASH
      * (sha256) vào Redis với TTL 24h — không bao giờ lưu plaintext, không cần
      * cột DB (invite_token_hash/invite_token_expires_at), Redis tự hết hạn.
      * Trả về rawToken để gửi qua email (không log ra ngoài).
@@ -56,21 +59,24 @@ export declare class PlayerService {
     addPlayerToTeam(team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
     /**
      * Thêm cầu thủ vào team, tự find-or-create User theo email nếu chưa
-     * tồn tại. Khác createPlayer()+addPlayerToTeam() cũ (bắt buộc user có
-     * sẵn) — đây là entrypoint cho flow "leader nhập tên+email, hệ thống
-     * tự lo phần tài khoản".
+     * tồn tại. Player KHÔNG có cột name/email (schema.prisma) — 2 field này
+     * thuộc về User, Player chỉ giữ user_id (@unique, 1-1). Khác
+     * createPlayer()+addPlayerToTeam() cũ (bắt buộc user có sẵn) — đây là
+     * entrypoint cho flow "leader nhập tên+email, hệ thống tự lo phần tài
+     * khoản".
      *
-     * User mới tạo có password = null, is_active = false, kèm invite token
-     * (hash lưu Redis TTL 24h, raw token gửi qua email). Cần endpoint
+     * User mới tạo có password = null (cột nullable theo schema.prisma:
+     * `password String?`), is_active = false, kèm invite token (hash lưu
+     * Redis TTL 24h, raw token gửi qua email). Cần endpoint
      * POST /auth/accept-invite (chưa có trong file này) để user set mật
      * khẩu thật bằng token này rồi kích hoạt account, trong vòng 24h kể từ
      * lúc tạo — quá hạn phải dùng resendInvite() để admin gửi lại.
      *
-     * FIX so với bản cũ: issueInviteToken() được gọi SAU khi transaction
-     * Prisma đã commit, không còn nằm trong tx — vì Redis không rollback
-     * theo transaction DB. Nếu để trong tx và transaction rollback (vd. do
-     * lỗi jersey trùng ở bước sau), sẽ có token "mồ côi" trỏ tới user không
-     * tồn tại (hoặc trỏ nhầm user nếu id được tái sử dụng).
+     * issueInviteToken() được gọi SAU khi transaction Prisma đã commit,
+     * không nằm trong tx — vì Redis không rollback theo transaction DB. Nếu
+     * để trong tx và transaction rollback (vd. do lỗi jersey trùng ở bước
+     * sau), sẽ có token "mồ côi" trỏ tới user không tồn tại (hoặc trỏ nhầm
+     * user nếu id được tái sử dụng).
      *
      * Gửi email NGOÀI transaction: network call không nên giữ DB
      * connection, và nếu email fail thì không nên rollback việc tạo
@@ -100,8 +106,16 @@ export declare class PlayerService {
         deleted: number;
     }>;
     exportTeamPlayersExcel(team_id: number): Promise<Buffer>;
-    exportImportTemplate(minRows?: number): Buffer;
-    importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer): Promise<ImportResult>;
+    exportImportTemplate(minRows?: number): Promise<Buffer>;
+    /**
+     * Hỗ trợ file Excel thuần tiếng Việt (header + giá trị "Vị trí" dạng
+     * GK/DEF/MID/FW hoặc "Thủ môn"/"Hậu vệ"...) lẫn file tiếng Anh cũ, thông
+     * qua normalizeImportRow() ở module-level phía trên. Nếu email chưa có
+     * tài khoản → tự tạo User (password=null, is_active=false) + phát invite
+     * token + gửi mail, đồng bộ hành vi với createPlayerForTeamWithUser().
+     * Mỗi dòng là 1 transaction riêng — 1 dòng lỗi không ảnh hưởng dòng khác.
+     */
+    importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult>;
     private mapPlayer;
     private mapTeamPlayer;
 }

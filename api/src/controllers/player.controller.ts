@@ -167,7 +167,7 @@ export class PlayerController extends Controller {
   // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
   @Get("import-template")
   async downloadImportTemplate(@Query() minRows = 7): Promise<void> {
-    const buffer = this.service.exportImportTemplate(minRows);
+    const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
     const res = (this as any).res as ExRequest["res"];
     res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res!.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');

@@ -5,11 +5,15 @@ import {
   Info, UploadCloud, FileDown, Camera,
 } from 'lucide-react';
 
+// FIX: giá trị value phải khớp PlayerPosition enum của backend
+// (goalkeeper | defender | midfielder | forward) — trước đây dùng
+// GK/DEF/MID/FW nên mọi request thêm/sửa cầu thủ bị Zod reject ở backend
+// (position: Invalid enum value), gây lỗi khi bấm "Thêm cầu thủ".
 const POSITIONS = [
-  { value: 'GK', label: 'GK – Thủ môn' },
-  { value: 'DEF', label: 'DEF – Hậu vệ' },
-  { value: 'MID', label: 'MID – Tiền vệ' },
-  { value: 'FW', label: 'FW – Tiền đạo' },
+  { value: 'goalkeeper', label: 'Thủ môn' },
+  { value: 'defender', label: 'Hậu vệ' },
+  { value: 'midfielder', label: 'Tiền vệ' },
+  { value: 'forward', label: 'Tiền đạo' },
 ];
 
 /**
@@ -40,8 +44,8 @@ export default function PlayerFormModal({
     formState: { errors },
   } = useForm({
     defaultValues: isAdd
-      ? { name: '', user_email: '', date_of_birth: '', position: 'MID', number: '' }
-      : { number: player?.number ?? '', position: player?.position ?? 'MID' },
+      ? { name: '', user_email: '', date_of_birth: '', position: 'midfielder', number: '' }
+      : { number: player?.number ?? '', position: player?.position ?? 'midfielder' },
   });
 
   const numberTakenBy = (value) =>

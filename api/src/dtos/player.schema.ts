@@ -87,7 +87,11 @@ export const bulkDeleteSchema = z.object({
 
 // FIX: .trim().toLowerCase() — Excel do leader nhập tay dễ dính khoảng trắng/case
 // khác DB, gây false negative "User not found" ở Phase 2 matching trong service.
+// FIX #2: thêm "name" — bắt buộc, dùng để tạo tài khoản mới khi email import
+// chưa tồn tại trong hệ thống (trước đây import KHÔNG tự tạo user được vì
+// thiếu field này, chỉ fail với "User not found").
 export const importPlayerRowSchema = z.object({
+    name: z.string().trim().min(1, "Họ tên không được để trống").max(150),
     user_email: z.string().trim().toLowerCase().email(),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,

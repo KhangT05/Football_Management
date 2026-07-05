@@ -138,6 +138,7 @@ export declare const bulkDeleteSchema: z.ZodObject<{
     ids: z.ZodArray<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const importPlayerRowSchema: z.ZodObject<{
+    name: z.ZodString;
     user_email: z.ZodString;
     date_of_birth: z.ZodCoercedDate<unknown>;
     position: z.ZodEnum<{
