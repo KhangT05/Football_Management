@@ -1,8 +1,12 @@
-import { Clock, Trash2, ArrowRight } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 
 /**
  * EventCard — Card hiển thị 1 sự kiện trận đấu (bàn thắng, thẻ vàng, thẻ đỏ, thay người).
  * Dùng trong trang UpdateResults (admin).
+ *
+ * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — logic
+ * filter/fallback name ở đây đã đúng. Root cause nằm ở LiveControlTab
+ * (parsePlayers unwrap sai shape response). Xem LiveControlTab.jsx.
  */
 export default function EventCard({ evt, players, lineup, allEvents, onUpdate, onRemove }) {
   const getEventStyle = (type) => {

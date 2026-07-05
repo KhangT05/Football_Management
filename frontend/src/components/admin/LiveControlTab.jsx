@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Save, CheckCircle2, Plus, Trash2, Clock, Activity,
-  Loader2, AlertTriangle, RefreshCw,
-  RotateCcw, Minus, ChevronDown, CalendarDays,
-  Flag, Zap, Target, ArrowLeftRight, Shield, Search
+  Save, CheckCircle2, Plus, Trash2, Activity,
+  Loader2, RefreshCw,
+  RotateCcw, Minus,
+  Flag, Zap, Target, Shield, Search
 } from 'lucide-react';
 import { teamApi, matchApi, matchLineupApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
@@ -55,18 +55,27 @@ function countEvents(events) {
   };
 }
 
-// ─── MatchTimer (inline — no separate component needed) ───────────────────────
-
-function useTimer(isRunning, onTick) {
-  const timerRef = useRef(null);
-  useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => onTick(p => p + 1), 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+// ─── Robust API response unwrapping ────────────────────────────────────────
+// PREV BUG: `typeof res?.status === 'boolean'` giả định custom wrapper.
+// axios thật trả res.status = number (200) → luôn rơi vào nhánh else,
+// payload = toàn bộ response object thay vì res.data → parse ra [] mọi lúc,
+// bất kể team nào (không phải lỗi riêng 1 bên).
+//
+// Fix: thử tuần tự các shape phổ biến, không đoán qua typeof status.
+//   1. axios response  → res.data.data (paginated) hoặc res.data (raw array)
+//   2. đã unwrap sẵn   → res.data (paginated) hoặc res (raw array)
+// Log cảnh báo nếu không match shape nào để dễ chẩn đoán tiếp trên thực tế.
+function unwrapListResponse(res, label) {
+  const candidates = [
+    res?.data?.data,   // axios response, paginated envelope
+    res?.data,         // axios response, raw array  OR  already-unwrapped paginated
+    res,               // already-unwrapped raw array
+  ];
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c;
+  }
+  console.warn(`[LiveControlTab] Không parse được response cho ${label}. Shape thực tế:`, res);
+  return [];
 }
 
 // ─── Main Component: LiveControlTab ──────────────────────────────────────────
@@ -130,26 +139,55 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   useEffect(() => {
     if (!selectedMatch) return;
     let cancelled = false;
-    const parsePlayers = (res) => {
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    };
+
     const load = async () => {
       setLoadingPlayers(true);
       try {
         const [homeRes, awayRes, lineupRes] = await Promise.allSettled([
-          selectedMatch.home_team_id ? teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }) : Promise.resolve({ data: [] }),
-          selectedMatch.away_team_id ? teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }) : Promise.resolve({ data: [] }),
+          selectedMatch.home_team_id ? teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }) : Promise.resolve([]),
+          selectedMatch.away_team_id ? teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }) : Promise.resolve([]),
           matchLineupApi.getMatchLineups(selectedMatch.id)
         ]);
         if (cancelled) return;
-        setHomePlayers(homeRes.status === 'fulfilled' ? parsePlayers(homeRes.value) : []);
-        setAwayPlayers(awayRes.status === 'fulfilled' ? parsePlayers(awayRes.value) : []);
 
-        const allLineups = lineupRes.status === 'fulfilled' && Array.isArray(lineupRes.value?.data) ? lineupRes.value.data : [];
+        // FIX: trước đây lỗi fetch chỉ log console, UI không báo gì → nhìn
+        // giống "dropdown rỗng do bug logic" trong khi thực tế là request
+        // fail/team không có player. Surface ra toast để phân biệt được
+        // ngay data issue vs UI bug, không phải mò console mỗi lần.
+        if (homeRes.status === 'rejected') {
+          console.error(`[LiveControlTab] getPlayers(home_team_id=${selectedMatch.home_team_id}) failed:`, homeRes.reason);
+          toast.error(`Không tải được danh sách cầu thủ đội nhà (team_id=${selectedMatch.home_team_id}).`);
+        }
+        if (awayRes.status === 'rejected') {
+          console.error(`[LiveControlTab] getPlayers(away_team_id=${selectedMatch.away_team_id}) failed:`, awayRes.reason);
+          toast.error(`Không tải được danh sách cầu thủ đội khách (team_id=${selectedMatch.away_team_id}).`);
+        }
+
+        const parsedHome = homeRes.status === 'fulfilled' ? unwrapListResponse(homeRes.value, 'homePlayers') : [];
+        const parsedAway = awayRes.status === 'fulfilled' ? unwrapListResponse(awayRes.value, 'awayPlayers') : [];
+
+        // FIX: fetch fulfilled nhưng trả 0 phần tử là data issue (team chưa
+        // có player trong DB) chứ không phải parse lỗi — cần phân biệt rõ
+        // trong log để không tốn thời gian debug lại unwrapListResponse.
+        if (homeRes.status === 'fulfilled' && parsedHome.length === 0) {
+          console.warn(`[LiveControlTab] home_team_id=${selectedMatch.home_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
+        }
+        if (awayRes.status === 'fulfilled' && parsedAway.length === 0) {
+          console.warn(`[LiveControlTab] away_team_id=${selectedMatch.away_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
+        }
+
+        setHomePlayers(parsedHome);
+        setAwayPlayers(parsedAway);
+
+        const allLineups = lineupRes.status === 'fulfilled' ? unwrapListResponse(lineupRes.value, 'lineups') : [];
+
+        // Coerce cả 2 vế về Number — tránh lệch string/number giữa lineup.team_id
+        // (thường đi qua path serialize khác) và match.home_team_id/away_team_id.
+        const homeTeamId = Number(selectedMatch.home_team_id);
+        const awayTeamId = Number(selectedMatch.away_team_id);
         setLineups({
-          home: allLineups.filter(l => l.team_id === selectedMatch.home_team_id),
-          away: allLineups.filter(l => l.team_id === selectedMatch.away_team_id)
+          home: allLineups.filter(l => Number(l.team_id) === homeTeamId),
+          away: allLineups.filter(l => Number(l.team_id) === awayTeamId)
         });
       } finally {
         if (!cancelled) setLoadingPlayers(false);
@@ -167,37 +205,26 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const [isDirty, setIsDirty] = useState(false);
 
   const [matchStatus, setMatchStatus] = useState('');
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
 
   const [isStarting, setIsStarting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
-  const [activeModal, setActiveModal] = useState(null); // 'period', 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
+  const [activeModal, setActiveModal] = useState(null); // 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
 
-  // Use the timer hook
-  useTimer(timerRunning, setTimerSeconds);
-
-  const prevSeasonRef = useRef(effectiveSeasonId);
+  const prevSeasonRef = useState(effectiveSeasonId)[0];
   useEffect(() => {
     if (!effectiveSeasonId) return;
     fetchBySeason(Number(effectiveSeasonId), { force: true });
-    if (prevSeasonRef.current !== effectiveSeasonId) {
-      prevSeasonRef.current = effectiveSeasonId;
-      setTimeout(() => resetForm(), 0);
-    }
   }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedMatch) {
       setMatchStatus(selectedMatch.status);
-      setTimerRunning(selectedMatch.status === 'ongoing');
     } else {
       setMatchStatus('');
-      setTimerRunning(false);
     }
-  }, [selectedMatch?.id, selectedMatch?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedMatch?.id, selectedMatch?.status]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const resetForm = () => {
@@ -205,7 +232,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
-    setTimerSeconds(0); setTimerRunning(false);
     setMatchStatus('');
   };
 
@@ -214,7 +240,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
-    setTimerSeconds(0);
   };
 
   const handleScoreChange = (side, val) => {
@@ -294,8 +319,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     try {
       await matchApi.startMatch(selectedMatch.id);
       setMatchStatus('ongoing');
-      setTimerSeconds(0);
-      setTimerRunning(true);
       toast.success('Trận đấu đã bắt đầu!');
       handleRefresh();
     } catch (err) {
@@ -309,7 +332,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setIsSavingDraft(true);
     try {
       await syncUnsavedEvents();
-      toast.info('Đã đồng bộ sự kiện (chưa kết thúc trận).');
+      toast.info('Đã đồng bộ sự kiện (chưa xác nhận kết quả).');
       setIsDirty(false);
     } catch {
       toast.error('Lỗi khi đồng bộ sự kiện.');
@@ -330,13 +353,12 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         resultType: 'full_time',
       });
 
-      setTimerRunning(false);
       setMatchStatus('finished');
-      toast.success('Kết thúc trận! Standings và bracket đã được cập nhật. 🎉', 5000);
+      toast.success('Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉', 5000);
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
-      toast.error('Lỗi khi kết thúc trận: ' + (err?.response?.data?.message || err.message));
+      toast.error('Lỗi khi xác nhận kết quả: ' + (err?.response?.data?.message || err.message));
     } finally { setIsFinishing(false); }
   };
 
@@ -357,10 +379,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setActiveModal(null);
     handleRefresh();
   };
-
-  const timerMins = Math.floor(timerSeconds / 60);
-  const timerSecs = timerSeconds % 60;
-  const timerDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
 
   // ── Formatted scheduled_at ─────────────────────────────────────────────────
   const fmtMatchDate = (m) => m?.scheduled_at
@@ -546,7 +564,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     </div>
                   </div>
 
-                  {/* Score + Timer */}
+                  {/* Score */}
                   <div className="flex flex-col items-center gap-3 shrink-0">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <input
@@ -562,15 +580,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                         onChange={e => handleScoreChange('away', e.target.value)}
                         className="w-14 h-18 sm:w-20 sm:h-24 text-center text-4xl sm:text-6xl font-black bg-navy-dark border-2 border-navy-light rounded-2xl focus:border-orange-500 outline-none transition-all text-white shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                    </div>
-
-                    {/* Timer */}
-                    <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono font-black text-lg sm:text-2xl tracking-widest transition-all ${isOngoing
-                      ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
-                      : 'bg-navy-dark border-navy-light text-gray-500'
-                      }`}>
-                      <Clock className="w-4 h-4 opacity-70" />
-                      {timerDisplay}
                     </div>
 
                     <button
@@ -617,10 +626,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     <button
                       onClick={handleFinishMatch}
                       disabled={isFinishing}
-                      className="flex-1 flex items-center justify-center gap-2.5 py-4 px-6 bg-linear-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-60 text-white font-black rounded-2xl shadow-lg shadow-red-900/40 transition-all uppercase tracking-wider text-sm"
+                      className="flex-1 flex items-center justify-center gap-2.5 py-4 px-6 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60 text-white font-black rounded-2xl shadow-lg shadow-blue-900/40 transition-all uppercase tracking-wider text-sm"
                     >
                       {isFinishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Flag className="w-5 h-5" />}
-                      Kết thúc trận
+                      Xác nhận kết quả
                     </button>
                   )}
 
@@ -728,10 +737,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                 <button
                   onClick={handleFinishMatch}
                   disabled={isFinishing}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-black rounded-xl transition-all shadow-lg shadow-red-900/40 text-sm"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-900/40 text-sm"
                 >
                   {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Flag className="w-4 h-4" />}
-                  Kết thúc
+                  Xác nhận
                 </button>
               )}
 
@@ -752,7 +761,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
       {/* Advanced Control Modals */}
       <ForfeitMatchModal isOpen={activeModal === 'forfeit'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
-      <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} currentMinute={timerMins} onSuccess={handleModalSuccess} />
+      <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
       <ResolveAppealModal isOpen={activeModal === 'resolve'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
     </>

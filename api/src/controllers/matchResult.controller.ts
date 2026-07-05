@@ -101,4 +101,9 @@ export class MatchResultController extends Controller {
         this.setStatus(201);
         return result;
     }
+
+    @Get("{id}/report")
+    async getMatchReport(@Path() id: number) {
+        return this.matchResultService.getMatchReport(id);
+    }
 }
