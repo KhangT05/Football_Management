@@ -396,9 +396,9 @@ export default function ScheduleResults() {
             </div>
 
             {/* Scrollable container taking full width of the main container */}
-            <div className="flex gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {groups.map(group => (
-                <div key={group.id} className="min-w-[280px] sm:min-w-[320px] md:min-w-[350px] bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 shadow-2xl snap-start shrink-0 hover:border-blue-500/30 transition-colors duration-300">
+                <div key={group.id} className="w-full bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 shadow-2xl hover:border-blue-500/30 transition-colors">
                   <div className="flex items-center justify-between border-b border-navy-light/50 pb-4 mb-5">
                     <h3 className="text-lg md:text-xl font-black text-blue-400 uppercase tracking-widest">{group.name}</h3>
                     <span className="text-xs font-black text-gray-300 bg-navy-light/80 px-3 py-1.5 rounded-lg border border-white/5">{group.season_teams?.length || 0} Đội</span>
