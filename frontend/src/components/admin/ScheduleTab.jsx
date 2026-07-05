@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   CalendarDays, CalendarPlus, Zap, Edit3, X, Save,
-  MapPin, Clock, Loader2, RefreshCw, Search
+  MapPin, Clock, Loader2, RefreshCw, Search, GitBranch, Trophy
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
@@ -11,6 +11,12 @@ import useToastStore from '../../store/toastStore';
 import { groupApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
+// GIẢ ĐỊNH đường dẫn import — chưa xác nhận được vị trí file thật của
+// KnockoutUI trong project (không có trong source đã cung cấp). Đổi lại
+// path này để khớp cấu trúc thư mục thực tế. Component nhận prop
+// `seasonId` (number) — theo đúng signature knockoutApi.generateBracket(seasonId, payload)
+// đã thấy ở KnockoutUI.
+import KnockoutUI from '../knockout/KnockoutUI';
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
@@ -121,12 +127,6 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
-// Modal này giờ có 2 chế độ, tự động phát hiện dựa trên GroupService:
-//  - Season CHƯA có bảng nào (hasDrawnGroups=false): hiện form cũ (tự tạo
-//    bảng + tự chia đội), gọi POST /schedules/seasons/{id}/generate.
-//  - Season ĐÃ có bảng + đã bốc thăm (hasDrawnGroups=true): ẩn phần
-//    "số bảng / kích thước bảng" (không còn ý nghĩa gì), chỉ hỏi sân/giờ/
-//    nghỉ tối thiểu, gọi POST /schedules/seasons/{id}/generate-from-groups.
 function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
@@ -143,9 +143,6 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Kiểm tra season đã có bảng + đã bốc thăm (>= 2 đội/bảng) hay chưa —
-  // dùng chính API groupApi.listBySeason (GroupService.findAllBySeason),
-  // đảm bảo cùng nguồn sự thật với GroupDrawUI.
   useEffect(() => {
     if (!seasonId) return;
     let cancelled = false;
@@ -202,10 +199,8 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
     };
 
     if (hasDrawnGroups) {
-      // Bảng đã tồn tại + đã bốc thăm — chỉ sinh match + xếp lịch
       await onGenerateFromGroups(seasonId, { ...basePayload, doubleRound: false });
     } else {
-      // Chưa có bảng — luồng cũ: tự tạo bảng + tự chia đội + sinh lịch
       await onGenerate(seasonId, {
         ...basePayload,
         desiredGroupCount: Number(formData.desiredGroupCount),
@@ -349,6 +344,12 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
 
+  // NEW: phase-type switcher — nối 2 luồng "vòng bảng" và "knockout" đã tồn
+  // tại độc lập ở API level nhưng chưa có entry point chung trong UI. Trước
+  // đây user phải tự chuyển sang 1 component KnockoutUI tách biệt hoàn toàn,
+  // không có state/context liền mạch từ đây.
+  const [subTab, setSubTab] = useState('group'); // 'group' | 'knockout'
+
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null); // stores match object if open
 
@@ -362,10 +363,10 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   }, [fetchVenues, fetchTeams]);
 
   useEffect(() => {
-    if (selectedSeasonId) {
+    if (selectedSeasonId && subTab === 'group') {
       fetchBySeason(Number(selectedSeasonId), { force: true });
     }
-  }, [selectedSeasonId, fetchBySeason]);
+  }, [selectedSeasonId, subTab, fetchBySeason]);
 
   const effectiveSeasonId = selectedSeasonId;
   const matches = useMemo(() => {
@@ -406,7 +407,6 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
-  // NEW: sinh lịch cho season đã có bảng + đã bốc thăm sẵn (qua GroupDrawUI).
   const handleGenerateFromGroups = async (seasonId, payload) => {
     try {
       await generateFromGroups(seasonId, payload);
@@ -431,137 +431,172 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   return (
     <>
       <div className="space-y-6 animate-fade-in">
-        {/* Filters & Actions */}
-        <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm trận đấu (theo tên đội)..."
-                value={searchTerm}
-                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon transition-colors text-sm"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="px-4 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white transition-all disabled:opacity-50"
-              title="Tải lại lịch"
-            >
-              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={() => setGenerateModalOpen(true)}
-              disabled={!effectiveSeasonId}
-              className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
-            >
-              <Zap className="w-5 h-5" /> Tạo lịch thi đấu
-            </button>
-          </div>
+
+        {/* Sub-tab switcher: Vòng bảng vs Knockout — luôn hiện, không gate theo
+            trạng thái round-robin. KnockoutService tự throw CONFLICT nếu chưa
+            đủ điều kiện (vd standings chưa đủ đội), KnockoutUI hiển thị lỗi đó
+            trực tiếp qua toast — không cần FE tự đoán trạng thái trước. */}
+        <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-full sm:w-fit">
+          <button
+            onClick={() => setSubTab('group')}
+            className={`flex-1 sm:w-40 py-2.5 px-4 text-xs font-black uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 ${subTab === 'group' ? 'bg-neon text-black' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            <Trophy className="w-4 h-4" /> Vòng bảng
+          </button>
+          <button
+            onClick={() => setSubTab('knockout')}
+            className={`flex-1 sm:w-40 py-2.5 px-4 text-xs font-black uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 ${subTab === 'knockout' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            <GitBranch className="w-4 h-4" /> Knockout
+          </button>
         </div>
 
-        {/* Content Area */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-neon animate-spin" />
-          </div>
-        ) : matches.length === 0 ? (
-          <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
-            <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
-            <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
-            {effectiveSeasonId && (
-              <button
-                onClick={() => setGenerateModalOpen(true)}
-                className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Zap className="w-5 h-5" /> Tạo lịch tự động ngay
-              </button>
-            )}
-          </div>
-        ) : (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayedMatches.map(m => {
-                const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
-                const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
-
-                const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
-                const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
-
-                const homeLogo = homeTeam?.logo;
-                const awayLogo = awayTeam?.logo;
-                return (
-                  <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
-                    <div className="flex justify-between items-start mb-3">
-                      <StatusBadge status={m.status} />
-                      <button
-                        onClick={() => setRescheduleMatchData(m)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
-                        title="Đổi lịch / Sân"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 justify-between mb-4 mt-2">
-                      <div className="flex-1 text-center min-w-0">
-                        {homeLogo ? (
-                          <img src={homeLogo} alt={homeName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-emerald-500/30" />
-                        ) : (
-                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
-                            {homeName[0]}
-                          </div>
-                        )}
-                        <p className="text-white font-bold text-sm truncate" title={homeName}>{homeName}</p>
-                      </div>
-                      <span className="text-gray-600 font-black text-xs shrink-0">VS</span>
-                      <div className="flex-1 text-center min-w-0">
-                        {awayLogo ? (
-                          <img src={awayLogo} alt={awayName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-blue-500/30" />
-                        ) : (
-                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
-                            {awayName[0]}
-                          </div>
-                        )}
-                        <p className="text-white font-bold text-sm truncate" title={awayName}>{awayName}</p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-navy-light/50 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                        <Clock className="w-3.5 h-3.5 text-gray-500" />
-                        {m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa xếp lịch'}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-400 font-medium truncate mb-2">
-                        <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                        <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
-                      </div>
-                      <button
-                        onClick={() => onGoToLiveControl(m.id)}
-                        className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Zap className="w-4 h-4" /> Cập nhật kết quả
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+        {subTab === 'knockout' ? (
+          !effectiveSeasonId ? (
+            <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
+              <GitBranch className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">Chọn mùa giải trước khi tạo sơ đồ Knockout.</p>
             </div>
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+          ) : (
+            <KnockoutUI seasonId={Number(effectiveSeasonId)} />
+          )
+        ) : (
+          <>
+            {/* Filters & Actions */}
+            <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm trận đấu (theo tên đội)..."
+                    value={searchTerm}
+                    onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon transition-colors text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="px-4 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white transition-all disabled:opacity-50"
+                  title="Tải lại lịch"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setGenerateModalOpen(true)}
+                  disabled={!effectiveSeasonId}
+                  className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Zap className="w-5 h-5" /> Tạo lịch thi đấu
+                </button>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 text-neon animate-spin" />
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
+                <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
+                <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
+                {effectiveSeasonId && (
+                  <button
+                    onClick={() => setGenerateModalOpen(true)}
+                    className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
+                  >
+                    <Zap className="w-5 h-5" /> Tạo lịch tự động ngay
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {displayedMatches.map(m => {
+                    const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
+                    const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
+
+                    const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
+                    const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
+
+                    const homeLogo = homeTeam?.logo;
+                    const awayLogo = awayTeam?.logo;
+                    return (
+                      <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
+                        <div className="flex justify-between items-start mb-3">
+                          <StatusBadge status={m.status} />
+                          <button
+                            onClick={() => setRescheduleMatchData(m)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
+                            title="Đổi lịch / Sân"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 justify-between mb-4 mt-2">
+                          <div className="flex-1 text-center min-w-0">
+                            {homeLogo ? (
+                              <img src={homeLogo} alt={homeName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-emerald-500/30" />
+                            ) : (
+                              <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
+                                {homeName[0]}
+                              </div>
+                            )}
+                            <p className="text-white font-bold text-sm truncate" title={homeName}>{homeName}</p>
+                          </div>
+                          <span className="text-gray-600 font-black text-xs shrink-0">VS</span>
+                          <div className="flex-1 text-center min-w-0">
+                            {awayLogo ? (
+                              <img src={awayLogo} alt={awayName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-blue-500/30" />
+                            ) : (
+                              <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
+                                {awayName[0]}
+                              </div>
+                            )}
+                            <p className="text-white font-bold text-sm truncate" title={awayName}>{awayName}</p>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-navy-light/50 flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
+                            <Clock className="w-3.5 h-3.5 text-gray-500" />
+                            {m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa xếp lịch'}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 font-medium truncate mb-2">
+                            <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                            <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
+                          </div>
+                          <button
+                            onClick={() => onGoToLiveControl(m.id)}
+                            className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Zap className="w-4 h-4" /> Cập nhật kết quả
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 

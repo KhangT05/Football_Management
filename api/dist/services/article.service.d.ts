@@ -27,18 +27,18 @@ export declare class ArticleService {
         id: number;
         created_at: Date;
         order: number;
+        article_id: number;
         url: string;
         caption: string | null;
-        article_id: number;
     }[]>;
     addMedia(articleId: number, dto: AddArticleMediaDto): Promise<{
         type: import("../generated/prisma/enums.js").MediaType;
         id: number;
         created_at: Date;
         order: number;
+        article_id: number;
         url: string;
         caption: string | null;
-        article_id: number;
     }>;
     deleteMedia(articleId: number, mediaId: number): Promise<void>;
     bulkDeleteMedia(articleId: number, dto: BulkDeleteMediaDto): Promise<{

@@ -1,5 +1,5 @@
 import { SeasonListItem } from '../dtos/season.schema.js';
-import { PrismaClient } from '../generated/prisma/client.js';
+import { Prisma, PrismaClient } from '../generated/prisma/client.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { PlayerStatisticRow, TeamStandingRow } from '../types/standing.type.js';
 export declare class StandingsService {
@@ -104,7 +104,7 @@ export declare class StandingsService {
      * standings recompute chạy sau khi match transaction commit (eventually consistent).
      * Nếu fail: standings stale nhưng match đã finalized. Acceptable cho scale này.
      */
-    recomputeGroupStandings(groupId: number): Promise<void>;
+    recomputeGroupStandings(groupId: number, tx?: Prisma.TransactionClient): Promise<void>;
     /**
      * List seasons ở trạng thái người dùng quan tâm: ongoing, finished, cancelled.
      * upcoming / registration_open bị loại — chưa có standings để xem.

@@ -1407,6 +1407,8 @@ const models: TsoaRoute.Models = {
     "KnockoutGenerateResult": {
         "dataType": "refObject",
         "properties": {
+            "phaseId": {"dataType":"double","required":true},
+            "phaseType": {"ref":"PhaseType","required":true},
             "totalSlots": {"dataType":"double","required":true},
             "round1Matches": {"dataType":"double","required":true},
             "byeSlots": {"dataType":"double","required":true},
@@ -1417,7 +1419,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofgenerateKnockoutRequestSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"legs":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]}]},"seededTeamIds":{"dataType":"array","array":{"dataType":"double"},"required":true},"matchTimes":{"dataType":"array","array":{"dataType":"string"},"required":true},"venueIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"phaseTypeOverride":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["round_of_16"]},{"dataType":"enum","enums":["quarter_final"]},{"dataType":"enum","enums":["semi_final"]},{"dataType":"enum","enums":["final"]}]},"legs":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]}]},"seeds":{"dataType":"array","array":{"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"rank":{"dataType":"double","required":true},"groupId":{"dataType":"double","required":true},"kind":{"dataType":"enum","enums":["standing"],"required":true}}},{"dataType":"nestedObjectLiteral","nestedProperties":{"teamId":{"dataType":"double","required":true},"kind":{"dataType":"enum","enums":["manual"],"required":true}}}]},"required":true},"matchTimes":{"dataType":"array","array":{"dataType":"string"},"required":true},"venueIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GenerateKnockoutRequestDto": {
@@ -6345,10 +6347,9 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsKnockoutController_generateKnockoutBracket: Record<string, TsoaRoute.ParameterSchema> = {
                 seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
-                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
                 body: {"in":"body","name":"body","required":true,"ref":"GenerateKnockoutRequestDto"},
         };
-        app.post('/seasons/:seasonId/phases/:phaseId/knockout/generate',
+        app.post('/seasons/:seasonId/knockout/generate',
             authenticateMiddleware([{"jwt":["admin"]}]),
             ...(fetchMiddlewares<RequestHandler>(KnockoutController)),
             ...(fetchMiddlewares<RequestHandler>(KnockoutController.prototype.generateKnockoutBracket)),

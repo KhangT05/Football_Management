@@ -1,6 +1,6 @@
 import { createAppError } from '../common/app.error.js';
 import { SeasonListItem } from '../dtos/season.schema.js';
-import { PrismaClient, SeasonStatus } from '../generated/prisma/client.js';
+import { Prisma, PrismaClient, SeasonStatus } from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
 import { PaginatedResult, QueryableConfig, QueryRequest } from '../types/queryable.type.js';
 import {
@@ -294,10 +294,13 @@ export class StandingsService {
      * standings recompute chạy sau khi match transaction commit (eventually consistent).
      * Nếu fail: standings stale nhưng match đã finalized. Acceptable cho scale này.
      */
-    async recomputeGroupStandings(groupId: number): Promise<void> {
-        // Path dài vì TournamentRule attach vào tournament, không phải season/group.
-        // Không có cách ngắn hơn trừ khi denormalize rule xuống group — không nên.
-        const group = await this.prisma.group.findUniqueOrThrow({
+    async recomputeGroupStandings(
+        groupId: number,
+        tx?: Prisma.TransactionClient,
+    ): Promise<void> {
+        const client = tx ?? this.prisma;
+
+        const group = await client.group.findUniqueOrThrow({
             where: { id: groupId },
             select: {
                 phase: {
@@ -324,7 +327,6 @@ export class StandingsService {
             },
         });
 
-        // Phase.season_id là non-null trong schema — assert để catch misconfiguration sớm
         const seasonId = group.phase.season?.id;
         if (!seasonId) {
             throw new Error(`Group ${groupId}: phase không có season — data integrity issue`);
@@ -336,8 +338,7 @@ export class StandingsService {
         const pointsLoss = rule?.points_per_loss ?? 0;
         const tiebreakerOrder = (rule?.tiebreaker_order as string[]) ?? ['goal_diff', 'goals_scored', 'head_to_head'];
 
-        // Load official matches — chỉ 'official' status, bỏ qua protested/under_review
-        const matches = await this.prisma.match.findMany({
+        const matches = await client.match.findMany({
             where: {
                 group_id: groupId,
                 status: { in: ['finished', 'forfeited'] },
@@ -359,20 +360,17 @@ export class StandingsService {
             },
         });
 
-        // Chỉ tính matches có matchResult (guard null)
         const officialMatches = matches.filter(
             (m): m is typeof m & { matchResult: NonNullable<typeof m.matchResult> } =>
                 m.matchResult !== null,
         );
 
-        // Load teams thuộc group qua seasonTeam
-        const seasonTeams = await this.prisma.seasonTeam.findMany({
+        const seasonTeams = await client.seasonTeam.findMany({
             where: { group_id: groupId },
             select: { team_id: true },
         });
         const teamIds = seasonTeams.map(st => st.team_id);
 
-        // Init accumulators cho tất cả teams, kể cả chưa đá trận nào
         const standings = new Map<number, StandingAccum>(
             teamIds.map(tid => [tid, {
                 teamId: tid, played: 0, wins: 0, draws: 0, losses: 0,
@@ -380,13 +378,10 @@ export class StandingsService {
             }]),
         );
 
-        // Accumulate stats từ mỗi match
         for (const m of officialMatches) {
             const r = m.matchResult;
             const home = standings.get(m.home_team_id);
             const away = standings.get(m.away_team_id);
-
-            // Guard: team có thể không thuộc group nếu data dirty
             if (!home || !away) continue;
 
             const hg = r.home_final_score;
@@ -408,14 +403,12 @@ export class StandingsService {
             }
         }
 
-        // Load card stats — chỉ khi tiebreaker order có yellow/red_cards
-        // seasonId đã assert not null ở trên
         const needsCardStats =
             tiebreakerOrder.includes('yellow_cards') ||
             tiebreakerOrder.includes('red_cards');
 
         if (needsCardStats) {
-            const cardStats = await this.prisma.playerStatistic.groupBy({
+            const cardStats = await client.playerStatistic.groupBy({
                 by: ['team_id'],
                 where: { team_id: { in: teamIds }, season_id: seasonId },
                 _sum: { yellow_cards: true, red_cards: true },
@@ -429,7 +422,6 @@ export class StandingsService {
             }
         }
 
-        // Build H2H map — chỉ khi cần
         const h2h = new Map<string, H2HRecord>();
 
         if (tiebreakerOrder.includes('head_to_head')) {
@@ -455,7 +447,6 @@ export class StandingsService {
             }
         }
 
-        // Sort với H2H mini-league logic (UEFA standard)
         const sorted = this._sortStandings(
             [...standings.values()],
             tiebreakerOrder,
@@ -465,43 +456,47 @@ export class StandingsService {
             pointsDraw,
         );
 
-        // Upsert batch trong single transaction
-        // Sequential map → array of Prisma operations, chạy trong interactive transaction
-        await this.prisma.$transaction(
-            sorted.map((s, idx) =>
-                this.prisma.teamStanding.upsert({
-                    where: { group_id_team_id: { group_id: groupId, team_id: s.teamId } },
-                    create: {
-                        group_id: groupId,
-                        team_id: s.teamId,
-                        // FIX: schema có field `season_id` (optional FK) trên TeamStanding,
-                        // code cũ bỏ trống → mọi truy vấn lọc TeamStanding theo season_id trực
-                        // tiếp (không qua group->phase->season join) sẽ miss row này.
-                        season_id: seasonId,
-                        position: idx + 1,
-                        matches_played: s.played,
-                        wins: s.wins,
-                        draws: s.draws,
-                        losses: s.losses,
-                        goals_for: s.goalsFor,
-                        goals_against: s.goalsAgainst,
-                        points: s.points,
-                    },
-                    update: {
-                        position: idx + 1,
-                        matches_played: s.played,
-                        wins: s.wins,
-                        draws: s.draws,
-                        losses: s.losses,
-                        goals_for: s.goalsFor,
-                        goals_against: s.goalsAgainst,
-                        points: s.points,
-                        // season_id không update — group không đổi season giữa các lần recompute,
-                        // và update field FK không cần thiết tốn thêm write.
-                    },
-                }),
-            ),
-        );
+        // FIX: nếu đang chạy trong transaction của caller (tx), không mở nested
+        // $transaction trên this.prisma — dùng chính tx, sequential upsert.
+        // Prisma không hỗ trợ batch nhiều statement trong 1 round-trip khi đã
+        // ở trong interactive transaction, nên N round-trip là bắt buộc.
+        // Chấp nhận được: group ≤ 8 teams → ≤ 8 round-trip, không phải hot path.
+        const upsertOps = sorted.map((s, idx) => ({
+            where: { group_id_team_id: { group_id: groupId, team_id: s.teamId } },
+            create: {
+                group_id: groupId,
+                team_id: s.teamId,
+                season_id: seasonId,
+                position: idx + 1,
+                matches_played: s.played,
+                wins: s.wins,
+                draws: s.draws,
+                losses: s.losses,
+                goals_for: s.goalsFor,
+                goals_against: s.goalsAgainst,
+                points: s.points,
+            },
+            update: {
+                position: idx + 1,
+                matches_played: s.played,
+                wins: s.wins,
+                draws: s.draws,
+                losses: s.losses,
+                goals_for: s.goalsFor,
+                goals_against: s.goalsAgainst,
+                points: s.points,
+            },
+        }));
+
+        if (tx) {
+            for (const op of upsertOps) {
+                await tx.teamStanding.upsert(op);
+            }
+        } else {
+            await this.prisma.$transaction(
+                upsertOps.map(op => this.prisma.teamStanding.upsert(op)),
+            );
+        }
     }
     // ─── Thêm vào StandingsService ───────────────────────────────────────────────
     // Paste 2 method này vào class StandingsService, bên dưới constructor.

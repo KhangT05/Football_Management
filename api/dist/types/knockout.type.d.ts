@@ -1,16 +1,34 @@
 import { PhaseType, Prisma } from "../generated/prisma/client.js";
+export type SeedSource = {
+    kind: 'standing';
+    groupId: number;
+    rank: number;
+} | {
+    kind: 'manual';
+    teamId: number;
+};
+export declare const BRACKET_SIZE_TO_PHASE_TYPE: Partial<Record<number, PhaseType>>;
 export interface KnockoutGenerateOptions {
-    phaseId: number;
     seasonId: number;
-    /** Ordered list of seeded teams: index 0 = seed 1, etc.
-     *  Must be power-of-2 or will be padded with byes. */
-    seededTeamIds: number[];
+    /** Ordered: index 0 = seed 1. Resolve sang teamId xảy ra TRONG transaction
+     *  của generateKnockoutBracket — không nhận teamId list tĩnh từ FE nữa,
+     *  vì standings có thể vừa đổi ngay trước lúc admin bấm generate. */
+    seeds: SeedSource[];
     venueIds: number[];
     matchTimes: string[];
     /** From Phase.legs — 1 or 2 */
     legs: 1 | 2;
+    /** Bắt buộc phải set nếu bracket size không map được qua
+     *  BRACKET_SIZE_TO_PHASE_TYPE (hiện tại: không case nào cần, third_place
+     *  không đi qua flow này). Giữ lại cho tương lai, KHÔNG dùng để bypass
+     *  validation bracket size. */
+    phaseTypeOverride?: PhaseType;
 }
 export interface KnockoutGenerateResult {
+    /** Phase vừa được get-or-create — caller cần ID này cho các call sau
+     *  (GET bracket, POST advance) vì generate không còn nhận phaseId nữa. */
+    phaseId: number;
+    phaseType: PhaseType;
     totalSlots: number;
     round1Matches: number;
     byeSlots: number;
