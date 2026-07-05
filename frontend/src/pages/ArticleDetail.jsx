@@ -3,6 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Tag, Share2 } from 'lucide-react';
 import { articleApi } from '../api';
 
+const getTagLabel = (tag) => {
+  if (typeof tag === 'string') return tag;
+  if (tag && typeof tag === 'object') return tag.tag || '';
+  return '';
+};
+
 export default function ArticleDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -76,12 +82,17 @@ export default function ArticleDetail() {
                 {new Date(article.published_at || article.created_at).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
               
-              {article.tags && article.tags.map(tag => (
-                <span key={tag} className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg">
-                  <Tag className="w-3 h-3" />
-                  {tag}
-                </span>
-              ))}
+              {article.tags && article.tags.map(tag => {
+                const tagLabel = getTagLabel(tag);
+                if (!tagLabel) return null;
+
+                return (
+                  <span key={tagLabel} className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg">
+                    <Tag className="w-3 h-3" />
+                    {tagLabel}
+                  </span>
+                );
+              })}
             </div>
             
             <h1 className="text-3xl md:text-5xl font-black text-white leading-tight mb-6">

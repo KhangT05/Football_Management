@@ -4,6 +4,12 @@ import { Newspaper, Calendar, Tag, ChevronRight, Search } from 'lucide-react';
 import { articleApi } from '../api';
 import Pagination from '../components/ui/Pagination';
 
+const getTagLabel = (tag) => {
+  if (typeof tag === 'string') return tag;
+  if (tag && typeof tag === 'object') return tag.tag || '';
+  return '';
+};
+
 export default function News() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,8 +52,12 @@ export default function News() {
 
         const res = await articleApi.getArticles(params);
         if (!cancelled) {
-          setArticles(res.data.data || []);
-          setTotalPages(res.data.meta?.last_page || 1);
+          const payload = (typeof res?.status === 'boolean') ? res.data : res;
+          const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+          const meta = Array.isArray(payload) ? null : payload?.meta;
+          
+          setArticles(items);
+          setTotalPages(meta?.last_page || 1);
         }
       } catch (err) {
         if (!cancelled) {
@@ -116,17 +126,22 @@ export default function News() {
               >
                 Tất cả
               </button>
-              {availableTags.map(tag => (
+              {availableTags.map(tag => {
+                const tagLabel = getTagLabel(tag);
+                if (!tagLabel) return null;
+
+                return (
                 <button
-                  key={tag}
-                  onClick={() => { setActiveTag(tag); setCurrentPage(1); }}
+                  key={tagLabel}
+                  onClick={() => { setActiveTag(tagLabel); setCurrentPage(1); }}
                   className={`shrink-0 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${
-                    activeTag === tag ? 'bg-blue-600 text-white shadow-lg' : 'bg-navy-dark text-gray-400 hover:text-white border border-navy-light'
+                    activeTag === tagLabel ? 'bg-blue-600 text-white shadow-lg' : 'bg-navy-dark text-gray-400 hover:text-white border border-navy-light'
                   }`}
                 >
-                  <Tag className="w-3 h-3" /> {tag}
+                  <Tag className="w-3 h-3" /> {tagLabel}
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -161,10 +176,10 @@ export default function News() {
                           <Newspaper className="w-12 h-12 opacity-20" />
                         </div>
                       )}
-                      {article.tags && article.tags.length > 0 && (
+                      {article.tags && article.tags.length > 0 && getTagLabel(article.tags[0]) && (
                         <div className="absolute top-4 left-4 flex gap-2">
                           <span className="bg-blue-600/90 backdrop-blur text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg">
-                            {article.tags[0]}
+                            {getTagLabel(article.tags[0])}
                           </span>
                         </div>
                       )}

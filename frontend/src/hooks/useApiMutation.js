@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { parseApiError } from '../utils/errorHelper';
 
 /**
  * useApiMutation
@@ -37,7 +38,7 @@ export function useApiMutation() {
       const result = await asyncFn();
       return result;
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra.';
+      const msg = parseApiError(err, 'Có lỗi xảy ra.');
       setError(msg);
       throw err;
     } finally {

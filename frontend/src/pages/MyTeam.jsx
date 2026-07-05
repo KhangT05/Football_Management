@@ -18,6 +18,7 @@ import PlayerFormModal from '../components/myteam/PlayerFormModal'; // react-hoo
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
+import { parseApiError } from '../utils/errorHelper';
 
 // ─── Constants ─────────────────────────────────────────────
 const MATCH_STATUS_LABEL = {
@@ -340,7 +341,7 @@ export default function MyTeam() {
       setEditTeamModalOpen(false);
       await reloadCurrent();
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi cập nhật thông tin đội.');
+      setModalError(parseApiError(apiErr, 'Lỗi khi cập nhật thông tin đội.'));
     } finally { setIsSaving(false); }
   };
 
@@ -355,7 +356,7 @@ export default function MyTeam() {
       setTeamDetail(null);
       setActiveTeamId(remaining[0]?.id ?? null);
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi xóa đội bóng.');
+      setModalError(parseApiError(apiErr, 'Lỗi khi xóa đội bóng.'));
     } finally { setIsSaving(false); }
   };
 
@@ -442,7 +443,7 @@ export default function MyTeam() {
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi cập nhật cầu thủ.');
+      setModalError(parseApiError(apiErr, 'Lỗi khi cập nhật cầu thủ.'));
     } finally { setIsSaving(false); }
   };
 

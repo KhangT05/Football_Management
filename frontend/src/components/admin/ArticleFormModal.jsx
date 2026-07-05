@@ -158,20 +158,7 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               />
             </div>
 
-            {/* Excerpt */}
-            <div>
-              <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
-                Tóm tắt (Excerpt)
-              </label>
-              <textarea
-                name="excerpt"
-                value={form.excerpt}
-                onChange={handleChange}
-                placeholder="Đoạn văn ngắn tóm tắt nội dung..."
-                rows="3"
-                className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors font-medium resize-none custom-scrollbar"
-              />
-            </div>
+
 
             {/* Tags */}
             <div>
