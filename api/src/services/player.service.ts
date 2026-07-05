@@ -1,7 +1,9 @@
 import * as XLSX from "xlsx";
+import crypto from "node:crypto";
+import bcrypt from "bcrypt"; // ASSUMPTION: đổi sang lib hash thật dùng trong auth.service nếu khác
 import {
     AddPlayerToTeamDto, BulkDeleteDto,
-    CreatePlayerDto, ImportPlayerRowDto,
+    CreatePlayerDto, CreatePlayerForTeamDto, ImportPlayerRowDto,
     importPlayerRowSchema,
     PlayerDetailDto,
     PlayerDto, TeamPlayerDto,
@@ -17,6 +19,7 @@ import { ImportResult, ListTeamPlayersQuery, PLAYER_SELECT, PLAYER_SELECT_WITH_S
 
 const MAX_IMPORT_ROWS = 200;
 const PLAYER_ROLE_NAME = "player";
+const BCRYPT_ROUNDS = 10; // ASSUMPTION: khớp cost factor dùng ở auth.service — check trước khi merge
 
 export class PlayerService {
     private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
@@ -43,11 +46,8 @@ export class PlayerService {
      * user_id sai) và không dedupe theo user_id (→ 2 Player row cho cùng 1
      * user nếu Player.user_id không có @@unique DB — chưa confirm schema.prisma).
      * Trả CONFLICT rõ ràng thay vì raw Prisma error hoặc silent duplicate.
-     * Không auto-reuse existing player ở đây (khác semantics với import Excel,
-     * nơi reuse là intent — xem docstring importTeamPlayersFromExcel) vì
-     * single-add qua FE nên biết rõ user đã có player profile để chuyển
-     * sang gọi addPlayerToTeam(player_id) trực tiếp, tránh 2 code path
-     * cùng verb "create" nhưng semantics khác nhau.
+     * Dùng khi admin đã biết user_id có sẵn. Không dùng cho case "thêm player +
+     * chưa chắc user tồn tại" — xem createPlayerForTeamWithUser.
      */
     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
         const user = await this.prisma.user.findUnique({
@@ -227,13 +227,110 @@ export class PlayerService {
     }
 
     /**
+     * Thêm cầu thủ vào team, tự find-or-create User theo email nếu chưa
+     * tồn tại. Khác createPlayer()+addPlayerToTeam() cũ (bắt buộc user có
+     * sẵn) — đây là entrypoint cho flow "leader nhập tên+email, hệ thống
+     * tự lo phần tài khoản".
+     *
+     * OPERATIONAL GAP: user mới tạo có password random không ai biết,
+     * is_active=false. Nếu hệ thống chưa có flow reset-password/invite-accept
+     * để user claim account, user này không bao giờ login được — cần xử lý
+     * trước khi ship (gửi invite email kèm token, hoặc đổi UX sang "mời user
+     * trước, gán player sau khi user đã có account thật").
+     *
+     * Pre-check jersey ngoài transaction để fail sớm (UX), P2002 trong
+     * catch là nguồn chân lý chống race — giả định đã có unique constraint
+     * (team_id, jersey_number) filter deleted_at null. Nếu chưa có, request
+     * đồng thời có thể pass cả 2 pre-check → cần thêm constraint DB.
+     */
+    async createPlayerForTeamWithUser(
+        team_id: number,
+        dto: CreatePlayerForTeamDto
+    ): Promise<TeamPlayerDto> {
+        const dupJersey = await this.prisma.teamPlayer.findFirst({
+            where: { team_id, jersey_number: dto.jersey_number, deleted_at: null },
+            select: { id: true },
+        });
+        if (dupJersey) {
+            throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
+        }
+
+        // Hash ngoài transaction — bcrypt cost 10 ~50-100ms, không nên giữ
+        // transaction connection trong lúc CPU-bound work này chạy.
+        const unusablePassword = crypto.randomBytes(32).toString("hex");
+        const passwordHash = await bcrypt.hash(unusablePassword, BCRYPT_ROUNDS);
+
+        try {
+            const tp = await this.prisma.$transaction(async (tx) => {
+                let user = await tx.user.findUnique({
+                    where: { email: dto.user_email },
+                    select: { id: true },
+                });
+
+                if (!user) {
+                    user = await tx.user.create({
+                        data: {
+                            email: dto.user_email,
+                            name: dto.name,
+                            password: passwordHash,
+                            is_active: false,
+                        },
+                        select: { id: true },
+                    });
+                }
+
+                let player = await tx.player.findFirst({
+                    where: { user_id: user.id, deleted_at: null },
+                    select: { id: true },
+                });
+
+                if (!player) {
+                    player = await tx.player.create({
+                        data: {
+                            user_id: user.id,
+                            date_of_birth: dto.date_of_birth,
+                            position: dto.position,
+                        },
+                        select: { id: true },
+                    });
+                } else {
+                    const alreadyInTeam = await tx.teamPlayer.findFirst({
+                        where: { team_id, player_id: player.id, deleted_at: null },
+                        select: { id: true },
+                    });
+                    if (alreadyInTeam) throw createAppError("CONFLICT", "Player already in team");
+                }
+
+                const created = await tx.teamPlayer.create({
+                    data: {
+                        team_id,
+                        player_id: player.id,
+                        jersey_number: dto.jersey_number,
+                        position: dto.position,
+                        role: "player",
+                        user_id: user.id,
+                    },
+                    select: TEAM_PLAYER_SELECT,
+                });
+
+                await this.ensurePlayerRole(user.id, tx);
+                return created;
+            });
+
+            return this.mapTeamPlayer(tp);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+                throw createAppError("CONFLICT", "Trùng dữ liệu — request khác vừa thêm player/số áo này");
+            }
+            throw err;
+        }
+    }
+
+    /**
      * FIX: trước đây thiếu team_id trong where clause của check + update →
      * IDOR — team A có thể sửa TeamPlayer của team B nếu biết đúng id
      * (sequential integer, dễ enumerate). Giờ team_id là bắt buộc, service
-     * là nơi enforce invariant này — không phụ thuộc controller nhớ pre-check
-     * (pattern cũ: controller tự getTeamPlayerById(id, team_id) trước rồi
-     * gọi service không kèm team_id — TOCTOU + fragile, dễ vỡ nếu route khác
-     * gọi thẳng service sau này mà quên pre-check).
+     * là nơi enforce invariant này — không phụ thuộc controller nhớ pre-check.
      */
     async updateTeamPlayer(id: number, team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto> {
         const exists = await this.prisma.teamPlayer.findFirst({

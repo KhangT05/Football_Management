@@ -64,13 +64,4 @@ export const userApi = {
   softDelete: (id) => {
     return axiosClient.delete(`/users/${id}`);
   },
-  /**
-   * Lookup user theo email (exact match) — dùng cho flow add-player-by-email.
-   * GET /users/lookup?email=...
-   * @param {string} email
-   * @returns SafeUser (404 nếu không tồn tại)
-   */
-  lookupByEmail: (email) => {
-    return axiosClient.get('/users/lookup', { params: { email } });
-  },
 };

@@ -1,174 +1,245 @@
-import { X, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import {
+  UserPlus, Edit, X, AlertTriangle, CheckCircle2, Loader2,
+  Info, UploadCloud, FileDown, Camera,
+} from 'lucide-react';
 
 const POSITIONS = [
-  { value: 'goalkeeper',  label: 'Thủ môn (GK)' },
-  { value: 'defender', label: 'Hậu vệ (DEF)' },
-  { value: 'midfielder', label: 'Tiền vệ (MID)' },
-  { value: 'forward',  label: 'Tiền đạo (FW)' },
-];
-
-const ROLES = [
-  { value: 'captain', label: '⭐ Đội trưởng' },
-  { value: 'vice_captain', label: 'Đội phó' },
-  { value: 'player', label: 'Thành viên' },
+  { value: 'GK', label: 'GK – Thủ môn' },
+  { value: 'DEF', label: 'DEF – Hậu vệ' },
+  { value: 'MID', label: 'MID – Tiền vệ' },
+  { value: 'FW', label: 'FW – Tiền đạo' },
 ];
 
 /**
- * PlayerFormModal — Modal thêm/sửa cầu thủ vào đội (dành cho admin).
+ * mode: 'add' | 'edit'
+ * onSubmitAdd({ name, user_email, date_of_birth, position, number })
+ * onSubmitEdit({ number, position })
  */
 export default function PlayerFormModal({
   mode,
-  form,
-  setForm,
-  formError,
-  isSaving,
-  onSave,
+  player,
+  usedNumbers = [],
+  onSubmitAdd,
+  onSubmitEdit,
   onClose,
+  isSaving,
+  serverError,
+  onImportExcel,
+  onDownloadTemplate,
+  isDownloadingTemplate,
+  isImporting,
 }) {
+  const isAdd = mode === 'add';
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: isAdd
+      ? { name: '', user_email: '', date_of_birth: '', position: 'MID', number: '' }
+      : { number: player?.number ?? '', position: player?.position ?? 'MID' },
+  });
+
+  const numberTakenBy = (value) =>
+    usedNumbers.find((p) => String(p.number) === String(value) && p.id !== player?.id);
+
+  const submit = handleSubmit((values) => {
+    if (isAdd) onSubmitAdd(values);
+    else onSubmitEdit(values);
+  });
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-2xl animate-slide-up overflow-hidden max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <form
+        onSubmit={submit}
+        className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-navy-light bg-navy-dark sticky top-0 z-10">
-          <h3 className="text-lg font-black text-white uppercase tracking-tight">
-            {mode === 'add' ? 'Thêm cầu thủ vào đội' : 'Chỉnh sửa cầu thủ'}
-          </h3>
-          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors border border-transparent hover:border-navy-light">
-            <X className="w-5 h-5" />
+        <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
+              {isAdd ? <UserPlus className="w-5 h-5 text-blue-400" /> : <Edit className="w-5 h-5 text-blue-400" />}
+            </div>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">
+              {isAdd ? 'Thêm cầu thủ' : 'Chỉnh sửa'}
+            </h3>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
-          {formError && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
-              <AlertTriangle className="w-4 h-4 shrink-0" />{formError}
+        <div className="p-8 space-y-6 relative z-10">
+          {player?.avatar && (
+            <div className="flex justify-center mb-4">
+              <div className="w-24 h-24 rounded-full border-[3px] border-navy-light overflow-hidden relative group cursor-pointer shadow-lg shadow-black/50">
+                <img src={player.avatar} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform duration-300" />
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                Họ và tên <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.name || ''}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Nguyễn Văn A"
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-              />
+          {serverError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-[0_0_20px_rgba(239,68,68,0.1)] font-medium">
+              <AlertTriangle className="w-5 h-5 shrink-0" /> {serverError}
             </div>
+          )}
 
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                Email {mode === 'add' && <span className="text-gray-500 font-normal lowercase">(Tùy chọn)</span>}
-              </label>
-              <input
-                type="email"
-                value={form.email || ''}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                placeholder="player@example.com"
-                disabled={mode === 'edit'}
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm disabled:opacity-50"
-              />
+          {/* Import Excel block — chỉ hiện khi thêm mới */}
+          {isAdd && onImportExcel && (
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30 shrink-0 mt-0.5">
+                  <Info className="w-4 h-4 text-emerald-400" />
+                </div>
+                <p className="text-xs text-emerald-400/90 font-medium leading-relaxed">
+                  Thêm nhiều cầu thủ cùng lúc bằng file Excel. Tải file mẫu, điền thông tin rồi upload lại.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onDownloadTemplate}
+                  disabled={isDownloadingTemplate}
+                  className="flex-1 px-4 py-3.5 font-bold bg-navy-dark text-gray-200 border border-navy-light rounded-xl flex items-center justify-center gap-2 hover:bg-navy-light hover:text-white transition-all duration-300 text-sm disabled:opacity-60"
+                >
+                  {isDownloadingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+                  Tải file mẫu
+                </button>
+                <div className="relative flex-1">
+                  <input
+                    type="file"
+                    id="import-excel-modal"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={onImportExcel}
+                    disabled={isSaving || isImporting}
+                  />
+                  <label
+                    htmlFor="import-excel-modal"
+                    className={`w-full px-4 py-3.5 font-bold bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-500 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 ${isSaving || isImporting ? 'opacity-70 pointer-events-none' : ''
+                      }`}
+                  >
+                    <UploadCloud className="w-5 h-5" /> Import Excel
+                  </label>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+          {isAdd ? (
+            <>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                  Họ và tên <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nguyễn Văn A"
+                  {...register('name', { required: 'Vui lòng nhập tên cầu thủ.' })}
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+                />
+                {errors.name && <p className="text-xs text-red-400 ml-1">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                  Email <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="player@example.com"
+                  {...register('user_email', { required: 'Vui lòng nhập email cầu thủ.' })}
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+                />
+                <p className="text-[11px] text-gray-500 ml-1">
+                  Nếu email chưa có tài khoản, hệ thống sẽ tự tạo tài khoản mới.
+                </p>
+                {errors.user_email && <p className="text-xs text-red-400 ml-1">{errors.user_email.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                  Ngày sinh <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  {...register('date_of_birth', { required: 'Vui lòng nhập ngày sinh.' })}
+                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+                />
+                {errors.date_of_birth && <p className="text-xs text-red-400 ml-1">{errors.date_of_birth.message}</p>}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center">
+                {player?.name}
+              </label>
+              <p className="text-[11px] text-gray-500 text-center">
+                Tên và thông tin hồ sơ gắn với tài khoản, chỉnh ở phần quản lý tài khoản.
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-5">
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                 Số áo <span className="text-red-400">*</span>
               </label>
               <input
-                type="number" min="1" max="99"
-                value={form.number || ''}
-                onChange={e => setForm(f => ({ ...f, number: e.target.value }))}
+                type="number"
+                min="1"
+                max="99"
                 placeholder="10"
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm text-center font-bold"
+                {...register('number', {
+                  required: 'Vui lòng nhập số áo hợp lệ.',
+                  validate: (v) => {
+                    const conflict = numberTakenBy(v);
+                    return conflict ? `Số áo ${v} đã được dùng bởi ${conflict.name}.` : true;
+                  },
+                })}
+                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-black text-center transition-all"
               />
+              {errors.number && <p className="text-xs text-red-400 mt-1">{errors.number.message}</p>}
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vị trí</label>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Vị trí</label>
               <select
-                value={form.position || 'forward'}
-                onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm"
+                {...register('position')}
+                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold appearance-none cursor-pointer text-center"
               >
-                {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                {POSITIONS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
               </select>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ngày sinh</label>
-              <input
-                type="date"
-                value={form.date_of_birth ? (new Date(form.date_of_birth).toISOString().split('T')[0]) : ''}
-                onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vai trò</label>
-              <select
-                value={form.role || 'player'}
-                onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-neon text-sm"
-              >
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Chiều cao (cm)</label>
-              <input
-                type="number" step="0.1" min="100" max="250"
-                value={form.height || ''}
-                onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
-                placeholder="175"
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Cân nặng (kg)</label>
-              <input
-                type="number" step="0.1" min="30" max="150"
-                value={form.weight || ''}
-                onChange={e => setForm(f => ({ ...f, weight: e.target.value }))}
-                placeholder="70"
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Quốc tịch</label>
-              <input
-                type="text"
-                value={form.nationality || ''}
-                onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))}
-                placeholder="Việt Nam"
-                className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm"
-              />
-            </div>
-
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-navy-light bg-navy-dark flex justify-end gap-3 sticky bottom-0 z-10">
-          <button onClick={onClose} className="px-5 py-2.5 font-bold text-gray-400 hover:text-white bg-navy-light rounded-xl border border-navy-light transition-colors">Hủy</button>
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
+          <button type="button" onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
+            Hủy bỏ
+          </button>
           <button
-            onClick={onSave}
+            type="submit"
             disabled={isSaving}
-            className="px-6 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 transition-colors disabled:opacity-70"
+            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            {mode === 'add' ? 'Thêm' : 'Lưu'}
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+            {isAdd ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
