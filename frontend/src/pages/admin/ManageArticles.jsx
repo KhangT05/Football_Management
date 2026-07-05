@@ -12,7 +12,14 @@ import ArticleFormModal from '../../components/admin/ArticleFormModal';
 import Pagination from '../../components/ui/Pagination';
 import { articleApi } from '../../api';
 
-const EMPTY_ARTICLE = { title: '', excerpt: '', content: '', cover_image: null, status: 'draft', tags: [] };
+const EMPTY_ARTICLE = {
+  title: '',
+  slug: '',
+  content: '',
+  cover_image: '',
+  tags: [],
+  is_published: false
+};
 
 export default function ManageArticles() {
   const toast = useToastStore();
@@ -57,22 +64,35 @@ export default function ManageArticles() {
   const openEditArticle = (article) => {
     articleCrud.openEdit(article, {
       title: article.title,
-      excerpt: article.excerpt || '',
       content: article.content,
       cover_image: article.cover_image,
       status: article.status,
-      tags: article.tags || [],
+      tags: (article.tags || []).map(t => typeof t === 'object' ? t.tag : t),
     });
   };
 
-  // Dùng crud.save() đúng pattern — không bypass isSaving thủ công
   const handleSaveArticle = useCallback((payload) => {
+    const finalPayload = { ...payload };
+    delete finalPayload.excerpt; // in case it's lingering in older data
+    
+    if (!finalPayload.slug) {
+      finalPayload.slug = finalPayload.title.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9 -]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+    }
+
+    if (!finalPayload.cover_image) {
+      delete finalPayload.cover_image;
+    }
+
     articleCrud.save(async () => {
       if (articleCrud.modal === 'add') {
-        await articleApi.createArticle(payload);
+        await articleApi.createArticle(finalPayload);
         toast.success(`Đã tạo bài viết "${payload.title}"`);
       } else {
-        await articleApi.updateArticle(articleCrud.editing.id, payload);
+        await articleApi.updateArticle(articleCrud.editing.id, finalPayload);
         toast.success(`Đã cập nhật bài viết "${payload.title}"`);
       }
     });

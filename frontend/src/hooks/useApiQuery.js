@@ -104,8 +104,8 @@ export function useApiQuery(apiFn, options = {}) {
   // Auto-fetch on mount và khi deps thay đổi
   useEffect(() => {
     if (!autoFetch) return;
-    // Không fetch nếu deps có giá trị falsy (e.g. selectedSeason chưa chọn)
-    const hasFalsyDep = deps.some(d => d === '' || d === null || d === undefined || d === 0);
+    // Không fetch nếu deps có giá trị null hoặc undefined
+    const hasFalsyDep = deps.some(d => d === null || d === undefined);
     if (deps.length > 0 && hasFalsyDep) {
       setData([]);
       setIsLoading(false);

@@ -21,6 +21,7 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import SeasonTeamRow from '../../components/admin/SeasonTeamRow';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 import Pagination from '../../components/ui/Pagination';
+import { parseApiError } from '../../utils/errorHelper';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -217,7 +218,7 @@ export default function ManageSeasonTeams() {
       });
       toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
-    }).catch(err => addTeamModal.setFormError(err?.response?.data?.message || 'Lỗi khi thêm đội.'));
+    }).catch(err => addTeamModal.setFormError(parseApiError(err, 'Lỗi khi thêm đội.')));
   };
 
   // ── Manual Group Assign ─────────────────────────────────────
@@ -229,7 +230,7 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.assignGroup(assignModal.editing.id, { group_id: Number(assignModal.form.group_id) });
       toast.success('Đã xếp đội vào bảng thủ công!');
       reloadTeams();
-    }).catch(err => assignModal.setFormError(err?.response?.data?.message || 'Lỗi khi xếp bảng.'));
+    }).catch(err => assignModal.setFormError(parseApiError(err, 'Lỗi khi xếp bảng.')));
   };
 
   // ── Actions: Transfer Team ──────────────────────────────────
@@ -243,7 +244,7 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
       toast.success('Đã chuyển đội sang mùa giải mới!');
       reloadTeams();
-    }).catch(err => transferModal.setFormError(err?.response?.data?.message || 'Lỗi khi chuyển đội.'));
+    }).catch(err => transferModal.setFormError(parseApiError(err, 'Lỗi khi chuyển đội.')));
   };
 
   const selectedSeasonObj = seasons.find(s => String(s.id) === String(selectedSeason));
