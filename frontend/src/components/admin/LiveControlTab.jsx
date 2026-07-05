@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-  Save, CheckCircle2, Plus, Trash2, Activity,
+import { Save, CheckCircle2, Plus, Trash2, Activity,
   Loader2, RefreshCw,
   RotateCcw, Minus,
   Flag, Zap, Target, Shield, Search
@@ -14,6 +13,8 @@ import useToastStore from '../../store/toastStore';
 import EventCard from '../../components/admin/EventCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
+import MatchSelectorPanel from '../../components/admin/MatchSelectorPanel';
+
 import {
   ForfeitMatchModal,
   AbandonMatchModal,
@@ -24,7 +25,7 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
-  { key: 'goal', label: 'Bàn thắng', icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-400' },
+  { key: 'goal', label: 'Bàn thắng', icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/40' },
   { key: 'yellow', label: 'Thẻ Vàng', icon: '🟨', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
   { key: 'red', label: 'Thẻ Đỏ', icon: '🟥', cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
   { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
@@ -87,7 +88,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const { teams, fetchAll: fetchTeams } = useTeamStore();
 
   useEffect(() => {
-    fetchTeams({ per_page: 500 });
+    fetchTeams({ per_page: 500, force: true });
   }, [fetchTeams]);
 
   const effectiveSeasonId = selectedSeasonId;
@@ -111,8 +112,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       list = list.filter(m => {
-        const hName = m.home_team?.name || teams.find(t => t.id === m.home_team_id)?.name || '';
-        const aName = m.away_team?.name || teams.find(t => t.id === m.away_team_id)?.name || '';
+        const hName = m.home_team?.name || teams.find(t => Number(t.id) === Number(m.home_team_id))?.name || '';
+        const aName = m.away_team?.name || teams.find(t => Number(t.id) === Number(m.away_team_id))?.name || '';
         return hName.toLowerCase().includes(lower) || aName.toLowerCase().includes(lower);
       });
     }
@@ -212,7 +213,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const [activeModal, setActiveModal] = useState(null); // 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
 
-  const prevSeasonRef = useState(effectiveSeasonId)[0];
   useEffect(() => {
     if (!effectiveSeasonId) return;
     fetchBySeason(Number(effectiveSeasonId), { force: true });
@@ -224,10 +224,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     } else {
       setMatchStatus('');
     }
-  }, [selectedMatch?.id, selectedMatch?.status]);
+  }, [selectedMatch]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  const resetForm = () => {
+  const _resetForm = () => {
     setSelectedMatchId('');
     setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
@@ -274,8 +274,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setIsDirty(true);
   };
 
-  const getHomeName = () => selectedMatch?.home_team?.name ?? teams.find(t => t.id === selectedMatch?.home_team_id)?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
-  const getAwayName = () => selectedMatch?.away_team?.name ?? teams.find(t => t.id === selectedMatch?.away_team_id)?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
+  const getHomeName = () => selectedMatch?.home_team?.name ?? teams.find(t => Number(t.id) === Number(selectedMatch?.home_team_id))?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
+  const getAwayName = () => selectedMatch?.away_team?.name ?? teams.find(t => Number(t.id) === Number(selectedMatch?.away_team_id))?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
 
   const handleRefresh = () => {
     if (effectiveSeasonId) {
@@ -390,131 +390,21 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   return (
     <>
       <div className="space-y-5 animate-fade-in">
-        {/* ── Search & Refresh ── */}
-        <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="flex-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-blue-400" /> Tìm kiếm trận Live
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm theo tên đội..."
-                  value={searchTerm}
-                  onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Refresh */}
-            <div className="flex items-end">
-              <button
-                onClick={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
-                disabled={isLoadingMatches}
-                className="px-5 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white hover:border-gray-500 transition-all disabled:opacity-40"
-                title="Tải lại danh sách trận"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoadingMatches ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Match Cards ── */}
-        <div>
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Zap className="w-3.5 h-3.5 text-blue-400" />
-            Chọn Trận Đấu
-            {matches.length > 0 && (
-              <span className="ml-auto text-gray-600 font-normal">{matches.length} trận</span>
-            )}
-          </h3>
-
-          {isLoadingMatches ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {[1, 2, 3].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
-            </div>
-          ) : matches.length === 0 ? (
-            <div className="text-center py-10 border border-dashed border-navy-light rounded-2xl">
-              <div className="text-3xl mb-3">🏟️</div>
-              <p className="text-gray-500 text-sm">Không có trận nào đang <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc <span className="text-red-400 font-bold">đang diễn ra</span>.</p>
-            </div>
-          ) : (
-            <div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {displayedMatches.map(m => {
-                  const isSelected = String(m.id) === String(selectedMatchId);
-                  const isLive = m.status === 'ongoing';
-                  const homeName = m.home_team?.name ?? `Đội #${m.home_team_id}`;
-                  const awayName = m.away_team?.name ?? `Đội #${m.away_team_id}`;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => handleMatchSelect(String(m.id))}
-                      className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${isSelected
-                        ? 'bg-blue-600/10 border-blue-500/60 shadow-lg shadow-blue-900/20'
-                        : 'bg-navy border-navy-light hover:border-gray-500 hover:bg-navy-light/40'
-                        }`}
-                    >
-                      {/* Live pulse glow */}
-                      {isLive && (
-                        <div className="absolute inset-0 bg-linear-to-r from-red-600/5 to-transparent pointer-events-none" />
-                      )}
-
-                      <div className="flex items-center justify-between mb-3">
-                        <div className={`text-xs font-black px-2.5 py-1 rounded-full ${isLive
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : 'bg-navy-dark text-gray-500 border border-navy-light'
-                          }`}>
-                          {isLive ? (
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                              LIVE
-                            </span>
-                          ) : '⏳ SẮP DIỄN RA'}
-                        </div>
-                        <span className="text-xs text-gray-600">{fmtMatchDate(m)}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 justify-between">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-sm shrink-0">
-                            {homeName[0]}
-                          </div>
-                          <span className="font-bold text-white text-sm truncate">{homeName}</span>
-                        </div>
-                        <span className="text-gray-600 font-black text-xs shrink-0 px-2">VS</span>
-                        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                          <span className="font-bold text-white text-sm truncate text-right">{awayName}</span>
-                          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-orange-600 to-amber-700 flex items-center justify-center text-white font-black text-sm shrink-0">
-                            {awayName[0]}
-                          </div>
-                        </div>
-                      </div>
-
-                      {isSelected && (
-                        <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <MatchSelectorPanel
+          matches={matches}
+          teams={teams}
+          isLoading={isLoadingMatches}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          displayedMatches={displayedMatches}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          totalPages={totalPages}
+          selectedMatchId={selectedMatchId}
+          onMatchSelect={handleMatchSelect}
+          onRefresh={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
+          isRefreshing={isLoadingMatches}
+        />
 
         {/* ── Main Workspace ── */}
         {selectedMatch && (

@@ -85,8 +85,13 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
               <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
             </h3>
             <p className="text-sm text-gray-400 mt-1 font-medium">
-              Trận đấu: {match.home_team?.name || 'Đội nhà'} vs {match.away_team?.name || 'Đội khách'}
+              {match.home_team?.name || 'Đội nhà'} <span className="text-gray-600 mx-1">vs</span> {match.away_team?.name || 'Đội khách'}
             </p>
+            {match.start_time && !isNaN(new Date(match.start_time).getTime()) && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {new Date(match.start_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+              </p>
+            )}
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
             <X className="w-6 h-6" />
@@ -125,7 +130,14 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
                         </div>
                         <div>
                           <p className={`font-bold ${isStarting ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
-                          <p className="text-[10px] uppercase font-black text-gray-500 tracking-wider">Số {player.number} • {player.position}</p>
+                          <p className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
+                            Số {player.number} • {{
+                              GK: 'Thủ môn', GOALKEEPER: 'Thủ môn',
+                              DEF: 'Hậu vệ', DEFENDER: 'Hậu vệ',
+                              MID: 'Tiền vệ', MIDFIELDER: 'Tiền vệ',
+                              FW: 'Tiền đạo', FORWARD: 'Tiền đạo',
+                            }[player.position?.toUpperCase()] ?? player.position}
+                          </p>
                         </div>
                       </div>
                       <div>

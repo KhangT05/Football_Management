@@ -231,9 +231,9 @@ export default function ManageMatchLineup() {
           </div>
         </div>
 
-        <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl mb-8 flex items-start gap-3 shadow-lg">
-          <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-400/90 font-medium leading-relaxed">
+        <div className="bg-navy border border-navy-light p-4 rounded-xl mb-8 flex items-start gap-3 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+          <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-400 font-medium leading-relaxed">
             Bạn cần chọn tối đa 11 cầu thủ đá chính và bầu 1 Đội trưởng (nhấn biểu tượng Ngôi sao bên cạnh cầu thủ).
             Đội hình có thể được thay đổi trước khi trận đấu diễn ra ít nhất 10 phút.
           </p>

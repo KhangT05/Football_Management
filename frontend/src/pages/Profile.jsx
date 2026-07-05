@@ -1,7 +1,8 @@
 import { User, Mail, Shield, Camera, Save, Phone, Loader2, CheckCircle2, Edit2, X, CalendarDays, Lock } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { useState, useEffect } from 'react';
+import useProfileStore from '../store/profileStore';
+import { useEffect } from 'react';
 import { userApi } from '../api';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -10,62 +11,56 @@ const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-ligh
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
   const toast = useToastStore();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Local state for form fields
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-  });
-  // Keep a copy for cancel
-  const [savedData, setSavedData] = useState({ name: '', phone: '' });
+  
+  const { 
+    isEditing, isFetching, isSaving, saveSuccess, formData,
+    setEditing, setFetching, setSaving, setSaveSuccess,
+    updateField, syncFromUser, handleCancel, updateAfterSave
+  } = useProfileStore(useShallow(state => ({
+    isEditing: state.isEditing,
+    isFetching: state.isFetching,
+    isSaving: state.isSaving,
+    saveSuccess: state.saveSuccess,
+    formData: state.formData,
+    setEditing: state.setEditing,
+    setFetching: state.setFetching,
+    setSaving: state.setSaving,
+    setSaveSuccess: state.setSaveSuccess,
+    updateField: state.updateField,
+    syncFromUser: state.syncFromUser,
+    handleCancel: state.handleCancel,
+    updateAfterSave: state.updateAfterSave
+  })));
 
   // Fetch full user details (including phone) when component mounts or user changes
   useEffect(() => {
     if (user?.id) {
-      const initial = {
-        name: user.name || '',
-        phone: user.phone || '',
-      };
-      setFormData(initial);
-      setSavedData(initial);
+      syncFromUser(user);
 
       // Fetch full profile from /users/{id}
-      setIsFetching(true);
+      setFetching(true);
       userApi.getUserById(user.id)
         .then(res => {
           if (res.data) {
-            const full = {
-              name: res.data.name || '',
-              phone: res.data.phone || '',
-            };
-            setFormData(full);
-            setSavedData(full);
+            syncFromUser(res.data);
             setUser(res.data);
           }
         })
         .catch(err => console.error("Failed to fetch full user profile", err))
-        .finally(() => setIsFetching(false));
+        .finally(() => setFetching(false));
     }
-  }, [user?.id, setUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, setUser, syncFromUser, setFetching]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleCancel = () => {
-    setFormData(savedData); // Restore original
-    setIsEditing(false);
+    updateField(e.target.name, e.target.value);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!user?.id) return;
 
-    setIsLoading(true);
+    setSaving(true);
     try {
       const res = await userApi.updateProfile(user.id, {
         name: formData.name,
@@ -77,10 +72,8 @@ export default function Profile() {
           name: res.data.name || formData.name,
           phone: res.data.phone || formData.phone,
         };
-        setSavedData(updated);
+        updateAfterSave(updated);
         setUser({ ...user, ...res.data });
-        setIsEditing(false);
-        setSaveSuccess(true);
         toast.success('Cập nhật thông tin thành công! 🎉');
         setTimeout(() => setSaveSuccess(false), 3000);
       }
@@ -88,7 +81,7 @@ export default function Profile() {
       console.error("Failed to update profile", error);
       toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
     } finally {
-      setIsLoading(false);
+      setSaving(false);
     }
   };
 
@@ -198,7 +191,7 @@ export default function Profile() {
                 {!isEditing ? (
                   <button
                     type="button"
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => setEditing(true)}
                     className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all duration-300 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30 hover:-translate-y-0.5"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -300,10 +293,10 @@ export default function Profile() {
                     <div className="pt-6 mt-6 border-t border-navy-light flex justify-end animate-fade-in">
                       <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isSaving}
                         className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-8 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 w-full sm:w-auto"
                       >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                         Lưu thay đổi
                       </button>
                     </div>

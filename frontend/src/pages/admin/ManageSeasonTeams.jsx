@@ -10,12 +10,15 @@ import { seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useSeasonStore from '../../store/seasonStore';
+import useAdminUIStore from '../../store/adminUIStore';
+import { useShallow } from 'zustand/react/shallow';
 import AdminModal from '../../components/admin/AdminModal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import GroupDrawUI from '../../components/admin/GroupDrawUI';
 import KnockoutUI from '../../components/admin/KnockoutUI';
 import ManageJerseysModal from '../../components/admin/ManageJerseysModal';
 import StatusBadge from '../../components/ui/StatusBadge';
+import SeasonTeamRow from '../../components/admin/SeasonTeamRow';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 import Pagination from '../../components/ui/Pagination';
 
@@ -42,9 +45,17 @@ export default function ManageSeasonTeams() {
 
   // ── Seasons ─────────────────────────────────────────────────
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
-  const [selectedSeason, setSelectedSeason] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterSeasonStatus, setFilterSeasonStatus] = useState('');
+
+  // ── Filter state — lưu trong adminUIStore để giữ filter khi chuyển tab ──
+  const { seasonTeamFilters, setSeasonTeamFilters } = useAdminUIStore(useShallow(state => ({
+    seasonTeamFilters: state.seasonTeamFilters,
+    setSeasonTeamFilters: state.setSeasonTeamFilters,
+  })));
+  const { selectedSeason, filterStatus, filterSeasonStatus } = seasonTeamFilters;
+
+  const setSelectedSeason = (val) => setSeasonTeamFilters({ selectedSeason: val });
+  const setFilterStatus = (val) => setSeasonTeamFilters({ filterStatus: val });
+  const setFilterSeasonStatus = (val) => setSeasonTeamFilters({ filterSeasonStatus: val });
 
   useEffect(() => {
     fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' });
@@ -436,87 +447,15 @@ export default function ManageSeasonTeams() {
                       </tr>
                     ) : (
                       paginatedTeams.map(st => (
-                        <tr key={st.id} className="hover:bg-navy-dark/70 transition-colors group">
-                          <td className="py-4 px-6 text-center text-gray-500 text-xs font-mono">#{st.id}</td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-xs text-white shadow-md overflow-hidden">
-                                {st.team?.logo
-                                  ? <img src={st.team.logo} alt="logo" className="w-full h-full object-cover" />
-                                  : <span className="text-sm font-black text-neon">{st.team?.name?.[0]}</span>
-                                }
-                              </div>
-                              <div>
-                                <p className="font-bold text-white text-sm">{st.team?.name || 'Unknown Team'}</p>
-                                {st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6 text-center">
-                            <StatusBadge status={st.status} variant="seasonTeam" />
-                          </td>
-                          <td className="py-4 px-6 text-center">
-                            {st.group_id ? (
-                              <span className="font-bold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/30 text-xs shadow-sm shadow-purple-500/10">
-                                Bảng #{st.group_id}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="py-4 px-6 text-center">
-                            {st.status === 'pending' && (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={() => handleUpdateStatus(st.id, 'approved')}
-                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 shadow-sm shadow-emerald-500/10 hover:shadow-emerald-500/20 transition-all active:scale-90"
-                                  title="Duyệt đăng ký"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleUpdateStatus(st.id, 'rejected')}
-                                  className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 shadow-sm shadow-red-500/10 hover:shadow-red-500/20 transition-all active:scale-90"
-                                  title="Từ chối"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => setJerseyModalTeam(st)}
-                                className="p-1.5 rounded-lg bg-navy-light text-emerald-400 hover:text-white hover:bg-emerald-600 border border-emerald-500/20 hover:border-emerald-500 shadow-sm transition-all active:scale-90"
-                                title="Quản lý áo đấu"
-                              >
-                                <Shirt className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => openAssignGroup(st)}
-                                className="p-1.5 rounded-lg bg-navy-light text-blue-400 hover:text-white hover:bg-blue-600 border border-blue-500/20 hover:border-blue-500 shadow-sm transition-all active:scale-90"
-                                title="Xếp bảng thủ công"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => openTransferTeam(st)}
-                                className="p-1.5 rounded-lg bg-navy-light text-purple-400 hover:text-white hover:bg-purple-600 border border-purple-500/20 hover:border-purple-500 shadow-sm transition-all active:scale-90"
-                                title="Chuyển giải"
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setDeletingId(st.id)}
-                                className="p-1.5 rounded-lg bg-navy-light text-red-400 hover:text-white hover:bg-red-600 border border-red-500/20 hover:border-red-500 shadow-sm transition-all active:scale-90"
-                                title="Xóa khỏi giải"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                        <SeasonTeamRow
+                          key={st.id}
+                          seasonTeam={st}
+                          onUpdateStatus={handleUpdateStatus}
+                          onDeleteRequest={setDeletingId}
+                          onAssignGroup={openAssignGroup}
+                          onTransfer={openTransferTeam}
+                          onManageJerseys={setJerseyModalTeam}
+                        />
                       ))
                     )}
                   </tbody>

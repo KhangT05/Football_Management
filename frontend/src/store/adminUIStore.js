@@ -37,6 +37,19 @@ const useAdminUIStore = create((set) => ({
   isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+
+  // --- Quản lý Mùa giải & Đội (ManageSeasonTeams) ---
+  seasonTeamFilters: {
+    selectedSeason: '',
+    filterStatus: '',
+    filterSeasonStatus: '',
+  },
+  setSeasonTeamFilters: (filters) => set((state) => ({
+    seasonTeamFilters: { ...state.seasonTeamFilters, ...filters }
+  })),
+  clearSeasonTeamFilters: () => set({
+    seasonTeamFilters: { selectedSeason: '', filterStatus: '', filterSeasonStatus: '' }
+  }),
 }));
 
 export default useAdminUIStore;

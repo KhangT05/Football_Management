@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi,
-    userApi, // NOTE: giả định module `userApi` có `findByEmail`. Nếu tên endpoint
-    //       thật của bạn khác (vd. authApi.lookupByEmail, adminUserApi.search...),
-    //       đổi lại đúng 1 chỗ này trong useAddPlayer bên dưới.
-} from '../../../api';
-import { parseList, normalizePlayer } from '../utils';
+    userApi,
+} from '../api';
+import { parseList, normalizePlayer } from '../utils/utils';
 
 const myTeamKey = (userId) => ['myTeam', userId];
 

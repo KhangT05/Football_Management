@@ -33,7 +33,14 @@ function extractTotalCount(payload) {
 export default function GroupDrawUI({ seasonId }) {
   const toast = useToastStore();
 
-  const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
+  const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({ 
+    teams: state.teams,
+    fetchAll: state.fetchAll
+  })));
+
+  useEffect(() => {
+    fetchTeams({ per_page: 500, force: true });
+  }, [fetchTeams]);
 
   const teamMap = useMemo(() => {
     const map = new Map();
@@ -46,6 +53,8 @@ export default function GroupDrawUI({ seasonId }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isCreatingGroups, setIsCreatingGroups] = useState(false);
   const [deletingGroupId, setDeletingGroupId] = useState(null);
+  const [draggedTeam, setDraggedTeam] = useState(null);
+  const [dragOverGroup, setDragOverGroup] = useState(null);
 
   const [teamsPerGroup, setTeamsPerGroup] = useState(4);
   const [numPots, setNumPots] = useState(4);
@@ -55,6 +64,7 @@ export default function GroupDrawUI({ seasonId }) {
   const [phaseInfo, setPhaseInfo] = useState(null);
 
   const [groups, setGroups] = useState([]);
+  const [originalGroups, setOriginalGroups] = useState([]);
   const [totalTeams, setTotalTeams] = useState(null);
   const [groupsLoadError, setGroupsLoadError] = useState(false);
   const [teamsCountError, setTeamsCountError] = useState(false);
@@ -92,7 +102,9 @@ export default function GroupDrawUI({ seasonId }) {
         const payload = unwrapResponse(groupsRes.value, 'groupApi.listBySeason');
         setGroupsLoadError(false);
         setPhaseInfo(payload?.phase ?? null);
-        setGroups(Array.isArray(payload?.groups) ? payload.groups : []);
+        const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
+        setGroups(fetchedGroups);
+        setOriginalGroups(JSON.parse(JSON.stringify(fetchedGroups)));
         setPersistedTeamsPerGroup(
           typeof payload?.phase?.teams_per_group === 'number' ? payload.phase.teams_per_group : null
         );
@@ -128,7 +140,7 @@ export default function GroupDrawUI({ seasonId }) {
     } finally {
       if (reqId === requestIdRef.current && isMountedRef.current) setLoading(false);
     }
-  }, [seasonId, toast.error]);
+  }, [seasonId, toast]);
 
   useEffect(() => {
     setGroups([]);
@@ -136,6 +148,7 @@ export default function GroupDrawUI({ seasonId }) {
     setTeamsCountError(false);
     setTotalTeams(null);
     setPersistedTeamsPerGroup(null);
+    setOriginalGroups([]);
     setPhaseInfo(null);
     if (seasonId) {
       loadData();
@@ -258,6 +271,90 @@ export default function GroupDrawUI({ seasonId }) {
       setDeletingGroupId(null);
     }
   };
+
+  // ── Drag & Drop Handlers ──
+  const handleDragStart = (e, stId, sourceGroupId) => {
+    e.dataTransfer.setData('stId', stId);
+    e.dataTransfer.setData('sourceGroupId', sourceGroupId);
+    setDraggedTeam(stId);
+  };
+
+  const handleDragOver = (e, groupId) => {
+    e.preventDefault();
+    if (dragOverGroup !== groupId) {
+      setDragOverGroup(groupId);
+    }
+  };
+
+  const handleDragLeave = (e, groupId) => {
+    e.preventDefault();
+    if (dragOverGroup === groupId) {
+      setDragOverGroup(null);
+    }
+  };
+
+  const handleDrop = (e, targetGroupId) => {
+    e.preventDefault();
+    setDragOverGroup(null);
+    setDraggedTeam(null);
+    
+    const stId = Number(e.dataTransfer.getData('stId'));
+    const sourceGroupId = Number(e.dataTransfer.getData('sourceGroupId'));
+    
+    if (!stId || sourceGroupId === targetGroupId) return;
+
+    setGroups(prevGroups => {
+      const newGroups = JSON.parse(JSON.stringify(prevGroups));
+      const sourceGroup = newGroups.find(g => g.id === sourceGroupId);
+      const targetGroup = newGroups.find(g => g.id === targetGroupId);
+      
+      if (!sourceGroup || !targetGroup) return prevGroups;
+
+      const teamIndex = sourceGroup.season_teams.findIndex(st => st.id === stId);
+      if (teamIndex === -1) return prevGroups;
+
+      const [teamToMove] = sourceGroup.season_teams.splice(teamIndex, 1);
+      targetGroup.season_teams.push(teamToMove);
+      
+      return newGroups;
+    });
+  };
+
+  const handleSaveChanges = async () => {
+    if (isDrawing || isCreatingGroups) return;
+    
+    // Find all teams that have changed groups
+    const changes = [];
+    groups.forEach(currentGroup => {
+      currentGroup.season_teams.forEach(st => {
+        const originalGroup = originalGroups.find(og => og.season_teams.some(ost => ost.id === st.id));
+        if (originalGroup && originalGroup.id !== currentGroup.id) {
+          changes.push({ teamId: st.id, targetGroupId: currentGroup.id });
+        }
+      });
+    });
+
+    if (changes.length === 0) return;
+
+    setIsDrawing(true); // Reuse isDrawing state to show loading
+    try {
+      // Execute all changes
+      await Promise.all(changes.map(change => 
+        seasonTeamApi.assignGroup(change.teamId, { group_id: change.targetGroupId })
+      ));
+      toast.success('Đã lưu thành công các thay đổi bảng đấu!');
+      loadData();
+    } catch (error) {
+      console.error('[GroupDrawUI] save changes failed:', error);
+      toast.error('Có lỗi xảy ra khi lưu thay đổi bảng đấu.');
+    } finally {
+      setIsDrawing(false);
+    }
+  };
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(groups) !== JSON.stringify(originalGroups);
+  }, [groups, originalGroups]);
 
   const hasTeamCount = typeof totalTeams === 'number';
   const minRequired = groups.length * 2;
@@ -467,7 +564,12 @@ export default function GroupDrawUI({ seasonId }) {
                   </button>
                 </div>
               </div>
-              <div className="p-2">
+              <div 
+                className={`p-2 transition-colors min-h-[80px] ${dragOverGroup === group.id ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded-b-2xl' : ''}`}
+                onDragOver={(e) => handleDragOver(e, group.id)}
+                onDragLeave={(e) => handleDragLeave(e, group.id)}
+                onDrop={(e) => handleDrop(e, group.id)}
+              >
                 {group.season_teams.length === 0 ? (
                   <div className="text-center py-8">
                     <Hash className="w-6 h-6 text-gray-700 mx-auto mb-2" />
@@ -477,7 +579,13 @@ export default function GroupDrawUI({ seasonId }) {
                   <table className="w-full text-left text-sm">
                     <tbody>
                       {group.season_teams.map((st, idx) => (
-                        <tr key={st.id} className="border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors">
+                        <tr 
+                          key={st.id} 
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, st.id, group.id)}
+                          onDragEnd={() => setDraggedTeam(null)}
+                          className={`border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors cursor-grab active:cursor-grabbing ${draggedTeam === st.id ? 'opacity-50' : ''}`}
+                        >
                           <td className="py-2.5 pl-3 pr-2 text-gray-500 font-mono text-xs w-8">{idx + 1}</td>
                           <td className="py-2.5 pr-3 font-bold text-white">
                             {getTeamName(st.team_id)}
@@ -497,6 +605,32 @@ export default function GroupDrawUI({ seasonId }) {
           <Users className="w-10 h-10 text-gray-600 mx-auto mb-3" />
           <h4 className="text-gray-400 font-bold text-sm">Chưa có bảng đấu</h4>
           <p className="text-gray-500 text-xs mt-1">Tạo bảng trước khi bốc thăm.</p>
+        </div>
+      )}
+
+      {hasChanges && (
+        <div className="sticky bottom-4 z-10 flex justify-end mt-6 bg-navy-dark/90 backdrop-blur-sm p-4 rounded-2xl border border-blue-500/30 shadow-2xl shadow-black">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-bold text-amber-400">Có thay đổi chưa được lưu</span>
+            <button
+              onClick={() => {
+                setGroups(JSON.parse(JSON.stringify(originalGroups)));
+                toast.success('Đã hủy các thay đổi');
+              }}
+              disabled={isDrawing || isCreatingGroups || loading}
+              className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-400 hover:text-white bg-transparent border border-navy-light hover:bg-navy-light transition-all disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSaveChanges}
+              disabled={isDrawing || isCreatingGroups || loading}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
+              Lưu thay đổi bảng đấu
+            </button>
+          </div>
         </div>
       )}
     </div>
