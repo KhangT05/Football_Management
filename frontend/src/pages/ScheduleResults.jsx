@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid, GitBranch } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
@@ -11,7 +11,14 @@ import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
-// Thêm gần đầu file, sau imports
+// GIẢ ĐỊNH: knockoutApi tồn tại ở '../api/knockoutApi' với method
+// getBracket(seasonId) trả về { rounds: [{ round, phaseName, matches: [...] }] }
+// hoặc null/404 nếu season chưa có phase knockout. Đây chỉ là suy đoán dựa
+// theo pattern knockoutApi.generateBracket(seasonId, payload) đã thấy trước
+// — CHƯA xác nhận được shape thật vì không có source file knockoutApi.
+// Nếu request fail hoặc shape khác, section bracket tự ẩn (không crash trang).
+import { knockoutApi } from '../api/knockoutApi';
+
 function unwrapGroupsResponse(res) {
   const candidates = [res?.data?.data, res?.data, res];
   for (const c of candidates) {
@@ -21,6 +28,70 @@ function unwrapGroupsResponse(res) {
   console.warn('[ScheduleResults] Không parse được groups response. Shape thực tế:', res);
   return [];
 }
+
+// GIẢ ĐỊNH: cùng PHASE_TYPE_LABELS với ScheduleMatchCard — nếu enum thực tế
+// khác, sửa đồng thời cả 2 chỗ hoặc rút ra 1 file constants chung.
+const PHASE_TYPE_LABELS = {
+  round_of_32: 'Vòng 1/16',
+  round_of_16: 'Vòng 1/8',
+  quarter_final: 'Tứ kết',
+  semi_final: 'Bán kết',
+  third_place: 'Tranh hạng 3',
+  final: 'Chung kết',
+};
+
+// ── Bracket Section (knockout) ──────────────────────────────────
+function BracketSection({ rounds, teamMap, venueMap, onSelectMatch }) {
+  if (!rounds || rounds.length === 0) return null;
+
+  return (
+    <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+            <GitBranch className="w-5 h-5 text-amber-400" />
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-orange-500 uppercase tracking-wider">
+            Sơ đồ Knockout
+          </h2>
+        </div>
+      </div>
+
+      <div className="flex gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {rounds.map(r => (
+          <div key={r.round} className="min-w-[280px] sm:min-w-[320px] bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-5 shadow-2xl snap-start shrink-0">
+            <h3 className="text-sm font-black text-amber-400 uppercase tracking-widest mb-4 pb-3 border-b border-navy-light/50">
+              {r.phaseName || PHASE_TYPE_LABELS[r.phaseType] || `Vòng ${r.round}`}
+            </h3>
+            <div className="space-y-3">
+              {r.matches.map(m => {
+                const home = teamMap[m.home_team_id];
+                const away = teamMap[m.away_team_id];
+                const hasScore = m.home_score != null && m.away_score != null;
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => onSelectMatch({ ...m, home_team: home, away_team: away, venue: venueMap[m.venue_id] })}
+                    className="cursor-pointer bg-navy/60 border border-navy-light rounded-xl p-3 hover:border-amber-500/40 transition-colors"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-white truncate flex-1">{home?.name ?? `Đội #${m.home_team_id ?? '?'}`}</span>
+                      <span className="font-black text-gray-400 mx-2 text-xs shrink-0">
+                        {hasScore ? `${m.home_score} - ${m.away_score}` : 'vs'}
+                      </span>
+                      <span className="font-bold text-white truncate flex-1 text-right">{away?.name ?? `Đội #${m.away_team_id ?? '?'}`}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -30,6 +101,8 @@ export default function ScheduleResults() {
 
   const [groups, setGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+
+  const [bracketRounds, setBracketRounds] = useState([]);
 
   // ── Zustand stores ─────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
@@ -45,7 +118,8 @@ export default function ScheduleResults() {
 
 
   // ── Matches raw + enriched ─────────────────────────────────
-  // Enrich: gắn home_team, away_team, venue từ store
+  // Enrich: gắn home_team, away_team, venue từ store. Giữ nguyên match.phase
+  // nếu API đã trả (không override) — dùng bởi ScheduleMatchCard cho phase badge.
   const allMatches = useMemo(() => {
     const rawMatches = selectedSeasonId
       ? getMatchesFromCache(Number(selectedSeasonId))
@@ -63,7 +137,6 @@ export default function ScheduleResults() {
     : seasons.some(s => isSeasonLoading(s.id)));
 
   // ── Tabs ───────────────────────────────────────────────────
-  // Available rounds derived from all matches
   const availableRounds = useMemo(() => {
     const rounds = [...new Set(allMatches.map(m => m.round).filter(Boolean))].sort((a, b) => a - b);
     return rounds;
@@ -106,7 +179,7 @@ export default function ScheduleResults() {
     }
   }, [seasons, selectedSeasonId]);
 
-  // Khi season thay đổi: fetch lịch mới + groups
+  // Khi season thay đổi: fetch lịch mới + groups + bracket knockout
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
@@ -124,8 +197,24 @@ export default function ScheduleResults() {
         }
       };
       fetchGroups();
+
+      // Bracket knockout — độc lập với groups, season có thể chỉ có 1 trong 2
+      // hoặc cả 2 (round-robin xong rồi mới có knockout). Fail im lặng: đây
+      // là section bổ sung, không phải nội dung chính của trang.
+      const fetchBracket = async () => {
+        try {
+          const res = await knockoutApi.getBracket(selectedSeasonId);
+          const payload = typeof res?.status === 'boolean' ? res.data : res;
+          setBracketRounds(Array.isArray(payload?.rounds) ? payload.rounds : []);
+        } catch (error) {
+          // 404/chưa có knockout phase = expected, không log như lỗi thật
+          setBracketRounds([]);
+        }
+      };
+      fetchBracket();
     } else {
       setGroups([]);
+      setBracketRounds([]);
     }
   }, [selectedSeasonId, fetchBySeason]);
 
@@ -438,6 +527,14 @@ export default function ScheduleResults() {
             </div>
           </div>
         )}
+
+        {/* Bracket Section (knockout) — song song với Groups, hiện khi có phase knockout */}
+        <BracketSection
+          rounds={bracketRounds}
+          teamMap={teamMap}
+          venueMap={venueMap}
+          onSelectMatch={setSelectedMatch}
+        />
       </div>
 
       <MatchModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />

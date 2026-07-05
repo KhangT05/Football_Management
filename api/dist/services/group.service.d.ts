@@ -14,7 +14,6 @@ export declare class GroupService {
      * giờ serialize qua season lock — chấp nhận được vì đây vốn là các
      * thao tác admin tần suất thấp, không phải hot path.
      */
-    private lockSeason;
     /** Chỉ dùng ở các entrypoint TẠO dữ liệu (createGroup, createGroupsBulk). */
     private getOrCreateRoundRobinPhase;
     /**

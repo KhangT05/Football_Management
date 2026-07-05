@@ -1,8 +1,8 @@
 import { createAppError } from "../common/app.error.js";
 import { Prisma, PhaseFormat, PrismaClient, SeasonTeamStatus, PhaseStatus, PhaseType } from "../generated/prisma/client.js";
+import { lockSeason } from "../helper/season-lock.helper.js";
 import { shuffle } from "../libs/array.utils.js";
 import { DrawAssignment, DrawGroupsOptions } from "../types/group.type.js";
-
 export class GroupService {
     constructor(private readonly prisma: PrismaClient) { }
 
@@ -21,14 +21,9 @@ export class GroupService {
      * giờ serialize qua season lock — chấp nhận được vì đây vốn là các
      * thao tác admin tần suất thấp, không phải hot path.
      */
-    private async lockSeason(tx: Prisma.TransactionClient, seasonId: number): Promise<void> {
-        const rows = await tx.$queryRaw<{ id: number }[]>`SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
-        if (rows.length === 0) throw createAppError("NOT_FOUND", `Season ${seasonId} not found`);
-    }
-
     /** Chỉ dùng ở các entrypoint TẠO dữ liệu (createGroup, createGroupsBulk). */
     private async getOrCreateRoundRobinPhase(tx: Prisma.TransactionClient, seasonId: number) {
-        await this.lockSeason(tx, seasonId);
+        await lockSeason(tx, seasonId);
 
         let phase = await tx.phase.findFirst({
             where: { season_id: seasonId, format: PhaseFormat.round_robin, is_active: true },
@@ -218,7 +213,7 @@ export class GroupService {
             throw createAppError("VALIDATION_ERROR", "teams_per_group phải >= 2");
 
         return this.prisma.$transaction(async (tx) => {
-            await this.lockSeason(tx, seasonId);
+            await lockSeason(tx, seasonId);
 
             const phase = await this.findRoundRobinPhase(tx, seasonId);
             if (!phase) throw createAppError("CONFLICT", "Season chưa có group nào, tạo group trước khi draw");
@@ -287,7 +282,7 @@ export class GroupService {
 
     async clearDraw(seasonId: number): Promise<void> {
         return this.prisma.$transaction(async (tx) => {
-            await this.lockSeason(tx, seasonId);
+            await lockSeason(tx, seasonId);
 
             const phase = await this.findRoundRobinPhase(tx, seasonId);
             if (!phase) return; // chưa từng tạo phase/group thì không có gì để xoá
@@ -425,7 +420,7 @@ export class GroupService {
             throw createAppError("VALIDATION_ERROR", "num_pots phải >= 1");
 
         return this.prisma.$transaction(async (tx) => {
-            await this.lockSeason(tx, seasonId);
+            await lockSeason(tx, seasonId);
 
             const phase = await this.findRoundRobinPhase(tx, seasonId);
             if (!phase) throw createAppError("CONFLICT", "Season chưa có group nào, tạo group trước khi draw");

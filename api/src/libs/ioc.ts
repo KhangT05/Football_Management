@@ -39,8 +39,8 @@ import { VenueService } from "../services/venue.service.js";
 import { WorkflowService } from "../services/workflow.service.js";
 import prisma from "./prisma.js";
 
-const knockoutService = new KnockoutService(prisma);
 const standingsService = new StandingsService(prisma);
+const knockoutService = new KnockoutService(prisma, standingsService);
 const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
 const lifecycleService = new MatchLifecycleService(prisma, matchResultService);
 const workflowService = new WorkflowService(prisma, knockoutService, lifecycleService, matchResultService, standingsService);
@@ -58,7 +58,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [SeasonTeamController, () => new SeasonTeamController(new SeasonTeamService(prisma))],
     [GroupController, () => new GroupController(new GroupService(prisma))],
     [ScheduleController, () => new ScheduleController(new ScheduleService(prisma))],
-    [KnockoutController, () => new KnockoutController(new KnockoutService(prisma))],
+    [KnockoutController, () => new KnockoutController(knockoutService)],
     [MatchController, () => new MatchController(lifecycleService)],
     [MatchResultController, () => new MatchResultController(matchResultService)],
     [MatchLineupController, () => new MatchLineupController(new MatchLineupService(prisma))],

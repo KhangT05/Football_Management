@@ -1,23 +1,58 @@
 import { Clock, MapPin } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 
+// GIẢ ĐỊNH: giá trị PhaseType enum ở backend (generated/prisma/client.js).
+// Chỉnh lại map này nếu enum thực tế khác — đây chỉ là nhãn hiển thị, không
+// ảnh hưởng logic. Key phải khớp EXACT với PhaseType string trả về từ API.
+const PHASE_TYPE_LABELS = {
+  group_stage: 'Vòng bảng',
+  round_of_32: 'Vòng 1/16',
+  round_of_16: 'Vòng 1/8',
+  quarter_final: 'Tứ kết',
+  semi_final: 'Bán kết',
+  third_place: 'Tranh hạng 3',
+  final: 'Chung kết',
+};
+
 /**
  * ScheduleMatchCard — Match card dùng cho trang ScheduleResults (public).
  * Match object cần được enrich với home_team, away_team, venue.
+ *
+ * FIX: trước đây chỉ hiển thị `Vòng {match.round}` — với match knockout,
+ * round là số nội bộ (1, 2, 3...) không có ý nghĩa với người xem (không
+ * phân biệt được tứ kết/bán kết/chung kết). Giờ ưu tiên hiển thị
+ * phase.name (tên do admin đặt lúc tạo bracket) hoặc nhãn suy ra từ
+ * phase.type nếu name trống, fallback về round number chỉ khi match
+ * không thuộc phase nào có thông tin phase (vd data cũ/legacy).
+ *
+ * YÊU CẦU BACKEND: match object phải include phase: { select: { name: true,
+ * type: true, format: true } } ở API trả dữ liệu cho trang này — hiện tại
+ * chưa xác nhận được vì không có source của controller/route liên quan.
+ * Nếu API chưa trả field này, phaseLabel luôn null và card fallback về
+ * roundLabel như cũ (không crash, chỉ không có badge mới).
  */
 export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
-  const homeName  = match.home_team?.name  ?? `Đội #${match.home_team_id}`;
-  const awayName  = match.away_team?.name  ?? `Đội #${match.away_team_id}`;
+  const homeName = match.home_team?.name ?? `Đội #${match.home_team_id}`;
+  const awayName = match.away_team?.name ?? `Đội #${match.away_team_id}`;
   const homeInitial = homeName[0]?.toUpperCase() ?? '?';
   const awayInitial = awayName[0]?.toUpperCase() ?? '?';
-  const hasScore  = match.home_score != null && match.away_score != null;
+  const hasScore = match.home_score != null && match.away_score != null;
   const venueName = match.venue?.name ?? null;
 
   const dateLabel = match.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })
     : 'Chưa xác định';
 
-  const roundLabel = match.round ? `Vòng ${match.round}` : null;
+  const isKnockout = match.phase?.format === 'knockout' || match.phase?.type
+    ? match.phase.type !== 'group_stage'
+    : false;
+
+  const phaseLabel = match.phase?.name
+    || (match.phase?.type ? PHASE_TYPE_LABELS[match.phase.type] : null);
+
+  const roundLabel = phaseLabel
+    ? phaseLabel
+    : (match.round ? `Vòng ${match.round}` : null);
 
   return (
     <div
@@ -26,7 +61,7 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
       style={{ animationDelay: `${idx * 40}ms` }}
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-      
+
       {/* Date & Status */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3 relative z-10">
         <div className="flex items-center gap-4">
@@ -35,7 +70,10 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
             {dateLabel}
           </div>
           {roundLabel && (
-            <span className="text-[10px] font-black text-gray-400 bg-navy-dark border border-navy-light px-3 py-1 rounded-full shadow-inner uppercase tracking-widest">
+            <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-inner uppercase tracking-widest border ${isKnockout
+                ? 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+                : 'text-gray-400 bg-navy-dark border-navy-light'
+              }`}>
               {roundLabel}
             </span>
           )}
@@ -72,17 +110,15 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
               <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-navy-dark border border-navy-light px-2 py-0.5 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-widest">
                 Kết quả
               </div>
-              <span className={`text-4xl font-black tracking-wider ${
-                match.home_score > match.away_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
-              }`}>
+              <span className={`text-4xl font-black tracking-wider ${match.home_score > match.away_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
+                  match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+                }`}>
                 {match.home_score}
               </span>
               <span className="text-2xl font-black text-gray-600 mx-3">—</span>
-              <span className={`text-4xl font-black tracking-wider ${
-                match.away_score > match.home_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
-              }`}>
+              <span className={`text-4xl font-black tracking-wider ${match.away_score > match.home_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
+                  match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+                }`}>
                 {match.away_score}
               </span>
             </div>
