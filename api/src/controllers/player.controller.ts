@@ -20,7 +20,7 @@ import {
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
 
-const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 
 @Route("players")
 @Tags("Players")
@@ -97,18 +97,23 @@ export class PlayerController extends Controller {
     return tp;
   }
 
+  // FIX: bỏ user_id — chưa từng được dùng trong body, AuthRequest param là dead
+  // param. Nếu cần audit "ai thêm player này", thêm cột created_by ở service,
+  // không giữ param không dùng ở controller.
   @Security("jwt", ["admin", "organizing"])
   @Post("{team_id}/team-players")
   @SuccessResponse(201, "Created")
   async addPlayerToTeam(
     @Path() team_id: number,
-    @Body() body: AddPlayerToTeamDto,
-    @Request() req: AuthRequest
+    @Body() body: AddPlayerToTeamDto
   ): Promise<TeamPlayerDto> {
     this.setStatus(201);
     return this.service.addPlayerToTeam(team_id, body);
   }
 
+  // FIX: bỏ pre-check getTeamPlayerById ở controller — TOCTOU + fragile
+  // (an toàn phụ thuộc discipline của caller, không phải data layer).
+  // service.updateTeamPlayer giờ tự scope theo team_id và tự 404.
   @Security("jwt", ["organizing"])
   @Patch("{team_id}/team-players/{id}")
   async updateTeamPlayer(
@@ -116,12 +121,7 @@ export class PlayerController extends Controller {
     @Path() id: number,
     @Body() body: UpdateTeamPlayerDto
   ): Promise<TeamPlayerDto> {
-    const exists = await this.service.getTeamPlayerById(id, team_id);
-    if (!exists) {
-      this.setStatus(404);
-      throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
-    }
-    return this.service.updateTeamPlayer(id, body);
+    return this.service.updateTeamPlayer(id, team_id, body);
   }
 
   @Security("jwt", ["admin", "organizing"])
@@ -130,12 +130,7 @@ export class PlayerController extends Controller {
     @Path() team_id: number,
     @Path() id: number
   ): Promise<TeamPlayerDto> {
-    const exists = await this.service.getTeamPlayerById(id, team_id);
-    if (!exists) {
-      this.setStatus(404);
-      throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
-    }
-    return this.service.approveTeamPlayer(id);
+    return this.service.approveTeamPlayer(id, team_id);
   }
 
   @Security("jwt", ["organizing"])
@@ -144,12 +139,7 @@ export class PlayerController extends Controller {
     @Path() team_id: number,
     @Path() id: number
   ): Promise<TeamPlayerDto> {
-    const exists = await this.service.getTeamPlayerById(id, team_id);
-    if (!exists) {
-      this.setStatus(404);
-      throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
-    }
-    return this.service.rejectTeamPlayer(id);
+    return this.service.rejectTeamPlayer(id, team_id);
   }
 
   @Security("jwt", ["admin", "organizing"])
@@ -163,6 +153,8 @@ export class PlayerController extends Controller {
 
   // ─── Excel ────────────────────────────────────────────────────────────────
 
+  // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
+  @Security("jwt", ["admin", "organizing"])
   @Get("{team_id}/team-players/export")
   async exportTeamPlayers(@Path() team_id: number): Promise<void> {
     const buffer = await this.service.exportTeamPlayersExcel(team_id);
@@ -172,6 +164,7 @@ export class PlayerController extends Controller {
     res!.send(buffer);
   }
 
+  // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
   @Get("import-template")
   async downloadImportTemplate(@Query() minRows = 7): Promise<void> {
     const buffer = this.service.exportImportTemplate(minRows);
@@ -181,8 +174,10 @@ export class PlayerController extends Controller {
     res!.send(buffer);
   }
 
-  // FIX: endpoint import trước đây thiếu hoàn toàn — service.importTeamPlayersFromExcel()
-  // không có route nào gọi tới, flow import không thể trigger qua API.
+  // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer
+  // + gán role vào bất kỳ team_id nào không cần auth. Đây là lỗ hổng nghiêm
+  // trọng nhất trong file, không phải cosmetic.
+  @Security("jwt", ["admin", "organizing"])
   @Post("{team_id}/team-players/import")
   @Consumes("multipart/form-data")
   async importTeamPlayers(
@@ -193,7 +188,6 @@ export class PlayerController extends Controller {
       this.setStatus(400);
       throw Object.assign(new Error("File is required"), { status: 400 });
     }
-    // Guard trước khi vào XLSX.read (đồng bộ, block CPU) — reject sớm file quá khổ.
     if (file.size > MAX_IMPORT_FILE_BYTES) {
       this.setStatus(413);
       throw Object.assign(new Error(`File too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024}MB)`), { status: 413 });

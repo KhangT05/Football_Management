@@ -2,31 +2,31 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   ShieldOff, ArrowRight, X, Loader2, AlertTriangle,
-  CheckCircle2, Camera, Search, ArrowUpDown, CreditCard, QrCode, UploadCloud, FileDown
+  CheckCircle2, Search, ArrowUpDown, CreditCard, QrCode
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
+import { teamApi, playerApi, userApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
 
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import LineupBuilderModal from '../components/modals/LineupBuilderModal';
 import EditTeamModal from '../components/modals/EditTeamModal';
+import PlayerFormModal from '../components/modals/PlayerFormModal'; // Doc 2 — react-hook-form based
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 
 const normalizePosition = (posStr) => {
   if (!posStr) return 'OTHER';
-  let p = posStr.toUpperCase().trim();
-  if (p === 'GOALKEEPER' || p.includes('GK') || p.includes('THỦ MÔN')) return 'GK';
-  if (p === 'DEFENDER' || p.includes('DEF') || p === 'DF' || p.includes('HẬU VỆ')) return 'DEF';
-  if (p === 'MIDFIELDER' || p.includes('MID') || p === 'MF' || p.includes('TIỀN VỆ')) return 'MID';
-  if (p === 'FORWARD' || p.includes('FW') || p === 'FWD' || p.includes('TIỀN ĐẠO')) return 'FW';
+  const p = posStr.toUpperCase().trim();
+  if (p === 'GOALKEEPER' || p.includes('GK')) return 'GK';
+  if (p === 'DEFENDER' || p.includes('DEF')) return 'DEF';
+  if (p === 'MIDFIELDER' || p.includes('MID')) return 'MID';
+  if (p === 'FORWARD' || p.includes('FW')) return 'FW';
   return p;
 };
 
-// Trích tên file từ header Content-Disposition (nếu backend có set), fallback về tên mặc định
 const extractFilename = (contentDisposition, fallback) => {
   if (!contentDisposition) return fallback;
   const match = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
@@ -88,173 +88,6 @@ function ConfirmDeleteModal({ playerName, onConfirm, onCancel, isDeleting }) {
   );
 }
 
-// ─── Player Add/Edit Modal ────────────────────────────────
-function PlayerModal({ mode, player, onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate }) {
-  const [form, setForm] = useState({
-    name: player?.name || '',
-    number: player?.number || '',
-    position: player?.position || 'MID',
-    goals: player?.goals || 0,
-  });
-
-  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-
-  return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
-              {mode === 'add' ? <UserPlus className="w-5 h-5 text-blue-400" /> : <Edit className="w-5 h-5 text-blue-400" />}
-            </div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">
-              {mode === 'add' ? 'Thêm cầu thủ' : 'Chỉnh sửa'}
-            </h3>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-8 space-y-6 relative z-10">
-          {/* Avatar */}
-          {player?.avatar && (
-            <div className="flex justify-center mb-4">
-              <div className="w-24 h-24 rounded-full border-[3px] border-navy-light overflow-hidden relative group cursor-pointer shadow-lg shadow-black/50">
-                <img src={player.avatar} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                  <Camera className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform duration-300" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-[0_0_20px_rgba(239,68,68,0.1)] font-medium">
-              <AlertTriangle className="w-5 h-5 shrink-0" /> {error}
-            </div>
-          )}
-
-          {/* Import Excel block (chỉ hiện khi thêm mới) */}
-          {mode === 'add' && onImport && (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30 shrink-0 mt-0.5">
-                  <Info className="w-4 h-4 text-emerald-400" />
-                </div>
-                <p className="text-xs text-emerald-400/90 font-medium leading-relaxed">
-                  Thêm nhiều cầu thủ cùng lúc bằng file Excel. Tải file mẫu, điền thông tin rồi upload lại.
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={onDownloadTemplate}
-                  disabled={isDownloadingTemplate}
-                  className="flex-1 px-4 py-3.5 font-bold bg-navy-dark text-gray-200 border border-navy-light rounded-xl flex items-center justify-center gap-2 hover:bg-navy-light hover:text-white transition-all duration-300 text-sm disabled:opacity-60"
-                >
-                  {isDownloadingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
-                  Tải file mẫu
-                </button>
-                <div className="relative flex-1">
-                  <input type="file" id="import-excel-modal" accept=".xlsx,.xls" className="hidden" onChange={onImport} disabled={isSaving} />
-                  <label htmlFor="import-excel-modal" className={`w-full px-4 py-3.5 font-bold bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-500 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 ${isSaving ? 'opacity-70 pointer-events-none' : ''}`}>
-                    <UploadCloud className="w-5 h-5" /> Import Excel
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Họ tên */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-              Họ và tên <span className="text-red-400">*</span>
-            </label>
-            <input
-              name="name"
-              type="text"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Nguyễn Văn A"
-              className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-5">
-            {/* Số áo */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                Số áo <span className="text-red-400">*</span>
-              </label>
-              <input
-                name="number"
-                type="number"
-                min="1" max="99"
-                value={form.number}
-                onChange={handleChange}
-                placeholder="10"
-                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-black text-center transition-all"
-              />
-            </div>
-
-            {/* Vị trí */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Vị trí</label>
-              <select
-                name="position"
-                value={form.position}
-                onChange={handleChange}
-                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold appearance-none cursor-pointer text-center"
-              >
-                <option value="GK">GK – Thủ môn</option>
-                <option value="DEF">DEF – Hậu vệ</option>
-                <option value="MID">MID – Tiền vệ</option>
-                <option value="FW">FW – Tiền đạo</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Bàn thắng (chỉ khi edit) */}
-          {mode === 'edit' && (
-            <div className="space-y-2 pt-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center">Số bàn thắng</label>
-              <input
-                name="goals"
-                type="number"
-                min="0"
-                value={form.goals}
-                onChange={handleChange}
-                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-neon focus:outline-none focus:border-neon focus:ring-4 focus:ring-neon/20 text-xl font-black text-center transition-all"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
-          <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
-            Hủy bỏ
-          </button>
-          <button
-            onClick={() => onSave(form)}
-            disabled={isSaving}
-            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
-          >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-            {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Position Badge ───────────────────────────────────────
 function PosBadge({ pos }) {
   const normPos = normalizePosition(pos);
@@ -278,7 +111,6 @@ function PaymentModal({ teamName, onClose }) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-lg animate-scale-in flex flex-col overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-emerald-500/5 to-transparent pointer-events-none"></div>
-
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 relative z-10">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
@@ -290,7 +122,6 @@ function PaymentModal({ teamName, onClose }) {
             <X className="w-6 h-6" />
           </button>
         </div>
-
         <div className="p-8 space-y-8 overflow-y-auto relative z-10 custom-scrollbar max-h-[70vh]">
           <div className="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl flex items-start gap-4 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
             <div className="p-2 bg-emerald-500/20 rounded-xl shrink-0 mt-0.5">
@@ -301,7 +132,6 @@ function PaymentModal({ teamName, onClose }) {
               <p className="text-emerald-500/80 font-medium leading-relaxed">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-2 shadow-xl group-hover:scale-110 transition-transform duration-300">
@@ -315,7 +145,6 @@ function PaymentModal({ teamName, onClose }) {
                 <span className="text-gray-500">ND:</span> {teamName} LE PHI
               </div>
             </div>
-
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-300 group">
               <div className="w-16 h-16 bg-navy rounded-2xl border border-navy-light flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300 group-hover:border-blue-500/50">
                 <Users className="w-8 h-8 text-blue-400" />
@@ -326,12 +155,10 @@ function PaymentModal({ teamName, onClose }) {
               </div>
             </div>
           </div>
-
           <p className="text-center text-xs text-gray-500 font-medium px-4">
             * Sau khi thanh toán, vui lòng liên hệ Admin qua Fanpage để được xác nhận trạng thái.
           </p>
         </div>
-
         <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end relative z-10">
           <button onClick={onClose} className="px-8 py-3.5 font-bold bg-navy-light text-white rounded-2xl hover:bg-gray-700 transition-all duration-300 shadow-lg">
             Đóng cửa sổ
@@ -352,13 +179,11 @@ export default function MyTeam() {
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
 
-  // UI State
-  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'matches'
+  const [activeTab, setActiveTab] = useState('roster');
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('number');
   const [showPayment, setShowPayment] = useState(false);
 
-  // Modal State
   const [editTeamModalOpen, setEditTeamModalOpen] = useState(false);
   const [lineupModalMatch, setLineupModalMatch] = useState(null);
   const [playerModal, setPlayerModal] = useState(null); // null | 'add' | 'edit'
@@ -367,11 +192,9 @@ export default function MyTeam() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
-  // Delete Confirm State
   const [deletingPlayer, setDeletingPlayer] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ── Parse helpers ────────────────────────────────────────
   const parseSingle = (res) => {
     const payload = (typeof res?.status === 'boolean') ? res.data : res;
     return Array.isArray(payload?.data) ? payload.data[0] : (payload?.data ?? payload);
@@ -382,29 +205,29 @@ export default function MyTeam() {
     return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
   };
 
-  // Normalize player from team-player record
+  // tp.player.user.name — join path thật theo PlayerDto.user shape.
+  // goals: KHÔNG có field backing trong PlayerDto/TeamPlayerDto — fallback 0,
+  // giữ lại UI hiển thị nhưng KHÔNG persist được (chưa có endpoint) — đã flag turn trước.
   const normalizePlayer = (tp) => ({
-    id: tp.id,           // teamPlayer ID
+    id: tp.id,
     player_id: tp.player_id ?? tp.player?.id,
-    name: tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
-    number: tp.jersey_number ?? tp.number ?? 0,
-    position: tp.position ?? 'MID',
-    goals: tp.goals_scored ?? tp.goals ?? 0,
+    name: tp.player?.user?.name ?? `Cầu thủ #${tp.id}`,
+    email: tp.player?.user?.email ?? null,
+    number: tp.jersey_number ?? 0,
+    position: tp.position ?? 'midfielder',
+    goals: 0,
     status: tp.status ?? 'active',
     approval_status: tp.approval_status ?? 'approved',
     role: tp.role ?? 'player',
     avatar: tp.player?.avatar ?? null,
   });
 
-  // ── Fetch team & players ─────────────────────────────────
   const loadTeamData = useCallback(async () => {
     if (!user?.id) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      // Get teams owned by this user
       const teamsRes = await teamApi.getTeams({ per_page: 10 });
       const allTeams = parseList(teamsRes);
-      // Filter team belonging to the current user
       const myTeam = allTeams.find(t => t.user_id === user.id) ?? allTeams[0] ?? null;
 
       if (!myTeam) {
@@ -414,13 +237,12 @@ export default function MyTeam() {
         return;
       }
 
-      // Enrich team object
       setTeam({
         id: myTeam.id,
         name: myTeam.name,
         emoji: '🛡️',
-        status: myTeam.is_active ? 'approved' : 'pending', // Trạng thái của đội
-        registrationStatus: null, // Trạng thái tham gia giải
+        status: myTeam.is_active ? 'approved' : 'pending',
+        registrationStatus: null,
         activeSeasonId: null,
         captain: myTeam.coach_name ?? '—',
         phone: myTeam.phone ?? '—',
@@ -434,19 +256,16 @@ export default function MyTeam() {
         logo: myTeam.logo,
       });
 
-      // Load players
       const playersRes = await teamApi.getPlayers(myTeam.id, { per_page: 50 });
       const rawPlayers = parseList(playersRes);
       setPlayers(rawPlayers.map(normalizePlayer));
 
-      // Load active season and matches
       try {
         const seasonsRes = await seasonApi.getAll();
         const allSeasons = parseList(seasonsRes);
         const activeSeason = allSeasons.find(s => ['registration_open', 'ongoing', 'upcoming'].includes(s.status)) || allSeasons[0];
 
         if (activeSeason) {
-          // Check season registration status
           const stRes = await seasonTeamApi.getAll({ team_id: myTeam.id, season_id: activeSeason.id });
           const stData = stRes?.data?.data || stRes?.data || [];
           const currentSt = stData[0];
@@ -490,7 +309,6 @@ export default function MyTeam() {
 
   useEffect(() => { loadTeamData(); }, [loadTeamData]);
 
-  // Filtered + sorted players
   const displayed = players
     .filter(p =>
       (p.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -499,7 +317,6 @@ export default function MyTeam() {
     .sort((a, b) => {
       if (sortField === 'number') return (a.number ?? 0) - (b.number ?? 0);
       if (sortField === 'name') return (a.name ?? '').localeCompare(b.name ?? '');
-      if (sortField === 'goals') return (b.goals ?? 0) - (a.goals ?? 0);
       return 0;
     });
 
@@ -521,32 +338,17 @@ export default function MyTeam() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = displayed.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // ── Validate form ────────────────────────────────────────
-  const validateForm = useCallback((form, excludeId = null) => {
-    if (!form.name?.trim()) return 'Vui lòng nhập họ tên cầu thủ.';
-    if (!form.number || isNaN(form.number)) return 'Vui lòng nhập số áo hợp lệ.';
-    const conflict = players.find(p => String(p.number) === String(form.number) && p.id !== excludeId);
-    if (conflict) return `Số áo ${form.number} đã được dùng bởi ${conflict.name}.`;
-    return '';
-  }, [players]);
-
-  // ── EDIT Team Info ─────────────────────────────────────────
   const handleEditTeamSave = async (form) => {
     setIsSaving(true);
     try {
       await teamApi.update(team.id, form);
-
       if (team.activeSeasonTeamId && form.color_hex) {
         try {
-          await jerseyApi.upsert(team.activeSeasonTeamId, {
-            type: 'home',
-            primary_color: form.color_hex
-          });
+          await jerseyApi.upsert(team.activeSeasonTeamId, { type: 'home', primary_color: form.color_hex });
         } catch (e) {
           console.warn('Could not update jersey color:', e);
         }
       }
-
       toast.success('Đã cập nhật thông tin đội bóng thành công!');
       setEditTeamModalOpen(false);
       await loadTeamData();
@@ -571,35 +373,42 @@ export default function MyTeam() {
     }
   };
 
-  // ── ADD Player ───────────────────────────────────────────
   const openAddModal = () => {
     setEditingPlayer(null);
     setModalError('');
     setPlayerModal('add');
   };
 
-  const handleAddSave = async (form) => {
-    const err = validateForm(form);
-    if (err) { setModalError(err); return; }
+  // values: { user_email, date_of_birth, position, number } — shape từ PlayerFormModal (doc 2)
+  const handleAddSave = async (values) => {
     setIsSaving(true);
+    setModalError('');
     try {
-      // Step 1: Create player record
-      const createRes = await playerApi.create({ name: form.name.trim() });
+      const lookupRes = await userApi.lookupByEmail(values.user_email.trim());
+      const foundUser = parseSingle(lookupRes);
+      if (!foundUser) { setModalError('Không tìm thấy tài khoản với email này.'); return; }
+
+      const createRes = await playerApi.create({
+        user_id: foundUser.id,
+        date_of_birth: values.date_of_birth,
+        position: values.position,
+      });
       const newPlayer = parseSingle(createRes);
 
-      // Step 2: Add to team
       await playerApi.addToTeam(team.id, {
         player_id: newPlayer.id,
-        jersey_number: parseInt(form.number),
-        position: form.position,
+        jersey_number: parseInt(values.number, 10),
+        position: values.position,
         role: 'player',
       });
 
-      toast.success(`Đã thêm "${form.name.trim()}" (áo số ${form.number}) vào đội!`);
+      toast.success(`Đã thêm "${foundUser.name}" (áo số ${values.number}) vào đội!`);
       setPlayerModal(null);
       await loadTeamData();
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ. Vui lòng thử lại.');
+      // 404 từ lookup, 409 nếu Player user_id đã tồn tại (chưa dedupe ở BE — xem note trước),
+      // hoặc 422 nếu jersey_number trùng (BE chưa confirm có check trùng số áo không)
+      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ.');
     } finally {
       setIsSaving(false);
     }
@@ -608,11 +417,9 @@ export default function MyTeam() {
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     try {
       const formData = new FormData();
       formData.append('file', file);
-
       setIsSaving(true);
       await playerApi.importTeamPlayers(team.id, formData);
       toast.success('Nhập dữ liệu từ file Excel thành công!');
@@ -625,20 +432,13 @@ export default function MyTeam() {
     }
   };
 
-  // ── DOWNLOAD Import Template ──────────────────────────────
-  // playerApi.downloadImportTemplate() → GET /players/import-template, không nhận
-  // teamId (template dùng chung, không theo từng đội) và đã tự set responseType: 'blob'.
   const handleDownloadTemplate = async () => {
     setIsDownloadingTemplate(true);
     try {
       const res = await playerApi.downloadImportTemplate();
-      const blob = res.data;
-
-      const filename = extractFilename(
-        res?.headers?.['content-disposition'],
-        'import-template.xlsx'
-      );
-
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      if (!blob.size) throw new Error('Empty response — kiểm tra axiosClient interceptor có unwrap blob response không');
+      const filename = extractFilename(res?.headers?.['content-disposition'], 'import-template.xlsx');
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -648,36 +448,28 @@ export default function MyTeam() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể tải file mẫu Excel. Vui lòng thử lại.');
+      toast.error(err?.response?.data?.message || err.message || 'Không thể tải file mẫu Excel.');
     } finally {
       setIsDownloadingTemplate(false);
     }
   };
 
-  // ── EDIT Player ──────────────────────────────────────────
   const openEditModal = (player) => {
     setEditingPlayer(player);
     setModalError('');
     setPlayerModal('edit');
   };
 
-  const handleEditSave = async (form) => {
-    const err = validateForm(form, editingPlayer.id);
-    if (err) { setModalError(err); return; }
+  // values: { number, position } — mode edit của PlayerFormModal không có name/email
+  const handleEditSave = async (values) => {
     setIsSaving(true);
+    setModalError('');
     try {
-      // Update team-player record (jersey_number, position)
       await playerApi.updateTeamPlayer(team.id, editingPlayer.id, {
-        jersey_number: parseInt(form.number),
-        position: form.position,
+        jersey_number: parseInt(values.number, 10),
+        position: values.position,
       });
-
-      // Also update the player name if it changed
-      if (editingPlayer.player_id && form.name.trim() !== editingPlayer.name) {
-        await playerApi.update(editingPlayer.player_id, { name: form.name.trim() });
-      }
-
-      toast.success(`Đã cập nhật thông tin cầu thủ "${form.name}".`);
+      toast.success('Đã cập nhật thông tin cầu thủ.');
       setPlayerModal(null);
       await loadTeamData();
     } catch (apiErr) {
@@ -687,7 +479,6 @@ export default function MyTeam() {
     }
   };
 
-  // ── DELETE Player ─────────────────────────────────────────
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
@@ -704,11 +495,9 @@ export default function MyTeam() {
 
   const toggleSort = (field) => setSortField(field);
 
-  // ── No team ──────────────────────────────────────────────
   if (!isLoading && !team) {
     return (
       <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-16 relative overflow-hidden">
-        {/* Background Orbs */}
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600 rounded-full blur-[150px] opacity-10 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none"></div>
         <div className="container mx-auto px-4 max-w-6xl relative z-10">
           <NoTeamState />
@@ -719,14 +508,12 @@ export default function MyTeam() {
 
   return (
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12 relative overflow-hidden">
-      {/* Background Orbs */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none"></div>
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay z-0 pointer-events-none"></div>
 
       <div className="container mx-auto px-4 max-w-6xl animate-fade-in relative z-10">
 
-        {/* ─── Status Banners ─────────────────────────────── */}
         {!isLoading && team.status === 'pending' && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 p-5 rounded-2xl mb-8 flex items-start gap-4 animate-slide-up shadow-[0_0_30px_rgba(234,179,8,0.1)]">
             <div className="p-2 bg-yellow-500/20 rounded-xl shrink-0">
@@ -734,7 +521,7 @@ export default function MyTeam() {
             </div>
             <div>
               <p className="text-yellow-400 font-black text-lg mb-1 tracking-tight">Đội bóng đang chờ duyệt</p>
-              <p className="text-yellow-500/80 font-medium">Hồ sơ đăng ký của bạn đã được gửi. Vui lòng chờ Admin xác nhận. Trong thời gian này, bạn vẫn có thể chuẩn bị nhân sự.</p>
+              <p className="text-yellow-500/80 font-medium">Hồ sơ đăng ký của bạn đã được gửi. Vui lòng chờ Admin xác nhận.</p>
             </div>
           </div>
         )}
@@ -804,7 +591,6 @@ export default function MyTeam() {
           </div>
         )}
 
-        {/* ─── Team Header ─────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-slide-up relative">
           <div className="flex items-center gap-6">
             {isLoading ? (
@@ -860,7 +646,6 @@ export default function MyTeam() {
           )}
         </div>
 
-        {/* ─── Tabs ──────────────────────────────────────── */}
         {!isLoading && (
           <div className="flex items-center gap-4 border-b border-navy-light mb-8 animate-fade-in">
             <button
@@ -880,7 +665,6 @@ export default function MyTeam() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ─── Players Table / Matches Table ──────────────────────────────── */}
           <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
 
             {activeTab === 'matches' && (
@@ -929,7 +713,6 @@ export default function MyTeam() {
 
             {activeTab === 'roster' && (
               <>
-                {/* Search + sort bar */}
                 {!isLoading && (
                   <div className="flex gap-4 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
                     <div className="relative flex-1">
@@ -950,7 +733,6 @@ export default function MyTeam() {
                       >
                         <option value="number">Sắp xếp: Số áo</option>
                         <option value="name">Sắp xếp: Tên</option>
-                        <option value="goals">Sắp xếp: Bàn thắng</option>
                       </select>
                       <ArrowUpDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -978,7 +760,6 @@ export default function MyTeam() {
                       </div>
                     )}
                   </div>
-
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left whitespace-nowrap">
                       <thead>
@@ -994,11 +775,6 @@ export default function MyTeam() {
                             </button>
                           </th>
                           <th className="py-4 px-6 text-center">Vị trí</th>
-                          <th className="py-4 px-6 text-center">
-                            <button onClick={() => toggleSort('goals')} className="flex items-center justify-center gap-1.5 w-full hover:text-white transition-colors group">
-                              Bàn thắng <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                            </button>
-                          </th>
                           <th className="py-4 px-6 text-right">Thao tác</th>
                         </tr>
                       </thead>
@@ -1013,7 +789,7 @@ export default function MyTeam() {
                           </>
                         ) : paginatedPlayers.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="py-20 text-center text-gray-500">
+                            <td colSpan={4} className="py-20 text-center text-gray-500">
                               <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
                               <p className="font-bold text-gray-400 text-lg">Không tìm thấy cầu thủ</p>
                               <p className="text-sm mt-1">Thử thay đổi từ khóa tìm kiếm</p>
@@ -1054,11 +830,6 @@ export default function MyTeam() {
                               <td className="py-5 px-6 text-center">
                                 <PosBadge pos={player.position} />
                               </td>
-                              <td className="py-5 px-6 text-center">
-                                <span className="font-black text-neon text-xl drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
-                                  {player.goals > 0 ? player.goals : <span className="text-navy-light font-normal text-base">—</span>}
-                                </span>
-                              </td>
                               <td className="py-5 px-6">
                                 <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-4 sm:group-hover:translate-x-0">
                                   <button
@@ -1083,7 +854,6 @@ export default function MyTeam() {
                       </tbody>
                     </table>
                   </div>
-
                   {!isLoading && displayed.length > 0 && (
                     <div className="px-8 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
                       <span>Hiển thị <span className="text-white">{displayed.length}</span> / {players.length} cầu thủ</span>
@@ -1095,7 +865,6 @@ export default function MyTeam() {
                     </div>
                   )}
                 </div>
-
                 {totalPages > 1 && (
                   <div className="flex justify-center mt-6">
                     <Pagination
@@ -1111,13 +880,9 @@ export default function MyTeam() {
             )}
           </div>
 
-          {/* ─── Sidebar ─────────────────────────────────────── */}
           <div className="lg:col-span-1 space-y-6 animate-slide-up" style={{ animationDelay: '150ms' }}>
-
-            {/* Team Info Card */}
             <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-colors duration-500"></div>
-
               <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6 border-b border-navy-light/50 pb-5 relative z-10">
                 <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                   <Info className="w-5 h-5 text-indigo-400" />
@@ -1162,7 +927,6 @@ export default function MyTeam() {
               )}
             </div>
 
-            {/* Stats Card */}
             <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-500 pointer-events-none">
                 <Trophy className="w-32 h-32 text-neon" />
@@ -1187,7 +951,6 @@ export default function MyTeam() {
                     }, {});
                     return [
                       { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
-                      { label: 'Bàn thắng', value: players.reduce((s, p) => s + (p.goals || 0), 0), color: 'text-neon drop-shadow-[0_0_8px_rgba(57,255,20,0.3)]', bg: 'bg-neon/5 border-neon/20' },
                       { label: 'Đã duyệt', value: players.filter(p => p.approval_status === 'approved').length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/20' },
                       { label: 'Chờ duyệt', value: players.filter(p => p.approval_status === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-400/5 border-amber-400/20' },
                       { label: 'Thủ môn', value: totalByPosition['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
@@ -1212,22 +975,22 @@ export default function MyTeam() {
         </div>
       </div>
 
-      {/* ─── Player Add/Edit Modal ──────────────────────────── */}
       {playerModal && (
-        <PlayerModal
+        <PlayerFormModal
           mode={playerModal}
           player={editingPlayer}
-          onSave={playerModal === 'add' ? handleAddSave : handleEditSave}
+          usedNumbers={players}
+          onSubmitAdd={handleAddSave}
+          onSubmitEdit={handleEditSave}
           onClose={() => { setPlayerModal(null); setModalError(''); }}
           isSaving={isSaving}
-          error={modalError}
-          onImport={handleImportExcel}
+          serverError={modalError}
+          onImportExcel={handleImportExcel}
           onDownloadTemplate={handleDownloadTemplate}
           isDownloadingTemplate={isDownloadingTemplate}
         />
       )}
 
-      {/* ─── Delete Confirm ───────────────────────────────── */}
       {deletingPlayer && (
         <ConfirmDeleteModal
           playerName={deletingPlayer.name}
@@ -1237,7 +1000,6 @@ export default function MyTeam() {
         />
       )}
 
-      {/* ─── Payment Modal ────────────────────────────────── */}
       {showPayment && (
         <PaymentModal
           teamName={team?.name}
@@ -1245,7 +1007,6 @@ export default function MyTeam() {
         />
       )}
 
-      {/* ─── Edit Team Modal ──────────────────────────────── */}
       {editTeamModalOpen && (
         <EditTeamModal
           team={team}
@@ -1257,7 +1018,6 @@ export default function MyTeam() {
         />
       )}
 
-      {/* ─── Lineup Builder Modal ─────────────────────────── */}
       {lineupModalMatch && (
         <LineupBuilderModal
           match={lineupModalMatch}

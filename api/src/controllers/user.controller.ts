@@ -2,6 +2,7 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import { UserService, type SafeUser } from "../services/user.service.js";
 import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
+import { createAppError } from "../common/app.error.js";
 
 
 @Security("jwt", ["admin", "user", "organizing"])
@@ -10,6 +11,13 @@ import { PaginatedResult } from "../types/queryable.type.js";
 export class UserController extends Controller {
   constructor(private service: UserService) {
     super();
+  }
+
+  @Get("lookup")
+  async lookupByEmail(@Query() email: string): Promise<SafeUser> {
+    const user = await this.service.findSafeByEmail(email);
+    if (!user) throw createAppError("NOT_FOUND", `User with email ${email} not found`);
+    return user;
   }
 
   @Get("/")

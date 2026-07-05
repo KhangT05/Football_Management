@@ -2047,6 +2047,42 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUserController_lookupByEmail: Record<string, TsoaRoute.ParameterSchema> = {
+                email: {"in":"query","name":"email","required":true,"dataType":"string"},
+        };
+        app.get('/users/lookup',
+            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(UserController)),
+            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.lookupByEmail)),
+
+            async function UserController_lookupByEmail(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUserController_lookupByEmail, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<UserController>(UserController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'lookupByEmail',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsUserController_findAll: Record<string, TsoaRoute.ParameterSchema> = {
                 page: {"default":1,"in":"query","name":"page","dataType":"double"},
                 per_page: {"default":20,"in":"query","name":"per_page","dataType":"double"},
@@ -4788,7 +4824,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         const argsPlayerController_addPlayerToTeam: Record<string, TsoaRoute.ParameterSchema> = {
                 team_id: {"in":"path","name":"team_id","required":true,"dataType":"double"},
                 body: {"in":"body","name":"body","required":true,"ref":"AddPlayerToTeamDto"},
-                req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/players/:team_id/team-players',
             authenticateMiddleware([{"jwt":["admin","organizing"]}]),
@@ -4976,6 +5011,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 team_id: {"in":"path","name":"team_id","required":true,"dataType":"double"},
         };
         app.get('/players/:team_id/team-players/export',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.exportTeamPlayers)),
 
@@ -5047,6 +5083,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 file: {"in":"formData","name":"file","required":true,"dataType":"file"},
         };
         app.post('/players/:team_id/team-players/import',
+            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
             upload.fields([
                 {
                     name: "file",
