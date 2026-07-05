@@ -65,11 +65,11 @@ export default function PaymentModal({ teamName, seasonTeamId, amount = 500000, 
         <div className="p-6 space-y-5 overflow-y-auto">
 
           {/* Notice */}
-          <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3">
-            <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+            <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="text-emerald-300 font-bold mb-1">Đội bóng của bạn đã được duyệt!</p>
-              <p className="text-gray-300">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
+              <p className="text-red-500 font-bold mb-1">Đội bóng của bạn đã được duyệt!</p>
+              <p className="text-red-400">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
             </div>
           </div>
 

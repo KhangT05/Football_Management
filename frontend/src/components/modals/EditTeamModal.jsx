@@ -151,7 +151,7 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error, 
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-between gap-4 relative z-10 items-center">
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div>
             {onDelete && (
               <button
@@ -161,22 +161,22 @@ export default function EditTeamModal({ team, onSave, onClose, isSaving, error, 
                     onDelete(team.id);
                   }
                 }}
-                className="px-5 py-3.5 font-bold text-red-400 hover:text-white hover:bg-red-500 rounded-2xl transition-all flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(239,68,68,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)] hover:-translate-y-0.5"
+                className="w-full sm:w-auto px-5 py-3.5 font-bold text-red-400 hover:text-white hover:bg-red-500 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm shadow-[0_0_15px_rgba(239,68,68,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 whitespace-nowrap shrink-0"
               >
-                <Trash2 className="w-5 h-5" /> Xóa Đội
+                <Trash2 className="w-5 h-5 shrink-0" /> Xóa Đội
               </button>
             )}
           </div>
-          <div className="flex gap-4">
-            <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button onClick={onClose} className="w-full sm:w-auto px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all whitespace-nowrap">
               Hủy bỏ
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-8 py-3.5 font-black bg-linear-to-r from-neon to-emerald-500 text-black rounded-2xl flex items-center gap-3 hover:from-emerald-400 hover:to-teal-500 transition-all disabled:opacity-70 shadow-[0_0_20px_rgba(57,255,20,0.3)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
+              className="w-full sm:w-auto px-8 py-3.5 font-black bg-linear-to-r from-neon to-emerald-500 text-black rounded-2xl flex items-center justify-center gap-3 hover:from-emerald-400 hover:to-teal-500 transition-all disabled:opacity-70 shadow-[0_0_20px_rgba(57,255,20,0.3)] uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap shrink-0"
             >
-              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              {isSaving ? <Loader2 className="w-5 h-5 animate-spin shrink-0" /> : <Save className="w-5 h-5 shrink-0" />}
               LƯU THAY ĐỔI
             </button>
           </div>

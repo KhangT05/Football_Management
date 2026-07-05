@@ -452,12 +452,12 @@ export default function RegisterTeam() {
 
             {playerInputMode === 'excel' ? (
               <div className="animate-fade-in">
-                <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
-                  <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <div className="text-sm text-emerald-200/80 leading-relaxed">
+                <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
+                  <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                  <div className="text-sm text-red-400 leading-relaxed">
                     Tải lên file Excel (.xlsx, .xls) chứa danh sách cầu thủ của bạn. Hệ thống sẽ tự động đọc và gửi lời mời đến email của từng cầu thủ để họ xác nhận tham gia.
                     <br />
-                    <a href="#" className="text-emerald-400 hover:text-emerald-300 underline font-medium mt-2 inline-block">Tải file mẫu tại đây</a>
+                    <a href="#" className="text-red-500 hover:text-red-400 underline font-medium mt-2 inline-block">Tải file mẫu tại đây</a>
                   </div>
                 </div>
 
@@ -513,9 +513,9 @@ export default function RegisterTeam() {
                   </button>
                 </div>
 
-                <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-8">
-                  <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-200/80 leading-relaxed">
+                <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
+                  <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                  <div className="text-sm text-red-400 leading-relaxed">
                     Để thêm cầu thủ vào hệ thống, cầu thủ cần có <strong>Tài khoản đã đăng ký</strong>. Form dưới đây giúp bạn lập danh sách nháp. Khi hệ thống Backend nâng cấp tính năng tự động gửi lời mời qua Email, danh sách này sẽ được tự động xử lý. Bạn cũng có thể bỏ trống và vào trang Quản Lý Đội để Import trực tiếp từ file Excel sau.
                   </div>
                 </div>

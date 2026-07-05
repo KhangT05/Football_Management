@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, Newspaper,
   AlertTriangle, RefreshCw, Search,
   CheckCircle, XCircle
 } from 'lucide-react';
-import { useCrudModal, useDebouncedValue } from '../../hooks';
+import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import ArticleFormModal from '../../components/admin/ArticleFormModal';
@@ -16,10 +16,6 @@ const EMPTY_ARTICLE = { title: '', excerpt: '', content: '', cover_image: null, 
 
 export default function ManageArticles() {
   const toast = useToastStore();
-  const [articles, setArticles] = useState([]);
-  const [meta, setMeta] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState('');
 
   // Pagination & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,29 +23,29 @@ export default function ManageArticles() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
-  useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
 
-  const fetchArticles = useCallback(async () => {
-    setIsLoading(true);
-    setFetchError('');
-    try {
-      const res = await articleApi.getArticles({
+  // ── Data fetching — dùng useApiQuery thống nhất với các trang admin khác ──
+  const {
+    data: articles,
+    meta,
+    isLoading,
+    error: fetchError,
+    fetch: fetchArticles,
+  } = useApiQuery(
+    (params) => articleApi.getArticles(params),
+    {
+      perPage: itemsPerPage,
+      params: {
         page: currentPage,
         per_page: itemsPerPage,
         q: debouncedSearch || undefined,
         sort: 'created_at',
-        direction: 'desc'
-      });
-      setArticles(res.data.data || []);
-      setMeta(res.data.meta);
-    } catch (err) {
-      setFetchError(err?.response?.data?.message || 'Lỗi khi tải danh sách bài viết');
-    } finally {
-      setIsLoading(false);
+        direction: 'desc',
+      },
+      deps: [currentPage, itemsPerPage, debouncedSearch],
+      errorMsg: 'Lỗi khi tải danh sách bài viết',
     }
-  }, [currentPage, itemsPerPage, debouncedSearch]);
-
-  useEffect(() => { fetchArticles(); }, [fetchArticles]);
+  );
 
   const totalPages = meta?.last_page || 1;
 
@@ -69,9 +65,9 @@ export default function ManageArticles() {
     });
   };
 
-  const handleSaveArticle = async (payload) => {
-    try {
-      articleCrud.setIsSaving(true);
+  // Dùng crud.save() đúng pattern — không bypass isSaving thủ công
+  const handleSaveArticle = useCallback((payload) => {
+    articleCrud.save(async () => {
       if (articleCrud.modal === 'add') {
         await articleApi.createArticle(payload);
         toast.success(`Đã tạo bài viết "${payload.title}"`);
@@ -79,14 +75,8 @@ export default function ManageArticles() {
         await articleApi.updateArticle(articleCrud.editing.id, payload);
         toast.success(`Đã cập nhật bài viết "${payload.title}"`);
       }
-      articleCrud.closeModal();
-      fetchArticles();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu bài viết');
-    } finally {
-      articleCrud.setIsSaving(false);
-    }
-  };
+    });
+  }, [articleCrud, toast]);
 
   const handleDeleteArticle = () => {
     const article = articleCrud.deleting;
@@ -145,7 +135,7 @@ export default function ManageArticles() {
               type="text"
               placeholder="Tìm kiếm bài viết..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm transition-colors"
             />
           </div>
