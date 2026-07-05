@@ -25,7 +25,19 @@ export interface PlayerDto {
     user?: { id: number; name: string; email: string; phone: string | null } | null;
     user_id: number;
 }
-
+export interface PlayerSeasonInfo {
+    season_id: number;
+    season_name: string;
+    season_status: string;
+    team_id: number;
+    team_name: string;
+    season_team_status: string;
+    group_id: number | null;
+    jersey_number: number;
+}
+export interface PlayerDetailDto extends PlayerDto {
+    seasons: PlayerSeasonInfo[];
+}
 export interface TeamPlayerDto {
     id: number;
     team_id: number;

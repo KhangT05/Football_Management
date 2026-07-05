@@ -32,4 +32,36 @@ export const TEAM_PLAYER_SELECT = {
         select: PLAYER_SELECT,
     },
 };
+export const PLAYER_SELECT_WITH_SEASONS = {
+    ...PLAYER_SELECT,
+    team_players: {
+        where: { deleted_at: null },
+        select: {
+            id: true,
+            team_id: true,
+            jersey_number: true,
+            position: true,
+            role: true,
+            status: true,
+            approval_status: true,
+            team: {
+                select: {
+                    id: true,
+                    name: true,
+                    season_teams: {
+                        where: { deleted_at: null },
+                        select: {
+                            id: true,
+                            status: true,
+                            group_id: true,
+                            season: {
+                                select: { id: true, name: true, status: true },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+};
 //# sourceMappingURL=player.type.js.map
