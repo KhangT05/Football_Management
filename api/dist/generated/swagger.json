@@ -4521,6 +4521,14 @@
             },
             "KnockoutGenerateResult": {
                 "properties": {
+                    "phaseId": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Phase vừa được get-or-create — caller cần ID này cho các call sau\r\n(GET bracket, POST advance) vì generate không còn nhận phaseId nữa."
+                    },
+                    "phaseType": {
+                        "$ref": "#/components/schemas/PhaseType"
+                    },
                     "totalSlots": {
                         "type": "number",
                         "format": "double"
@@ -4541,6 +4549,8 @@
                     }
                 },
                 "required": [
+                    "phaseId",
+                    "phaseType",
                     "totalSlots",
                     "round1Matches",
                     "byeSlots",
@@ -4551,6 +4561,15 @@
             },
             "infer_typeofgenerateKnockoutRequestSchema_": {
                 "properties": {
+                    "phaseTypeOverride": {
+                        "type": "string",
+                        "enum": [
+                            "round_of_16",
+                            "quarter_final",
+                            "semi_final",
+                            "final"
+                        ]
+                    },
                     "legs": {
                         "type": "number",
                         "enum": [
@@ -4558,10 +4577,55 @@
                             2
                         ]
                     },
-                    "seededTeamIds": {
+                    "seeds": {
                         "items": {
-                            "type": "number",
-                            "format": "double"
+                            "anyOf": [
+                                {
+                                    "properties": {
+                                        "rank": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "groupId": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "kind": {
+                                            "type": "string",
+                                            "enum": [
+                                                "standing"
+                                            ],
+                                            "nullable": false
+                                        }
+                                    },
+                                    "required": [
+                                        "rank",
+                                        "groupId",
+                                        "kind"
+                                    ],
+                                    "type": "object"
+                                },
+                                {
+                                    "properties": {
+                                        "teamId": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "kind": {
+                                            "type": "string",
+                                            "enum": [
+                                                "manual"
+                                            ],
+                                            "nullable": false
+                                        }
+                                    },
+                                    "required": [
+                                        "teamId",
+                                        "kind"
+                                    ],
+                                    "type": "object"
+                                }
+                            ]
                         },
                         "type": "array"
                     },
@@ -4580,7 +4644,7 @@
                     }
                 },
                 "required": [
-                    "seededTeamIds",
+                    "seeds",
                     "matchTimes",
                     "venueIds"
                 ],
@@ -12014,7 +12078,7 @@
                 }
             }
         },
-        "/seasons/{seasonId}/phases/{phaseId}/knockout/generate": {
+        "/seasons/{seasonId}/knockout/generate": {
             "post": {
                 "operationId": "GenerateKnockoutBracket",
                 "responses": {
@@ -12029,7 +12093,7 @@
                         }
                     }
                 },
-                "description": "phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —\r\ntránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object\r\nrồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)\r\nlàm invariant check cuối, body schema con chỉ là contract cho OpenAPI.",
+                "description": "Route đổi: /phases/{phaseId}/knockout/generate -> /seasons/{seasonId}/knockout/generate.\r\nphaseId KHÔNG còn là input — nó là OUTPUT (service get-or-create Phase,\r\ntype derive từ bracket size qua BRACKET_SIZE_TO_PHASE_TYPE). Giữ phaseId\r\nlàm path param ở đây là tự mâu thuẫn: client phải có phaseId để tạo\r\nphase, nhưng phase chưa tồn tại tới khi generate chạy xong.\r\n\r\nIdempotency: không cần idempotency key riêng — CONFLICT tự nhiên xảy ra\r\nở service (existingCount > 0 trên bracket_slots của phase vừa\r\nget-or-create) nếu gọi generate 2 lần cho cùng season+phaseType.",
                 "tags": [
                     "Knockout"
                 ],
@@ -12044,15 +12108,6 @@
                     {
                         "in": "path",
                         "name": "seasonId",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "in": "path",
-                        "name": "phaseId",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -12099,7 +12154,6 @@
                         }
                     }
                 },
-                "description": "Action-style mutation (không idempotent, không phải partial update của\r\nresource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.\r\nvenueIds/matchTimes trong body là ScheduleOptions cho match round sau\r\nvừa được tạo ra (nếu advance làm xong 1 cặp slot).\r\n\r\nService return newMatchId (singular) — leg 1 match ID của round tiếp theo.\r\nLeg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần\r\nanchor ID để poll/redirect; leg 2 visible qua GET bracket.",
                 "tags": [
                     "Knockout"
                 ],
@@ -12160,7 +12214,6 @@
                         }
                     }
                 },
-                "description": "Read-only — không",
                 "tags": [
                     "Knockout"
                 ],

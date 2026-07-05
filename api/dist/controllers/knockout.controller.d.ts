@@ -6,31 +6,21 @@ export declare class KnockoutController extends Controller {
     private service;
     constructor(service: KnockoutService);
     /**
-     * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
-     * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
-     * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)
-     * làm invariant check cuối, body schema con chỉ là contract cho OpenAPI.
-     */
-    generateKnockoutBracket(seasonId: number, phaseId: number, body: knockoutSchema.GenerateKnockoutRequestDto): Promise<KnockoutGenerateResult>;
-    /**
-     * Action-style mutation (không idempotent, không phải partial update của
-     * resource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.
-     * venueIds/matchTimes trong body là ScheduleOptions cho match round sau
-     * vừa được tạo ra (nếu advance làm xong 1 cặp slot).
+     * Route đổi: /phases/{phaseId}/knockout/generate -> /seasons/{seasonId}/knockout/generate.
+     * phaseId KHÔNG còn là input — nó là OUTPUT (service get-or-create Phase,
+     * type derive từ bracket size qua BRACKET_SIZE_TO_PHASE_TYPE). Giữ phaseId
+     * làm path param ở đây là tự mâu thuẫn: client phải có phaseId để tạo
+     * phase, nhưng phase chưa tồn tại tới khi generate chạy xong.
      *
-     * Service return newMatchId (singular) — leg 1 match ID của round tiếp theo.
-     * Leg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần
-     * anchor ID để poll/redirect; leg 2 visible qua GET bracket.
+     * Idempotency: không cần idempotency key riêng — CONFLICT tự nhiên xảy ra
+     * ở service (existingCount > 0 trên bracket_slots của phase vừa
+     * get-or-create) nếu gọi generate 2 lần cho cùng season+phaseType.
      */
+    generateKnockoutBracket(seasonId: number, body: knockoutSchema.GenerateKnockoutRequestDto): Promise<KnockoutGenerateResult>;
     advanceWinner(seasonId: number, phaseId: number, body: knockoutSchema.AdvanceWinnerRequestDto): Promise<{
         matchCreated: boolean;
         newMatchId?: number;
     }>;
-    /**
-     * Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule.
-     * Trả toàn bộ slot tree; client tự build visual bracket từ
-     * sourceASlotId/sourceBSlotId links.
-     */
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
 }
 //# sourceMappingURL=knockout.controller.d.ts.map

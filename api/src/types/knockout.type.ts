@@ -1,21 +1,49 @@
-import { KNOCKOUT_PHASE_TYPES } from "../dtos/knockout.schema.js";
 import { PhaseType, Prisma } from "../generated/prisma/client.js";
+import { KNOCKOUT_PHASE_TYPES } from "../dtos/knockout.schema.js";
+
+// ─── SEED RESOLUTION ────────────────────────────────────────────────────────
+// 'standing': lấy team theo hạng trong bảng — nguồn thật là group_stage kết quả.
+// 'manual': chọn tay — dùng cho wildcard hoặc season không có group stage.
+// Union thay vì optional fields riêng lẻ để loại trừ trạng thái vô nghĩa
+// (vd groupId có mà rank null) ngay ở compile time.
+export type SeedSource =
+    | { kind: 'standing'; groupId: number; rank: number }
+    | { kind: 'manual'; teamId: number };
+
+// Map bracket size -> PhaseType. third_place CỐ TÌNH không có trong map này —
+// xem giải thích ở knockout.schema.ts. Nếu bracketSize không khớp key nào
+// (vd 3, 5, 6 team sau khi pad power-of-2 vẫn lệch) throw ngay, không đoán.
+export const BRACKET_SIZE_TO_PHASE_TYPE: Partial<Record<number, PhaseType>> = {
+    2: PhaseType.final,
+    4: PhaseType.semi_final,
+    8: PhaseType.quarter_final,
+    16: PhaseType.round_of_16,
+};
 
 export interface KnockoutGenerateOptions {
-    phaseId: number;
     seasonId: number;
-    /** Ordered list of seeded teams: index 0 = seed 1, etc.
-     *  Must be power-of-2 or will be padded with byes. */
-    seededTeamIds: number[];
+    /** Ordered: index 0 = seed 1. Resolve sang teamId xảy ra TRONG transaction
+     *  của generateKnockoutBracket — không nhận teamId list tĩnh từ FE nữa,
+     *  vì standings có thể vừa đổi ngay trước lúc admin bấm generate. */
+    seeds: SeedSource[];
     venueIds: number[];
     matchTimes: string[]; // "HH:mm" VN time
     /** From Phase.legs — 1 or 2 */
     legs: 1 | 2;
+    /** Bắt buộc phải set nếu bracket size không map được qua
+     *  BRACKET_SIZE_TO_PHASE_TYPE (hiện tại: không case nào cần, third_place
+     *  không đi qua flow này). Giữ lại cho tương lai, KHÔNG dùng để bypass
+     *  validation bracket size. */
+    phaseTypeOverride?: PhaseType;
 }
 
 export interface KnockoutGenerateResult {
+    /** Phase vừa được get-or-create — caller cần ID này cho các call sau
+     *  (GET bracket, POST advance) vì generate không còn nhận phaseId nữa. */
+    phaseId: number;
+    phaseType: PhaseType;
     totalSlots: number;
-    round1Matches: number;  // matches created immediately
+    round1Matches: number;
     byeSlots: number;
     warnings: string[];
 }
@@ -42,7 +70,7 @@ export const KNOCKOUT_PHASE_TYPE_SET = new Set<PhaseType>(KNOCKOUT_PHASE_TYPES);
 export type SlotLinkUpdate = {
     id: number;
     source_a_slot_id: number | null;
-    source_b_slot_id: number | null
+    source_b_slot_id: number | null;
 };
 
 export const seededTeamsSelect = {
@@ -55,14 +83,12 @@ export const slotLinksSelect = {
     source_b_slot_id: true,
 } satisfies Prisma.BracketSlotSelect;
 
-// Dùng cho byeSlots fetch (step 5) — id + seeded teams + source links.
 export const byeSlotSelect = {
     id: true,
     ...seededTeamsSelect,
     ...slotLinksSelect,
 } satisfies Prisma.BracketSlotSelect;
 
-// Dùng cho getBracket() — full projection map ra BracketSlotNode.
 export const bracketSlotNodeSelect = {
     id: true,
     round: true,
@@ -73,9 +99,6 @@ export const bracketSlotNodeSelect = {
     ...slotLinksSelect,
 } satisfies Prisma.BracketSlotSelect;
 
-// select thay include: propagateWinner chỉ cần .id của parent slot (fed_as_a/
-// fed_as_b), không cần full BracketSlot row. select cũng an toàn hơn omit khi
-// schema thêm cột mới — field mới không tự lộ ra nếu không khai báo trong select.
 export const slotWithParentLinksSelect = {
     id: true,
     ...seededTeamsSelect,

@@ -7,14 +7,6 @@ import { ScheduleEngine } from '../libs/schedule.engine.js';
 // Nếu giải có duration khác (futsal 2x20p, sân 11 người 2x45p+nghỉ), chỉnh
 // lại hằng số này hoặc đưa thành config theo tournament/season.
 const ASSUMED_MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h (đá + nghỉ + dự phòng)
-// Số lần thử lại greedy scheduling với thứ tự match xáo trộn khác nhau,
-// giữ lại kết quả có ít match thất bại nhất. Greedy chọn-slot-sớm-nhất theo
-// 1 thứ tự cố định KHÔNG đảm bảo tìm ra lịch khả thi dù lịch đó tồn tại —
-// đây là cách giảm rủi ro "failedMatchIds giả" với chi phí thấp, không cần
-// CSP solver thật. Đủ cho scale vài chục match/giải sinh viên; nếu quy mô
-// lớn hơn nhiều (hàng trăm match, ràng buộc phức tạp hơn) nên thay bằng
-// constraint solver thật thay vì tăng số restart vô hạn.
-const SCHEDULE_RESTARTS = 20;
 export class ScheduleService extends ScheduleEngine {
     query;
     constructor(prisma) {
@@ -180,7 +172,7 @@ export class ScheduleService extends ScheduleEngine {
         return { groupCount, groupIds, ...scheduleResult, warnings };
     }
     /**
-     * NEW: Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
+     * Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
      * GroupService (createGroupsBulk + drawGroups/drawGroupsSeeded), rồi
      * auto-schedule giờ/sân. Dùng cho luồng: admin tạo bảng + bốc thăm trước
      * (GroupDrawUI) → sau đó bấm "Tạo lịch thi đấu" ở ScheduleTab.
@@ -190,12 +182,6 @@ export class ScheduleService extends ScheduleEngine {
      * phase — nên không dùng được sau khi đã bốc thăm thủ công. Method này
      * ngược lại: BẮT BUỘC phải có phase + group + season_team.group_id đã
      * set sẵn, và KHÔNG tự tạo hay tự chia đội.
-     *
-     * Tiêu chí resolve Phase (format round_robin, type group_stage,
-     * is_active true) và tiêu chí lọc season_teams hợp lệ trong group
-     * (deleted_at null, is_active true, status approved) được giữ ĐỒNG BỘ
-     * với GroupService (getOrCreateRoundRobinPhase / buildGroupsPayload) —
-     * để 2 service luôn nhìn cùng 1 Phase/Group, tránh lệch trạng thái.
      */
     async generateMatchesFromDrawnGroups(seasonId, options) {
         const warnings = [];
@@ -208,8 +194,6 @@ export class ScheduleService extends ScheduleEngine {
             const season = await tx.season.findUnique({ where: { id: seasonId } });
             if (!season)
                 throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
-            // Cùng tiêu chí resolve phase với GroupService — KHÔNG tự tạo phase
-            // (đây là read/generate-path, không phải create-path).
             const phase = await tx.phase.findFirst({
                 where: {
                     season_id: seasonId,
@@ -229,8 +213,6 @@ export class ScheduleService extends ScheduleEngine {
             if (existingMatches > 0)
                 throw createAppError('CONFLICT', `Season ${seasonId} đã có lịch thi đấu (${existingMatches} match) — xoá lịch cũ ` +
                     `trước khi tạo lại.`);
-            // Filter giống hệt GroupService.buildGroupsPayload — đảm bảo chỉ tính
-            // các season_team thực sự "đã bốc thăm và còn hợp lệ".
             const groups = await tx.group.findMany({
                 where: { phase_id: phase.id, is_active: true },
                 include: {
@@ -290,8 +272,6 @@ export class ScheduleService extends ScheduleEngine {
     }
     async autoScheduleMatches(seasonId, 
     // allowPastDate optional — mặc định false (throw nếu start_date đã qua).
-    // Trước đây chỉ console.warn rồi vẫn chạy tiếp, sinh ra slot pool toàn
-    // nằm trong quá khứ — sai lặng lẽ, không observable qua log structured.
     options) {
         const matches = await this.prisma.match.findMany({
             where: {
@@ -311,10 +291,6 @@ export class ScheduleService extends ScheduleEngine {
         });
         if (matches.length === 0)
             return { matchesScheduled: 0, failedMatchIds: [] };
-        // FIX: select thêm end_date — trước đây rangeEnd luôn hardcode
-        // start_date + 6 tháng, bỏ qua hoàn toàn thời điểm season thực sự kết
-        // thúc. Match có thể bị xếp lịch sau khi season đã đóng. end_date giờ
-        // là hard boundary bắt buộc, không có fallback im lặng.
         const [phase, season] = await Promise.all([
             this.prisma.phase.findFirst({
                 where: { season_id: seasonId, type: PhaseType.group_stage },
@@ -339,8 +315,6 @@ export class ScheduleService extends ScheduleEngine {
         if (rangeEnd <= startDate)
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} end_date (${rangeEnd.toISOString()}) phải sau start_date ` +
                 `(${startDate.toISOString()})`);
-        // Throw thay vì chỉ warn — trừ khi caller chủ động bypass bằng
-        // allowPastDate (vd backfill lịch sử có chủ đích).
         if (startDate < new Date() && !options.allowPastDate) {
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} có start_date đã qua (${startDate.toISOString()}) — ` +
                 `slot pool sẽ rơi vào quá khứ. Cập nhật start_date hoặc gọi với allowPastDate=true ` +
@@ -352,104 +326,16 @@ export class ScheduleService extends ScheduleEngine {
             throw createAppError('VALIDATION_ERROR', `Không đủ slot: cần ${matches.length}, chỉ có ${pool.length}. ` +
                 `Thêm venueId / matchTime, đẩy startDate sớm hơn, hoặc mở rộng end_date của season.`);
         }
-        // Greedy chọn-slot-sớm-nhất theo 1 thứ tự cố định KHÔNG đảm bảo tìm ra
-        // lịch khả thi dù lịch đó tồn tại (greedy không backtrack — 1 lựa chọn
-        // sớm có thể khoá chết slot mà 1 match sau bắt buộc cần). Hai kỹ thuật
-        // bù đắp, không cần CSP solver thật:
-        //
-        // 1. MRV ordering trong mỗi round: match nào có ÍT slot hợp lệ nhất
-        //    (do ràng buộc rest-days của team đó) được xếp TRƯỚC — giảm khả
-        //    năng nó bị "khoá chết" bởi match khác xếp trước nó. Đây là
-        //    standard CSP heuristic (Minimum Remaining Values).
-        // 2. Multi-restart: chạy toàn bộ pass greedy nhiều lần với random
-        //    tie-break, giữ lại kết quả failedMatchIds ít nhất. Chi phí
-        //    O(restarts × n), chấp nhận được vì đây là batch job chạy 1 lần,
-        //    không phải hot path.
-        let best = null;
-        for (let attempt = 0; attempt < SCHEDULE_RESTARTS; attempt++) {
-            const result = this.runGreedyPass(matches, pool, minRestDays, attempt);
-            if (!best || result.unscheduled.length < best.unscheduled.length) {
-                best = result;
-                if (best.unscheduled.length === 0)
-                    break; // tìm được lịch hoàn chỉnh, dừng sớm
-            }
-        }
-        const { updates, unscheduled } = best;
+        // DEDUPE: greedy + MRV ordering + multi-restart giờ nằm chung ở
+        // ScheduleEngine.scheduleMatchesWithRetry — KnockoutService.scheduleMatchBatch
+        // dùng lại cùng hàm này, không còn 2 implementation lệch nhau.
+        const { updates, unscheduled } = await this.scheduleMatchesWithRetry(matches, pool, minRestDays);
         const failedFromCollision = await this.writeScheduleBatch(updates);
         const finalUnscheduled = [...unscheduled, ...failedFromCollision];
         return {
             matchesScheduled: updates.length - failedFromCollision.length,
             failedMatchIds: finalUnscheduled,
         };
-    }
-    // ─── Greedy scheduling pass (1 lần thử, dùng nội bộ bởi multi-restart) ─────
-    runGreedyPass(matches, pool, minRestDays, attemptSeed) {
-        const lastPlayedAt = new Map();
-        const usedSlotIdx = new Set();
-        const updates = [];
-        const unscheduled = [];
-        const byRound = new Map();
-        for (const m of matches) {
-            const r = parseInt(m.round ?? '0', 10);
-            const bucket = byRound.get(r) ?? [];
-            bucket.push(m);
-            byRound.set(r, bucket);
-        }
-        for (const round of [...byRound.keys()].sort((a, b) => a - b)) {
-            const roundMatches = byRound.get(round);
-            // attempt 0 = thứ tự gốc (deterministic, dễ debug/reproduce).
-            // attempt > 0 = MRV ordering trên bản shuffle khác nhau mỗi lần,
-            // để tránh tie-break luôn rơi vào cùng 1 cục bộ tối ưu.
-            const ordered = attemptSeed === 0
-                ? roundMatches
-                : this.orderByMostConstrained(shuffle([...roundMatches]), pool, usedSlotIdx, lastPlayedAt, minRestDays);
-            for (const match of ordered) {
-                const slotIdx = this.findEarliestValidSlot(pool, usedSlotIdx, match.home_team_id, match.away_team_id, lastPlayedAt, minRestDays);
-                if (slotIdx === -1) {
-                    unscheduled.push(match.id);
-                    continue;
-                }
-                const slot = pool[slotIdx];
-                const scheduledAt = this.vnTimeToUtc(slot.date, slot.time);
-                usedSlotIdx.add(slotIdx);
-                lastPlayedAt.set(match.home_team_id, scheduledAt.getTime());
-                lastPlayedAt.set(match.away_team_id, scheduledAt.getTime());
-                updates.push({ id: match.id, scheduledAt, venueId: slot.venue_id });
-            }
-        }
-        return { updates, unscheduled };
-    }
-    // MRV heuristic: với mỗi match còn lại trong round, đếm số slot hợp lệ
-    // (chưa bị used, thoả rest-days cho cả 2 team) TẠI THỜI ĐIỂM HIỆN TẠI —
-    // không commit, chỉ đếm để sort. Match nào có ít lựa chọn nhất xử lý
-    // trước, giảm rủi ro nó bị match khác "tiện tay" chiếm mất slot duy nhất
-    // nó cần. Đây là proxy, không phải đếm chính xác theo lý thuyết CSP đầy
-    // đủ (không tính ảnh hưởng dây chuyền các match sau), nhưng đủ tốt để
-    // cải thiện tỷ lệ thành công so với thứ tự cố định ban đầu.
-    orderByMostConstrained(candidates, pool, usedSlotIdx, lastPlayedAt, minRestDays) {
-        const withDegree = candidates.map(match => {
-            let degree = 0;
-            for (let idx = 0; idx < pool.length; idx++) {
-                if (usedSlotIdx.has(idx))
-                    continue;
-                const slot = pool[idx];
-                const candidateAt = this.vnTimeToUtc(slot.date, slot.time).getTime();
-                if (this.isRestDaysSatisfied(match.home_team_id, candidateAt, lastPlayedAt, minRestDays)
-                    && this.isRestDaysSatisfied(match.away_team_id, candidateAt, lastPlayedAt, minRestDays)) {
-                    degree++;
-                }
-            }
-            return { match, degree };
-        });
-        withDegree.sort((a, b) => a.degree - b.degree);
-        return withDegree.map(w => w.match);
-    }
-    isRestDaysSatisfied(teamId, candidateAtMs, lastPlayedAt, minRestDays) {
-        const last = lastPlayedAt.get(teamId);
-        if (last === undefined)
-            return true;
-        const diffDays = Math.abs(candidateAtMs - last) / (24 * 60 * 60 * 1000);
-        return diffDays >= minRestDays;
     }
     async rescheduleMatch(matchId, input) {
         const match = await this.prisma.match.findUnique({
@@ -467,12 +353,11 @@ export class ScheduleService extends ScheduleEngine {
         const RESCHEDULABLE = [MatchStatus.scheduled, MatchStatus.postponed];
         if (!RESCHEDULABLE.includes(match.status))
             throw createAppError('CONFLICT', `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`);
-        // Trước đây chỉ check exact-time equality, không bắt được overlap thực
-        // tế (trận trước chưa kết thúc, trận sau đã bắt đầu ở cùng sân/cùng
-        // đội nhưng lệch giờ). Đổi sang window check ±ASSUMED_MATCH_DURATION_MS.
-        // Note: không check rest-days ở đây — manual reschedule là override có
-        // chủ đích, caller (admin) chịu trách nhiệm. Nếu muốn enforce, thêm
-        // flag strictRestDays riêng.
+        // Window check ±ASSUMED_MATCH_DURATION_MS thay vì exact-time equality —
+        // bắt được overlap thực tế (trận trước chưa kết thúc, trận sau đã bắt
+        // đầu ở cùng sân/cùng đội nhưng lệch giờ). Note: không check rest-days
+        // ở đây — manual reschedule là override có chủ đích, caller (admin)
+        // chịu trách nhiệm. Muốn enforce, thêm flag strictRestDays riêng.
         const windowStart = new Date(input.scheduledAt.getTime() - ASSUMED_MATCH_DURATION_MS);
         const windowEnd = new Date(input.scheduledAt.getTime() + ASSUMED_MATCH_DURATION_MS);
         const conflict = await this.prisma.match.findFirst({

@@ -14,38 +14,31 @@ export class KnockoutController extends Controller {
     }
 
     /**
-     * phaseId/seasonId lấy từ path, KHÔNG bắt client gửi lại trong body —
-     * tránh conflict (path=5, body=7 thì theo cái nào?). Merge vào object
-     * rồi validate lại bằng full schema gốc (knockoutGenerateOptionsSchema)
-     * làm invariant check cuối, body schema con chỉ là contract cho OpenAPI.
+     * Route đổi: /phases/{phaseId}/knockout/generate -> /seasons/{seasonId}/knockout/generate.
+     * phaseId KHÔNG còn là input — nó là OUTPUT (service get-or-create Phase,
+     * type derive từ bracket size qua BRACKET_SIZE_TO_PHASE_TYPE). Giữ phaseId
+     * làm path param ở đây là tự mâu thuẫn: client phải có phaseId để tạo
+     * phase, nhưng phase chưa tồn tại tới khi generate chạy xong.
+     *
+     * Idempotency: không cần idempotency key riêng — CONFLICT tự nhiên xảy ra
+     * ở service (existingCount > 0 trên bracket_slots của phase vừa
+     * get-or-create) nếu gọi generate 2 lần cho cùng season+phaseType.
      */
     @Security('jwt', ['admin'])
-    @Post('seasons/{seasonId}/phases/{phaseId}/knockout/generate')
+    @Post('seasons/{seasonId}/knockout/generate')
     @SuccessResponse(201, 'Created')
     async generateKnockoutBracket(
         @Path() seasonId: number,
-        @Path() phaseId: number,
         @Body() body: knockoutSchema.GenerateKnockoutRequestDto,
     ): Promise<KnockoutGenerateResult> {
         const parsed = knockoutSchema.knockoutGenerateOptionsSchema.parse({
             ...body,
             seasonId,
-            phaseId,
         });
         this.setStatus(201);
         return this.service.generateKnockoutBracket(parsed);
     }
 
-    /**
-     * Action-style mutation (không idempotent, không phải partial update của
-     * resource) → POST giống autoSchedule, không dùng PATCH như rescheduleMatch.
-     * venueIds/matchTimes trong body là ScheduleOptions cho match round sau
-     * vừa được tạo ra (nếu advance làm xong 1 cặp slot).
-     *
-     * Service return newMatchId (singular) — leg 1 match ID của round tiếp theo.
-     * Leg 2 match được tạo cùng lúc nhưng không expose vì client chỉ cần
-     * anchor ID để poll/redirect; leg 2 visible qua GET bracket.
-     */
     @Security('jwt', ['admin'])
     @Post('seasons/{seasonId}/phases/{phaseId}/knockout/advance')
     @SuccessResponse(200, 'OK')
@@ -58,11 +51,6 @@ export class KnockoutController extends Controller {
         return this.service.advanceWinner(phaseId, seasonId, input, { venueIds, matchTimes });
     }
 
-    /**
-     * Read-only — không @Security, theo đúng pattern getSchedule/getTeamSchedule.
-     * Trả toàn bộ slot tree; client tự build visual bracket từ
-     * sourceASlotId/sourceBSlotId links.
-     */
     @Get('phases/{phaseId}/knockout/bracket')
     async getBracket(
         @Path() phaseId: number,
