@@ -2,6 +2,7 @@ import { ArticleStatus, PrismaClient } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { createAppError } from "../common/app.error.js";
+import { storageService } from "./storage.service.js";
 import {
     AddArticleMediaDto,
     AddTagDto,
@@ -77,14 +78,28 @@ export class ArticleService {
 
     // ─── Write ─────────────────────────────────────────────────────────────────
 
-    async create(userId: number, data: CreateArticleDto): Promise<SafeArticle> {
+    /**
+     * Upload cover_image → lưu url vào DB trong cùng 1 flow (giống tournament.updateWithLogo).
+     * Nếu coverFile được truyền, nó override cover_image trong dto (nếu có).
+     */
+    async create(
+        userId: number,
+        data: CreateArticleDto,
+        coverFile?: Express.Multer.File
+    ): Promise<SafeArticle> {
         const slugExists = await this.prisma.article.findUnique({
             where: { slug: data.slug },
             select: { id: true },
         });
         if (slugExists) throw createAppError("CONFLICT", `Slug "${data.slug}" already exists`);
 
-        const { tags, media, published_at, ...fields } = data;
+        const { tags, media, published_at, cover_image, ...fields } = data;
+
+        let coverImage = cover_image;
+        if (coverFile) {
+            const result = await storageService.upload({ namespace: "articles", kind: "cover", file: coverFile });
+            coverImage = result.url;
+        }
 
         // published_at: explicit value > auto-now khi status=published > undefined
         const publishedAt =
@@ -98,6 +113,7 @@ export class ArticleService {
             data: {
                 ...fields,
                 user_id: userId,
+                ...(coverImage !== undefined && { cover_image: coverImage }),
                 ...(publishedAt && { published_at: publishedAt }),
                 // bulk insert tags + media trong cùng 1 query — 1 round-trip
                 ...(tags?.length && {
@@ -118,10 +134,14 @@ export class ArticleService {
         }) as Promise<SafeArticle>;
     }
 
-    async update(id: number, data: UpdateArticleDto): Promise<SafeArticle> {
+    async update(
+        id: number,
+        data: UpdateArticleDto,
+        coverFile?: Express.Multer.File
+    ): Promise<SafeArticle> {
         await this.findByIdOrFail(id);
 
-        const { tags, media, published_at, slug, status, ...fields } = data;
+        const { tags, media, published_at, slug, status, cover_image, ...fields } = data;
 
         if (slug) {
             const conflict = await this.prisma.article.findFirst({
@@ -129,6 +149,12 @@ export class ArticleService {
                 select: { id: true },
             });
             if (conflict) throw createAppError("CONFLICT", `Slug "${slug}" already exists`);
+        }
+
+        let coverImage = cover_image;
+        if (coverFile) {
+            const result = await storageService.upload({ namespace: "articles", kind: "cover", file: coverFile });
+            coverImage = result.url;
         }
 
         const publishedAt =
@@ -168,6 +194,7 @@ export class ArticleService {
                 where: { id },
                 data: {
                     ...patch,
+                    ...(coverImage !== undefined && { cover_image: coverImage }),
                     ...(publishedAt && { published_at: publishedAt }),
                 },
                 ...ARTICLE_FULL_INCLUDE,
@@ -215,7 +242,6 @@ export class ArticleService {
         });
     }
 
-    /** Bulk add — createMany skipDuplicates, 1 round-trip */
     async bulkAddTags(articleId: number, dto: BulkAddTagsDto): Promise<{ count: number }> {
         await this.findByIdOrFail(articleId);
         const result = await this.prisma.articleTag.createMany({
@@ -251,6 +277,25 @@ export class ArticleService {
         await this.findByIdOrFail(articleId);
         return this.prisma.articleMedia.create({
             data: { ...dto, article_id: articleId },
+        });
+    }
+
+    /** Upload file media (ảnh/video) → lưu vào ArticleMedia trong 1 flow */
+    async addMediaFile(
+        articleId: number,
+        file: Express.Multer.File,
+        extra?: { caption?: string; order?: number; type?: "image" | "video" }
+    ) {
+        await this.findByIdOrFail(articleId);
+        const result = await storageService.upload({ namespace: "articles", kind: "media", file });
+        return this.prisma.articleMedia.create({
+            data: {
+                article_id: articleId,
+                type: extra?.type ?? "image",
+                url: result.url,
+                caption: extra?.caption,
+                order: extra?.order ?? 0,
+            },
         });
     }
 

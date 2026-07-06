@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Body, Controller, Delete, Get, Patch, Path, Post, Query, Route, Security, SuccessResponse, Tags, Request, } from "tsoa";
+import { Body, Controller, Delete, FormField, Get, Patch, Path, Post, Query, Route, Security, SuccessResponse, Tags, Request, UploadedFile, } from "tsoa";
 import { ArticleService } from "../services/article.service.js";
 import * as articleSchema from "../dtos/article.schema.js";
 let ArticleController = class ArticleController extends Controller {
@@ -21,17 +21,8 @@ let ArticleController = class ArticleController extends Controller {
     }
     async findAll(page = 1, per_page = 20, q, sort, direction, status, season_id, match_id, team_id, user_id, tag) {
         return this.service.findAll({
-            page,
-            per_page,
-            q,
-            sort,
-            direction,
-            status,
-            season_id,
-            match_id,
-            team_id,
-            user_id,
-            tag,
+            page, per_page, q, sort, direction, status,
+            season_id, match_id, team_id, user_id, tag,
         });
     }
     async findById(id) {
@@ -40,12 +31,40 @@ let ArticleController = class ArticleController extends Controller {
     async findBySlug(slug) {
         return this.service.findBySlugOrFail(slug);
     }
-    async create(body, req) {
+    /**
+     * Tạo article kèm upload cover_image (multipart/form-data).
+     * tags/media gửi dạng JSON string trong form field.
+     */
+    async create(req, title, slug, content, status, season_id, match_id, team_id, published_at, tags, media, coverFile) {
+        const dto = articleSchema.createArticleSchema.parse({
+            title,
+            slug,
+            content,
+            status,
+            season_id: season_id ? Number(season_id) : undefined,
+            match_id: match_id ? Number(match_id) : undefined,
+            team_id: team_id ? Number(team_id) : undefined,
+            published_at,
+            tags: tags ? JSON.parse(tags) : undefined,
+            media: media ? JSON.parse(media) : undefined,
+        });
         this.setStatus(201);
-        return this.service.create(req.user.user_id, body);
+        return this.service.create(req.user.user_id, dto, coverFile);
     }
-    async update(id, body) {
-        return this.service.update(id, body);
+    async update(id, title, slug, content, status, season_id, match_id, team_id, published_at, tags, media, coverFile) {
+        const dto = articleSchema.updateArticleSchema.parse({
+            title,
+            slug,
+            content,
+            status,
+            season_id: season_id ? Number(season_id) : undefined,
+            match_id: match_id ? Number(match_id) : undefined,
+            team_id: team_id ? Number(team_id) : undefined,
+            published_at,
+            tags: tags ? JSON.parse(tags) : undefined,
+            media: media ? JSON.parse(media) : undefined,
+        });
+        return this.service.update(id, dto, coverFile);
     }
     async updateStatus(id, body) {
         return this.service.updateStatus(id, body.status);
@@ -57,17 +76,14 @@ let ArticleController = class ArticleController extends Controller {
     async listTags() {
         return this.service.listDistinctTags();
     }
-    /** Add 1 tag vào article */
     async addTag(article_id, body) {
         this.setStatus(201);
         return this.service.addTag(article_id, body);
     }
-    /** Bulk add nhiều tags vào article — 1 round-trip */
     async bulkAddTags(article_id, body) {
         this.setStatus(201);
         return this.service.bulkAddTags(article_id, body);
     }
-    /** Remove 1 tag khỏi article */
     async removeTag(article_id, tag) {
         this.setStatus(204);
         return this.service.removeTag(article_id, tag);
@@ -75,17 +91,24 @@ let ArticleController = class ArticleController extends Controller {
     async getMedia(article_id) {
         return this.service.getMedia(article_id);
     }
-    /** Add 1 media item — dùng sau khi upload lên Cloudinary */
+    /** Add media item bằng URL có sẵn (không upload file) */
     async addMedia(article_id, body) {
         this.setStatus(201);
         return this.service.addMedia(article_id, body);
     }
-    /** Delete 1 media item */
+    /** Add media item bằng cách upload file trực tiếp */
+    async uploadMedia(article_id, caption, order, type, file) {
+        this.setStatus(201);
+        return this.service.addMediaFile(article_id, file, {
+            caption,
+            order: order ? Number(order) : undefined,
+            type,
+        });
+    }
     async deleteMedia(article_id, media_id) {
         this.setStatus(204);
         return this.service.deleteMedia(article_id, media_id);
     }
-    /** Bulk delete media — truyền ids[] */
     async bulkDeleteMedia(article_id, body) {
         return this.service.bulkDeleteMedia(article_id, body);
     }
@@ -125,19 +148,39 @@ __decorate([
     Security("jwt", ["admin", "organizing"]),
     Post("/"),
     SuccessResponse(201, "Created"),
-    __param(0, Body()),
-    __param(1, Request()),
+    __param(0, Request()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, FormField()),
+    __param(4, FormField()),
+    __param(5, FormField()),
+    __param(6, FormField()),
+    __param(7, FormField()),
+    __param(8, FormField()),
+    __param(9, FormField()),
+    __param(10, FormField()),
+    __param(11, UploadedFile("cover_image")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, String, String, String, Object, Object, Object, Object, Object, Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "create", null);
 __decorate([
     Security("jwt", ["admin", "organizing"]),
     Patch("{id}"),
     __param(0, Path()),
-    __param(1, Body()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, FormField()),
+    __param(4, FormField()),
+    __param(5, FormField()),
+    __param(6, FormField()),
+    __param(7, FormField()),
+    __param(8, FormField()),
+    __param(9, FormField()),
+    __param(10, FormField()),
+    __param(11, UploadedFile("cover_image")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "update", null);
 __decorate([
@@ -211,6 +254,19 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], ArticleController.prototype, "addMedia", null);
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
+    Post("{article_id}/media/upload"),
+    SuccessResponse(201, "Created"),
+    __param(0, Path()),
+    __param(1, FormField()),
+    __param(2, FormField()),
+    __param(3, FormField()),
+    __param(4, UploadedFile("file")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ArticleController.prototype, "uploadMedia", null);
 __decorate([
     Security("jwt", ["admin", "organizing"]),
     Delete("{article_id}/media/{media_id}"),

@@ -1,5 +1,6 @@
 import { Queryable } from "../libs/queryable.js";
 import { createAppError } from "../common/app.error.js";
+import { storageService } from "./storage.service.js";
 import { ARTICLE_BASE_WHERE, ARTICLE_FULL_INCLUDE, ARTICLE_LIST_INCLUDE } from "../types/article.type.js";
 export class ArticleService {
     prisma;
@@ -56,14 +57,23 @@ export class ArticleService {
         return article;
     }
     // ─── Write ─────────────────────────────────────────────────────────────────
-    async create(userId, data) {
+    /**
+     * Upload cover_image → lưu url vào DB trong cùng 1 flow (giống tournament.updateWithLogo).
+     * Nếu coverFile được truyền, nó override cover_image trong dto (nếu có).
+     */
+    async create(userId, data, coverFile) {
         const slugExists = await this.prisma.article.findUnique({
             where: { slug: data.slug },
             select: { id: true },
         });
         if (slugExists)
             throw createAppError("CONFLICT", `Slug "${data.slug}" already exists`);
-        const { tags, media, published_at, ...fields } = data;
+        const { tags, media, published_at, cover_image, ...fields } = data;
+        let coverImage = cover_image;
+        if (coverFile) {
+            const result = await storageService.upload({ namespace: "articles", kind: "cover", file: coverFile });
+            coverImage = result.url;
+        }
         // published_at: explicit value > auto-now khi status=published > undefined
         const publishedAt = published_at
             ? new Date(published_at)
@@ -74,6 +84,7 @@ export class ArticleService {
             data: {
                 ...fields,
                 user_id: userId,
+                ...(coverImage !== undefined && { cover_image: coverImage }),
                 ...(publishedAt && { published_at: publishedAt }),
                 // bulk insert tags + media trong cùng 1 query — 1 round-trip
                 ...(tags?.length && {
@@ -93,9 +104,9 @@ export class ArticleService {
             ...ARTICLE_FULL_INCLUDE,
         });
     }
-    async update(id, data) {
+    async update(id, data, coverFile) {
         await this.findByIdOrFail(id);
-        const { tags, media, published_at, slug, status, ...fields } = data;
+        const { tags, media, published_at, slug, status, cover_image, ...fields } = data;
         if (slug) {
             const conflict = await this.prisma.article.findFirst({
                 where: { slug, id: { not: id } },
@@ -103,6 +114,11 @@ export class ArticleService {
             });
             if (conflict)
                 throw createAppError("CONFLICT", `Slug "${slug}" already exists`);
+        }
+        let coverImage = cover_image;
+        if (coverFile) {
+            const result = await storageService.upload({ namespace: "articles", kind: "cover", file: coverFile });
+            coverImage = result.url;
         }
         const publishedAt = published_at
             ? new Date(published_at)
@@ -134,6 +150,7 @@ export class ArticleService {
                 where: { id },
                 data: {
                     ...patch,
+                    ...(coverImage !== undefined && { cover_image: coverImage }),
                     ...(publishedAt && { published_at: publishedAt }),
                 },
                 ...ARTICLE_FULL_INCLUDE,
@@ -175,7 +192,6 @@ export class ArticleService {
             update: {},
         });
     }
-    /** Bulk add — createMany skipDuplicates, 1 round-trip */
     async bulkAddTags(articleId, dto) {
         await this.findByIdOrFail(articleId);
         const result = await this.prisma.articleTag.createMany({
@@ -208,6 +224,20 @@ export class ArticleService {
         await this.findByIdOrFail(articleId);
         return this.prisma.articleMedia.create({
             data: { ...dto, article_id: articleId },
+        });
+    }
+    /** Upload file media (ảnh/video) → lưu vào ArticleMedia trong 1 flow */
+    async addMediaFile(articleId, file, extra) {
+        await this.findByIdOrFail(articleId);
+        const result = await storageService.upload({ namespace: "articles", kind: "media", file });
+        return this.prisma.articleMedia.create({
+            data: {
+                article_id: articleId,
+                type: extra?.type ?? "image",
+                url: result.url,
+                caption: extra?.caption,
+                order: extra?.order ?? 0,
+            },
         });
     }
     async deleteMedia(articleId, mediaId) {

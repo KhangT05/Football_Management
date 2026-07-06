@@ -56,6 +56,38 @@ export declare const updateArticleStatusSchema: z.ZodObject<{
         readonly archived: "archived";
     }>;
 }, z.core.$strip>;
+export declare const createArticleFormSchema: z.ZodObject<{
+    title: z.ZodString;
+    slug: z.ZodString;
+    content: z.ZodString;
+    status: z.ZodDefault<z.ZodEnum<{
+        readonly draft: "draft";
+        readonly published: "published";
+        readonly archived: "archived";
+    }>>;
+    season_id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    match_id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    team_id: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    published_at: z.ZodOptional<z.ZodString>;
+    tags: z.ZodOptional<z.ZodString>;
+    media: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const updateArticleFormSchema: z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
+    slug: z.ZodOptional<z.ZodString>;
+    content: z.ZodOptional<z.ZodString>;
+    status: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
+        readonly draft: "draft";
+        readonly published: "published";
+        readonly archived: "archived";
+    }>>>;
+    season_id: z.ZodOptional<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
+    match_id: z.ZodOptional<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
+    team_id: z.ZodOptional<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
+    published_at: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    tags: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    media: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+}, z.core.$strip>;
 export declare const addTagSchema: z.ZodObject<{
     tag: z.ZodString;
 }, z.core.$strip>;
@@ -76,6 +108,8 @@ export declare const bulkDeleteMediaSchema: z.ZodObject<{
 }, z.core.$strip>;
 export type CreateArticleDto = z.infer<typeof createArticleSchema>;
 export type UpdateArticleDto = z.infer<typeof updateArticleSchema>;
+export type CreateArticleFormDto = z.infer<typeof createArticleFormSchema>;
+export type UpdateArticleFormDto = z.infer<typeof updateArticleFormSchema>;
 export type UpdateArticleStatusDto = z.infer<typeof updateArticleStatusSchema>;
 export type AddTagDto = z.infer<typeof addTagSchema>;
 export type BulkAddTagsDto = z.infer<typeof bulkAddTagsSchema>;

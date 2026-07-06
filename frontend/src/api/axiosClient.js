@@ -103,7 +103,18 @@ export function refreshTokens() {
 // RESPONSE INTERCEPTOR
 // ============================================================
 axiosClient.interceptors.response.use(
-  (response) => response.data, // unwrap axios envelope → caller nhận ApiResponseShape<T>
+  (response) => {
+    // File tải về (Excel export/template...) dùng responseType: 'blob'.
+    // response.data lúc này ĐÃ LÀ Blob thật (axios tự parse theo responseType),
+    // không phải ApiResponseShape { status, message, data } như API JSON khác.
+    // Nếu unwrap thêm 1 lớp (trả response.data) thì caller nhận thẳng Blob,
+    // và code component gọi `res.data` sẽ ra undefined (Blob không có field .data)
+    // → new Blob([undefined]) tạo file 9 byte chứa chữ "undefined".
+    if (response.config.responseType === 'blob') {
+      return response; // giữ nguyên, để caller tự lấy đúng res.data (là Blob thật)
+    }
+    return response.data; // unwrap axios envelope → caller nhận ApiResponseShape<T>
+  },
 
   async (error) => {
     const originalRequest = error.config;

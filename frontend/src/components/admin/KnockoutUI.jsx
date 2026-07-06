@@ -7,6 +7,7 @@ import useVenueStore from '../../store/venueStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 import { BTN_PRIMARY } from '../../utils/adminStyles';
+import BracketView from './BracketView';
 
 const VALID_BRACKET_SIZES = [2, 4, 8, 16];
 
@@ -317,10 +318,19 @@ export default function KnockoutUI({ seasonId }) {
       const result = typeof res?.status === 'boolean' ? res.data : res;
       const newPhaseId = result?.phaseId;
 
+      // Bracket đã tạo thành công (nếu tới được đây, request không throw).
+      // Luôn báo success cho việc tạo bracket — KHÔNG phụ thuộc vào warnings.
+      toast.success(`Đã tạo sơ đồ Knockout — ${result?.round1Matches} trận, ${result?.byeSlots} bye`);
+
+      // warnings ở đây chỉ là thông tin phụ (vd: chưa xếp lịch tự động vì
+      // thiếu venue/giờ — chuyện bình thường vì xếp lịch là bước riêng).
+      // Hiển thị nhẹ, không phải toast.error để tránh nhìn như request fail.
       if (result?.warnings?.length) {
-        result.warnings.forEach(w => toast.error(w));
-      } else {
-        toast.success(`Đã tạo sơ đồ Knockout — ${result?.round1Matches} trận, ${result?.byeSlots} bye`);
+        result.warnings.forEach(w => {
+          if (toast.info) toast.info(w);
+          else if (toast.warning) toast.warning(w);
+          else console.warn('[Knockout warning]', w);
+        });
       }
 
       if (newPhaseId) {
@@ -501,9 +511,7 @@ export default function KnockoutUI({ seasonId }) {
               </button>
             )}
           </div>
-          <pre className="text-gray-300 text-xs whitespace-pre-wrap font-mono bg-navy-dark p-4 rounded-lg">
-            {JSON.stringify(bracketData, null, 2)}
-          </pre>
+          <BracketView slots={bracketData} teams={teams} />
         </div>
       ) : (
         <div className="text-center py-12 bg-navy border border-navy-light rounded-xl border-dashed">

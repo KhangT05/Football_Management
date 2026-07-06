@@ -1,6 +1,5 @@
-import { useState, useRef } from 'react';
-import { X, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { uploadApi } from '../../api';
+import { useState, useRef, useEffect } from 'react';
+import { X, Save, Image as ImageIcon } from 'lucide-react';
 
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import {
@@ -35,8 +34,17 @@ const EDITOR_CONFIG = {
 export default function ArticleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState(initialData);
   const [formError, setFormError] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState(initialData?.cover_image || '');
   const fileInputRef = useRef(null);
+
+  // Dọn object URL khi unmount / đổi ảnh để tránh leak bộ nhớ
+  useEffect(() => {
+    return () => {
+      if (coverPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreview);
+      }
+    };
+  }, [coverPreview]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,22 +57,22 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
     setForm(prev => ({ ...prev, tags: tagsArray }));
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsUploading(true);
-      setFormError('');
-      const res = await uploadApi.uploadSingle(file, 'articles', 'cover_image');
-      // result from backend: { url, publicId, format, bytes }
-      setForm(prev => ({ ...prev, cover_image: res.data.url }));
-    } catch (err) {
-      console.error(err);
-      setFormError('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
-    } finally {
-      setIsUploading(false);
+    if (!file.type.startsWith('image/')) {
+      setFormError('Vui lòng chọn file ảnh hợp lệ.');
+      return;
     }
+
+    setFormError('');
+    setForm(prev => ({ ...prev, cover_image_file: file }));
+
+    if (coverPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(coverPreview);
+    }
+    setCoverPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = (e) => {
@@ -78,20 +86,20 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
       return;
     }
     setFormError('');
-    onSave(form);
+    onSave(form); // form.cover_image_file (nếu có) sẽ được articleApi build thành FormData
   };
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
-      
+
       <div className="relative w-full max-w-4xl bg-navy border border-navy-light rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-navy-light flex items-center justify-between bg-navy-dark/50">
           <h3 className="text-xl font-black text-white uppercase tracking-tight">
             {mode === 'add' ? 'Viết bài mới' : 'Chỉnh sửa bài viết'}
           </h3>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
           >
@@ -108,39 +116,42 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
           )}
 
           <form id="article-form" onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Cover Image Upload */}
+
+            {/* Cover Image */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Ảnh bìa
               </label>
               <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full sm:w-64 aspect-video bg-navy-dark border-2 border-dashed border-navy-light rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-colors flex items-center justify-center relative group"
                 >
-                  {form.cover_image ? (
+                  {coverPreview ? (
                     <>
-                      <img src={form.cover_image} alt="Cover Preview" className="w-full h-full object-cover" />
+                      <img src={coverPreview} alt="Cover Preview" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-navy-dark/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-white font-bold text-sm">Đổi ảnh</span>
                       </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-500 group-hover:text-blue-400 transition-colors">
-                      {isUploading ? <Loader2 className="w-8 h-8 animate-spin mb-2" /> : <ImageIcon className="w-8 h-8 mb-2" />}
-                      <span className="text-sm font-medium">{isUploading ? 'Đang tải lên...' : 'Chọn ảnh bìa'}</span>
+                      <ImageIcon className="w-8 h-8 mb-2" />
+                      <span className="text-sm font-medium">Chọn ảnh bìa</span>
                     </div>
                   )}
                 </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleImageUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/*"
+                  className="hidden"
                 />
               </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Ảnh sẽ được upload lên server cùng lúc khi bạn bấm {mode === 'add' ? '"Đăng bài"' : '"Lưu thay đổi"'}.
+              </p>
             </div>
 
             {/* Title */}
@@ -158,7 +169,20 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               />
             </div>
 
-
+            {/* Slug */}
+            <div>
+              <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
+                Slug (URL)
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={form.slug}
+                onChange={handleChange}
+                placeholder="vi-du-duong-dan-bai-viet"
+                className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+              />
+            </div>
 
             {/* Tags */}
             <div>
@@ -167,7 +191,7 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               </label>
               <input
                 type="text"
-                value={form.tags.join(', ')}
+                value={(form.tags || []).join(', ')}
                 onChange={handleTagsChange}
                 placeholder="Ví dụ: highlight, thong-bao, lich-thi-dau..."
                 className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
@@ -222,10 +246,10 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
           <button
             type="submit"
             form="article-form"
-            disabled={isSaving || isUploading}
+            disabled={isSaving}
             className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            <Save className="w-5 h-5" />
             {mode === 'add' ? 'Đăng bài' : 'Lưu thay đổi'}
           </button>
         </div>

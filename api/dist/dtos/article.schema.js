@@ -12,7 +12,7 @@ export const createArticleSchema = z.object({
     title: z.string().min(1),
     slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "slug chỉ chứa lowercase, số, dấu gạch ngang"),
     content: z.string().min(1),
-    cover_image: z.string().url().optional(),
+    cover_image: z.string().url().optional(), // dùng khi KHÔNG upload file, truyền sẵn URL
     status: z.nativeEnum(ArticleStatus).default(ArticleStatus.draft),
     season_id: z.number().int().positive().optional(),
     match_id: z.number().int().positive().optional(),
@@ -25,6 +25,22 @@ export const updateArticleSchema = createArticleSchema.partial();
 export const updateArticleStatusSchema = z.object({
     status: z.nativeEnum(ArticleStatus),
 });
+// ─── Multipart form fields (khi có upload cover_image) ────────────────────────
+// Vì multer/tsoa @FormField chỉ nhận string/number/boolean, các field số/JSON
+// phải gửi dạng string rồi coerce/parse tay ở controller.
+export const createArticleFormSchema = z.object({
+    title: z.string().min(1),
+    slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+    content: z.string().min(1),
+    status: z.nativeEnum(ArticleStatus).default(ArticleStatus.draft),
+    season_id: z.coerce.number().int().positive().optional(),
+    match_id: z.coerce.number().int().positive().optional(),
+    team_id: z.coerce.number().int().positive().optional(),
+    published_at: z.string().datetime().optional(),
+    tags: z.string().optional(), // JSON string: '["a","b"]'
+    media: z.string().optional(), // JSON string: '[{"type":"image","url":"..."}]'
+});
+export const updateArticleFormSchema = createArticleFormSchema.partial();
 // ─── Tag ──────────────────────────────────────────────────────────────────────
 export const addTagSchema = z.object({
     tag: z.string().min(1).max(50),
