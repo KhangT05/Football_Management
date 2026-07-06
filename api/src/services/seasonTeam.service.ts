@@ -299,6 +299,65 @@ export class SeasonTeamService {
         });
     }
 
+    /**
+     * Danh sách team đã đăng ký 1 season cụ thể, kèm thông tin tournament +
+     * season (dùng cho trang "Quản lý Mùa giải & Bốc thăm" — trước đây FE gọi
+     * nhầm teamApi.getTeams() không filter season_id, trả về TOÀN BỘ team
+     * trong hệ thống thay vì chỉ team đã đăng ký season này).
+     *
+     * Mặc định chỉ trả status=approved (đội đã duyệt, đủ điều kiện bốc thăm/
+     * xếp bảng) — muốn lấy cả pending thì truyền statuses tường minh.
+     */
+    async listBySeasonWithTeamInfo(
+        seasonId: number,
+        statuses: SeasonTeamStatus[] = [SeasonTeamStatus.approved]
+    ) {
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                tournament: { select: { id: true, name: true, logo: true } },
+            },
+        });
+        if (!season) throw createAppError("NOT_FOUND", `Season ${seasonId} not found`);
+
+        const seasonTeams = await this.prisma.seasonTeam.findMany({
+            where: {
+                season_id: seasonId,
+                status: { in: statuses },
+                deleted_at: null,
+            },
+            select: {
+                id: true,
+                status: true,
+                group_id: true,
+                team: {
+                    select: { id: true, name: true, logo: true },
+                },
+            },
+            orderBy: { id: "asc" },
+        });
+
+        return {
+            season: {
+                id: season.id,
+                name: season.name,
+                status: season.status,
+                tournament: season.tournament,
+            },
+            teams: seasonTeams.map((st) => ({
+                season_team_id: st.id,
+                team_id: st.team.id,
+                team_name: st.team.name,
+                team_logo: st.team.logo,
+                status: st.status,
+                group_id: st.group_id,
+            })),
+        };
+    }
+
     async getOrCreateGroupPhase(seasonId: number): Promise<Phase> {
         return this.prisma.$transaction(async (tx) => {
             // Lock season để tránh race: 2 request đồng thời cùng tạo 2 phase trùng nhau

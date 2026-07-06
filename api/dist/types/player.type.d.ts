@@ -93,11 +93,24 @@ export declare const PLAYER_SELECT_WITH_SEASONS: {
                             id: true;
                             status: true;
                             group_id: true;
+                            group: {
+                                select: {
+                                    id: true;
+                                    name: true;
+                                };
+                            };
                             season: {
                                 select: {
                                     id: true;
                                     name: true;
                                     status: true;
+                                    tournament: {
+                                        select: {
+                                            id: true;
+                                            name: true;
+                                            logo: true;
+                                        };
+                                    };
                                 };
                             };
                         };
@@ -133,6 +146,10 @@ export interface PlayerSeasonInfo {
     season_id: number;
     season_name: string;
     season_status: string;
+    tournament_id: number;
+    tournament_name: string;
+    tournament_logo: string | null;
+    group_name: string | null;
     team_id: number;
     team_name: string;
     season_team_status: string;
