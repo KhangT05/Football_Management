@@ -10,11 +10,6 @@ import { BTN_PRIMARY } from '../../utils/adminStyles';
 
 const VALID_BRACKET_SIZES = [2, 4, 8, 16];
 
-// NOTE: input[type=time] không dùng chung constant INPUT nữa — nếu bug
-// "không bấm được vào ô giờ" là do INPUT có pointer-events-none/cursor-
-// not-allowed áp nhầm (cần confirm trong adminStyles.js), tách class riêng
-// ở đây loại trừ khả năng đó ngay lập tức thay vì phải sửa constant dùng
-// chung cho cả app.
 const TIME_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500 scheme-dark cursor-pointer';
@@ -23,21 +18,6 @@ const SELECT_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500';
 
-// ─────────────────────────────────────────────────────────────────────────
-// ScheduleBracketModal — tách riêng khỏi bước generate. Nhận vào 1 phaseId
-// (bracket đã tồn tại, các match có thể chưa có venue/scheduled_at) và xếp
-// lịch cho các match CHƯA có lịch trong phase đó.
-//
-// ASSUMPTION cần backend xác nhận: endpoint `knockoutApi.scheduleBracket`
-// chưa tồn tại trong codebase gốc — đây là contract đề xuất, mirror đúng
-// pattern `generateFromGroups` đang dùng cho round-robin (xem ScheduleTab):
-//   POST /schedules/knockout-phases/{phaseId}/schedule
-//   body: { venueIds: number[], matchTimes: string[], dateRangeStart?, dateRangeEnd? }
-//   → chỉ set venue_id + scheduled_at cho match có venue_id/scheduled_at
-//     hiện đang NULL, KHÔNG tạo match mới, KHÔNG động vào match đã có lịch.
-// Nếu backend đặt tên khác, đổi named export trong ../../api cho khớp —
-// phần UI dưới không phụ thuộc vào path cụ thể.
-// ─────────────────────────────────────────────────────────────────────────
 function ScheduleBracketModal({ phaseId, unscheduledCount, venues, onClose, onScheduled }) {
   const toast = useToastStore();
   const [venueIds, setVenueIds] = useState([]);
@@ -196,17 +176,12 @@ function ScheduleBracketModal({ phaseId, unscheduledCount, venues, onClose, onSc
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// KnockoutUI — chỉ còn 1 trách nhiệm: sinh cấu trúc bracket (seed → cặp đấu
-// → số leg). KHÔNG còn venue/matchTimes/dateRange trong payload generate.
-// Xếp lịch là bước riêng, sau khi bracket đã tồn tại, qua ScheduleBracketModal.
-// ─────────────────────────────────────────────────────────────────────────
 export default function KnockoutUI({ seasonId }) {
   const toast = useToastStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
 
-  const [seedMode, setSeedMode] = useState('manual'); // 'manual' | 'standing'
+  const [seedMode, setSeedMode] = useState('manual');
 
   const [seededTeamIds, setSeededTeamIds] = useState([]);
   const [availableTeams, setAvailableTeams] = useState([]);
@@ -228,16 +203,36 @@ export default function KnockoutUI({ seasonId }) {
     fetchVenues();
   }, [fetchVenues]);
 
+  // Chỉ còn trách nhiệm knockout phases. Groups derive từ seasonTeams
+  // (xem fetchData bên dưới) — season.getById không nested groups per phase.
   const refreshPhases = async () => {
-    const seasonRes = await seasonApi.getById(seasonId);
+    const res = await seasonApi.getById(seasonId);
+    const seasonRes = typeof res?.status === 'boolean' ? res.data : res;
     const phases = seasonRes?.phases ?? [];
     const knockoutPhases = phases.filter(p => p.format === 'knockout');
     setAvailablePhases(knockoutPhases);
-
-    const groupPhases = phases.filter(p => p.format === 'round_robin');
-    setAvailableGroups(groupPhases.flatMap(p => p.groups ?? []));
-
     return knockoutPhases;
+  };
+
+  // FIX: SeasonTeam.group_id trỏ thẳng Group (schema), nên groups derive
+  // trực tiếp từ seasonTeams đã fetch, không cần call thêm endpoint nào.
+  // Trước đó group data hoặc không được đọc (season.getById không có nested
+  // groups), hoặc phải đi qua getStandings/groupApi (N+1, sai domain).
+  const deriveGroupsFromSeasonTeams = (seasonTeams) => {
+    const groupMap = new Map();
+    seasonTeams.forEach(st => {
+      if (st.group_id == null) return; // team chưa gán bảng -> không phải seed candidate cho standing mode
+      if (!groupMap.has(st.group_id)) {
+        // ASSUMPTION: seasonTeamApi.getAll include st.group (name). Nếu
+        // withRelations không include group, fallback "Bảng {id}" vẫn chạy
+        // được, chỉ mất label đẹp — verify bằng console.log(seasonTeams[0]).
+        groupMap.set(st.group_id, {
+          id: st.group_id,
+          name: st.group?.name ?? `Bảng ${st.group_id}`,
+        });
+      }
+    });
+    return Array.from(groupMap.values());
   };
 
   useEffect(() => {
@@ -250,7 +245,9 @@ export default function KnockoutUI({ seasonId }) {
         const allTeams = typeof teamRes?.status === 'boolean' ? teamRes.data : teamRes;
         const seasonTeams = (Array.isArray(allTeams?.data) ? allTeams.data : [])
           .filter(st => String(st.season_id) === String(seasonId) && st.status === 'approved');
+
         setAvailableTeams(seasonTeams);
+        setAvailableGroups(deriveGroupsFromSeasonTeams(seasonTeams));
       } catch (err) {
         console.error('Error fetching knockout data:', err);
       }
@@ -314,9 +311,6 @@ export default function KnockoutUI({ seasonId }) {
 
     setGenerating(true);
     try {
-      // Payload giờ CHỈ mô tả cấu trúc bracket — không venue/time/date.
-      // Match được tạo với venue_id/scheduled_at = NULL, xếp lịch là bước
-      // riêng qua "Xếp lịch" bên dưới.
       const payload = { seeds, legs: Number(legs) };
       const res = await knockoutApi.generateBracket(seasonId, payload);
 
@@ -345,8 +339,6 @@ export default function KnockoutUI({ seasonId }) {
     ? seededTeamIds.length
     : buildStandingSeeds(groupConfigs).length;
 
-  // Đếm match chưa có scheduled_at trong bracket đang xem, để quyết định
-  // hiện nút "Xếp lịch" và hiển thị số lượng cho modal.
   const unscheduledCount = Array.isArray(bracketData?.matches)
     ? bracketData.matches.filter(m => !m.scheduled_at).length
     : 0;

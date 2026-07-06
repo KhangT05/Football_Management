@@ -365,20 +365,13 @@ export class KnockoutService extends ScheduleEngine {
                 resolvedWinnerId = await this._computeAggregateWinner(tx, leg1Match.id, input.matchId, slot.seeded_home_team_id, slot.seeded_away_team_id);
             }
             else if (legs === 2) {
-                const leg2Pending = await tx.match.findFirst({
-                    where: {
-                        phase_id: phaseId,
-                        home_team_id: slot.seeded_away_team_id,
-                        away_team_id: slot.seeded_home_team_id,
-                        leg: 2,
-                        is_active: true,
-                        deleted_at: null,
-                        status: { notIn: TERMINAL_MATCH_STATUSES },
-                    },
-                    select: { id: true },
-                });
-                if (leg2Pending)
-                    return { matchCreated: false, newMatchIds: [] };
+                // FIX: gộp leg2Pending + leg2Match thành 1 query, phân biệt rõ
+                // 3 trạng thái (pending / done / KHÔNG TỒN TẠI) thay vì suy ra
+                // "không tồn tại" từ 2 query rời (notIn TERMINAL vs in TERMINAL)
+                // — filter đó không loại trừ lẫn nhau khi match bị soft-delete
+                // hoặc is_active=false, khiến code cũ fall-through và dùng
+                // thẳng winner của leg1 làm winner chung (silent single-leg
+                // override, sai aggregate mà không có warning/error nào).
                 const leg2Match = await tx.match.findFirst({
                     where: {
                         phase_id: phaseId,
@@ -387,13 +380,16 @@ export class KnockoutService extends ScheduleEngine {
                         leg: 2,
                         is_active: true,
                         deleted_at: null,
-                        status: { in: TERMINAL_MATCH_STATUSES },
                     },
-                    select: { id: true },
+                    select: { id: true, status: true },
                 });
-                if (leg2Match) {
-                    resolvedWinnerId = await this._computeAggregateWinner(tx, input.matchId, leg2Match.id, slot.seeded_home_team_id, slot.seeded_away_team_id);
-                }
+                if (!leg2Match)
+                    throw createAppError('CONFLICT', `Slot legs=2 nhưng không tìm thấy leg 2 match (home=${slot.seeded_away_team_id}, ` +
+                        `away=${slot.seeded_home_team_id}) trong phase ${phaseId} — có thể đã bị soft-delete ` +
+                        `hoặc chưa được tạo. Không thể xác định winner từ 1 lượt.`);
+                if (!TERMINAL_MATCH_STATUSES.includes(leg2Match.status))
+                    return { matchCreated: false, newMatchIds: [] }; // leg2 chưa đá xong — chờ
+                resolvedWinnerId = await this._computeAggregateWinner(tx, input.matchId, leg2Match.id, slot.seeded_home_team_id, slot.seeded_away_team_id);
             }
             return this.propagateWinner(tx, slot, resolvedWinnerId, phaseId, seasonId, legs);
         }, { timeout: 15_000 });
