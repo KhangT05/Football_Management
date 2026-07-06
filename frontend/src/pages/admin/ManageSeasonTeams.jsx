@@ -141,7 +141,6 @@ export default function ManageSeasonTeams() {
   const handleUpdateStatus = (id, newStatus) => {
     const st = allSeasonTeams.find(s => s.id === id);
     statusMutation.mutate(async () => {
-      await seasonTeamApi.updateStatus(id, { status: newStatus });
       if (newStatus === 'approved') {
         await seasonTeamApi.approve(id);
       } else if (newStatus === 'rejected') {
