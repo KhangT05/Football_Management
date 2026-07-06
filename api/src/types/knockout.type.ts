@@ -22,19 +22,13 @@ export const BRACKET_SIZE_TO_PHASE_TYPE: Partial<Record<number, PhaseType>> = {
 
 export interface KnockoutGenerateOptions {
     seasonId: number;
-    /** Ordered: index 0 = seed 1. Resolve sang teamId xảy ra TRONG transaction
-     *  của generateKnockoutBracket — không nhận teamId list tĩnh từ FE nữa,
-     *  vì standings có thể vừa đổi ngay trước lúc admin bấm generate. */
     seeds: SeedSource[];
-    venueIds: number[];
-    matchTimes: string[]; // "HH:mm" VN time
-    /** From Phase.legs — 1 or 2 */
     legs: 1 | 2;
-    /** Bắt buộc phải set nếu bracket size không map được qua
-     *  BRACKET_SIZE_TO_PHASE_TYPE (hiện tại: không case nào cần, third_place
-     *  không đi qua flow này). Giữ lại cho tương lai, KHÔNG dùng để bypass
-     *  validation bracket size. */
     phaseTypeOverride?: PhaseType;
+    venueIds?: number[];
+    matchTimes?: string[];
+    dateRangeStart?: Date;
+    dateRangeEnd?: Date;
 }
 
 export interface KnockoutGenerateResult {
