@@ -101,8 +101,9 @@ export declare function buildRound1Pairings(seeding: (number | null)[]): {
 }[];
 /**
  * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
- * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
+ * Dùng chung ở _applyScoreDelta (live), _computeScoreFromEvents (finalize)
+ * VÀ buildGoalsTimeline (report) để đảm bảo 3 nơi không viết 3 ternary khác
+ * nhau cho cùng business rule own_goal/goal_disallowed.
  *
  * own_goal:         team đá phản lưới → credit cho đối thủ
  * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)

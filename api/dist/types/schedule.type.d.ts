@@ -23,7 +23,7 @@ export type GenerateOptions = {
     minRestDaysPerTeam?: number;
 };
 export type ScheduleOptions = Pick<GenerateOptions, 'venueIds' | 'matchTimes'>;
-export type OptionalScheduleOptions = Partial<ScheduleOptions>;
+export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
 export type GenerateResult = {
     groupCount: number;
     groupIds: number[];
@@ -74,6 +74,10 @@ export declare const matchScheduleSelect: {
     readonly status: true;
 };
 export type MatchByTeamRow = Pick<Match, 'id' | 'round' | 'home_team_id' | 'away_team_id' | 'scheduled_at' | 'venue_id' | 'status'>;
+export type DateRangeOverride = {
+    dateRangeStart?: Date;
+    dateRangeEnd?: Date;
+};
 export type MatchScheduleRow = Prisma.MatchGetPayload<{
     select: typeof matchScheduleSelect;
 }>;

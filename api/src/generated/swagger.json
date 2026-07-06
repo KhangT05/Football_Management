@@ -4691,25 +4691,10 @@
 							]
 						},
 						"type": "array"
-					},
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"venueIds": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array"
 					}
 				},
 				"required": [
-					"seeds",
-					"matchTimes",
-					"venueIds"
+					"seeds"
 				],
 				"type": "object"
 			},
@@ -12335,7 +12320,7 @@
 						}
 					}
 				},
-				"description": "Route đổi: /phases/{phaseId}/knockout/generate -> /seasons/{seasonId}/knockout/generate.\r\nphaseId KHÔNG còn là input — nó là OUTPUT (service get-or-create Phase,\r\ntype derive từ bracket size qua BRACKET_SIZE_TO_PHASE_TYPE). Giữ phaseId\r\nlàm path param ở đây là tự mâu thuẫn: client phải có phaseId để tạo\r\nphase, nhưng phase chưa tồn tại tới khi generate chạy xong.\r\n\r\nIdempotency: không cần idempotency key riêng — CONFLICT tự nhiên xảy ra\r\nở service (existingCount > 0 trên bracket_slots của phase vừa\r\nget-or-create) nếu gọi generate 2 lần cho cùng season+phaseType.",
+				"description": "Route đổi: /phases/{phaseId}/knockout/generate -> /seasons/{seasonId}/knockout/generate.\r\nphaseId KHÔNG còn là input — nó là OUTPUT (service get-or-create Phase,\r\ntype derive từ bracket size qua BRACKET_SIZE_TO_PHASE_TYPE).\r\n\r\nIdempotency: CONFLICT tự nhiên ở service (existingCount > 0 trên\r\nbracket_slots của phase vừa get-or-create) nếu gọi generate 2 lần\r\ncho cùng season+phaseType.",
 				"tags": [
 					"Knockout"
 				],

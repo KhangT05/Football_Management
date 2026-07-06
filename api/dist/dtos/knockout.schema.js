@@ -49,8 +49,6 @@ export const knockoutGenerateOptionsSchema = z.object({
             .map(s => `${s.groupId}:${s.rank}`);
         return new Set(standingKeys).size === standingKeys.length;
     }, 'seeds (standing) không được trùng groupId+rank'),
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
     legs: legsSchema,
     phaseTypeOverride: z.nativeEnum(PhaseType)
         .refine((t) => KNOCKOUT_PHASE_TYPES.includes(t), 'phaseTypeOverride phải là 1 trong các round knockout hợp lệ (không gồm third_place)')
