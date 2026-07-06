@@ -33,7 +33,7 @@ export type ScheduleOptions = Pick<
     'venueIds' | 'matchTimes'
 >;
 // Dùng khi advance knockout — venueIds/matchTimes có thể chưa có
-export type OptionalScheduleOptions = Partial<ScheduleOptions>;
+export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
 
 export type GenerateResult = {
     groupCount: number;
@@ -100,5 +100,8 @@ export const matchScheduleSelect = {
 export type MatchByTeamRow = Pick<Match,
     'id' | 'round' | 'home_team_id' | 'away_team_id' | 'scheduled_at' | 'venue_id' | 'status'>;
 
-
+export type DateRangeOverride = {
+    dateRangeStart?: Date;
+    dateRangeEnd?: Date;
+};
 export type MatchScheduleRow = Prisma.MatchGetPayload<{ select: typeof matchScheduleSelect }>;
