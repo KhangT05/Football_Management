@@ -116,6 +116,45 @@ class MailService {
             html,
         });
     }
+    private buildResetPasswordUrl(token: string): string {
+        return `${this.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+    }
+
+    private buildResetPasswordEmailHtml(name: string, resetUrl: string): string {
+        return `
+<div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+  <h2 style="color: #111827;">Xin chào ${this.escapeHtml(name)},</h2>
+  <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Nhấn nút bên dưới để đặt mật khẩu mới:</p>
+  <p style="text-align: center; margin: 32px 0;">
+    <a href="${resetUrl}"
+       style="background-color: #dc2626; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+      Đặt lại mật khẩu
+    </a>
+  </p>
+  <p style="font-size: 13px; color: #6b7280;">
+    Nếu nút trên không hoạt động, hãy copy đường dẫn sau vào trình duyệt:<br/>
+    <a href="${resetUrl}" style="color: #dc2626; word-break: break-all;">${resetUrl}</a>
+  </p>
+  <p style="font-size: 13px; color: #6b7280;">Đường dẫn này hết hạn sau 1 giờ. Nếu bạn không yêu cầu việc này, hãy bỏ qua email — mật khẩu hiện tại vẫn an toàn.</p>
+</div>`.trim();
+    }
+
+    /**
+     * Không throw khi SMTP chưa cấu hình — cùng lý do như sendInviteEmail:
+     * không chặn flow forgot-password ở local dev.
+     */
+    async sendResetPasswordEmail(toEmail: string, payload: InviteEmailPayload): Promise<void> {
+        const resetUrl = this.buildResetPasswordUrl(payload.token);
+        const html = this.buildResetPasswordEmailHtml(payload.name, resetUrl);
+        const subject = "Yêu cầu đặt lại mật khẩu";
+
+        if (!this.isConfigured || !this.transporter) {
+            logger.warn(`[MailService:DEV] SMTP chưa cấu hình. Reset link cho ${toEmail}: ${resetUrl}`);
+            return;
+        }
+
+        await this.transporter.sendMail({ from: this.from, to: toEmail, subject, html });
+    }
 }
 
 export const mailService = new MailService();

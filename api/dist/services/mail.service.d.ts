@@ -37,6 +37,13 @@ declare class MailService {
      * transaction đã tạo player chỉ vì email fail.
      */
     sendInviteEmail(toEmail: string, payload: InviteEmailPayload): Promise<void>;
+    private buildResetPasswordUrl;
+    private buildResetPasswordEmailHtml;
+    /**
+     * Không throw khi SMTP chưa cấu hình — cùng lý do như sendInviteEmail:
+     * không chặn flow forgot-password ở local dev.
+     */
+    sendResetPasswordEmail(toEmail: string, payload: InviteEmailPayload): Promise<void>;
 }
 export declare const mailService: MailService;
 export {};

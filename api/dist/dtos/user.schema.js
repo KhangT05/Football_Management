@@ -15,4 +15,15 @@ export const updateUserSchema = createUserSchema
 export const roleIdsSchema = z.object({
     role_ids: z.array(z.number().int().positive()).min(1),
 });
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(6),
+});
+export const forgotPasswordSchema = z.object({
+    email: z.string().email(),
+});
+export const resetPasswordSchema = z.object({
+    token: z.string().min(1),
+    newPassword: z.string().min(6),
+});
 //# sourceMappingURL=user.schema.js.map

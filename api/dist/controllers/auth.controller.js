@@ -10,10 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Post, Get, Route, Tags, Security, Body, Request, SuccessResponse, Middlewares, Header } from 'tsoa';
+import { Controller, Post, Get, Route, Tags, Security, Body, Request, Middlewares, Header, SuccessResponse } from 'tsoa';
 import { AuthService } from '../services/auth.service.js';
 import { makeResponse } from '../common/api.response.js';
 import { authLimiter, originGuard } from '../middleware/csrf.middleware.js';
+import * as userSchema from '../dtos/user.schema.js';
+import { UserService } from '../services/user.service.js';
 const COOKIE_NAME = 'refresh_token';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -32,9 +34,11 @@ function clearRefreshCookie(res) {
 }
 let AuthController = class AuthController extends Controller {
     service;
-    constructor(service) {
+    userService;
+    constructor(service, userService) {
         super();
         this.service = service;
+        this.userService = userService;
     }
     async login(body, req) {
         const res = req.res;
@@ -75,6 +79,14 @@ let AuthController = class AuthController extends Controller {
     async me(req) {
         const user = await this.service.getMe(req.user.user_id);
         return makeResponse(user, 'OK');
+    }
+    async forgotPassword(body) {
+        this.setStatus(204);
+        return this.userService.forgotPassword(body.email);
+    }
+    async resetPassword(body) {
+        this.setStatus(204);
+        return this.userService.resetPassword(body.token, body.newPassword);
     }
 };
 __decorate([
@@ -122,10 +134,27 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
+__decorate([
+    Post("forgot-password"),
+    SuccessResponse(204, "OK"),
+    __param(0, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    Post("reset-password"),
+    SuccessResponse(204, "OK"),
+    __param(0, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 AuthController = __decorate([
     Route('auth'),
     Tags('Auth'),
-    __metadata("design:paramtypes", [AuthService])
+    __metadata("design:paramtypes", [AuthService,
+        UserService])
 ], AuthController);
 export { AuthController };
 //# sourceMappingURL=auth.controller.js.map

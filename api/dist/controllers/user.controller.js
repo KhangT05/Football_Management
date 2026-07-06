@@ -10,8 +10,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, UploadedFile } from "tsoa";
 import { UserService } from "../services/user.service.js";
+import * as userSchema from "../dtos/user.schema.js";
+import { createAppError } from "../common/app.error.js";
 let UserController = class UserController extends Controller {
     service;
     constructor(service) {
@@ -37,6 +39,11 @@ let UserController = class UserController extends Controller {
     }
     async restore(id) {
         return this.service.restore(id);
+    }
+    async updateAvatar(id, avatar) {
+        if (!avatar)
+            throw createAppError("VALIDATION_ERROR", "Thiếu file avatar");
+        return this.service.updateAvatar(id, avatar);
     }
 };
 __decorate([
@@ -88,6 +95,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "restore", null);
+__decorate([
+    Patch("{id}/avatar"),
+    __param(0, Path()),
+    __param(1, UploadedFile("avatar")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "updateAvatar", null);
 UserController = __decorate([
     Security("jwt", ["admin", "user", "organizing"]),
     Route("users"),

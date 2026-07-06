@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import { Queryable } from "../libs/queryable.js";
 import { createAppError } from "../common/app.error.js";
 import { RelationService } from "../libs/relation.service.js";
+import { mailService } from "./mail.service.js";
+import crypto from "crypto";
+import redis from "../libs/redis.js";
+import { storageService } from "./storage.service.js";
 // ─── Projection ───────────────────────────────────────────────────────────────
 const USER_SELECT = {
     omit: { password: true },
@@ -134,6 +138,55 @@ export class UserService {
             throw createAppError("NOT_FOUND", `user ${id} not found or not deleted`);
         }
         return this.findByIdOrFail(id);
+    }
+    async updateAvatar(id, avatarFile) {
+        const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
+        if (!exists)
+            throw createAppError("NOT_FOUND", `User ${id} not found`);
+        const result = await storageService.upload({ namespace: "users", kind: "avatar", file: avatarFile });
+        // TODO: old avatar leak until schema adds avatar_public_id column
+        return this.prisma.user.update({
+            where: { id },
+            data: { avatar: result.url },
+            ...USER_SELECT,
+        });
+    }
+    // ─── Forgot / Reset password ────────────────────────────────────────────────
+    /**
+     * Không leak việc email có tồn tại hay không (tránh user enumeration) —
+     * luôn trả về thành công dù email không tồn tại trong hệ thống.
+     */
+    resetTokenKey(tokenHash) {
+        return `reset-password:${tokenHash}`;
+    }
+    async forgotPassword(email) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (!user)
+            return; // im lặng — tránh user enumeration
+        const token = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+        // TTL 1 giờ — Redis tự xoá, không cần cột expires
+        await redis.set(this.resetTokenKey(tokenHash), String(user.id), { EX: 60 * 60 });
+        try {
+            await mailService.sendResetPasswordEmail(user.email, { token, name: user.name });
+        }
+        catch (err) {
+            console.error(`[UserService] Failed to send reset password email to ${user.email}`, err);
+        }
+    }
+    async resetPassword(token, newPassword) {
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+        const key = this.resetTokenKey(tokenHash);
+        const userId = await redis.get(key);
+        if (!userId)
+            throw createAppError("BAD_REQUEST", "Token không hợp lệ hoặc đã hết hạn");
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.prisma.user.update({
+            where: { id: Number(userId) },
+            data: { password: hashed },
+        });
+        // Single-use — xoá ngay sau khi dùng, không đợi TTL tự hết hạn
+        await redis.del(key);
     }
 }
 //# sourceMappingURL=user.service.js.map

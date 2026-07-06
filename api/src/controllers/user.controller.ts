@@ -1,8 +1,14 @@
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
+import {
+  Controller, Get, Path, Tags, Route, Post, Patch, Body,
+  SuccessResponse, Delete, Query, Security, UploadedFile,
+  Request as TsoaRequest
+} from "tsoa";
 import { UserService, type SafeUser } from "../services/user.service.js";
-import { type CreateUserDto, type UpdateUserDto } from "../dtos/user.schema.js";
+import * as userSchema from "../dtos/user.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { createAppError } from "../common/app.error.js";
+import type { Request as ExRequest } from "express";
+type AuthRequest = ExRequest & { user: { user_id: number } };
 
 
 @Security("jwt", ["admin", "user", "organizing"])
@@ -31,7 +37,7 @@ export class UserController extends Controller {
 
   @Post("/")
   @SuccessResponse(201, "Created")
-  async create(@Body() body: CreateUserDto): Promise<SafeUser> {
+  async create(@Body() body: userSchema.CreateUserDto): Promise<SafeUser> {
     this.setStatus(201);
     return this.service.create(body);
   }
@@ -39,7 +45,7 @@ export class UserController extends Controller {
   @Patch("{id}")
   async update(
     @Path() id: number,
-    @Body() body: UpdateUserDto
+    @Body() body: userSchema.UpdateUserDto
   ): Promise<SafeUser> {
     return this.service.update(id, body);
   }
@@ -53,5 +59,13 @@ export class UserController extends Controller {
   @Patch("{id}/restore")
   async restore(@Path() id: number): Promise<SafeUser> {
     return this.service.restore(id);
+  }
+  @Patch("{id}/avatar")
+  async updateAvatar(
+    @Path() id: number,
+    @UploadedFile("avatar") avatar: Express.Multer.File
+  ): Promise<SafeUser> {
+    if (!avatar) throw createAppError("VALIDATION_ERROR", "Thiếu file avatar");
+    return this.service.updateAvatar(id, avatar);
   }
 }
