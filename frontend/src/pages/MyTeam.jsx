@@ -15,7 +15,7 @@ import LineupBuilderModal from '../components/modals/LineupBuilderModal';
 import EditTeamModal from '../components/modals/EditTeamModal';
 import NoTeamState from '../components/myteam/NoTeamState';
 import PlayerDeleteModal from '../components/myteam/PlayerDeleteModal';
-import PlayerFormModal from '../components/myteam/PlayerFormModal'; // react-hook-form based; edit mode now also has a role select (no name/email field)
+import PlayerFormModal from '../components/admin/PlayerFormModal';
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';

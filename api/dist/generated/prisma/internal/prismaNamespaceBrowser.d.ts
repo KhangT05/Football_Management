@@ -69,6 +69,7 @@ export declare const UserScalarFieldEnum: {
     readonly email: "email";
     readonly password: "password";
     readonly phone: "phone";
+    readonly avatar: "avatar";
     readonly is_active: "is_active";
     readonly email_verified: "email_verified";
     readonly email_verified_at: "email_verified_at";
@@ -486,6 +487,7 @@ export declare const UserOrderByRelevanceFieldEnum: {
     readonly email: "email";
     readonly password: "password";
     readonly phone: "phone";
+    readonly avatar: "avatar";
 };
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum];
 export declare const RoleOrderByRelevanceFieldEnum: {

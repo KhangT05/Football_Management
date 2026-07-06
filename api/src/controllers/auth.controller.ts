@@ -7,9 +7,9 @@ import {
     Security,
     Body,
     Request,
-    SuccessResponse,
     Middlewares,
-    Header
+    Header,
+    SuccessResponse
 } from 'tsoa';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { AuthService } from '../services/auth.service.js';
@@ -17,6 +17,8 @@ import type { TokenResponseDto, UserPayload } from '../types/auth.types.js';
 import { ApiResponseShape, makeResponse } from '../common/api.response.js';
 import type { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
 import { authLimiter, originGuard } from '../middleware/csrf.middleware.js';
+import * as userSchema from '../dtos/user.schema.js';
+import { UserService } from '../services/user.service.js';
 type AuthRequest = ExpressRequest & { user: { user_id: number } };
 
 const COOKIE_NAME = 'refresh_token';
@@ -41,7 +43,10 @@ function clearRefreshCookie(res: ExpressResponse) {
 @Route('auth')
 @Tags('Auth')
 export class AuthController extends Controller {
-    constructor(private readonly service: AuthService) {
+    constructor(
+        private readonly service: AuthService,
+        private readonly userService: UserService
+    ) {
         super();
     }
 
@@ -119,5 +124,18 @@ export class AuthController extends Controller {
     async me(@Request() req: AuthRequest): Promise<ApiResponseShape<UserPayload>> {
         const user = await this.service.getMe(req.user.user_id);
         return makeResponse<UserPayload>(user, 'OK');
+    }
+    @Post("forgot-password")
+    @SuccessResponse(204, "OK")
+    async forgotPassword(@Body() body: userSchema.ForgotPasswordDto): Promise<void> {
+        this.setStatus(204);
+        return this.userService.forgotPassword(body.email);
+    }
+
+    @Post("reset-password")
+    @SuccessResponse(204, "OK")
+    async resetPassword(@Body() body: userSchema.ResetPasswordDto): Promise<void> {
+        this.setStatus(204);
+        return this.userService.resetPassword(body.token, body.newPassword);
     }
 }

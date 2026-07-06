@@ -23,5 +23,13 @@ export declare class UserService {
     /** Replace toàn bộ role set — wrap $transaction enforce bởi RelationService.sync */
     syncRoles(userId: number, roleIds: number[]): Promise<void>;
     restore(id: number): Promise<SafeUser>;
+    updateAvatar(id: number, avatarFile: Express.Multer.File): Promise<SafeUser>;
+    /**
+     * Không leak việc email có tồn tại hay không (tránh user enumeration) —
+     * luôn trả về thành công dù email không tồn tại trong hệ thống.
+     */
+    private resetTokenKey;
+    forgotPassword(email: string): Promise<void>;
+    resetPassword(token: string, newPassword: string): Promise<void>;
 }
 //# sourceMappingURL=user.service.d.ts.map

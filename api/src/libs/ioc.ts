@@ -48,7 +48,7 @@ const workflowService = new WorkflowService(prisma, knockoutService, lifecycleSe
 const controllerFactory = new Map<Function, () => unknown>([
     [UserController, () => new UserController(new UserService(prisma))],
     [RoleController, () => new RoleController(new RoleService(prisma))],
-    [AuthController, () => new AuthController(new AuthService(prisma))],
+    [AuthController, () => new AuthController(new AuthService(prisma), new UserService(prisma))],
     [VenueController, () => new VenueController(new VenueService(prisma))],
     [TournamentController, () => new TournamentController(new TournamentService(prisma))],
     [SeasonController, () => new SeasonController(new SeasonService(prisma), standingsService)],

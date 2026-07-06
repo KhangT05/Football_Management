@@ -83,6 +83,7 @@ export const UserScalarFieldEnum = {
     email: 'email',
     password: 'password',
     phone: 'phone',
+    avatar: 'avatar',
     is_active: 'is_active',
     email_verified: 'email_verified',
     email_verified_at: 'email_verified_at',
@@ -468,7 +469,8 @@ export const UserOrderByRelevanceFieldEnum = {
     name: 'name',
     email: 'email',
     password: 'password',
-    phone: 'phone'
+    phone: 'phone',
+    avatar: 'avatar'
 };
 export const RoleOrderByRelevanceFieldEnum = {
     name: 'name',

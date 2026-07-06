@@ -79,11 +79,6 @@ export class TournamentService {
             where: { id },
             data: { ...data, ...(logo !== undefined && { logo }) },
         });
-        if (existing?.logo && logo) {
-            storageService.replaceAsset(existing.logo, logo);
-            throw createAppError('NOT_IMPLEMENTED', `Logo replacement is not fully implemented yet. 
-                The old logo may remain on the storage.`);
-        }
         return updated;
     }
     async softDelete(id) {
