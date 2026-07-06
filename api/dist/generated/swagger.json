@@ -2749,6 +2749,30 @@
             "UpdateRoleDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateRoleSchema_"
             },
+            "PlayerRole": {
+                "type": "string",
+                "enum": [
+                    "player",
+                    "captain",
+                    "vice_captain"
+                ]
+            },
+            "PlayerStatus": {
+                "type": "string",
+                "enum": [
+                    "active",
+                    "injured",
+                    "suspended"
+                ]
+            },
+            "ApprovalStatus": {
+                "type": "string",
+                "enum": [
+                    "approved",
+                    "pending",
+                    "rejected"
+                ]
+            },
             "PlayerDto": {
                 "properties": {
                     "id": {
@@ -2839,109 +2863,6 @@
                 "type": "object",
                 "additionalProperties": false
             },
-            "infer_typeofcreatePlayerSchema_": {
-                "properties": {
-                    "avatar": {
-                        "type": "string"
-                    },
-                    "nationality": {
-                        "type": "string"
-                    },
-                    "weight": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "height": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "position": {
-                        "type": "string",
-                        "enum": [
-                            "goalkeeper",
-                            "defender",
-                            "midfielder",
-                            "forward"
-                        ]
-                    },
-                    "date_of_birth": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "user_id": {
-                        "type": "number",
-                        "format": "double"
-                    }
-                },
-                "required": [
-                    "position",
-                    "date_of_birth",
-                    "user_id"
-                ],
-                "type": "object"
-            },
-            "CreatePlayerDto": {
-                "$ref": "#/components/schemas/infer_typeofcreatePlayerSchema_"
-            },
-            "infer_typeofupdatePlayerSchema_": {
-                "properties": {
-                    "nationality": {
-                        "type": "string"
-                    },
-                    "weight": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "height": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "date_of_birth": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "position": {
-                        "type": "string",
-                        "enum": [
-                            "goalkeeper",
-                            "defender",
-                            "midfielder",
-                            "forward"
-                        ]
-                    },
-                    "avatar": {
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
-            "UpdatePlayerDto": {
-                "$ref": "#/components/schemas/infer_typeofupdatePlayerSchema_"
-            },
-            "PlayerRole": {
-                "type": "string",
-                "enum": [
-                    "player",
-                    "captain",
-                    "vice_captain"
-                ]
-            },
-            "PlayerStatus": {
-                "type": "string",
-                "enum": [
-                    "active",
-                    "injured",
-                    "suspended"
-                ]
-            },
-            "ApprovalStatus": {
-                "type": "string",
-                "enum": [
-                    "approved",
-                    "pending",
-                    "rejected"
-                ]
-            },
             "TeamPlayerDto": {
                 "properties": {
                     "id": {
@@ -3027,6 +2948,85 @@
                 ],
                 "type": "object",
                 "additionalProperties": false
+            },
+            "infer_typeofcreatePlayerSchema_": {
+                "properties": {
+                    "avatar": {
+                        "type": "string"
+                    },
+                    "nationality": {
+                        "type": "string"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "height": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "position": {
+                        "type": "string",
+                        "enum": [
+                            "goalkeeper",
+                            "defender",
+                            "midfielder",
+                            "forward"
+                        ]
+                    },
+                    "date_of_birth": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "position",
+                    "date_of_birth",
+                    "user_id"
+                ],
+                "type": "object"
+            },
+            "CreatePlayerDto": {
+                "$ref": "#/components/schemas/infer_typeofcreatePlayerSchema_"
+            },
+            "infer_typeofupdatePlayerSchema_": {
+                "properties": {
+                    "nationality": {
+                        "type": "string"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "height": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "date_of_birth": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "position": {
+                        "type": "string",
+                        "enum": [
+                            "goalkeeper",
+                            "defender",
+                            "midfielder",
+                            "forward"
+                        ]
+                    },
+                    "avatar": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdatePlayerDto": {
+                "$ref": "#/components/schemas/infer_typeofupdatePlayerSchema_"
             },
             "infer_typeofaddPlayerToTeamSchema_": {
                 "properties": {
@@ -9801,89 +9801,12 @@
                 ]
             }
         },
-        "/players/{id}": {
+        "/players/{team_id}/team-players/export": {
             "get": {
-                "operationId": "FindById",
-                "responses": {
-                    "200": {
-                        "description": "Ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlayerDto"
-                                }
-                            }
-                        }
-                    }
-                },
-                "tags": [
-                    "Players"
-                ],
-                "security": [],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    }
-                ]
-            },
-            "patch": {
-                "operationId": "Update",
-                "responses": {
-                    "200": {
-                        "description": "Ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlayerDto"
-                                }
-                            }
-                        }
-                    }
-                },
-                "tags": [
-                    "Players"
-                ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizing"
-                        ]
-                    }
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdatePlayerDto"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "SoftDelete",
+                "operationId": "ExportTeamPlayers",
                 "responses": {
                     "204": {
-                        "description": "Deleted"
+                        "description": "No content"
                     }
                 },
                 "tags": [
@@ -9900,7 +9823,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "team_id",
                         "required": true,
                         "schema": {
                             "format": "double",
@@ -9910,43 +9833,30 @@
                 ]
             }
         },
-        "/players": {
-            "post": {
-                "operationId": "Create",
+        "/players/import-template": {
+            "get": {
+                "operationId": "DownloadImportTemplate",
                 "responses": {
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlayerDto"
-                                }
-                            }
-                        }
+                    "204": {
+                        "description": "No content"
                     }
                 },
                 "tags": [
                     "Players"
                 ],
-                "security": [
+                "security": [],
+                "parameters": [
                     {
-                        "jwt": [
-                            "admin",
-                            "organizing"
-                        ]
-                    }
-                ],
-                "parameters": [],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreatePlayerDto"
-                            }
+                        "in": "query",
+                        "name": "minRows",
+                        "required": false,
+                        "schema": {
+                            "default": 7,
+                            "format": "double",
+                            "type": "number"
                         }
                     }
-                }
+                ]
             }
         },
         "/players/{team_id}/team-players": {
@@ -10252,6 +10162,154 @@
                 }
             }
         },
+        "/players/{id}": {
+            "get": {
+                "operationId": "FindById",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "Update",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePlayerDto"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "SoftDelete",
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/players": {
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreatePlayerDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/players/{team_id}/team-players/{id}/approve": {
             "post": {
                 "operationId": "ApproveTeamPlayer",
@@ -10340,64 +10398,6 @@
                         "name": "id",
                         "required": true,
                         "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    }
-                ]
-            }
-        },
-        "/players/{team_id}/team-players/export": {
-            "get": {
-                "operationId": "ExportTeamPlayers",
-                "responses": {
-                    "204": {
-                        "description": "No content"
-                    }
-                },
-                "tags": [
-                    "Players"
-                ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizing"
-                        ]
-                    }
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "team_id",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    }
-                ]
-            }
-        },
-        "/players/import-template": {
-            "get": {
-                "operationId": "DownloadImportTemplate",
-                "responses": {
-                    "204": {
-                        "description": "No content"
-                    }
-                },
-                "tags": [
-                    "Players"
-                ],
-                "security": [],
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "minRows",
-                        "required": false,
-                        "schema": {
-                            "default": 7,
                             "format": "double",
                             "type": "number"
                         }

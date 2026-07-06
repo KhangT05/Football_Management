@@ -29,37 +29,26 @@ export class PlayerController extends Controller {
     super();
   }
 
-  @Get("{id}")
-  async findById(@Path() id: number): Promise<PlayerDto> {
-    return this.service.getPlayerByIdOrFail(id);
-  }
-
+  // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
   @Security("jwt", ["admin", "organizing"])
-  @Post("/")
-  @SuccessResponse(201, "Created")
-  async create(@Body() body: CreatePlayerDto): Promise<PlayerDto> {
-    this.setStatus(201);
-    return this.service.createPlayer(body);
+  @Get("{team_id}/team-players/export")
+  async exportTeamPlayers(@Path() team_id: number): Promise<void> {
+    const buffer = await this.service.exportTeamPlayersExcel(team_id);
+    const res = (this as any).res as ExRequest["res"];
+    res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res!.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
+    res!.send(buffer);
   }
 
-  @Security("jwt", ["admin", "organizing"])
-  @Patch("{id}")
-  async update(
-    @Path() id: number,
-    @Body() body: UpdatePlayerDto
-  ): Promise<PlayerDto> {
-    return this.service.updatePlayer(id, body);
+  // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
+  @Get("import-template")
+  async downloadImportTemplate(@Query() minRows = 7): Promise<void> {
+    const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
+    const res = (this as any).res as ExRequest["res"];
+    res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res!.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
+    res!.send(buffer);
   }
-
-  @Security("jwt", ["admin", "organizing"])
-  @Delete("{id}")
-  @SuccessResponse(204, "Deleted")
-  async softDelete(@Path() id: number): Promise<void> {
-    this.setStatus(204);
-    return this.service.softDeletePlayer(id);
-  }
-
-  // ─── Team Players ─────────────────────────────────────────────────────────
 
   @Get("{team_id}/team-players")
   async listTeamPlayers(
@@ -95,6 +84,36 @@ export class PlayerController extends Controller {
       throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
     }
     return tp;
+  }
+
+  @Get("{id}")
+  async findById(@Path() id: number): Promise<PlayerDto> {
+    return this.service.getPlayerByIdOrFail(id);
+  }
+
+  @Security("jwt", ["admin", "organizing"])
+  @Post("/")
+  @SuccessResponse(201, "Created")
+  async create(@Body() body: CreatePlayerDto): Promise<PlayerDto> {
+    this.setStatus(201);
+    return this.service.createPlayer(body);
+  }
+
+  @Security("jwt", ["admin", "organizing"])
+  @Patch("{id}")
+  async update(
+    @Path() id: number,
+    @Body() body: UpdatePlayerDto
+  ): Promise<PlayerDto> {
+    return this.service.updatePlayer(id, body);
+  }
+
+  @Security("jwt", ["admin", "organizing"])
+  @Delete("{id}")
+  @SuccessResponse(204, "Deleted")
+  async softDelete(@Path() id: number): Promise<void> {
+    this.setStatus(204);
+    return this.service.softDeletePlayer(id);
   }
 
   // FIX: bỏ user_id — chưa từng được dùng trong body, AuthRequest param là dead
@@ -149,29 +168,6 @@ export class PlayerController extends Controller {
     @Body() body: BulkDeleteDto
   ): Promise<{ deleted: number; notFound: number[] }> {
     return this.service.bulkDeleteTeamPlayers(team_id, body);
-  }
-
-  // ─── Excel ────────────────────────────────────────────────────────────────
-
-  // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
-  @Security("jwt", ["admin", "organizing"])
-  @Get("{team_id}/team-players/export")
-  async exportTeamPlayers(@Path() team_id: number): Promise<void> {
-    const buffer = await this.service.exportTeamPlayersExcel(team_id);
-    const res = (this as any).res as ExRequest["res"];
-    res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res!.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
-    res!.send(buffer);
-  }
-
-  // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
-  @Get("import-template")
-  async downloadImportTemplate(@Query() minRows = 7): Promise<void> {
-    const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
-    const res = (this as any).res as ExRequest["res"];
-    res!.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res!.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
-    res!.send(buffer);
   }
 
   // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer

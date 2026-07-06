@@ -114,6 +114,7 @@ export default function MyTeam() {
   const [allSeasons, setAllSeasons] = useState([]);
   const [activeMatchSeasonId, setActiveMatchSeasonId] = useState(null);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [playerForm, setPlayerForm] = useState({});
 
   // Derived — always use this instead of teamDetail directly
   const activeTeam = useMemo(
@@ -371,6 +372,7 @@ export default function MyTeam() {
   const openAddModal = () => {
     setEditingPlayer(null);
     setModalError('');
+    setPlayerForm({ name: '', email: '', date_of_birth: '', number: '', position: 'midfielder', role: 'player' });
     setPlayerModal('add');
   };
 
@@ -407,30 +409,25 @@ export default function MyTeam() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teams, location.state]);
 
-  // values: { name, user_email, date_of_birth, position, number }
-  const handleAddSave = async (values) => {
+  const handleAddSave = async () => {
+    const values = playerForm;
     setIsSaving(true);
     setModalError('');
     try {
       await playerApi.createForTeam(activeTeam.id, {
         name: values.name.trim(),
-        user_email: values.user_email.trim(),
+        user_email: values.email.trim(), // field trong form tên là "email", map sang key API "user_email"
         date_of_birth: values.date_of_birth,
         position: values.position,
         jersey_number: parseInt(values.number, 10),
       });
-
-      toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội. Email mời đặt mật khẩu đã được gửi tới ${values.user_email.trim()}.`);
+      toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội...`);
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      // 409: email đã có Player profile trùng team, hoặc jersey trùng
       setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ.');
-    } finally {
-      setIsSaving(false);
-    }
+    } finally { setIsSaving(false); }
   };
-
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -468,9 +465,13 @@ export default function MyTeam() {
   const openEditModal = (player) => {
     setEditingPlayer(player);
     setModalError('');
+    setPlayerForm({
+      number: player.number,
+      position: player.position,
+      role: player.role,
+    });
     setPlayerModal('edit');
   };
-
   // values: { number, position, role } — mode edit của PlayerFormModal
   // KHÔNG có name/email (đổi ở phần quản lý tài khoản), nhưng CÓ role
   // (đội trưởng/phó/thành viên) từ bản cập nhật PlayerFormModal.
@@ -479,7 +480,8 @@ export default function MyTeam() {
   // có UI chọn role nên field này bị bỏ qua hoàn toàn (mọi player mãi mãi
   // là "player" dù backend/updateTeamPlayerSchema đã support). Giờ modal
   // trả kèm values.role, cần gửi lên để không bị mất giá trị người dùng chọn.
-  const handleEditSave = async (values) => {
+  const handleEditSave = async () => {
+    const values = playerForm;
     setIsSaving(true);
     setModalError('');
     try {
@@ -496,13 +498,14 @@ export default function MyTeam() {
     } finally { setIsSaving(false); }
   };
 
+
   // FIX (onSave is not a function): PlayerFormModal chỉ expose 1 callback
   // duy nhất — dispatch theo mode ngay tại đây, không truyền onSubmitAdd/
   // onSubmitEdit riêng lẻ nữa. Nếu PlayerFormModal source thực tế gọi tên
   // prop khác (vd. onSubmit), đổi tên prop bên dưới cho khớp — grep
   // `onSave(` trong PlayerFormModal.jsx để confirm.
-  const handlePlayerModalSave = (values) =>
-    playerModal === 'add' ? handleAddSave(values) : handleEditSave(values);
+  const handlePlayerModalSave = () =>
+    playerModal === 'add' ? handleAddSave() : handleEditSave();
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
@@ -1069,16 +1072,15 @@ export default function MyTeam() {
         </div>
       </div>
 
-      {/* ── Modals ───────────────────────────────────────────── */}
       {playerModal && (
         <PlayerFormModal
           mode={playerModal}
-          player={editingPlayer}
-          usedNumbers={players}
+          form={playerForm}
+          setForm={setPlayerForm}
+          formError={modalError}
+          isSaving={isSaving}
           onSave={handlePlayerModalSave}
           onClose={() => { setPlayerModal(null); setModalError(''); }}
-          isSaving={isSaving}
-          serverError={modalError}
           onImportExcel={handleImportExcel}
           onDownloadTemplate={handleDownloadTemplate}
           isDownloadingTemplate={isDownloadingTemplate}

@@ -6,12 +6,14 @@ import { ImportResult } from "../types/player.type.js";
 export declare class PlayerController extends Controller {
     private readonly service;
     constructor(service: PlayerService);
+    exportTeamPlayers(team_id: number): Promise<void>;
+    downloadImportTemplate(minRows?: number): Promise<void>;
+    listTeamPlayers(team_id: number, page?: number, per_page?: number, sort?: string, direction?: "asc" | "desc", position?: string, status?: string, approval_status?: string): Promise<PaginatedResult<TeamPlayerDto>>;
+    getTeamPlayer(team_id: number, id: number): Promise<TeamPlayerDto>;
     findById(id: number): Promise<PlayerDto>;
     create(body: CreatePlayerDto): Promise<PlayerDto>;
     update(id: number, body: UpdatePlayerDto): Promise<PlayerDto>;
     softDelete(id: number): Promise<void>;
-    listTeamPlayers(team_id: number, page?: number, per_page?: number, sort?: string, direction?: "asc" | "desc", position?: string, status?: string, approval_status?: string): Promise<PaginatedResult<TeamPlayerDto>>;
-    getTeamPlayer(team_id: number, id: number): Promise<TeamPlayerDto>;
     addPlayerToTeam(team_id: number, body: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
     updateTeamPlayer(team_id: number, id: number, body: UpdateTeamPlayerDto): Promise<TeamPlayerDto>;
     approveTeamPlayer(team_id: number, id: number): Promise<TeamPlayerDto>;
@@ -20,8 +22,6 @@ export declare class PlayerController extends Controller {
         deleted: number;
         notFound: number[];
     }>;
-    exportTeamPlayers(team_id: number): Promise<void>;
-    downloadImportTemplate(minRows?: number): Promise<void>;
     importTeamPlayers(team_id: number, file: Express.Multer.File): Promise<ImportResult>;
 }
 //# sourceMappingURL=player.controller.d.ts.map
