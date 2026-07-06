@@ -1,6 +1,6 @@
 import {
   UserPlus, Edit, X, AlertTriangle, CheckCircle2, Loader2,
-  Info, UploadCloud, FileDown,
+  Info, UploadCloud, FileDown, Mail,
 } from 'lucide-react';
 
 const POSITIONS = [
@@ -35,6 +35,7 @@ export default function PlayerFormModal({
   isImporting,
 }) {
   const isAdd = mode === 'add';
+  const emailMissing = isAdd && !String(form.email ?? '').trim();
 
   const handleField = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -50,7 +51,8 @@ export default function PlayerFormModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <form
         onSubmit={submit}
-        className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden max-h-[90vh]"
+        // to ra: max-w-md -> max-w-2xl, và max-h cao hơn để đỡ phải scroll ngay khi mở
+        className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-2xl animate-scale-in flex flex-col overflow-hidden max-h-[92vh]"
       >
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
 
@@ -70,7 +72,7 @@ export default function PlayerFormModal({
         </div>
 
         {/* Body */}
-        <div className="p-8 space-y-6 relative z-10 overflow-y-auto custom-scrollbar">
+        <div className="p-8 md:p-10 space-y-6 relative z-10 overflow-y-auto custom-scrollbar">
           {formError && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in font-medium">
               <AlertTriangle className="w-5 h-5 shrink-0" /> {formError}
@@ -79,13 +81,14 @@ export default function PlayerFormModal({
 
           {/* Import Excel — chỉ hiện khi thêm mới, và khi cha có truyền handler */}
           {isAdd && onImportExcel && (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-4">
+            <div className="bg-emerald-950 border-2 border-emerald-500 rounded-2xl p-5 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30 shrink-0 mt-0.5">
-                  <Info className="w-4 h-4 text-emerald-400" />
+                <div className="p-1.5 bg-emerald-500 rounded-lg shrink-0 mt-0.5">
+                  <Info className="w-4 h-4 text-emerald-950" />
                 </div>
-                <p className="text-xs text-emerald-400/90 font-medium leading-relaxed">
+                <p className="text-sm text-emerald-50 font-semibold leading-relaxed">
                   Thêm nhiều cầu thủ cùng lúc bằng file Excel. Tải file mẫu, điền thông tin rồi upload lại.
+                  File mẫu yêu cầu cột <span className="font-black text-emerald-300">Email</span> — thiếu email dòng đó sẽ import lỗi.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -93,7 +96,7 @@ export default function PlayerFormModal({
                   type="button"
                   onClick={onDownloadTemplate}
                   disabled={isDownloadingTemplate}
-                  className="flex-1 px-4 py-3.5 font-bold bg-navy-dark text-gray-200 border border-navy-light rounded-xl flex items-center justify-center gap-2 hover:bg-navy-light hover:text-white transition-all duration-300 text-sm disabled:opacity-60"
+                  className="flex-1 px-4 py-3.5 font-bold bg-emerald-50 text-emerald-900 border-2 border-emerald-500 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all duration-300 text-sm disabled:opacity-60"
                 >
                   {isDownloadingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
                   Tải file mẫu
@@ -121,6 +124,39 @@ export default function PlayerFormModal({
             </div>
           )}
 
+          {/* Email — đưa lên đầu tiên khi thêm mới vì đây là field bắt buộc để
+              hệ thống link/tạo tài khoản. Thiếu email = request sẽ fail hoàn
+              toàn ở backend (createPlayerForTeamWithUser bắt buộc user_email). */}
+          {isAdd && (
+            <div
+              className={`space-y-2 rounded-2xl p-4 border-2 transition-colors ${emailMissing
+                  ? 'border-amber-500/50 bg-amber-500/5'
+                  : 'border-blue-500/30 bg-blue-500/5'
+                }`}
+            >
+              <label className="flex items-center gap-2 text-xs font-black text-gray-300 uppercase tracking-wider ml-1">
+                <Mail className="w-4 h-4 text-blue-400" />
+                Email tài khoản <span className="text-red-400">* Bắt buộc</span>
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="player@example.com"
+                value={form.email ?? ''}
+                onChange={handleField('email')}
+                className="w-full px-5 py-4 bg-navy/60 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-base transition-all font-bold"
+              />
+              <p className="text-[11px] text-gray-400 ml-1 leading-relaxed">
+                Dùng để liên kết cầu thủ với tài khoản. Nếu email chưa có tài khoản, hệ thống sẽ tự tạo tài khoản mới và gửi email mời đặt mật khẩu (hiệu lực 24h).
+                {emailMissing && (
+                  <span className="block mt-1 text-amber-400 font-bold">
+                    ⚠ Chưa nhập email — không thể lưu cầu thủ nếu thiếu trường này.
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
               Họ tên cầu thủ <span className="text-red-400">*</span>
@@ -135,33 +171,17 @@ export default function PlayerFormModal({
           </div>
 
           {isAdd && (
-            <>
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Email tài khoản <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  placeholder="player@example.com"
-                  value={form.email ?? ''}
-                  onChange={handleField('email')}
-                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
-                />
-                <p className="text-[11px] text-gray-500 ml-1">Nếu email chưa có tài khoản, hệ thống sẽ tự tạo tài khoản mới và gửi email mời đặt mật khẩu.</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Ngày sinh
-                </label>
-                <input
-                  type="date"
-                  value={form.date_of_birth ?? ''}
-                  onChange={handleField('date_of_birth')}
-                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
-                />
-              </div>
-            </>
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                Ngày sinh
+              </label>
+              <input
+                type="date"
+                value={form.date_of_birth ?? ''}
+                onChange={handleField('date_of_birth')}
+                className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+              />
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-5">
@@ -215,8 +235,8 @@ export default function PlayerFormModal({
           </button>
           <button
             type="submit"
-            disabled={isSaving}
-            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
+            disabled={isSaving || emailMissing}
+            className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
             {isAdd ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}

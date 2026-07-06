@@ -19,21 +19,22 @@ let PlayerController = class PlayerController extends Controller {
         super();
         this.service = service;
     }
-    async findById(id) {
-        return this.service.getPlayerByIdOrFail(id);
+    // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
+    async exportTeamPlayers(team_id) {
+        const buffer = await this.service.exportTeamPlayersExcel(team_id);
+        const res = this.res;
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
+        res.send(buffer);
     }
-    async create(body) {
-        this.setStatus(201);
-        return this.service.createPlayer(body);
+    // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
+    async downloadImportTemplate(minRows = 7) {
+        const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
+        const res = this.res;
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
+        res.send(buffer);
     }
-    async update(id, body) {
-        return this.service.updatePlayer(id, body);
-    }
-    async softDelete(id) {
-        this.setStatus(204);
-        return this.service.softDeletePlayer(id);
-    }
-    // ─── Team Players ─────────────────────────────────────────────────────────
     async listTeamPlayers(team_id, page = 1, per_page = 20, sort, direction, position, status, approval_status) {
         return this.service.listTeamPlayers({
             team_id,
@@ -53,6 +54,20 @@ let PlayerController = class PlayerController extends Controller {
             throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
         }
         return tp;
+    }
+    async findById(id) {
+        return this.service.getPlayerByIdOrFail(id);
+    }
+    async create(body) {
+        this.setStatus(201);
+        return this.service.createPlayer(body);
+    }
+    async update(id, body) {
+        return this.service.updatePlayer(id, body);
+    }
+    async softDelete(id) {
+        this.setStatus(204);
+        return this.service.softDeletePlayer(id);
     }
     // FIX: bỏ user_id — chưa từng được dùng trong body, AuthRequest param là dead
     // param. Nếu cần audit "ai thêm player này", thêm cột created_by ở service,
@@ -76,23 +91,6 @@ let PlayerController = class PlayerController extends Controller {
     async bulkDeleteTeamPlayers(team_id, body) {
         return this.service.bulkDeleteTeamPlayers(team_id, body);
     }
-    // ─── Excel ────────────────────────────────────────────────────────────────
-    // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
-    async exportTeamPlayers(team_id) {
-        const buffer = await this.service.exportTeamPlayersExcel(team_id);
-        const res = this.res;
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
-        res.send(buffer);
-    }
-    // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
-    async downloadImportTemplate(minRows = 7) {
-        const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
-        const res = this.res;
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
-        res.send(buffer);
-    }
     // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer
     // + gán role vào bất kỳ team_id nào không cần auth. Đây là lỗ hổng nghiêm
     // trọng nhất trong file, không phải cosmetic.
@@ -108,6 +106,43 @@ let PlayerController = class PlayerController extends Controller {
         return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
     }
 };
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
+    Get("{team_id}/team-players/export"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "exportTeamPlayers", null);
+__decorate([
+    Get("import-template"),
+    __param(0, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "downloadImportTemplate", null);
+__decorate([
+    Get("{team_id}/team-players"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __param(6, Query()),
+    __param(7, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "listTeamPlayers", null);
+__decorate([
+    Get("{team_id}/team-players/{id}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "getTeamPlayer", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
@@ -142,28 +177,6 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "softDelete", null);
-__decorate([
-    Get("{team_id}/team-players"),
-    __param(0, Path()),
-    __param(1, Query()),
-    __param(2, Query()),
-    __param(3, Query()),
-    __param(4, Query()),
-    __param(5, Query()),
-    __param(6, Query()),
-    __param(7, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object, String, String, String, String, String]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "listTeamPlayers", null);
-__decorate([
-    Get("{team_id}/team-players/{id}"),
-    __param(0, Path()),
-    __param(1, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "getTeamPlayer", null);
 __decorate([
     Security("jwt", ["admin", "organizing"]),
     Post("{team_id}/team-players"),
@@ -211,21 +224,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "bulkDeleteTeamPlayers", null);
-__decorate([
-    Security("jwt", ["admin", "organizing"]),
-    Get("{team_id}/team-players/export"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "exportTeamPlayers", null);
-__decorate([
-    Get("import-template"),
-    __param(0, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "downloadImportTemplate", null);
 __decorate([
     Security("jwt", ["admin", "organizing"]),
     Post("{team_id}/team-players/import"),
