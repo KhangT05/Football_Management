@@ -5667,170 +5667,6 @@
 					}
 				]
 			},
-			"infer_typeofcreateArticleSchema_": {
-				"properties": {
-					"media": {
-						"items": {
-							"properties": {
-								"caption": {
-									"type": "string"
-								},
-								"order": {
-									"type": "number",
-									"format": "double"
-								},
-								"url": {
-									"type": "string"
-								},
-								"type": {
-									"type": "string",
-									"enum": [
-										"image",
-										"video"
-									]
-								}
-							},
-							"required": [
-								"order",
-								"url",
-								"type"
-							],
-							"type": "object"
-						},
-						"type": "array"
-					},
-					"tags": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"published_at": {
-						"type": "string"
-					},
-					"team_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"match_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"season_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"cover_image": {
-						"type": "string"
-					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"draft",
-							"published",
-							"archived"
-						]
-					},
-					"content": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					},
-					"title": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"status",
-					"content",
-					"slug",
-					"title"
-				],
-				"type": "object"
-			},
-			"CreateArticleDto": {
-				"$ref": "#/components/schemas/infer_typeofcreateArticleSchema_"
-			},
-			"infer_typeofupdateArticleSchema_": {
-				"properties": {
-					"media": {
-						"items": {
-							"properties": {
-								"caption": {
-									"type": "string"
-								},
-								"order": {
-									"type": "number",
-									"format": "double"
-								},
-								"url": {
-									"type": "string"
-								},
-								"type": {
-									"type": "string",
-									"enum": [
-										"image",
-										"video"
-									]
-								}
-							},
-							"required": [
-								"order",
-								"url",
-								"type"
-							],
-							"type": "object"
-						},
-						"type": "array"
-					},
-					"tags": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"published_at": {
-						"type": "string"
-					},
-					"team_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"match_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"season_id": {
-						"type": "number",
-						"format": "double"
-					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"draft",
-							"published",
-							"archived"
-						]
-					},
-					"cover_image": {
-						"type": "string"
-					},
-					"content": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					},
-					"title": {
-						"type": "string"
-					}
-				},
-				"type": "object"
-			},
-			"UpdateArticleDto": {
-				"$ref": "#/components/schemas/infer_typeofupdateArticleSchema_"
-			},
 			"infer_typeofupdateArticleStatusSchema_": {
 				"properties": {
 					"status": {
@@ -13620,6 +13456,7 @@
 						}
 					}
 				},
+				"description": "Tạo article kèm upload cover_image (multipart/form-data).\r\ntags/media gửi dạng JSON string trong form field.",
 				"tags": [
 					"Articles"
 				],
@@ -13635,9 +13472,57 @@
 				"requestBody": {
 					"required": true,
 					"content": {
-						"application/json": {
+						"multipart/form-data": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateArticleDto"
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"slug": {
+										"type": "string"
+									},
+									"content": {
+										"type": "string"
+									},
+									"status": {
+										"$ref": "#/components/schemas/ArticleStatus"
+									},
+									"season_id": {
+										"type": "string"
+									},
+									"match_id": {
+										"type": "string"
+									},
+									"team_id": {
+										"type": "string"
+									},
+									"published_at": {
+										"type": "string"
+									},
+									"tags": {
+										"type": "string"
+									},
+									"media": {
+										"type": "string"
+									},
+									"cover_image": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"title",
+									"slug",
+									"content",
+									"status",
+									"season_id",
+									"match_id",
+									"team_id",
+									"published_at",
+									"tags",
+									"media"
+								]
 							}
 						}
 					}
@@ -13714,9 +13599,57 @@
 				"requestBody": {
 					"required": true,
 					"content": {
-						"application/json": {
+						"multipart/form-data": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateArticleDto"
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"slug": {
+										"type": "string"
+									},
+									"content": {
+										"type": "string"
+									},
+									"status": {
+										"$ref": "#/components/schemas/ArticleStatus"
+									},
+									"season_id": {
+										"type": "string"
+									},
+									"match_id": {
+										"type": "string"
+									},
+									"team_id": {
+										"type": "string"
+									},
+									"published_at": {
+										"type": "string"
+									},
+									"tags": {
+										"type": "string"
+									},
+									"media": {
+										"type": "string"
+									},
+									"cover_image": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"title",
+									"slug",
+									"content",
+									"status",
+									"season_id",
+									"match_id",
+									"team_id",
+									"published_at",
+									"tags",
+									"media"
+								]
 							}
 						}
 					}
@@ -13865,7 +13798,6 @@
 						"description": "Created"
 					}
 				},
-				"description": "Add 1 tag vào article",
 				"tags": [
 					"Articles"
 				],
@@ -13924,7 +13856,6 @@
 						}
 					}
 				},
-				"description": "Bulk add nhiều tags vào article — 1 round-trip",
 				"tags": [
 					"Articles"
 				],
@@ -13967,7 +13898,6 @@
 						"description": "Deleted"
 					}
 				},
-				"description": "Remove 1 tag khỏi article",
 				"tags": [
 					"Articles"
 				],
@@ -14048,7 +13978,7 @@
 						}
 					}
 				},
-				"description": "Add 1 media item — dùng sau khi upload lên Cloudinary",
+				"description": "Add media item bằng URL có sẵn (không upload file)",
 				"tags": [
 					"Articles"
 				],
@@ -14113,7 +14043,6 @@
 						}
 					}
 				},
-				"description": "Bulk delete media — truyền ids[]",
 				"tags": [
 					"Articles"
 				],
@@ -14148,6 +14077,81 @@
 				}
 			}
 		},
+		"/articles/{article_id}/media/upload": {
+			"post": {
+				"operationId": "UploadMedia",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ArticleMedia"
+								}
+							}
+						}
+					}
+				},
+				"description": "Add media item bằng cách upload file trực tiếp",
+				"tags": [
+					"Articles"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "article_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"caption": {
+										"type": "string"
+									},
+									"order": {
+										"type": "string"
+									},
+									"type": {
+										"type": "string",
+										"enum": [
+											"image",
+											"video"
+										]
+									},
+									"file": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"required": [
+									"caption",
+									"order",
+									"type",
+									"file"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
 		"/articles/{article_id}/media/{media_id}": {
 			"delete": {
 				"operationId": "DeleteMedia",
@@ -14156,7 +14160,6 @@
 						"description": "Deleted"
 					}
 				},
-				"description": "Delete 1 media item",
 				"tags": [
 					"Articles"
 				],

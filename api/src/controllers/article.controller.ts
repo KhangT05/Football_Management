@@ -2,6 +2,7 @@ import {
     Body,
     Controller,
     Delete,
+    FormField,
     Get,
     Patch,
     Path,
@@ -12,9 +13,10 @@ import {
     SuccessResponse,
     Tags,
     Request,
+    UploadedFile,
 } from "tsoa";
 import type { Request as ExRequest } from "express";
-import { ArticleMedia } from "../generated/prisma/client.js";
+import { ArticleMedia, ArticleStatus } from "../generated/prisma/client.js";
 import { ArticleService } from "../services/article.service.js";
 import * as articleSchema from "../dtos/article.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
@@ -44,17 +46,8 @@ export class ArticleController extends Controller {
         @Query() tag?: string
     ): Promise<PaginatedResult<ArticleListItem>> {
         return this.service.findAll({
-            page,
-            per_page,
-            q,
-            sort,
-            direction,
-            status,
-            season_id,
-            match_id,
-            team_id,
-            user_id,
-            tag,
+            page, per_page, q, sort, direction, status,
+            season_id, match_id, team_id, user_id, tag,
         });
     }
 
@@ -62,29 +55,80 @@ export class ArticleController extends Controller {
     async findById(@Path() id: number): Promise<SafeArticle> {
         return this.service.findByIdOrFail(id);
     }
+
     @Get("slug/{slug}")
     async findBySlug(@Path() slug: string): Promise<SafeArticle> {
         return this.service.findBySlugOrFail(slug);
     }
 
+    /**
+     * Tạo article kèm upload cover_image (multipart/form-data).
+     * tags/media gửi dạng JSON string trong form field.
+     */
     @Security("jwt", ["admin", "organizing"])
     @Post("/")
     @SuccessResponse(201, "Created")
     async create(
-        @Body() body: articleSchema.CreateArticleDto,
-        @Request() req: AuthRequest
+        @Request() req: AuthRequest,
+        @FormField() title: string,
+        @FormField() slug: string,
+        @FormField() content: string,
+        @FormField() status: ArticleStatus | undefined,
+        @FormField() season_id: string | undefined,
+        @FormField() match_id: string | undefined,
+        @FormField() team_id: string | undefined,
+        @FormField() published_at: string | undefined,
+        @FormField() tags: string | undefined,
+        @FormField() media: string | undefined,
+        @UploadedFile("cover_image") coverFile?: Express.Multer.File
     ): Promise<SafeArticle> {
+        const dto = articleSchema.createArticleSchema.parse({
+            title,
+            slug,
+            content,
+            status,
+            season_id: season_id ? Number(season_id) : undefined,
+            match_id: match_id ? Number(match_id) : undefined,
+            team_id: team_id ? Number(team_id) : undefined,
+            published_at,
+            tags: tags ? JSON.parse(tags) : undefined,
+            media: media ? JSON.parse(media) : undefined,
+        });
+
         this.setStatus(201);
-        return this.service.create(req.user.user_id, body);
+        return this.service.create(req.user.user_id, dto, coverFile);
     }
 
     @Security("jwt", ["admin", "organizing"])
     @Patch("{id}")
     async update(
         @Path() id: number,
-        @Body() body: articleSchema.UpdateArticleDto
+        @FormField() title: string | undefined,
+        @FormField() slug: string | undefined,
+        @FormField() content: string | undefined,
+        @FormField() status: ArticleStatus | undefined,
+        @FormField() season_id: string | undefined,
+        @FormField() match_id: string | undefined,
+        @FormField() team_id: string | undefined,
+        @FormField() published_at: string | undefined,
+        @FormField() tags: string | undefined,
+        @FormField() media: string | undefined,
+        @UploadedFile("cover_image") coverFile?: Express.Multer.File
     ): Promise<SafeArticle> {
-        return this.service.update(id, body);
+        const dto = articleSchema.updateArticleSchema.parse({
+            title,
+            slug,
+            content,
+            status,
+            season_id: season_id ? Number(season_id) : undefined,
+            match_id: match_id ? Number(match_id) : undefined,
+            team_id: team_id ? Number(team_id) : undefined,
+            published_at,
+            tags: tags ? JSON.parse(tags) : undefined,
+            media: media ? JSON.parse(media) : undefined,
+        });
+
+        return this.service.update(id, dto, coverFile);
     }
 
     @Security("jwt", ["admin", "organizing"])
@@ -103,12 +147,12 @@ export class ArticleController extends Controller {
         this.setStatus(204);
         return this.service.softDelete(id);
     }
+
     @Get("tags")
     async listTags(): Promise<string[]> {
         return this.service.listDistinctTags();
     }
 
-    /** Add 1 tag vào article */
     @Security("jwt", ["admin", "organizing"])
     @Post("{article_id}/tags")
     @SuccessResponse(201, "Created")
@@ -120,7 +164,6 @@ export class ArticleController extends Controller {
         return this.service.addTag(article_id, body);
     }
 
-    /** Bulk add nhiều tags vào article — 1 round-trip */
     @Security("jwt", ["admin", "organizing"])
     @Post("{article_id}/tags/bulk")
     @SuccessResponse(201, "Created")
@@ -132,7 +175,6 @@ export class ArticleController extends Controller {
         return this.service.bulkAddTags(article_id, body);
     }
 
-    /** Remove 1 tag khỏi article */
     @Security("jwt", ["admin", "organizing"])
     @Delete("{article_id}/tags/{tag}")
     @SuccessResponse(204, "Deleted")
@@ -149,7 +191,7 @@ export class ArticleController extends Controller {
         return this.service.getMedia(article_id);
     }
 
-    /** Add 1 media item — dùng sau khi upload lên Cloudinary */
+    /** Add media item bằng URL có sẵn (không upload file) */
     @Security("jwt", ["admin", "organizing"])
     @Post("{article_id}/media")
     @SuccessResponse(201, "Created")
@@ -161,7 +203,25 @@ export class ArticleController extends Controller {
         return this.service.addMedia(article_id, body);
     }
 
-    /** Delete 1 media item */
+    /** Add media item bằng cách upload file trực tiếp */
+    @Security("jwt", ["admin", "organizing"])
+    @Post("{article_id}/media/upload")
+    @SuccessResponse(201, "Created")
+    async uploadMedia(
+        @Path() article_id: number,
+        @FormField() caption: string | undefined,
+        @FormField() order: string | undefined,
+        @FormField() type: "image" | "video" | undefined,
+        @UploadedFile("file") file: Express.Multer.File
+    ): Promise<ArticleMedia> {
+        this.setStatus(201);
+        return this.service.addMediaFile(article_id, file, {
+            caption,
+            order: order ? Number(order) : undefined,
+            type,
+        });
+    }
+
     @Security("jwt", ["admin", "organizing"])
     @Delete("{article_id}/media/{media_id}")
     @SuccessResponse(204, "Deleted")
@@ -173,7 +233,6 @@ export class ArticleController extends Controller {
         return this.service.deleteMedia(article_id, media_id);
     }
 
-    /** Bulk delete media — truyền ids[] */
     @Security("jwt", ["admin", "organizing"])
     @Delete("{article_id}/media")
     async bulkDeleteMedia(

@@ -27,7 +27,7 @@
         "authenticationModule": "./src/middleware/auth.middleware.ts",
         "multerOpts": {
             "limits": {
-                "fileSize": 5242880
+                "fileSize": 20971520
             }
         }
     }

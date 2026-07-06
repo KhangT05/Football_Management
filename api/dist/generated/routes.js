@@ -1736,26 +1736,6 @@ const models = {
         "type": { "dataType": "intersection", "subSchemas": [{ "ref": "Article" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "user": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true }, "media": { "dataType": "array", "array": { "dataType": "refAlias", "ref": "ArticleMedia" }, "required": true }, "tags": { "dataType": "array", "array": { "dataType": "refAlias", "ref": "ArticleTag" }, "required": true } } }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofcreateArticleSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "media": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "caption": { "dataType": "string" }, "order": { "dataType": "double", "required": true }, "url": { "dataType": "string", "required": true }, "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["image"] }, { "dataType": "enum", "enums": ["video"] }], "required": true } } } }, "tags": { "dataType": "array", "array": { "dataType": "string" } }, "published_at": { "dataType": "string" }, "team_id": { "dataType": "double" }, "match_id": { "dataType": "double" }, "season_id": { "dataType": "double" }, "cover_image": { "dataType": "string" }, "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["draft"] }, { "dataType": "enum", "enums": ["published"] }, { "dataType": "enum", "enums": ["archived"] }], "required": true }, "content": { "dataType": "string", "required": true }, "slug": { "dataType": "string", "required": true }, "title": { "dataType": "string", "required": true } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateArticleDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofcreateArticleSchema_", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofupdateArticleSchema_": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "media": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "caption": { "dataType": "string" }, "order": { "dataType": "double", "required": true }, "url": { "dataType": "string", "required": true }, "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["image"] }, { "dataType": "enum", "enums": ["video"] }], "required": true } } } }, "tags": { "dataType": "array", "array": { "dataType": "string" } }, "published_at": { "dataType": "string" }, "team_id": { "dataType": "double" }, "match_id": { "dataType": "double" }, "season_id": { "dataType": "double" }, "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["draft"] }, { "dataType": "enum", "enums": ["published"] }, { "dataType": "enum", "enums": ["archived"] }] }, "cover_image": { "dataType": "string" }, "content": { "dataType": "string" }, "slug": { "dataType": "string" }, "title": { "dataType": "string" } }, "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateArticleDto": {
-        "dataType": "refAlias",
-        "type": { "ref": "infer_typeofupdateArticleSchema_", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateArticleStatusSchema_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["draft"] }, { "dataType": "enum", "enums": ["published"] }, { "dataType": "enum", "enums": ["archived"] }], "required": true } }, "validators": {} },
@@ -6109,10 +6089,25 @@ export function RegisterRoutes(app, opts) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsArticleController_create = {
-        body: { "in": "body", "name": "body", "required": true, "ref": "CreateArticleDto" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+        title: { "in": "formData", "name": "title", "required": true, "dataType": "string" },
+        slug: { "in": "formData", "name": "slug", "required": true, "dataType": "string" },
+        content: { "in": "formData", "name": "content", "required": true, "dataType": "string" },
+        status: { "in": "formData", "name": "status", "required": true, "dataType": "union", "subSchemas": [{ "ref": "ArticleStatus" }, { "dataType": "undefined" }] },
+        season_id: { "in": "formData", "name": "season_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        match_id: { "in": "formData", "name": "match_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        team_id: { "in": "formData", "name": "team_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        published_at: { "in": "formData", "name": "published_at", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        tags: { "in": "formData", "name": "tags", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        media: { "in": "formData", "name": "media", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        coverFile: { "in": "formData", "name": "cover_image", "dataType": "file" },
     };
-    app.post('/articles', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.create)), async function ArticleController_create(request, response, next) {
+    app.post('/articles', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+        {
+            name: "cover_image",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.create)), async function ArticleController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -6138,9 +6133,24 @@ export function RegisterRoutes(app, opts) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsArticleController_update = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
-        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateArticleDto" },
+        title: { "in": "formData", "name": "title", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        slug: { "in": "formData", "name": "slug", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        content: { "in": "formData", "name": "content", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        status: { "in": "formData", "name": "status", "required": true, "dataType": "union", "subSchemas": [{ "ref": "ArticleStatus" }, { "dataType": "undefined" }] },
+        season_id: { "in": "formData", "name": "season_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        match_id: { "in": "formData", "name": "match_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        team_id: { "in": "formData", "name": "team_id", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        published_at: { "in": "formData", "name": "published_at", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        tags: { "in": "formData", "name": "tags", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        media: { "in": "formData", "name": "media", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        coverFile: { "in": "formData", "name": "cover_image", "dataType": "file" },
     };
-    app.patch('/articles/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.update)), async function ArticleController_update(request, response, next) {
+    app.patch('/articles/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+        {
+            name: "cover_image",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.update)), async function ArticleController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -6371,6 +6381,42 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'addMedia',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsArticleController_uploadMedia = {
+        article_id: { "in": "path", "name": "article_id", "required": true, "dataType": "double" },
+        caption: { "in": "formData", "name": "caption", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        order: { "in": "formData", "name": "order", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "undefined" }] },
+        type: { "in": "formData", "name": "type", "required": true, "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["image"] }, { "dataType": "enum", "enums": ["video"] }, { "dataType": "undefined" }] },
+        file: { "in": "formData", "name": "file", "required": true, "dataType": "file" },
+    };
+    app.post('/articles/:article_id/media/upload', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+        {
+            name: "file",
+            maxCount: 1
+        }
+    ]), ...(fetchMiddlewares(ArticleController)), ...(fetchMiddlewares(ArticleController.prototype.uploadMedia)), async function ArticleController_uploadMedia(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsArticleController_uploadMedia, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(ArticleController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'uploadMedia',
                 controller,
                 response,
                 next,
