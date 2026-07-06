@@ -34,24 +34,19 @@ export default function RolesTab() {
 
   const roleCrud = useCrudModal({ emptyForm: { name: '', description: '', is_active: true }, onSuccess: fetchRoles });
 
-  const handleSaveRole = async (payload) => {
-    try {
-      roleCrud.setIsSaving(true);
+  const handleSaveRole = (payload) => {
+    roleCrud.save(async () => {
       if (roleCrud.modal === 'add') {
-        await roleApi.createRole(payload);
+        // is_active không có trong CreateRoleDto của backend → bỏ ra
+        // eslint-disable-next-line no-unused-vars
+        const { is_active, ...addPayload } = payload;
+        await roleApi.createRole(addPayload);
         toast.success(`Đã tạo vai trò "${payload.name}"`);
       } else {
         await roleApi.updateRole(roleCrud.editing.id, payload);
         toast.success(`Đã cập nhật vai trò "${payload.name}"`);
       }
-      roleCrud.closeModal();
-      fetchRoles();
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu vai trò');
-    } finally {
-      roleCrud.setIsSaving(false);
-    }
+    });
   };
 
   const handleDeleteRole = () => {
@@ -169,7 +164,7 @@ export default function RolesTab() {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => roleCrud.openEdit(role)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
+                        <button onClick={() => roleCrud.openEdit(role, { name: role.name, description: role.description ?? '', is_active: role.is_active })} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button onClick={() => roleCrud.setDeleting(role)} className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors">

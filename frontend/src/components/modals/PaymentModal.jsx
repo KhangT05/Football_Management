@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { X, CreditCard, Info, Users, QrCode, Loader2, ExternalLink, ChevronRight, ShieldCheck } from 'lucide-react';
 import { paymentApi } from '../../api/paymentApi';
+
+const DEFAULT_BANK = {
+  BANK_ID: '970415', // Vietcombank
+  ACCOUNT_NO: '108879326878', // Example — thay bằng số tài khoản thật
+  ACCOUNT_NAME: 'NGUYEN HOANG HUY'
+};
 
 /**
  * PaymentModal — Modal thanh toán lệ phí tích hợp VNPay.
@@ -12,33 +18,28 @@ import { paymentApi } from '../../api/paymentApi';
  * @param {Function} onClose
  */
 export default function PaymentModal({ teamName, seasonTeamId, amount = 500000, onClose }) {
-  const [isLoadingVnpay, setIsLoadingVnpay] = useState(false);
-  const [vnpayError, setVnpayError] = useState('');
+  // Auto polling — detect PAID status every 5s after user opened modal
+  useEffect(() => {
+    let interval;
+    if (seasonTeamId) {
+      interval = setInterval(async () => {
+        try {
+          const res = await paymentApi.getPaymentStatus(seasonTeamId);
+          // res = ApiResponseShape: res.data = PaymentRow, res.data.status = PaymentStatus enum
+          const paymentStatus = res?.data?.status;
+          if (paymentStatus === 'PAID') {
+            onClose();
+          }
+        } catch {
+          // Ignore polling errors silently
+        }
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [seasonTeamId, onClose]);
 
   const formatCurrency = (num) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
-
-  const handleVnpayPayment = async () => {
-    setIsLoadingVnpay(true);
-    setVnpayError('');
-    try {
-      const res = await paymentApi.initiatePayment({
-        season_team_id: seasonTeamId,
-        return_url: `${window.location.origin}/thanh-toan/ket-qua`,
-      });
-      
-      const paymentUrl = res.data?.payment_url;
-      if (paymentUrl) {
-        window.location.href = paymentUrl;
-      } else {
-        throw new Error('Không nhận được URL thanh toán từ máy chủ.');
-      }
-    } catch (err) {
-      setVnpayError(err?.response?.data?.message || 'Không thể kết nối tới cổng thanh toán. Vui lòng thử lại.');
-    } finally {
-      setIsLoadingVnpay(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -79,88 +80,25 @@ export default function PaymentModal({ teamName, seasonTeamId, amount = 500000, 
             <span className="text-white font-black text-xl">{formatCurrency(amount)}</span>
           </div>
 
-          {/* ── VNPay CTA ── */}
-          <div className="relative border border-blue-500/40 rounded-2xl overflow-hidden">
-            {/* BG Glow */}
-            <div className="absolute inset-0 bg-linear-to-br from-blue-900/30 via-navy to-indigo-900/20 pointer-events-none" />
-            <div className="absolute -top-8 -right-8 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="relative z-10 p-5">
-              {/* Logo & Title */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-white rounded-2xl flex flex-col items-center justify-center shadow-lg shrink-0">
-                  <span className="font-black text-blue-600 text-base leading-tight tracking-tighter">VN</span>
-                  <span className="font-black text-red-500 text-base leading-tight tracking-tighter">PAY</span>
-                </div>
-                <div>
-                  <h4 className="text-white font-bold text-base">Thanh toán qua VNPAY</h4>
-                  <p className="text-gray-400 text-xs mt-0.5">An toàn · Nhanh chóng · Tin cậy</p>
-                </div>
-                <div className="ml-auto">
-                  <div className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Bảo mật SSL</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment methods badges */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {['ATM nội địa', 'Visa/MasterCard', 'QR Code', 'Ví điện tử'].map(method => (
-                  <span key={method} className="text-xs text-gray-300 bg-white/5 border border-white/10 rounded-full px-2.5 py-1">
-                    {method}
-                  </span>
-                ))}
-              </div>
-
-              {/* Error message */}
-              {vnpayError && (
-                <div className="mb-3 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
-                  {vnpayError}
-                </div>
-              )}
-
-              {/* Pay button */}
-              <button
-                onClick={handleVnpayPayment}
-                disabled={isLoadingVnpay}
-                className="w-full py-3.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 text-base"
-              >
-                {isLoadingVnpay ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang kết nối...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5" />
-                    Thanh toán ngay
-                    <ExternalLink className="w-4 h-4 opacity-70" />
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 border-t border-navy-light" />
-            <span className="text-gray-600 text-xs font-medium">hoặc thanh toán bằng</span>
-            <div className="flex-1 border-t border-navy-light" />
-          </div>
-
           {/* Alternative methods */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* QR / Bank transfer */}
-            <div className="border border-navy-light bg-navy-dark rounded-xl p-4 text-center flex flex-col items-center gap-2.5 hover:border-gray-500 transition-colors cursor-default group">
-              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                <QrCode className="w-5 h-5 text-gray-400" />
+          <div className="grid grid-cols-1 gap-4">
+            {/* VietQR / Bank transfer */}
+            <div className="border border-navy-light bg-navy-dark rounded-xl p-5 text-center flex flex-col items-center gap-3 hover:border-emerald-500/50 transition-colors cursor-default group">
+              <div className="w-full max-w-[260px] aspect-square bg-white rounded-2xl flex items-center justify-center p-3 shadow-xl group-hover:scale-[1.02] transition-transform">
+                <img
+                  src={`https://img.vietqr.io/image/${DEFAULT_BANK.BANK_ID}-${DEFAULT_BANK.ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent((teamName || 'TEAM') + ' LE PHI')}&accountName=${encodeURIComponent(DEFAULT_BANK.ACCOUNT_NAME)}`}
+                  alt="VietQR"
+                  className="w-full h-full object-contain rounded-xl"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+                <div style={{ display: 'none' }} className="w-full h-full items-center justify-center">
+                  <QrCode className="w-20 h-20 text-gray-400" />
+                </div>
               </div>
               <div>
-                <p className="text-white font-semibold text-sm">Chuyển khoản</p>
-                <p className="text-xs text-gray-500 mt-0.5">Quét mã QR ngân hàng</p>
+                <p className="text-sm text-gray-400 mt-1">Quét mã qua ứng dụng ngân hàng</p>
               </div>
-              <div className="text-xs font-mono bg-navy/80 border border-navy-light px-2 py-1 rounded text-gray-400 w-full truncate">
+              <div className="text-sm font-mono font-bold bg-navy/80 border border-navy-light px-4 py-2.5 rounded-lg text-emerald-400 w-full text-center">
                 ND: {teamName} LE PHI
               </div>
             </div>

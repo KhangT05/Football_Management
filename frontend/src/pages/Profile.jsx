@@ -2,7 +2,7 @@ import { User, Mail, Shield, Camera, Save, Phone, Loader2, CheckCircle2, Edit2, 
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useProfileStore from '../store/profileStore';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { userApi } from '../api';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -11,6 +11,8 @@ const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-ligh
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
   const toast = useToastStore();
+  const fileInputRef = useRef(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   
   const { 
     isEditing, isFetching, isSaving, saveSuccess, formData,
@@ -85,6 +87,33 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    
+    // Check size limit (e.g. 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước ảnh quá lớn (tối đa 5MB).');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const res = await userApi.updateAvatar(user.id, file);
+      if (res.data) {
+        setUser({ ...user, avatar_url: res.data.avatar_url || res.data.url || res.url });
+        toast.success('Cập nhật ảnh đại diện thành công!');
+      }
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast.error(error?.response?.data?.message || 'Lỗi khi tải lên ảnh đại diện.');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const getRoleLabel = (role) => {
     const roles = {
       admin: { label: 'Quản trị viên', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/30' },
@@ -114,13 +143,28 @@ export default function Profile() {
             <div className="bg-navy/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 md:p-8 flex flex-col items-center text-center shadow-2xl shadow-black/40 animate-slide-up">
               <div className="relative mb-6 group">
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[6px] border-navy overflow-hidden bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-blue-900/30 transition-transform duration-500 group-hover:scale-105 group-hover:shadow-blue-500/20">
-                  {isFetching ? (
-                    <div className="w-full h-full skeleton rounded-full" />
+                  {isFetching || isUploadingAvatar ? (
+                    <div className="w-full h-full skeleton rounded-full flex items-center justify-center">
+                      {isUploadingAvatar && <Loader2 className="w-8 h-8 text-white animate-spin absolute" />}
+                    </div>
+                  ) : user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-5xl md:text-6xl font-black text-white">{userInitial}</span>
                   )}
                 </div>
-                <button className="absolute bottom-1 right-1 md:bottom-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-navy hover:bg-navy-light text-gray-300 hover:text-white rounded-full flex items-center justify-center border-4 border-navy shadow-lg transition-colors group-hover:scale-110">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleAvatarUpload} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar || isFetching}
+                  className="absolute bottom-1 right-1 md:bottom-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-navy hover:bg-navy-light text-gray-300 hover:text-white rounded-full flex items-center justify-center border-4 border-navy shadow-lg transition-colors group-hover:scale-110 disabled:opacity-50"
+                >
                   <Camera className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>

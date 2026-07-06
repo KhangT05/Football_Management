@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Shield } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { roleApi } from '../../api';
 
 export default function UserFormModal({ mode, initialData, isSaving, onSave, onClose }) {
@@ -62,7 +63,7 @@ export default function UserFormModal({ mode, initialData, isSaving, onSave, onC
     onSave(form);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       
@@ -192,6 +193,7 @@ export default function UserFormModal({ mode, initialData, isSaving, onSave, onC
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

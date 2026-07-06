@@ -193,7 +193,7 @@ export default function ManageTeams() {
 
     const payload = {
       name: playerCrud.form.name.trim(),
-      email: playerCrud.form.email?.trim() || undefined,
+      user_email: playerCrud.form.email?.trim() || undefined,
       jersey_number: parseInt(playerCrud.form.number),
       position: playerCrud.form.position,
       role: playerCrud.form.role,

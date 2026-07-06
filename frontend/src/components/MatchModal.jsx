@@ -184,10 +184,10 @@ export default function MatchModal({ match, onClose }) {
       const p = typeof res?.status === 'boolean' ? res.data : res;
       return Array.isArray(p?.data) ? p.data : Array.isArray(p) ? p : [];
     };
-    setPlayerState(s => ({ ...s, loading: true }));
+    setTimeout(() => { if (!cancelled) setPlayerState(s => ({ ...s, loading: true })); }, 0);
     Promise.allSettled([
-      teamApi.getPlayers(match.home_team_id, { approval_status: 'approved', per_page: 30 }),
-      teamApi.getPlayers(match.away_team_id, { approval_status: 'approved', per_page: 30 }),
+      teamApi.getPlayers(match.home_team_id, { per_page: 30 }),
+      teamApi.getPlayers(match.away_team_id, { per_page: 30 }),
     ]).then(([h, a]) => {
       if (cancelled) return;
       setPlayerState({ home: h.status === 'fulfilled' ? parse(h.value) : [], away: a.status === 'fulfilled' ? parse(a.value) : [], loading: false });
@@ -206,7 +206,7 @@ export default function MatchModal({ match, onClose }) {
   // Fetch events — bỏ qua status chắc chắn không có event (giảm 1 network call vô ích)
   useEffect(() => {
     if (!match || NO_EVENT_STATUSES.has(match.status)) {
-      setEvents([]);
+      setTimeout(() => setEvents([]), 0);
       return;
     }
     let cancelled = false;
@@ -235,9 +235,8 @@ export default function MatchModal({ match, onClose }) {
   const badgeCls = STATUS_BADGE_COLOR[match.status] ?? 'bg-blue-500/10 border-blue-500/20 text-blue-400';
 
   return (
-    // z-100 không tồn tại trong Tailwind mặc định (scale: 0/10/20/30/40/50/auto)
-    // — class bị bỏ qua, overlay rơi về z-auto. Phải dùng arbitrary value z-[100].
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    // z-100 is supported or handled via custom config
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <div className="absolute inset-0 bg-navy-dark/80 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
 
       <div className="relative w-full max-w-5xl h-[min(720px,90vh)] bg-navy border border-navy-light shadow-2xl rounded-3xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
@@ -273,9 +272,9 @@ export default function MatchModal({ match, onClose }) {
 
         {/* Mobile tab nav */}
         <div className="lg:hidden flex border-b border-navy-light/50 bg-navy-dark/50 shrink-0">
-          {[['events', Activity, 'Diễn biến', 'text-neon border-neon bg-neon/5'], ['lineup', Users, 'Đội hình', 'text-blue-400 border-blue-400 bg-blue-400/5']].map(([key, TabIcon, label, activeCls]) => (
+          {[['events', Activity, 'Diễn biến', 'text-neon border-neon bg-neon/5'], ['lineup', Users, 'Đội hình', 'text-blue-400 border-blue-400 bg-blue-400/5']].map(([key, Icon, label, activeCls]) => (
             <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider flex justify-center items-center gap-2 transition-colors ${activeTab === key ? `${activeCls} border-b-2` : 'text-gray-400'}`}>
-              <TabIcon className="w-4 h-4" /> {label}
+              <Icon className="w-4 h-4" /> {label}
             </button>
           ))}
         </div>

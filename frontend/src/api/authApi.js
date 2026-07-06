@@ -68,6 +68,22 @@ export const authApi = {
     axiosClient.post('/auth/logout'),
 
   /**
+   * POST /auth/forgot-password
+   * Gửi email khôi phục mật khẩu.
+   * @param {{ email: string }} data
+   */
+  forgotPassword: (data) =>
+    axiosClient.post('/auth/forgot-password', data),
+
+  /**
+   * POST /auth/reset-password
+   * Đặt lại mật khẩu mới thông qua token.
+   * @param {{ token: string, newPassword: string }} data
+   */
+  resetPassword: (data) =>
+    axiosClient.post('/auth/reset-password', data),
+
+  /**
    * OAuth social login — backend chưa implement, stub tránh crash UI.
    * @param {'google'|'github'} provider
    */

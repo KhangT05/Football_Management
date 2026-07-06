@@ -5,9 +5,9 @@ export const parseApiError = (err, defaultMsg = 'Có lỗi xảy ra') => {
   if (!err?.response?.data) return defaultMsg;
 
   const data = err.response.data;
-  const errors = data?.errors || data?.data?.body || data?.data;
+  const errors = data?.details || data?.errors || data?.data?.body || data?.data;
   
-  // If we have detailed validation errors (e.g., from Laravel or NestJS formatted)
+  // If we have detailed validation errors (e.g., from Laravel, tsoa or NestJS formatted)
   if (errors && typeof errors === 'object') {
     const errorMessages = [];
     for (const key in errors) {
@@ -49,6 +49,7 @@ function translateValidationError(field, msg) {
   const fieldNames = {
     name: 'Tên',
     email: 'Email',
+    user_email: 'Email tài khoản',
     password: 'Mật khẩu',
     number: 'Số áo',
     position: 'Vị trí',

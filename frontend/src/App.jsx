@@ -23,6 +23,8 @@ const Register = lazy(() => import("./pages/Register"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ForbiddenPage = lazy(() => import("./pages/ForbiddenPage"));
 const PaymentResultPage = lazy(() => import("./pages/PaymentResultPage"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
@@ -131,6 +133,8 @@ function App() {
           {/* Auth Routes */}
           <Route path="/quan-ly-giai-dau/dang-nhap" element={<Login />} />
           <Route path="/dang-ky" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Admin Routes – bắt buộc đã đăng nhập + có role admin */}
           <Route path="/quan-ly-giai-dau" element={

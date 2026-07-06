@@ -64,4 +64,20 @@ export const userApi = {
   softDelete: (id) => {
     return axiosClient.delete(`/users/${id}`);
   },
+
+  /**
+   * Cập nhật ảnh đại diện (avatar) của user
+   * PATCH /users/{id}/avatar
+   * @param {number} id
+   * @param {File} file
+   */
+  updateAvatar: (id, file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return axiosClient.patch(`/users/${id}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

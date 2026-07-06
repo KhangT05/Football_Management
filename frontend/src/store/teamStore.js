@@ -154,7 +154,7 @@ const useTeamStore = create((set, get) => ({
     try {
       const [teamRes, playersRes, matchesRes] = await Promise.all([
         teamApi.getTeamById(teamId),
-        teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 50 }).catch(() => null),
+        teamApi.getPlayers(teamId, { per_page: 50 }).catch(() => null),
         matchApi.getTeamSchedule(null, teamId, { per_page: 20 }).catch(() => null)
       ]);
 
@@ -240,7 +240,7 @@ const useTeamStore = create((set, get) => ({
   /**
    * Lấy danh sách cầu thủ của đội (có cache)
    * @param {number} teamId
-   * @param {{ approval_status?, position?, per_page?, force? }} params
+   * @param {{ position?, per_page?, force? }} params
    */
   fetchPlayers: async (teamId, params = {}) => {
     const { force = false, ...queryParams } = params;
@@ -284,15 +284,17 @@ const useTeamStore = create((set, get) => ({
    * @param {object} data
    */
   addNewPlayerToTeam: async (teamId, data) => {
+    // Bước 1: Tìm User hoặc Tạo User mới
     let userId = null;
+    const email = data.user_email || data.email;
 
-    if (data.email) {
+    if (email) {
       // Tìm user theo email
       try {
-        const searchRes = await userApi.getAll({ q: data.email });
+        const searchRes = await userApi.getAll({ q: email });
         const payload = typeof searchRes?.status === 'boolean' ? searchRes.data : searchRes;
         const users = Array.isArray(payload?.data) ? payload.data : [];
-        const exactUser = users.find(u => u.email === data.email);
+        const exactUser = users.find(u => u.email === email);
         if (exactUser) {
           userId = exactUser.id;
         }
@@ -303,7 +305,7 @@ const useTeamStore = create((set, get) => ({
 
     if (!userId) {
       // Tạo user mới
-      const dummyEmail = data.email || `player_${Date.now()}@temp.local`;
+      const dummyEmail = email || `player_${Date.now()}@temp.local`;
       const createRes = await userApi.create({
         name: data.name,
         email: dummyEmail,

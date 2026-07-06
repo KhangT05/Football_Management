@@ -34,7 +34,6 @@ export const normalizePlayer = (tp) => ({
     position: tp.position ?? 'MID',
     goals: tp.goals_scored ?? tp.goals ?? 0,
     status: tp.status ?? 'active',
-    approval_status: tp.approval_status ?? 'approved',
     role: tp.role ?? 'player',
     avatar: tp.player?.avatar ?? null,
 });

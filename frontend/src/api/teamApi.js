@@ -89,7 +89,7 @@ export const teamApi = {
    * Lấy danh sách cầu thủ trong đội
    * GET /players/{teamId}/team-players  (player.controller.ts)
    * @param {number} teamId
-   * @param {{ page?, per_page?, approval_status?, position?, status? }} params
+   * @param {{ page?, per_page?, position?, status? }} params
    */
   getPlayers: (teamId, params = {}) => {
     return axiosClient.get(`/players/${teamId}/team-players`, { params });

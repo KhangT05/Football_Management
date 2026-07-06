@@ -43,6 +43,11 @@ export const paymentApi = {
    *
    * @param {number} seasonTeamId
    */
+  getPaymentStatus: (seasonTeamId) => {
+    return axiosClient.get('/payments/status', { params: { season_team_id: seasonTeamId } });
+  },
+
+  /** Alias cho getPaymentStatus */
   getStatus: (seasonTeamId) => {
     return axiosClient.get('/payments/status', { params: { season_team_id: seasonTeamId } });
   },

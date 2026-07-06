@@ -7,7 +7,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, userApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
+import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -68,10 +68,7 @@ const extractFilename = (contentDisposition, fallback) => {
 };
 
 // ─── Parse helpers ─────────────────────────────────────────
-const parseSingle = (res) => {
-  const payload = (typeof res?.status === 'boolean') ? res.data : res;
-  return Array.isArray(payload?.data) ? payload.data[0] : (payload?.data ?? payload);
-};
+
 
 const parseList = (res) => {
   const payload = (typeof res?.status === 'boolean') ? res.data : res;
@@ -92,7 +89,6 @@ const normalizePlayer = (tp) => ({
   position: tp.position ?? 'MID',
   goals: tp.goals_scored ?? tp.goals ?? 0,
   status: tp.status ?? 'active',
-  approval_status: tp.approval_status ?? 'approved',
   role: tp.role ?? 'player',
   avatar: tp.player?.user?.avatar ?? tp.player?.avatar ?? null,
 });
@@ -916,7 +912,6 @@ export default function MyTeam() {
                                     <p className="text-xs font-medium text-gray-500 mt-0.5">
                                       {player.role === 'captain' && '⭐ Đội trưởng'}
                                       {player.role === 'vice_captain' && '🔹 Phó đội trưởng'}
-                                      {player.approval_status === 'pending' && <span className="text-amber-400 ml-1">• Chờ duyệt</span>}
                                     </p>
                                   </div>
                                 </div>
@@ -1048,8 +1043,6 @@ export default function MyTeam() {
                     return [
                       { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
                       { label: 'Bàn thắng', value: totalGoals, color: 'text-neon', bg: 'bg-neon/5 border-neon/20' },
-                      { label: 'Đã duyệt', value: players.filter(p => p.approval_status === 'approved').length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/20' },
-                      { label: 'Chờ duyệt', value: players.filter(p => p.approval_status === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-400/5 border-amber-400/20' },
                       { label: 'Thủ môn', value: byPos['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
                       { label: 'Hậu vệ', value: byPos['DEF'] || 0, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/30' },
                       { label: 'Tiền vệ', value: byPos['MID'] || 0, color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
