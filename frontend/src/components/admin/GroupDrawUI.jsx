@@ -33,7 +33,7 @@ function extractTotalCount(payload) {
 export default function GroupDrawUI({ seasonId }) {
   const toast = useToastStore();
 
-  const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({ 
+  const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({
     teams: state.teams,
     fetchAll: state.fetchAll
   })));
@@ -55,6 +55,10 @@ export default function GroupDrawUI({ seasonId }) {
   const [deletingGroupId, setDeletingGroupId] = useState(null);
   const [draggedTeam, setDraggedTeam] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
+  // NEW: highlight đúng 1 dòng team đang là drop-target, để phân biệt trực
+  // quan với "thả vào vùng trống của cả bảng" (dragOverGroup). Khi cả 2
+  // cùng active, dragOverTeamId ưu tiên hiển thị (xem className bên dưới).
+  const [dragOverTeamId, setDragOverTeamId] = useState(null);
 
   const [teamsPerGroup, setTeamsPerGroup] = useState(4);
   const [numPots, setNumPots] = useState(4);
@@ -273,6 +277,24 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   // ── Drag & Drop Handlers ──
+  //
+  // Có 2 loại thao tác kéo-thả khác nhau, PHẢI phân biệt rõ:
+  //
+  // 1) Thả vào 1 ĐỘI cụ thể ở bảng khác (handleTeamDrop) -> SWAP 1-1.
+  //    Sĩ số 2 bảng không đổi -> luôn được phép, kể cả khi 2 bảng đang
+  //    bằng quân số.
+  //
+  // 2) Thả vào VÙNG TRỐNG của cả bảng, không nhắm vào đội nào (handleDrop)
+  //    -> MOVE (chuyển hẳn 1 đội sang bảng khác). Việc này làm bảng nguồn
+  //    -1, bảng đích +1 -> CHỈ hợp lệ khi 2 bảng đang lệch quân số (dùng để
+  //    cân lại). Nếu 2 bảng đang bằng nhau, move sẽ tạo ra đúng bug trong
+  //    ảnh (3/2 và 1/2) nên phải chặn và bắt buộc người dùng thả trúng vào
+  //    1 đội để trigger swap thay vì move.
+  //
+  // Lưu ý về "thả vào giữa 2 dòng": vì các <tr> xếp sát nhau không có
+  // khoảng cách thật trong DOM, con trỏ giữa 2 dòng luôn nằm trên rìa của
+  // 1 trong 2 <tr> đó -> event luôn rơi vào (1), không lọt xuống (2).
+  // Khoảng trống thật của (2) chỉ tồn tại dưới dòng cuối/bảng rỗng.
   const handleDragStart = (e, stId, sourceGroupId) => {
     e.dataTransfer.setData('stId', stId);
     e.dataTransfer.setData('sourceGroupId', sourceGroupId);
@@ -293,60 +315,155 @@ export default function GroupDrawUI({ seasonId }) {
     }
   };
 
+  // Thả vào vùng trống của cả bảng -> MOVE. Chặn nếu 2 bảng đang bằng
+  // quân số, vì move trong trường hợp đó luôn làm lệch sĩ số 1 bên.
   const handleDrop = (e, targetGroupId) => {
     e.preventDefault();
     setDragOverGroup(null);
     setDraggedTeam(null);
-    
+
     const stId = Number(e.dataTransfer.getData('stId'));
     const sourceGroupId = Number(e.dataTransfer.getData('sourceGroupId'));
-    
+
     if (!stId || sourceGroupId === targetGroupId) return;
+
+    const sourceGroup = groups.find(g => g.id === sourceGroupId);
+    const targetGroup = groups.find(g => g.id === targetGroupId);
+    if (!sourceGroup || !targetGroup) return;
+
+    if (sourceGroup.season_teams.length === targetGroup.season_teams.length) {
+      toast.error(
+        'Hai bảng đang bằng số đội — thả trúng vào 1 đội trong bảng đích để hoán đổi vị trí (swap) thay vì di chuyển.'
+      );
+      return;
+    }
+
+    setGroups(prevGroups => {
+      const newGroups = JSON.parse(JSON.stringify(prevGroups));
+      const sg = newGroups.find(g => g.id === sourceGroupId);
+      const tg = newGroups.find(g => g.id === targetGroupId);
+
+      if (!sg || !tg) return prevGroups;
+
+      const teamIndex = sg.season_teams.findIndex(st => st.id === stId);
+      if (teamIndex === -1) return prevGroups;
+
+      const [teamToMove] = sg.season_teams.splice(teamIndex, 1);
+      tg.season_teams.push(teamToMove);
+
+      return newGroups;
+    });
+  };
+
+  // Thả trúng vào 1 đội cụ thể -> SWAP 1-1. Luôn cho phép vì không đổi
+  // sĩ số 2 bên. stopPropagation để container's onDrop (handleDrop) không
+  // chạy tiếp và hiểu nhầm thành move.
+  const handleTeamDragOver = (e, stId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverTeamId !== stId) setDragOverTeamId(stId);
+  };
+
+  const handleTeamDragLeave = (e) => {
+    e.stopPropagation();
+    setDragOverTeamId(null);
+  };
+
+  const handleTeamDrop = (e, targetGroupId, targetStId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverGroup(null);
+    setDragOverTeamId(null);
+    setDraggedTeam(null);
+
+    const stId = Number(e.dataTransfer.getData('stId'));
+    const sourceGroupId = Number(e.dataTransfer.getData('sourceGroupId'));
+
+    if (!stId || stId === targetStId) return;
+    if (sourceGroupId === targetGroupId) return; // thả vào chính bảng của nó — bỏ qua
 
     setGroups(prevGroups => {
       const newGroups = JSON.parse(JSON.stringify(prevGroups));
       const sourceGroup = newGroups.find(g => g.id === sourceGroupId);
       const targetGroup = newGroups.find(g => g.id === targetGroupId);
-      
       if (!sourceGroup || !targetGroup) return prevGroups;
 
-      const teamIndex = sourceGroup.season_teams.findIndex(st => st.id === stId);
-      if (teamIndex === -1) return prevGroups;
+      const sourceIdx = sourceGroup.season_teams.findIndex(st => st.id === stId);
+      const targetIdx = targetGroup.season_teams.findIndex(st => st.id === targetStId);
+      if (sourceIdx === -1 || targetIdx === -1) return prevGroups;
 
-      const [teamToMove] = sourceGroup.season_teams.splice(teamIndex, 1);
-      targetGroup.season_teams.push(teamToMove);
-      
+      // Đổi chỗ 2 đội cho nhau tại đúng vị trí — sĩ số 2 bảng giữ nguyên
+      const tmp = sourceGroup.season_teams[sourceIdx];
+      sourceGroup.season_teams[sourceIdx] = targetGroup.season_teams[targetIdx];
+      targetGroup.season_teams[targetIdx] = tmp;
+
       return newGroups;
     });
   };
 
   const handleSaveChanges = async () => {
     if (isDrawing || isCreatingGroups) return;
-    
-    // Find all teams that have changed groups
-    const changes = [];
+
+    const originalGroupOf = new Map();
+    originalGroups.forEach(g => g.season_teams.forEach(st => originalGroupOf.set(st.id, g.id)));
+
+    // Tất cả đội đã đổi bảng so với bản gốc
+    const moves = [];
     groups.forEach(currentGroup => {
       currentGroup.season_teams.forEach(st => {
-        const originalGroup = originalGroups.find(og => og.season_teams.some(ost => ost.id === st.id));
-        if (originalGroup && originalGroup.id !== currentGroup.id) {
-          changes.push({ teamId: st.id, targetGroupId: currentGroup.id });
+        const originalGroupId = originalGroupOf.get(st.id);
+        if (originalGroupId !== undefined && originalGroupId !== currentGroup.id) {
+          moves.push({ teamId: st.id, fromGroupId: originalGroupId, toGroupId: currentGroup.id });
         }
       });
     });
 
-    if (changes.length === 0) return;
+    if (moves.length === 0) return;
+
+    // FIX: ghép các cặp "A đi G1->G2 và B đi G2->G1" thành 1 lệnh swap thật
+    // (seasonTeamApi.swapTeams) thay vì 2 lệnh assignGroup độc lập chạy
+    // song song. Lý do: assignGroup kiểm tra capacity dựa trên số đội đã
+    // COMMIT trong group đích tại thời điểm request đó chạy; 2 request
+    // song song cho 1 swap có thể đọc capacity trước khi lệnh kia commit,
+    // dẫn tới bị BE từ chối "group đã full" dù về bản chất sĩ số không đổi.
+    // swapTeams xử lý atomic trong 1 transaction, không đụng đến capacity
+    // nên luôn an toàn cho đúng loại thao tác đổi chỗ này.
+    const used = new Set();
+    const swapPairs = [];
+    for (let i = 0; i < moves.length; i++) {
+      const a = moves[i];
+      if (used.has(a.teamId)) continue;
+      const j = moves.findIndex((b, k) =>
+        k !== i && !used.has(b.teamId) &&
+        b.fromGroupId === a.toGroupId && b.toGroupId === a.fromGroupId
+      );
+      if (j !== -1) {
+        swapPairs.push([a.teamId, moves[j].teamId]);
+        used.add(a.teamId);
+        used.add(moves[j].teamId);
+      }
+    }
+    const singleMoves = moves.filter(m => !used.has(m.teamId));
 
     setIsDrawing(true); // Reuse isDrawing state to show loading
     try {
-      // Execute all changes
-      await Promise.all(changes.map(change => 
-        seasonTeamApi.assignGroup(change.teamId, { group_id: change.targetGroupId })
-      ));
+      // groupApi.swapTeams / groupApi.assignTeam (PUT /groups/swap, /groups/assign)
+      // — field name khớp đúng SwapTeamsBody { season_team_id_a, season_team_id_b }
+      // và AssignTeamToGroupBody { season_team_id, group_id } phía BE.
+      for (const [teamAId, teamBId] of swapPairs) {
+        await groupApi.swapTeams({ season_team_id_a: teamAId, season_team_id_b: teamBId });
+      }
+      // Move đơn lẻ còn lại (trường hợp cân lại quân số giữa 2 bảng lệch)
+      if (singleMoves.length > 0) {
+        await Promise.all(
+          singleMoves.map(m => groupApi.assignTeam({ season_team_id: m.teamId, group_id: m.toGroupId }))
+        );
+      }
       toast.success('Đã lưu thành công các thay đổi bảng đấu!');
       loadData();
     } catch (error) {
       console.error('[GroupDrawUI] save changes failed:', error);
-      toast.error('Có lỗi xảy ra khi lưu thay đổi bảng đấu.');
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi lưu thay đổi bảng đấu.');
     } finally {
       setIsDrawing(false);
     }
@@ -564,8 +681,8 @@ export default function GroupDrawUI({ seasonId }) {
                   </button>
                 </div>
               </div>
-              <div 
-                className={`p-2 transition-colors min-h-[80px] ${dragOverGroup === group.id ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded-b-2xl' : ''}`}
+              <div
+                className={`p-2 transition-colors min-h-[80px] ${dragOverGroup === group.id && dragOverTeamId === null ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded-b-2xl' : ''}`}
                 onDragOver={(e) => handleDragOver(e, group.id)}
                 onDragLeave={(e) => handleDragLeave(e, group.id)}
                 onDrop={(e) => handleDrop(e, group.id)}
@@ -579,12 +696,17 @@ export default function GroupDrawUI({ seasonId }) {
                   <table className="w-full text-left text-sm">
                     <tbody>
                       {group.season_teams.map((st, idx) => (
-                        <tr 
-                          key={st.id} 
+                        <tr
+                          key={st.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, st.id, group.id)}
-                          onDragEnd={() => setDraggedTeam(null)}
-                          className={`border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors cursor-grab active:cursor-grabbing ${draggedTeam === st.id ? 'opacity-50' : ''}`}
+                          onDragEnd={() => { setDraggedTeam(null); setDragOverTeamId(null); }}
+                          onDragOver={(e) => handleTeamDragOver(e, st.id)}
+                          onDragLeave={handleTeamDragLeave}
+                          onDrop={(e) => handleTeamDrop(e, group.id, st.id)}
+                          className={`border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors cursor-grab active:cursor-grabbing
+                            ${draggedTeam === st.id ? 'opacity-50' : ''}
+                            ${dragOverTeamId === st.id ? 'bg-blue-500/25 ring-1 ring-inset ring-blue-400' : ''}`}
                         >
                           <td className="py-2.5 pl-3 pr-2 text-gray-500 font-mono text-xs w-8">{idx + 1}</td>
                           <td className="py-2.5 pr-3 font-bold text-white">
@@ -609,28 +731,31 @@ export default function GroupDrawUI({ seasonId }) {
       )}
 
       {hasChanges && (
-        <div className="sticky bottom-4 z-10 flex justify-end mt-6 bg-navy-dark/90 backdrop-blur-sm p-4 rounded-2xl border border-blue-500/30 shadow-2xl shadow-black">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-amber-400">Có thay đổi chưa được lưu</span>
-            <button
-              onClick={() => {
-                setGroups(JSON.parse(JSON.stringify(originalGroups)));
-                toast.success('Đã hủy các thay đổi');
-              }}
-              disabled={isDrawing || isCreatingGroups || loading}
-              className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-400 hover:text-white bg-transparent border border-navy-light hover:bg-navy-light transition-all disabled:opacity-50"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleSaveChanges}
-              disabled={isDrawing || isCreatingGroups || loading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
-              Lưu thay đổi bảng đấu
-            </button>
-          </div>
+        // FIX: trước đây là 1 thanh full-width (flex justify-end trên div
+        // rộng hết container) nên trông như che gần hết khu vực bên dưới dù
+        // nội dung thật chỉ gói gọn bên phải. Giờ chuyển thành 1 card nhỏ
+        // gọn, fixed ở góc phải-dưới màn hình (giống toast/snackbar), không
+        // chiếm ngang layout, thu nhỏ padding/chữ.
+        <div className="fixed bottom-4 right-4 z-20 flex items-center gap-3 bg-navy-dark/95 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-blue-500/30 shadow-xl shadow-black/40">
+          <span className="text-xs font-bold text-amber-400 whitespace-nowrap">Chưa lưu thay đổi</span>
+          <button
+            onClick={() => {
+              setGroups(JSON.parse(JSON.stringify(originalGroups)));
+              toast.success('Đã hủy các thay đổi');
+            }}
+            disabled={isDrawing || isCreatingGroups || loading}
+            className="px-3 py-1.5 rounded-lg font-bold text-xs text-gray-400 hover:text-white bg-transparent border border-navy-light hover:bg-navy-light transition-all disabled:opacity-50"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSaveChanges}
+            disabled={isDrawing || isCreatingGroups || loading}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all shadow-md shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDrawing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListChecks className="w-3.5 h-3.5" />}
+            Lưu thay đổi
+          </button>
         </div>
       )}
     </div>
