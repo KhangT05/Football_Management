@@ -43,7 +43,7 @@ export default function ForgotPassword() {
       {/* Header Utilities */}
       <div className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center">
         <Link 
-          to="/login" 
+          to="/dang-nhap" 
           className="flex items-center gap-2 font-semibold px-4 py-2 rounded-xl border backdrop-blur-md shadow-lg transition-all hover:opacity-80"
           style={{ 
             backgroundColor: 'var(--color-bg-elevated)', 

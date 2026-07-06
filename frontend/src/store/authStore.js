@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
+import { userApi } from '../api/userApi';
 import axiosClient, { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
 
 /**
@@ -15,6 +16,31 @@ function getErrorMessage(error, fallback) {
   if (status === 429) return 'Bạn đã thử quá nhiều lần. Vui lòng chờ 15 phút và thử lại.';
   if (status === 422) return data?.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
   return rawMsg || fallback;
+}
+
+/**
+ * Helper để lấy full profile (kèm phone, avatar) và gán roles.
+ */
+async function enrichUserProfile(baseProfile) {
+  if (!baseProfile) return null;
+  let fullProfile = { ...baseProfile };
+  
+  try {
+    const res = await userApi.getUserById(fullProfile.id);
+    const data = res.data ?? res;
+    fullProfile = { ...fullProfile, ...data };
+  } catch (err) {
+    console.warn('[authStore] Không thể lấy full profile:', err);
+  }
+  
+  try {
+    await axiosClient.get('/roles', { params: { per_page: 1 } });
+    fullProfile.roles = ['admin'];
+  } catch {
+    fullProfile.roles = ['user'];
+  }
+  
+  return fullProfile;
 }
 
 /**
@@ -59,16 +85,7 @@ const useAuthStore = create((set) => ({
       try {
         const profileRes = await authApi.getProfile();
         userProfile = profileRes.data;
-        
-        if (userProfile) {
-          try {
-            await axiosClient.get('/roles', { params: { per_page: 1 } });
-            userProfile.roles = ['admin'];
-          } catch {
-            userProfile.roles = ['user'];
-          }
-        }
-        userProfile = profileRes.data; // { id, name, email, roles }
+        userProfile = await enrichUserProfile(userProfile);
       } catch (profileErr) {
         console.warn('[authStore] Không lấy được profile:', profileErr);
       }
@@ -96,7 +113,8 @@ const useAuthStore = create((set) => ({
 
         try {
           const profileRes = await authApi.getProfile();
-          set({ user: profileRes.data, isAuthenticated: true, isInitialized: true });
+          const userProfile = await enrichUserProfile(profileRes.data);
+          set({ user: userProfile, isAuthenticated: true, isInitialized: true });
         } catch {
           set({ isAuthenticated: true, isInitialized: true });
         }
@@ -127,15 +145,6 @@ const useAuthStore = create((set) => ({
 
   // ── initializeAuth ───────────────────────────────────────
   // Khôi phục session khi F5 / mở tab mới.
-  //
-  // Flow:
-  //   1. accessToken in-memory còn → đã init (StrictMode double-call) → skip
-  //   2. Không có csrf_token → chưa login hoặc đã logout → stop
-  //   3. Gọi refreshTokens() — single-flight từ axiosClient, dedupe nếu
-  //      interceptor 401 cũng đang refresh đồng thời
-  //   4. GET /auth/me lấy profile + roles
-  //
-  // LUÔN set isInitialized = true ở cuối (kể cả khi fail).
   initializeAuth: async () => {
     if (getAccessToken()) {
       set({ isInitialized: true, isAuthenticated: true });
@@ -150,23 +159,15 @@ const useAuthStore = create((set) => ({
 
     set({ loading: true });
     try {
-      // single-flight — không race với interceptor 401 refresh
       await refreshTokens();
 
       const profileRes = await authApi.getProfile();
-      const userProfile = profileRes?.data ?? profileRes;
+      let userProfile = profileRes?.data ?? profileRes;
 
-      if (userProfile) {
-        try {
-          await axiosClient.get('/roles', { params: { per_page: 1 } });
-          userProfile.roles = ['admin'];
-        } catch {
-          userProfile.roles = ['user'];
-        }
-      }
+      userProfile = await enrichUserProfile(userProfile);
 
       set({
-        user: profileRes.data,
+        user: userProfile,
         isAuthenticated: true,
         isInitialized: true,
         loading: false,

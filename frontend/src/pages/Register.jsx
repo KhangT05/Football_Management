@@ -51,7 +51,7 @@ export default function Register() {
     if (result.success) {
       setIsSuccess(true);
       setTimeout(() => {
-        navigate('/quan-ly-giai-dau/dang-nhap');
+        navigate('/dang-nhap');
       }, 2000);
     }
   };
@@ -275,7 +275,7 @@ export default function Register() {
             <div className="flex items-center justify-center pt-2">
               <p className="text-sm text-gray-400">
                 Đã có tài khoản?{' '}
-                <Link to="/quan-ly-giai-dau/dang-nhap" className="font-semibold text-neon hover:underline transition-colors">
+                <Link to="/dang-nhap" className="font-semibold text-neon hover:underline transition-colors">
                   Đăng nhập ngay
                 </Link>
               </p>

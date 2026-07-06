@@ -26,7 +26,7 @@ export default function AdminRoute({ children }) {
   if (!isAuthenticated) {
     return (
       <Navigate
-        to="/quan-ly-giai-dau/dang-nhap"
+        to="/dang-nhap"
         state={{ from: location.pathname }}
         replace
       />

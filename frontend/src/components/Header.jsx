@@ -88,7 +88,7 @@ export default function Header() {
                   Đăng Ký
                 </Link>
                 <Link
-                  to="/quan-ly-giai-dau/dang-nhap"
+                  to="/dang-nhap"
                   className="bg-neon/10 border border-neon text-neon px-5 py-2.5 rounded-lg font-bold hover:bg-neon hover:text-navy transition-all duration-300 text-sm uppercase tracking-wider shadow-[0_0_10px_rgba(57,255,20,0.2)]"
                 >
                   Đăng Nhập
@@ -237,7 +237,7 @@ export default function Header() {
                   <User className="w-4 h-4" /> Đăng Ký Tài Khoản
                 </Link>
                 <Link
-                  to="/quan-ly-giai-dau/dang-nhap"
+                  to="/dang-nhap"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neon/10 border border-neon text-neon font-bold text-sm hover:bg-neon hover:text-navy transition-colors"
                 >

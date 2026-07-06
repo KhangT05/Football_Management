@@ -80,4 +80,14 @@ export const userApi = {
       },
     });
   },
+
+  /**
+   * Cập nhật mật khẩu cho user
+   * PATCH /users/{id}/password
+   * @param {number} id
+   * @param {{ currentPassword, newPassword }} data
+   */
+  updatePassword: (id, data) => {
+    return axiosClient.patch(`/users/${id}/password`, data);
+  },
 };

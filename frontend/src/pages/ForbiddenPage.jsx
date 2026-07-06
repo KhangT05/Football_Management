@@ -56,7 +56,7 @@ export default function ForbiddenPage() {
             Trang chủ
           </Link>
           <Link
-            to="/quan-ly-giai-dau/dang-nhap"
+            to="/dang-nhap"
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-navy-dark bg-red-500 hover:bg-red-400 transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
           >
             <LogIn className="w-4 h-4" />

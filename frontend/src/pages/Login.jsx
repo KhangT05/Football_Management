@@ -114,7 +114,7 @@ export default function Login() {
             <div className="space-y-1.5 group">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-semibold text-slate-200 group-focus-within:text-neon transition-colors">Mật khẩu</label>
-                <Link to="/forgot-password" className="font-medium text-xs text-neon hover:underline transition-colors">
+                <Link to="/quen-mau-khau" className="font-medium text-xs text-neon hover:underline transition-colors">
                   Quên mật khẩu?
                 </Link>
               </div>

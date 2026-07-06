@@ -13,6 +13,51 @@ export default function Profile() {
   const toast = useToastStore();
   const fileInputRef = useRef(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  // Thêm state cho form Đổi mật khẩu
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  
+  const handlePasswordChange = (e) => {
+    setPasswordForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setPasswordError('');
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!user?.id) return;
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordError('');
+    try {
+      await userApi.updatePassword(user.id, {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      setPasswordSuccess(true);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Đổi mật khẩu thành công! 🔒');
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setIsPasswordModalOpen(false);
+      }, 2000);
+    } catch (err) {
+      setPasswordError(err?.response?.data?.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
   
   const { 
     isEditing, isFetching, isSaving, saveSuccess, formData,
@@ -69,13 +114,14 @@ export default function Profile() {
         phone: formData.phone
       });
 
-      if (res.data) {
+      // The API returns the user object directly, so res IS the user object
+      if (res && res.id) {
         const updated = {
-          name: res.data.name || formData.name,
-          phone: res.data.phone || formData.phone,
+          name: res.name || formData.name,
+          phone: res.phone || formData.phone,
         };
         updateAfterSave(updated);
-        setUser({ ...user, ...res.data });
+        setUser({ ...user, ...res });
         toast.success('Cập nhật thông tin thành công! 🎉');
         setTimeout(() => setSaveSuccess(false), 3000);
       }
@@ -100,8 +146,8 @@ export default function Profile() {
     setIsUploadingAvatar(true);
     try {
       const res = await userApi.updateAvatar(user.id, file);
-      if (res.data) {
-        setUser({ ...user, avatar_url: res.data.avatar_url || res.data.url || res.url });
+      if (res && res.id) {
+        setUser({ ...user, avatar: res.avatar, avatar_url: res.avatar });
         toast.success('Cập nhật ảnh đại diện thành công!');
       }
     } catch (error) {
@@ -147,8 +193,8 @@ export default function Profile() {
                     <div className="w-full h-full skeleton rounded-full flex items-center justify-center">
                       {isUploadingAvatar && <Loader2 className="w-8 h-8 text-white animate-spin absolute" />}
                     </div>
-                  ) : user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (user?.avatar || user?.avatar_url) ? (
+                    <img src={user.avatar || user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-5xl md:text-6xl font-black text-white">{userInitial}</span>
                   )}
@@ -333,8 +379,17 @@ export default function Profile() {
                   <div className="flex-1"></div>
 
                   {/* Actions */}
-                  {isEditing && (
-                    <div className="pt-6 mt-6 border-t border-navy-light flex justify-end animate-fade-in">
+                  <div className="pt-6 mt-6 border-t border-navy-light flex justify-end items-center gap-4 animate-fade-in flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsPasswordModalOpen(true)}
+                      className="bg-navy-dark hover:bg-navy border border-navy-light text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 w-full sm:w-auto"
+                    >
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      Đổi mật khẩu
+                    </button>
+                    
+                    {isEditing && (
                       <button
                         type="submit"
                         disabled={isSaving}
@@ -343,16 +398,128 @@ export default function Profile() {
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                         Lưu thay đổi
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                 </form>
               </div>
             </div>
+            
           </div>
 
         </div>
       </div>
+
+      {/* Password Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-navy border border-navy-light rounded-3xl w-full max-w-xl shadow-2xl shadow-black relative overflow-hidden animate-slide-up">
+            <div className="p-6 md:p-8 relative z-10">
+              <button 
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Shield className="text-purple-500 w-7 h-7" />
+                  Bảo mật tài khoản
+                </h3>
+                <p className="text-gray-400 mt-2 text-sm">Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
+              </div>
+
+              {passwordError && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl flex items-center gap-3 text-red-500 animate-fade-in">
+                  <X className="w-5 h-5 shrink-0" />
+                  <p className="text-sm font-medium">{passwordError}</p>
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/50 rounded-xl flex items-center gap-3 text-green-500 animate-fade-in">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <p className="text-sm font-medium">Mật khẩu đã được cập nhật thành công!</p>
+                </div>
+              )}
+
+              <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mật khẩu hiện tại</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Nhập mật khẩu hiện tại"
+                      className={INPUT_CLASS}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* New Password */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mật khẩu mới</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                        placeholder="Nhập mật khẩu mới"
+                        className={INPUT_CLASS}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Xác nhận mật khẩu</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                        placeholder="Nhập lại mật khẩu mới"
+                        className={INPUT_CLASS}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 mt-6 border-t border-navy-light flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isUpdatingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-8 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 w-full sm:w-auto"
+                  >
+                    {isUpdatingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    Cập nhật mật khẩu
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

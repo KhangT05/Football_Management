@@ -52,7 +52,7 @@ export default function AdminLayout({ children }) {
   const handleLogout = async () => {
     setDropdownOpen(false);
     await logout();
-    navigate('/quan-ly-giai-dau/dang-nhap');
+    navigate('/dang-nhap');
   };
 
   return (
