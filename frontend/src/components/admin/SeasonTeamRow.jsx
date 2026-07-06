@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Edit, Trash2, RefreshCw, Shirt } from 'lucide-react';
+import { CheckCircle2, XCircle, Edit, Trash2, RefreshCw, Shirt, Trophy } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 
 /**
@@ -22,6 +22,14 @@ export default function SeasonTeamRow({
   onTransfer,
   onManageJerseys,
 }) {
+  // Tên giải đấu (tournament) mà season này thuộc về.
+  // API có thể trả theo 2 dạng tuỳ chỗ populate: st.season.tournament hoặc st.tournament — check cả 2 cho chắc.
+  const tournamentName = st.season?.tournament?.name ?? st.tournament?.name ?? null;
+
+  // Tên bảng — ưu tiên object group.name nếu BE đã join, fallback về group_id thô,
+  // còn không có gì (đội đá knockout, chưa/không chia bảng) thì hiện dấu gạch ngang.
+  const groupLabel = st.group?.name ?? (st.group_id != null ? `Bảng #${st.group_id}` : null);
+
   return (
     <tr className="hover:bg-navy-dark/70 transition-colors group">
       <td className="py-4 px-6 text-center text-gray-500 text-xs font-mono">#{st.id}</td>
@@ -34,9 +42,15 @@ export default function SeasonTeamRow({
               : <span className="text-sm font-black text-neon">{st.team?.name?.[0]}</span>
             }
           </div>
-          <div>
-            <p className="font-bold text-white text-sm">{st.team?.name || 'Unknown Team'}</p>
-            {st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
+          <div className="min-w-0">
+            <p className="font-bold text-white text-sm truncate">{st.team?.name || 'Unknown Team'}</p>
+            {tournamentName && (
+              <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5 truncate">
+                <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
+                {tournamentName}
+              </p>
+            )}
+            {!tournamentName && st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
           </div>
         </div>
       </td>
@@ -46,12 +60,12 @@ export default function SeasonTeamRow({
       </td>
 
       <td className="py-4 px-6 text-center">
-        {st.group_id ? (
+        {groupLabel ? (
           <span className="font-bold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/30 text-xs shadow-sm shadow-purple-500/10">
-            Bảng #{st.group_id}
+            {groupLabel}
           </span>
         ) : (
-          <span className="text-gray-500 text-xs">—</span>
+          <span className="text-gray-500 text-xs italic">Knockout</span>
         )}
       </td>
 

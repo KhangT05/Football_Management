@@ -36,9 +36,9 @@ export declare class MatchResultController extends Controller {
         match_id: number;
         created_at: Date;
         period: import("../generated/prisma/enums.js").MatchPeriod | null;
+        minute: number | null;
         player_id: number | null;
         team_id: number | null;
-        minute: number | null;
         added_minute: number | null;
     }>>;
     getMatchPlayerStats(id: number): Promise<(import("../generated/prisma/internal/prismaNamespace.js").PickEnumerable<import("../generated/prisma/models.js").MatchEventGroupByOutputType, ("type" | "player_id" | "team_id")[]> & {

@@ -89,15 +89,15 @@ export declare class SeasonController extends Controller {
             red_cards: number | null;
         };
         seasons: {
-            team_id: number;
-            team: {
-                name: string;
-            };
-            season_id: number;
             season: {
                 name: string;
                 start_date: Date | null;
             };
+            team: {
+                name: string;
+            };
+            team_id: number;
+            season_id: number;
             matches_played: number;
             goals_scored: number;
             assists: number;
@@ -118,13 +118,13 @@ export declare class SeasonController extends Controller {
         is_suspended: boolean;
     }>>;
     getSuspendedPlayers(id: number): Promise<({
-        player: {
-            id: number;
-            name: never;
-        };
         team: {
             id: number;
             name: string;
+        };
+        player: {
+            id: number;
+            name: never;
         };
     } & {
         id: number;
