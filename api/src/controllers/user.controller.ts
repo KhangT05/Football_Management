@@ -68,4 +68,14 @@ export class UserController extends Controller {
     if (!avatar) throw createAppError("VALIDATION_ERROR", "Thiếu file avatar");
     return this.service.updateAvatar(id, avatar);
   }
+
+  @Patch("{id}/password")
+  @SuccessResponse(204, "OK")
+  async updatePassword(
+    @Path() id: number,
+    @Body() body: userSchema.ChangePasswordDto
+  ): Promise<void> {
+    this.setStatus(204);
+    return this.service.updatePassword(id, body.currentPassword, body.newPassword);
+  }
 }

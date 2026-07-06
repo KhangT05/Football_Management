@@ -118,7 +118,7 @@ export default function ResetPassword() {
             </div>
           ) : !token ? (
             <div className="flex justify-center">
-              <Link to="/forgot-password" className="text-neon hover:text-white transition-colors text-sm font-bold underline">
+              <Link to="/quen-mau-khau" className="text-neon hover:text-white transition-colors text-sm font-bold underline">
                 Yêu cầu lại liên kết khôi phục
               </Link>
             </div>

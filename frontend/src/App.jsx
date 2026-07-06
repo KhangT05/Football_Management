@@ -131,10 +131,10 @@ function App() {
           </Route>
 
           {/* Auth Routes */}
-          <Route path="/quan-ly-giai-dau/dang-nhap" element={<Login />} />
+          <Route path="/dang-nhap" element={<Login />} />
           <Route path="/dang-ky" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/quen-mau-khau" element={<ForgotPassword />} />
+          <Route path="/khoi-phuc-mat-khau" element={<ResetPassword />} />
 
           {/* Admin Routes – bắt buộc đã đăng nhập + có role admin */}
           <Route path="/quan-ly-giai-dau" element={

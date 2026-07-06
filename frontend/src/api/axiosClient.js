@@ -121,7 +121,7 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (refreshError) {
         if (!window.location.pathname.includes('/dang-nhap')) {
-          window.location.href = '/quan-ly-giai-dau/dang-nhap';
+          window.location.href = '/dang-nhap';
         }
         return Promise.reject(refreshError);
       }
