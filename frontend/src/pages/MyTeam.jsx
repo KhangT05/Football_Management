@@ -4,6 +4,7 @@ import {
   AlertTriangle, CheckCircle2, Loader2, X,
   Search, ArrowUpDown, CreditCard, Shield, Calendar,
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import { teamApi, playerApi, userApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
@@ -14,7 +15,7 @@ import LineupBuilderModal from '../components/modals/LineupBuilderModal';
 import EditTeamModal from '../components/modals/EditTeamModal';
 import NoTeamState from '../components/myteam/NoTeamState';
 import PlayerDeleteModal from '../components/myteam/PlayerDeleteModal';
-import PlayerFormModal from '../components/myteam/PlayerFormModal'; // react-hook-form based, edit mode has no name/email field
+import PlayerFormModal from '../components/myteam/PlayerFormModal'; // react-hook-form based; edit mode now also has a role select (no name/email field)
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
@@ -100,6 +101,8 @@ const normalizePlayer = (tp) => ({
 export default function MyTeam() {
   const { user } = useAuthStore(useShallow(s => ({ user: s.user })));
   const toast = useToastStore();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // ── Multi-team state ─────────────────────────────────────
   const [isLoading, setIsLoading] = useState(true);
@@ -265,7 +268,12 @@ export default function MyTeam() {
         status: t.is_active ? 'approved' : 'pending',
       }));
       setTeams(basicTeams);
-      setActiveTeamId(basicTeams[0].id); // triggers loadTeamDetail effect below
+
+      // Nếu có yêu cầu mở sẵn 1 team cụ thể (từ RegisterTeam → autoOpenAddPlayer),
+      // ưu tiên activate đúng team đó thay vì luôn lấy team đầu tiên.
+      const requestedTeamId = location.state?.autoOpenAddPlayer ? location.state?.teamId : null;
+      const requestedExists = requestedTeamId && basicTeams.some(t => t.id === requestedTeamId);
+      setActiveTeamId(requestedExists ? requestedTeamId : basicTeams[0].id); // triggers loadTeamDetail effect below
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Không thể tải danh sách đội bóng.');
       setIsLoading(false);
@@ -366,6 +374,39 @@ export default function MyTeam() {
     setPlayerModal('add');
   };
 
+  // ── FIX: xử lý điều hướng từ RegisterTeam.jsx ──────────────
+  // Khi user chọn "Thêm cầu thủ vào team có sẵn" ở màn hình choice của
+  // RegisterTeam, nó navigate('/doi-cua-toi', { state: { autoOpenAddPlayer, teamId } }).
+  // Effect này đọc lại state đó và tự động: switch đúng team + mở modal add player.
+  //
+  // Điều kiện `teams.length === 0` bắt buộc phải có: loadAllTeams() là async,
+  // nếu thiếu check này thì lần effect chạy đầu tiên (khi teams còn rỗng)
+  // sẽ fail-silent (targetExists = false) và tính năng coi như không chạy.
+  useEffect(() => {
+    const st = location.state;
+    if (!st?.autoOpenAddPlayer || !st?.teamId) return;
+    if (teams.length === 0) return; // chưa load xong danh sách team, đợi render sau
+
+    const targetExists = teams.some(t => t.id === st.teamId);
+    if (targetExists) {
+      if (activeTeamId !== st.teamId) {
+        setSearch('');
+        setSortField('number');
+        setActiveTab('roster');
+        setActiveTeamId(st.teamId);
+      }
+      openAddModal();
+    } else {
+      // teamId trong state không thuộc danh sách team của user hiện tại
+      // (VD: đã bị xóa, hoặc dữ liệu cũ) — fail quiet, không mở nhầm team.
+      console.warn('autoOpenAddPlayer: teamId không tồn tại trong danh sách team của user', st.teamId);
+    }
+
+    // Clear ngay location.state để F5 / back không bị trigger mở modal lại.
+    navigate(location.pathname, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teams, location.state]);
+
   // values: { name, user_email, date_of_birth, position, number }
   const handleAddSave = async (values) => {
     setIsSaving(true);
@@ -430,7 +471,14 @@ export default function MyTeam() {
     setPlayerModal('edit');
   };
 
-  // values: { number, position } — mode edit của PlayerFormModal KHÔNG có name/email
+  // values: { number, position, role } — mode edit của PlayerFormModal
+  // KHÔNG có name/email (đổi ở phần quản lý tài khoản), nhưng CÓ role
+  // (đội trưởng/phó/thành viên) từ bản cập nhật PlayerFormModal.
+  //
+  // FIX: forward thêm `role` lên updateTeamPlayer — trước đây modal không
+  // có UI chọn role nên field này bị bỏ qua hoàn toàn (mọi player mãi mãi
+  // là "player" dù backend/updateTeamPlayerSchema đã support). Giờ modal
+  // trả kèm values.role, cần gửi lên để không bị mất giá trị người dùng chọn.
   const handleEditSave = async (values) => {
     setIsSaving(true);
     setModalError('');
@@ -438,6 +486,7 @@ export default function MyTeam() {
       await playerApi.updateTeamPlayer(activeTeam.id, editingPlayer.id, {
         jersey_number: parseInt(values.number, 10),
         position: values.position,
+        role: values.role,
       });
       toast.success(`Đã cập nhật cầu thủ "${editingPlayer.name}".`);
       setPlayerModal(null);

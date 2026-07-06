@@ -81,6 +81,11 @@ export declare const ResolveAppealSchema: z.ZodObject<{
     newAwayScore: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     note: z.ZodString;
 }, z.core.$strip>;
+export declare const DeleteEventQuerySchema: z.ZodObject<{
+    venueIds: z.ZodPipe<z.ZodOptional<z.ZodString>, z.ZodTransform<number[] | undefined, string | undefined>>;
+    matchTimes: z.ZodPipe<z.ZodOptional<z.ZodString>, z.ZodTransform<string[] | undefined, string | undefined>>;
+}, z.core.$strip>;
+export type DeleteEventQueryDto = z.infer<typeof DeleteEventQuerySchema>;
 export type RecordEventDto = z.infer<typeof RecordEventSchema>;
 export type TransitionPeriodDto = z.infer<typeof TransitionPeriodSchema>;
 export type FinalizeMatchDto = z.infer<typeof FinalizeMatchSchema>;

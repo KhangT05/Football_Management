@@ -16,6 +16,7 @@ import Pagination from '../../components/ui/Pagination';
 import ApproveTeamsTab from '../../components/admin/ApproveTeamsTab';
 import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
+import { playerApi } from '../../api';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -25,7 +26,7 @@ const POSITIONS = [
 ];
 
 const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, is_active: true };
-const EMPTY_PLAYER = { name: '', number: '', position: 'FW' };
+const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
 
 export default function ManageTeams() {
   const toast = useToastStore();
@@ -216,6 +217,7 @@ export default function ManageTeams() {
   // ── Delete Player ──────────────────────────────────────
   const [deletePlayerState, setDeletePlayerState] = useState(null);
   const [isDeletingPlayer, setIsDeletingPlayer] = useState(false);
+  const [isImportingExcel, setIsImportingExcel] = useState(false);
 
   const handleDeletePlayer = async () => {
     const { player, teamId } = deletePlayerState;
@@ -230,6 +232,47 @@ export default function ManageTeams() {
       toast.error(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
     } finally {
       setIsDeletingPlayer(false);
+    }
+  };
+  const handleDownloadPlayerTemplate = async () => {
+    setIsDownloadingTemplate(true);
+    try {
+      const res = await playerApi.downloadImportTemplate();
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      if (!blob.size) throw new Error('File mẫu rỗng, vui lòng thử lại.');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'import-cau-thu-mau.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Không thể tải file mẫu Excel.');
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
+
+  const handleImportPlayersExcel = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // cho phép chọn lại cùng 1 file lần sau
+    if (!file || !playerTargetTeamId) return;
+
+    setIsImportingExcel(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await playerApi.importTeamPlayers(playerTargetTeamId, formData);
+      const result = res?.data ?? res;
+      toast.success(`Import xong: ${result?.success ?? 0} thành công, ${result?.failed ?? 0} lỗi.`, 5000);
+      fetchPlayers(playerTargetTeamId, { force: true });
+      playerCrud.closeModal();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Import Excel thất bại.');
+    } finally {
+      setIsImportingExcel(false);
     }
   };
 
@@ -492,7 +535,6 @@ export default function ManageTeams() {
         />
       )}
 
-      {/* Player Add Modal */}
       {playerCrud.modal && (
         <PlayerFormModal
           mode={playerCrud.modal}
@@ -502,9 +544,12 @@ export default function ManageTeams() {
           isSaving={playerCrud.isSaving}
           onSave={handleSavePlayer}
           onClose={playerCrud.closeModal}
+          onImportExcel={handleImportPlayersExcel}
+          onDownloadTemplate={handleDownloadPlayerTemplate}
+          isDownloadingTemplate={isDownloadingTemplate}
+          isImporting={isImportingExcel}
         />
       )}
-
       {/* Delete Confirm – Team */}
       {teamCrud.deleting && (
         <ConfirmDeleteModal

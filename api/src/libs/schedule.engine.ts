@@ -1,9 +1,6 @@
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { Slot } from "../types/schedule.type.js";
 import { MatchStatus, Prisma, PrismaClient } from "../generated/prisma/client.js";
-// GIẢ ĐỊNH: shuffle nằm cùng thư mục libs/ như ScheduleEngine (đúng path đã
-// thấy trong ScheduleService gốc: '../libs/array.utils.js'). Nếu
-// schedule.engine.ts KHÔNG cùng cấp libs/, đổi lại đường dẫn dưới đây.
 import { shuffle } from "./array.utils.js";
 
 export type ScheduleCandidateMatch = {
@@ -19,12 +16,8 @@ export type GreedyPassResult = {
 };
 
 // Số lần thử lại greedy scheduling với thứ tự match xáo trộn khác nhau, giữ
-// lại kết quả có ít match thất bại nhất. Greedy chọn-slot-sớm-nhất theo 1
-// thứ tự cố định KHÔNG đảm bảo tìm ra lịch khả thi dù lịch đó tồn tại — đây
-// là cách giảm rủi ro "failedMatchIds giả" với chi phí thấp, không cần CSP
-// solver thật. Dùng CHUNG cho ScheduleService (round-robin) và
-// KnockoutService (bracket) — trước đây 2 nơi tự implement riêng, dễ lệch
-// khi fix bug 1 bên quên bên kia (đã xảy ra thật với allowPastDate).
+// lại kết quả có ít match thất bại nhất. Dùng CHUNG cho ScheduleService
+// (round-robin) và KnockoutService (bracket).
 const SCHEDULE_RESTARTS = 20;
 
 export class ScheduleEngine {
@@ -34,6 +27,20 @@ export class ScheduleEngine {
     ) {
     }
 
+    /**
+     * FIX: Slot giờ cache `scheduledAtMs` (epoch ms, đã tính vnTimeToUtc) ngay
+     * tại thời điểm build — trước đây field này KHÔNG được lưu, khiến 2 nơi
+     * downstream tự tính lại timestamp theo 2 cách khác nhau:
+     *   - findEarliestValidSlot dùng `date.getTime()` — bỏ qua giờ trong ngày,
+     *     rest-days constraint sai lệch tới ~23h59 tuỳ giờ đá.
+     *   - orderByMostConstrained dùng `vnTimeToUtc(date, time).getTime()` — đúng.
+     * MRV ordering và assignment thật do đó dùng 2 nguồn sự thật khác nhau
+     * trong cùng 1 pass. Cache 1 lần tại đây, mọi nơi khác đọc lại giá trị
+     * này thay vì tính lại.
+     *
+     * Yêu cầu: type Slot (types/schedule.type.ts) cần thêm field
+     * `scheduledAtMs: number`.
+     */
     protected buildSlotPool(
         venueIds: number[],
         startDate: Date,
@@ -49,17 +56,19 @@ export class ScheduleEngine {
                 for (const time of matchTimes) {
                     const dt = this.vnTimeToUtc(cursor, time);
                     if (!takenSet.has(`${venueId}_${dt.toISOString()}`)) {
-                        slots.push({ venue_id: venueId, date: new Date(cursor), time });
+                        slots.push({
+                            venue_id: venueId,
+                            date: new Date(cursor),
+                            time,
+                            scheduledAtMs: dt.getTime(),
+                        });
                     }
                 }
             }
             cursor.setUTCDate(cursor.getUTCDate() + 1);
         }
 
-        return slots.sort((a, b) => {
-            const d = a.date.getTime() - b.date.getTime();
-            return d !== 0 ? d : a.time.localeCompare(b.time);
-        });
+        return slots.sort((a, b) => a.scheduledAtMs - b.scheduledAtMs);
     }
 
     protected vnTimeToUtc(date: Date, vnTime: string): Date {
@@ -81,7 +90,7 @@ export class ScheduleEngine {
 
         for (let i = 0; i < pool.length; i++) {
             if (usedSlotIdx.has(i)) continue;
-            const slotTime = pool[i]!.date.getTime();
+            const slotTime = pool[i]!.scheduledAtMs; // FIX: dùng giá trị cache, không phải date.getTime()
             const homeLast = lastPlayedAt.get(homeTeamId);
             const awayLast = lastPlayedAt.get(awayTeamId);
             if (homeLast !== undefined && slotTime - homeLast < minRestMs) continue;
@@ -120,8 +129,11 @@ export class ScheduleEngine {
                     WHERE id IN (${Prisma.join(ids)})
                 `;
             return [];
-        } catch {
-            // Bulk fail → fallback per-row để isolate conflict
+        } catch (err) {
+            // FIX: log trước khi fallback — trước đây catch rỗng, không có
+            // cách nào phân biệt "hết slot" (logic) vs "DB lỗi" (infra) khi
+            // debug incident chỉ dựa vào failedMatchIds ở tầng caller.
+            console.error('[ScheduleEngine] Bulk UPDATE thất bại, fallback per-row:', err);
             const failed: number[] = [];
             for (const u of updates) {
                 try {
@@ -129,7 +141,8 @@ export class ScheduleEngine {
                         where: { id: u.id },
                         data: { scheduled_at: u.scheduledAt, venue_id: u.venueId },
                     });
-                } catch {
+                } catch (rowErr) {
+                    console.error(`[ScheduleEngine] Match ${u.id} update thất bại:`, rowErr);
                     failed.push(u.id);
                 }
             }
@@ -140,22 +153,31 @@ export class ScheduleEngine {
     /**
      * SHARED scheduler — dùng bởi cả ScheduleService.autoScheduleMatches
      * (round-robin) và KnockoutService.scheduleMatchBatch (bracket).
-     * Trước đây mỗi bên tự viết greedy pass + MRV ordering + multi-restart
-     * riêng dù cùng thuật toán 100% — dedupe tại đây, caller chỉ cần build
-     * pool + list match rồi gọi 1 hàm.
+     *
+     * KHÔNG đánh dấu async: toàn bộ thân hàm CPU-bound, không có await bên
+     * trong. Đánh dấu async ở đây không khiến nó non-blocking — Node vẫn
+     * chạy hết computation đồng bộ trước khi resolve Promise, chỉ tạo ảo
+     * giác "đã async hoá" và bắt buộc caller phải nhớ await (nếu quên,
+     * destructure trên Promise object → undefined → crash ở writeScheduleBatch).
+     * Giữ sync — caller gọi thẳng, không cần await.
+     *
+     * Với scale hiện tại (SCHEDULE_RESTARTS=20 × MRV O(candidates × pool),
+     * vài chục match/giải sinh viên) block event loop trong thời gian ngắn,
+     * chấp nhận được. Nếu tournament scale lên vài trăm match/pool vài nghìn
+     * slot, cần chủ động yield (vd setImmediate giữa các attempt) — thêm
+     * async suông không giải quyết vấn đề này.
      *
      * @param initialLastPlayedAt map lastPlayedAt (ms epoch) theo team_id,
      *   seed sẵn TRƯỚC khi chạy pass đầu. Dùng cho knockout khi cần tôn
-     *   trọng rest-days tính từ trận vòng bảng cuối cùng của mỗi team,
-     *   không chỉ tính nội bộ trong các match knockout đang xếp. Round-robin
-     *   gốc không cần, bỏ trống (mặc định map rỗng).
+     *   trọng rest-days tính từ trận vòng bảng cuối cùng của mỗi team.
+     *   Round-robin không cần, bỏ trống (mặc định map rỗng).
      */
-    protected async scheduleMatchesWithRetry(
+    protected scheduleMatchesWithRetry(
         matches: ScheduleCandidateMatch[],
         pool: Slot[],
         minRestDays: number,
         initialLastPlayedAt?: Map<number, number>,
-    ): Promise<GreedyPassResult> {
+    ): GreedyPassResult {
         let best: GreedyPassResult | null = null;
 
         for (let attempt = 0; attempt < SCHEDULE_RESTARTS; attempt++) {
@@ -213,7 +235,7 @@ export class ScheduleEngine {
                 if (slotIdx === -1) { unscheduled.push(match.id); continue; }
 
                 const slot = pool[slotIdx]!;
-                const scheduledAt = this.vnTimeToUtc(slot.date, slot.time);
+                const scheduledAt = new Date(slot.scheduledAtMs); // FIX: khỏi gọi lại vnTimeToUtc
 
                 usedSlotIdx.add(slotIdx);
                 lastPlayedAt.set(match.home_team_id, scheduledAt.getTime());
@@ -229,9 +251,9 @@ export class ScheduleEngine {
     // (chưa used, thoả rest-days cho cả 2 team) TẠI THỜI ĐIỂM HIỆN TẠI —
     // không commit, chỉ đếm để sort. Match nào có ít lựa chọn nhất xử lý
     // trước, giảm rủi ro nó bị match khác "tiện tay" chiếm mất slot duy nhất
-    // nó cần. Đây là proxy, không phải đếm chính xác theo lý thuyết CSP đầy
-    // đủ (không tính ảnh hưởng dây chuyền các match sau), nhưng đủ tốt để
-    // cải thiện tỷ lệ thành công so với thứ tự cố định ban đầu.
+    // nó cần. Proxy, không phải đếm chính xác theo lý thuyết CSP đầy đủ
+    // (không tính ảnh hưởng dây chuyền các match sau), nhưng đủ tốt để cải
+    // thiện tỷ lệ thành công so với thứ tự cố định ban đầu.
     private orderByMostConstrained(
         candidates: ScheduleCandidateMatch[],
         pool: Slot[],
@@ -243,8 +265,7 @@ export class ScheduleEngine {
             let degree = 0;
             for (let idx = 0; idx < pool.length; idx++) {
                 if (usedSlotIdx.has(idx)) continue;
-                const slot = pool[idx]!;
-                const candidateAt = this.vnTimeToUtc(slot.date, slot.time).getTime();
+                const candidateAt = pool[idx]!.scheduledAtMs; // FIX: dùng giá trị cache, cùng nguồn với findEarliestValidSlot
                 if (this.isRestDaysSatisfied(match.home_team_id, candidateAt, lastPlayedAt, minRestDays)
                     && this.isRestDaysSatisfied(match.away_team_id, candidateAt, lastPlayedAt, minRestDays)) {
                     degree++;

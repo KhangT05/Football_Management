@@ -1,5 +1,5 @@
 import { createAppError } from '../common/app.error.js';
-import { Prisma, MatchStatus, PhaseFormat, PhaseStatus, } from '../generated/prisma/client.js';
+import { Prisma, MatchStatus, PhaseFormat, PhaseStatus, SeasonStatus, } from '../generated/prisma/client.js';
 import { bracketSlotNodeSelect, byeSlotSelect, BRACKET_SIZE_TO_PHASE_TYPE, slotWithParentLinksSelect, } from '../types/knockout.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
 import { buildRound1Pairings, nextPowerOf2 } from '../helper/match.helper.js';
@@ -53,6 +53,29 @@ export class KnockoutService extends ScheduleEngine {
             final: 'Chung kết',
         };
         return map[t] ?? t;
+    }
+    /**
+     * Season có thể chỉ chạy knockout thuần (không round-robin trước) — luồng
+     * A trong yêu cầu. round-robin flow (ScheduleService.generateGroupsAndSchedule)
+     * đã transition season.status -> ongoing khi generate; knockout flow trước
+     * đây KHÔNG làm việc này, nên season đá thẳng knockout có thể mắc kẹt ở
+     * 'registration_open' dù đã có match thật — sai state machine, ảnh hưởng
+     * bất kỳ logic nào filter theo season.status (registration form vẫn mở,
+     * dashboard hiển thị sai trạng thái mùa giải).
+     * Chỉ transition nếu đang registration_open — không đụng các status khác
+     * (vd không tự ý resurrect season đã completed/cancelled).
+     */
+    async ensureSeasonOngoing(tx, seasonId) {
+        const season = await tx.season.findUnique({
+            where: { id: seasonId },
+            select: { status: true },
+        });
+        if (season?.status === SeasonStatus.registration_open) {
+            await tx.season.update({
+                where: { id: seasonId },
+                data: { status: SeasonStatus.ongoing },
+            });
+        }
     }
     /**
      * Resolve SeedSource[] -> teamId[], GIỮ NGUYÊN thứ tự input (thứ tự này
@@ -133,6 +156,10 @@ export class KnockoutService extends ScheduleEngine {
             warnings.push(`${byeCount} bye slot(s) — bracket size ${bracketSize}`);
         const result = await this.prisma.$transaction(async (tx) => {
             const phase = await this.getOrCreateKnockoutPhase(tx, options.seasonId, phaseType, options.legs);
+            // Pure-knockout support (luồng A): season có thể chưa từng có
+            // round-robin. Transition status ngay khi generate thành công,
+            // giống invariant round-robin flow.
+            await this.ensureSeasonOngoing(tx, options.seasonId);
             if (!phase.is_active)
                 throw createAppError('CONFLICT', 'Phase đã bị deactivate');
             if (phase.status === PhaseStatus.locked)
@@ -249,7 +276,7 @@ export class KnockoutService extends ScheduleEngine {
                 select: { id: true, round: true, slot_number: true, seeded_home_team_id: true, seeded_away_team_id: true },
             });
             const strandedSlots = allSlotsAfterPropagate.filter(s => s.round > 1 && s.seeded_home_team_id !== null && s.seeded_away_team_id !== null);
-            const strandedMatchIds = [];
+            const strandedMatchDrafts = [];
             for (const slot of strandedSlots) {
                 const m = await tx.match.create({
                     data: {
@@ -259,11 +286,15 @@ export class KnockoutService extends ScheduleEngine {
                         status: MatchStatus.scheduled,
                         leg: legs > 1 ? 1 : null,
                         group_id: null,
+                        // Tag round = bracket round — trước đây match knockout
+                        // không set field này, làm ScheduleResults (FE) parse
+                        // round=0 cho mọi trận knockout, lẫn lộn hiển thị.
+                        round: String(slot.round),
                     },
                     select: { id: true },
                 });
                 await tx.bracketSlot.update({ where: { id: slot.id }, data: { match_id: m.id } });
-                strandedMatchIds.push(m.id);
+                strandedMatchDrafts.push({ id: m.id, round: slot.round, home: slot.seeded_home_team_id, away: slot.seeded_away_team_id });
                 if (legs === 2) {
                     await tx.match.create({
                         data: {
@@ -273,6 +304,7 @@ export class KnockoutService extends ScheduleEngine {
                             status: MatchStatus.scheduled,
                             leg: 2,
                             group_id: null,
+                            round: String(slot.round),
                         },
                     });
                 }
@@ -284,7 +316,7 @@ export class KnockoutService extends ScheduleEngine {
                 phaseId: phase.id,
                 phaseType: phase.type,
                 totalSlots: slotCreateData.length,
-                round1MatchIds: [...createdMatchIds, ...strandedMatchIds],
+                round1MatchIds: [...createdMatchIds, ...strandedMatchDrafts.map(d => d.id)],
                 byeSlots: byeCount,
             };
         }, { timeout: 30_000 });
@@ -455,7 +487,7 @@ export class KnockoutService extends ScheduleEngine {
             data: isHomeInParent
                 ? { seeded_home_team_id: winnerTeamId }
                 : { seeded_away_team_id: winnerTeamId },
-            select: { seeded_home_team_id: true, seeded_away_team_id: true, match_id: true },
+            select: { round: true, seeded_home_team_id: true, seeded_away_team_id: true, match_id: true },
         });
         if (!updated.seeded_home_team_id || !updated.seeded_away_team_id)
             return { matchCreated: false, newMatchIds: [] };
@@ -464,6 +496,9 @@ export class KnockoutService extends ScheduleEngine {
         }
         const homeId = updated.seeded_home_team_id;
         const awayId = updated.seeded_away_team_id;
+        // round = bracket round của parentSlot (updated.round) — giữ nhất
+        // quán với round1/stranded-slot tagging ở generateKnockoutBracket.
+        const roundTag = String(updated.round);
         const leg1 = await tx.match.create({
             data: {
                 phase_id: phaseId,
@@ -472,6 +507,7 @@ export class KnockoutService extends ScheduleEngine {
                 status: MatchStatus.scheduled,
                 leg: legs > 1 ? 1 : null,
                 group_id: null,
+                round: roundTag,
             },
             select: { id: true },
         });
@@ -489,6 +525,7 @@ export class KnockoutService extends ScheduleEngine {
                     status: MatchStatus.scheduled,
                     leg: 2,
                     group_id: null,
+                    round: roundTag,
                 },
                 select: { id: true },
             });
@@ -513,6 +550,9 @@ export class KnockoutService extends ScheduleEngine {
                     status: MatchStatus.scheduled,
                     leg: legs > 1 ? 1 : null,
                     group_id: null,
+                    // Round 1 luôn = '1' — trước đây field này không set,
+                    // khiến FE parse round=0 và không phân biệt được vòng đấu.
+                    round: '1',
                 },
                 select: { id: true },
             });
@@ -527,6 +567,7 @@ export class KnockoutService extends ScheduleEngine {
                         status: MatchStatus.scheduled,
                         leg: 2,
                         group_id: null,
+                        round: '1',
                     },
                     select: { id: true },
                 });
@@ -542,7 +583,7 @@ export class KnockoutService extends ScheduleEngine {
         const [matches, phase, season] = await Promise.all([
             this.prisma.match.findMany({
                 where: { id: { in: matchIds }, is_active: true },
-                select: { id: true, home_team_id: true, away_team_id: true },
+                select: { id: true, home_team_id: true, away_team_id: true, round: true },
             }),
             this.prisma.phase.findUnique({
                 where: { id: phaseId },
@@ -585,6 +626,10 @@ export class KnockoutService extends ScheduleEngine {
             throw createAppError('VALIDATION_ERROR', `Không đủ slot cho knockout: cần ${matches.length}, chỉ có ${pool.length}. ` +
                 `Thêm venueId / matchTime hoặc mở rộng end_date của season.`);
         }
+        // Seed lastPlayedAt từ lịch sử trận đã đá — cần vì knockout thường
+        // schedule theo batch nhỏ (round1, hoặc 1-2 trận advance), lastPlayedAt
+        // rỗng ban đầu sẽ bỏ sót rest-days constraint với trận group-stage
+        // gần nhất của team đó.
         const lastPlayedAt = new Map();
         for (const m of recentMatches) {
             if (!m.played_at)
@@ -595,22 +640,16 @@ export class KnockoutService extends ScheduleEngine {
             if ((lastPlayedAt.get(m.away_team_id) ?? 0) < t)
                 lastPlayedAt.set(m.away_team_id, t);
         }
-        const usedSlotIdx = new Set();
-        const updates = [];
-        const unscheduled = [];
-        for (const match of matches) {
-            const slotIdx = this.findEarliestValidSlot(pool, usedSlotIdx, match.home_team_id, match.away_team_id, lastPlayedAt, minRestDays);
-            if (slotIdx === -1) {
-                unscheduled.push(match.id);
-                continue;
-            }
-            const slot = pool[slotIdx];
-            usedSlotIdx.add(slotIdx);
-            const scheduledAt = this.vnTimeToUtc(slot.date, slot.time);
-            lastPlayedAt.set(match.home_team_id, scheduledAt.getTime());
-            lastPlayedAt.set(match.away_team_id, scheduledAt.getTime());
-            updates.push({ id: match.id, scheduledAt, venueId: slot.venue_id });
-        }
+        // Orchestration (MRV + multi-restart) dùng chung với ScheduleService
+        // qua ScheduleEngine — trước đây knockout tự viết 1-pass greedy riêng,
+        // tỷ lệ failedMatchIds cao hơn round-robin dù cùng constraint.
+        const candidateMatches = matches.map(m => ({
+            id: m.id,
+            home_team_id: m.home_team_id,
+            away_team_id: m.away_team_id,
+            round: m.round,
+        }));
+        const { updates, unscheduled } = this.scheduleMatchesWithRetry(candidateMatches, pool, minRestDays, lastPlayedAt);
         const failed = await this.writeScheduleBatch(updates);
         unscheduled.push(...failed);
         return { matchesScheduled: updates.length - failed.length, failedMatchIds: unscheduled };

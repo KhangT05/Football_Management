@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { UserPlus, Edit, Camera, AlertTriangle, Info, Loader2, FileDown, UploadCloud, CheckCircle2, X } from 'lucide-react';
 
-export default function PlayerFormModal({ mode, player, onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate }) {
+export default function PlayerFormModal({ mode, player,
+  onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate }) {
   const [form, setForm] = useState({
     name: player?.name || '',
     number: player?.number || '',

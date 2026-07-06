@@ -7,6 +7,15 @@ import { ScheduleEngine } from '../libs/schedule.engine.js';
 // Nếu giải có duration khác (futsal 2x20p, sân 11 người 2x45p+nghỉ), chỉnh
 // lại hằng số này hoặc đưa thành config theo tournament/season.
 const ASSUMED_MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h (đá + nghỉ + dự phòng)
+// Select dùng chung cho các query trả match kèm phase — thêm để FE (public
+// ScheduleResults) phân biệt được match thuộc group_stage hay knockout thay
+// vì chỉ có field `round` (knockout trước đây round luôn null/0, không đủ
+// để hiển thị "Tứ kết"/"Bán kết").
+const MATCH_WITH_PHASE_SELECT = {
+    id: true, round: true, home_team_id: true, away_team_id: true,
+    scheduled_at: true, venue_id: true, status: true,
+    phase: { select: { id: true, name: true, type: true, format: true } },
+};
 export class ScheduleService extends ScheduleEngine {
     query;
     constructor(prisma) {
@@ -41,15 +50,11 @@ export class ScheduleService extends ScheduleEngine {
             is_active: true,
             OR: [{ home_team_id: teamId }, { away_team_id: teamId }],
         };
-        const SELECT = {
-            id: true, round: true, home_team_id: true, away_team_id: true,
-            scheduled_at: true, venue_id: true, status: true,
-        };
         // round là String → không thể dùng DB-level orderBy đúng nghĩa số.
         // Fetch toàn bộ dataset (bounded: vài chục match/team/season) rồi sort ở app.
         if (sortCol === 'round') {
             const [allRows, total] = await this.prisma.$transaction([
-                this.prisma.match.findMany({ where, select: SELECT }),
+                this.prisma.match.findMany({ where, select: MATCH_WITH_PHASE_SELECT }),
                 this.prisma.match.count({ where }),
             ]);
             allRows.sort((a, b) => {
@@ -68,7 +73,7 @@ export class ScheduleService extends ScheduleEngine {
         const [data, total] = await this.prisma.$transaction([
             this.prisma.match.findMany({
                 where,
-                select: SELECT,
+                select: MATCH_WITH_PHASE_SELECT,
                 orderBy: { [sortCol]: direction },
                 skip: (page - 1) * perPage,
                 take: perPage,
@@ -172,7 +177,7 @@ export class ScheduleService extends ScheduleEngine {
         return { groupCount, groupIds, ...scheduleResult, warnings };
     }
     /**
-     * Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
+     * NEW: Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
      * GroupService (createGroupsBulk + drawGroups/drawGroupsSeeded), rồi
      * auto-schedule giờ/sân. Dùng cho luồng: admin tạo bảng + bốc thăm trước
      * (GroupDrawUI) → sau đó bấm "Tạo lịch thi đấu" ở ScheduleTab.
@@ -182,6 +187,12 @@ export class ScheduleService extends ScheduleEngine {
      * phase — nên không dùng được sau khi đã bốc thăm thủ công. Method này
      * ngược lại: BẮT BUỘC phải có phase + group + season_team.group_id đã
      * set sẵn, và KHÔNG tự tạo hay tự chia đội.
+     *
+     * Tiêu chí resolve Phase (format round_robin, type group_stage,
+     * is_active true) và tiêu chí lọc season_teams hợp lệ trong group
+     * (deleted_at null, is_active true, status approved) được giữ ĐỒNG BỘ
+     * với GroupService (getOrCreateRoundRobinPhase / buildGroupsPayload) —
+     * để 2 service luôn nhìn cùng 1 Phase/Group, tránh lệch trạng thái.
      */
     async generateMatchesFromDrawnGroups(seasonId, options) {
         const warnings = [];
@@ -194,6 +205,8 @@ export class ScheduleService extends ScheduleEngine {
             const season = await tx.season.findUnique({ where: { id: seasonId } });
             if (!season)
                 throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+            // Cùng tiêu chí resolve phase với GroupService — KHÔNG tự tạo phase
+            // (đây là read/generate-path, không phải create-path).
             const phase = await tx.phase.findFirst({
                 where: {
                     season_id: seasonId,
@@ -213,6 +226,8 @@ export class ScheduleService extends ScheduleEngine {
             if (existingMatches > 0)
                 throw createAppError('CONFLICT', `Season ${seasonId} đã có lịch thi đấu (${existingMatches} match) — xoá lịch cũ ` +
                     `trước khi tạo lại.`);
+            // Filter giống hệt GroupService.buildGroupsPayload — đảm bảo chỉ tính
+            // các season_team thực sự "đã bốc thăm và còn hợp lệ".
             const groups = await tx.group.findMany({
                 where: { phase_id: phase.id, is_active: true },
                 include: {
@@ -272,6 +287,8 @@ export class ScheduleService extends ScheduleEngine {
     }
     async autoScheduleMatches(seasonId, 
     // allowPastDate optional — mặc định false (throw nếu start_date đã qua).
+    // Trước đây chỉ console.warn rồi vẫn chạy tiếp, sinh ra slot pool toàn
+    // nằm trong quá khứ — sai lặng lẽ, không observable qua log structured.
     options) {
         const matches = await this.prisma.match.findMany({
             where: {
@@ -285,12 +302,15 @@ export class ScheduleService extends ScheduleEngine {
                 home_team_id: true,
                 away_team_id: true,
                 round: true,
-                group_id: true,
             },
             orderBy: { id: 'asc' }, // stable base order trước khi áp dụng MRV/restart
         });
         if (matches.length === 0)
             return { matchesScheduled: 0, failedMatchIds: [] };
+        // FIX: select thêm end_date — trước đây rangeEnd luôn hardcode
+        // start_date + 6 tháng, bỏ qua hoàn toàn thời điểm season thực sự kết
+        // thúc. Match có thể bị xếp lịch sau khi season đã đóng. end_date giờ
+        // là hard boundary bắt buộc, không có fallback im lặng.
         const [phase, season] = await Promise.all([
             this.prisma.phase.findFirst({
                 where: { season_id: seasonId, type: PhaseType.group_stage },
@@ -315,6 +335,8 @@ export class ScheduleService extends ScheduleEngine {
         if (rangeEnd <= startDate)
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} end_date (${rangeEnd.toISOString()}) phải sau start_date ` +
                 `(${startDate.toISOString()})`);
+        // Throw thay vì chỉ warn — trừ khi caller chủ động bypass bằng
+        // allowPastDate (vd backfill lịch sử có chủ đích).
         if (startDate < new Date() && !options.allowPastDate) {
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} có start_date đã qua (${startDate.toISOString()}) — ` +
                 `slot pool sẽ rơi vào quá khứ. Cập nhật start_date hoặc gọi với allowPastDate=true ` +
@@ -326,10 +348,9 @@ export class ScheduleService extends ScheduleEngine {
             throw createAppError('VALIDATION_ERROR', `Không đủ slot: cần ${matches.length}, chỉ có ${pool.length}. ` +
                 `Thêm venueId / matchTime, đẩy startDate sớm hơn, hoặc mở rộng end_date của season.`);
         }
-        // DEDUPE: greedy + MRV ordering + multi-restart giờ nằm chung ở
-        // ScheduleEngine.scheduleMatchesWithRetry — KnockoutService.scheduleMatchBatch
-        // dùng lại cùng hàm này, không còn 2 implementation lệch nhau.
-        const { updates, unscheduled } = await this.scheduleMatchesWithRetry(matches, pool, minRestDays);
+        // Orchestration (MRV + multi-restart) đã move lên ScheduleEngine —
+        // dùng chung với KnockoutService, không còn duplicate ở đây.
+        const { updates, unscheduled } = this.scheduleMatchesWithRetry(matches, pool, minRestDays);
         const failedFromCollision = await this.writeScheduleBatch(updates);
         const finalUnscheduled = [...unscheduled, ...failedFromCollision];
         return {
@@ -353,11 +374,12 @@ export class ScheduleService extends ScheduleEngine {
         const RESCHEDULABLE = [MatchStatus.scheduled, MatchStatus.postponed];
         if (!RESCHEDULABLE.includes(match.status))
             throw createAppError('CONFLICT', `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`);
-        // Window check ±ASSUMED_MATCH_DURATION_MS thay vì exact-time equality —
-        // bắt được overlap thực tế (trận trước chưa kết thúc, trận sau đã bắt
-        // đầu ở cùng sân/cùng đội nhưng lệch giờ). Note: không check rest-days
-        // ở đây — manual reschedule là override có chủ đích, caller (admin)
-        // chịu trách nhiệm. Muốn enforce, thêm flag strictRestDays riêng.
+        // Trước đây chỉ check exact-time equality, không bắt được overlap thực
+        // tế (trận trước chưa kết thúc, trận sau đã bắt đầu ở cùng sân/cùng
+        // đội nhưng lệch giờ). Đổi sang window check ±ASSUMED_MATCH_DURATION_MS.
+        // Note: không check rest-days ở đây — manual reschedule là override có
+        // chủ đích, caller (admin) chịu trách nhiệm. Nếu muốn enforce, thêm
+        // flag strictRestDays riêng.
         const windowStart = new Date(input.scheduledAt.getTime() - ASSUMED_MATCH_DURATION_MS);
         const windowEnd = new Date(input.scheduledAt.getTime() + ASSUMED_MATCH_DURATION_MS);
         const conflict = await this.prisma.match.findFirst({
@@ -392,18 +414,20 @@ export class ScheduleService extends ScheduleEngine {
                 phase: { season_id: seasonId },
                 is_active: true,
             },
-            select: {
-                id: true, round: true,
-                home_team_id: true, away_team_id: true,
-                scheduled_at: true, venue_id: true, status: true,
-            },
+            select: MATCH_WITH_PHASE_SELECT,
             orderBy: [{ scheduled_at: 'asc' }, { id: 'asc' }],
         });
         matches.sort((a, b) => {
-            const ra = parseInt(a.round ?? '0', 10);
-            const rb = parseInt(b.round ?? '0', 10);
-            if (ra !== rb)
-                return ra - rb;
+            // Round-robin dùng round để sort tuyến tính; knockout sort theo
+            // scheduled_at là đủ (bracket round không tuyến tính theo thời
+            // gian tuyệt đối giữa các phase khác nhau — vd 2 trận tứ kết có
+            // thể đá sau 1 trận bán kết bị hoãn).
+            if (a.phase?.format !== 'knockout' && b.phase?.format !== 'knockout') {
+                const ra = parseInt(a.round ?? '0', 10);
+                const rb = parseInt(b.round ?? '0', 10);
+                if (ra !== rb)
+                    return ra - rb;
+            }
             const ta = a.scheduled_at?.getTime() ?? Infinity;
             const tb = b.scheduled_at?.getTime() ?? Infinity;
             return ta - tb;
@@ -422,6 +446,12 @@ export class ScheduleService extends ScheduleEngine {
                 scheduledAt: m.scheduled_at,
                 venueId: m.venue_id,
                 status: m.status,
+                // NEW — cho phép FE (ScheduleResults) phân biệt group_stage vs
+                // knockout và hiển thị đúng nhãn (VD "Tứ kết") thay vì "Vòng 0".
+                phaseId: m.phase?.id ?? null,
+                phaseName: m.phase?.name ?? null,
+                phaseType: m.phase?.type ?? null,
+                phaseFormat: m.phase?.format ?? null,
             })),
         };
     }

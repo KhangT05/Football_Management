@@ -1335,6 +1335,16 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofDeleteEventQuerySchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "matchTimes": { "dataType": "array", "array": { "dataType": "string" } }, "venueIds": { "dataType": "array", "array": { "dataType": "double" } } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DeleteEventQueryDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofDeleteEventQuerySchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Partial_RecordEventInput_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "playerId": { "dataType": "double" }, "teamId": { "dataType": "double" }, "type": { "ref": "MatchEventType" }, "minute": { "dataType": "double" }, "addedMinute": { "dataType": "double" }, "period": { "ref": "MatchPeriod" }, "note": { "dataType": "string" }, "subOutPlayerId": { "dataType": "double" }, "wasOwnGoal": { "dataType": "boolean" } }, "validators": {} },
@@ -2288,6 +2298,7 @@ export function RegisterRoutes(app, opts) {
     const argsTournamentRuleController_update = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTournamentRuleDto" },
+        force: { "in": "query", "name": "force", "dataType": "boolean" },
     };
     app.patch('/tournamentrules/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TournamentRuleController)), ...(fetchMiddlewares(TournamentRuleController.prototype.update)), async function TournamentRuleController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -4609,7 +4620,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "ConfirmOfficialBody" },
     };
-    app.post('/matches/:id/result/confirm', authenticateMiddleware([{ "jwt": [] }]), ...(fetchMiddlewares(MatchResultController)), ...(fetchMiddlewares(MatchResultController.prototype.confirmResult)), async function MatchResultController_confirmResult(request, response, next) {
+    app.post('/matches/:id/result/confirm', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(MatchResultController)), ...(fetchMiddlewares(MatchResultController.prototype.confirmResult)), async function MatchResultController_confirmResult(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -5140,8 +5151,7 @@ export function RegisterRoutes(app, opts) {
     const argsMatchController_deleteEvent = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         eventId: { "in": "path", "name": "eventId", "required": true, "dataType": "double" },
-        venueIds: { "in": "query", "name": "venueIds", "dataType": "string" },
-        matchTimes: { "in": "query", "name": "matchTimes", "dataType": "string" },
+        query: { "in": "queries", "name": "query", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "matchTimes": { "dataType": "array", "array": { "dataType": "string" } }, "venueIds": { "dataType": "array", "array": { "dataType": "double" } } } },
     };
     app.delete('/matches/:id/correction/events/:eventId', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(MatchController)), ...(fetchMiddlewares(MatchController.prototype.deleteEvent)), async function MatchController_deleteEvent(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

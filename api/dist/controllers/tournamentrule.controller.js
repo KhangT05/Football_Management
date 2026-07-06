@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request, Query } from "tsoa";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 let TournamentRuleController = class TournamentRuleController extends Controller {
     service;
@@ -28,8 +28,14 @@ let TournamentRuleController = class TournamentRuleController extends Controller
         this.setStatus(201);
         return this.service.create(body, req.user.user_id);
     }
-    async update(id, body) {
-        return this.service.update(id, body);
+    async update(id, body, force) {
+        // FIX: return type UpdateTournamentRuleDto → TournamentRuleDto (service.update
+        // trả full object + relations, sai response schema cũ gây lệch OpenAPI codegen).
+        // Expose `force` — service đã có escape hatch bypass retroactive-guard nhưng
+        // controller không truyền được, endpoint luôn throw CONFLICT không path nào
+        // recover. Cân nhắc siết force=true riêng về ["admin"] nếu không muốn
+        // organizing tự bypass integrity guard cho field retroactive.
+        return this.service.update(id, body, force ?? false);
     }
     async softDelete(id) {
         this.setStatus(204);
@@ -67,8 +73,9 @@ __decorate([
     Security("jwt", ["admin", "organizing"]),
     __param(0, Path()),
     __param(1, Body()),
+    __param(2, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, Object, Boolean]),
     __metadata("design:returntype", Promise)
 ], TournamentRuleController.prototype, "update", null);
 __decorate([

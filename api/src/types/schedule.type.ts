@@ -9,7 +9,14 @@ export type MatchDraft = {
     status: MatchStatus;
 };
 
-export type Slot = { venue_id: number; date: Date; time: string };
+export type Slot = {
+    venue_id: number;
+    date: Date;
+    time: string;
+    scheduledAtMs: number; // epoch ms, cache sẵn từ vnTimeToUtc(date, time) — 
+    // single source of truth cho mọi so sánh rest-days,
+    // tránh tính lại timezone conversion nhiều lần/không nhất quán
+};
 
 export type GenerateOptions = {
     desiredGroupCount: number;

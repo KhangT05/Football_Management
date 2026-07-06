@@ -34,19 +34,23 @@ import {
 import { EditScoreInput } from '../types/match.type.js';
 import { MatchReportOutput } from '../types/matchReport.type.js';
 
-// FIX: ConfirmResultInput cần thêm field optional này trong types/matchResult.type.js
-// để forfeitMatch() pass winner tường minh thay vì để _resolveWinner suy luận qua
-// so sánh score.
-//   export interface ConfirmResultInput {
-//     ...
-//     explicitWinnerTeamId?: number | null;
-//   }
 type ConfirmResultInputWithExplicitWinner = ConfirmResultInput & {
     explicitWinnerTeamId?: number | null;
 };
 
 type ConfirmResultOutputWithWarnings = ConfirmResultOutput & {
     postCommitWarnings?: string[];
+};
+
+// Kết quả trung gian trả ra từ transaction có lock — cần đủ data để chạy
+// post-commit steps (standings/knockout advance) SAU khi tx đã commit.
+type ConfirmResultCore = {
+    matchResultId: number;
+    resolution: WinnerResolution;
+    isKnockout: boolean;
+    phaseId: number;
+    seasonId: number;
+    groupId: number | null;
 };
 
 export class MatchResultService {
@@ -72,10 +76,6 @@ export class MatchResultService {
         );
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // READ — MATCH RESULT
-    // ═══════════════════════════════════════════════════════════════════════════
-
     async getMatchResult(matchId: number) {
         const result = await this.prisma.matchResult.findUnique({
             where: { match_id: matchId },
@@ -90,10 +90,6 @@ export class MatchResultService {
 
         return result;
     }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // READ — MATCH EVENTS (paginated)
-    // ═══════════════════════════════════════════════════════════════════════════
 
     async listMatchEvents(
         matchId: number,
@@ -110,10 +106,6 @@ export class MatchResultService {
         return this.matchEventQueryable.run(queryReq);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // READ — MATCH PLAYER STATS (grouped)
-    // ═══════════════════════════════════════════════════════════════════════════
-
     async getMatchPlayerStats(matchId: number) {
         return this.prisma.matchEvent.groupBy({
             by: ['player_id', 'team_id', 'type'],
@@ -125,29 +117,54 @@ export class MatchResultService {
         });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // WRITE — CONFIRM RESULT
-    // ═══════════════════════════════════════════════════════════════════════════
+    /**
+     * FIX (root cause #3): _guardConfirm cũ chỉ chặn draw ở resultType=full_time.
+     * _resolveWinner case extra_time cũng có thể trả winnerTeamId=null nếu hoà sau
+     * hiệp phụ — không có gì chặn input resultType=extra_time với homeExtraTime
+     * === awayExtraTime đi qua guard. Hệ quả: knockout match confirm với
+     * winner_team_id=null, knockoutAdvanced bị skip (if isKnockout && winnerTeamId)
+     * nhưng match status vẫn set finished theo STATUS_BY_RESULT_TYPE — "finished"
+     * mà không ai advance bracket, không warning nào log vì code không coi đây là lỗi.
+     *
+     * overrideResult có guard riêng, tách biệt khỏi _guardConfirm — cùng thiếu sót
+     * lặp lại ở 2 nơi. Gộp về 1 helper để tránh drift lần nữa.
+     */
+    private _knockoutDrawBlocked(
+        resultType: MatchResultType,
+        input: { homeScore: number; awayScore: number; homeExtraTime?: number; awayExtraTime?: number },
+    ): boolean {
+        if (resultType === MatchResultType.full_time) {
+            return input.homeScore === input.awayScore;
+        }
+        if (resultType === MatchResultType.extra_time) {
+            const h = input.homeExtraTime ?? input.homeScore;
+            const a = input.awayExtraTime ?? input.awayScore;
+            return h === a;
+        }
+        return false;
+    }
 
     /**
-     * Finalize 1 trận: tạo MatchResult, update Match status, update player stats.
+     * FIX (Critical #1 — atomicity): confirmResult/adminRecordResult trước đây gọi
+     * qua 2 transaction độc lập (createMany events ở lifecycle service, rồi
+     * confirmResult mở transaction riêng) → nếu confirmResult throw, events đã
+     * insert vẫn commit (orphan); nếu caller retry, events insert lại (duplicate,
+     * không unique constraint chặn). Tách guard+write ra method nhận `tx` từ
+     * ngoài để adminRecordResult có thể gộp event-insert + confirm vào CÙNG 1
+     * transaction. confirmResult (public) tự mở transaction riêng khi gọi trực tiếp.
      *
-     * Idempotency: tx.matchResult.create() catch P2002 trên unique constraint
-     * match_id — nguồn correctness thật cho race "2 caller cùng confirm 1 match",
-     * không phải bất kỳ lock/claim nào ở tầng gọi.
-     *
-     * Post-commit steps (standings, knockout advance) chạy try-catch riêng,
-     * gom lỗi vào postCommitWarnings thay vì throw — match đã finalize thành
-     * công thì response phải phản ánh đúng, không để lỗi phụ khiến caller
-     * tưởng cả request fail rồi retry (retry sẽ đụng _guardConfirm reject vì
-     * MatchResult đã tồn tại).
+     * Đồng thời fix lock: bản cũ lock match row ở CHÍNH transaction này rồi mới
+     * SELECT lại — findUnique ngoài tx cũ đã bị bỏ, mọi guard check giờ đọc từ
+     * snapshot đã lock, nhất quán với pattern recordEvent/addEvent đã dùng.
      */
-    async confirmResult(
+    async confirmResultInTx(
+        tx: Prisma.TransactionClient,
         matchId: number,
         input: ConfirmResultInputWithExplicitWinner,
-        scheduleOptions: OptionalScheduleOptions,
-    ): Promise<ConfirmResultOutputWithWarnings> {
-        const match = await this.prisma.match.findUnique({
+    ): Promise<ConfirmResultCore> {
+        await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+
+        const match = await tx.match.findUnique({
             where: { id: matchId },
             select: matchForConfirmSelect,
         });
@@ -165,43 +182,49 @@ export class MatchResultService {
         }
 
         const yellowSuspension = match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
-        // FIX (tie-score forfeit/walkover): _resolveWinner giờ throw
-        // VALIDATION_ERROR nếu resultType=forfeit/walkover mà homeScore===awayScore
-        // và không có explicitWinnerTeamId — thay vì silent default winner=away.
-        // Xem comment trong _resolveWinner.
         const resolution = this._resolveWinner(match.home_team_id, match.away_team_id, input);
         const targetMatchStatus = STATUS_BY_RESULT_TYPE[input.resultType] ?? MatchStatus.finished;
 
-        let matchResultId: number;
-        try {
-            matchResultId = await this.prisma.$transaction(async tx => {
-                const result = await tx.matchResult.create({
-                    data: toMatchResultCreateInput(matchId, input, resolution),
-                    select: { id: true },
-                });
+        const result = await tx.matchResult.create({
+            data: toMatchResultCreateInput(matchId, input, resolution),
+            select: { id: true },
+        });
 
-                await tx.match.update({
-                    where: { id: matchId },
-                    data: toMatchUpdateOnConfirm(resolution, targetMatchStatus),
-                });
+        await tx.match.update({
+            where: { id: matchId },
+            data: toMatchUpdateOnConfirm(resolution, targetMatchStatus),
+        });
 
-                await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
+        await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
 
-                return result.id;
-            });
-        } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
-                throw createAppError('CONFLICT', `Match ${matchId} đã có MatchResult (race condition detected)`);
-            throw err;
-        }
+        return {
+            matchResultId: result.id,
+            resolution,
+            isKnockout,
+            phaseId: match.phase_id,
+            seasonId,
+            groupId: match.group_id,
+        };
+    }
 
+    /**
+     * Post-commit steps (standings recompute, knockout advance) — tách ra để
+     * confirmResult() và adminRecordResult() (lifecycle service) dùng chung, tránh
+     * lặp lại logic warning-collection ở 2 nơi (nguồn của bug #3 kiểu drift).
+     */
+    async runPostConfirmSteps(
+        matchId: number,
+        core: ConfirmResultCore,
+        scheduleOptions: OptionalScheduleOptions,
+    ): Promise<ConfirmResultOutputWithWarnings> {
+        const { matchResultId, resolution, isKnockout, phaseId, seasonId, groupId } = core;
         const postCommitWarnings: string[] = [];
 
         let standingUpdated = false;
         try {
-            standingUpdated = await this._tryRecomputeStandings(isKnockout, match.group_id);
+            standingUpdated = await this._tryRecomputeStandings(isKnockout, groupId);
         } catch (err) {
-            const msg = `Recompute standings thất bại cho group ${match.group_id}: ${err instanceof Error ? err.message : String(err)}`;
+            const msg = `Recompute standings thất bại cho group ${groupId}: ${err instanceof Error ? err.message : String(err)}`;
             console.error(`[confirmResult] ${msg}`);
             postCommitWarnings.push(msg);
         }
@@ -212,7 +235,7 @@ export class MatchResultService {
         if (isKnockout && resolution.winnerTeamId) {
             try {
                 const advance = await this.knockoutService.advanceWinner(
-                    match.phase_id,
+                    phaseId,
                     seasonId,
                     { matchId, winnerTeamId: resolution.winnerTeamId },
                     scheduleOptions,
@@ -236,16 +259,43 @@ export class MatchResultService {
         };
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // WRITE — OVERRIDE RESULT (admin correction)
-    // ═══════════════════════════════════════════════════════════════════════════
+    async confirmResult(
+        matchId: number,
+        input: ConfirmResultInputWithExplicitWinner,
+        scheduleOptions: OptionalScheduleOptions,
+    ): Promise<ConfirmResultOutputWithWarnings> {
+        let core: ConfirmResultCore;
+        try {
+            core = await this.prisma.$transaction(tx => this.confirmResultInTx(tx, matchId, input));
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+                throw createAppError('CONFLICT', `Match ${matchId} đã có MatchResult (race condition detected)`);
+            throw err;
+        }
 
-    async overrideResult(
+        return this.runPostConfirmSteps(matchId, core, scheduleOptions);
+    }
+
+    /**
+     * FIX (Critical #2 — race/TOCTOU): overrideResult trước đây KHÔNG lock row,
+     * chạy 2 write riêng (không transaction) sau khi đọc match bằng plain
+     * findUniqueOrThrow. editScore (lifecycle service) check eventCount===0 rồi
+     * gọi method này — giữa lúc check và lúc write, addEvent/deleteEvent/editEvent
+     * (đã có FOR UPDATE lock) có thể insert event + recompute + commit trước, rồi
+     * overrideResult ghi đè home_final_score/winner_team_id bằng score input tay
+     * → event tồn tại trong DB nhưng score không phản ánh event đó, vỡ invariant
+     * "score = f(events)".
+     *
+     * Fix: tách phần guard+write ra nhận `tx` từ ngoài — editScore (lifecycle)
+     * giờ lock row FOR UPDATE, check eventCount, rồi gọi method này TRONG CÙNG
+     * transaction đã lock, serialize đúng với các method addEvent/deleteEvent/editEvent.
+     */
+    async overrideResultInTx(
+        tx: Prisma.TransactionClient,
         matchId: number,
         input: EditScoreInput,
-        scheduleOptions: OptionalScheduleOptions,
-    ): Promise<void> {
-        const match = await this.prisma.match.findUniqueOrThrow({
+    ): Promise<{ isKnockout: boolean; groupId: number | null }> {
+        const match = await tx.match.findUniqueOrThrow({
             where: { id: matchId },
             select: {
                 home_team_id: true,
@@ -269,13 +319,10 @@ export class MatchResultService {
         if (!match.matchResult)
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
 
-        // FIX: guard mới — chặn override winner nếu bracket round kế tiếp đã tạo.
-        // resolveAppeal() đã có guard tương đương (chặn overturn cho knockout hoàn
-        // toàn), overrideResult (correction window) trước đây không có gì, cho phép
-        // đổi tỉ số → đổi winner trong khi round sau đã cầm sẵn đội cũ, data lệch
-        // im lặng, không cascade, không cảnh báo.
-        if (match.phase.format === PhaseFormat.knockout) {
-            const slot = await this.prisma.bracketSlot.findFirst({
+        const isKnockout = match.phase.format === PhaseFormat.knockout;
+
+        if (isKnockout) {
+            const slot = await tx.bracketSlot.findFirst({
                 where: { match_id: matchId },
                 select: {
                     fed_as_a: { select: { match_id: true } },
@@ -297,6 +344,14 @@ export class MatchResultService {
 
         const resultType = input.resultType ?? match.matchResult.result_type;
 
+        if (isKnockout && this._knockoutDrawBlocked(resultType, input)) {
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Match ${matchId}: knockout draw ở ${resultType} — cần resultType=extra_time hoặc penalty, ` +
+                `không thể override về tỉ số hoà khi đã confirm với winner xác định.`,
+            );
+        }
+
         if (resultType === MatchResultType.penalty) {
             if (input.homePenalty === undefined || input.awayPenalty === undefined)
                 throw createAppError('VALIDATION_ERROR', `overrideResult: resultType=penalty cần homePenalty + awayPenalty`);
@@ -304,11 +359,6 @@ export class MatchResultService {
                 throw createAppError('VALIDATION_ERROR', `overrideResult: penalty không được hoà — ${input.homePenalty}-${input.awayPenalty}`);
         }
 
-        // FIX: overrideResult đi qua CÙNG _resolveWinner như confirmResult —
-        // trước đây đây là 1 trong 2 lối vào bị bỏ sót khi patch chỉ ở
-        // forfeitMatch(). Admin đổi resultType sang forfeit/walkover với
-        // homeScore===awayScore giờ bị chặn ngay tại _resolveWinner, không
-        // còn silent-default winner=away.
         const resolution = this._resolveWinner(
             match.home_team_id,
             match.away_team_id,
@@ -323,40 +373,51 @@ export class MatchResultService {
             },
         );
 
-        await this.prisma.$transaction(async tx => {
-            await tx.matchResult.update({
-                where: { match_id: matchId },
-                data: {
-                    home_final_score: resolution.homeFinal,
-                    away_final_score: resolution.awayFinal,
-                    home_extra_time_score: input.homeExtraTime ?? null,
-                    away_extra_time_score: input.awayExtraTime ?? null,
-                    home_penalty_score: input.homePenalty ?? null,
-                    away_penalty_score: input.awayPenalty ?? null,
-                    ...(input.homeHalfTime !== undefined && { home_half_time_score: input.homeHalfTime }),
-                    ...(input.awayHalfTime !== undefined && { away_half_time_score: input.awayHalfTime }),
-                    winner_team_id: resolution.winnerTeamId,
-                    result_type: resultType,
-                    ...(input.notes !== undefined && { notes: input.notes }),
-                    updated_at: new Date(),
-                },
-            });
-
-            await tx.match.update({
-                where: { id: matchId },
-                data: {
-                    home_score: resolution.homeFinal,
-                    away_score: resolution.awayFinal,
-                    updated_at: new Date(),
-                },
-            });
+        await tx.matchResult.update({
+            where: { match_id: matchId },
+            data: {
+                home_final_score: resolution.homeFinal,
+                away_final_score: resolution.awayFinal,
+                home_extra_time_score: input.homeExtraTime ?? null,
+                away_extra_time_score: input.awayExtraTime ?? null,
+                home_penalty_score: input.homePenalty ?? null,
+                away_penalty_score: input.awayPenalty ?? null,
+                ...(input.homeHalfTime !== undefined && { home_half_time_score: input.homeHalfTime }),
+                ...(input.awayHalfTime !== undefined && { away_half_time_score: input.awayHalfTime }),
+                winner_team_id: resolution.winnerTeamId,
+                result_type: resultType,
+                ...(input.notes !== undefined && { notes: input.notes }),
+                updated_at: new Date(),
+            },
         });
 
-        if (match.phase.format !== PhaseFormat.knockout && match.group_id) {
+        await tx.match.update({
+            where: { id: matchId },
+            data: {
+                home_score: resolution.homeFinal,
+                away_score: resolution.awayFinal,
+                updated_at: new Date(),
+            },
+        });
+
+        return { isKnockout, groupId: match.group_id };
+    }
+
+    async overrideResult(
+        matchId: number,
+        input: EditScoreInput,
+        scheduleOptions: OptionalScheduleOptions,
+    ): Promise<void> {
+        const { isKnockout, groupId } = await this.prisma.$transaction(async tx => {
+            await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            return this.overrideResultInTx(tx, matchId, input);
+        });
+
+        if (!isKnockout && groupId) {
             try {
-                await this.standingsService.recomputeGroupStandings(match.group_id);
+                await this.standingsService.recomputeGroupStandings(groupId);
             } catch (err) {
-                console.error(`[overrideResult] recompute standings failed for group ${match.group_id}:`, err);
+                console.error(`[overrideResult] recompute standings failed for group ${groupId}:`, err);
             }
         }
 
@@ -366,10 +427,6 @@ export class MatchResultService {
             console.error(`[overrideResult] recompute player stats failed for match ${matchId}:`, err);
         }
     }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // WRITE — RECOMPUTE PLAYER STATS (admin correction)
-    // ═══════════════════════════════════════════════════════════════════════════
 
     async recomputePlayerStats(matchId: number): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
@@ -417,17 +474,9 @@ export class MatchResultService {
         await this._recomputeStatsForPlayers(playerKeys, seasonId, yellowSuspension);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PUBLIC HELPER (exposed for admin controller)
-    // ═══════════════════════════════════════════════════════════════════════════
-
     async recomputeStandingsFor(groupId: number): Promise<void> {
         await this.standingsService.recomputeGroupStandings(groupId);
     }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PRIVATE HELPERS
-    // ═══════════════════════════════════════════════════════════════════════════
 
     private _guardConfirm(match: MatchForConfirmFull, input: ConfirmResultInputWithExplicitWinner): void {
         if (match.status === MatchStatus.finished || match.status === MatchStatus.cancelled)
@@ -437,12 +486,11 @@ export class MatchResultService {
             throw createAppError('CONFLICT', `Match ${match.id} đã có MatchResult`);
 
         const isKnockout = match.phase.format === PhaseFormat.knockout;
-        if (isKnockout && input.resultType === MatchResultType.full_time) {
-            if (input.homeScore === input.awayScore)
-                throw createAppError(
-                    'VALIDATION_ERROR',
-                    `Match ${match.id}: knockout draw ở full_time — cần extra_time hoặc penalty`,
-                );
+        if (isKnockout && this._knockoutDrawBlocked(input.resultType, input)) {
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Match ${match.id}: knockout draw ở ${input.resultType} — cần extra_time hoặc penalty`,
+            );
         }
 
         if (input.resultType === MatchResultType.penalty) {
@@ -491,12 +539,6 @@ export class MatchResultService {
             }
             case MatchResultType.forfeit:
             case MatchResultType.walkover: {
-                // FIX: đây là root cause thật của bug forfeit_score=0. Trước đây
-                // `input.homeScore > input.awayScore ? home : away` silent default
-                // về awayTeamId khi hoà — sai hoàn toàn nếu forfeit_score config = 0
-                // (0 > 0 === false). explicitWinnerTeamId (checked ở trên) là cách
-                // caller AVOID rơi vào nhánh này, nhưng nếu caller nào đó (override,
-                // adminRecordResult) không truyền, phải FAIL LOUD thay vì đoán sai.
                 if (input.homeScore === input.awayScore) {
                     throw createAppError(
                         'VALIDATION_ERROR',

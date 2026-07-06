@@ -1,35 +1,15 @@
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
-
-// GIẢ ĐỊNH: giá trị PhaseType enum ở backend (generated/prisma/client.js).
-// Chỉnh lại map này nếu enum thực tế khác — đây chỉ là nhãn hiển thị, không
-// ảnh hưởng logic. Key phải khớp EXACT với PhaseType string trả về từ API.
-const PHASE_TYPE_LABELS = {
-  group_stage: 'Vòng bảng',
-  round_of_32: 'Vòng 1/16',
-  round_of_16: 'Vòng 1/8',
-  quarter_final: 'Tứ kết',
-  semi_final: 'Bán kết',
-  third_place: 'Tranh hạng 3',
-  final: 'Chung kết',
-};
 
 /**
  * ScheduleMatchCard — Match card dùng cho trang ScheduleResults (public).
  * Match object cần được enrich với home_team, away_team, venue.
  *
- * FIX: trước đây chỉ hiển thị `Vòng {match.round}` — với match knockout,
- * round là số nội bộ (1, 2, 3...) không có ý nghĩa với người xem (không
- * phân biệt được tứ kết/bán kết/chung kết). Giờ ưu tiên hiển thị
- * phase.name (tên do admin đặt lúc tạo bracket) hoặc nhãn suy ra từ
- * phase.type nếu name trống, fallback về round number chỉ khi match
- * không thuộc phase nào có thông tin phase (vd data cũ/legacy).
- *
- * YÊU CẦU BACKEND: match object phải include phase: { select: { name: true,
- * type: true, format: true } } ở API trả dữ liệu cho trang này — hiện tại
- * chưa xác nhận được vì không có source của controller/route liên quan.
- * Nếu API chưa trả field này, phaseLabel luôn null và card fallback về
- * roundLabel như cũ (không crash, chỉ không có badge mới).
+ * phase info: BE (schedule.service.ts) giờ select kèm phase {id, name, type,
+ * format} — trước đây chỉ có `round` (String), và match knockout không set
+ * round nên hiển thị sai (round=0/không có nhãn). Chấp nhận field name có
+ * thể là `phase` (object) hoặc `phaseName`/`phaseFormat` (flattened, tuỳ
+ * endpoint) — ưu tiên object trước, fallback field phẳng.
  */
 export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
   const homeName = match.home_team?.name ?? `Đội #${match.home_team_id}`;
@@ -43,15 +23,15 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })
     : 'Chưa xác định';
 
-  const isKnockout = match.phase?.format === 'knockout' || match.phase?.type
-    ? match.phase.type !== 'group_stage'
-    : false;
+  const phaseFormat = match.phase?.format ?? match.phaseFormat ?? null;
+  const phaseName = match.phase?.name ?? match.phaseName ?? null;
+  const isKnockout = phaseFormat === 'knockout';
 
-  const phaseLabel = match.phase?.name
-    || (match.phase?.type ? PHASE_TYPE_LABELS[match.phase.type] : null);
-
-  const roundLabel = phaseLabel
-    ? phaseLabel
+  // Round-robin: hiện "Vòng N" từ match.round. Knockout: hiện tên phase
+  // ("Tứ kết"/"Bán kết"...) thay vì round number — round trong knockout là
+  // bracket round nội bộ, không có ý nghĩa với người xem.
+  const stageLabel = isKnockout
+    ? phaseName
     : (match.round ? `Vòng ${match.round}` : null);
 
   return (
@@ -69,12 +49,13 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
             <Clock className="w-4 h-4" />
             {dateLabel}
           </div>
-          {roundLabel && (
-            <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-inner uppercase tracking-widest border ${isKnockout
-                ? 'text-amber-300 bg-amber-500/10 border-amber-500/30'
-                : 'text-gray-400 bg-navy-dark border-navy-light'
+          {stageLabel && (
+            <span className={`flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full shadow-inner uppercase tracking-widest ${isKnockout
+              ? 'text-amber-300 bg-amber-500/10 border border-amber-500/30'
+              : 'text-gray-400 bg-navy-dark border border-navy-light'
               }`}>
-              {roundLabel}
+              {isKnockout && <Trophy className="w-3 h-3" />}
+              {stageLabel}
             </span>
           )}
         </div>
@@ -111,13 +92,13 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
                 Kết quả
               </div>
               <span className={`text-4xl font-black tracking-wider ${match.home_score > match.away_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                  match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+                match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
                 }`}>
                 {match.home_score}
               </span>
               <span className="text-2xl font-black text-gray-600 mx-3">—</span>
               <span className={`text-4xl font-black tracking-wider ${match.away_score > match.home_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                  match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+                match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
                 }`}>
                 {match.away_score}
               </span>

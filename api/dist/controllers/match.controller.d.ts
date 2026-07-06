@@ -84,7 +84,7 @@ export declare class MatchController extends Controller {
      * scheduleOptions truyền qua query params vì DELETE không nên có body.
      * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
      */
-    deleteEvent(id: number, eventId: number, venueIds?: string, matchTimes?: string): Promise<void>;
+    deleteEvent(id: number, eventId: number, query: matchSchema.DeleteEventQueryDto): Promise<void>;
     /**
      * Sửa event (minute, type, player, period, note) sau khi match finished.
      * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.

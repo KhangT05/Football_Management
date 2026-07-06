@@ -11,6 +11,7 @@ export type Slot = {
     venue_id: number;
     date: Date;
     time: string;
+    scheduledAtMs: number;
 };
 export type GenerateOptions = {
     desiredGroupCount: number;

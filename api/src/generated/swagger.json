@@ -4312,6 +4312,27 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"infer_typeofDeleteEventQuerySchema_": {
+				"properties": {
+					"matchTimes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
+			},
+			"DeleteEventQueryDto": {
+				"$ref": "#/components/schemas/infer_typeofDeleteEventQuerySchema_"
+			},
 			"Partial_RecordEventInput_": {
 				"properties": {
 					"playerId": {
@@ -6626,7 +6647,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UpdateTournamentRuleDto"
+									"$ref": "#/components/schemas/TournamentRuleDto"
 								}
 							}
 						}
@@ -6651,6 +6672,14 @@
 						"schema": {
 							"format": "double",
 							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "force",
+						"required": false,
+						"schema": {
+							"type": "boolean"
 						}
 					}
 				],
@@ -10878,7 +10907,6 @@
 						}
 					}
 				},
-				"description": "List events của 1 trận.\r\n\r\nQuery params:\r\n  Simple filters: ?type=goal&period=first_half\r\n  Pagination: ?page=1&per_page=30\r\n  Sort: ?sort=minute&direction=asc\r\n  Search: ?q=keyword (if searchFields enabled)",
 				"tags": [
 					"Match Result"
 				],
@@ -11073,12 +11101,15 @@
 						}
 					}
 				},
+				"description": "FIX (Critical #1 — auth bypass):",
 				"tags": [
 					"Match Result"
 				],
 				"security": [
 					{
-						"jwt": []
+						"jwt": [
+							"admin"
+						]
 					}
 				],
 				"parameters": [
@@ -11906,18 +11937,25 @@
 					},
 					{
 						"in": "query",
-						"name": "venueIds",
+						"name": "matchTimes",
 						"required": false,
 						"schema": {
-							"type": "string"
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					},
 					{
 						"in": "query",
-						"name": "matchTimes",
+						"name": "venueIds",
 						"required": false,
 						"schema": {
-							"type": "string"
+							"type": "array",
+							"items": {
+								"type": "number",
+								"format": "double"
+							}
 						}
 					}
 				]

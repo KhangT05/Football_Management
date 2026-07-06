@@ -1,4 +1,4 @@
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request, Query } from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 import { TournamentRuleDto, type CreateTournamentRuleDto, type UpdateTournamentRuleDto } from "../dtos/tournamentRule.schema.js";
@@ -36,9 +36,16 @@ export class TournamentRuleController extends Controller {
   @Security("jwt", ["admin", "organizing"])
   async update(
     @Path() id: number,
-    @Body() body: UpdateTournamentRuleDto
-  ): Promise<UpdateTournamentRuleDto> {
-    return this.service.update(id, body);
+    @Body() body: UpdateTournamentRuleDto,
+    @Query() force?: boolean,
+  ): Promise<TournamentRuleDto> {
+    // FIX: return type UpdateTournamentRuleDto → TournamentRuleDto (service.update
+    // trả full object + relations, sai response schema cũ gây lệch OpenAPI codegen).
+    // Expose `force` — service đã có escape hatch bypass retroactive-guard nhưng
+    // controller không truyền được, endpoint luôn throw CONFLICT không path nào
+    // recover. Cân nhắc siết force=true riêng về ["admin"] nếu không muốn
+    // organizing tự bypass integrity guard cho field retroactive.
+    return this.service.update(id, body, force ?? false);
   }
 
   @Delete("{id}")
