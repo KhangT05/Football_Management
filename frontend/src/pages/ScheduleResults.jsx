@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid, GitBranch } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
@@ -11,13 +11,6 @@ import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
-// GIẢ ĐỊNH: knockoutApi tồn tại ở '../api/knockoutApi' với method
-// getBracket(seasonId) trả về { rounds: [{ round, phaseName, matches: [...] }] }
-// hoặc null/404 nếu season chưa có phase knockout. Đây chỉ là suy đoán dựa
-// theo pattern knockoutApi.generateBracket(seasonId, payload) đã thấy trước
-// — CHƯA xác nhận được shape thật vì không có source file knockoutApi.
-// Nếu request fail hoặc shape khác, section bracket tự ẩn (không crash trang).
-import { knockoutApi } from '../api/knockoutApi';
 
 function unwrapGroupsResponse(res) {
   const candidates = [res?.data?.data, res?.data, res];
@@ -29,67 +22,18 @@ function unwrapGroupsResponse(res) {
   return [];
 }
 
-// GIẢ ĐỊNH: cùng PHASE_TYPE_LABELS với ScheduleMatchCard — nếu enum thực tế
-// khác, sửa đồng thời cả 2 chỗ hoặc rút ra 1 file constants chung.
-const PHASE_TYPE_LABELS = {
-  round_of_32: 'Vòng 1/16',
-  round_of_16: 'Vòng 1/8',
-  quarter_final: 'Tứ kết',
-  semi_final: 'Bán kết',
-  third_place: 'Tranh hạng 3',
-  final: 'Chung kết',
-};
-
-// ── Bracket Section (knockout) ──────────────────────────────────
-function BracketSection({ rounds, teamMap, venueMap, onSelectMatch }) {
-  if (!rounds || rounds.length === 0) return null;
-
-  return (
-    <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
-      <div className="max-w-4xl mx-auto mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-            <GitBranch className="w-5 h-5 text-amber-400" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-orange-500 uppercase tracking-wider">
-            Sơ đồ Knockout
-          </h2>
-        </div>
-      </div>
-
-      <div className="flex gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {rounds.map(r => (
-          <div key={r.round} className="min-w-[280px] sm:min-w-[320px] bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-5 shadow-2xl snap-start shrink-0">
-            <h3 className="text-sm font-black text-amber-400 uppercase tracking-widest mb-4 pb-3 border-b border-navy-light/50">
-              {r.phaseName || PHASE_TYPE_LABELS[r.phaseType] || `Vòng ${r.round}`}
-            </h3>
-            <div className="space-y-3">
-              {r.matches.map(m => {
-                const home = teamMap[m.home_team_id];
-                const away = teamMap[m.away_team_id];
-                const hasScore = m.home_score != null && m.away_score != null;
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => onSelectMatch({ ...m, home_team: home, away_team: away, venue: venueMap[m.venue_id] })}
-                    className="cursor-pointer bg-navy/60 border border-navy-light rounded-xl p-3 hover:border-amber-500/40 transition-colors"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-bold text-white truncate flex-1">{home?.name ?? `Đội #${m.home_team_id ?? '?'}`}</span>
-                      <span className="font-black text-gray-400 mx-2 text-xs shrink-0">
-                        {hasScore ? `${m.home_score} - ${m.away_score}` : 'vs'}
-                      </span>
-                      <span className="font-bold text-white truncate flex-1 text-right">{away?.name ?? `Đội #${m.away_team_id ?? '?'}`}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+// phase.format có thể trả về dạng object nested (match.phase.format) hoặc
+// flattened (match.phaseFormat) tuỳ endpoint (getSeasonSchedule đã flatten,
+// findMatchesByTeam giữ nested phase) — ScheduleStore cache có thể trộn cả
+// 2 nguồn. Đọc cả 2, ưu tiên nested.
+function getPhaseFormat(m) {
+  return m.phase?.format ?? m.phaseFormat ?? null;
+}
+function getPhaseName(m) {
+  return m.phase?.name ?? m.phaseName ?? null;
+}
+function getPhaseId(m) {
+  return m.phase?.id ?? m.phaseId ?? null;
 }
 
 // ── Page ──────────────────────────────────────────────────────
@@ -97,12 +41,16 @@ export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
+
+  // Filter round CHỈ áp dụng cho match round-robin (group_stage) — trước đây
+  // filter này áp cho toàn bộ allMatches bao gồm cả knockout, nhưng knockout
+  // round là bracket round nội bộ (1 = vòng đầu CỦA PHASE ĐÓ, không phải
+  // matchday tuyệt đối) nên trộn chung filter numeric gây sai lệch: bấm
+  // "Vòng 1" sẽ ra cả trận vòng bảng lượt 1 LẪN trận knockout round-of-16.
   const [filterRound, setFilterRound] = useState('');
 
   const [groups, setGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
-
-  const [bracketRounds, setBracketRounds] = useState([]);
 
   // ── Zustand stores ─────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
@@ -116,10 +64,7 @@ export default function ScheduleResults() {
   const teamMap = useMemo(() => Object.fromEntries((teams || []).map(t => [t.id, t])), [teams]);
   const venueMap = useMemo(() => Object.fromEntries((venues || []).map(v => [v.id, v])), [venues]);
 
-
   // ── Matches raw + enriched ─────────────────────────────────
-  // Enrich: gắn home_team, away_team, venue từ store. Giữ nguyên match.phase
-  // nếu API đã trả (không override) — dùng bởi ScheduleMatchCard cho phase badge.
   const allMatches = useMemo(() => {
     const rawMatches = selectedSeasonId
       ? getMatchesFromCache(Number(selectedSeasonId))
@@ -136,23 +81,62 @@ export default function ScheduleResults() {
     ? isSeasonLoading(Number(selectedSeasonId))
     : seasons.some(s => isSeasonLoading(s.id)));
 
-  // ── Tabs ───────────────────────────────────────────────────
+  // ── Tách round-robin vs knockout — 2 khái niệm "round"/"stage" khác nhau ──
+  const roundRobinMatches = useMemo(
+    () => allMatches.filter(m => getPhaseFormat(m) !== 'knockout'),
+    [allMatches],
+  );
+  const knockoutMatches = useMemo(
+    () => allMatches.filter(m => getPhaseFormat(m) === 'knockout'),
+    [allMatches],
+  );
+
+  // Available rounds derived CHỈ từ round-robin matches
   const availableRounds = useMemo(() => {
-    const rounds = [...new Set(allMatches.map(m => m.round).filter(Boolean))].sort((a, b) => a - b);
+    const rounds = [...new Set(roundRobinMatches.map(m => m.round).filter(Boolean))]
+      .sort((a, b) => Number(a) - Number(b));
     return rounds;
-  }, [allMatches]);
+  }, [roundRobinMatches]);
 
   const upcoming = useMemo(() => {
-    let list = allMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
+    let list = roundRobinMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
     if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
     return list.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-  }, [allMatches, filterRound]);
+  }, [roundRobinMatches, filterRound]);
 
   const results = useMemo(() => {
-    let list = allMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited');
+    let list = roundRobinMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited');
     if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
     return list.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
-  }, [allMatches, filterRound]);
+  }, [roundRobinMatches, filterRound]);
+
+  // Knockout bracket: nhóm theo phase (round_of_16/quarter_final/semi_final/
+  // final...), mỗi phase sort theo bracket round asc rồi scheduled_at asc.
+  // Hiển thị độc lập với tab upcoming/results — 1 phase có thể có cả trận
+  // đã đá lẫn chưa đá (VD bán kết lượt đi xong, lượt về chưa đá).
+  const knockoutStages = useMemo(() => {
+    const byPhase = new Map();
+    for (const m of knockoutMatches) {
+      const phaseId = getPhaseId(m) ?? 'unknown';
+      const bucket = byPhase.get(phaseId) ?? { phaseId, phaseName: getPhaseName(m) ?? 'Knockout', matches: [] };
+      bucket.matches.push(m);
+      byPhase.set(phaseId, bucket);
+    }
+    const stages = [...byPhase.values()];
+    for (const stage of stages) {
+      stage.matches.sort((a, b) => {
+        const ra = Number(a.round ?? 0);
+        const rb = Number(b.round ?? 0);
+        if (ra !== rb) return ra - rb;
+        return new Date(a.scheduled_at ?? 0) - new Date(b.scheduled_at ?? 0);
+      });
+    }
+    // Sort các phase theo round nhỏ nhất trong phase đó — round_of_16 trước
+    // quarter_final trước semi_final trước final (bracket round tăng dần
+    // qua các phase, đúng thứ tự tiến triển giải).
+    stages.sort((a, b) => (a.matches[0]?.round ?? 0) - (b.matches[0]?.round ?? 0));
+    return stages;
+  }, [knockoutMatches]);
 
   // ── Fetch on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -179,7 +163,7 @@ export default function ScheduleResults() {
     }
   }, [seasons, selectedSeasonId]);
 
-  // Khi season thay đổi: fetch lịch mới + groups + bracket knockout
+  // Khi season thay đổi: fetch lịch mới + groups
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
@@ -197,24 +181,8 @@ export default function ScheduleResults() {
         }
       };
       fetchGroups();
-
-      // Bracket knockout — độc lập với groups, season có thể chỉ có 1 trong 2
-      // hoặc cả 2 (round-robin xong rồi mới có knockout). Fail im lặng: đây
-      // là section bổ sung, không phải nội dung chính của trang.
-      const fetchBracket = async () => {
-        try {
-          const res = await knockoutApi.getBracket(selectedSeasonId);
-          const payload = typeof res?.status === 'boolean' ? res.data : res;
-          setBracketRounds(Array.isArray(payload?.rounds) ? payload.rounds : []);
-        } catch (error) {
-          // 404/chưa có knockout phase = expected, không log như lỗi thật
-          setBracketRounds([]);
-        }
-      };
-      fetchBracket();
     } else {
       setGroups([]);
-      setBracketRounds([]);
     }
   }, [selectedSeasonId, fetchBySeason]);
 
@@ -333,11 +301,12 @@ export default function ScheduleResults() {
               </div>
             </div>{/* end flex row */}
 
-            {/* Round filter row — chỉ hiện khi có dữ liệu */}
+            {/* Round filter row — chỉ hiện khi có dữ liệu round-robin. KHÔNG
+                bao gồm knockout (xem section riêng bên dưới nội dung chính). */}
             {availableRounds.length > 0 && (
               <div className="flex items-center gap-3 flex-wrap border-t border-navy-light/50 pt-4">
                 <div className="flex items-center gap-1.5 text-xs font-black text-gray-400 uppercase tracking-wider shrink-0">
-                  <Filter className="w-3.5 h-3.5" /> Vòng đấu:
+                  <Filter className="w-3.5 h-3.5" /> Vòng đấu (Vòng bảng):
                 </div>
                 <button
                   onClick={() => setFilterRound('')}
@@ -372,8 +341,6 @@ export default function ScheduleResults() {
             )}
           </div>
 
-
-
           {/* Stats bar */}
           <div className="flex items-center justify-between mb-6 px-2 animate-fade-in">
             {selectedSeason && (
@@ -383,9 +350,9 @@ export default function ScheduleResults() {
             )}
 
             <div className="flex items-center gap-4 ml-auto">
-              {!isLoading && selectedSeasonId && allMatches.length > 0 && (
+              {!isLoading && selectedSeasonId && roundRobinMatches.length > 0 && (
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden sm:block">
-                  Tổng <span className="text-white">{allMatches.length}</span> trận <span className="mx-1 text-gray-600">|</span>
+                  Tổng <span className="text-white">{roundRobinMatches.length}</span> trận vòng bảng <span className="mx-1 text-gray-600">|</span>
                   <span className="text-emerald-400 ml-1">{results.length} KQ</span> <span className="mx-1 text-gray-600">|</span>
                   <span className="text-amber-400 ml-1">{upcoming.length} Tới</span>
                 </p>
@@ -402,7 +369,7 @@ export default function ScheduleResults() {
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content — Round robin (upcoming/results) */}
           <div className="space-y-6">
             {!selectedSeasonId && !seasonsLoading ? (
               <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-500 animate-fade-in bg-navy/30 rounded-4xl border border-navy-light/50 border-dashed backdrop-blur-sm">
@@ -439,7 +406,7 @@ export default function ScheduleResults() {
                 </div>
                 <div className="text-center">
                   <p className="font-black text-xl text-white mb-2 tracking-tight">
-                    {activeTab === 'upcoming' ? 'Chưa có lịch thi đấu' : 'Chưa có kết quả'}
+                    {activeTab === 'upcoming' ? 'Chưa có lịch thi đấu vòng bảng' : 'Chưa có kết quả vòng bảng'}
                   </p>
                   <p className="text-sm font-medium">
                     {activeTab === 'upcoming' ? 'Các trận đấu sẽ được cập nhật sớm nhất.' : 'Giải đấu chưa có trận nào kết thúc.'}
@@ -468,6 +435,41 @@ export default function ScheduleResults() {
           </div>
 
         </div>
+
+        {/* Knockout Bracket Section — độc lập với tab upcoming/results, luôn
+            hiển thị đủ tất cả trận (đã đá + chưa đá) theo từng phase, vì 1
+            phase có thể ở trạng thái hỗn hợp (VD bán kết lượt đi xong, lượt
+            về chưa đá) — ép vào 1 trong 2 tab sẽ mất ngữ cảnh. */}
+        {knockoutStages.length > 0 && (
+          <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
+            <div className="max-w-4xl mx-auto mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-yellow-200 uppercase tracking-wider">
+                  Vòng loại trực tiếp
+                </h2>
+              </div>
+            </div>
+
+            <div className="max-w-4xl mx-auto space-y-10">
+              {knockoutStages.map(stage => (
+                <div key={stage.phaseId}>
+                  <h3 className="text-sm font-black text-amber-300 uppercase tracking-widest mb-4 px-1">
+                    {stage.phaseName}
+                    <span className="ml-2 text-gray-500 font-bold normal-case">({stage.matches.length} trận)</span>
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    {stage.matches.map((match, idx) => (
+                      <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Groups Section (Wide Layout) */}
         {!isGroupsLoading && groups.length > 0 && (
@@ -527,14 +529,6 @@ export default function ScheduleResults() {
             </div>
           </div>
         )}
-
-        {/* Bracket Section (knockout) — song song với Groups, hiện khi có phase knockout */}
-        <BracketSection
-          rounds={bracketRounds}
-          teamMap={teamMap}
-          venueMap={venueMap}
-          onSelectMatch={setSelectedMatch}
-        />
       </div>
 
       <MatchModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />

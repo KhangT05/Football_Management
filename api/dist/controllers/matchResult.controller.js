@@ -24,43 +24,32 @@ let MatchResultController = class MatchResultController extends Controller {
         const result = await this.matchResultService.getMatchResult(id);
         return result;
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — MATCH EVENTS (paginated)
-    // ═══════════════════════════════════════════════════════════════════════════
-    /**
-     * List events của 1 trận.
-     *
-     * Query params:
-     *   Simple filters: ?type=goal&period=first_half
-     *   Pagination: ?page=1&per_page=30
-     *   Sort: ?sort=minute&direction=asc
-     *   Search: ?q=keyword (if searchFields enabled)
-     */
     async getMatchEvents(id, type, period, page, per_page, sort, direction, q) {
-        // Build QueryRequest từ parsed query params
         const req = buildMatchEventsQueryRequest({
-            type,
-            period,
-            page,
-            per_page,
-            sort,
-            direction,
-            q,
+            type, period, page, per_page, sort, direction, q,
         });
-        // Service gọi queryable.run(req)
         const result = await this.matchResultService.listMatchEvents(id, req);
         return result;
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — MATCH PLAYER STATS (public, không pagination)
-    // ═══════════════════════════════════════════════════════════════════════════
     async getMatchPlayerStats(id) {
         const stats = await this.matchResultService.getMatchPlayerStats(id);
         return stats;
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // POST — CONFIRM RESULT (require auth)
-    // ═══════════════════════════════════════════════════════════════════════════
+    /**
+     * FIX (Critical #1 — auth bypass): @Security("jwt") trước đây không role-restrict
+     * — bất kỳ authenticated user (user/leader/organizing) đều gọi được endpoint này
+     * để confirmResult() trực tiếp, bypass toàn bộ state machine ở MatchController
+     * (finalizeMatch → grace period → confirmOfficial), vốn siết admin cho mọi
+     * confirm/forfeit/resolve-appeal operation. _guardConfirm chỉ chặn status
+     * finished/cancelled — match ongoing/pending_official/needs_review/abandoned/
+     * bye/postponed đều pass, và nếu body.input cho set explicitWinnerTeamId, đây
+     * là privilege escalation thực sự (set winner tuỳ ý cho bất kỳ match).
+     *
+     * Siết về admin. Khuyến nghị đánh giá lại: endpoint này có còn cần thiết không
+     * — MatchController đã có confirmOfficial/forfeitMatch/adminRecordResult cho
+     * đầy đủ use case; nếu không có consumer riêng (integration test, internal
+     * tool), nên xoá hẳn thay vì giữ 1 entrypoint thứ 2 vào cùng service method.
+     */
     async confirmResult(id, body) {
         const result = await this.matchResultService.confirmResult(id, body.input, body.scheduleOptions);
         this.setStatus(201);
@@ -99,7 +88,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchResultController.prototype, "getMatchPlayerStats", null);
 __decorate([
-    Security("jwt"),
+    Security("jwt", ["admin"]),
     Post("{id}/result/confirm"),
     __param(0, Path()),
     __param(1, Body()),

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   CalendarDays, CalendarPlus, Zap, Edit3, X, Save,
-  MapPin, Clock, Loader2, RefreshCw, Search, GitBranch, Trophy
+  MapPin, Clock, Loader2, RefreshCw, Search, Trophy, LayoutGrid
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
@@ -11,12 +11,9 @@ import useToastStore from '../../store/toastStore';
 import { groupApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
-// GIẢ ĐỊNH đường dẫn import — chưa xác nhận được vị trí file thật của
-// KnockoutUI trong project (không có trong source đã cung cấp). Đổi lại
-// path này để khớp cấu trúc thư mục thực tế. Component nhận prop
-// `seasonId` (number) — theo đúng signature knockoutApi.generateBracket(seasonId, payload)
-// đã thấy ở KnockoutUI.
-import KnockoutUI from '../knockout/KnockoutUI';
+// ASSUMPTION: KnockoutUI nằm cùng thư mục admin, subfolder knockout/ — chỉnh
+// path nếu thực tế đặt khác. Component nhận prop `seasonId` (number).
+import KnockoutUI from './knockout/KnockoutUI';
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
@@ -127,6 +124,12 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
+// Modal này giờ có 2 chế độ, tự động phát hiện dựa trên GroupService:
+//  - Season CHƯA có bảng nào (hasDrawnGroups=false): hiện form cũ (tự tạo
+//    bảng + tự chia đội), gọi POST /schedules/seasons/{id}/generate.
+//  - Season ĐÃ có bảng + đã bốc thăm (hasDrawnGroups=true): ẩn phần
+//    "số bảng / kích thước bảng" (không còn ý nghĩa gì), chỉ hỏi sân/giờ/
+//    nghỉ tối thiểu, gọi POST /schedules/seasons/{id}/generate-from-groups.
 function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
@@ -143,6 +146,9 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Kiểm tra season đã có bảng + đã bốc thăm (>= 2 đội/bảng) hay chưa —
+  // dùng chính API groupApi.listBySeason (GroupService.findAllBySeason),
+  // đảm bảo cùng nguồn sự thật với GroupDrawUI.
   useEffect(() => {
     if (!seasonId) return;
     let cancelled = false;
@@ -199,8 +205,10 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
     };
 
     if (hasDrawnGroups) {
+      // Bảng đã tồn tại + đã bốc thăm — chỉ sinh match + xếp lịch
       await onGenerateFromGroups(seasonId, { ...basePayload, doubleRound: false });
     } else {
+      // Chưa có bảng — luồng cũ: tự tạo bảng + tự chia đội + sinh lịch
       await onGenerate(seasonId, {
         ...basePayload,
         desiredGroupCount: Number(formData.desiredGroupCount),
@@ -344,11 +352,11 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
 
-  // NEW: phase-type switcher — nối 2 luồng "vòng bảng" và "knockout" đã tồn
-  // tại độc lập ở API level nhưng chưa có entry point chung trong UI. Trước
-  // đây user phải tự chuyển sang 1 component KnockoutUI tách biệt hoàn toàn,
-  // không có state/context liền mạch từ đây.
-  const [subTab, setSubTab] = useState('group'); // 'group' | 'knockout'
+  // NEW — toggle Vòng bảng / Knockout. Trước đây không có entry point nào
+  // trong ScheduleTab dẫn tới KnockoutUI — 2 luồng tồn tại độc lập ở API/
+  // component level nhưng user thực tế không chuyển được qua lại. seasonId
+  // được truyền xuyên suốt để KnockoutUI dùng chung season đang chọn.
+  const [stageView, setStageView] = useState('roundrobin'); // 'roundrobin' | 'knockout'
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null); // stores match object if open
@@ -363,15 +371,18 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   }, [fetchVenues, fetchTeams]);
 
   useEffect(() => {
-    if (selectedSeasonId && subTab === 'group') {
+    if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId), { force: true });
     }
-  }, [selectedSeasonId, subTab, fetchBySeason]);
+  }, [selectedSeasonId, fetchBySeason]);
 
   const effectiveSeasonId = selectedSeasonId;
   const matches = useMemo(() => {
     if (!effectiveSeasonId) return [];
     let list = getMatchesFromCache(Number(effectiveSeasonId));
+    // Tab lịch vòng bảng chỉ hiện match round-robin — knockout có view riêng
+    // (KnockoutUI), tránh trộn 2 khái niệm "round" khác nhau trong cùng list.
+    list = list.filter(m => (m.phase?.format ?? m.phaseFormat) !== 'knockout');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       list = list.filter(m => {
@@ -407,6 +418,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
+  // NEW: sinh lịch cho season đã có bảng + đã bốc thăm sẵn (qua GroupDrawUI).
   const handleGenerateFromGroups = async (seasonId, payload) => {
     try {
       await generateFromGroups(seasonId, payload);
@@ -431,36 +443,32 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   return (
     <>
       <div className="space-y-6 animate-fade-in">
-
-        {/* Sub-tab switcher: Vòng bảng vs Knockout — luôn hiện, không gate theo
-            trạng thái round-robin. KnockoutService tự throw CONFLICT nếu chưa
-            đủ điều kiện (vd standings chưa đủ đội), KnockoutUI hiển thị lỗi đó
-            trực tiếp qua toast — không cần FE tự đoán trạng thái trước. */}
-        <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-full sm:w-fit">
+        {/* Stage toggle — Vòng bảng vs Knockout */}
+        <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-fit shadow-inner">
           <button
-            onClick={() => setSubTab('group')}
-            className={`flex-1 sm:w-40 py-2.5 px-4 text-xs font-black uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 ${subTab === 'group' ? 'bg-neon text-black' : 'text-gray-400 hover:text-white'
+            onClick={() => setStageView('roundrobin')}
+            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${stageView === 'roundrobin' ? 'bg-neon text-black shadow-md' : 'text-gray-400 hover:text-white'
               }`}
           >
-            <Trophy className="w-4 h-4" /> Vòng bảng
+            <LayoutGrid className="w-4 h-4" /> Vòng bảng
           </button>
           <button
-            onClick={() => setSubTab('knockout')}
-            className={`flex-1 sm:w-40 py-2.5 px-4 text-xs font-black uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 ${subTab === 'knockout' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-white'
+            onClick={() => setStageView('knockout')}
+            disabled={!effectiveSeasonId}
+            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 disabled:opacity-40 ${stageView === 'knockout' ? 'bg-amber-500 text-black shadow-md' : 'text-gray-400 hover:text-white'
               }`}
           >
-            <GitBranch className="w-4 h-4" /> Knockout
+            <Trophy className="w-4 h-4" /> Knockout
           </button>
         </div>
 
-        {subTab === 'knockout' ? (
-          !effectiveSeasonId ? (
-            <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
-              <GitBranch className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">Chọn mùa giải trước khi tạo sơ đồ Knockout.</p>
-            </div>
-          ) : (
+        {stageView === 'knockout' ? (
+          effectiveSeasonId ? (
             <KnockoutUI seasonId={Number(effectiveSeasonId)} />
+          ) : (
+            <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
+              <p className="text-gray-400 font-bold">Chọn mùa giải trước để tạo knockout.</p>
+            </div>
           )
         ) : (
           <>

@@ -11,7 +11,6 @@ export class MatchLifecycleService {
         this.prisma = prisma;
         this.matchResultService = matchResultService;
     }
-    // ─── State machine ────────────────────────────────────────────────────────
     async startMatch(matchId) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -44,9 +43,6 @@ export class MatchLifecycleService {
             data: { current_period: period },
         });
     }
-    // ─── Event recording ──────────────────────────────────────────────────────
-    // recordEvent và finalizeMatch cùng SELECT...FOR UPDATE trên row match →
-    // 2 thao tác tự serialize qua nhau (loại race draw-guard vs event chen giữa).
     async recordEvent(matchId, input) {
         await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -153,7 +149,6 @@ export class MatchLifecycleService {
         }
         return { home90, away90, homeET, awayET };
     }
-    // ─── Finalize ─────────────────────────────────────────────────────────────
     async finalizeMatch(matchId, input = {}, _scheduleOptions) {
         await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -183,8 +178,6 @@ export class MatchLifecycleService {
             });
         });
     }
-    // ─── Manual score ─────────────────────────────────────────────────────────
-    // submitManualScore — thêm guard fail-fast, đặt ngay sau check eventCount
     async submitManualScore(matchId, input, _scheduleOptions) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -197,17 +190,11 @@ export class MatchLifecycleService {
         const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
         if (eventCount > 0)
             throw createAppError('CONFLICT', `Match ${matchId} đã có ${eventCount} events — dùng finalizeMatch() thay vì manual score`);
-        // FIX: fail-fast — trước đây guard này chỉ có ở finalizeMatch, manual score
-        // path đẩy lỗi xuống tận _guardConfirm ở confirmResult, tốn round-trip + admin
-        // debug ngược khó hơn.
         const resultType = input.resultType ?? MatchResultType.full_time;
         if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
             const isTwoLegged = match.phase.legs === 2 && match.leg != null;
             if (!isTwoLegged && input.homeScore === input.awayScore)
                 throw createAppError('CONFLICT', `Match ${matchId} đang hoà ${input.homeScore}-${input.awayScore} ở knockout — cần extra_time/penalty`);
-            // Two-legged: check aggregate tương tự finalizeMatch nếu cần — bỏ qua ở đây
-            // vì manual score input không có sẵn events để suy leg1 score chính xác;
-            // guard đầy đủ vẫn chạy đúng ở _guardConfirm downstream.
         }
         await this.prisma.match.update({
             where: { id: matchId },
@@ -224,21 +211,6 @@ export class MatchLifecycleService {
             },
         });
     }
-    // ─── Confirm official ─────────────────────────────────────────────────────
-    // VERIFIED (matchresult.service.ts thật): confirmResult() KHÔNG nhận tx —
-    // tự mở this.prisma.$transaction() bằng connection riêng. Do đó
-    // confirmOfficial() KHÔNG ĐƯỢC gọi từ bên trong 1 transaction đang giữ
-    // row lock trên `matches` (vd claim-tx của handleGracePeriodTimeout) —
-    // nếu làm vậy, tx.match.update() trong confirmResult (connection B) sẽ
-    // block chờ lock của connection A trong khi A đang await B → deadlock.
-    // confirmOfficial luôn dùng this.prisma trực tiếp, chạy SAU khi mọi
-    // claim-transaction đã commit và release lock.
-    //
-    // Correctness cho race "2 instance cùng confirm 1 match" nằm ở
-    // matchResultService.confirmResult(): match_id là unique constraint trên
-    // matchResult, insert thua cuộc nhận P2002 → convert CONFLICT "đã có
-    // MatchResult". SELECT FOR UPDATE SKIP LOCKED ở tầng dưới chỉ là
-    // best-effort để tránh gọi thừa, KHÔNG phải nguồn correctness.
     async confirmOfficial(matchId, scheduleOptions) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -293,15 +265,22 @@ export class MatchLifecycleService {
             resultType,
         }, scheduleOptions);
     }
-    // ─── Grace period timeout handler ─────────────────────────────────────────
-    // Claim (SELECT FOR UPDATE SKIP LOCKED) chạy trong 1 transaction NGẮN,
-    // riêng biệt với confirmOfficial() — không bọc chung để tránh deadlock
-    // (xem comment ở confirmOfficial). Claim chỉ là best-effort filter: nếu
-    // 2 instance đọc trùng lúc cùng thấy row chưa bị lock, cả 2 có thể cùng
-    // "claimed = true" và cùng gọi confirmOfficial — cửa sổ hở này CHẤP NHẬN
-    // ĐƯỢC vì unique constraint match_id trên matchResult (P2002 trong
-    // confirmResult) mới là nguồn correctness thật, claim chỉ giảm số lần
-    // cron instance khác phải ăn CONFLICT vô ích.
+    /**
+     * FIX (High #4 — claim correctness): bản cũ chỉ SELECT...FOR UPDATE SKIP LOCKED
+     * rồi return true/false trong 1 transaction KHÔNG làm gì khác — row lock được
+     * giải phóng ngay khi tx đó commit, không có write nào để tạo mutual exclusion
+     * thực sự. Hai lần chạy job gần nhau (hoặc 2 instance) đều pass claim check
+     * trước khi worker nào gọi confirmOfficial(); bảo vệ thực tế duy nhất trước đây
+     * là unique constraint P2002 + string-match "đã có MatchResult" — coupling giữa
+     * lỗi nghiệp vụ và logic idempotency, dễ vỡ nếu message đổi.
+     *
+     * Fix: claim bằng 1 UPDATE có điều kiện, atomic theo MVCC row lock của chính
+     * statement UPDATE — chỉ 1 process thắng do Postgres serialize concurrent UPDATE
+     * trên cùng row; process thua đọc affected rows = 0 và tự skip. Dùng
+     * pending_official_at=NULL làm claim signal (an toàn vì confirmOfficial không
+     * đọc field này); review path dùng chính status làm claim signal (đổi thẳng
+     * sang needs_review trong 1 statement, không cần SELECT trước).
+     */
     async handleGracePeriodTimeout(gracePeriodMinutes = 15, scheduleOptions) {
         const cutoff = new Date(Date.now() - gracePeriodMinutes * 60 * 1000);
         const expired = await this.prisma.match.findMany({
@@ -321,18 +300,17 @@ export class MatchLifecycleService {
             else
                 autoIds.push(m.id);
         }
-        const confirmErrors = [];
         const succeededAutoIds = [];
         for (const matchId of autoIds) {
-            const claimed = await this.prisma.$transaction(async (tx) => {
-                const rows = await tx.$queryRaw `
-                    SELECT id FROM matches
-                    WHERE id = ${matchId} AND status = ${MatchStatus.pending_official}
-                    FOR UPDATE SKIP LOCKED
-                `;
-                return rows.length > 0;
-            });
-            if (!claimed) {
+            const claimed = await this.prisma.$queryRaw `
+                UPDATE matches
+                SET pending_official_at = NULL
+                WHERE id = ${matchId}
+                  AND status = ${MatchStatus.pending_official}
+                  AND pending_official_at < ${cutoff}
+                RETURNING id
+            `;
+            if (claimed.length === 0) {
                 console.warn(`[GracePeriod] match ${matchId} đang bị instance khác xử lý — skip`);
                 continue;
             }
@@ -348,36 +326,32 @@ export class MatchLifecycleService {
                     console.warn(`[GracePeriod] match ${matchId} đã được confirm trước — skip (idempotent)`);
                 }
                 else {
-                    confirmErrors.push({ matchId, error: err });
                     console.error(`[GracePeriod] auto-confirm failed for match ${matchId}:`, err);
+                    // Claim đã null hoá pending_official_at nhưng confirmOfficial fail —
+                    // nếu không reset, match kẹt vĩnh viễn ngoài filter `pending_official_at < cutoff`
+                    // ở lần chạy sau (vì now là null). Reset lại mốc cutoff để retry ở lần sau.
+                    await this.prisma.match.updateMany({
+                        where: { id: matchId, status: MatchStatus.pending_official, pending_official_at: null },
+                        data: { pending_official_at: new Date(Date.now() - gracePeriodMinutes * 60 * 1000 - 1000) },
+                    });
                 }
             }
         }
         const reviewIds = [];
         for (const matchId of reviewCandidateIds) {
-            const claimed = await this.prisma.$transaction(async (tx) => {
-                const rows = await tx.$queryRaw `
-                    SELECT id FROM matches
-                    WHERE id = ${matchId} AND status = ${MatchStatus.pending_official}
-                    FOR UPDATE SKIP LOCKED
-                `;
-                if (rows.length === 0)
-                    return false;
-                await tx.match.update({
-                    where: { id: matchId },
-                    data: { status: MatchStatus.needs_review },
-                });
-                return true;
-            });
-            if (claimed)
+            const claimed = await this.prisma.$queryRaw `
+                UPDATE matches
+                SET status = ${MatchStatus.needs_review}
+                WHERE id = ${matchId}
+                  AND status = ${MatchStatus.pending_official}
+                  AND pending_official_at < ${cutoff}
+                RETURNING id
+            `;
+            if (claimed.length > 0)
                 reviewIds.push(matchId);
         }
         return { autoOfficiated: succeededAutoIds, flaggedForReview: reviewIds };
     }
-    // ─── Forfeit / walkover ───────────────────────────────────────────────────
-    // VERIFIED: matchResultService._resolveWinner() đọc explicitWinnerTeamId
-    // và ưu tiên nó trước khi so sánh score — bug forfeit_score=0 config sai
-    // → 0-0 → winner vô định đã được đóng đúng nghĩa.
     async forfeitMatch(matchId, forfeitingTeamId, scheduleOptions) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -401,8 +375,6 @@ export class MatchLifecycleService {
             explicitWinnerTeamId: winnerIsHome ? match.home_team_id : match.away_team_id,
         }, scheduleOptions);
     }
-    // ─── Abandon ──────────────────────────────────────────────────────────────
-    // TECH DEBT: reuse field postponed_reason cho abandoned_reason — cần field riêng.
     async abandonMatch(matchId, minute, reason) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -421,7 +393,6 @@ export class MatchLifecycleService {
             },
         });
     }
-    // ─── Appeal / protest ─────────────────────────────────────────────────────
     async fileAppeal(matchId, reason) {
         await this._fileDispute(matchId, reason, MatchResultStatus.under_review);
     }
@@ -442,7 +413,6 @@ export class MatchLifecycleService {
             data: { status: targetStatus, appeal_reason: reason },
         });
     }
-    // ─── resolveAppeal ────────────────────────────────────────────────────────
     async resolveAppeal(matchId, input) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -500,9 +470,8 @@ export class MatchLifecycleService {
             }
         }
     }
-    // ─── Correction window guard ──────────────────────────────────────────────
-    async _assertCorrectionWindow(matchId) {
-        const match = await this.prisma.match.findUniqueOrThrow({
+    async _assertCorrectionWindow(matchId, client = this.prisma) {
+        const match = await client.match.findUniqueOrThrow({
             where: { id: matchId },
             select: { status: true, played_at: true },
         });
@@ -514,89 +483,66 @@ export class MatchLifecycleService {
         if (elapsed > CORRECTION_WINDOW_MS)
             throw createAppError('FORBIDDEN', `Match ${matchId}: correction window đã đóng (${Math.floor(elapsed / 60000)}p sau khi kết thúc, giới hạn 15p)`);
     }
-    // ─── addEvent (correction) ────────────────────────────────────────────────
     async addEvent(matchId, input, scheduleOptions) {
-        await this._assertCorrectionWindow(matchId);
-        const match = await this.prisma.match.findUniqueOrThrow({
-            where: { id: matchId },
-            select: { home_team_id: true },
-        });
-        if (input.type === MatchEventType.yellow_card && input.playerId) {
-            const existingYellow = await this.prisma.matchEvent.findFirst({
-                where: {
+        const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            await this._assertCorrectionWindow(matchId, tx);
+            const match = await tx.match.findUniqueOrThrow({
+                where: { id: matchId },
+                select: { home_team_id: true },
+            });
+            if (input.type === MatchEventType.yellow_card && input.playerId) {
+                const existingYellow = await tx.matchEvent.findFirst({
+                    where: {
+                        match_id: matchId,
+                        player_id: input.playerId,
+                        type: MatchEventType.yellow_card,
+                    },
+                    select: { id: true },
+                });
+                if (existingYellow)
+                    throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`);
+            }
+            await tx.matchEvent.create({
+                data: {
                     match_id: matchId,
                     player_id: input.playerId,
-                    type: MatchEventType.yellow_card,
+                    team_id: input.teamId,
+                    type: input.type,
+                    minute: input.minute,
+                    added_minute: input.addedMinute,
+                    period: input.period,
+                    note: input.note,
+                    card_color: this._deriveCardColor(input.type),
+                    sub_out_player_id: input.subOutPlayerId,
                 },
-                select: { id: true },
             });
-            if (existingYellow)
-                throw createAppError('VALIDATION_ERROR', `Player ${input.playerId} đã có thẻ vàng — dùng type 'second_yellow'`);
-        }
-        await this.prisma.matchEvent.create({
-            data: {
-                match_id: matchId,
-                player_id: input.playerId,
-                team_id: input.teamId,
-                type: input.type,
-                minute: input.minute,
-                added_minute: input.addedMinute,
-                period: input.period,
-                note: input.note,
-                card_color: this._deriveCardColor(input.type),
-                sub_out_player_id: input.subOutPlayerId,
-            },
+            return this._recalculateResultTx(tx, matchId, match.home_team_id);
         });
-        await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
+        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
     }
-    // ─── deleteEvent (correction) ─────────────────────────────────────────────
     async deleteEvent(matchId, eventId, scheduleOptions) {
-        await this._assertCorrectionWindow(matchId);
-        const match = await this.prisma.match.findUniqueOrThrow({
-            where: { id: matchId },
-            select: { home_team_id: true },
-        });
-        const event = await this.prisma.matchEvent.findUnique({
-            where: { id: eventId },
-            select: { match_id: true },
-        });
-        if (!event)
-            throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
-        if (event.match_id !== matchId)
-            throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
-        await this.prisma.matchEvent.delete({ where: { id: eventId } });
-        await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
-    }
-    // ─── editEvent (correction) ───────────────────────────────────────────────
-    async editEvent(matchId, eventId, input, scheduleOptions) {
-        await this._assertCorrectionWindow(matchId);
-        const match = await this.prisma.match.findUniqueOrThrow({
-            where: { id: matchId },
-            select: { home_team_id: true },
-        });
-        const event = await this.prisma.matchEvent.findUnique({
-            where: { id: eventId },
-            select: { match_id: true, player_id: true, type: true },
-        });
-        if (!event)
-            throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
-        if (event.match_id !== matchId)
-            throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
-        const newType = input.type ?? event.type;
-        const newPlayerId = input.playerId !== undefined ? input.playerId : event.player_id;
-        if (newType === MatchEventType.yellow_card && newPlayerId) {
-            const existingYellow = await this.prisma.matchEvent.findFirst({
-                where: {
-                    match_id: matchId,
-                    player_id: newPlayerId,
-                    type: MatchEventType.yellow_card,
-                    NOT: { id: eventId },
-                },
-                select: { id: true },
+        const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            await this._assertCorrectionWindow(matchId, tx);
+            const match = await tx.match.findUniqueOrThrow({
+                where: { id: matchId },
+                select: { home_team_id: true },
             });
-            if (existingYellow)
-                throw createAppError('VALIDATION_ERROR', `Player ${newPlayerId} đã có thẻ vàng — dùng type 'second_yellow'`);
-        }
+            const event = await tx.matchEvent.findUnique({
+                where: { id: eventId },
+                select: { match_id: true },
+            });
+            if (!event)
+                throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
+            if (event.match_id !== matchId)
+                throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
+            await tx.matchEvent.delete({ where: { id: eventId } });
+            return this._recalculateResultTx(tx, matchId, match.home_team_id);
+        });
+        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
+    }
+    async editEvent(matchId, eventId, input, scheduleOptions) {
         if (input.playerId != null) {
             const exists = await this.prisma.player.findUnique({ where: { id: input.playerId }, select: { id: true } });
             if (!exists)
@@ -612,42 +558,95 @@ export class MatchLifecycleService {
             if (!exists)
                 throw createAppError('VALIDATION_ERROR', `Player ${input.subOutPlayerId} (subOut) không tồn tại`);
         }
-        const updateData = {};
-        if (input.type !== undefined) {
-            updateData.type = input.type;
-            updateData.card_color = this._deriveCardColor(input.type) ?? null;
-        }
-        if (input.playerId !== undefined)
-            updateData.player_id = input.playerId;
-        if (input.teamId !== undefined)
-            updateData.team_id = input.teamId;
-        if (input.minute !== undefined)
-            updateData.minute = input.minute;
-        if (input.addedMinute !== undefined)
-            updateData.added_minute = input.addedMinute;
-        if (input.period !== undefined)
-            updateData.period = input.period;
-        if (input.note !== undefined)
-            updateData.note = input.note;
-        if (input.subOutPlayerId !== undefined)
-            updateData.sub_out_player_id = input.subOutPlayerId;
-        await this.prisma.matchEvent.update({
-            where: { id: eventId },
-            data: updateData,
+        const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            await this._assertCorrectionWindow(matchId, tx);
+            const match = await tx.match.findUniqueOrThrow({
+                where: { id: matchId },
+                select: { home_team_id: true },
+            });
+            const event = await tx.matchEvent.findUnique({
+                where: { id: eventId },
+                select: { match_id: true, player_id: true, type: true },
+            });
+            if (!event)
+                throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
+            if (event.match_id !== matchId)
+                throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
+            const newType = input.type ?? event.type;
+            const newPlayerId = input.playerId !== undefined ? input.playerId : event.player_id;
+            if (newType === MatchEventType.yellow_card && newPlayerId) {
+                const existingYellow = await tx.matchEvent.findFirst({
+                    where: {
+                        match_id: matchId,
+                        player_id: newPlayerId,
+                        type: MatchEventType.yellow_card,
+                        NOT: { id: eventId },
+                    },
+                    select: { id: true },
+                });
+                if (existingYellow)
+                    throw createAppError('VALIDATION_ERROR', `Player ${newPlayerId} đã có thẻ vàng — dùng type 'second_yellow'`);
+            }
+            const updateData = {};
+            if (input.type !== undefined) {
+                updateData.type = input.type;
+                updateData.card_color = this._deriveCardColor(input.type) ?? null;
+            }
+            if (input.playerId !== undefined)
+                updateData.player_id = input.playerId;
+            if (input.teamId !== undefined)
+                updateData.team_id = input.teamId;
+            if (input.minute !== undefined)
+                updateData.minute = input.minute;
+            if (input.addedMinute !== undefined)
+                updateData.added_minute = input.addedMinute;
+            if (input.period !== undefined)
+                updateData.period = input.period;
+            if (input.note !== undefined)
+                updateData.note = input.note;
+            if (input.subOutPlayerId !== undefined)
+                updateData.sub_out_player_id = input.subOutPlayerId;
+            await tx.matchEvent.update({
+                where: { id: eventId },
+                data: updateData,
+            });
+            return this._recalculateResultTx(tx, matchId, match.home_team_id);
         });
-        await this._recalculateResult(matchId, match.home_team_id, scheduleOptions);
+        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
     }
-    // ─── editScore (correction — manual path only) ────────────────────────────
+    /**
+     * FIX (Critical #2): lock row FOR UPDATE + check eventCount + gọi
+     * matchResultService.overrideResultInTx TRONG CÙNG transaction — trước đây
+     * 3 bước này không transaction, không lock, TOCTOU với addEvent/deleteEvent/
+     * editEvent (đã lock). Xem chi tiết ở comment overrideResultInTx.
+     */
     async editScore(matchId, input, scheduleOptions) {
-        await this._assertCorrectionWindow(matchId);
-        const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
-        if (eventCount > 0)
-            throw createAppError('CONFLICT', `Match ${matchId} có ${eventCount} events — dùng addEvent/deleteEvent/editEvent thay vì editScore`);
-        await this.matchResultService.overrideResult(matchId, input, scheduleOptions);
+        const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            await this._assertCorrectionWindow(matchId, tx);
+            const eventCount = await tx.matchEvent.count({ where: { match_id: matchId } });
+            if (eventCount > 0)
+                throw createAppError('CONFLICT', `Match ${matchId} có ${eventCount} events — dùng addEvent/deleteEvent/editEvent thay vì editScore`);
+            return this.matchResultService.overrideResultInTx(tx, matchId, input);
+        });
+        if (!isKnockout && groupId) {
+            try {
+                await this.matchResultService.recomputeStandingsFor(groupId);
+            }
+            catch (err) {
+                console.error(`[editScore] recompute standings failed for group ${groupId}:`, err);
+            }
+        }
+        try {
+            await this.matchResultService.recomputePlayerStats(matchId);
+        }
+        catch (err) {
+            console.error(`[editScore] recompute player stats failed for match ${matchId}:`, err);
+        }
     }
-    // ─── _recalculateResult ───────────────────────────────────────────────────
-    async _recalculateResult(matchId, homeTeamId, scheduleOptions) {
-        const match = await this.prisma.match.findUniqueOrThrow({
+    async _recalculateResultTx(tx, matchId, homeTeamId) {
+        const match = await tx.match.findUniqueOrThrow({
             where: { id: matchId },
             select: {
                 away_team_id: true,
@@ -665,7 +664,7 @@ export class MatchLifecycleService {
         });
         if (!match.matchResult)
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult — không recompute được`);
-        const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(matchId, homeTeamId);
+        const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(matchId, homeTeamId, tx);
         const resultType = match.matchResult.result_type;
         const hasExtraTime = resultType === MatchResultType.extra_time ||
             resultType === MatchResultType.penalty;
@@ -684,51 +683,61 @@ export class MatchLifecycleService {
                 : awayFinal > homeFinal ? match.away_team_id
                     : null;
         }
-        await this.prisma.$transaction(async (tx) => {
-            await tx.matchResult.update({
-                where: { match_id: matchId },
-                data: {
-                    home_final_score: homeFinal,
-                    away_final_score: awayFinal,
-                    home_extra_time_score: homeExtraTime,
-                    away_extra_time_score: awayExtraTime,
-                    winner_team_id: winnerTeamId,
-                    updated_at: new Date(),
-                },
-            });
-            await tx.match.update({
-                where: { id: matchId },
-                data: {
-                    home_score: homeFinal,
-                    away_score: awayFinal,
-                    updated_at: new Date(),
-                },
-            });
+        await tx.matchResult.update({
+            where: { match_id: matchId },
+            data: {
+                home_final_score: homeFinal,
+                away_final_score: awayFinal,
+                home_extra_time_score: homeExtraTime,
+                away_extra_time_score: awayExtraTime,
+                winner_team_id: winnerTeamId,
+                updated_at: new Date(),
+            },
         });
-        if (!isKnockoutFormat(match.phase.format) && match.group_id) {
+        await tx.match.update({
+            where: { id: matchId },
+            data: {
+                home_score: homeFinal,
+                away_score: awayFinal,
+                updated_at: new Date(),
+            },
+        });
+        return {
+            groupId: match.group_id,
+            isKnockout: isKnockoutFormat(match.phase.format),
+        };
+    }
+    async _runPostCorrectionSteps(matchId, groupId, isKnockout) {
+        if (!isKnockout && groupId) {
             try {
-                await this.matchResultService.recomputeStandingsFor(match.group_id);
+                await this.matchResultService.recomputeStandingsFor(groupId);
             }
             catch (err) {
-                console.error(`[_recalculateResult] recompute standings failed for group ${match.group_id}:`, err);
+                console.error(`[correction] recompute standings failed for group ${groupId}:`, err);
             }
         }
         try {
             await this.matchResultService.recomputePlayerStats(matchId);
         }
         catch (err) {
-            console.error(`[_recalculateResult] recompute player stats failed for match ${matchId}:`, err);
+            console.error(`[correction] recompute player stats failed for match ${matchId}:`, err);
         }
     }
+    /**
+     * FIX (Critical #1 — atomicity): trước đây createMany(scorers/cards) chạy
+     * trong 1 transaction riêng, sau đó confirmResult() mở transaction thứ 2 độc
+     * lập. confirmResult throw (P2002 race, validation resultType/penalty, guard
+     * knockout draw...) → events đã insert vẫn commit, orphan không có MatchResult.
+     * Retry sau lỗi → duplicate events (không unique constraint chặn). Cũng không
+     * lock row trong khi status cho phép cả 'ongoing' — race với recordEvent (đã lock).
+     *
+     * Fix: gộp toàn bộ vào 1 transaction có FOR UPDATE lock — status check + card
+     * validation đọc lại TRONG lock (đóng TOCTOU với check ngoài lock cũ), event
+     * insert, rồi confirmResultInTx (matchresult.service.ts) chạy guard+write
+     * MatchResult/Match/PlayerStatistic cùng transaction. Post-commit steps
+     * (standings/knockout advance) dùng chung runPostConfirmSteps với confirmResult().
+     */
     async adminRecordResult(matchId, input, scheduleOptions) {
-        const match = await this.prisma.match.findUniqueOrThrow({
-            where: { id: matchId },
-            select: {
-                status: true,
-                home_team_id: true,
-                away_team_id: true,
-            },
-        });
         const allowedStatuses = [
             MatchStatus.scheduled,
             MatchStatus.postponed,
@@ -737,95 +746,80 @@ export class MatchLifecycleService {
             MatchStatus.pending_official,
             MatchStatus.needs_review,
         ];
-        if (!allowedStatuses.includes(match.status)) {
-            throw createAppError("CONFLICT", `Match ${matchId} ở '${match.status}' — không thể nhập kết quả. ` +
-                `Dùng correction window (addEvent/editScore) cho match đã finished.`);
-        }
-        // ─── Card batch guard ───────────────────────────────────────────────
-        // adminRecordResult dùng createMany, KHÔNG qua recordEvent() nên
-        // KHÔNG có per-write "1 yellow → phải second_yellow" guard tự nhiên.
-        // Validate theo batch (2 query cố định, không N+1):
-        //   1. Trong-batch: reject nếu 2 yellow_card cùng playerId trong 1 submit
-        //   2. Đối chiếu DB: playerId đã có yellow_card từ trước (event cũ, nếu
-        //      match đang ở needs_review/pending_official với event có sẵn)
-        if (input.cards?.length) {
-            const yellowsInBatch = input.cards.filter(c => c.type === MatchEventType.yellow_card);
-            const seen = new Set();
-            for (const c of yellowsInBatch) {
-                if (seen.has(c.playerId))
-                    throw createAppError('VALIDATION_ERROR', `Player ${c.playerId}: 2 yellow_card trong cùng submit — dùng type 'second_yellow' cho thẻ thứ 2`);
-                seen.add(c.playerId);
-            }
-            if (yellowsInBatch.length > 0) {
-                const playerIds = [...seen];
-                const existing = await this.prisma.matchEvent.findMany({
-                    where: {
-                        match_id: matchId,
-                        player_id: { in: playerIds },
-                        type: MatchEventType.yellow_card,
-                    },
-                    select: { player_id: true },
-                });
-                if (existing.length > 0)
-                    throw createAppError('VALIDATION_ERROR', `Player(s) đã có yellow_card từ trước: ${existing.map(e => e.player_id).join(', ')} — dùng 'second_yellow'`);
-            }
-            // teamId phải thuộc match — cùng constraint forfeitMatch() đang check,
-            // admin free-input dễ typo teamId sai giải khác
-            const validTeamIds = new Set([match.home_team_id, match.away_team_id]);
-            const badTeam = input.cards.find(c => !validTeamIds.has(c.teamId));
-            if (badTeam)
-                throw createAppError('VALIDATION_ERROR', `Team ${badTeam.teamId} không thuộc match ${matchId}`);
-        }
-        // ─── Atomic write: scorers + cards ─────────────────────────────────
-        // 1 transaction cho cả 2 — không chung tx với confirmResult() bên dưới
-        // (confirmResult tự mở $transaction riêng, wrap chung risk deadlock
-        // giống pattern đã tránh ở confirmOfficial/handleGracePeriodTimeout).
-        // Trade-off: nếu confirmResult() fail SAU khi block này commit, scorer/card
-        // events orphan trên match chưa có MatchResult — giống gap sẵn có ở code
-        // gốc (scorers createMany trước, confirmResult sau, không atomic).
-        // Không mở rộng transaction ra ngoài vì risk deadlock lớn hơn risk orphan event
-        // (orphan event recoverable qua addEvent/deleteEvent trong correction window
-        // sau khi confirm thành công lần retry).
-        if ((input.scorers?.length ?? 0) > 0 || (input.cards?.length ?? 0) > 0) {
-            await this.prisma.$transaction(async (tx) => {
-                if (input.scorers?.length) {
-                    await tx.matchEvent.createMany({
-                        data: input.scorers.map((s) => ({
-                            match_id: matchId,
-                            team_id: s.teamId,
-                            player_id: null,
-                            type: s.type === "own_goal"
-                                ? MatchEventType.own_goal
-                                : MatchEventType.goal,
-                            minute: s.minute,
-                            period: s.period ?? null,
-                            note: s.playerName ?? null,
-                        })),
-                    });
-                }
-                if (input.cards?.length) {
-                    await tx.matchEvent.createMany({
-                        data: input.cards.map((c) => ({
-                            match_id: matchId,
-                            team_id: c.teamId,
-                            player_id: c.playerId,
-                            type: c.type,
-                            minute: c.minute,
-                            period: c.period ?? null,
-                            card_color: this._deriveCardColor(c.type),
-                        })),
-                    });
-                }
-            });
-        }
         const resultType = input.resultType ?? MatchResultType.full_time;
-        return this.matchResultService.confirmResult(matchId, {
-            homeScore: input.homeScore,
-            awayScore: input.awayScore,
-            homeHalfTimeScore: input.homeHalfTimeScore,
-            awayHalfTimeScore: input.awayHalfTimeScore,
-            resultType,
-        }, scheduleOptions);
+        const core = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            const match = await tx.match.findUniqueOrThrow({
+                where: { id: matchId },
+                select: { status: true, home_team_id: true, away_team_id: true },
+            });
+            if (!allowedStatuses.includes(match.status)) {
+                throw createAppError('CONFLICT', `Match ${matchId} ở '${match.status}' — không thể nhập kết quả. ` +
+                    `Dùng correction window (addEvent/editScore) cho match đã finished.`);
+            }
+            if (input.cards?.length) {
+                const yellowsInBatch = input.cards.filter(c => c.type === MatchEventType.yellow_card);
+                const seen = new Set();
+                for (const c of yellowsInBatch) {
+                    if (seen.has(c.playerId))
+                        throw createAppError('VALIDATION_ERROR', `Player ${c.playerId}: 2 yellow_card trong cùng submit — dùng type 'second_yellow' cho thẻ thứ 2`);
+                    seen.add(c.playerId);
+                }
+                if (yellowsInBatch.length > 0) {
+                    const playerIds = [...seen];
+                    const existing = await tx.matchEvent.findMany({
+                        where: {
+                            match_id: matchId,
+                            player_id: { in: playerIds },
+                            type: MatchEventType.yellow_card,
+                        },
+                        select: { player_id: true },
+                    });
+                    if (existing.length > 0)
+                        throw createAppError('VALIDATION_ERROR', `Player(s) đã có yellow_card từ trước: ${existing.map(e => e.player_id).join(', ')} — dùng 'second_yellow'`);
+                }
+                const validTeamIds = new Set([match.home_team_id, match.away_team_id]);
+                const badTeam = input.cards.find(c => !validTeamIds.has(c.teamId));
+                if (badTeam)
+                    throw createAppError('VALIDATION_ERROR', `Team ${badTeam.teamId} không thuộc match ${matchId}`);
+            }
+            if (input.scorers?.length) {
+                await tx.matchEvent.createMany({
+                    data: input.scorers.map((s) => ({
+                        match_id: matchId,
+                        team_id: s.teamId,
+                        player_id: null,
+                        type: s.type === "own_goal"
+                            ? MatchEventType.own_goal
+                            : MatchEventType.goal,
+                        minute: s.minute,
+                        period: s.period ?? null,
+                        note: s.playerName ?? null,
+                    })),
+                });
+            }
+            if (input.cards?.length) {
+                await tx.matchEvent.createMany({
+                    data: input.cards.map((c) => ({
+                        match_id: matchId,
+                        team_id: c.teamId,
+                        player_id: c.playerId,
+                        type: c.type,
+                        minute: c.minute,
+                        period: c.period ?? null,
+                        card_color: this._deriveCardColor(c.type),
+                    })),
+                });
+            }
+            return this.matchResultService.confirmResultInTx(tx, matchId, {
+                homeScore: input.homeScore,
+                awayScore: input.awayScore,
+                homeHalfTimeScore: input.homeHalfTimeScore,
+                awayHalfTimeScore: input.awayHalfTimeScore,
+                resultType,
+            });
+        });
+        return this.matchResultService.runPostConfirmSteps(matchId, core, scheduleOptions);
     }
 }
 //# sourceMappingURL=match.service.js.map

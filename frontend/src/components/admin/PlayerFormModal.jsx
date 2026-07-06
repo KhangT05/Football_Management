@@ -1,77 +1,67 @@
-import { useId } from 'react';
-import { useForm } from 'react-hook-form';
 import {
   UserPlus, Edit, X, AlertTriangle, CheckCircle2, Loader2,
-  Info, UploadCloud, FileDown, Camera,
+  Info, UploadCloud, FileDown,
 } from 'lucide-react';
 
-// FIX: giá trị value phải khớp PlayerPosition enum của backend
-// (goalkeeper | defender | midfielder | forward) — trước đây dùng
-// GK/DEF/MID/FW nên mọi request thêm/sửa cầu thủ bị Zod reject ở backend
-// (position: Invalid enum value), gây lỗi khi bấm "Thêm cầu thủ".
 const POSITIONS = [
-  { value: 'goalkeeper', label: 'Thủ môn' },
-  { value: 'defender', label: 'Hậu vệ' },
-  { value: 'midfielder', label: 'Tiền vệ' },
-  { value: 'forward', label: 'Tiền đạo' },
+  { value: 'goalkeeper', label: 'GK – Thủ môn' },
+  { value: 'defender', label: 'DEF – Hậu vệ' },
+  { value: 'midfielder', label: 'MID – Tiền vệ' },
+  { value: 'forward', label: 'FW – Tiền đạo' },
+];
+
+const ROLES = [
+  { value: 'player', label: 'Thành viên' },
+  { value: 'vice_captain', label: 'Phó đội trưởng' },
+  { value: 'captain', label: 'Đội trưởng' },
 ];
 
 /**
- * mode: 'add' | 'edit'
- * onSave(values) — callback DUY NHẤT, cha (MyTeam) tự dispatch theo mode.
- *   add:  { name, user_email, date_of_birth, position, number }
- *   edit: { number, position }
+ * Component controlled — mọi giá trị input đọc/ghi trực tiếp qua `form` / `setForm`
+ * do component cha (ManageTeams) quản lý, KHÔNG dùng state nội bộ (react-hook-form)
+ * để tránh mất đồng bộ dữ liệu (đây là nguyên nhân bug mất email trước đó).
  */
 export default function PlayerFormModal({
   mode,
-  player,
-  usedNumbers = [],
+  form,
+  setForm,
+  formError,
+  isSaving,
   onSave,
   onClose,
-  isSaving,
-  serverError,
   onImportExcel,
   onDownloadTemplate,
   isDownloadingTemplate,
   isImporting,
 }) {
   const isAdd = mode === 'add';
-  const fileInputId = useId(); // tránh đụng id tĩnh khi có nhiều modal / HMR
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    defaultValues: isAdd
-      ? { name: '', user_email: '', date_of_birth: '', position: 'midfielder', number: '' }
-      : { number: player?.number ?? '', position: player?.position ?? 'midfielder' },
-  });
+  const handleField = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
 
-  const numberTakenBy = (value) =>
-    usedNumbers.find((p) => String(p.number) === String(value) && p.id !== player?.id);
-
-  const submit = handleSubmit((values) => {
-    onSave?.(values);
-  });
+  const submit = (e) => {
+    e.preventDefault();
+    onSave();
+  };
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <form
         onSubmit={submit}
-        className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden"
+        className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden max-h-[90vh]"
       >
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
               {isAdd ? <UserPlus className="w-5 h-5 text-blue-400" /> : <Edit className="w-5 h-5 text-blue-400" />}
             </div>
             <h3 className="text-xl font-black text-white uppercase tracking-tight">
-              {isAdd ? 'Thêm cầu thủ' : 'Chỉnh sửa'}
+              {isAdd ? 'Thêm cầu thủ' : 'Chỉnh sửa cầu thủ'}
             </h3>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
@@ -80,25 +70,14 @@ export default function PlayerFormModal({
         </div>
 
         {/* Body */}
-        <div className="p-8 space-y-6 relative z-10">
-          {player?.avatar && (
-            <div className="flex justify-center mb-4">
-              <div className="w-24 h-24 rounded-full border-[3px] border-navy-light overflow-hidden relative group cursor-pointer shadow-lg shadow-black/50">
-                <img src={player.avatar} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                  <Camera className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform duration-300" />
-                </div>
-              </div>
+        <div className="p-8 space-y-6 relative z-10 overflow-y-auto custom-scrollbar">
+          {formError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in font-medium">
+              <AlertTriangle className="w-5 h-5 shrink-0" /> {formError}
             </div>
           )}
 
-          {serverError && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-[0_0_20px_rgba(239,68,68,0.1)] font-medium">
-              <AlertTriangle className="w-5 h-5 shrink-0" /> {serverError}
-            </div>
-          )}
-
-          {/* Import Excel block — chỉ hiện khi thêm mới */}
+          {/* Import Excel — chỉ hiện khi thêm mới, và khi cha có truyền handler */}
           {isAdd && onImportExcel && (
             <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-4">
               <div className="flex items-start gap-3">
@@ -122,76 +101,67 @@ export default function PlayerFormModal({
                 <div className="relative flex-1">
                   <input
                     type="file"
-                    id={fileInputId}
+                    id="import-excel-modal"
                     accept=".xlsx,.xls"
                     className="hidden"
                     onChange={onImportExcel}
                     disabled={isSaving || isImporting}
                   />
                   <label
-                    htmlFor={fileInputId}
+                    htmlFor="import-excel-modal"
                     className={`w-full px-4 py-3.5 font-bold bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-500 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 ${isSaving || isImporting ? 'opacity-70 pointer-events-none' : ''
                       }`}
                   >
-                    <UploadCloud className="w-5 h-5" /> Import Excel
+                    {isImporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
+                    {isImporting ? 'Đang import...' : 'Import Excel'}
                   </label>
                 </div>
               </div>
+              <p className="text-[11px] text-gray-500 text-center">— hoặc nhập tay 1 cầu thủ bên dưới —</p>
             </div>
           )}
 
-          {isAdd ? (
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+              Họ tên cầu thủ <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Nguyễn Văn A"
+              value={form.name ?? ''}
+              onChange={handleField('name')}
+              className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+            />
+          </div>
+
+          {isAdd && (
             <>
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Họ và tên <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nguyễn Văn A"
-                  {...register('name', { required: 'Vui lòng nhập tên cầu thủ.' })}
-                  className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
-                />
-                {errors.name && <p className="text-xs text-red-400 ml-1">{errors.name.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Email <span className="text-red-400">*</span>
+                  Email tài khoản <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="email"
                   placeholder="player@example.com"
-                  {...register('user_email', { required: 'Vui lòng nhập email cầu thủ.' })}
+                  value={form.email ?? ''}
+                  onChange={handleField('email')}
                   className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
                 />
-                <p className="text-[11px] text-gray-500 ml-1">
-                  Nếu email chưa có tài khoản, hệ thống sẽ tự tạo tài khoản mới.
-                </p>
-                {errors.user_email && <p className="text-xs text-red-400 ml-1">{errors.user_email.message}</p>}
+                <p className="text-[11px] text-gray-500 ml-1">Nếu email chưa có tài khoản, hệ thống sẽ tự tạo tài khoản mới và gửi email mời đặt mật khẩu.</p>
               </div>
 
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Ngày sinh <span className="text-red-400">*</span>
+                  Ngày sinh
                 </label>
                 <input
                   type="date"
-                  {...register('date_of_birth', { required: 'Vui lòng nhập ngày sinh.' })}
+                  value={form.date_of_birth ?? ''}
+                  onChange={handleField('date_of_birth')}
                   className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
                 />
-                {errors.date_of_birth && <p className="text-xs text-red-400 ml-1">{errors.date_of_birth.message}</p>}
               </div>
             </>
-          ) : (
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center">
-                {player?.name}
-              </label>
-              <p className="text-[11px] text-gray-500 text-center">
-                Tên và thông tin hồ sơ gắn với tài khoản, chỉnh ở phần quản lý tài khoản.
-              </p>
-            </div>
           )}
 
           <div className="grid grid-cols-2 gap-5">
@@ -204,22 +174,17 @@ export default function PlayerFormModal({
                 min="1"
                 max="99"
                 placeholder="10"
-                {...register('number', {
-                  required: 'Vui lòng nhập số áo hợp lệ.',
-                  validate: (v) => {
-                    const conflict = numberTakenBy(v);
-                    return conflict ? `Số áo ${v} đã được dùng bởi ${conflict.name}.` : true;
-                  },
-                })}
+                value={form.number ?? ''}
+                onChange={handleField('number')}
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-black text-center transition-all"
               />
-              {errors.number && <p className="text-xs text-red-400 mt-1">{errors.number.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Vị trí</label>
               <select
-                {...register('position')}
+                value={form.position ?? 'midfielder'}
+                onChange={handleField('position')}
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold appearance-none cursor-pointer text-center"
               >
                 {POSITIONS.map((p) => (
@@ -228,10 +193,23 @@ export default function PlayerFormModal({
               </select>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Vai trò trong đội</label>
+            <select
+              value={form.role ?? 'player'}
+              onChange={handleField('role')}
+              className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold appearance-none cursor-pointer"
+            >
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
+        <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10 shrink-0">
           <button type="button" onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
             Hủy bỏ
           </button>

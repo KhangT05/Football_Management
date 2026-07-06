@@ -10,6 +10,7 @@ import {
     Delete,
     Security,
     Query,
+    Queries,
 } from "tsoa";
 import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
@@ -246,19 +247,10 @@ export class MatchController extends Controller {
     @Security("jwt", ["admin"])
     @Delete("{id}/correction/events/{eventId}")
     @SuccessResponse(204, "Event deleted")
-    async deleteEvent(
-        @Path() id: number,
-        @Path() eventId: number,
-        @Query() venueIds?: string,
-        @Query() matchTimes?: string,
-    ): Promise<void> {
+    async deleteEvent(@Path() id: number, @Path()
+    eventId: number, @Queries() query: matchSchema.DeleteEventQueryDto): Promise<void> {
         this.setStatus(204);
-        // Parse CSV query params → typed scheduleOptions
-        const scheduleOptions: matchSchema.ConfirmOfficialDto = {
-            venueIds: venueIds ? venueIds.split(",").map(Number) : undefined,
-            matchTimes: matchTimes ? matchTimes.split(",") : undefined,
-        };
-        return this.lifecycleService.deleteEvent(id, eventId, scheduleOptions);
+        return this.lifecycleService.deleteEvent(id, eventId, query);
     }
 
     /**

@@ -15,6 +15,18 @@ export declare class KnockoutService extends ScheduleEngine {
     private getOrCreateKnockoutPhase;
     private phaseNameFor;
     /**
+     * Season có thể chỉ chạy knockout thuần (không round-robin trước) — luồng
+     * A trong yêu cầu. round-robin flow (ScheduleService.generateGroupsAndSchedule)
+     * đã transition season.status -> ongoing khi generate; knockout flow trước
+     * đây KHÔNG làm việc này, nên season đá thẳng knockout có thể mắc kẹt ở
+     * 'registration_open' dù đã có match thật — sai state machine, ảnh hưởng
+     * bất kỳ logic nào filter theo season.status (registration form vẫn mở,
+     * dashboard hiển thị sai trạng thái mùa giải).
+     * Chỉ transition nếu đang registration_open — không đụng các status khác
+     * (vd không tự ý resurrect season đã completed/cancelled).
+     */
+    private ensureSeasonOngoing;
+    /**
      * Resolve SeedSource[] -> teamId[], GIỮ NGUYÊN thứ tự input (thứ tự này
      * quyết định seed 1 gặp seed cuối cùng qua buildRound1Pairings — không
      * được sort lại hay dùng Map iteration order thay thế).

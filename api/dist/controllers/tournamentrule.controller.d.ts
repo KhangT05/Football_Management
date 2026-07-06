@@ -13,7 +13,7 @@ export declare class TournamentRuleController extends Controller {
     findAll(): Promise<TournamentRuleDto[]>;
     findById(id: number): Promise<TournamentRuleDto>;
     create(body: CreateTournamentRuleDto, req: AuthRequest): Promise<CreateTournamentRuleDto>;
-    update(id: number, body: UpdateTournamentRuleDto): Promise<UpdateTournamentRuleDto>;
+    update(id: number, body: UpdateTournamentRuleDto, force?: boolean): Promise<TournamentRuleDto>;
     softDelete(id: number): Promise<void>;
     restore(id: number): Promise<TournamentRuleDto>;
 }

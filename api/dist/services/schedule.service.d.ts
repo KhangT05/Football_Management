@@ -9,7 +9,7 @@ export declare class ScheduleService extends ScheduleEngine {
     findMatchesByTeam(seasonId: number, teamId: number, req?: QueryRequest): Promise<PaginatedResult<MatchByTeamRow>>;
     generateGroupsAndSchedule(seasonId: number, options: GenerateOptions): Promise<GenerateResult>;
     /**
-     * Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
+     * NEW: Sinh match round-robin cho các group ĐÃ tồn tại + đã bốc thăm qua
      * GroupService (createGroupsBulk + drawGroups/drawGroupsSeeded), rồi
      * auto-schedule giờ/sân. Dùng cho luồng: admin tạo bảng + bốc thăm trước
      * (GroupDrawUI) → sau đó bấm "Tạo lịch thi đấu" ở ScheduleTab.
@@ -19,6 +19,12 @@ export declare class ScheduleService extends ScheduleEngine {
      * phase — nên không dùng được sau khi đã bốc thăm thủ công. Method này
      * ngược lại: BẮT BUỘC phải có phase + group + season_team.group_id đã
      * set sẵn, và KHÔNG tự tạo hay tự chia đội.
+     *
+     * Tiêu chí resolve Phase (format round_robin, type group_stage,
+     * is_active true) và tiêu chí lọc season_teams hợp lệ trong group
+     * (deleted_at null, is_active true, status approved) được giữ ĐỒNG BỘ
+     * với GroupService (getOrCreateRoundRobinPhase / buildGroupsPayload) —
+     * để 2 service luôn nhìn cùng 1 Phase/Group, tránh lệch trạng thái.
      */
     generateMatchesFromDrawnGroups(seasonId: number, options: GenerateFromGroupsOptions): Promise<GenerateResult>;
     autoScheduleMatches(seasonId: number, options: ScheduleOptions & {

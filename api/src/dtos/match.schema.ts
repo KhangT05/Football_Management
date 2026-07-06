@@ -135,8 +135,19 @@ export const ResolveAppealSchema = z
         { path: ['newHomeScore'], message: 'newHomeScore + newAwayScore bắt buộc khi resolution = overturn' },
     );
 
-// ─── Inferred DTO types ───────────────────────────────────────────────────────
+// match.schema.ts
+export const DeleteEventQuerySchema = z.object({
+    venueIds: z.string().optional()
+        .transform(s => s ? s.split(",").map(Number) : undefined)
+        .refine(arr => !arr?.some(Number.isNaN), { message: "venueIds chứa giá trị không hợp lệ" }),
+    matchTimes: z.string().optional()
+        .transform(s => s ? s.split(",") : undefined),
+}).refine(
+    data => !data.venueIds || !data.matchTimes || data.venueIds.length === data.matchTimes.length,
+    { message: "venueIds và matchTimes phải có cùng số lượng" }
+);
 
+export type DeleteEventQueryDto = z.infer<typeof DeleteEventQuerySchema>;
 export type RecordEventDto = z.infer<typeof RecordEventSchema>;
 export type TransitionPeriodDto = z.infer<typeof TransitionPeriodSchema>;
 export type FinalizeMatchDto = z.infer<typeof FinalizeMatchSchema>;

@@ -30,15 +30,6 @@ export declare class MatchResultController extends Controller {
         appeal_reason: string | null;
         appeal_note: string | null;
     }>;
-    /**
-     * List events của 1 trận.
-     *
-     * Query params:
-     *   Simple filters: ?type=goal&period=first_half
-     *   Pagination: ?page=1&per_page=30
-     *   Sort: ?sort=minute&direction=asc
-     *   Search: ?q=keyword (if searchFields enabled)
-     */
     getMatchEvents(id: number, type?: string, period?: string, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc', q?: string): Promise<import("../types/queryable.type.js").PaginatedResult<{
         type: import("../generated/prisma/enums.js").MatchEventType;
         id: number;
@@ -55,6 +46,21 @@ export declare class MatchResultController extends Controller {
             type: number;
         };
     })[]>;
+    /**
+     * FIX (Critical #1 — auth bypass): @Security("jwt") trước đây không role-restrict
+     * — bất kỳ authenticated user (user/leader/organizing) đều gọi được endpoint này
+     * để confirmResult() trực tiếp, bypass toàn bộ state machine ở MatchController
+     * (finalizeMatch → grace period → confirmOfficial), vốn siết admin cho mọi
+     * confirm/forfeit/resolve-appeal operation. _guardConfirm chỉ chặn status
+     * finished/cancelled — match ongoing/pending_official/needs_review/abandoned/
+     * bye/postponed đều pass, và nếu body.input cho set explicitWinnerTeamId, đây
+     * là privilege escalation thực sự (set winner tuỳ ý cho bất kỳ match).
+     *
+     * Siết về admin. Khuyến nghị đánh giá lại: endpoint này có còn cần thiết không
+     * — MatchController đã có confirmOfficial/forfeitMatch/adminRecordResult cho
+     * đầy đủ use case; nếu không có consumer riêng (integration test, internal
+     * tool), nên xoá hẳn thay vì giữ 1 entrypoint thứ 2 vào cùng service method.
+     */
     confirmResult(id: number, body: matchResultType.ConfirmOfficialBody): Promise<matchResultType.ConfirmResultOutput & {
         postCommitWarnings?: string[];
     }>;

@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Query, } from "tsoa";
+import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Queries, } from "tsoa";
 import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
@@ -155,14 +155,9 @@ let MatchController = class MatchController extends Controller {
      * scheduleOptions truyền qua query params vì DELETE không nên có body.
      * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
      */
-    async deleteEvent(id, eventId, venueIds, matchTimes) {
+    async deleteEvent(id, eventId, query) {
         this.setStatus(204);
-        // Parse CSV query params → typed scheduleOptions
-        const scheduleOptions = {
-            venueIds: venueIds ? venueIds.split(",").map(Number) : undefined,
-            matchTimes: matchTimes ? matchTimes.split(",") : undefined,
-        };
-        return this.lifecycleService.deleteEvent(id, eventId, scheduleOptions);
+        return this.lifecycleService.deleteEvent(id, eventId, query);
     }
     /**
      * Sửa event (minute, type, player, period, note) sau khi match finished.
@@ -325,10 +320,9 @@ __decorate([
     SuccessResponse(204, "Event deleted"),
     __param(0, Path()),
     __param(1, Path()),
-    __param(2, Query()),
-    __param(3, Query()),
+    __param(2, Queries()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String, String]),
+    __metadata("design:paramtypes", [Number, Number, Object]),
     __metadata("design:returntype", Promise)
 ], MatchController.prototype, "deleteEvent", null);
 __decorate([

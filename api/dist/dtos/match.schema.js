@@ -97,4 +97,12 @@ export const ResolveAppealSchema = z
     note: z.string().min(1).max(1000),
 })
     .refine(d => d.resolution !== 'overturn' || (d.newHomeScore !== undefined && d.newAwayScore !== undefined), { path: ['newHomeScore'], message: 'newHomeScore + newAwayScore bắt buộc khi resolution = overturn' });
+// match.schema.ts
+export const DeleteEventQuerySchema = z.object({
+    venueIds: z.string().optional()
+        .transform(s => s ? s.split(",").map(Number) : undefined)
+        .refine(arr => !arr?.some(Number.isNaN), { message: "venueIds chứa giá trị không hợp lệ" }),
+    matchTimes: z.string().optional()
+        .transform(s => s ? s.split(",") : undefined),
+}).refine(data => !data.venueIds || !data.matchTimes || data.venueIds.length === data.matchTimes.length, { message: "venueIds và matchTimes phải có cùng số lượng" });
 //# sourceMappingURL=match.schema.js.map
