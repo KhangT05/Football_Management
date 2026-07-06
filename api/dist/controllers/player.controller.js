@@ -10,50 +10,47 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, UploadedFile, Consumes } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Res, UploadedFile, Consumes } from "tsoa";
 import { PlayerService } from "../services/player.service.js";
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 let PlayerController = class PlayerController extends Controller {
     service;
     constructor(service) {
         super();
         this.service = service;
     }
-    // FIX: thiếu @Security hoàn toàn — leak PII (email) không cần auth.
-    async exportTeamPlayers(team_id) {
-        const buffer = await this.service.exportTeamPlayersExcel(team_id);
-        const res = this.res;
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", `attachment; filename="team-${team_id}-players.xlsx"`);
-        res.send(buffer);
-    }
+    // ────────────────────────────────────────────────────────────────
+    // QUAN TRỌNG VỀ THỨ TỰ ROUTE:
+    // tsoa generate routes.ts theo ĐÚNG thứ tự khai báo method trong
+    // class này. Express match route theo thứ tự đăng ký, nên bất kỳ
+    // route "tĩnh" nào (vd. "import-template", "export") mà đứng SAU
+    // một route "động" cùng cấp (vd. "{id}") sẽ bị route động nuốt mất
+    // — request khớp nhầm vào "{id}" với id = chuỗi tĩnh đó, gây lỗi
+    // "invalid float number" khi tsoa cố ép kiểu sang number.
+    //
+    // => Mọi route tĩnh PHẢI khai báo TRƯỚC route động cùng cấp
+    // (cùng số lượng segment, cùng HTTP method).
+    // ────────────────────────────────────────────────────────────────
     // Không có PII, chỉ template rỗng — giữ public để leader tải mà không cần login trước.
-    async downloadImportTemplate(minRows = 7) {
-        const buffer = await this.service.exportImportTemplate(minRows); // FIX: thiếu await
-        const res = this.res;
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", 'attachment; filename="import-template.xlsx"');
-        res.send(buffer);
-    }
-    async listTeamPlayers(team_id, page = 1, per_page = 20, sort, direction, position, status, approval_status) {
-        return this.service.listTeamPlayers({
-            team_id,
-            page,
-            per_page,
-            sort,
-            direction,
-            ...(position && { position }),
-            ...(status && { status }),
-            ...(approval_status && { approval_status }),
+    // Đứng TRƯỚC findById("{id}") vì cùng là GET, cùng cấp "players/...".
+    //
+    // FIX (file tải về không mở được): trước đây method này tự gọi
+    // request.res.send(buffer) rồi để tsoa tiếp tục xử lý response như
+    // bình thường (vì return type là Promise<void>) — tsoa generate code
+    // vẫn cố ghi thêm 1 lần response nữa sau khi handler resolve, ghi đè/
+    // nối byte vào sau khi socket đã kết thúc => file .xlsx (vốn là 1 file
+    // zip) bị hỏng cấu trúc, Excel không mở được.
+    //
+    // Cách đúng theo tsoa: dùng @Res() + TsoaResponse — tsoa nhận diện
+    // đây là "custom response", tự gọi hàm callback để gửi response DUY
+    // NHẤT, không tự động ghi thêm lần 2 nữa.
+    async downloadImportTemplate(minRows = 7, successResponse) {
+        const buffer = await this.service.exportImportTemplate(minRows);
+        successResponse(200, buffer, {
+            "Content-Type": XLSX_CONTENT_TYPE,
+            "Content-Disposition": 'attachment; filename="import-template.xlsx"',
         });
-    }
-    async getTeamPlayer(team_id, id) {
-        const tp = await this.service.getTeamPlayerById(id, team_id);
-        if (!tp) {
-            this.setStatus(404);
-            throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
-        }
-        return tp;
     }
     async findById(id) {
         return this.service.getPlayerByIdOrFail(id);
@@ -69,12 +66,57 @@ let PlayerController = class PlayerController extends Controller {
         this.setStatus(204);
         return this.service.softDeletePlayer(id);
     }
+    // ─── Team Players ─────────────────────────────────────────────────────────
+    async listTeamPlayers(team_id, page = 1, per_page = 20, sort, direction, position, status, approval_status) {
+        return this.service.listTeamPlayers({
+            team_id,
+            page,
+            per_page,
+            sort,
+            direction,
+            ...(position && { position }),
+            ...(status && { status }),
+            ...(approval_status && { approval_status }),
+        });
+    }
+    // FIX: cùng nhóm bug route-ordering như import-template — route tĩnh
+    // "export" phải đứng TRƯỚC route động "{id}" (cùng là GET, cùng cấp
+    // "{team_id}/team-players/..."). Trước đây getTeamPlayer("{id}") khai
+    // báo trước nên GET /players/5/team-players/export bị match nhầm,
+    // gán id="export" → lỗi "invalid float number" y hệt bug import-template.
+    //
+    // FIX (file không mở được): đổi sang @Res()/TsoaResponse, lý do giống
+    // hệt downloadImportTemplate ở trên — tránh tsoa ghi response 2 lần.
+    async exportTeamPlayers(team_id, successResponse) {
+        const buffer = await this.service.exportTeamPlayersExcel(team_id);
+        successResponse(200, buffer, {
+            "Content-Type": XLSX_CONTENT_TYPE,
+            "Content-Disposition": `attachment; filename="team-${team_id}-players.xlsx"`,
+        });
+    }
+    async getTeamPlayer(team_id, id) {
+        const tp = await this.service.getTeamPlayerById(id, team_id);
+        if (!tp) {
+            this.setStatus(404);
+            throw Object.assign(new Error(`TeamPlayer ${id} not found`), { status: 404 });
+        }
+        return tp;
+    }
     // FIX: bỏ user_id — chưa từng được dùng trong body, AuthRequest param là dead
     // param. Nếu cần audit "ai thêm player này", thêm cột created_by ở service,
     // không giữ param không dùng ở controller.
     async addPlayerToTeam(team_id, body) {
         this.setStatus(201);
         return this.service.addPlayerToTeam(team_id, body);
+    }
+    // Thêm cầu thủ mới + tự tạo tài khoản (find-or-create theo email) — dùng
+    // cho flow "leader nhập tên + email" ở MyTeam.jsx / RegisterTeam.jsx.
+    // Khác addPlayerToTeam (yêu cầu player_id có sẵn). Path có 3 segment tĩnh
+    // ("create-with-user") nên không đụng độ thứ tự với addPlayerToTeam
+    // ("{team_id}/team-players", 2 segment) hay bất kỳ route POST nào khác.
+    async createPlayerForTeamWithUser(team_id, body) {
+        this.setStatus(201);
+        return this.service.createPlayerForTeamWithUser(team_id, body);
     }
     // FIX: bỏ pre-check getTeamPlayerById ở controller — TOCTOU + fragile
     // (an toàn phụ thuộc discipline của caller, không phải data layer).
@@ -107,42 +149,13 @@ let PlayerController = class PlayerController extends Controller {
     }
 };
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
-    Get("{team_id}/team-players/export"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "exportTeamPlayers", null);
-__decorate([
     Get("import-template"),
     __param(0, Query()),
+    __param(1, Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Number, Function]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "downloadImportTemplate", null);
-__decorate([
-    Get("{team_id}/team-players"),
-    __param(0, Path()),
-    __param(1, Query()),
-    __param(2, Query()),
-    __param(3, Query()),
-    __param(4, Query()),
-    __param(5, Query()),
-    __param(6, Query()),
-    __param(7, Query()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object, String, String, String, String, String]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "listTeamPlayers", null);
-__decorate([
-    Get("{team_id}/team-players/{id}"),
-    __param(0, Path()),
-    __param(1, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
-    __metadata("design:returntype", Promise)
-], PlayerController.prototype, "getTeamPlayer", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
@@ -178,6 +191,37 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "softDelete", null);
 __decorate([
+    Get("{team_id}/team-players"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __param(6, Query()),
+    __param(7, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "listTeamPlayers", null);
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
+    Get("{team_id}/team-players/export"),
+    __param(0, Path()),
+    __param(1, Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Function]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "exportTeamPlayers", null);
+__decorate([
+    Get("{team_id}/team-players/{id}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "getTeamPlayer", null);
+__decorate([
     Security("jwt", ["admin", "organizing"]),
     Post("{team_id}/team-players"),
     SuccessResponse(201, "Created"),
@@ -187,6 +231,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "addPlayerToTeam", null);
+__decorate([
+    Security("jwt", ["admin", "organizing"]),
+    Post("{team_id}/team-players/create-with-user"),
+    SuccessResponse(201, "Created"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "createPlayerForTeamWithUser", null);
 __decorate([
     Security("jwt", ["organizing"]),
     Patch("{team_id}/team-players/{id}"),

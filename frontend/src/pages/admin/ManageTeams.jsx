@@ -148,8 +148,8 @@ export default function ManageTeams() {
     }
   };
 
-  // ── Expand: Team Roster ────────────────────────────────
   const [expandedTeamId, setExpandedTeamId] = useState(null);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   const toggleTeamExpand = (teamId) => {
     if (expandedTeamId === teamId) {

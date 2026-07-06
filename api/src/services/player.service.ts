@@ -433,6 +433,7 @@ export class PlayerService {
                         position: dto.position,
                         role: dto.role,
                         user_id: player.user_id,
+                        approval_status: ApprovalStatus.approved,
                     },
                     select: TEAM_PLAYER_SELECT,
                 });
@@ -546,6 +547,7 @@ export class PlayerService {
                         position: dto.position,
                         role: "player",
                         user_id: user.id,
+                        approval_status: ApprovalStatus.approved,
                     },
                     select: TEAM_PLAYER_SELECT,
                 });
@@ -900,6 +902,7 @@ export class PlayerService {
                             position: dto.position,
                             role: "player",
                             user_id: userId,
+                            approval_status: ApprovalStatus.approved,
                         },
                     });
 

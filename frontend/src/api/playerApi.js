@@ -156,4 +156,12 @@ export const playerApi = {
     axiosClient.post(`/players/${teamId}/team-players/import`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  /**
+* Thêm cầu thủ vào đội + tự tạo tài khoản nếu email chưa tồn tại (gửi invite email)
+* POST /players/{teamId}/team-players/create-with-user
+* @param {number} teamId
+* @param {{ name: string, user_email: string, date_of_birth: string, position: string, jersey_number: number }} data
+*/
+  createForTeam: (teamId, data) =>
+    axiosClient.post(`/players/${teamId}/team-players/create-with-user`, data),
 };
