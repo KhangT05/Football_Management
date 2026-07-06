@@ -10,8 +10,6 @@ export declare const knockoutGenerateOptionsSchema: z.ZodObject<{
         kind: z.ZodLiteral<"manual">;
         teamId: z.ZodNumber;
     }, z.core.$strip>], "kind">>;
-    venueIds: z.ZodArray<z.ZodNumber>;
-    matchTimes: z.ZodArray<z.ZodString>;
     legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     phaseTypeOverride: z.ZodOptional<z.ZodEnum<{
         readonly group_stage: "group_stage";
@@ -27,8 +25,6 @@ export declare const advanceWinnerInputSchema: z.ZodObject<{
     winnerTeamId: z.ZodNumber;
 }, z.core.$strip>;
 export declare const generateKnockoutRequestSchema: z.ZodObject<{
-    venueIds: z.ZodArray<z.ZodNumber>;
-    matchTimes: z.ZodArray<z.ZodString>;
     legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     seeds: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
         kind: z.ZodLiteral<"standing">;

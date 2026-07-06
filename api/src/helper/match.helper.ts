@@ -273,6 +273,10 @@ export function nextPowerOf2(n: number): number {
 }
 
 // → helpers/bracket.helper.ts
+// Cross-seeding chuẩn: seed[i] vs seed[n-1-i] (KHÔNG phải seed[2i] vs
+// seed[2i+1]). Với input seed order là rank-major theo nhiều group
+// (VD [A1,B1,A2,B2] khi seed 2 bảng x top2), công thức này cho R1 =
+// (A1 vs B2), (B1 vs A2) — tránh 2 đội cùng bảng gặp nhau ngay round 1.
 export function buildRound1Pairings(
     seeding: (number | null)[],
 ): { home: number | null; away: number | null }[] {
@@ -284,8 +288,9 @@ export function buildRound1Pairings(
 }
 /**
  * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live) và _computeScoreFromEvents (finalize)
- * để đảm bảo 2 nơi không viết 2 ternary khác nhau cho cùng business rule.
+ * Dùng chung ở _applyScoreDelta (live), _computeScoreFromEvents (finalize)
+ * VÀ buildGoalsTimeline (report) để đảm bảo 3 nơi không viết 3 ternary khác
+ * nhau cho cùng business rule own_goal/goal_disallowed.
  *
  * own_goal:         team đá phản lưới → credit cho đối thủ
  * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
@@ -380,6 +385,14 @@ export interface MatchReportGoalEntry {
     isOwnGoal: boolean;
 }
 
+// FIX: trước đây hàm này tự viết ternary riêng để xác định creditTeamId
+// (own_goal → đảo home/away), trùng lặp và có thể lệch với
+// isCreditedToHomeTeam nếu rule thay đổi sau này mà quên sync 2 chỗ. Giờ
+// gọi thẳng isCreditedToHomeTeam để đảm bảo 1 nguồn sự thật duy nhất.
+//
+// FIX: ev.team_id không được null-check trước đây — event có team_id=null
+// (dữ liệu thiếu/join lỗi) sẽ rơi vào nhánh `away` một cách âm thầm. Giờ
+// skip hẳn event đó thay vì đoán.
 export function buildGoalsTimeline(
     events: { player_id: number | null; team_id: number | null; type: MatchEventType; minute: number | null; added_minute: number | null }[],
     homeTeamId: number,
@@ -390,16 +403,13 @@ export function buildGoalsTimeline(
     const away: MatchReportGoalEntry[] = [];
 
     for (const ev of events) {
-        if (!ev.player_id) continue;
+        if (!ev.player_id || ev.team_id === null) continue;
 
         const isGoalType = ev.type === MatchEventType.goal || ev.type === MatchEventType.penalty_scored;
         const isOwnGoal = ev.type === MatchEventType.own_goal;
         if (!isGoalType && !isOwnGoal) continue;
 
-        // creditTeam: goal thường -> team_id chính chủ. own_goal -> đảo ngược sang đối thủ.
-        const creditTeamId = isOwnGoal
-            ? (ev.team_id === homeTeamId ? awayTeamId : homeTeamId)
-            : ev.team_id;
+        const creditedHome = isCreditedToHomeTeam(homeTeamId, ev.team_id, ev.type);
 
         const entry: MatchReportGoalEntry = {
             playerName: playerNameLookup.get(ev.player_id) ?? 'Unknown',
@@ -408,7 +418,7 @@ export function buildGoalsTimeline(
             isOwnGoal,
         };
 
-        (creditTeamId === homeTeamId ? home : away).push(entry);
+        (creditedHome ? home : away).push(entry);
     }
 
     const byMinute = (a: MatchReportGoalEntry, b: MatchReportGoalEntry) => (a.minute ?? 0) - (b.minute ?? 0);

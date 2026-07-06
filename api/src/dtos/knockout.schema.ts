@@ -56,8 +56,6 @@ export const knockoutGenerateOptionsSchema = z.object({
                 .map(s => `${s.groupId}:${s.rank}`);
             return new Set(standingKeys).size === standingKeys.length;
         }, 'seeds (standing) không được trùng groupId+rank'),
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
     legs: legsSchema,
     phaseTypeOverride: z.nativeEnum(PhaseType)
         .refine(

@@ -4691,25 +4691,10 @@
                             ]
                         },
                         "type": "array"
-                    },
-                    "matchTimes": {
-                        "items": {
-                            "type": "string"
-                        },
-                        "type": "array"
-                    },
-                    "venueIds": {
-                        "items": {
-                            "type": "number",
-                            "format": "double"
-                        },
-                        "type": "array"
                     }
                 },
                 "required": [
-                    "seeds",
-                    "matchTimes",
-                    "venueIds"
+                    "seeds"
                 ],
                 "type": "object"
             },
