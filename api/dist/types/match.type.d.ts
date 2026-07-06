@@ -1,4 +1,4 @@
-import { MatchEventType, MatchPeriod, MatchResultType } from '../generated/prisma/client.js';
+import { MatchEventType, MatchPeriod, MatchResultType, Prisma, PrismaClient } from '../generated/prisma/client.js';
 export interface RecordEventInput {
     playerId?: number;
     teamId?: number;
@@ -36,6 +36,10 @@ export interface ResolveAppealInput {
 export declare const PERIOD_TRANSITIONS: Record<MatchPeriod, MatchPeriod[]>;
 export declare const EXTRA_TIME_PERIODS: MatchPeriod[];
 export declare const SCORE_DELTA_BY_TYPE: Partial<Record<MatchEventType, 1 | -1>>;
+export declare const CORRECTION_WINDOW_MS: number;
+export declare const MINUTE_BOUNDS: Partial<Record<MatchPeriod, [number, number]>>;
+export declare const MAX_ADDED_MINUTE = 15;
+export type DbClient = PrismaClient | Prisma.TransactionClient;
 export type EditEventInput = Partial<RecordEventInput>;
 export type EditScoreInput = {
     homeScore: number;

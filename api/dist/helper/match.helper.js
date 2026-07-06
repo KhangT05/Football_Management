@@ -1,6 +1,7 @@
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-import { MatchEventType, PhaseFormat } from "../generated/prisma/client.js";
+import { MatchEventType, MatchPeriod, PhaseFormat } from "../generated/prisma/client.js";
 import { createAppError } from "../common/app.error.js";
+import { MAX_ADDED_MINUTE, MINUTE_BOUNDS } from "../types/match.type.js";
 export function isKnockoutFormat(format) {
     return format === PhaseFormat.knockout;
 }
@@ -315,5 +316,53 @@ export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLoo
 export function formatMinuteLabel(e) {
     const base = e.addedMinute ? `${e.minute}+${e.addedMinute}'` : `${e.minute}'`;
     return e.isOwnGoal ? `${base} (OG)` : base;
+}
+// match.helper.ts — chỉ thay hàm assertMinuteInBounds, phần còn lại của file giữ nguyên
+export function assertMinuteInBounds(period, minute, addedMinute) {
+    // penalty_shootout không có khái niệm "phút thi đấu" — không tồn tại trong
+    // MINUTE_BOUNDS, trước đây sẽ rơi vào nhánh INTERNAL_SERVER_ERROR sai chỗ.
+    if (period === MatchPeriod.penalty_shootout)
+        return;
+    if (minute === null || minute === undefined || !Number.isInteger(minute)) {
+        throw createAppError('VALIDATION_ERROR', `minute phải là số nguyên, nhận được: ${minute}`);
+    }
+    if (addedMinute != null) {
+        if (!Number.isInteger(addedMinute) || addedMinute < 0 || addedMinute > MAX_ADDED_MINUTE) {
+            throw createAppError('VALIDATION_ERROR', `addedMinute phải trong khoảng 0-${MAX_ADDED_MINUTE}, nhận được: ${addedMinute}`);
+        }
+    }
+    if (!period) {
+        throw createAppError('CONFLICT', `Match chưa xác định period hiện tại — gọi transitionPeriod trước khi ghi event`);
+    }
+    const bounds = MINUTE_BOUNDS[period];
+    if (!bounds) {
+        throw createAppError('INTERNAL_SERVER_ERROR', `Không có minute bounds định nghĩa cho period '${period}'`);
+    }
+    const [min, max] = bounds;
+    if (minute < min || minute > max) {
+        throw createAppError('VALIDATION_ERROR', `minute=${minute} không hợp lệ cho period '${period}' (khoảng cho phép: ${min}-${max})`);
+    }
+}
+// ── Sent-off player guard ────────────────────────────────────────────────
+// Gap có thật: BE hiện chỉ chặn "2 thẻ vàng cùng type" (findFirst yellow_card),
+// không có khái niệm "cầu thủ đã bị truất quyền" (red_card hoặc second_yellow)
+// → sau khi bị đuổi, cầu thủ đó vẫn có thể được ghi thêm goal/card/sub_in ở BE,
+// vỡ invariant bóng đá cơ bản. Check này BẮT BUỘC chạy trong transaction đã lock
+// match row (không phải check rời trước lock — race giữa 2 event cùng lúc cho
+// cùng player vẫn có thể lọt nếu check ở ngoài FOR UPDATE).
+export async function assertPlayerNotSentOff(tx, matchId, playerId) {
+    if (!playerId)
+        return;
+    const sentOff = await tx.matchEvent.findFirst({
+        where: {
+            match_id: matchId,
+            player_id: playerId,
+            type: { in: [MatchEventType.red_card, MatchEventType.second_yellow] },
+        },
+        select: { id: true },
+    });
+    if (sentOff) {
+        throw createAppError('CONFLICT', `Player ${playerId} đã bị truất quyền thi đấu (thẻ đỏ/thẻ vàng thứ 2) trong trận ${matchId} — không thể ghi thêm sự kiện`);
+    }
 }
 //# sourceMappingURL=match.helper.js.map
