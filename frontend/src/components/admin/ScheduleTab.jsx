@@ -11,9 +11,7 @@ import useToastStore from '../../store/toastStore';
 import { groupApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
-// ASSUMPTION: KnockoutUI nằm cùng thư mục admin, subfolder knockout/ — chỉnh
-// path nếu thực tế đặt khác. Component nhận prop `seasonId` (number).
-import KnockoutUI from './knockout/KnockoutUI';
+import KnockoutUI from '../../components/admin/KnockoutUI';
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
