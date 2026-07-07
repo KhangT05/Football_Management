@@ -1379,6 +1379,152 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "PlayerRankingMetric": {
+                "type": "string",
+                "enum": [
+                    "goals",
+                    "assists",
+                    "yellow_cards",
+                    "red_cards"
+                ]
+            },
+            "PlayerRankingEntry": {
+                "properties": {
+                    "matches_played": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "value": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "team_name": {
+                        "type": "string"
+                    },
+                    "team_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "player_name": {
+                        "type": "string"
+                    },
+                    "player_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "matches_played",
+                    "value",
+                    "team_name",
+                    "team_id",
+                    "player_name",
+                    "player_id"
+                ],
+                "type": "object"
+            },
+            "PlayerRankingStats": {
+                "properties": {
+                    "players": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerRankingEntry"
+                        },
+                        "type": "array"
+                    },
+                    "metric": {
+                        "$ref": "#/components/schemas/PlayerRankingMetric"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "players",
+                    "metric",
+                    "limit",
+                    "season_id"
+                ],
+                "type": "object"
+            },
+            "MvpWeights": {
+                "properties": {
+                    "red": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "yellow": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "assist": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "goal": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "red",
+                    "yellow",
+                    "assist",
+                    "goal"
+                ],
+                "type": "object"
+            },
+            "BestPlayerEntry": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PlayerRankingEntry"
+                    },
+                    {
+                        "properties": {
+                            "score": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "score"
+                        ],
+                        "type": "object"
+                    }
+                ]
+            },
+            "BestPlayerStats": {
+                "properties": {
+                    "players": {
+                        "items": {
+                            "$ref": "#/components/schemas/BestPlayerEntry"
+                        },
+                        "type": "array"
+                    },
+                    "weights": {
+                        "$ref": "#/components/schemas/MvpWeights"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "players",
+                    "weights",
+                    "limit",
+                    "season_id"
+                ],
+                "type": "object"
+            },
             "SeasonTeamStatus": {
                 "type": "string",
                 "enum": [
@@ -2477,6 +2623,13 @@
                         "type": "number",
                         "format": "double"
                     },
+                    "grace_period_retry_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "abandoned_reason": {
+                        "type": "string"
+                    },
                     "finalize_away_half_time": {
                         "type": "number",
                         "format": "double"
@@ -2580,6 +2733,8 @@
                     "manual_home_score",
                     "finalize_away_penalty",
                     "finalize_home_penalty",
+                    "grace_period_retry_count",
+                    "abandoned_reason",
                     "finalize_away_half_time",
                     "finalize_home_half_time",
                     "finalize_result_type",
@@ -7479,13 +7634,7 @@
                 "tags": [
                     "Statistics"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "query",
@@ -7517,13 +7666,7 @@
                 "tags": [
                     "Statistics"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -7555,14 +7698,7 @@
                 "tags": [
                     "Statistics"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizer"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -7594,14 +7730,7 @@
                 "tags": [
                     "Statistics"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizer"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -7642,19 +7771,176 @@
                 "tags": [
                     "Statistics"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizer"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
                         "name": "seasonId",
                         "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/seasons/{seasonId}/top-assists": {
+            "get": {
+                "operationId": "GetTopAssists",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerRankingStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/seasons/{seasonId}/top-yellow-cards": {
+            "get": {
+                "operationId": "GetTopYellowCards",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerRankingStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/seasons/{seasonId}/top-red-cards": {
+            "get": {
+                "operationId": "GetTopRedCards",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerRankingStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/seasons/{seasonId}/best-players": {
+            "get": {
+                "operationId": "GetBestPlayers",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BestPlayerStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
                         "schema": {
                             "format": "double",
                             "type": "number"
@@ -8744,10 +9030,6 @@
                                         "seasons": {
                                             "items": {
                                                 "properties": {
-                                                    "assists": {
-                                                        "type": "number",
-                                                        "format": "double"
-                                                    },
                                                     "matches_played": {
                                                         "type": "number",
                                                         "format": "double"
@@ -8769,6 +9051,10 @@
                                                         "type": "object"
                                                     },
                                                     "season_id": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "assists": {
                                                         "type": "number",
                                                         "format": "double"
                                                     },
@@ -8801,10 +9087,10 @@
                                                     }
                                                 },
                                                 "required": [
-                                                    "assists",
                                                     "matches_played",
                                                     "season",
                                                     "season_id",
+                                                    "assists",
                                                     "team_id",
                                                     "team",
                                                     "red_cards",
@@ -9039,10 +9325,6 @@
                                                 "type": "number",
                                                 "format": "double"
                                             },
-                                            "assists": {
-                                                "type": "number",
-                                                "format": "double"
-                                            },
                                             "player_id": {
                                                 "type": "number",
                                                 "format": "double"
@@ -9052,6 +9334,10 @@
                                                 "format": "double"
                                             },
                                             "season_id": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "assists": {
                                                 "type": "number",
                                                 "format": "double"
                                             },
@@ -9088,10 +9374,10 @@
                                             "is_suspended",
                                             "accumulated_yellow_cards",
                                             "minutes_played",
-                                            "assists",
                                             "player_id",
                                             "matches_played",
                                             "season_id",
+                                            "assists",
                                             "team_id",
                                             "red_cards",
                                             "yellow_cards",

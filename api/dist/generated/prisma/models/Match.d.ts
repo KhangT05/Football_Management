@@ -25,6 +25,7 @@ export type MatchAvgAggregateOutputType = {
     abandoned_minute: number | null;
     finalize_home_half_time: number | null;
     finalize_away_half_time: number | null;
+    grace_period_retry_count: number | null;
     finalize_home_penalty: number | null;
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
@@ -44,6 +45,7 @@ export type MatchSumAggregateOutputType = {
     abandoned_minute: number | null;
     finalize_home_half_time: number | null;
     finalize_away_half_time: number | null;
+    grace_period_retry_count: number | null;
     finalize_home_penalty: number | null;
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
@@ -72,6 +74,8 @@ export type MatchMinAggregateOutputType = {
     finalize_result_type: $Enums.MatchResultType | null;
     finalize_home_half_time: number | null;
     finalize_away_half_time: number | null;
+    abandoned_reason: string | null;
+    grace_period_retry_count: number | null;
     finalize_home_penalty: number | null;
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
@@ -106,6 +110,8 @@ export type MatchMaxAggregateOutputType = {
     finalize_result_type: $Enums.MatchResultType | null;
     finalize_home_half_time: number | null;
     finalize_away_half_time: number | null;
+    abandoned_reason: string | null;
+    grace_period_retry_count: number | null;
     finalize_home_penalty: number | null;
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
@@ -140,6 +146,8 @@ export type MatchCountAggregateOutputType = {
     finalize_result_type: number;
     finalize_home_half_time: number;
     finalize_away_half_time: number;
+    abandoned_reason: number;
+    grace_period_retry_count: number;
     finalize_home_penalty: number;
     finalize_away_penalty: number;
     manual_home_score: number;
@@ -166,6 +174,7 @@ export type MatchAvgAggregateInputType = {
     abandoned_minute?: true;
     finalize_home_half_time?: true;
     finalize_away_half_time?: true;
+    grace_period_retry_count?: true;
     finalize_home_penalty?: true;
     finalize_away_penalty?: true;
     manual_home_score?: true;
@@ -185,6 +194,7 @@ export type MatchSumAggregateInputType = {
     abandoned_minute?: true;
     finalize_home_half_time?: true;
     finalize_away_half_time?: true;
+    grace_period_retry_count?: true;
     finalize_home_penalty?: true;
     finalize_away_penalty?: true;
     manual_home_score?: true;
@@ -213,6 +223,8 @@ export type MatchMinAggregateInputType = {
     finalize_result_type?: true;
     finalize_home_half_time?: true;
     finalize_away_half_time?: true;
+    abandoned_reason?: true;
+    grace_period_retry_count?: true;
     finalize_home_penalty?: true;
     finalize_away_penalty?: true;
     manual_home_score?: true;
@@ -247,6 +259,8 @@ export type MatchMaxAggregateInputType = {
     finalize_result_type?: true;
     finalize_home_half_time?: true;
     finalize_away_half_time?: true;
+    abandoned_reason?: true;
+    grace_period_retry_count?: true;
     finalize_home_penalty?: true;
     finalize_away_penalty?: true;
     manual_home_score?: true;
@@ -281,6 +295,8 @@ export type MatchCountAggregateInputType = {
     finalize_result_type?: true;
     finalize_home_half_time?: true;
     finalize_away_half_time?: true;
+    abandoned_reason?: true;
+    grace_period_retry_count?: true;
     finalize_home_penalty?: true;
     finalize_away_penalty?: true;
     manual_home_score?: true;
@@ -392,6 +408,8 @@ export type MatchGroupByOutputType = {
     finalize_result_type: $Enums.MatchResultType | null;
     finalize_home_half_time: number | null;
     finalize_away_half_time: number | null;
+    abandoned_reason: string | null;
+    grace_period_retry_count: number;
     finalize_home_penalty: number | null;
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
@@ -437,6 +455,8 @@ export type MatchWhereInput = {
     finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    grace_period_retry_count?: Prisma.IntFilter<"Match"> | number;
     finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -483,6 +503,8 @@ export type MatchOrderByWithRelationInput = {
     finalize_result_type?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    abandoned_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -534,6 +556,8 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    grace_period_retry_count?: Prisma.IntFilter<"Match"> | number;
     finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -580,6 +604,8 @@ export type MatchOrderByWithAggregationInput = {
     finalize_result_type?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    abandoned_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrderInput | Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -622,6 +648,8 @@ export type MatchScalarWhereWithAggregatesInput = {
     finalize_result_type?: Prisma.EnumMatchResultTypeNullableWithAggregatesFilter<"Match"> | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     finalize_away_half_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    abandoned_reason?: Prisma.StringNullableWithAggregatesFilter<"Match"> | string | null;
+    grace_period_retry_count?: Prisma.IntWithAggregatesFilter<"Match"> | number;
     finalize_home_penalty?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     finalize_away_penalty?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     manual_home_score?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
@@ -651,6 +679,8 @@ export type MatchCreateInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -695,6 +725,8 @@ export type MatchUncheckedCreateInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -730,6 +762,8 @@ export type MatchUpdateInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -774,6 +808,8 @@ export type MatchUncheckedUpdateInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -814,6 +850,8 @@ export type MatchCreateManyInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -843,6 +881,8 @@ export type MatchUpdateManyMutationInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -875,6 +915,8 @@ export type MatchUncheckedUpdateManyInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -937,6 +979,8 @@ export type MatchCountOrderByAggregateInput = {
     finalize_result_type?: Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrder;
+    abandoned_reason?: Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
@@ -962,6 +1006,7 @@ export type MatchAvgOrderByAggregateInput = {
     abandoned_minute?: Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
@@ -990,6 +1035,8 @@ export type MatchMaxOrderByAggregateInput = {
     finalize_result_type?: Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrder;
+    abandoned_reason?: Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
@@ -1024,6 +1071,8 @@ export type MatchMinOrderByAggregateInput = {
     finalize_result_type?: Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrder;
+    abandoned_reason?: Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
@@ -1049,6 +1098,7 @@ export type MatchSumOrderByAggregateInput = {
     abandoned_minute?: Prisma.SortOrder;
     finalize_home_half_time?: Prisma.SortOrder;
     finalize_away_half_time?: Prisma.SortOrder;
+    grace_period_retry_count?: Prisma.SortOrder;
     finalize_home_penalty?: Prisma.SortOrder;
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
@@ -1385,6 +1435,8 @@ export type MatchCreateWithoutUserInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1428,6 +1480,8 @@ export type MatchUncheckedCreateWithoutUserInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1491,6 +1545,8 @@ export type MatchScalarWhereInput = {
     finalize_result_type?: Prisma.EnumMatchResultTypeNullableFilter<"Match"> | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_half_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    abandoned_reason?: Prisma.StringNullableFilter<"Match"> | string | null;
+    grace_period_retry_count?: Prisma.IntFilter<"Match"> | number;
     finalize_home_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     finalize_away_penalty?: Prisma.IntNullableFilter<"Match"> | number | null;
     manual_home_score?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -1520,6 +1576,8 @@ export type MatchCreateWithoutPhaseInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1562,6 +1620,8 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1618,6 +1678,8 @@ export type MatchCreateWithoutBracketSlotInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1661,6 +1723,8 @@ export type MatchUncheckedCreateWithoutBracketSlotInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1708,6 +1772,8 @@ export type MatchUpdateWithoutBracketSlotInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1751,6 +1817,8 @@ export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1785,6 +1853,8 @@ export type MatchCreateWithoutGroupInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1827,6 +1897,8 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1883,6 +1955,8 @@ export type MatchCreateWithoutHome_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1925,6 +1999,8 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -1968,6 +2044,8 @@ export type MatchCreateWithoutAway_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2010,6 +2088,8 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2079,6 +2159,8 @@ export type MatchCreateWithoutMatchJerseyAssignmentInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2122,6 +2204,8 @@ export type MatchUncheckedCreateWithoutMatchJerseyAssignmentInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2169,6 +2253,8 @@ export type MatchUpdateWithoutMatchJerseyAssignmentInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2212,6 +2298,8 @@ export type MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2246,6 +2334,8 @@ export type MatchCreateWithoutVenueInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2289,6 +2379,8 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2344,6 +2436,8 @@ export type MatchCreateWithoutMatchLineupsInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2387,6 +2481,8 @@ export type MatchUncheckedCreateWithoutMatchLineupsInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2434,6 +2530,8 @@ export type MatchUpdateWithoutMatchLineupsInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2477,6 +2575,8 @@ export type MatchUncheckedUpdateWithoutMatchLineupsInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2511,6 +2611,8 @@ export type MatchCreateWithoutEventsInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2554,6 +2656,8 @@ export type MatchUncheckedCreateWithoutEventsInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2601,6 +2705,8 @@ export type MatchUpdateWithoutEventsInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2644,6 +2750,8 @@ export type MatchUncheckedUpdateWithoutEventsInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2678,6 +2786,8 @@ export type MatchCreateWithoutMatchResultInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2721,6 +2831,8 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2768,6 +2880,8 @@ export type MatchUpdateWithoutMatchResultInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2811,6 +2925,8 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2845,6 +2961,8 @@ export type MatchCreateWithoutArticlesInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2888,6 +3006,8 @@ export type MatchUncheckedCreateWithoutArticlesInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -2935,6 +3055,8 @@ export type MatchUpdateWithoutArticlesInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2978,6 +3100,8 @@ export type MatchUncheckedUpdateWithoutArticlesInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3017,6 +3141,8 @@ export type MatchCreateManyUserInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3045,6 +3171,8 @@ export type MatchUpdateWithoutUserInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3088,6 +3216,8 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3127,6 +3257,8 @@ export type MatchUncheckedUpdateManyWithoutUserInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3159,6 +3291,8 @@ export type MatchCreateManyPhaseInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3188,6 +3322,8 @@ export type MatchUpdateWithoutPhaseInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3230,6 +3366,8 @@ export type MatchUncheckedUpdateWithoutPhaseInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3269,6 +3407,8 @@ export type MatchUncheckedUpdateManyWithoutPhaseInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3302,6 +3442,8 @@ export type MatchCreateManyGroupInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3331,6 +3473,8 @@ export type MatchUpdateWithoutGroupInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3373,6 +3517,8 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3412,6 +3558,8 @@ export type MatchUncheckedUpdateManyWithoutGroupInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3445,6 +3593,8 @@ export type MatchCreateManyHome_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3478,6 +3628,8 @@ export type MatchCreateManyAway_teamInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3507,6 +3659,8 @@ export type MatchUpdateWithoutHome_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3549,6 +3703,8 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3588,6 +3744,8 @@ export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3617,6 +3775,8 @@ export type MatchUpdateWithoutAway_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3659,6 +3819,8 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3698,6 +3860,8 @@ export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3732,6 +3896,8 @@ export type MatchCreateManyVenueInput = {
     finalize_result_type?: $Enums.MatchResultType | null;
     finalize_home_half_time?: number | null;
     finalize_away_half_time?: number | null;
+    abandoned_reason?: string | null;
+    grace_period_retry_count?: number;
     finalize_home_penalty?: number | null;
     finalize_away_penalty?: number | null;
     manual_home_score?: number | null;
@@ -3760,6 +3926,8 @@ export type MatchUpdateWithoutVenueInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3803,6 +3971,8 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3842,6 +4012,8 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
     finalize_result_type?: Prisma.NullableEnumMatchResultTypeFieldUpdateOperationsInput | $Enums.MatchResultType | null;
     finalize_home_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_half_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    abandoned_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    grace_period_retry_count?: Prisma.IntFieldUpdateOperationsInput | number;
     finalize_home_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     finalize_away_penalty?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     manual_home_score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3923,6 +4095,8 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     finalize_result_type?: boolean;
     finalize_home_half_time?: boolean;
     finalize_away_half_time?: boolean;
+    abandoned_reason?: boolean;
+    grace_period_retry_count?: boolean;
     finalize_home_penalty?: boolean;
     finalize_away_penalty?: boolean;
     manual_home_score?: boolean;
@@ -3970,6 +4144,8 @@ export type MatchSelectScalar = {
     finalize_result_type?: boolean;
     finalize_home_half_time?: boolean;
     finalize_away_half_time?: boolean;
+    abandoned_reason?: boolean;
+    grace_period_retry_count?: boolean;
     finalize_home_penalty?: boolean;
     finalize_away_penalty?: boolean;
     manual_home_score?: boolean;
@@ -3983,7 +4159,7 @@ export type MatchSelectScalar = {
     is_published?: boolean;
     referee?: boolean;
 };
-export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "abandoned_minute" | "pending_official_at" | "finalize_result_type" | "finalize_home_half_time" | "finalize_away_half_time" | "finalize_home_penalty" | "finalize_away_penalty" | "manual_home_score" | "manual_away_score" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee", ExtArgs["result"]["match"]>;
+export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "abandoned_minute" | "pending_official_at" | "finalize_result_type" | "finalize_home_half_time" | "finalize_away_half_time" | "abandoned_reason" | "grace_period_retry_count" | "finalize_home_penalty" | "finalize_away_penalty" | "manual_home_score" | "manual_away_score" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee", ExtArgs["result"]["match"]>;
 export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.Match$groupArgs<ExtArgs>;
@@ -4036,6 +4212,8 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         finalize_result_type: $Enums.MatchResultType | null;
         finalize_home_half_time: number | null;
         finalize_away_half_time: number | null;
+        abandoned_reason: string | null;
+        grace_period_retry_count: number;
         finalize_home_penalty: number | null;
         finalize_away_penalty: number | null;
         manual_home_score: number | null;
@@ -4382,6 +4560,8 @@ export interface MatchFieldRefs {
     readonly finalize_result_type: Prisma.FieldRef<"Match", 'MatchResultType'>;
     readonly finalize_home_half_time: Prisma.FieldRef<"Match", 'Int'>;
     readonly finalize_away_half_time: Prisma.FieldRef<"Match", 'Int'>;
+    readonly abandoned_reason: Prisma.FieldRef<"Match", 'String'>;
+    readonly grace_period_retry_count: Prisma.FieldRef<"Match", 'Int'>;
     readonly finalize_home_penalty: Prisma.FieldRef<"Match", 'Int'>;
     readonly finalize_away_penalty: Prisma.FieldRef<"Match", 'Int'>;
     readonly manual_home_score: Prisma.FieldRef<"Match", 'Int'>;

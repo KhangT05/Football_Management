@@ -309,6 +309,8 @@ export const MatchScalarFieldEnum = {
     finalize_result_type: 'finalize_result_type',
     finalize_home_half_time: 'finalize_home_half_time',
     finalize_away_half_time: 'finalize_away_half_time',
+    abandoned_reason: 'abandoned_reason',
+    grace_period_retry_count: 'grace_period_retry_count',
     finalize_home_penalty: 'finalize_home_penalty',
     finalize_away_penalty: 'finalize_away_penalty',
     manual_home_score: 'manual_home_score',
@@ -523,6 +525,7 @@ export const VenueOrderByRelevanceFieldEnum = {
 export const MatchOrderByRelevanceFieldEnum = {
     round: 'round',
     postponed_reason: 'postponed_reason',
+    abandoned_reason: 'abandoned_reason',
     referee: 'referee'
 };
 export const MatchEventOrderByRelevanceFieldEnum = {

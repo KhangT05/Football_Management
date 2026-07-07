@@ -550,33 +550,35 @@ enum MatchStatus {
 }
 
 model Match {
-  id                      Int              @id @default(autoincrement())
-  phase_id                Int
-  group_id                Int? // null = knockout
-  home_team_id            Int
-  away_team_id            Int
-  scheduled_at            DateTime?
-  played_at               DateTime?
-  home_score              Int?
-  away_score              Int?
-  status                  MatchStatus      @default(scheduled)
-  round                   String?
-  leg                     Int? // 1 hoặc 2 nếu two-legged (knockout)
-  current_period          MatchPeriod? // sub-state khi ongoing: extra_time_first, penalty_shootout...
-  postponed_from          DateTime? // original scheduled_at
-  postponed_reason        String?
-  abandoned_minute        Int? // abandoned tại phút mấy
-  pending_official_at     DateTime?
-  finalize_result_type    MatchResultType?
-  finalize_home_half_time Int?
-  finalize_away_half_time Int?
-  finalize_home_penalty   Int?
-  finalize_away_penalty   Int?
-  manual_home_score       Int?
-  manual_away_score       Int?
-  is_active               Boolean          @default(true)
-  created_at              DateTime         @default(now())
-  updated_at              DateTime?        @updatedAt
+  id                       Int              @id @default(autoincrement())
+  phase_id                 Int
+  group_id                 Int? // null = knockout
+  home_team_id             Int
+  away_team_id             Int
+  scheduled_at             DateTime?
+  played_at                DateTime?
+  home_score               Int?
+  away_score               Int?
+  status                   MatchStatus      @default(scheduled)
+  round                    String?
+  leg                      Int? // 1 hoặc 2 nếu two-legged (knockout)
+  current_period           MatchPeriod? // sub-state khi ongoing: extra_time_first, penalty_shootout...
+  postponed_from           DateTime? // original scheduled_at
+  postponed_reason         String?
+  abandoned_minute         Int? // abandoned tại phút mấy
+  pending_official_at      DateTime?
+  finalize_result_type     MatchResultType?
+  finalize_home_half_time  Int?
+  finalize_away_half_time  Int?
+  abandoned_reason         String?
+  grace_period_retry_count Int              @default(0)
+  finalize_home_penalty    Int?
+  finalize_away_penalty    Int?
+  manual_home_score        Int?
+  manual_away_score        Int?
+  is_active                Boolean          @default(true)
+  created_at               DateTime         @default(now())
+  updated_at               DateTime?        @updatedAt
 
   deleted_at DateTime?
 

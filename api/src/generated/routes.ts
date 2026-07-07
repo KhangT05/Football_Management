@@ -482,6 +482,36 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerRankingMetric": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goals"]},{"dataType":"enum","enums":["assists"]},{"dataType":"enum","enums":["yellow_cards"]},{"dataType":"enum","enums":["red_cards"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerRankingEntry": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"matches_played":{"dataType":"double","required":true},"value":{"dataType":"double","required":true},"team_name":{"dataType":"string","required":true},"team_id":{"dataType":"double","required":true},"player_name":{"dataType":"string","required":true},"player_id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerRankingStats": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"players":{"dataType":"array","array":{"dataType":"refAlias","ref":"PlayerRankingEntry"},"required":true},"metric":{"ref":"PlayerRankingMetric","required":true},"limit":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MvpWeights": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"red":{"dataType":"double","required":true},"yellow":{"dataType":"double","required":true},"assist":{"dataType":"double","required":true},"goal":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BestPlayerEntry": {
+        "dataType": "refAlias",
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"PlayerRankingEntry"},{"dataType":"nestedObjectLiteral","nestedProperties":{"score":{"dataType":"double","required":true}}}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BestPlayerStats": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"players":{"dataType":"array","array":{"dataType":"refAlias","ref":"BestPlayerEntry"},"required":true},"weights":{"ref":"MvpWeights","required":true},"limit":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonTeamStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["approved"]},{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["eliminated"]},{"dataType":"enum","enums":["withdrawn"]}],"validators":{}},
@@ -757,7 +787,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_MatchPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"referee":{"dataType":"string","required":true},"is_published":{"dataType":"boolean","required":true},"venue_id":{"dataType":"double","required":true},"manual_away_score":{"dataType":"double","required":true},"manual_home_score":{"dataType":"double","required":true},"finalize_away_penalty":{"dataType":"double","required":true},"finalize_home_penalty":{"dataType":"double","required":true},"finalize_away_half_time":{"dataType":"double","required":true},"finalize_home_half_time":{"dataType":"double","required":true},"finalize_result_type":{"ref":"MatchResultType","required":true},"pending_official_at":{"dataType":"datetime","required":true},"abandoned_minute":{"dataType":"double","required":true},"postponed_reason":{"dataType":"string","required":true},"postponed_from":{"dataType":"datetime","required":true},"current_period":{"ref":"MatchPeriod","required":true},"leg":{"dataType":"double","required":true},"round":{"dataType":"string","required":true},"away_score":{"dataType":"double","required":true},"home_score":{"dataType":"double","required":true},"played_at":{"dataType":"datetime","required":true},"scheduled_at":{"dataType":"datetime","required":true},"away_team_id":{"dataType":"double","required":true},"home_team_id":{"dataType":"double","required":true},"phase_id":{"dataType":"double","required":true},"group_id":{"dataType":"double","required":true},"status":{"ref":"MatchStatus","required":true},"user_id":{"dataType":"double","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"referee":{"dataType":"string","required":true},"is_published":{"dataType":"boolean","required":true},"venue_id":{"dataType":"double","required":true},"manual_away_score":{"dataType":"double","required":true},"manual_home_score":{"dataType":"double","required":true},"finalize_away_penalty":{"dataType":"double","required":true},"finalize_home_penalty":{"dataType":"double","required":true},"grace_period_retry_count":{"dataType":"double","required":true},"abandoned_reason":{"dataType":"string","required":true},"finalize_away_half_time":{"dataType":"double","required":true},"finalize_home_half_time":{"dataType":"double","required":true},"finalize_result_type":{"ref":"MatchResultType","required":true},"pending_official_at":{"dataType":"datetime","required":true},"abandoned_minute":{"dataType":"double","required":true},"postponed_reason":{"dataType":"string","required":true},"postponed_from":{"dataType":"datetime","required":true},"current_period":{"ref":"MatchPeriod","required":true},"leg":{"dataType":"double","required":true},"round":{"dataType":"string","required":true},"away_score":{"dataType":"double","required":true},"home_score":{"dataType":"double","required":true},"played_at":{"dataType":"datetime","required":true},"scheduled_at":{"dataType":"datetime","required":true},"away_team_id":{"dataType":"double","required":true},"home_team_id":{"dataType":"double","required":true},"phase_id":{"dataType":"double","required":true},"group_id":{"dataType":"double","required":true},"status":{"ref":"MatchStatus","required":true},"user_id":{"dataType":"double","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchModel": {
@@ -3234,7 +3264,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 season_id: {"in":"query","name":"season_id","dataType":"double"},
         };
         app.get('/statistics/seasons/revenue',
-            authenticateMiddleware([{"jwt":["admin"]}]),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getSeasonRevenue)),
 
@@ -3270,7 +3299,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/statistics/tournaments/:id/overview',
-            authenticateMiddleware([{"jwt":["admin"]}]),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTournamentOverview)),
 
@@ -3306,7 +3334,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
         };
         app.get('/statistics/seasons/:seasonId/teams/registrations',
-            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTeamRegistrationStats)),
 
@@ -3343,7 +3370,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 limit: {"in":"query","name":"limit","dataType":"double"},
         };
         app.get('/statistics/seasons/:seasonId/top-scorers',
-            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTopScorers)),
 
@@ -3379,7 +3405,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
         };
         app.get('/statistics/seasons/:seasonId/discipline',
-            authenticateMiddleware([{"jwt":["admin","organizer"]}]),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
             ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTeamDisciplineStats)),
 
@@ -3400,6 +3425,150 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'getTeamDisciplineStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTopAssists: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                limit: {"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/top-assists',
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTopAssists)),
+
+            async function StatisticsController_getTopAssists(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTopAssists, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTopAssists',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTopYellowCards: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                limit: {"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/top-yellow-cards',
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTopYellowCards)),
+
+            async function StatisticsController_getTopYellowCards(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTopYellowCards, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTopYellowCards',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getTopRedCards: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                limit: {"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/top-red-cards',
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getTopRedCards)),
+
+            async function StatisticsController_getTopRedCards(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTopRedCards, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTopRedCards',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getBestPlayers: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                limit: {"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/statistics/seasons/:seasonId/best-players',
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getBestPlayers)),
+
+            async function StatisticsController_getBestPlayers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getBestPlayers, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getBestPlayers',
                 controller,
                 response,
                 next,

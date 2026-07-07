@@ -11,6 +11,11 @@ import type {
     TopScorerStats,
     TeamRegistrationFunnel,
     TeamRegistrationStats,
+    MvpWeights,
+    BestPlayerEntry,
+    BestPlayerStats,
+    PlayerRankingMetric,
+    PlayerRankingStats,
 } from "../types/statistics.type.js";
 
 const BUSINESS_TZ_OFFSET_HOURS = 7;
@@ -313,17 +318,16 @@ export class StatisticsService {
             { team_id: number; team_name: string; yellow_count: bigint; red_count: bigint }[]
         > `
             SELECT
-                t.id AS team_id,
-                t.name AS team_name,
-                COALESCE(SUM(CASE WHEN me.event_type = 'yellow_card' THEN 1 ELSE 0 END), 0) AS yellow_count,
-                COALESCE(SUM(CASE WHEN me.event_type = 'red_card' THEN 1 ELSE 0 END), 0) AS red_count
+            t.id AS team_id,
+            t.name AS team_name,
+            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.event_type = 'yellow_card' THEN 1 ELSE 0 END), 0) AS yellow_count,
+            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.event_type = 'red_card' THEN 1 ELSE 0 END), 0) AS red_count
             FROM teams t
             JOIN season_teams st ON st.team_id = t.id AND st.season_id = ${seasonId}
             LEFT JOIN match_events me ON me.team_id = t.id
                 AND me.event_type IN ('yellow_card', 'red_card')
             LEFT JOIN matches m ON m.id = me.match_id
-            LEFT JOIN phases ph ON ph.id = m.phase_id
-            WHERE me.id IS NULL OR ph.season_id = ${seasonId}
+            LEFT JOIN phases ph ON ph.id = m.phase_id AND ph.season_id = ${seasonId}
             GROUP BY t.id, t.name
             ORDER BY red_count DESC, yellow_count DESC
         `;
@@ -338,5 +342,142 @@ export class StatisticsService {
                 disciplinary_points: Number(r.yellow_count) * 1 + Number(r.red_count) * 3,
             })),
         };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAYER RANKING (goals/assists/yellow/red) — đọc từ PlayerStatistic
+    // (đã denormalized), KHÔNG re-aggregate match_events. Giả định:
+    // PlayerStatistic được service khác update transactional khi ghi nhận
+    // match event, bao gồm cả case sửa/hủy event (VAR, nhập nhầm thẻ).
+    // Nếu assumption này sai → ranking sẽ lệch so với match_events thật,
+    // cần raw-query lại như getTopScorers bản cũ.
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // FIX: bản cũ dùng computed key `[field]: ...` + `as Prisma.XxxInput` để
+    // build where/orderBy động theo metric. Cast đó che generic inference của
+    // findMany() — TS rơi về overload generic hơn, làm `include.player`/`team`
+    // không resolve đúng shape (player_name: never, value: number|undefined).
+    // Fix: whitelist tường minh where/orderBy theo từng metric — giữ full
+    // type inference, và compiler tự bắt lỗi nếu thêm metric mới mà quên map.
+    private static readonly RANKING_FIELD_MAP: Record<PlayerRankingMetric, string> = {
+        goals: "goals_scored",
+        assists: "assists",
+        yellow_cards: "yellow_cards",
+        red_cards: "red_cards",
+    };
+
+    private static readonly RANKING_WHERE_MAP: Record<
+        PlayerRankingMetric,
+        (seasonId: number) => Prisma.PlayerStatisticWhereInput
+    > = {
+            goals: (season_id) => ({ season_id, goals_scored: { gt: 0 } }),
+            assists: (season_id) => ({ season_id, assists: { gt: 0 } }),
+            yellow_cards: (season_id) => ({ season_id, yellow_cards: { gt: 0 } }),
+            red_cards: (season_id) => ({ season_id, red_cards: { gt: 0 } }),
+        };
+
+    // tie-break: hiệu suất cao hơn (ít trận hơn) xếp trước — cố định, không
+    // phải input từ client nên không đi qua Queryable.applySort()
+    private static readonly RANKING_ORDER_MAP: Record<
+        PlayerRankingMetric,
+        Prisma.PlayerStatisticOrderByWithRelationInput[]
+    > = {
+            goals: [{ goals_scored: "desc" }, { matches_played: "asc" }],
+            assists: [{ assists: "desc" }, { matches_played: "asc" }],
+            yellow_cards: [{ yellow_cards: "desc" }, { matches_played: "asc" }],
+            red_cards: [{ red_cards: "desc" }, { matches_played: "asc" }],
+        };
+
+    async getPlayerRanking(
+        seasonId: number,
+        metric: PlayerRankingMetric,
+        limit = 10,
+    ): Promise<PlayerRankingStats> {
+        if (limit <= 0 || limit > 100) {
+            throw createAppError(
+                "VALIDATION_ERROR",
+                `getPlayerRanking called with invalid limit=${limit}`,
+                "limit phải trong khoảng 1-100",
+            );
+        }
+
+        const rows = await this.prisma.playerStatistic.findMany({
+            where: StatisticsService.RANKING_WHERE_MAP[metric](seasonId),
+            orderBy: StatisticsService.RANKING_ORDER_MAP[metric],
+            take: limit,
+            include: {
+                player: { select: { id: true, name: true } },
+                team: { select: { id: true, name: true } },
+            },
+        });
+
+        const field = StatisticsService.RANKING_FIELD_MAP[metric] as keyof typeof rows[number];
+
+        return {
+            season_id: seasonId,
+            limit,
+            metric,
+            players: rows.map((r) => ({
+                player_id: r.player.id,
+                player_name: r.player.name,
+                team_id: r.team.id,
+                team_name: r.team.name,
+                value: r[field] as number,
+                matches_played: r.matches_played,
+            })),
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BEST PLAYER (MVP) — weighted score, KHÔNG có business rule chuẩn nào
+    // được xác nhận, đây là công thức mặc định tạm thời. Cần BTC confirm
+    // trọng số thật trước khi công bố công khai (ảnh hưởng danh dự/giải thưởng).
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Sort trong app (không phải raw SQL ORDER BY theo computed expression)
+    // vì:
+    // 1. Prisma không support ORDER BY computed expression multi-field.
+    // 2. Số row = số cầu thủ trong 1 season (roster size, vài trăm max),
+    //    KHÔNG phải match_events (có thể hàng chục nghìn row/mùa) — load
+    //    hết về app rồi sort O(n log n) trong memory là chấp nhận được ở
+    //    scale này. Nếu sau này ranking xuyên nhiều mùa/giải, phải raw SQL.
+    static readonly DEFAULT_MVP_WEIGHTS: MvpWeights = { goal: 4, assist: 3, yellow: -1, red: -3 };
+
+    async getBestPlayers(
+        seasonId: number,
+        limit = 10,
+        weights: MvpWeights = StatisticsService.DEFAULT_MVP_WEIGHTS,
+    ): Promise<BestPlayerStats> {
+        if (limit <= 0 || limit > 100) {
+            throw createAppError(
+                "VALIDATION_ERROR",
+                `getBestPlayers called with invalid limit=${limit}`,
+                "limit phải trong khoảng 1-100",
+            );
+        }
+        const rows = await this.prisma.playerStatistic.findMany({
+            where: { season_id: seasonId, matches_played: { gt: 0 } },
+            include: {
+                player: { select: { id: true, name: true } },
+                team: { select: { id: true, name: true } },
+            },
+        });
+        const scored: BestPlayerEntry[] = rows
+            .map((r) => ({
+                player_id: r.player.id,
+                player_name: r.player.name,
+                team_id: r.team.id,
+                team_name: r.team.name,
+                matches_played: r.matches_played,
+                value: r.goals_scored,
+                score:
+                    r.goals_scored * weights.goal +
+                    r.assists * weights.assist +
+                    r.yellow_cards * weights.yellow +
+                    r.red_cards * weights.red,
+            }))
+            .sort((a, b) => b.score - a.score || a.matches_played - b.matches_played)
+            .slice(0, limit);
+        return { season_id: seasonId, limit, weights, players: scored };
     }
 }
