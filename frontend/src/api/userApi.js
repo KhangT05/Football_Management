@@ -74,11 +74,7 @@ export const userApi = {
   updateAvatar: (id, file) => {
     const formData = new FormData();
     formData.append('avatar', file);
-    return axiosClient.patch(`/users/${id}/avatar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return axiosClient.patch(`/users/${id}/avatar`, formData);
   },
 
   /**

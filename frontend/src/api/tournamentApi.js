@@ -51,9 +51,7 @@ export const tournamentApi = {
       form.append('logo', data.logo);
     }
 
-    return axiosClient.post('/tournaments', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return axiosClient.post('/tournaments', form);
   },
 
   /**
@@ -76,9 +74,7 @@ export const tournamentApi = {
       form.append('logo', data.logo);
     }
 
-    return axiosClient.patch(`/tournaments/${id}`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return axiosClient.patch(`/tournaments/${id}`, form);
   },
 
   /**

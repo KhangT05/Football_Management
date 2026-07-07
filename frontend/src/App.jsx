@@ -41,6 +41,9 @@ const ManageTournaments = lazy(() => import("./pages/admin/ManageTournaments"));
 const News = lazy(() => import("./pages/News"));
 const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
 
+// Tournament detail
+const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
+
 // ── Loading Fallback ───────────────────────────────────────
 function PageLoader() {
   return (
@@ -106,6 +109,7 @@ function App() {
             <Route path="/tran-dau/:id" element={<MatchDetail />} />
             <Route path="/tin-tuc" element={<News />} />
             <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
+            <Route path="/giai-dau/:id" element={<TournamentDetail />} />
 
             {/* Protected routes – cần đăng nhập */}
             <Route path="/dang-ky-doi-bong" element={

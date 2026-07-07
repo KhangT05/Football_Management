@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient';
 
 export const statisticsApi = {
-  getUserRegistrations: (days) => {
-    return axiosClient.get('/statistics/users/registrations', { params: { days } });
+  getUserRegistrations: (period) => {
+    return axiosClient.get('/statistics/users/registrations', { params: { period } });
   },
 
   getSeasonRevenue: (seasonId) => {

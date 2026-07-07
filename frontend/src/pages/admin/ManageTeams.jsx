@@ -5,9 +5,10 @@ import {
   ChevronDown, ChevronUp, AlertTriangle, Loader2,
   UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { useCrudModal, useDebouncedValue } from '../../hooks';
+import { useCrudModal, useDebouncedValue, useApiQuery } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
+import useSeasonStore from '../../store/seasonStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
@@ -16,7 +17,7 @@ import Pagination from '../../components/ui/Pagination';
 import ApproveTeamsTab from '../../components/admin/ApproveTeamsTab';
 import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
-import { playerApi } from '../../api';
+import { playerApi, seasonTeamApi } from '../../api';
 
 const POSITIONS = [
   { value: 'GK', label: 'GK – Thủ môn' },
@@ -73,6 +74,26 @@ export default function ManageTeams() {
 
   const totalPages = meta?.last_page || 1;
   const paginatedTeams = teams || [];
+
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, fetchAll: state.fetchAll })));
+  
+  useEffect(() => {
+    fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' });
+  }, [fetchSeasons]);
+
+  const { data: allSeasonTeams } = useApiQuery(
+    (params) => seasonTeamApi.getAll(params),
+    { autoFetch: true, defaultParams: { per_page: 5000 } }
+  );
+
+  const teamsWithSeasons = paginatedTeams.map(team => {
+    const teamSeasonTeams = allSeasonTeams?.filter(st => String(st.team_id) === String(team.id)) || [];
+    const mappedSeasonTeams = teamSeasonTeams.map(st => {
+      const season = seasons.find(s => String(s.id) === String(st.season_id));
+      return { ...st, season: season || { id: st.season_id, name: `Season #${st.season_id}` } };
+    });
+    return { ...team, season_teams: mappedSeasonTeams };
+  });
 
   // ── CRUD Modal: Team (useCrudModal) ───────────────────
   const teamCrud = useCrudModal({ emptyForm: EMPTY_TEAM, onSuccess: refetchTeams });
@@ -384,7 +405,7 @@ export default function ManageTeams() {
                           </div>
                         </td>
                       </tr>
-                    ) : paginatedTeams.length === 0 ? (
+                    ) : teamsWithSeasons.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-16 text-center text-gray-400">
                           <div className="flex flex-col items-center gap-3">
@@ -398,7 +419,7 @@ export default function ManageTeams() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedTeams.map((team, idx) => (
+                      teamsWithSeasons.map((team, idx) => (
                         <Fragment key={team.id}>
                           {/* Team Row */}
                           <tr key={team.id} className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>

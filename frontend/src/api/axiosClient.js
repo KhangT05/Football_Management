@@ -25,7 +25,6 @@ export function clearAccessToken() { _accessToken = null; }
 // ============================================================
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
-  headers: { 'Content-Type': 'application/json' },
   withCredentials: true,   // gửi httpOnly refresh_token cookie tự động
   timeout: 15000,
 });

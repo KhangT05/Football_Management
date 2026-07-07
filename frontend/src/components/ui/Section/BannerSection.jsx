@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, Shield, Trophy, Users, Calendar, Swords, Loader2, X } from "lucide-react";
+import { Search, Shield, Trophy, Users, Calendar, Swords, Loader2, X, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { tournamentApi, teamApi, seasonApi, matchApi } from "../../../api";
 import useAuthStore from "../../../store/authStore";
@@ -133,66 +133,109 @@ export default function BannerSection() {
     const matchCount = useCountUp(stats.matches);
 
     return (
-        <div className="mb-20 rounded-3xl overflow-hidden relative border border-navy-light shadow-2xl">
-            <div className="absolute inset-0 bg-navy/80 z-10"></div>
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1518605368461-1e12222374be?q=80&w=2070')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
-            
-            <div className="relative z-20 p-6 sm:p-10 md:p-16 lg:p-24 flex flex-col items-center text-center justify-center min-h-[350px] md:min-h-[450px]">
-                <div className="w-full max-w-4xl space-y-6 md:space-y-10">
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight">
-                        Tổ chức giải đấu dễ dàng <br className="hidden sm:block"/>
-                        <span className="text-gray-300 font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-2 block">Quản lý đội thể thao đơn giản!</span>
-                    </h2>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto">
-                        <button onClick={() => setShowSearchModal(true)} className="px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-2 sm:gap-3 bg-navy-dark border border-navy-light hover:bg-navy text-white font-bold rounded-2xl text-center transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base">
-                            <Search className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                            Tìm giải đấu
-                        </button>
-                        <Link to="/dang-ky-doi-bong" className="px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-2 sm:gap-3 bg-navy-dark border border-navy-light hover:bg-navy text-white font-bold rounded-2xl text-center transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base">
-                            <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                            Tạo đội hình
-                        </Link>
-                        <button onClick={handleManageTeamClick} className="px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-2 sm:gap-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-center transition-all duration-300 shadow-lg shadow-indigo-600/20 hover:-translate-y-1 text-sm sm:text-base">
-                            <Shield className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                            Quản lý đội
-                        </button>
+        <div className="mb-24 sm:mb-28 relative">
+            {/* Hero panel */}
+            <div className="rounded-3xl overflow-hidden relative border border-navy-light shadow-2xl bg-navy-dark">
+                {/* Ambient "floodlight" glows */}
+                <div className="absolute -top-24 -left-16 w-80 h-80 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-32 -right-10 w-104 h-104 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+
+                {/* Faint scoreboard grid texture */}
+                <div
+                    className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                    style={{
+                        backgroundImage: 'repeating-linear-linear(45deg, rgba(255,255,255,0.7) 0px, rgba(255,255,255,0.7) 1px, transparent 1px, transparent 16px)',
+                    }}
+                />
+
+                {/* Oversized watermark icon, grounds the section in "sports" */}
+                <Trophy
+                    aria-hidden="true"
+                    className="hidden lg:block absolute -right-14 -top-14 w-[340px] h-[340px] text-white/[0.035] rotate-12 pointer-events-none"
+                />
+
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-navy-dark to-transparent pointer-events-none" />
+
+                <div className="relative z-10 p-6 sm:p-10 md:p-16 lg:p-24 flex flex-col items-center text-center justify-center min-h-[380px] md:min-h-[460px]">
+                    <div className="w-full max-w-4xl space-y-6 md:space-y-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                            </span>
+                            Nền tảng quản lý thể thao
+                        </div>
+
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
+                            Tổ chức giải đấu dễ dàng
+                            <span className="block mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-blue-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">
+                                Quản lý đội thể thao đơn giản!
+                            </span>
+                        </h2>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto pt-2">
+                            <button
+                                onClick={() => setShowSearchModal(true)}
+                                className="px-4 py-3.5 md:px-5 md:py-4 flex items-center justify-center gap-3 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base"
+                            >
+                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 shrink-0">
+                                    <Search className="w-4 h-4" />
+                                </span>
+                                Tìm giải đấu
+                            </button>
+                            <Link
+                                to="/dang-ky-doi-bong"
+                                className="px-4 py-3.5 md:px-5 md:py-4 flex items-center justify-center gap-3 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base"
+                            >
+                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0">
+                                    <Users className="w-4 h-4" />
+                                </span>
+                                Tạo đội hình
+                            </Link>
+                            <button
+                                onClick={handleManageTeamClick}
+                                className="sm:col-span-2 px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-3 bg-linear-to-br from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:-translate-y-1 text-sm sm:text-base"
+                            >
+                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/15 shrink-0">
+                                    <Shield className="w-4 h-4" />
+                                </span>
+                                Quản lý đội
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Stats Bar */}
-            <div className="relative z-20 grid grid-cols-2 lg:grid-cols-4 bg-navy-dark/90 backdrop-blur-md border-t border-navy-light/50">
-                <StatBlock
-                    label="Giải đấu"
-                    value={tourCount}
-                    loading={loading}
-                    icon={<Trophy className="w-4 h-4 text-emerald-400" />}
-                    className="border-b lg:border-b-0 border-r border-navy-light/50"
-                />
-                <StatBlock
-                    label="Đội thi đấu"
-                    value={teamCount}
-                    loading={loading}
-                    icon={<Users className="w-4 h-4 text-blue-400" />}
-                    className="border-b lg:border-b-0 lg:border-r border-navy-light/50"
-                />
-                <StatBlock
-                    label="Mùa giải"
-                    value={seasonCount}
-                    loading={loading}
-                    icon={<Calendar className="w-4 h-4 text-purple-400" />}
-                    className="border-r border-navy-light/50"
-                />
-                <StatBlock
-                    label="Trận đấu"
-                    value={matchCount}
-                    loading={loading}
-                    icon={<Swords className="w-4 h-4 text-amber-400" />}
-                    className=""
-                />
+            {/* Floating stats card, overlapping the hero's bottom edge */}
+            <div className="relative z-20 -mt-10 sm:-mt-14 mx-4 sm:mx-10">
+                <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-navy-light/70 bg-navy/95 backdrop-blur-xl border border-navy-light rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+                    <StatBlock
+                        label="Giải đấu"
+                        value={tourCount}
+                        loading={loading}
+                        icon={<Trophy className="w-4 h-4 text-emerald-400" />}
+                    />
+                    <StatBlock
+                        label="Đội thi đấu"
+                        value={teamCount}
+                        loading={loading}
+                        icon={<Users className="w-4 h-4 text-blue-400" />}
+                    />
+                    <StatBlock
+                        label="Mùa giải"
+                        value={seasonCount}
+                        loading={loading}
+                        icon={<Calendar className="w-4 h-4 text-purple-400" />}
+                    />
+                    <StatBlock
+                        label="Trận đấu"
+                        value={matchCount}
+                        loading={loading}
+                        icon={<Swords className="w-4 h-4 text-amber-400" />}
+                    />
+                </div>
             </div>
-            
+
             <TournamentSearchModal isOpen={showSearchModal} onClose={() => setShowSearchModal(false)} />
         </div>
     )
@@ -236,7 +279,9 @@ function TournamentSearchModal({ isOpen, onClose }) {
                 <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
                 <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light relative z-10 bg-navy/40">
                     <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-                        <Search className="w-6 h-6 text-blue-400" />
+                        <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400">
+                            <Search className="w-5 h-5" />
+                        </span>
                         Tìm kiếm giải đấu
                     </h3>
                     <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
@@ -262,7 +307,9 @@ function TournamentSearchModal({ isOpen, onClose }) {
                         </div>
                     ) : tournaments.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-                            <Trophy className="w-16 h-16 opacity-20" />
+                            <div className="flex items-center justify-center w-20 h-20 rounded-full bg-navy-light/60">
+                                <Trophy className="w-9 h-9 opacity-40" />
+                            </div>
                             <p className="font-bold text-lg">Không tìm thấy giải đấu nào</p>
                         </div>
                     ) : (
@@ -272,10 +319,11 @@ function TournamentSearchModal({ isOpen, onClose }) {
                                     <div className="w-16 h-16 rounded-xl bg-navy-dark border border-navy-light overflow-hidden shrink-0">
                                         {tour.logo ? <img src={tour.logo} alt={tour.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-500"><Trophy className="w-8 h-8" /></div>}
                                     </div>
-                                    <div>
-                                        <h4 className="font-black text-white text-lg group-hover:text-blue-400 transition-colors">{tour.name}</h4>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-black text-white text-lg group-hover:text-blue-400 transition-colors truncate">{tour.name}</h4>
                                         {tour.description && <p className="text-sm text-gray-400 line-clamp-1 mt-1">{tour.description}</p>}
                                     </div>
+                                    <ChevronRight className="w-5 h-5 text-gray-500 shrink-0 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                                 </Link>
                             ))}
                         </div>
@@ -287,19 +335,23 @@ function TournamentSearchModal({ isOpen, onClose }) {
     );
 }
 
-function StatBlock({ label, value, loading, icon, className = "" }) {
+function StatBlock({ label, value, loading, icon }) {
     return (
-        <div className={`p-4 sm:p-6 md:p-8 text-center ${className}`}>
-            <div className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-2 bg-white/5 inline-flex items-center gap-2 px-3 py-1 rounded-lg">
-                {icon}
+        <div className="group p-5 sm:p-6 md:p-7 text-center transition-colors hover:bg-white/3">
+            <div className="flex items-center justify-center mb-3">
+                <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/5 group-hover:scale-110 transition-transform">
+                    {icon}
+                </span>
+            </div>
+            <div className="text-[11px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider mb-1.5">
                 {label}
             </div>
             {loading ? (
-                <div className="flex items-center justify-center h-10">
-                    <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
+                <div className="flex items-center justify-center h-9">
+                    <Loader2 className="w-5 h-5 text-gray-500 animate-spin" />
                 </div>
             ) : (
-                <div className="text-4xl font-black text-white">
+                <div className="text-3xl sm:text-4xl font-black text-white tabular-nums">
                     {value.toLocaleString('vi-VN')}
                 </div>
             )}

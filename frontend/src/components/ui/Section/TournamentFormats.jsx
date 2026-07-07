@@ -1,35 +1,35 @@
-import { Network, Repeat, LayoutGrid, GitBranch, Combine, ListOrdered } from "lucide-react";
+import { Network, Repeat, LayoutGrid, GitBranch, Combine } from "lucide-react";
 
 export default function TournamentFormats() {
     const formats = [
         {
             title: "Loại trực tiếp",
-            icon: <Network className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=600&auto=format&fit=crop", // Stadium
+            icon: <Network className="w-6 h-6" />,
+            image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=600&auto=format&fit=crop",
             description: "Đội thua sẽ bị loại, đội thắng tiếp tục vào vòng trong."
         },
         {
             title: "Đấu vòng tròn",
-            icon: <Repeat className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop", // Basketball
+            icon: <Repeat className="w-6 h-6" />,
+            image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop",
             description: "Các đội thi đấu với nhau để tích lũy điểm số trên bảng xếp hạng."
         },
         {
             title: "Chia bảng đấu",
-            icon: <LayoutGrid className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop", // Football
+            icon: <LayoutGrid className="w-6 h-6" />,
+            image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop",
             description: "Thi đấu vòng bảng để chọn ra các đội xuất sắc nhất tiến vào vòng loại trực tiếp."
         },
         {
             title: "Nhánh thắng - Nhánh thua",
-            icon: <GitBranch className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop", // Esports
+            icon: <GitBranch className="w-6 h-6" />,
+            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop",
             description: "Đội thua vẫn có cơ hội thứ hai ở nhánh dưới để giành quyền vào chung kết."
         },
         {
             title: "Thể thức hỗn hợp",
-            icon: <Combine className="w-8 h-8" />,
-            image: "https://images.unsplash.com/photo-1551280857-2b9ebf241ac6?q=80&w=600&auto=format&fit=crop", // Mixed
+            icon: <Combine className="w-6 h-6" />,
+            image: "https://images.unsplash.com/photo-1551280857-2b9ebf241ac6?q=80&w=600&auto=format&fit=crop",
             description: "Tự do kết hợp các thể thức thi đấu phù hợp với giải đấu của riêng bạn."
         }
     ];
@@ -55,48 +55,46 @@ export default function TournamentFormats() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-7 relative z-10 items-stretch">
                 {formats.map((format, idx) => (
-                    <div 
-                        key={idx} 
-                        className="group cursor-pointer animate-slide-up"
-                        style={{ animationDelay: `${idx * 100}ms` }}
+                    <div
+                        key={idx}
+                        className="group animate-slide-up"
+                        style={{ animationDelay: `${idx * 90}ms` }}
                     >
-                        {/* Card Container */}
-                        <div className="relative w-full aspect-4/5 overflow-hidden rounded-4xl bg-navy shadow-xl border border-navy-light/50 group-hover:border-cyan-400/50 group-hover:shadow-[0_15px_40px_rgba(34,211,238,0.2)] transition-all duration-500 group-hover:-translate-y-3 transform-gpu">
-                            
-                            {/* Overlay Gradient */}
-                            {/* Invert to bright overlay on hover so black text is perfectly readable */}
-                            <div className="absolute inset-0 bg-linear-to-t from-navy-dark/90 via-navy-dark/30 to-transparent z-10 transition-all duration-500 group-hover:bg-white/90 group-hover:backdrop-blur-md"></div>
-                            
-                            {/* Background Image */}
-                            <img 
-                                src={format.image} 
-                                alt={format.title} 
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu group-hover:opacity-30"
-                                loading="lazy"
-                            />
+                        {/* Card */}
+                        <div className="relative h-full flex flex-col rounded-3xl bg-navy-light/40 backdrop-blur-xl border border-navy-light/60 overflow-hidden shadow-lg shadow-black/10 hover:border-cyan-400/50 hover:shadow-[0_20px_40px_rgba(34,211,238,0.15)] transition-all duration-500 hover:-translate-y-2 transform-gpu">
 
-                            {/* Content */}
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4">
-                                {/* Floating Icon */}
-                                <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/90 shadow-2xl group-hover:scale-110 group-hover:bg-cyan-400 group-hover:border-cyan-500 group-hover:text-black group-hover:shadow-[0_10px_30px_rgba(34,211,238,0.6)] transition-all duration-500 mb-6 group-hover:-translate-y-4 transform-gpu">
+                            {/* Image banner */}
+                            <div className="relative h-32 sm:h-36 overflow-hidden shrink-0 bg-navy-dark">
+                                <img
+                                    src={format.image}
+                                    alt={format.title}
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu opacity-90 group-hover:opacity-100"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
+                            </div>
+
+                            {/* Icon badge, bridging the image and the text body */}
+                            <div className="relative px-6 -mt-7">
+                                <div className="w-14 h-14 rounded-2xl bg-navy-light backdrop-blur-xl border border-navy-light/50 flex items-center justify-center text-cyan-400 shadow-xl shadow-black/20 group-hover:bg-cyan-400 group-hover:text-navy-dark group-hover:border-cyan-400 group-hover:shadow-[0_10px_25px_rgba(34,211,238,0.45)] transition-all duration-500 transform-gpu">
                                     {format.icon}
                                 </div>
-                                
-                                {/* Title */}
-                                <h3 className="text-base font-black text-center text-gray-200 group-hover:text-black transition-all duration-500 drop-shadow-lg group-hover:drop-shadow-none group-hover:-translate-y-2 transform-gpu px-2">
+                            </div>
+
+                            {/* Always-visible content */}
+                            <div className="flex-1 flex flex-col p-6 pt-5">
+                                <h3 className="text-lg font-black text-white mb-2 group-hover:text-cyan-400 transition-colors duration-300">
                                     {format.title}
                                 </h3>
-                                
-                                {/* Decoration line */}
-                                <div className="w-8 h-1 bg-blue-500/0 rounded-full mt-4 group-hover:bg-black transition-all duration-500 transform-gpu scale-x-0 group-hover:scale-x-100 group-hover:-translate-y-2"></div>
-                                
-                                {/* Hover Description */}
-                                <p className="absolute bottom-6 left-4 right-4 text-sm text-center text-blue-50 font-semibold opacity-0 group-hover:opacity-100 group-hover:text-gray-800 transition-all duration-500 translate-y-4 group-hover:translate-y-0 drop-shadow-xl group-hover:drop-shadow-none leading-relaxed">
+                                <p className="text-sm text-gray-400 leading-relaxed">
                                     {format.description}
                                 </p>
                             </div>
+
+                            {/* Accent underline, grows in on hover */}
+                            <div className="h-0.5 w-0 group-hover:w-full bg-linear-to-r from-cyan-400 to-blue-500 transition-all duration-500 ease-out"></div>
                         </div>
                     </div>
                 ))}

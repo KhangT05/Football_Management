@@ -418,6 +418,7 @@ export default function ManageSeasonTeams() {
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <th className="py-4 px-6 w-16 text-center">ID</th>
                       <th className="py-4 px-6">Đội bóng</th>
+                      {!selectedSeason && <th className="py-4 px-6">Mùa giải</th>}
                       <th className="py-4 px-6 text-center">Trạng thái</th>
                       <th className="py-4 px-6 text-center">Group</th>
                       <th className="py-4 px-6 text-center">Duyệt</th>
@@ -428,14 +429,14 @@ export default function ManageSeasonTeams() {
                     {loadingTeams ? (
                       Array.from({ length: 4 }).map((_, i) => (
                         <tr key={i}>
-                          {[1, 2, 3, 4, 5, 6].map(j => (
+                          {[1, 2, 3, 4, 5, 6, ...(selectedSeason ? [] : [7])].map(j => (
                             <td key={j} className="py-4 px-6"><div className="skeleton h-5 w-full rounded" /></td>
                           ))}
                         </tr>
                       ))
                     ) : seasonTeams.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-gray-500">
+                        <td colSpan={selectedSeason ? 6 : 7} className="py-16 text-center text-gray-500">
                           <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
                           <p className="font-semibold">{filterStatus ? 'Không có đội nào với trạng thái này' : 'Chưa có đội nào đăng ký'}</p>
                           {filterStatus && (
@@ -450,6 +451,8 @@ export default function ManageSeasonTeams() {
                         <SeasonTeamRow
                           key={st.id}
                           seasonTeam={st}
+                          seasons={seasons}
+                          hideSeason={!!selectedSeason}
                           onUpdateStatus={handleUpdateStatus}
                           onDeleteRequest={setDeletingId}
                           onAssignGroup={openAssignGroup}

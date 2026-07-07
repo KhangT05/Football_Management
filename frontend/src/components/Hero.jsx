@@ -13,7 +13,7 @@ export default function Hero() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10 py-10 sm:py-16 md:py-20 lg:py-24 flex flex-col lg:flex-row items-center gap-10 md:gap-14 lg:gap-10">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10 py-10 sm:py-14 md:py-16 lg:py-10 flex flex-col lg:flex-row items-center gap-10 md:gap-14 lg:gap-10">
         
         {/* Text Content */}
         <div className="w-full lg:w-3/5 space-y-8 lg:pr-8 animate-slide-up relative z-20">

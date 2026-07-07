@@ -2154,7 +2154,7 @@
 					"forward"
 				]
 			},
-			"PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+			"PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--season_id-number--matches_played-number--player_58__id-number--user_58__name-string_--avatar-string_--player_id-number--assists-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
 				"properties": {
 					"data": {
 						"items": {
@@ -2166,9 +2166,41 @@
 									"type": "number",
 									"format": "double"
 								},
+								"assists": {
+									"type": "number",
+									"format": "double"
+								},
 								"player_id": {
 									"type": "number",
 									"format": "double"
+								},
+								"player": {
+									"properties": {
+										"avatar": {
+											"type": "string"
+										},
+										"user": {
+											"properties": {
+												"name": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"name"
+											],
+											"type": "object"
+										},
+										"id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"avatar",
+										"user",
+										"id"
+									],
+									"type": "object"
 								},
 								"matches_played": {
 									"type": "number",
@@ -2181,6 +2213,26 @@
 								"team_id": {
 									"type": "number",
 									"format": "double"
+								},
+								"team": {
+									"properties": {
+										"logo": {
+											"type": "string"
+										},
+										"id": {
+											"type": "number",
+											"format": "double"
+										},
+										"name": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"logo",
+										"id",
+										"name"
+									],
+									"type": "object"
 								},
 								"red_cards": {
 									"type": "number",
@@ -2202,10 +2254,13 @@
 							"required": [
 								"is_suspended",
 								"accumulated_yellow_cards",
+								"assists",
 								"player_id",
+								"player",
 								"matches_played",
 								"season_id",
 								"team_id",
+								"team",
 								"red_cards",
 								"yellow_cards",
 								"goals_scored",
@@ -8917,7 +8972,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
+									"$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--season_id-number--matches_played-number--player_58__id-number--user_58__name-string_--avatar-string_--player_id-number--assists-number--accumulated_yellow_cards-number--is_suspended-boolean__"
 								}
 							}
 						}

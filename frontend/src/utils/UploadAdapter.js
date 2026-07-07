@@ -14,12 +14,12 @@ class MyUploadAdapter {
           .then(res => {
             // Trả về { default: URL } theo format CKEditor yêu cầu
             resolve({
-              default: res.data.url
+              default: res.url || res.data?.url
             });
           })
           .catch(err => {
             console.error('CKEditor upload failed', err);
-            reject(err?.response?.data?.message || 'Không thể tải ảnh lên');
+            reject(err?.response?.data?.message || err?.message || 'Không thể tải ảnh lên');
           });
       }));
   }
