@@ -7,7 +7,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi } from '../api';
+import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi, userApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -83,6 +83,7 @@ const parseList = (res) => {
 const normalizePlayer = (tp) => ({
   id: tp.id,
   player_id: tp.player_id ?? tp.player?.id,
+  user_id: tp.player?.user_id ?? tp.player?.user?.id,
   name: tp.player?.user?.name ?? tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
   email: tp.player?.user?.email ?? null,
   number: tp.jersey_number ?? tp.number ?? 0,
@@ -462,6 +463,7 @@ export default function MyTeam() {
     setEditingPlayer(player);
     setModalError('');
     setPlayerForm({
+      name: player.player?.user?.name ?? player.player?.name ?? player.name ?? '',
       number: player.number,
       position: player.position,
       role: player.role,
@@ -481,6 +483,15 @@ export default function MyTeam() {
     setIsSaving(true);
     setModalError('');
     try {
+      // Cập nhật tên cầu thủ thông qua userApi
+      if (values.name && editingPlayer.user_id) {
+        try {
+          await userApi.updateProfile(editingPlayer.user_id, { name: values.name.trim() });
+        } catch (e) {
+          console.error('Failed to update User name', e);
+        }
+      }
+
       await playerApi.updateTeamPlayer(activeTeam.id, editingPlayer.id, {
         jersey_number: parseInt(values.number, 10),
         position: values.position,

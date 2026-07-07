@@ -1,0 +1,74 @@
+import { getInitials, AVATAR_COLORS } from '../utils/constants';
+
+export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
+  const { player, team, goals_scored, assists, yellow_cards, red_cards } = playerStat;
+  const playerName = player?.user?.name || player?.name || 'Cầu thủ không xác định';
+  const teamName = team?.name || 'Đội bóng không xác định';
+  
+  const initial = getInitials(playerName);
+  const colorIdx = (player?.id ?? rank) % AVATAR_COLORS.length;
+
+  return (
+    <tr className="hover:bg-white/5 transition-colors group border-b border-navy-light/50 last:border-0">
+      {/* Hạng */}
+      <td className="px-6 py-4 w-20">
+        <div className="flex items-center justify-center">
+          <span className={`text-lg font-black ${
+            rank === 1 ? 'text-yellow-400' :
+            rank === 2 ? 'text-gray-300' :
+            rank === 3 ? 'text-amber-600' :
+            'text-gray-500'
+          }`}>
+            {rank}
+          </span>
+        </div>
+      </td>
+
+      {/* Thông tin Cầu thủ */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-lg text-white shadow-md border-2 border-navy-light shrink-0 group-hover:border-blue-500/50 transition-colors relative overflow-hidden`}>
+              <span className="absolute inset-0 flex items-center justify-center select-none">
+                {initial}
+              </span>
+              {player?.avatar && (
+                <img 
+                  src={player.avatar} 
+                  alt={playerName} 
+                  className="w-full h-full object-cover relative z-10"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+            </div>
+          </div>
+          <div>
+            <div className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">
+              {playerName}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              {team?.logo ? (
+                <img src={team.logo} alt={teamName} className="w-3.5 h-3.5 rounded-full object-cover" />
+              ) : (
+                <div className="w-3.5 h-3.5 rounded-full bg-navy border border-navy-light flex items-center justify-center text-[8px] font-bold text-gray-400">
+                  {getInitials(teamName).substring(0, 1)}
+                </div>
+              )}
+              <span className="text-xs text-gray-500 font-medium">{teamName}</span>
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* Chỉ số chính được hiển thị theo tab (như UI yêu cầu) */}
+      <td className="px-6 py-4 text-right">
+        <span className="text-lg font-bold text-white">
+          {activeStatTab === 'goals' && (goals_scored || 0)}
+          {activeStatTab === 'assists' && (assists || 0)}
+          {activeStatTab === 'yellow' && (yellow_cards || 0)}
+          {activeStatTab === 'red' && (red_cards || 0)}
+        </span>
+      </td>
+    </tr>
+  );
+}

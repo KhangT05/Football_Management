@@ -12,11 +12,7 @@ export const uploadApi = {
     formData.append('file', file);
     formData.append('namespace', namespace);
     formData.append('kind', kind);
-    return axiosClient.post('/upload/single', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return axiosClient.post('/upload/single', formData);
   },
 
   /**
@@ -32,10 +28,6 @@ export const uploadApi = {
     });
     formData.append('namespace', namespace);
     formData.append('kind', kind);
-    return axiosClient.post('/upload/multi', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return axiosClient.post('/upload/multi', formData);
   },
 };

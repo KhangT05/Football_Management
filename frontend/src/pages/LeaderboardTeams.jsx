@@ -13,6 +13,8 @@ import StandingRow from '../components/StandingRow';
 import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 import Pagination from '../components/ui/Pagination';
 import { groupApi } from '../api/groupApi';
+import { seasonApi } from '../api/seasonApi';
+import StandingPlayerRow from '../components/StandingPlayerRow';
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
   // ── Zustand stores ─────────────────────────────────────────
@@ -54,6 +56,47 @@ export default function LeaderboardTeams() {
   
   const [seasonGroups, setSeasonGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+
+  // --- NEW STATE FOR PLAYER LEADERBOARD ---
+  const [activeMainTab, setActiveMainTab] = useState('teams'); // 'teams' | 'players'
+  const [activeStatTab, setActiveStatTab] = useState('goals'); // 'goals' | 'assists' | 'yellow' | 'red'
+  const [playerStats, setPlayerStats] = useState([]);
+  const [isPlayerStatsLoading, setIsPlayerStatsLoading] = useState(false);
+
+  const fetchPlayerStats = async (seasonId, statTab) => {
+    if (!seasonId) {
+      setPlayerStats([]);
+      return;
+    }
+    setIsPlayerStatsLoading(true);
+    try {
+      const sortMap = {
+        goals: 'goals_scored',
+        assists: 'assists',
+        yellow: 'yellow_cards',
+        red: 'red_cards'
+      };
+      const res = await seasonApi.getPlayerStats(seasonId, {
+        sort: sortMap[statTab],
+        direction: 'desc',
+        per_page: 50
+      });
+      const items = res?.data?.data || res?.data || [];
+      setPlayerStats(items);
+    } catch (error) {
+      console.error("Failed to fetch player stats", error);
+      setPlayerStats([]);
+    } finally {
+      setIsPlayerStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMainTab === 'players' && selectedSeasonId) {
+      fetchPlayerStats(selectedSeasonId, activeStatTab);
+    }
+  }, [activeMainTab, activeStatTab, selectedSeasonId]);
+  // --- END NEW STATE ---
 
   useEffect(() => {
     if (selectedSeasonId) {
@@ -262,7 +305,29 @@ export default function LeaderboardTeams() {
               </button>
             </div>
           </div>
-          {/* Tabs */}
+          {/* Main Tabs (Teams vs Players) */}
+          <div className="flex items-center gap-8 mb-6 border-b border-navy-light px-2">
+            <button
+              onClick={() => setActiveMainTab('teams')}
+              className={`pb-4 text-base md:text-lg font-bold transition-all border-b-2 -mb-px ${
+                activeMainTab === 'teams' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+              }`}
+            >
+              Bảng xếp hạng Đội bóng
+            </button>
+            <button
+              onClick={() => setActiveMainTab('players')}
+              className={`pb-4 text-base md:text-lg font-bold transition-all border-b-2 -mb-px ${
+                activeMainTab === 'players' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+              }`}
+            >
+              Cầu thủ xuất sắc nhất
+            </button>
+          </div>
+
+          {activeMainTab === 'teams' ? (
+            <>
+              {/* Tabs */}
           <div className="flex items-center gap-8 mb-8 border-b border-navy-light px-2">
             <button
               onClick={() => setActiveTab('group')}
@@ -453,6 +518,80 @@ export default function LeaderboardTeams() {
                   <span className="flex items-center gap-1.5"><strong className="text-blue-400">PTS:</strong> Points</span>
                 </div>
               )}
+            </div>
+          )}
+            </>
+          ) : (
+            <div className="space-y-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <div className="flex items-center gap-6 mb-8 border-b border-navy-light px-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button
+                  onClick={() => setActiveStatTab('goals')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'goals' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Số bàn thắng
+                </button>
+                <button
+                  onClick={() => setActiveStatTab('assists')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'assists' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Số lần kiến tạo
+                </button>
+                <button
+                  onClick={() => setActiveStatTab('yellow')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'yellow' ? 'text-yellow-400 border-yellow-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Thẻ vàng
+                </button>
+                <button
+                  onClick={() => setActiveStatTab('red')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'red' ? 'text-red-400 border-red-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Thẻ đỏ
+                </button>
+              </div>
+
+              {/* BẢNG XẾP HẠNG CẦU THỦ */}
+              <div className="bg-navy/80 backdrop-blur-2xl border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40 mb-12">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left whitespace-nowrap min-w-[600px]">
+                    <thead className="bg-linear-to-r from-navy-dark via-navy to-navy-dark text-white text-[11px] sm:text-xs font-black uppercase tracking-widest border-b border-navy-light">
+                      <tr>
+                        <th className="py-4 px-6 text-center w-20">Hạng</th>
+                        <th className="py-4 px-6">Vận động viên</th>
+                        <th className="py-4 px-6 text-right">
+                          {activeStatTab === 'goals' && 'Số bàn thắng'}
+                          {activeStatTab === 'assists' && 'Số lần kiến tạo'}
+                          {activeStatTab === 'yellow' && 'Thẻ vàng'}
+                          {activeStatTab === 'red' && 'Thẻ đỏ'}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-transparent">
+                      {isPlayerStatsLoading ? (
+                        <tr>
+                          <td colSpan={3} className="py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" /></td>
+                        </tr>
+                      ) : playerStats.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="py-8 text-center text-gray-500 text-sm">Chưa có dữ liệu thống kê cầu thủ.</td>
+                        </tr>
+                      ) : (
+                        playerStats.map((row, idx) => (
+                          <StandingPlayerRow key={row.id} playerStat={row} rank={idx + 1} activeStatTab={activeStatTab} />
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </section>

@@ -368,7 +368,7 @@ const useTeamStore = create((set, get) => ({
     // 0. Cập nhật User profile (name)
     if (userId && data.name !== undefined) {
       try {
-        await userApi.update(userId, { name: data.name });
+        await userApi.updateProfile(userId, { name: data.name });
       } catch (e) {
         console.error('Failed to update User name', e);
       }

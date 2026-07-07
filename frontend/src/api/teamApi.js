@@ -48,9 +48,7 @@ export const teamApi = {
       Object.entries(data).forEach(([k, v]) => {
         if (v != null) form.append(k, v);
       });
-      return axiosClient.post('/teams', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      return axiosClient.post('/teams', form);
     }
     return axiosClient.post('/teams', data);
   },
@@ -67,9 +65,7 @@ export const teamApi = {
       Object.entries(data).forEach(([k, v]) => {
         if (v != null) form.append(k, v);
       });
-      return axiosClient.patch(`/teams/${id}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      return axiosClient.patch(`/teams/${id}`, form);
     }
     return axiosClient.patch(`/teams/${id}`, data);
   },

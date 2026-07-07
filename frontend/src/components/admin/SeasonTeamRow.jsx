@@ -27,6 +27,8 @@ export default function SeasonTeamRow({
   onAssignGroup,
   onTransfer,
   onManageJerseys,
+  seasons,
+  hideSeason,
   showSeasonColumn = false,
   isSameTeamAsPrev = false,
   groupSize = 1,
@@ -90,6 +92,14 @@ export default function SeasonTeamRow({
               </p>
             )}
           </div>
+        </td>
+      )}
+
+      {!hideSeason && (
+        <td className="py-4 px-6">
+          <span className="px-2.5 py-1 bg-navy-light rounded-md text-[11px] font-medium text-gray-300 border border-navy-light/50 whitespace-nowrap shadow-sm">
+            {seasons?.find(s => s.id === st.season_id)?.name || 'Không rõ'}
+          </span>
         </td>
       )}
 

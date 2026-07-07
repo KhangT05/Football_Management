@@ -159,14 +159,19 @@ export default function PlayerFormModal({
 
           <div className="space-y-2">
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-              Họ tên cầu thủ <span className="text-red-400">*</span>
+              Họ tên cầu thủ {isAdd && <span className="text-red-400">*</span>}
             </label>
             <input
               type="text"
               placeholder="Nguyễn Văn A"
               value={form.name ?? ''}
               onChange={handleField('name')}
-              className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
+              className={`w-full px-5 py-4 border rounded-2xl text-sm transition-all font-bold ${
+                isAdd
+                  ? 'bg-navy/50 border-navy-light text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                  : 'bg-navy-dark/50 border-navy-light/50 text-gray-400 cursor-not-allowed'
+              }`}
+              title={!isAdd ? 'Họ tên được quản lý ở phần tài khoản' : ''}
             />
           </div>
 
