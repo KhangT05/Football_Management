@@ -120,6 +120,11 @@ export default function ManageSeasonTeams() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedTeams = seasonTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
+  // Số cột thực tế của bảng — thay đổi theo việc có hiện cột Season/Tournament
+  // hay không (chỉ hiện khi list gộp nhiều season, tức selectedSeason rỗng).
+  // Dùng cho colSpan (empty state) và số ô skeleton loading — phải khớp <thead>.
+  const columnCount = selectedSeason ? 6 : 7;
+
   // ── Summary stats ───────────────────────────────────────────
   const stats = useMemo(() => {
     let base = allSeasonTeams;
@@ -418,6 +423,9 @@ export default function ManageSeasonTeams() {
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <th className="py-4 px-6 w-16 text-center">ID</th>
                       <th className="py-4 px-6">Đội bóng</th>
+                      {/* Chỉ hiện khi không filter theo 1 season cụ thể — tránh
+                          cột thừa/trống khi season đã cố định qua dropdown filter. */}
+                      {!selectedSeason && <th className="py-4 px-6">Mùa giải</th>}
                       <th className="py-4 px-6 text-center">Trạng thái</th>
                       <th className="py-4 px-6 text-center">Group</th>
                       <th className="py-4 px-6 text-center">Duyệt</th>
@@ -428,14 +436,14 @@ export default function ManageSeasonTeams() {
                     {loadingTeams ? (
                       Array.from({ length: 4 }).map((_, i) => (
                         <tr key={i}>
-                          {[1, 2, 3, 4, 5, 6].map(j => (
+                          {Array.from({ length: columnCount }).map((_, j) => (
                             <td key={j} className="py-4 px-6"><div className="skeleton h-5 w-full rounded" /></td>
                           ))}
                         </tr>
                       ))
                     ) : seasonTeams.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-gray-500">
+                        <td colSpan={columnCount} className="py-16 text-center text-gray-500">
                           <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
                           <p className="font-semibold">{filterStatus ? 'Không có đội nào với trạng thái này' : 'Chưa có đội nào đăng ký'}</p>
                           {filterStatus && (
@@ -450,6 +458,7 @@ export default function ManageSeasonTeams() {
                         <SeasonTeamRow
                           key={st.id}
                           seasonTeam={st}
+                          showSeasonColumn={!selectedSeason}
                           onUpdateStatus={handleUpdateStatus}
                           onDeleteRequest={setDeletingId}
                           onAssignGroup={openAssignGroup}

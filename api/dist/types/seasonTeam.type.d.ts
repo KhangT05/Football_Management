@@ -1,10 +1,18 @@
-import { Prisma, SeasonTeamStatus } from "../generated/prisma/client.js";
+import { Prisma, SeasonTeamStatus, SeasonStatus } from "../generated/prisma/client.js";
 export declare const withRelations: {
     include: {
         season: {
             select: {
                 id: true;
                 name: true;
+                status: true;
+                tournament: {
+                    select: {
+                        id: true;
+                        name: true;
+                        logo: true;
+                    };
+                };
             };
         };
         team: {
@@ -45,6 +53,12 @@ export interface SeasonTeamWithRelations {
     season: {
         id: number;
         name: string;
+        status: SeasonStatus;
+        tournament: {
+            id: number;
+            name: string;
+            logo: string | null;
+        };
     };
     team: {
         id: number;
