@@ -13,6 +13,11 @@ import StatusBadge from '../ui/StatusBadge';
  * @prop {Function} onAssignGroup      — (seasonTeam) => void
  * @prop {Function} onTransfer         — (seasonTeam) => void
  * @prop {Function} onManageJerseys    — (seasonTeam) => void
+ * @prop {boolean}  showSeasonColumn   — true khi đang xem "tất cả mùa giải"
+ *                                       (selectedSeason rỗng ở parent). Khi false,
+ *                                       season đã cố định qua filter nên ẩn cột
+ *                                       này để giảm noise — thông tin đã implicit
+ *                                       từ context (season đang chọn).
  */
 export default function SeasonTeamRow({
   seasonTeam: st,
@@ -21,10 +26,12 @@ export default function SeasonTeamRow({
   onAssignGroup,
   onTransfer,
   onManageJerseys,
+  showSeasonColumn = false,
 }) {
   // Tên giải đấu (tournament) mà season này thuộc về.
   // API có thể trả theo 2 dạng tuỳ chỗ populate: st.season.tournament hoặc st.tournament — check cả 2 cho chắc.
   const tournamentName = st.season?.tournament?.name ?? st.tournament?.name ?? null;
+  const seasonName = st.season?.name ?? null;
 
   // Tên bảng — ưu tiên object group.name nếu BE đã join, fallback về group_id thô,
   // còn không có gì (đội đá knockout, chưa/không chia bảng) thì hiện dấu gạch ngang.
@@ -44,16 +51,35 @@ export default function SeasonTeamRow({
           </div>
           <div className="min-w-0">
             <p className="font-bold text-white text-sm truncate">{st.team?.name || 'Unknown Team'}</p>
+            {!showSeasonColumn && tournamentName && (
+              <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5 truncate">
+                <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
+                {tournamentName}
+              </p>
+            )}
+            {!showSeasonColumn && !tournamentName && st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
+          </div>
+        </div>
+      </td>
+
+      {/* Cột riêng cho Season/Tournament — chỉ hiện khi list gộp nhiều season.
+          Khi đã filter theo 1 season cụ thể, cột này bị bỏ (season implicit từ filter),
+          tournamentName vẫn hiện dạng subtext ở cột Đội bóng phía trên. */}
+      {showSeasonColumn && (
+        <td className="py-4 px-6">
+          <div className="min-w-0">
+            <p className="text-white text-sm font-semibold truncate">
+              {seasonName ?? <span className="text-gray-500 italic">— chưa rõ mùa —</span>}
+            </p>
             {tournamentName && (
               <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5 truncate">
                 <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
                 {tournamentName}
               </p>
             )}
-            {!tournamentName && st.team?.city && <p className="text-gray-500 text-xs">{st.team.city}</p>}
           </div>
-        </div>
-      </td>
+        </td>
+      )}
 
       <td className="py-4 px-6 text-center">
         <StatusBadge status={st.status} variant="seasonTeam" />
