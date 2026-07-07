@@ -365,4 +365,43 @@ export async function assertPlayerNotSentOff(tx, matchId, playerId) {
         throw createAppError('CONFLICT', `Player ${playerId} đã bị truất quyền thi đấu (thẻ đỏ/thẻ vàng thứ 2) trong trận ${matchId} — không thể ghi thêm sự kiện`);
     }
 }
+/**
+ * Kiểm tra bracket slot con (round kế tiếp) của 1 match knockout đã được
+ * tạo hay chưa. Dùng để chặn sửa/xóa event hoặc override score sau khi
+ * bracket đã advance dựa trên winner cũ — tránh đổi winner "dưới chân" 1
+ * match đã tạo ra trận vòng sau (có thể đã đá).
+ *
+ * Trả về matchId của trận vòng sau nếu đã tồn tại, null nếu chưa (an toàn
+ * để sửa). Extract từ overrideResultInTx cũ để dùng chung với
+ * _recalculateResultTx (match.lifecycle.service.ts) — trước đây guard này
+ * chỉ có ở editScore path, addEvent/deleteEvent/editEvent thiếu.
+ */
+export async function findAdvancedChildMatchId(tx, matchId) {
+    const slot = await tx.bracketSlot.findFirst({
+        where: { match_id: matchId },
+        select: {
+            fed_as_a: { select: { match_id: true } },
+            fed_as_b: { select: { match_id: true } },
+        },
+    });
+    return slot?.fed_as_a?.[0]?.match_id ?? slot?.fed_as_b?.[0]?.match_id ?? null;
+}
+/**
+ * Season đã seed knockout bracket chưa (có phase format=knockout với ít
+ * nhất 1 match). Dùng để khoá correction lên match round-robin sau khi
+ * standings đã được dùng để seed bracket — sửa kết quả vòng bảng sau mốc
+ * này có thể đổi thứ hạng/tie-break mà KHÔNG re-seed bracket, gây lệch
+ * suất đi tiếp một cách âm thầm (không throw, không warning ở code cũ).
+ */
+export async function isKnockoutBracketSeeded(tx, seasonId) {
+    const knockoutPhase = await tx.phase.findFirst({
+        where: {
+            season_id: seasonId,
+            format: PhaseFormat.knockout,
+            matches: { some: {} },
+        },
+        select: { id: true },
+    });
+    return knockoutPhase !== null;
+}
 //# sourceMappingURL=match.helper.js.map

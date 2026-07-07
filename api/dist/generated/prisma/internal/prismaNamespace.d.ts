@@ -2407,6 +2407,8 @@ export declare const MatchScalarFieldEnum: {
     readonly finalize_result_type: "finalize_result_type";
     readonly finalize_home_half_time: "finalize_home_half_time";
     readonly finalize_away_half_time: "finalize_away_half_time";
+    readonly abandoned_reason: "abandoned_reason";
+    readonly grace_period_retry_count: "grace_period_retry_count";
     readonly finalize_home_penalty: "finalize_home_penalty";
     readonly finalize_away_penalty: "finalize_away_penalty";
     readonly manual_home_score: "manual_home_score";
@@ -2646,6 +2648,7 @@ export type VenueOrderByRelevanceFieldEnum = (typeof VenueOrderByRelevanceFieldE
 export declare const MatchOrderByRelevanceFieldEnum: {
     readonly round: "round";
     readonly postponed_reason: "postponed_reason";
+    readonly abandoned_reason: "abandoned_reason";
     readonly referee: "referee";
 };
 export type MatchOrderByRelevanceFieldEnum = (typeof MatchOrderByRelevanceFieldEnum)[keyof typeof MatchOrderByRelevanceFieldEnum];

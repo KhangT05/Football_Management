@@ -2,7 +2,12 @@ import { createAppError } from '../common/app.error.js';
 import { CardColor, MatchEventType, MatchPeriod, MatchResultStatus, MatchResultType, MatchStatus, PhaseFormat, } from '../generated/prisma/client.js';
 import { EXTRA_TIME_PERIODS, PERIOD_TRANSITIONS, SCORE_DELTA_BY_TYPE, CORRECTION_WINDOW_MS, } from '../types/match.type.js';
 import { matchForFinalizeSelect, matchForForfeitSelect } from '../types/match.queries.js';
-import { assertMinuteInBounds, assertPlayerNotSentOff, isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
+import { assertMinuteInBounds, assertPlayerNotSentOff, isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn, findAdvancedChildMatchId, isKnockoutBracketSeeded, } from '../helper/match.helper.js';
+// Retry cap cho grace period auto-confirm — sau N lần fail liên tiếp (lỗi
+// deterministic: thiếu TournamentRule, data hỏng...), escalate needs_review
+// thay vì retry vô thời hạn mỗi cron tick. Yêu cầu migration:
+// Match.grace_period_retry_count Int @default(0).
+const MAX_GRACE_PERIOD_RETRY = 5;
 export class MatchLifecycleService {
     prisma;
     matchResultService;
@@ -271,20 +276,11 @@ export class MatchLifecycleService {
         }, scheduleOptions);
     }
     /**
-     * FIX (High #4 — claim correctness): bản cũ chỉ SELECT...FOR UPDATE SKIP LOCKED
-     * rồi return true/false trong 1 transaction KHÔNG làm gì khác — row lock được
-     * giải phóng ngay khi tx đó commit, không có write nào để tạo mutual exclusion
-     * thực sự. Hai lần chạy job gần nhau (hoặc 2 instance) đều pass claim check
-     * trước khi worker nào gọi confirmOfficial(); bảo vệ thực tế duy nhất trước đây
-     * là unique constraint P2002 + string-match "đã có MatchResult" — coupling giữa
-     * lỗi nghiệp vụ và logic idempotency, dễ vỡ nếu message đổi.
-     *
-     * Fix: claim bằng 1 UPDATE có điều kiện, atomic theo MVCC row lock của chính
-     * statement UPDATE — chỉ 1 process thắng do Postgres serialize concurrent UPDATE
-     * trên cùng row; process thua đọc affected rows = 0 và tự skip. Dùng
-     * pending_official_at=NULL làm claim signal (an toàn vì confirmOfficial không
-     * đọc field này); review path dùng chính status làm claim signal (đổi thẳng
-     * sang needs_review trong 1 statement, không cần SELECT trước).
+     * FIX (retry cap — bug report #5): trước đây fail (không phải idempotency
+     * conflict) → reset pending_official_at về mốc quá hạn, retry vô thời
+     * hạn mỗi cron tick nếu lỗi deterministic (thiếu TournamentRule, data
+     * hỏng...). Giờ đếm grace_period_retry_count, sau MAX_GRACE_PERIOD_RETRY
+     * lần escalate thẳng needs_review thay vì tiếp tục retry.
      */
     async handleGracePeriodTimeout(gracePeriodMinutes = 15, scheduleOptions) {
         const cutoff = new Date(Date.now() - gracePeriodMinutes * 60 * 1000);
@@ -293,10 +289,11 @@ export class MatchLifecycleService {
                 status: MatchStatus.pending_official,
                 pending_official_at: { lt: cutoff },
             },
-            select: { id: true, manual_home_score: true },
+            select: { id: true, manual_home_score: true, grace_period_retry_count: true },
         });
         if (expired.length === 0)
             return { autoOfficiated: [], flaggedForReview: [] };
+        const retryCountMap = new Map(expired.map(m => [m.id, m.grace_period_retry_count]));
         const autoIds = [];
         const reviewCandidateIds = [];
         for (const m of expired) {
@@ -329,15 +326,27 @@ export class MatchLifecycleService {
                     err.message?.includes('đã có MatchResult');
                 if (isIdempotencyConflict) {
                     console.warn(`[GracePeriod] match ${matchId} đã được confirm trước — skip (idempotent)`);
+                    continue;
                 }
-                else {
-                    console.error(`[GracePeriod] auto-confirm failed for match ${matchId}:`, err);
-                    // Claim đã null hoá pending_official_at nhưng confirmOfficial fail —
-                    // nếu không reset, match kẹt vĩnh viễn ngoài filter `pending_official_at < cutoff`
-                    // ở lần chạy sau (vì now là null). Reset lại mốc cutoff để retry ở lần sau.
+                const nextRetryCount = (retryCountMap.get(matchId) ?? 0) + 1;
+                if (nextRetryCount >= MAX_GRACE_PERIOD_RETRY) {
+                    console.error(`[GracePeriod] match ${matchId} fail ${nextRetryCount} lần liên tiếp — ` +
+                        `escalate needs_review, dừng auto-retry. Lỗi cuối:`, err);
                     await this.prisma.match.updateMany({
                         where: { id: matchId, status: MatchStatus.pending_official, pending_official_at: null },
-                        data: { pending_official_at: new Date(Date.now() - gracePeriodMinutes * 60 * 1000 - 1000) },
+                        data: { status: MatchStatus.needs_review, grace_period_retry_count: nextRetryCount },
+                    });
+                }
+                else {
+                    console.error(`[GracePeriod] auto-confirm failed for match ${matchId} (retry ${nextRetryCount}/${MAX_GRACE_PERIOD_RETRY}):`, err);
+                    // Claim đã null hoá pending_official_at nhưng confirmOfficial fail —
+                    // reset lại mốc cutoff để retry ở lần chạy cron sau.
+                    await this.prisma.match.updateMany({
+                        where: { id: matchId, status: MatchStatus.pending_official, pending_official_at: null },
+                        data: {
+                            pending_official_at: new Date(Date.now() - gracePeriodMinutes * 60 * 1000 - 1000),
+                            grace_period_retry_count: nextRetryCount,
+                        },
                     });
                 }
             }
@@ -380,21 +389,27 @@ export class MatchLifecycleService {
             explicitWinnerTeamId: winnerIsHome ? match.home_team_id : match.away_team_id,
         }, scheduleOptions);
     }
+    /**
+     * FIX (field reuse conflict — bug report #4): trước đây check
+     * `match.postponed_reason` để tránh ghi đè, nhưng field đó có thể còn
+     * giá trị từ lần postpone TRƯỚC nếu match từng postpone rồi resume
+     * (status → ongoing) — check này block nhầm abandon hợp lệ có kèm
+     * reason. Tách hẳn field abandoned_reason (migration required), không
+     * dùng chung với postponed_reason nữa.
+     */
     async abandonMatch(matchId, minute, reason) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
-            select: { status: true, postponed_reason: true },
+            select: { status: true },
         });
         if (match.status !== MatchStatus.ongoing)
             throw createAppError('CONFLICT', `Match ${matchId} không ongoing — không abandon được`);
-        if (reason && match.postponed_reason)
-            throw createAppError('CONFLICT', `Match ${matchId} đã có postponed_reason — cần field abandoned_reason riêng`);
         await this.prisma.match.update({
             where: { id: matchId },
             data: {
                 status: MatchStatus.abandoned,
                 abandoned_minute: minute,
-                postponed_reason: reason,
+                abandoned_reason: reason,
             },
         });
     }
@@ -418,44 +433,63 @@ export class MatchLifecycleService {
             data: { status: targetStatus, appeal_reason: reason },
         });
     }
+    /**
+     * FIX (race condition — bug report #3): trước đây KHÔNG lock row, đọc
+     * match/matchResult bằng plain findUniqueOrThrow/findUnique NGOÀI
+     * transaction, ghi 2 statement (overturn) TRONG 1 transaction riêng —
+     * 2 admin resolve cùng lúc là race, last-write-wins, không CONFLICT.
+     * Giờ toàn bộ đọc+ghi gộp vào 1 transaction có FOR UPDATE lock ngay từ
+     * đầu, serialize đúng với addEvent/deleteEvent/editEvent/editScore/
+     * confirmResult (đều lock cùng row).
+     *
+     * KNOWN GAP (chưa giải quyết, cần confirm nghiệp vụ trước khi ship):
+     * overturn ghi thẳng home_final_score/away_final_score MỚI nhưng KHÔNG
+     * đụng match_events — phá invariant "score = f(events)" mà
+     * overrideResultInTx/_recalculateResultTx bảo vệ. PlayerStatistic (tính
+     * từ events) sẽ KHÔNG đổi theo overturn này. Nếu overturn có thể do đổi
+     * 1 bàn thắng cụ thể (offside phát hiện sau), cần sửa match_events
+     * tương ứng qua addEvent/deleteEvent TRƯỚC KHI gọi overturn, hoặc mở
+     * rộng ResolveAppealInput nhận eventChanges và tự áp dụng ở đây.
+     */
     async resolveAppeal(matchId, input) {
-        const match = await this.prisma.match.findUniqueOrThrow({
-            where: { id: matchId },
-            select: {
-                home_team_id: true,
-                away_team_id: true,
-                group_id: true,
-                phase: { select: { format: true } },
-            },
-        });
-        const result = await this.prisma.matchResult.findUnique({
-            where: { match_id: matchId },
-            select: { status: true },
-        });
-        if (!result)
-            throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
-        if (result.status !== MatchResultStatus.under_review &&
-            result.status !== MatchResultStatus.protested)
-            throw createAppError('CONFLICT', `MatchResult đang ở '${result.status}' — không resolve được`);
-        const isKnockout = match.phase.format === PhaseFormat.knockout;
-        if (isKnockout && input.resolution === 'overturn') {
-            throw createAppError('NOT_IMPLEMENTED', `Match ${matchId} là knockout — overturn bracket chưa được hỗ trợ tự động`);
-        }
-        if (input.resolution === 'uphold') {
-            await this.prisma.matchResult.update({
-                where: { match_id: matchId },
-                data: toMatchResultUpdateOnUphold(input.note),
+        const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            const match = await tx.match.findUniqueOrThrow({
+                where: { id: matchId },
+                select: {
+                    home_team_id: true,
+                    away_team_id: true,
+                    group_id: true,
+                    phase: { select: { format: true } },
+                },
             });
-        }
-        else {
-            if (input.newHomeScore === undefined || input.newAwayScore === undefined)
-                throw createAppError('VALIDATION_ERROR', 'overturn cần newHomeScore/newAwayScore');
-            const newWinner = input.newHomeScore === input.newAwayScore
-                ? null
-                : input.newHomeScore > input.newAwayScore
-                    ? match.home_team_id
-                    : match.away_team_id;
-            await this.prisma.$transaction(async (tx) => {
+            const result = await tx.matchResult.findUnique({
+                where: { match_id: matchId },
+                select: { status: true },
+            });
+            if (!result)
+                throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
+            if (result.status !== MatchResultStatus.under_review &&
+                result.status !== MatchResultStatus.protested)
+                throw createAppError('CONFLICT', `MatchResult đang ở '${result.status}' — không resolve được`);
+            const isKnockout = match.phase.format === PhaseFormat.knockout;
+            if (isKnockout && input.resolution === 'overturn') {
+                throw createAppError('NOT_IMPLEMENTED', `Match ${matchId} là knockout — overturn bracket chưa được hỗ trợ tự động`);
+            }
+            if (input.resolution === 'uphold') {
+                await tx.matchResult.update({
+                    where: { match_id: matchId },
+                    data: toMatchResultUpdateOnUphold(input.note),
+                });
+            }
+            else {
+                if (input.newHomeScore === undefined || input.newAwayScore === undefined)
+                    throw createAppError('VALIDATION_ERROR', 'overturn cần newHomeScore/newAwayScore');
+                const newWinner = input.newHomeScore === input.newAwayScore
+                    ? null
+                    : input.newHomeScore > input.newAwayScore
+                        ? match.home_team_id
+                        : match.away_team_id;
                 await tx.matchResult.update({
                     where: { match_id: matchId },
                     data: toMatchResultUpdateOnOverturn(input.newHomeScore, input.newAwayScore, newWinner, input.note),
@@ -464,14 +498,15 @@ export class MatchLifecycleService {
                     where: { id: matchId },
                     data: toMatchUpdateOnOverturn(input.newHomeScore, input.newAwayScore),
                 });
-            });
-        }
-        if (!isKnockout && match.group_id) {
+            }
+            return { isKnockout, groupId: match.group_id };
+        });
+        if (!isKnockout && groupId) {
             try {
-                await this.matchResultService.recomputeStandingsFor(match.group_id);
+                await this.matchResultService.recomputeStandingsFor(groupId);
             }
             catch (err) {
-                console.error(`[resolveAppeal] recompute standings failed for group ${match.group_id}:`, err);
+                console.error(`[resolveAppeal] recompute standings failed for group ${groupId}:`, err);
             }
         }
     }
@@ -496,9 +531,6 @@ export class MatchLifecycleService {
                 where: { id: matchId },
                 select: { home_team_id: true },
             });
-            // NEW: addEvent không có current_period fallback (input.period bắt buộc ở
-            // đây vì match đã finished, không còn "current period" ongoing) — validate
-            // trực tiếp trên input.period.
             assertMinuteInBounds(input.period, input.minute, input.addedMinute);
             await assertPlayerNotSentOff(tx, matchId, input.playerId);
             if (input.subOutPlayerId) {
@@ -532,10 +564,12 @@ export class MatchLifecycleService {
             });
             return this._recalculateResultTx(tx, matchId, match.home_team_id);
         });
+        // Event mới thêm — không có player "biến mất" cần recompute bù, natural
+        // query trong recomputePlayerStats(matchId) đã bắt được player mới này.
         await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
     }
     async deleteEvent(matchId, eventId, scheduleOptions) {
-        const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
+        const { groupId, isKnockout, affectedPlayers } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
             await this._assertCorrectionWindow(matchId, tx);
             const match = await tx.match.findUniqueOrThrow({
@@ -544,16 +578,23 @@ export class MatchLifecycleService {
             });
             const event = await tx.matchEvent.findUnique({
                 where: { id: eventId },
-                select: { match_id: true },
+                select: { match_id: true, player_id: true, team_id: true },
             });
             if (!event)
                 throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
             if (event.match_id !== matchId)
                 throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
             await tx.matchEvent.delete({ where: { id: eventId } });
-            return this._recalculateResultTx(tx, matchId, match.home_team_id);
+            const recalc = await this._recalculateResultTx(tx, matchId, match.home_team_id);
+            // FIX (player stats drift — bug report #2): capture player/team
+            // TRƯỚC delete — player này có thể không còn event nào trong match
+            // này sau khi xóa, cần force recompute để loại count đã xóa.
+            const affectedPlayers = event.player_id
+                ? [{ player_id: event.player_id, team_id: event.team_id }]
+                : [];
+            return { ...recalc, affectedPlayers };
         });
-        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
+        await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
     }
     async editEvent(matchId, eventId, input, scheduleOptions) {
         if (input.playerId != null) {
@@ -571,7 +612,7 @@ export class MatchLifecycleService {
             if (!exists)
                 throw createAppError('VALIDATION_ERROR', `Player ${input.subOutPlayerId} (subOut) không tồn tại`);
         }
-        const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
+        const { groupId, isKnockout, affectedPlayers } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
             await this._assertCorrectionWindow(matchId, tx);
             const match = await tx.match.findUniqueOrThrow({
@@ -583,6 +624,7 @@ export class MatchLifecycleService {
                 select: {
                     match_id: true,
                     player_id: true,
+                    team_id: true,
                     type: true,
                     minute: true,
                     added_minute: true,
@@ -638,16 +680,17 @@ export class MatchLifecycleService {
                 where: { id: eventId },
                 data: updateData,
             });
-            return this._recalculateResultTx(tx, matchId, match.home_team_id);
+            const recalc = await this._recalculateResultTx(tx, matchId, match.home_team_id);
+            // FIX (player stats drift — bug report #2): capture player/team CŨ
+            // trước update — nếu playerId hoặc teamId đổi, combo cũ cần force
+            // recompute (có thể không còn event nào trong match này nữa).
+            const affectedPlayers = event.player_id
+                ? [{ player_id: event.player_id, team_id: event.team_id }]
+                : [];
+            return { ...recalc, affectedPlayers };
         });
-        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
+        await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
     }
-    /**
-     * FIX (Critical #2): lock row FOR UPDATE + check eventCount + gọi
-     * matchResultService.overrideResultInTx TRONG CÙNG transaction — trước đây
-     * 3 bước này không transaction, không lock, TOCTOU với addEvent/deleteEvent/
-     * editEvent (đã lock). Xem chi tiết ở comment overrideResultInTx.
-     */
     async editScore(matchId, input, scheduleOptions) {
         const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -672,17 +715,32 @@ export class MatchLifecycleService {
             console.error(`[editScore] recompute player stats failed for match ${matchId}:`, err);
         }
     }
+    /**
+     * FIX (bracket-advance guard + round-robin seeding lock — bug report #1
+     * và câu hỏi "round robin rồi tới knockout"): trước đây method này
+     * KHÔNG có guard nào — sửa event có thể đổi winner_team_id của 1 match
+     * knockout đã advance (round kế tiếp đã tạo, có thể đã đá), hoặc đổi
+     * kết quả round-robin sau khi standings đã dùng để seed knockout bracket
+     * (đổi thứ hạng mà bracket không re-seed theo).
+     *
+     * Fix: 1 điểm check duy nhất, chạy TRONG transaction (throw sẽ rollback
+     * cả insert/delete/update event ở caller):
+     * - Round-robin: chặn cứng nếu season đã seed knockout bracket.
+     * - Knockout: chỉ chặn nếu winner THỰC SỰ đổi so với trước VÀ round kế
+     *   tiếp đã tạo — sửa minute/note không đổi winner thì vẫn cho qua.
+     */
     async _recalculateResultTx(tx, matchId, homeTeamId) {
         const match = await tx.match.findUniqueOrThrow({
             where: { id: matchId },
             select: {
                 away_team_id: true,
                 group_id: true,
-                phase: { select: { format: true } },
+                phase: { select: { format: true, season: { select: { id: true } } } },
                 matchResult: {
                     select: {
                         id: true,
                         result_type: true,
+                        winner_team_id: true,
                         home_penalty_score: true,
                         away_penalty_score: true,
                     },
@@ -691,6 +749,17 @@ export class MatchLifecycleService {
         });
         if (!match.matchResult)
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult — không recompute được`);
+        const seasonId = match.phase.season?.id;
+        if (!seasonId)
+            throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
+        const isKnockout = isKnockoutFormat(match.phase.format);
+        if (!isKnockout) {
+            const seeded = await isKnockoutBracketSeeded(tx, seasonId);
+            if (seeded)
+                throw createAppError('FORBIDDEN', `Match ${matchId}: knockout bracket của season ${seasonId} đã seed — không thể sửa ` +
+                    `kết quả vòng bảng qua correction window. Dùng resolveAppeal nếu cần xử lý khiếu nại ` +
+                    `(có thể ảnh hưởng suất đi tiếp, cần xử lý nghiệp vụ thủ công).`);
+        }
         const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(matchId, homeTeamId, tx);
         const resultType = match.matchResult.result_type;
         const hasExtraTime = resultType === MatchResultType.extra_time ||
@@ -709,6 +778,13 @@ export class MatchLifecycleService {
             winnerTeamId = homeFinal > awayFinal ? homeTeamId
                 : awayFinal > homeFinal ? match.away_team_id
                     : null;
+        }
+        if (isKnockout && winnerTeamId !== match.matchResult.winner_team_id) {
+            const childMatchId = await findAdvancedChildMatchId(tx, matchId);
+            if (childMatchId !== null)
+                throw createAppError('CONFLICT', `Match ${matchId}: winner đổi từ ${match.matchResult.winner_team_id} sang ` +
+                    `${winnerTeamId}, nhưng round kế tiếp đã tạo (match ${childMatchId}) dựa trên winner cũ. ` +
+                    `Không thể sửa event ở đây — xử lý qua resolveAppeal + can thiệp thủ công vào bracket.`);
         }
         await tx.matchResult.update({
             where: { match_id: matchId },
@@ -729,12 +805,9 @@ export class MatchLifecycleService {
                 updated_at: new Date(),
             },
         });
-        return {
-            groupId: match.group_id,
-            isKnockout: isKnockoutFormat(match.phase.format),
-        };
+        return { groupId: match.group_id, isKnockout };
     }
-    async _runPostCorrectionSteps(matchId, groupId, isKnockout) {
+    async _runPostCorrectionSteps(matchId, groupId, isKnockout, additionalPlayers = []) {
         if (!isKnockout && groupId) {
             try {
                 await this.matchResultService.recomputeStandingsFor(groupId);
@@ -744,26 +817,12 @@ export class MatchLifecycleService {
             }
         }
         try {
-            await this.matchResultService.recomputePlayerStats(matchId);
+            await this.matchResultService.recomputePlayerStats(matchId, additionalPlayers);
         }
         catch (err) {
             console.error(`[correction] recompute player stats failed for match ${matchId}:`, err);
         }
     }
-    /**
-     * FIX (Critical #1 — atomicity): trước đây createMany(scorers/cards) chạy
-     * trong 1 transaction riêng, sau đó confirmResult() mở transaction thứ 2 độc
-     * lập. confirmResult throw (P2002 race, validation resultType/penalty, guard
-     * knockout draw...) → events đã insert vẫn commit, orphan không có MatchResult.
-     * Retry sau lỗi → duplicate events (không unique constraint chặn). Cũng không
-     * lock row trong khi status cho phép cả 'ongoing' — race với recordEvent (đã lock).
-     *
-     * Fix: gộp toàn bộ vào 1 transaction có FOR UPDATE lock — status check + card
-     * validation đọc lại TRONG lock (đóng TOCTOU với check ngoài lock cũ), event
-     * insert, rồi confirmResultInTx (matchresult.service.ts) chạy guard+write
-     * MatchResult/Match/PlayerStatistic cùng transaction. Post-commit steps
-     * (standings/knockout advance) dùng chung runPostConfirmSteps với confirmResult().
-     */
     async adminRecordResult(matchId, input, scheduleOptions) {
         const allowedStatuses = [
             MatchStatus.scheduled,
@@ -793,10 +852,6 @@ export class MatchLifecycleService {
                 for (const c of input.cards) {
                     assertMinuteInBounds(c.period ?? null, c.minute, undefined);
                 }
-                // Không cần assertPlayerNotSentOff ở đây vì đây là batch nhập 1 lần cho match
-                // chưa có event nào từ trước (allowedStatuses bao gồm scheduled/postponed/bye) —
-                // nhưng NẾU status là ongoing/pending_official/needs_review (đã có event cũ),
-                // vẫn cần check để tránh nhập thẻ cho player đã bị đuổi từ batch trước.
                 for (const c of input.cards) {
                     await assertPlayerNotSentOff(tx, matchId, c.playerId);
                 }

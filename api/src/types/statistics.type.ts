@@ -73,3 +73,32 @@ export interface TeamDisciplineStats {
     season_id: number;
     teams: TeamDisciplineEntry[];
 }
+
+export type PlayerRankingMetric = "goals" | "assists" | "yellow_cards" | "red_cards";
+
+export type PlayerRankingEntry = {
+    player_id: number;
+    player_name: string;
+    team_id: number;
+    team_name: string;
+    value: number;
+    matches_played: number;
+};
+
+export type PlayerRankingStats = {
+    season_id: number;
+    limit: number;
+    metric: PlayerRankingMetric;
+    players: PlayerRankingEntry[];
+};
+
+export type MvpWeights = { goal: number; assist: number; yellow: number; red: number };
+
+export type BestPlayerEntry = PlayerRankingEntry & { score: number };
+
+export type BestPlayerStats = {
+    season_id: number;
+    limit: number;
+    weights: MvpWeights;
+    players: BestPlayerEntry[];
+};

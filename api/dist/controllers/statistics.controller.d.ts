@@ -9,5 +9,9 @@ export declare class StatisticsController extends Controller {
     getTeamRegistrationStats(seasonId: number): Promise<import("../types/statistics.type.js").TeamRegistrationStats>;
     getTopScorers(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").TopScorerStats>;
     getTeamDisciplineStats(seasonId: number): Promise<import("../types/statistics.type.js").TeamDisciplineStats>;
+    getTopAssists(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").PlayerRankingStats>;
+    getTopYellowCards(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").PlayerRankingStats>;
+    getTopRedCards(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").PlayerRankingStats>;
+    getBestPlayers(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").BestPlayerStats>;
 }
 //# sourceMappingURL=statistics.controller.d.ts.map

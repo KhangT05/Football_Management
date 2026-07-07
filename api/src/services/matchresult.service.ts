@@ -30,6 +30,8 @@ import {
     statKey,
     toMatchResultCreateInput,
     toMatchUpdateOnConfirm,
+    findAdvancedChildMatchId,
+    isKnockoutBracketSeeded,
 } from '../helper/match.helper.js';
 import { EditScoreInput } from '../types/match.type.js';
 import { MatchReportOutput } from '../types/matchReport.type.js';
@@ -42,8 +44,6 @@ type ConfirmResultOutputWithWarnings = ConfirmResultOutput & {
     postCommitWarnings?: string[];
 };
 
-// Kết quả trung gian trả ra từ transaction có lock — cần đủ data để chạy
-// post-commit steps (standings/knockout advance) SAU khi tx đã commit.
 type ConfirmResultCore = {
     matchResultId: number;
     resolution: WinnerResolution;
@@ -52,6 +52,9 @@ type ConfirmResultCore = {
     seasonId: number;
     groupId: number | null;
 };
+
+// Player key đơn giản cho recompute — dùng ở recomputePlayerStats.
+type PlayerKey = { player_id: number; team_id: number };
 
 export class MatchResultService {
     private matchEventQueryable: Queryable<MatchEventRow>;
@@ -117,18 +120,6 @@ export class MatchResultService {
         });
     }
 
-    /**
-     * FIX (root cause #3): _guardConfirm cũ chỉ chặn draw ở resultType=full_time.
-     * _resolveWinner case extra_time cũng có thể trả winnerTeamId=null nếu hoà sau
-     * hiệp phụ — không có gì chặn input resultType=extra_time với homeExtraTime
-     * === awayExtraTime đi qua guard. Hệ quả: knockout match confirm với
-     * winner_team_id=null, knockoutAdvanced bị skip (if isKnockout && winnerTeamId)
-     * nhưng match status vẫn set finished theo STATUS_BY_RESULT_TYPE — "finished"
-     * mà không ai advance bracket, không warning nào log vì code không coi đây là lỗi.
-     *
-     * overrideResult có guard riêng, tách biệt khỏi _guardConfirm — cùng thiếu sót
-     * lặp lại ở 2 nơi. Gộp về 1 helper để tránh drift lần nữa.
-     */
     private _knockoutDrawBlocked(
         resultType: MatchResultType,
         input: { homeScore: number; awayScore: number; homeExtraTime?: number; awayExtraTime?: number },
@@ -144,19 +135,6 @@ export class MatchResultService {
         return false;
     }
 
-    /**
-     * FIX (Critical #1 — atomicity): confirmResult/adminRecordResult trước đây gọi
-     * qua 2 transaction độc lập (createMany events ở lifecycle service, rồi
-     * confirmResult mở transaction riêng) → nếu confirmResult throw, events đã
-     * insert vẫn commit (orphan); nếu caller retry, events insert lại (duplicate,
-     * không unique constraint chặn). Tách guard+write ra method nhận `tx` từ
-     * ngoài để adminRecordResult có thể gộp event-insert + confirm vào CÙNG 1
-     * transaction. confirmResult (public) tự mở transaction riêng khi gọi trực tiếp.
-     *
-     * Đồng thời fix lock: bản cũ lock match row ở CHÍNH transaction này rồi mới
-     * SELECT lại — findUnique ngoài tx cũ đã bị bỏ, mọi guard check giờ đọc từ
-     * snapshot đã lock, nhất quán với pattern recordEvent/addEvent đã dùng.
-     */
     async confirmResultInTx(
         tx: Prisma.TransactionClient,
         matchId: number,
@@ -207,11 +185,6 @@ export class MatchResultService {
         };
     }
 
-    /**
-     * Post-commit steps (standings recompute, knockout advance) — tách ra để
-     * confirmResult() và adminRecordResult() (lifecycle service) dùng chung, tránh
-     * lặp lại logic warning-collection ở 2 nơi (nguồn của bug #3 kiểu drift).
-     */
     async runPostConfirmSteps(
         matchId: number,
         core: ConfirmResultCore,
@@ -277,18 +250,16 @@ export class MatchResultService {
     }
 
     /**
-     * FIX (Critical #2 — race/TOCTOU): overrideResult trước đây KHÔNG lock row,
-     * chạy 2 write riêng (không transaction) sau khi đọc match bằng plain
-     * findUniqueOrThrow. editScore (lifecycle service) check eventCount===0 rồi
-     * gọi method này — giữa lúc check và lúc write, addEvent/deleteEvent/editEvent
-     * (đã có FOR UPDATE lock) có thể insert event + recompute + commit trước, rồi
-     * overrideResult ghi đè home_final_score/winner_team_id bằng score input tay
-     * → event tồn tại trong DB nhưng score không phản ánh event đó, vỡ invariant
-     * "score = f(events)".
+     * FIX (round-robin → knockout seeding lock, thêm sau bug report): khi
+     * knockout bracket của season đã seed (KnockoutService.generateKnockoutBracket
+     * đã chạy), override score lên match round-robin có thể đổi standings/
+     * tie-break mà KHÔNG re-seed bracket — sai suất đi tiếp âm thầm. Chặn
+     * cứng, đẩy case hiếm (lỗi phát hiện sau) sang resolveAppeal.
      *
-     * Fix: tách phần guard+write ra nhận `tx` từ ngoài — editScore (lifecycle)
-     * giờ lock row FOR UPDATE, check eventCount, rồi gọi method này TRONG CÙNG
-     * transaction đã lock, serialize đúng với các method addEvent/deleteEvent/editEvent.
+     * Bracket-advance guard (isKnockout branch) giữ nguyên logic cũ, chỉ
+     * extract ra findAdvancedChildMatchId để dùng chung với
+     * match.lifecycle.service.ts _recalculateResultTx (trước đây guard này
+     * chỉ có ở đây, addEvent/deleteEvent/editEvent thiếu — xem bug report).
      */
     async overrideResultInTx(
         tx: Prisma.TransactionClient,
@@ -320,27 +291,27 @@ export class MatchResultService {
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
 
         const isKnockout = match.phase.format === PhaseFormat.knockout;
-
-        if (isKnockout) {
-            const slot = await tx.bracketSlot.findFirst({
-                where: { match_id: matchId },
-                select: {
-                    fed_as_a: { select: { match_id: true } },
-                    fed_as_b: { select: { match_id: true } },
-                },
-            });
-            const parentHasMatch = slot?.fed_as_a?.[0]?.match_id ?? slot?.fed_as_b?.[0]?.match_id;
-            if (parentHasMatch)
-                throw createAppError(
-                    'CONFLICT',
-                    `Match ${matchId}: round kế tiếp đã được tạo (match ${parentHasMatch}) — ` +
-                    `không thể override winner qua correction window. Dùng resolveAppeal (hiện chưa hỗ trợ overturn cho knockout).`,
-                );
-        }
-
         const seasonId = match.phase.season?.id;
         if (!seasonId)
             throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
+
+        if (isKnockout) {
+            const childMatchId = await findAdvancedChildMatchId(tx, matchId);
+            if (childMatchId !== null)
+                throw createAppError(
+                    'CONFLICT',
+                    `Match ${matchId}: round kế tiếp đã được tạo (match ${childMatchId}) — ` +
+                    `không thể override winner qua correction window. Dùng resolveAppeal (hiện chưa hỗ trợ overturn cho knockout).`,
+                );
+        } else {
+            const seeded = await isKnockoutBracketSeeded(tx, seasonId);
+            if (seeded)
+                throw createAppError(
+                    'FORBIDDEN',
+                    `Match ${matchId}: knockout bracket của season ${seasonId} đã seed — không thể override ` +
+                    `kết quả vòng bảng. Dùng resolveAppeal nếu cần xử lý khiếu nại.`,
+                );
+        }
 
         const resultType = input.resultType ?? match.matchResult.result_type;
 
@@ -428,7 +399,25 @@ export class MatchResultService {
         }
     }
 
-    async recomputePlayerStats(matchId: number): Promise<void> {
+    /**
+     * FIX (player stats drift — bug report #2): trước đây `played` set chỉ
+     * suy từ match_events HIỆN TẠI của match này (đọc SAU khi đã
+     * delete/update). Hệ quả:
+     * - deleteEvent xóa event DUY NHẤT của 1 player trong match → player đó
+     *   biến mất khỏi `played` → không bao giờ recompute lại →
+     *   PlayerStatistic giữ nguyên count cũ (từ event đã xóa) vĩnh viễn.
+     * - editEvent đổi player_id (A → B): A (không còn event nào trong match
+     *   này) không nằm trong `played` → stats A vẫn tính event đã chuyển
+     *   sang B.
+     *
+     * Fix: nhận thêm `additionalPlayers` — player/team CAPTURED TRƯỚC khi
+     * mutate (caller ở match.lifecycle.service.ts truyền vào), union vào
+     * tập cần recompute. `_recomputeStatsForPlayers` vốn recompute TUYỆT ĐỐI
+     * theo toàn bộ match_events trong season (không phải incremental) nên
+     * gọi thêm cho player không còn event nào trong match này vẫn cho kết
+     * quả đúng (0 hoặc số liệu từ match khác trong season).
+     */
+    async recomputePlayerStats(matchId: number, additionalPlayers: PlayerKey[] = []): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
             select: {
@@ -464,9 +453,13 @@ export class MatchResultService {
         });
 
         const { played } = buildStatDeltas(events);
-        if (played.size === 0) return;
+        const playerKeyStrings = new Set(played);
+        for (const p of additionalPlayers) {
+            playerKeyStrings.add(statKey(p.player_id, p.team_id));
+        }
+        if (playerKeyStrings.size === 0) return;
 
-        const playerKeys = [...played].map(k => {
+        const playerKeys = [...playerKeyStrings].map(k => {
             const [pid, tid] = k.split(':').map(Number);
             return { player_id: pid!, team_id: tid! };
         });
