@@ -34,11 +34,24 @@ const formatDateChip = formatDateChipUtc;
 function TimeField({ value, onChange, placeholder }) {
   const [h, m] = value ? value.split(':') : ['', ''];
 
-  const commit = (hhRaw, mmRaw) => {
-    const hh = hhRaw === '' ? '' : String(Math.min(23, Math.max(0, Number(hhRaw))));
-    const mm = mmRaw === '' ? '' : String(Math.min(59, Math.max(0, Number(mmRaw))));
+  // Trong lúc gõ: không pad, không clamp — chỉ giữ digit thô để user
+  // còn cơ hội gõ ký tự thứ 2 hoặc backspace sửa lại.
+  const emit = (hh, mm) => {
     if (hh === '' && mm === '') { onChange(''); return; }
-    onChange(`${(hh || '0').padStart(2, '0')}:${(mm || '0').padStart(2, '0')}`);
+    onChange(`${hh}:${mm}`);
+  };
+
+  const handleHour = (raw) => emit(raw.replace(/\D/g, '').slice(0, 2), m);
+  const handleMinute = (raw) => emit(h, raw.replace(/\D/g, '').slice(0, 2));
+
+  // Chỉ clamp + pad khi rời field — lúc này mới "chốt" giá trị hợp lệ.
+  const blurHour = () => {
+    if (h === '') return;
+    emit(String(Math.min(23, Math.max(0, Number(h)))).padStart(2, '0'), m);
+  };
+  const blurMinute = () => {
+    if (m === '') return;
+    emit(h, String(Math.min(59, Math.max(0, Number(m)))).padStart(2, '0'));
   };
 
   return (
@@ -46,14 +59,16 @@ function TimeField({ value, onChange, placeholder }) {
       <input
         type="text" inputMode="numeric" maxLength={2} placeholder="HH"
         value={h}
-        onChange={e => commit(e.target.value.replace(/\D/g, ''), m)}
+        onChange={e => handleHour(e.target.value)}
+        onBlur={blurHour}
         className="w-14 px-2 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold text-center focus:border-neon outline-none"
       />
       <span className="text-gray-500 font-black">:</span>
       <input
         type="text" inputMode="numeric" maxLength={2} placeholder="MM"
         value={m}
-        onChange={e => commit(h, e.target.value.replace(/\D/g, ''))}
+        onChange={e => handleMinute(e.target.value)}
+        onBlur={blurMinute}
         className="w-14 px-2 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold text-center focus:border-neon outline-none"
       />
     </div>

@@ -32,6 +32,15 @@ const STATUS_OPTIONS = [
   { value: 'withdrawn', label: '🚫 Đã rút' },
 ];
 
+const STATS_CARDS = [
+  { label: 'Tổng số', statusKey: null, icon: Users, color: 'blue' },
+  { label: 'Chờ duyệt', statusKey: 'pending', icon: Calendar, color: 'amber' },
+  { label: 'Đã duyệt', statusKey: 'approved', icon: CheckCircle2, color: 'emerald' },
+  { label: 'Hoạt động', statusKey: 'active', icon: TrendingUp, color: 'sky' },
+  { label: 'Từ chối', statusKey: 'rejected', icon: XCircle, color: 'red' },
+  { label: 'Đã rút', statusKey: 'withdrawn', icon: X, color: 'gray' },
+];
+
 const SEASON_STATUS_COLORS = {
   registration_open: 'text-emerald-400',
   ongoing: 'text-red-400',
@@ -44,10 +53,8 @@ export default function ManageSeasonTeams() {
   const toast = useToastStore();
   const [activeTab, setActiveTab] = useState('teams');
 
-  // ── Seasons ─────────────────────────────────────────────────
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
 
-  // ── Filter state — lưu trong adminUIStore để giữ filter khi chuyển tab ──
   const { seasonTeamFilters, setSeasonTeamFilters } = useAdminUIStore(useShallow(state => ({
     seasonTeamFilters: state.seasonTeamFilters,
     setSeasonTeamFilters: state.setSeasonTeamFilters,
@@ -62,13 +69,11 @@ export default function ManageSeasonTeams() {
     fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' });
   }, [fetchSeasons]);
 
-  // ── Filtered seasons (dropdown filter) ────────────────────
   const filteredSeasons = useMemo(() => {
     if (!filterSeasonStatus) return seasons;
     return seasons.filter(s => s.status === filterSeasonStatus);
   }, [seasons, filterSeasonStatus]);
 
-  // ── Season Teams ─────────────────────────────────────────────
   const { data: allSeasonTeams, isLoading: loadingTeams, fetch: fetchSeasonTeams } = useApiQuery(
     (params) => seasonTeamApi.getAll(params),
     { autoFetch: false, perPage: 200 }
@@ -78,7 +83,7 @@ export default function ManageSeasonTeams() {
     if (selectedSeason) {
       fetchSeasonTeams({ season_id: selectedSeason, per_page: 500, sort: 'id', direction: 'asc' });
     } else {
-      fetchSeasonTeams({ per_page: 500, sort: 'id', direction: 'asc' }); // Lấy tất cả khi không chọn mùa
+      fetchSeasonTeams({ per_page: 500, sort: 'id', direction: 'asc' });
     }
   }, [selectedSeason, fetchSeasonTeams]);
 
@@ -87,7 +92,6 @@ export default function ManageSeasonTeams() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
-  // ── Client-side filter by status and search ───────────────────────────
   const seasonTeams = useMemo(() => {
     let filtered = allSeasonTeams;
     if (selectedSeason) {
@@ -100,12 +104,30 @@ export default function ManageSeasonTeams() {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(st => st.team?.name?.toLowerCase().includes(lower));
     }
-    return filtered;
+    return [...filtered].sort((a, b) => {
+      const nameA = a.team?.name || '';
+      const nameB = b.team?.name || '';
+      const cmp = nameA.localeCompare(nameB);
+      return cmp !== 0 ? cmp : a.id - b.id;
+    });
   }, [allSeasonTeams, selectedSeason, filterStatus, debouncedSearch]);
 
-  // ── Pagination ───────────────────────────────────────────
+  // ── Group theo team TRƯỚC khi paginate ─────────────────────
+  // Đơn vị pagination là "team", không phải "row". Group không bao giờ bị
+  // cắt ngang giữa 2 trang -> groupSizeMap không còn là "đếm theo trang hiện
+  // tại" nữa, mà là con số thật, không có edge case nào bị mất chính xác.
+  const groupedTeams = useMemo(() => {
+    const map = new Map();
+    seasonTeams.forEach(st => {
+      const tid = st.team?.id ?? `noteam-${st.id}`;
+      if (!map.has(tid)) map.set(tid, []);
+      map.get(tid).push(st);
+    });
+    return Array.from(map.values());
+  }, [seasonTeams]);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // = số TEAM/trang, không phải số row
 
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
@@ -116,16 +138,40 @@ export default function ManageSeasonTeams() {
     setTimeout(() => setCurrentPage(1), 0);
   }, [filterStatus, selectedSeason, debouncedSearch]);
 
-  const totalPages = Math.ceil(seasonTeams.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(groupedTeams.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedTeams = seasonTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginatedGroups = groupedTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginatedTeams = paginatedGroups.flat();
 
-  // Số cột thực tế của bảng — thay đổi theo việc có hiện cột Season/Tournament
-  // hay không (chỉ hiện khi list gộp nhiều season, tức selectedSeason rỗng).
-  // Dùng cho colSpan (empty state) và số ô skeleton loading — phải khớp <thead>.
-  const columnCount = selectedSeason ? 6 : 7;
+  const columnCount = selectedSeason ? 5 : 6;
 
-  // ── Summary stats ───────────────────────────────────────────
+  // ── Collapse/expand per team group ─────────────────────────
+  // Default = COLLAPSED. Track Set<team.id> đã được user bấm mở, không phải
+  // ngược lại — tránh phải tính trước "group nào có size > 1" mỗi lần data
+  // đổi chỉ để pre-populate collapsed set. Set rỗng = tất cả collapsed.
+  const [expandedTeamIds, setExpandedTeamIds] = useState(() => new Set());
+  const toggleTeamGroup = (tid) => {
+    setExpandedTeamIds(prev => {
+      const next = new Set(prev);
+      next.has(tid) ? next.delete(tid) : next.add(tid);
+      return next;
+    });
+  };
+  useEffect(() => {
+    setExpandedTeamIds(new Set());
+  }, [safePage, filterStatus, selectedSeason, debouncedSearch]);
+
+  // groupSizeMap giờ tính trực tiếp từ paginatedGroups (mỗi group đã trọn vẹn
+  // trong trang), không phải đếm lại trên danh sách row phẳng.
+  const groupSizeMap = useMemo(() => {
+    const map = new Map();
+    paginatedGroups.forEach(g => {
+      const tid = g[0].team?.id ?? `noteam-${g[0].id}`;
+      map.set(tid, g.length);
+    });
+    return map;
+  }, [paginatedGroups]);
+
   const stats = useMemo(() => {
     let base = allSeasonTeams;
     if (selectedSeason) {
@@ -141,7 +187,15 @@ export default function ManageSeasonTeams() {
     };
   }, [allSeasonTeams, selectedSeason]);
 
-  // ── Actions: Status ─────────────────────────────────────────
+  const statValueMap = {
+    'Tổng số': stats.total,
+    'Chờ duyệt': stats.pending,
+    'Đã duyệt': stats.approved,
+    'Hoạt động': stats.active,
+    'Từ chối': stats.rejected,
+    'Đã rút': stats.withdrawn,
+  };
+
   const statusMutation = useApiMutation();
   const handleUpdateStatus = (id, newStatus) => {
     const st = allSeasonTeams.find(s => s.id === id);
@@ -184,7 +238,6 @@ export default function ManageSeasonTeams() {
     }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
   };
 
-  // ── Actions: Delete ─────────────────────────────────────────
   const deleteMutation = useApiMutation();
   const [deletingId, setDeletingId] = useState(null);
   const [jerseyModalTeam, setJerseyModalTeam] = useState(null);
@@ -197,7 +250,6 @@ export default function ManageSeasonTeams() {
     }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi xóa.'));
   };
 
-  // ── Actions: Add Team ───────────────────────────────────────
   const [allTeams, setAllTeams] = useState([]);
   const addTeamModal = useCrudModal({ emptyForm: { team_id: '', season_id: '' } });
 
@@ -225,7 +277,6 @@ export default function ManageSeasonTeams() {
     }).catch(err => addTeamModal.setFormError(parseApiError(err, 'Lỗi khi thêm đội.')));
   };
 
-  // ── Manual Group Assign ─────────────────────────────────────
   const assignModal = useCrudModal({ emptyForm: { group_id: '' } });
   const openAssignGroup = (st) => assignModal.openEdit(st, { group_id: st.group_id || '' });
   const handleAssign = () => {
@@ -237,7 +288,6 @@ export default function ManageSeasonTeams() {
     }).catch(err => assignModal.setFormError(parseApiError(err, 'Lỗi khi xếp bảng.')));
   };
 
-  // ── Actions: Transfer Team ──────────────────────────────────
   const transferModal = useCrudModal({ emptyForm: { target_season_id: '' } });
   const openTransferTeam = (st) => {
     transferModal.openEdit(st, { target_season_id: '' });
@@ -257,7 +307,6 @@ export default function ManageSeasonTeams() {
     <AdminLayout>
       <div className="w-full space-y-6 animate-fade-in pb-20">
 
-        {/* ── Header ──────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
@@ -266,9 +315,7 @@ export default function ManageSeasonTeams() {
             <p className="text-gray-400 text-sm mt-1">Duyệt đội đăng ký và tiến hành chia bảng ngẫu nhiên.</p>
           </div>
 
-          {/* Season Selector + Season Status Filter */}
           <div className="flex flex-col gap-2 min-w-[260px]">
-            {/* Season status quick filter */}
             <div className="flex gap-1.5 flex-wrap">
               {[
                 { value: '', label: 'Tất cả' },
@@ -290,7 +337,6 @@ export default function ManageSeasonTeams() {
               ))}
             </div>
 
-            {/* Season dropdown */}
             <div className="relative">
               <select
                 className="w-full bg-navy border border-navy-light rounded-xl px-4 py-2.5 text-white font-bold outline-none focus:border-neon focus:ring-1 focus:ring-neon/20 text-sm appearance-none cursor-pointer transition-all shadow-md shadow-black/15"
@@ -306,7 +352,6 @@ export default function ManageSeasonTeams() {
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Selected season status badge */}
             {selectedSeasonObj && (
               <div className={`text-xs font-bold flex items-center gap-1.5 ${SEASON_STATUS_COLORS[selectedSeasonObj.status] ?? 'text-gray-400'}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -316,25 +361,18 @@ export default function ManageSeasonTeams() {
           </div>
         </div>
 
-        {/* ── Content ─────────────────────────── */}
         <>
-          {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {[
-              { label: 'Tổng số', value: stats.total, color: 'blue', icon: Users },
-              { label: 'Chờ duyệt', value: stats.pending, color: 'amber', icon: Calendar },
-              { label: 'Đã duyệt', value: stats.approved, color: 'emerald', icon: CheckCircle2 },
-              { label: 'Hoạt động', value: stats.active, color: 'sky', icon: TrendingUp },
-              { label: 'Từ chối', value: stats.rejected, color: 'red', icon: XCircle },
-              { label: 'Đã rút', value: stats.withdrawn, color: 'gray', icon: X },
-              // eslint-disable-next-line no-unused-vars
-            ].map(({ label, value, color, icon: Icon }) => (
+            {STATS_CARDS.map(({ label, statusKey, color, icon: Icon }) => (
               <div
                 key={label}
-                onClick={() => setFilterStatus(prev => prev === label.toLowerCase() ? '' : '')}
-                className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group`}
+                onClick={() => {
+                  if (statusKey === null) { setFilterStatus(''); return; }
+                  setFilterStatus(prev => prev === statusKey ? '' : statusKey);
+                }}
+                className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group ${filterStatus === statusKey ? `border-${color}-500/60 ring-1 ring-${color}-500/30` : ''}`}
               >
-                <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{value}</div>
+                <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
                 <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
                   <Icon className={`w-3 h-3 text-${color}-400`} />
                   {label}
@@ -343,7 +381,6 @@ export default function ManageSeasonTeams() {
             ))}
           </div>
 
-          {/* Tabs */}
           <div className="flex items-center gap-2 border-b border-navy-light">
             <button
               className={`px-6 py-3 font-bold text-sm border-b-2 transition-all ${activeTab === 'teams' ? 'border-neon text-neon' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -365,12 +402,9 @@ export default function ManageSeasonTeams() {
             </button>
           </div>
 
-
-          {/* ── Tab: Teams ─────────────────────────────────────── */}
           {activeTab === 'teams' && (
             <div className="bg-navy border border-navy-light rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
 
-              {/* Table header with filter */}
               <div className="p-4 border-b border-navy-light flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-navy-dark">
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-emerald-400" />
@@ -378,7 +412,6 @@ export default function ManageSeasonTeams() {
                   {filterStatus && <span className="text-gray-400"> / {allSeasonTeams.length}</span>})
                 </h3>
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                  {/* Search */}
                   <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -389,7 +422,6 @@ export default function ManageSeasonTeams() {
                       className="w-full pl-9 pr-3 py-2 bg-navy border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm transition-colors"
                     />
                   </div>
-                  {/* Status filter */}
                   <div className="relative w-full sm:w-auto shrink-0">
                     <select
                       className="w-full sm:w-auto bg-navy border border-navy-light rounded-lg pl-8 pr-8 py-2 text-white font-bold outline-none focus:border-neon text-sm appearance-none cursor-pointer"
@@ -423,11 +455,8 @@ export default function ManageSeasonTeams() {
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <th className="py-4 px-6 w-16 text-center">ID</th>
                       <th className="py-4 px-6">Đội bóng</th>
-                      {/* Chỉ hiện khi không filter theo 1 season cụ thể — tránh
-                          cột thừa/trống khi season đã cố định qua dropdown filter. */}
                       {!selectedSeason && <th className="py-4 px-6">Mùa giải</th>}
                       <th className="py-4 px-6 text-center">Trạng thái</th>
-                      <th className="py-4 px-6 text-center">Group</th>
                       <th className="py-4 px-6 text-center">Duyệt</th>
                       <th className="py-4 px-6 text-right">Thao tác</th>
                     </tr>
@@ -454,24 +483,37 @@ export default function ManageSeasonTeams() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedTeams.map(st => (
-                        <SeasonTeamRow
-                          key={st.id}
-                          seasonTeam={st}
-                          showSeasonColumn={!selectedSeason}
-                          onUpdateStatus={handleUpdateStatus}
-                          onDeleteRequest={setDeletingId}
-                          onAssignGroup={openAssignGroup}
-                          onTransfer={openTransferTeam}
-                          onManageJerseys={setJerseyModalTeam}
-                        />
-                      ))
+                      paginatedTeams.map((st, idx) => {
+                        const tid = st.team?.id ?? `noteam-${st.id}`;
+                        const isSameTeamAsPrev = idx > 0 && paginatedTeams[idx - 1].team?.id === st.team?.id;
+                        const groupSize = groupSizeMap.get(tid) || 1;
+                        const isCollapsed = !expandedTeamIds.has(tid);
+
+                        // Row phụ (cùng team, không phải row đầu) bị ẩn khi group collapse
+                        if (isSameTeamAsPrev && isCollapsed) return null;
+
+                        return (
+                          <SeasonTeamRow
+                            key={st.id}
+                            seasonTeam={st}
+                            showSeasonColumn={!selectedSeason}
+                            isSameTeamAsPrev={isSameTeamAsPrev}
+                            groupSize={groupSize}
+                            isGroupCollapsed={isCollapsed}
+                            onToggleGroup={() => toggleTeamGroup(tid)}
+                            onUpdateStatus={handleUpdateStatus}
+                            onDeleteRequest={setDeletingId}
+                            onAssignGroup={openAssignGroup}
+                            onTransfer={openTransferTeam}
+                            onManageJerseys={setJerseyModalTeam}
+                          />
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="px-6 py-4 border-t border-navy-light bg-navy-dark rounded-b-xl">
                   <Pagination
@@ -480,6 +522,7 @@ export default function ManageSeasonTeams() {
                     onPageChange={setCurrentPage}
                     itemsPerPage={itemsPerPage}
                     onItemsPerPageChange={handleItemsPerPageChange}
+                    itemsLabel="đội"
                   />
                 </div>
               )}
@@ -487,11 +530,9 @@ export default function ManageSeasonTeams() {
             </div>
           )}
 
-          {/* ── Tab: Draw Groups ────────────────────────────────── */}
           {activeTab === 'draw' && (
             <GroupDrawUI seasonId={selectedSeason ? Number(selectedSeason) : null} />
           )}
-          {/* ── Tab: Knockout ──────────────────────────────────── */}
           {activeTab === 'knockout' && (
             <KnockoutUI seasonId={selectedSeason} />
           )}
@@ -499,7 +540,6 @@ export default function ManageSeasonTeams() {
         </>
       </div>
 
-      {/* ── Add Team Modal ──────────────────────────────────────── */}
       {addTeamModal.modal && (
         <AdminModal
           title="Thêm đội vào mùa giải"
@@ -555,7 +595,6 @@ export default function ManageSeasonTeams() {
         </AdminModal>
       )}
 
-      {/* ── Assign Group Modal ──────────────────────────────────── */}
       {assignModal.modal && (
         <AdminModal
           title="Xếp bảng thủ công"
@@ -592,7 +631,6 @@ export default function ManageSeasonTeams() {
         </AdminModal>
       )}
 
-      {/* ── Transfer Team Modal ─────────────────────────────────── */}
       {transferModal.modal && (
         <AdminModal
           title="Chuyển mùa giải"
@@ -637,7 +675,6 @@ export default function ManageSeasonTeams() {
         </AdminModal>
       )}
 
-      {/* ── Delete Confirm ──────────────────────────────────────── */}
       {deletingId && (
         <ConfirmModal
           title="Xác nhận xóa?"
@@ -647,7 +684,6 @@ export default function ManageSeasonTeams() {
           isLoading={deleteMutation.isLoading}
         />
       )}
-      {/* Jersey Modal */}
       <ManageJerseysModal
         isOpen={!!jerseyModalTeam}
         onClose={() => setJerseyModalTeam(null)}
