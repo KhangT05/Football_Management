@@ -517,6 +517,24 @@
             "UpdateUserDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateUserSchema_"
             },
+            "infer_typeofchangePasswordSchema_": {
+                "properties": {
+                    "newPassword": {
+                        "type": "string"
+                    },
+                    "currentPassword": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "newPassword",
+                    "currentPassword"
+                ],
+                "type": "object"
+            },
+            "ChangePasswordDto": {
+                "$ref": "#/components/schemas/infer_typeofchangePasswordSchema_"
+            },
             "SingleUploadResult": {
                 "properties": {
                     "url": {
@@ -1458,6 +1476,16 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "SeasonStatus": {
+                "type": "string",
+                "enum": [
+                    "upcoming",
+                    "registration_open",
+                    "ongoing",
+                    "finished",
+                    "cancelled"
+                ]
+            },
             "SeasonTeamWithRelations": {
                 "properties": {
                     "id": {
@@ -1509,6 +1537,30 @@
                     },
                     "season": {
                         "properties": {
+                            "tournament": {
+                                "properties": {
+                                    "logo": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "id": {
+                                        "type": "number",
+                                        "format": "double"
+                                    }
+                                },
+                                "required": [
+                                    "logo",
+                                    "name",
+                                    "id"
+                                ],
+                                "type": "object"
+                            },
+                            "status": {
+                                "$ref": "#/components/schemas/SeasonStatus"
+                            },
                             "name": {
                                 "type": "string"
                             },
@@ -1518,6 +1570,8 @@
                             }
                         },
                         "required": [
+                            "tournament",
+                            "status",
                             "name",
                             "id"
                         ],
@@ -1723,16 +1777,6 @@
                     "draft",
                     "in_progress",
                     "locked"
-                ]
-            },
-            "SeasonStatus": {
-                "type": "string",
-                "enum": [
-                    "upcoming",
-                    "registration_open",
-                    "ongoing",
-                    "finished",
-                    "cancelled"
                 ]
             },
             "SeasonListItem": {
@@ -6383,6 +6427,49 @@
                                 "required": [
                                     "avatar"
                                 ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/password": {
+            "patch": {
+                "operationId": "UpdatePassword",
+                "responses": {
+                    "204": {
+                        "description": "OK"
+                    }
+                },
+                "tags": [
+                    "Users"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "user",
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordDto"
                             }
                         }
                     }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  CalendarDays, CalendarPlus, Zap, Edit3, X, Save,
-  MapPin, Clock, Loader2, RefreshCw, Search, Trophy, LayoutGrid
+  CalendarPlus, Zap, Edit3, X, Save,
+  MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
@@ -11,18 +11,76 @@ import useToastStore from '../../store/toastStore';
 import { groupApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
-import KnockoutUI from '../../components/admin/KnockoutUI';
+import {
+  vnInputToUtcDate, utcToVnInput, getDatesInRangeUtc, formatDateChipUtc,
+} from '../../utils/vn-time';
+
+// ─── Helpers: date range ───────────────────────────────────────────────────
+// FIX: dùng getDatesInRangeUtc/formatDateChipUtc — bản cũ dùng
+// `new Date(\`${d}T00:00:00\`)` (local-TZ parse) rồi `.toISOString()` (UTC
+// output), round-trip qua 2 TZ khác nhau gây off-by-one-day trên máy có TZ
+// dương so với UTC (VN = UTC+7): local midnight -> UTC 17:00 hôm trước ->
+// slice(0,10) ra sai ngày lùi 1. Bản mới build thuần UTC-calendar-day, không
+// có local-TZ nào can thiệp vào giữa chừng.
+const getDatesInRange = getDatesInRangeUtc;
+const formatDateChip = formatDateChipUtc;
+
+// ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
+// native <input type="time"> render theo locale hệ điều hành của CLIENT
+// (Chrome/Edge lấy Intl locale máy, không theo `lang` attr set trên input),
+// nên máy admin locale en-US sẽ hiện AM/PM 12h — gõ "20" bị coi invalid,
+// đúng pattern "không nhập được time" bạn báo. Thay bằng 2 input số tự
+// control, cố định 24h, không phụ thuộc locale/OS.
+function TimeField({ value, onChange, placeholder }) {
+  const [h, m] = value ? value.split(':') : ['', ''];
+
+  // Trong lúc gõ: không pad, không clamp — chỉ giữ digit thô để user
+  // còn cơ hội gõ ký tự thứ 2 hoặc backspace sửa lại.
+  const emit = (hh, mm) => {
+    if (hh === '' && mm === '') { onChange(''); return; }
+    onChange(`${hh}:${mm}`);
+  };
+
+  const handleHour = (raw) => emit(raw.replace(/\D/g, '').slice(0, 2), m);
+  const handleMinute = (raw) => emit(h, raw.replace(/\D/g, '').slice(0, 2));
+
+  // Chỉ clamp + pad khi rời field — lúc này mới "chốt" giá trị hợp lệ.
+  const blurHour = () => {
+    if (h === '') return;
+    emit(String(Math.min(23, Math.max(0, Number(h)))).padStart(2, '0'), m);
+  };
+  const blurMinute = () => {
+    if (m === '') return;
+    emit(h, String(Math.min(59, Math.max(0, Number(m)))).padStart(2, '0'));
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="text" inputMode="numeric" maxLength={2} placeholder="HH"
+        value={h}
+        onChange={e => handleHour(e.target.value)}
+        onBlur={blurHour}
+        className="w-14 px-2 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold text-center focus:border-neon outline-none"
+      />
+      <span className="text-gray-500 font-black">:</span>
+      <input
+        type="text" inputMode="numeric" maxLength={2} placeholder="MM"
+        value={m}
+        onChange={e => handleMinute(e.target.value)}
+        onBlur={blurMinute}
+        className="w-14 px-2 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold text-center focus:border-neon outline-none"
+      />
+    </div>
+  );
+}
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
-  const [scheduledAt, setScheduledAt] = useState(() => {
-    if (match?.scheduled_at) {
-      const dateObj = new Date(match.scheduled_at);
-      const tzOffset = dateObj.getTimezoneOffset() * 60000;
-      return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
-    }
-    return '';
-  });
+  // FIX: thay round-trip qua getTimezoneOffset() (phụ thuộc TZ của OS máy
+  // admin — sai nếu admin remote vào server/VPS TZ khác VN) bằng conversion
+  // tường minh theo Asia/Ho_Chi_Minh (+7 cố định, không DST).
+  const [scheduledAt, setScheduledAt] = useState(() => utcToVnInput(match?.scheduled_at));
   const [venueId, setVenueId] = useState(match?.venue_id ? String(match.venue_id) : '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -30,7 +88,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
     e.preventDefault();
     setIsSaving(true);
     await onSave(match.id, {
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+      scheduledAt: scheduledAt ? vnInputToUtcDate(scheduledAt) : undefined,
       venueId: venueId ? Number(venueId) : undefined,
     });
     setIsSaving(false);
@@ -82,7 +140,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-emerald-400" /> Thời gian
+              <Clock className="w-4 h-4 text-emerald-400" /> Thời gian (giờ VN)
             </label>
             <input
               type="datetime-local"
@@ -122,12 +180,6 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
-// Modal này giờ có 2 chế độ, tự động phát hiện dựa trên GroupService:
-//  - Season CHƯA có bảng nào (hasDrawnGroups=false): hiện form cũ (tự tạo
-//    bảng + tự chia đội), gọi POST /schedules/seasons/{id}/generate.
-//  - Season ĐÃ có bảng + đã bốc thăm (hasDrawnGroups=true): ẩn phần
-//    "số bảng / kích thước bảng" (không còn ý nghĩa gì), chỉ hỏi sân/giờ/
-//    nghỉ tối thiểu, gọi POST /schedules/seasons/{id}/generate-from-groups.
 function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
@@ -138,15 +190,44 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
     minGroupSize: 4,
     maxGroupSize: 4,
     minRestDaysPerTeam: 2,
-    matchTimes: "08:00, 15:00",
   });
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [excludedDates, setExcludedDates] = useState([]);
+
+  const [timeSlots, setTimeSlots] = useState(['08:00', '15:00']);
+  const [newTime, setNewTime] = useState('');
 
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Kiểm tra season đã có bảng + đã bốc thăm (>= 2 đội/bảng) hay chưa —
-  // dùng chính API groupApi.listBySeason (GroupService.findAllBySeason),
-  // đảm bảo cùng nguồn sự thật với GroupDrawUI.
+  const allDatesInRange = useMemo(() => getDatesInRange(startDate, endDate), [startDate, endDate]);
+  const playableDates = useMemo(
+    () => allDatesInRange.filter(d => !excludedDates.includes(d)),
+    [allDatesInRange, excludedDates],
+  );
+
+  useEffect(() => {
+    setExcludedDates(prev => prev.filter(d => allDatesInRange.includes(d)));
+  }, [allDatesInRange]);
+
+  const toggleDate = (date) => {
+    setExcludedDates(prev =>
+      prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
+    );
+  };
+
+  const addTimeSlot = () => {
+    if (!newTime || newTime.length < 5) return;
+    setTimeSlots(prev => (prev.includes(newTime) ? prev : [...prev, newTime].sort()));
+    setNewTime('');
+  };
+
+  const removeTimeSlot = (t) => {
+    setTimeSlots(prev => prev.filter(x => x !== t));
+  };
+
   useEffect(() => {
     if (!seasonId) return;
     let cancelled = false;
@@ -192,21 +273,33 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
       alert("Vui lòng chọn ít nhất một sân thi đấu.");
       return;
     }
+    if (!startDate || !endDate) {
+      alert("Vui lòng chọn khoảng ngày thi đấu.");
+      return;
+    }
+    if (playableDates.length === 0) {
+      alert("Không có ngày nào có thể đá trong khoảng đã chọn.");
+      return;
+    }
+    if (timeSlots.length === 0) {
+      alert("Vui lòng chọn ít nhất một khung giờ đá.");
+      return;
+    }
 
     setIsGenerating(true);
-    const timesArray = formData.matchTimes.split(',').map(t => t.trim()).filter(Boolean);
 
     const basePayload = {
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
-      matchTimes: timesArray,
+      matchTimes: timeSlots,
+      startDate,
+      endDate,
+      playableDates,
     };
 
     if (hasDrawnGroups) {
-      // Bảng đã tồn tại + đã bốc thăm — chỉ sinh match + xếp lịch
       await onGenerateFromGroups(seasonId, { ...basePayload, doubleRound: false });
     } else {
-      // Chưa có bảng — luồng cũ: tự tạo bảng + tự chia đội + sinh lịch
       await onGenerate(seasonId, {
         ...basePayload,
         desiredGroupCount: Number(formData.desiredGroupCount),
@@ -239,14 +332,14 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
             {groupCheckError && (
-              <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">
+              <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã bốc thăm
                 bảng, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
               </p>
             )}
 
             {hasDrawnGroups ? (
-              <div className="text-sm text-emerald-300 bg-emerald-400/10 p-3 rounded-lg border border-emerald-400/20">
+              <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
                 Season đã có bảng đấu và đã bốc thăm. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng
                 hiện có rồi xếp giờ/sân — không tạo lại bảng hay chia lại đội.
               </div>
@@ -279,30 +372,109 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
-                <input
-                  type="number" min="0"
-                  name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
-                  className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Khung giờ đá (cách nhau dấu phẩy)</label>
-                <input
-                  type="text" required
-                  placeholder="VD: 08:00, 15:00, 18:30"
-                  name="matchTimes" value={formData.matchTimes} onChange={handleChange}
-                  className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
+              <input
+                type="number" min="0"
+                name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
+                className="w-full sm:w-64 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+              />
             </div>
 
-            <p className="text-[11px] text-gray-500 -mt-2">
-              Khoảng thời gian xếp lịch (ngày bắt đầu/kết thúc) lấy từ <code>start_date</code>/<code>end_date</code>
-              của mùa giải — chỉnh ở phần cài đặt mùa giải nếu cần đổi.
-            </p>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-emerald-400" /> Khoảng ngày thi đấu
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
+                  <input
+                    type="date" required
+                    value={startDate}
+                    max={endDate || undefined}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
+                  <input
+                    type="date" required
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
+                  />
+                </div>
+              </div>
+
+              {allDatesInRange.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase">
+                      Bỏ chọn ngày không thể đá ({playableDates.length}/{allDatesInRange.length} ngày được chọn)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setExcludedDates(excludedDates.length === allDatesInRange.length ? [] : allDatesInRange)}
+                      className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
+                    >
+                      {excludedDates.length === allDatesInRange.length ? 'Chọn tất cả' : 'Bỏ chọn tất cả'}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
+                    {allDatesInRange.map(date => {
+                      const isPlayable = !excludedDates.includes(date);
+                      return (
+                        <button
+                          key={date}
+                          type="button"
+                          onClick={() => toggleDate(date)}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${isPlayable
+                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                            : 'bg-navy border-navy-light text-gray-600 line-through'
+                            }`}
+                        >
+                          {formatDateChip(date)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Khung giờ đá — TimeField custom, không phụ thuộc OS locale */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-400" /> Khung giờ đá (giờ VN, 24h)
+              </label>
+              <div className="flex items-center gap-2">
+                <TimeField value={newTime} onChange={setNewTime} />
+                <button
+                  type="button"
+                  onClick={addTimeSlot}
+                  disabled={!newTime || newTime.length < 5}
+                  className="px-4 py-2.5 rounded-xl bg-navy-dark border border-navy-light text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-40 flex items-center gap-1.5 font-bold text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Thêm
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {timeSlots.length === 0 ? (
+                  <span className="text-xs text-gray-500 italic">Chưa có khung giờ nào — thêm ít nhất một khung giờ.</span>
+                ) : (
+                  timeSlots.map(t => (
+                    <span key={t} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                      {t}
+                      <button type="button" onClick={() => removeTimeSlot(t)} className="text-blue-300/70 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
 
             <div className="space-y-3">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
@@ -350,14 +522,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
 
-  // NEW — toggle Vòng bảng / Knockout. Trước đây không có entry point nào
-  // trong ScheduleTab dẫn tới KnockoutUI — 2 luồng tồn tại độc lập ở API/
-  // component level nhưng user thực tế không chuyển được qua lại. seasonId
-  // được truyền xuyên suốt để KnockoutUI dùng chung season đang chọn.
-  const [stageView, setStageView] = useState('roundrobin'); // 'roundrobin' | 'knockout'
-
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
-  const [rescheduleMatchData, setRescheduleMatchData] = useState(null); // stores match object if open
+  const [rescheduleMatchData, setRescheduleMatchData] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -378,8 +544,6 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const matches = useMemo(() => {
     if (!effectiveSeasonId) return [];
     let list = getMatchesFromCache(Number(effectiveSeasonId));
-    // Tab lịch vòng bảng chỉ hiện match round-robin — knockout có view riêng
-    // (KnockoutUI), tránh trộn 2 khái niệm "round" khác nhau trong cùng list.
     list = list.filter(m => (m.phase?.format ?? m.phaseFormat) !== 'knockout');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
@@ -416,7 +580,6 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
-  // NEW: sinh lịch cho season đã có bảng + đã bốc thăm sẵn (qua GroupDrawUI).
   const handleGenerateFromGroups = async (seasonId, payload) => {
     try {
       await generateFromGroups(seasonId, payload);
@@ -441,172 +604,138 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   return (
     <>
       <div className="space-y-6 animate-fade-in">
-        {/* Stage toggle — Vòng bảng vs Knockout */}
-        <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-fit shadow-inner">
-          <button
-            onClick={() => setStageView('roundrobin')}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${stageView === 'roundrobin' ? 'bg-neon text-black shadow-md' : 'text-gray-400 hover:text-white'
-              }`}
-          >
-            <LayoutGrid className="w-4 h-4" /> Vòng bảng
-          </button>
-          <button
-            onClick={() => setStageView('knockout')}
-            disabled={!effectiveSeasonId}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 disabled:opacity-40 ${stageView === 'knockout' ? 'bg-amber-500 text-black shadow-md' : 'text-gray-400 hover:text-white'
-              }`}
-          >
-            <Trophy className="w-4 h-4" /> Knockout
-          </button>
+        <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm trận đấu (theo tên đội)..."
+                value={searchTerm}
+                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon transition-colors text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="px-4 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white transition-all disabled:opacity-50"
+              title="Tải lại lịch"
+            >
+              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setGenerateModalOpen(true)}
+              disabled={!effectiveSeasonId}
+              className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
+            >
+              <Zap className="w-5 h-5" /> Tạo lịch thi đấu
+            </button>
+          </div>
         </div>
 
-        {stageView === 'knockout' ? (
-          effectiveSeasonId ? (
-            <KnockoutUI seasonId={Number(effectiveSeasonId)} />
-          ) : (
-            <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
-              <p className="text-gray-400 font-bold">Chọn mùa giải trước để tạo knockout.</p>
-            </div>
-          )
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-neon animate-spin" />
+          </div>
+        ) : matches.length === 0 ? (
+          <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
+            <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
+            <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
+            {effectiveSeasonId && (
+              <button
+                onClick={() => setGenerateModalOpen(true)}
+                className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
+              >
+                <Zap className="w-5 h-5" /> Tạo lịch tự động ngay
+              </button>
+            )}
+          </div>
         ) : (
-          <>
-            {/* Filters & Actions */}
-            <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Tìm trận đấu (theo tên đội)..."
-                    value={searchTerm}
-                    onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon transition-colors text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  className="px-4 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white transition-all disabled:opacity-50"
-                  title="Tải lại lịch"
-                >
-                  <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
-                <button
-                  onClick={() => setGenerateModalOpen(true)}
-                  disabled={!effectiveSeasonId}
-                  className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Zap className="w-5 h-5" /> Tạo lịch thi đấu
-                </button>
-              </div>
-            </div>
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayedMatches.map(m => {
+                const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
+                const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
 
-            {/* Content Area */}
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-neon animate-spin" />
-              </div>
-            ) : matches.length === 0 ? (
-              <div className="text-center py-24 border border-dashed border-navy-light rounded-3xl bg-navy/30">
-                <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
-                <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
-                {effectiveSeasonId && (
-                  <button
-                    onClick={() => setGenerateModalOpen(true)}
-                    className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
-                  >
-                    <Zap className="w-5 h-5" /> Tạo lịch tự động ngay
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {displayedMatches.map(m => {
-                    const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
-                    const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
+                const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
+                const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
 
-                    const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
-                    const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
+                const homeLogo = homeTeam?.logo;
+                const awayLogo = awayTeam?.logo;
+                return (
+                  <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
+                    <div className="flex justify-between items-start mb-3">
+                      <StatusBadge status={m.status} />
+                      <button
+                        onClick={() => setRescheduleMatchData(m)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
+                        title="Đổi lịch / Sân"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                    const homeLogo = homeTeam?.logo;
-                    const awayLogo = awayTeam?.logo;
-                    return (
-                      <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
-                        <div className="flex justify-between items-start mb-3">
-                          <StatusBadge status={m.status} />
-                          <button
-                            onClick={() => setRescheduleMatchData(m)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
-                            title="Đổi lịch / Sân"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 justify-between mb-4 mt-2">
-                          <div className="flex-1 text-center min-w-0">
-                            {homeLogo ? (
-                              <img src={homeLogo} alt={homeName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-emerald-500/30" />
-                            ) : (
-                              <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
-                                {homeName[0]}
-                              </div>
-                            )}
-                            <p className="text-white font-bold text-sm truncate" title={homeName}>{homeName}</p>
+                    <div className="flex items-center gap-2 justify-between mb-4 mt-2">
+                      <div className="flex-1 text-center min-w-0">
+                        {homeLogo ? (
+                          <img src={homeLogo} alt={homeName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-emerald-500/30" />
+                        ) : (
+                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-900 flex items-center justify-center text-emerald-400 font-black mb-1 border border-emerald-500/30">
+                            {homeName[0]}
                           </div>
-                          <span className="text-gray-600 font-black text-xs shrink-0">VS</span>
-                          <div className="flex-1 text-center min-w-0">
-                            {awayLogo ? (
-                              <img src={awayLogo} alt={awayName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-blue-500/30" />
-                            ) : (
-                              <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
-                                {awayName[0]}
-                              </div>
-                            )}
-                            <p className="text-white font-bold text-sm truncate" title={awayName}>{awayName}</p>
-                          </div>
-                        </div>
-
-                        <div className="pt-3 border-t border-navy-light/50 flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                            <Clock className="w-3.5 h-3.5 text-gray-500" />
-                            {m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : 'Chưa xếp lịch'}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-400 font-medium truncate mb-2">
-                            <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                            <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
-                          </div>
-                          <button
-                            onClick={() => onGoToLiveControl(m.id)}
-                            className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Zap className="w-4 h-4" /> Cập nhật kết quả
-                          </button>
-                        </div>
+                        )}
+                        <p className="text-white font-bold text-sm truncate" title={homeName}>{homeName}</p>
                       </div>
-                    );
-                  })}
-                </div>
-                {totalPages > 1 && (
-                  <div className="mt-8 flex justify-center">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                    />
+                      <span className="text-gray-600 font-black text-xs shrink-0">VS</span>
+                      <div className="flex-1 text-center min-w-0">
+                        {awayLogo ? (
+                          <img src={awayLogo} alt={awayName} className="w-10 h-10 mx-auto rounded-xl object-contain bg-white mb-1 border border-blue-500/30" />
+                        ) : (
+                          <div className="w-10 h-10 mx-auto rounded-xl bg-linear-to-br from-blue-500/20 to-indigo-900 flex items-center justify-center text-blue-400 font-black mb-1 border border-blue-500/30">
+                            {awayName[0]}
+                          </div>
+                        )}
+                        <p className="text-white font-bold text-sm truncate" title={awayName}>{awayName}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-navy-light/50 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        {m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }) : 'Chưa xếp lịch'}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-400 font-medium truncate mb-2">
+                        <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                        <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
+                      </div>
+                      <button
+                        onClick={() => onGoToLiveControl(m.id)}
+                        className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Zap className="w-4 h-4" /> Cập nhật kết quả
+                      </button>
+                    </div>
                   </div>
-                )}
+                );
+              })}
+            </div>
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
-      {/* Modals */}
       {generateModalOpen && createPortal(
         <GenerateScheduleModal
           seasonId={Number(selectedSeasonId)}

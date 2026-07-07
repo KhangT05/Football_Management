@@ -12,5 +12,6 @@ export declare class UserController extends Controller {
     softDelete(id: number): Promise<void>;
     restore(id: number): Promise<SafeUser>;
     updateAvatar(id: number, avatar: Express.Multer.File): Promise<SafeUser>;
+    updatePassword(id: number, body: userSchema.ChangePasswordDto): Promise<void>;
 }
 //# sourceMappingURL=user.controller.d.ts.map

@@ -54,8 +54,21 @@ export const PLAYER_SELECT_WITH_SEASONS = {
                             id: true,
                             status: true,
                             group_id: true,
+                            group: {
+                                select: { id: true, name: true },
+                            },
                             season: {
-                                select: { id: true, name: true, status: true },
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    status: true,
+                                    // FIX: thêm tournament — mỗi season thuộc đúng 1 tournament
+                                    // (tournament_id required, không nullable trong schema),
+                                    // FE cần cái này để hiển thị "Giải X - Mùa Y" thay vì chỉ mùa giải.
+                                    tournament: {
+                                        select: { id: true, name: true, logo: true },
+                                    },
+                                },
                             },
                         },
                     },

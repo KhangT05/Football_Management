@@ -1,4 +1,4 @@
-import { MatchEventType, MatchStatus, PhaseFormat, PlayerPosition, Prisma } from "../generated/prisma/client.js";
+import { MatchEventType, MatchPeriod, MatchStatus, PhaseFormat, PlayerPosition, Prisma } from "../generated/prisma/client.js";
 import { MatchReportPlayerRow } from "../types/matchReport.type.js";
 import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
 import { QueryRequest } from "../types/queryable.type.js";
@@ -154,5 +154,7 @@ export declare function buildGoalsTimeline(events: {
     away: MatchReportGoalEntry[];
 };
 export declare function formatMinuteLabel(e: MatchReportGoalEntry): string;
+export declare function assertMinuteInBounds(period: MatchPeriod | null | undefined, minute: number | null | undefined, addedMinute?: number | null): void;
+export declare function assertPlayerNotSentOff(tx: Prisma.TransactionClient, matchId: number, playerId: number | null | undefined): Promise<void>;
 export {};
 //# sourceMappingURL=match.helper.d.ts.map

@@ -1,9 +1,8 @@
 import { createAppError } from '../common/app.error.js';
 import { CardColor, MatchEventType, MatchPeriod, MatchResultStatus, MatchResultType, MatchStatus, PhaseFormat, } from '../generated/prisma/client.js';
-import { EXTRA_TIME_PERIODS, PERIOD_TRANSITIONS, SCORE_DELTA_BY_TYPE, } from '../types/match.type.js';
+import { EXTRA_TIME_PERIODS, PERIOD_TRANSITIONS, SCORE_DELTA_BY_TYPE, CORRECTION_WINDOW_MS, } from '../types/match.type.js';
 import { matchForFinalizeSelect, matchForForfeitSelect } from '../types/match.queries.js';
-import { isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
-const CORRECTION_WINDOW_MS = 15 * 60 * 1000;
+import { assertMinuteInBounds, assertPlayerNotSentOff, isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn } from '../helper/match.helper.js';
 export class MatchLifecycleService {
     prisma;
     matchResultService;
@@ -62,6 +61,12 @@ export class MatchLifecycleService {
             if (match.status === MatchStatus.ongoing) {
                 if (match.home_score === null || match.away_score === null)
                     throw createAppError('CONFLICT', `Match ${matchId} chưa init score — gọi startMatch trước`);
+            }
+            assertMinuteInBounds(input.period ?? match.current_period, input.minute, input.addedMinute);
+            await assertPlayerNotSentOff(tx, matchId, input.playerId);
+            if (input.type === MatchEventType.substitution_out ||
+                input.type === MatchEventType.substitution_in) {
+                await assertPlayerNotSentOff(tx, matchId, input.subOutPlayerId);
             }
             if (input.type === MatchEventType.yellow_card && input.playerId) {
                 const existingYellow = await tx.matchEvent.findFirst({
@@ -491,6 +496,14 @@ export class MatchLifecycleService {
                 where: { id: matchId },
                 select: { home_team_id: true },
             });
+            // NEW: addEvent không có current_period fallback (input.period bắt buộc ở
+            // đây vì match đã finished, không còn "current period" ongoing) — validate
+            // trực tiếp trên input.period.
+            assertMinuteInBounds(input.period, input.minute, input.addedMinute);
+            await assertPlayerNotSentOff(tx, matchId, input.playerId);
+            if (input.subOutPlayerId) {
+                await assertPlayerNotSentOff(tx, matchId, input.subOutPlayerId);
+            }
             if (input.type === MatchEventType.yellow_card && input.playerId) {
                 const existingYellow = await tx.matchEvent.findFirst({
                     where: {
@@ -567,7 +580,14 @@ export class MatchLifecycleService {
             });
             const event = await tx.matchEvent.findUnique({
                 where: { id: eventId },
-                select: { match_id: true, player_id: true, type: true },
+                select: {
+                    match_id: true,
+                    player_id: true,
+                    type: true,
+                    minute: true,
+                    added_minute: true,
+                    period: true,
+                },
             });
             if (!event)
                 throw createAppError('NOT_FOUND', `Event ${eventId} không tồn tại`);
@@ -593,8 +613,15 @@ export class MatchLifecycleService {
                 updateData.type = input.type;
                 updateData.card_color = this._deriveCardColor(input.type) ?? null;
             }
-            if (input.playerId !== undefined)
-                updateData.player_id = input.playerId;
+            const newMinute = input.minute ?? event.minute;
+            const newAddedMinute = input.addedMinute !== undefined ? input.addedMinute : event.added_minute;
+            const newPeriod = input.period ?? event.period;
+            if (input.minute !== undefined || input.addedMinute !== undefined || input.period !== undefined) {
+                assertMinuteInBounds(newPeriod, newMinute, newAddedMinute);
+            }
+            if (input.playerId !== undefined && input.playerId !== event.player_id) {
+                await assertPlayerNotSentOff(tx, matchId, input.playerId);
+            }
             if (input.teamId !== undefined)
                 updateData.team_id = input.teamId;
             if (input.minute !== undefined)
@@ -756,6 +783,23 @@ export class MatchLifecycleService {
             if (!allowedStatuses.includes(match.status)) {
                 throw createAppError('CONFLICT', `Match ${matchId} ở '${match.status}' — không thể nhập kết quả. ` +
                     `Dùng correction window (addEvent/editScore) cho match đã finished.`);
+            }
+            if (input.scorers?.length) {
+                for (const s of input.scorers) {
+                    assertMinuteInBounds(s.period ?? null, s.minute, undefined);
+                }
+            }
+            if (input.cards?.length) {
+                for (const c of input.cards) {
+                    assertMinuteInBounds(c.period ?? null, c.minute, undefined);
+                }
+                // Không cần assertPlayerNotSentOff ở đây vì đây là batch nhập 1 lần cho match
+                // chưa có event nào từ trước (allowedStatuses bao gồm scheduled/postponed/bye) —
+                // nhưng NẾU status là ongoing/pending_official/needs_review (đã có event cũ),
+                // vẫn cần check để tránh nhập thẻ cho player đã bị đuổi từ batch trước.
+                for (const c of input.cards) {
+                    await assertPlayerNotSentOff(tx, matchId, c.playerId);
+                }
             }
             if (input.cards?.length) {
                 const yellowsInBatch = input.cards.filter(c => c.type === MatchEventType.yellow_card);

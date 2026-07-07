@@ -26,4 +26,12 @@ export const SCORE_DELTA_BY_TYPE = {
     [MatchEventType.penalty_scored]: 1,
     [MatchEventType.goal_disallowed]: -1,
 };
+export const CORRECTION_WINDOW_MS = 15 * 60 * 1000;
+export const MINUTE_BOUNDS = {
+    [MatchPeriod.first_half]: [0, 45],
+    [MatchPeriod.second_half]: [45, 90],
+    [MatchPeriod.extra_time_first]: [90, 105],
+    [MatchPeriod.extra_time_second]: [105, 120],
+};
+export const MAX_ADDED_MINUTE = 15;
 //# sourceMappingURL=match.type.js.map

@@ -1,12 +1,10 @@
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Trash2, AlertTriangle } from 'lucide-react';
 
 /**
  * EventCard — Card hiển thị 1 sự kiện trận đấu (bàn thắng, thẻ vàng, thẻ đỏ, thay người).
- * Dùng trong trang UpdateResults (admin).
  *
- * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — logic
- * filter/fallback name ở đây đã đúng. Root cause nằm ở LiveControlTab
- * (parsePlayers unwrap sai shape response). Xem LiveControlTab.jsx.
+ * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — root cause ở
+ * LiveControlTab (unwrap response). Xem LiveControlTab.jsx.
  */
 export default function EventCard({ evt, players, lineup, allEvents, onUpdate, onRemove }) {
   const getEventStyle = (type) => {
@@ -39,6 +37,29 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
     }
   };
 
+  // ── Yellow-card count per player, giới hạn TRƯỚC evt hiện tại (theo id/thời
+  // gian tạo, giống pattern substitution tracking bên dưới) — dùng để: (1) hiện
+  // badge "Thẻ vàng 2 → Đỏ" khi user chọn player đã có 1 thẻ; (2) loại player đã
+  // bị truất quyền (red hoặc yellow-2) khỏi mọi dropdown khác (goal/card/sub-out).
+  const yellowCountBefore = new Map();
+  const sentOffPlayerIds = new Set(); // đã nhận red_card HOẶC thẻ vàng thứ 2
+
+  if (allEvents) {
+    for (const e of allEvents) {
+      if (e.id === evt.id) break;
+      if (e.type === 'yellow' && e.player) {
+        const n = (yellowCountBefore.get(e.player) || 0) + 1;
+        yellowCountBefore.set(e.player, n);
+        if (n >= 2) sentOffPlayerIds.add(e.player);
+      }
+      if (e.type === 'red' && e.player) {
+        sentOffPlayerIds.add(e.player);
+      }
+    }
+  }
+
+  const isSecondYellow = evt.type === 'yellow' && evt.player && (yellowCountBefore.get(evt.player) || 0) >= 1;
+
   // Determine current players on field and on bench
   let starters = players;
   let subs = [];
@@ -70,25 +91,28 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
     }
   }
 
+  // Player bị đuổi (sentOffPlayerIds) không còn "on field" nữa dù chưa có
+  // substitution nào ghi nhận — loại khỏi field lẫn bench (không thể vào lại).
+  for (const pid of sentOffPlayerIds) {
+    currentOnFieldIds.delete(pid);
+    currentBenchIds.delete(pid);
+  }
+
   const onFieldPlayers = players.filter(p => currentOnFieldIds.has(String(p.id)));
   const benchPlayers = players.filter(p => currentBenchIds.has(String(p.id)));
 
   const renderPlayerOptions = (list) => {
     return list.map(p => {
-      // Display name nằm ở User, không phải Player/TeamPlayer — ưu tiên path
-      // qua user trước. 2 nhánh đầu cover 2 shape schema có thể có:
-      // - p.user?.name        : TeamPlayer join thẳng User (không lồng qua player)
-      // - p.player?.user?.name: TeamPlayer -> Player -> User
-      // p.name / p.player?.name giữ làm fallback cuối nếu API có denormalize sẵn.
       const name =
         p.user?.name ||
         p.player?.user?.name ||
         p.name ||
         p.player?.name ||
         `Cầu thủ #${p.player_id || p.id}`;
+      const disabled = sentOffPlayerIds.has(String(p.id));
       return (
-        <option key={p.id} value={String(p.id)}>
-          {name} ({p.jersey_number ?? p.number ?? '?'})
+        <option key={p.id} value={String(p.id)} disabled={disabled}>
+          {name} ({p.jersey_number ?? p.number ?? '?'}){disabled ? ' — đã bị truất quyền' : ''}
         </option>
       );
     });
@@ -109,6 +133,13 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
         </button>
       </div>
 
+      {isSecondYellow && (
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-2 py-1">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          Thẻ vàng thứ 2 — sẽ ghi nhận thành thẻ đỏ (truất quyền thi đấu)
+        </div>
+      )}
+
       {evt.type === 'substitution' ? (
         <div className="flex flex-col gap-2 bg-navy-dark/30 p-2 rounded-lg border border-blue-500/20">
           <div className="flex items-center gap-2">
@@ -120,7 +151,6 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
             >
               <option value="">Chọn người ra sân...</option>
               {renderPlayerOptions(onFieldPlayers)}
-              {/* Fallback if player was manually selected but not in list */}
               {evt.playerOut && !onFieldPlayers.find(p => String(p.id) === String(evt.playerOut)) && (
                 <option value={evt.playerOut}>Cầu thủ #{evt.playerOut} (đã chọn)</option>
               )}
@@ -167,7 +197,7 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
         <Clock className="w-4 h-4 opacity-70 shrink-0" />
         <input
           type="number"
-          min="1" max="120"
+          min="0" max="130"
           placeholder="Phút"
           value={evt.minute}
           onChange={e => onUpdate(evt.id, 'minute', e.target.value)}

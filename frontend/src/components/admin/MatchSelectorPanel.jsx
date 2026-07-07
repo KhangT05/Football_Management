@@ -5,24 +5,28 @@ import Pagination from '../ui/Pagination';
  * MatchSelectorPanel
  * ─────────────────────────────────────────────────────
  * Panel tìm kiếm và chọn trận đấu để điều khiển live.
- * Tách từ LiveControlTab.jsx để giảm kích thước component cha.
  *
- * @prop {Array}    matches         — danh sách trận đã lọc (scheduled + ongoing)
- * @prop {Array}    teams           — danh sách đội để tra cứu tên
- * @prop {boolean}  isLoading       — đang tải danh sách trận
- * @prop {string}   searchTerm      — giá trị ô tìm kiếm
- * @prop {Function} setSearchTerm   — setter
- * @prop {Array}    displayedMatches — trang hiện tại của matches
+ * @prop {Array}    matches              — danh sách trận đã lọc theo status + search
+ * @prop {number}   allSeasonMatchesCount — tổng số trận scheduled/ongoing TRƯỚC khi
+ *                                          áp search filter — dùng để phân biệt
+ *                                          "season không có trận" vs "search 0 kết quả"
+ * @prop {Array}    teams
+ * @prop {boolean}  isLoading
+ * @prop {string}   searchTerm
+ * @prop {Function} setSearchTerm
+ * @prop {Array}    displayedMatches
  * @prop {number}   currentPage
  * @prop {Function} setCurrentPage
  * @prop {number}   totalPages
  * @prop {string}   selectedMatchId
- * @prop {Function} onMatchSelect   — (matchId: string) => void
- * @prop {Function} onRefresh       — () => void — gọi reload danh sách
- * @prop {boolean}  isRefreshing    — nút refresh đang loading
+ * @prop {Function} onMatchSelect
+ * @prop {Function} onRefresh
+ * @prop {boolean}  isRefreshing
+ * @prop {Function} [onGoToSchedule] — callback chuyển sang tab Lịch thi đấu (optional)
  */
 export default function MatchSelectorPanel({
   matches,
+  allSeasonMatchesCount,
   teams,
   isLoading,
   searchTerm,
@@ -35,6 +39,7 @@ export default function MatchSelectorPanel({
   onMatchSelect,
   onRefresh,
   isRefreshing,
+  onGoToSchedule,
 }) {
   const fmtMatchDate = (m) => m?.scheduled_at
     ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
@@ -47,6 +52,8 @@ export default function MatchSelectorPanel({
       ?? teams.find(t => Number(t.id) === Number(match[idKey]))?.name
       ?? `Đội #${match[idKey]}`;
   };
+
+  const hasSearchTerm = searchTerm.trim().length > 0;
 
   return (
     <div className="space-y-5">
@@ -98,10 +105,41 @@ export default function MatchSelectorPanel({
         ) : matches.length === 0 ? (
           <div className="text-center py-10 border border-dashed border-navy-light rounded-2xl">
             <div className="text-3xl mb-3">🏟️</div>
-            <p className="text-gray-500 text-sm">
-              Không có trận nào đang <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc{' '}
-              <span className="text-red-400 font-bold">đang diễn ra</span>.
-            </p>
+            {/* Phân 2 case: season thật sự trống vs search filter loại hết —
+                trước đây render chung 1 message, không phân biệt được nguyên
+                nhân, dead-end không có action. */}
+            {allSeasonMatchesCount === 0 ? (
+              <>
+                <p className="text-gray-500 text-sm mb-4">
+                  Mùa giải chưa có trận nào ở trạng thái{' '}
+                  <span className="text-amber-400 font-bold">chờ diễn ra</span> hoặc{' '}
+                  <span className="text-red-400 font-bold">đang diễn ra</span>.
+                </p>
+                {onGoToSchedule && (
+                  <button
+                    onClick={onGoToSchedule}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-colors"
+                  >
+                    + Đi tới Lịch thi đấu để tạo trận
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 text-sm mb-3">
+                  Không tìm thấy trận đấu khớp với{' '}
+                  <span className="text-white font-bold">"{searchTerm}"</span>.
+                </p>
+                {hasSearchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="px-4 py-2 bg-navy-dark border border-navy-light hover:border-gray-500 text-gray-300 hover:text-white font-bold text-sm rounded-xl transition-colors"
+                  >
+                    Xoá bộ lọc
+                  </button>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <div>
@@ -115,23 +153,20 @@ export default function MatchSelectorPanel({
                   <button
                     key={m.id}
                     onClick={() => onMatchSelect(String(m.id))}
-                    className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${
-                      isSelected
+                    className={`group relative text-left p-4 rounded-2xl border transition-all duration-200 overflow-hidden ${isSelected
                         ? 'bg-blue-600/10 border-blue-500/60 shadow-lg shadow-blue-900/20'
                         : 'bg-navy border-navy-light hover:border-gray-500 hover:bg-navy-light/40'
-                    }`}
+                      }`}
                   >
-                    {/* Live pulse glow */}
                     {isLive && (
                       <div className="absolute inset-0 bg-linear-to-r from-red-600/5 to-transparent pointer-events-none" />
                     )}
 
                     <div className="flex items-center justify-between mb-3">
-                      <div className={`text-xs font-black px-2.5 py-1 rounded-full ${
-                        isLive
+                      <div className={`text-xs font-black px-2.5 py-1 rounded-full ${isLive
                           ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                           : 'bg-navy-dark text-gray-500 border border-navy-light'
-                      }`}>
+                        }`}>
                         {isLive ? (
                           <span className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />

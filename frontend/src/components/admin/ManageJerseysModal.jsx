@@ -12,8 +12,8 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
 
   const [formData, setFormData] = useState({
     type: 'home',
-    color_primary: '#ffffff',
-    color_secondary: '#000000'
+    primary_color: '#ffffff',
+    secondary_color: '#000000'
   });
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
   };
 
   const resetForm = () => {
-    setFormData({ type: 'home', color_primary: '#ffffff', color_secondary: '#000000' });
+    setFormData({ type: 'home', primary_color: '#ffffff', secondary_color: '#000000' });
   };
 
   const handleSave = async (e) => {
@@ -63,16 +63,16 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
       await jerseyApi.delete(seasonTeam.id, type);
       toast.success('Đã xóa áo đấu');
       loadJerseys();
-    } catch (_err) {
-      toast.error('Lỗi khi xóa áo đấu');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Lỗi khi xóa áo đấu');
     }
   };
 
   const handleEdit = (jersey, index) => {
     setFormData({
       type: jersey.type,
-      color_primary: jersey.color_primary || '#ffffff',
-      color_secondary: jersey.color_secondary || '#000000'
+      primary_color: jersey.primary_color || '#ffffff',
+      secondary_color: jersey.secondary_color || '#000000'
     });
     setEditingIndex(index);
   };
@@ -83,7 +83,6 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-navy border border-navy-light w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
-        {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-navy-light bg-navy-dark/50 rounded-t-2xl">
           <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Shirt className="w-5 h-5 text-emerald-400" />
@@ -97,10 +96,8 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 overflow-y-auto space-y-6">
 
-          {/* List Existing */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-gray-400">Danh sách hiện tại</h3>
             {loading ? (
@@ -115,7 +112,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md border border-white/10"
                         style={{
-                          background: `linear-gradient(135deg, ${j.color_primary} 50%, ${j.color_secondary} 50%)`
+                          background: `linear-gradient(135deg, ${j.primary_color} 50%, ${j.secondary_color} 50%)`
                         }}
                       >
                         <Shirt className="w-5 h-5 text-white drop-shadow-md" />
@@ -123,8 +120,8 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                       <div>
                         <div className="font-bold text-white uppercase text-sm">{j.type}</div>
                         <div className="text-xs text-gray-400 font-mono flex items-center gap-2">
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.color_primary }}></span> {j.color_primary}</span>
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.color_secondary }}></span> {j.color_secondary}</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.primary_color }}></span> {j.primary_color}</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: j.secondary_color }}></span> {j.secondary_color}</span>
                         </div>
                       </div>
                     </div>
@@ -140,7 +137,6 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
 
           <hr className="border-navy-light" />
 
-          {/* Form */}
           <form onSubmit={handleSave} className="space-y-4 bg-navy-dark p-4 rounded-xl border border-navy-light">
             <h3 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
               <Plus className="w-4 h-4 text-emerald-400" /> {editingIndex !== null ? 'Cập nhật' : 'Thêm mới'}
@@ -158,7 +154,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                   <option value="home">Home (Sân nhà)</option>
                   <option value="away">Away (Sân khách)</option>
                   <option value="third">Third (Mẫu thứ 3)</option>
-                  <option value="gk">Goalkeeper (Thủ môn)</option>
+                  <option value="goalkeeper">Goalkeeper (Thủ môn)</option>
                 </select>
               </div>
 
@@ -167,14 +163,14 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                 <div className="flex gap-2">
                   <input
                     type="color"
-                    value={formData.color_primary}
-                    onChange={e => setFormData({ ...formData, color_primary: e.target.value })}
+                    value={formData.primary_color}
+                    onChange={e => setFormData({ ...formData, primary_color: e.target.value })}
                     className="w-10 h-10 rounded border-0 cursor-pointer bg-transparent"
                   />
                   <input
                     type="text"
-                    value={formData.color_primary}
-                    onChange={e => setFormData({ ...formData, color_primary: e.target.value })}
+                    value={formData.primary_color}
+                    onChange={e => setFormData({ ...formData, primary_color: e.target.value })}
                     className={INPUT}
                   />
                 </div>
@@ -185,14 +181,14 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
                 <div className="flex gap-2">
                   <input
                     type="color"
-                    value={formData.color_secondary}
-                    onChange={e => setFormData({ ...formData, color_secondary: e.target.value })}
+                    value={formData.secondary_color}
+                    onChange={e => setFormData({ ...formData, secondary_color: e.target.value })}
                     className="w-10 h-10 rounded border-0 cursor-pointer bg-transparent"
                   />
                   <input
                     type="text"
-                    value={formData.color_secondary}
-                    onChange={e => setFormData({ ...formData, color_secondary: e.target.value })}
+                    value={formData.secondary_color}
+                    onChange={e => setFormData({ ...formData, secondary_color: e.target.value })}
                     className={INPUT}
                   />
                 </div>

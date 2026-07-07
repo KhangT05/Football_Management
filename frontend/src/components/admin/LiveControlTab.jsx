@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, CheckCircle2, Plus, Trash2, Activity,
+import {
+  Save, Plus, Trash2, Activity,
   Loader2, RefreshCw,
-  RotateCcw, Minus,
+  RotateCcw,
   Flag, Zap, Target, Shield, Search
 } from 'lucide-react';
 import { teamApi, matchApi, matchLineupApi } from '../../api';
@@ -31,13 +32,43 @@ const EVENT_TYPES = [
   { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
 ];
 
-// ─── Payload builders ─────────────────────────────────────────────────────────
+// Ngưỡng phút hợp lệ — chỉ là UX guard, KHÔNG thay thế validation ở BE.
+// BE (matchlifecycle.service.ts: recordEvent/addEvent/editEvent) hiện không
+// bound-check `minute` theo `period`. Cần vá riêng ở BE — đây chỉ chặn input
+// bất thường trên UI, client vẫn có thể bypass qua raw API call.
+const MAX_MINUTE = 130;
 
-function buildEventPayload(evt, teamId) {
+// ─── Second-yellow detection ────────────────────────────────────────────────
+// Local model giữ evt.type === 'yellow' cho MỌI thẻ vàng (kể cả thẻ thứ 2) để
+// UI đơn giản — effective type (yellow_card vs second_yellow) chỉ resolve tại
+// thời điểm build payload gửi BE, dựa theo thứ tự tạo event (id = Date.now()).
+function getEffectiveYellowType(evt, sideEvents) {
+  if (evt.type !== 'yellow' || !evt.player) return 'yellow';
+  const earlierYellowSamePlayer = sideEvents.some(
+    e => e.type === 'yellow' && e.player === evt.player && e.id < evt.id
+  );
+  return earlierYellowSamePlayer ? 'second_yellow' : 'yellow';
+}
+
+function countYellowsByPlayer(sideEvents) {
+  const map = new Map();
+  for (const e of sideEvents) {
+    if (e.type !== 'yellow' || !e.player) continue;
+    map.set(e.player, (map.get(e.player) || 0) + 1);
+  }
+  return map;
+}
+
+// ─── Payload builders ─────────────────────────────────────────────────────────
+// NHẬN effectiveType riêng thay vì đọc evt.type trực tiếp — bắt buộc để
+// second-yellow thật sự đi thành type='second_yellow' lên BE, khớp với badge
+// cảnh báo đã hiển thị trong EventCard.jsx.
+function buildEventPayload(evt, teamId, effectiveType) {
   const base = { teamId, minute: Number(evt.minute) || 1 };
-  switch (evt.type) {
+  switch (effectiveType) {
     case 'goal': return [{ ...base, type: 'goal', playerId: evt.player || undefined }];
     case 'yellow': return [{ ...base, type: 'yellow_card', playerId: evt.player || undefined }];
+    case 'second_yellow': return [{ ...base, type: 'second_yellow', playerId: evt.player || undefined }];
     case 'red': return [{ ...base, type: 'red_card', playerId: evt.player || undefined }];
     case 'substitution': return [
       { ...base, type: 'substitution_in', playerId: evt.playerIn || undefined },
@@ -58,19 +89,14 @@ function countEvents(events) {
 
 // ─── Robust API response unwrapping ────────────────────────────────────────
 // PREV BUG: `typeof res?.status === 'boolean'` giả định custom wrapper.
-// axios thật trả res.status = number (200) → luôn rơi vào nhánh else,
-// payload = toàn bộ response object thay vì res.data → parse ra [] mọi lúc,
-// bất kể team nào (không phải lỗi riêng 1 bên).
-//
+// axios thật trả res.status = number (200) → luôn rơi vào else, payload =
+// toàn bộ response object → parse ra [] mọi lúc.
 // Fix: thử tuần tự các shape phổ biến, không đoán qua typeof status.
-//   1. axios response  → res.data.data (paginated) hoặc res.data (raw array)
-//   2. đã unwrap sẵn   → res.data (paginated) hoặc res (raw array)
-// Log cảnh báo nếu không match shape nào để dễ chẩn đoán tiếp trên thực tế.
 function unwrapListResponse(res, label) {
   const candidates = [
     res?.data?.data,   // axios response, paginated envelope
-    res?.data,         // axios response, raw array  OR  already-unwrapped paginated
-    res,               // already-unwrapped raw array
+    res?.data,         // axios response, raw array HOẶC đã-unwrap paginated
+    res,               // đã-unwrap raw array
   ];
   for (const c of candidates) {
     if (Array.isArray(c)) return c;
@@ -81,7 +107,7 @@ function unwrapListResponse(res, label) {
 
 // ─── Main Component: LiveControlTab ──────────────────────────────────────────
 
-export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId }) {
+export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId, onGoToSchedule }) {
   const toast = useToastStore();
   const { seasons } = useSeasonStore();
   const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
@@ -107,18 +133,26 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Danh sách trận "khả dụng cho live control": chỉ scheduled/ongoing.
+  // Tách riêng thành statusFilteredMatches (chưa áp search) để phân biệt
+  // "season không có trận nào" vs "search filter loại hết" ở MatchSelectorPanel.
+  const statusFilteredMatches = useMemo(
+    () => allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing'),
+    [allSeasonMatches]
+  );
+
   const matches = useMemo(() => {
-    let list = allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
-    if (searchTerm) {
-      const lower = searchTerm.toLowerCase();
-      list = list.filter(m => {
-        const hName = m.home_team?.name || teams.find(t => Number(t.id) === Number(m.home_team_id))?.name || '';
-        const aName = m.away_team?.name || teams.find(t => Number(t.id) === Number(m.away_team_id))?.name || '';
-        return hName.toLowerCase().includes(lower) || aName.toLowerCase().includes(lower);
-      });
-    }
-    return list;
-  }, [allSeasonMatches, searchTerm, teams]);
+    if (!searchTerm) return statusFilteredMatches;
+    const lower = searchTerm.toLowerCase();
+    return statusFilteredMatches.filter(m => {
+      const hName = m.home_team?.name ?? teams.find(t => Number(t.id) === Number(m.home_team_id))?.name;
+      const aName = m.away_team?.name ?? teams.find(t => Number(t.id) === Number(m.away_team_id))?.name;
+      // teams store chưa load xong (race với fetchTeams ở trên) → không loại
+      // kết quả, tránh false-negative khi search chạy trước khi tên resolve.
+      if (hName == null && aName == null) return true;
+      return (hName ?? '').toLowerCase().includes(lower) || (aName ?? '').toLowerCase().includes(lower);
+    });
+  }, [statusFilteredMatches, searchTerm, teams]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -131,7 +165,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     [matches, selectedMatchId],
   );
 
-  // ── Players & Lineups ─────────────────────────────────────────────────────────────────
+  // ── Players & Lineups ─────────────────────────────────────────────────────
   const [homePlayers, setHomePlayers] = useState([]);
   const [awayPlayers, setAwayPlayers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
@@ -151,10 +185,9 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         ]);
         if (cancelled) return;
 
-        // FIX: trước đây lỗi fetch chỉ log console, UI không báo gì → nhìn
-        // giống "dropdown rỗng do bug logic" trong khi thực tế là request
-        // fail/team không có player. Surface ra toast để phân biệt được
-        // ngay data issue vs UI bug, không phải mò console mỗi lần.
+        // Surface fetch failure ra toast — trước đây chỉ log console, UI im
+        // lặng → nhìn giống "dropdown rỗng do bug logic" trong khi thực tế là
+        // request fail. Phân biệt rõ data issue vs UI bug.
         if (homeRes.status === 'rejected') {
           console.error(`[LiveControlTab] getPlayers(home_team_id=${selectedMatch.home_team_id}) failed:`, homeRes.reason);
           toast.error(`Không tải được danh sách cầu thủ đội nhà (team_id=${selectedMatch.home_team_id}).`);
@@ -167,9 +200,9 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         const parsedHome = homeRes.status === 'fulfilled' ? unwrapListResponse(homeRes.value, 'homePlayers') : [];
         const parsedAway = awayRes.status === 'fulfilled' ? unwrapListResponse(awayRes.value, 'awayPlayers') : [];
 
-        // FIX: fetch fulfilled nhưng trả 0 phần tử là data issue (team chưa
-        // có player trong DB) chứ không phải parse lỗi — cần phân biệt rõ
-        // trong log để không tốn thời gian debug lại unwrapListResponse.
+        // Fetch fulfilled nhưng trả 0 phần tử = data issue (team chưa có
+        // player trong DB), không phải parse lỗi — log riêng để không tốn
+        // thời gian debug lại unwrapListResponse.
         if (homeRes.status === 'fulfilled' && parsedHome.length === 0) {
           console.warn(`[LiveControlTab] home_team_id=${selectedMatch.home_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
         }
@@ -182,8 +215,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
         const allLineups = lineupRes.status === 'fulfilled' ? unwrapListResponse(lineupRes.value, 'lineups') : [];
 
-        // Coerce cả 2 vế về Number — tránh lệch string/number giữa lineup.team_id
-        // (thường đi qua path serialize khác) và match.home_team_id/away_team_id.
+        // Coerce cả 2 vế về Number — tránh lệch string/number giữa
+        // lineup.team_id và match.home_team_id/away_team_id.
         const homeTeamId = Number(selectedMatch.home_team_id);
         const awayTeamId = Number(selectedMatch.away_team_id);
         setLineups({
@@ -198,16 +231,20 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     return () => { cancelled = true; };
   }, [selectedMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Score & events ──────────────────────────────────────────────────────────
-  const [homeScore, setHomeScore] = useState(0);
-  const [awayScore, setAwayScore] = useState(0);
+  // ── Events ──────────────────────────────────────────────────────────────────
+  // Score KHÔNG phải state riêng — derive từ homeEvents/awayEvents (type='goal')
+  // để KHÔNG THỂ desync với BE. BE luôn tính lại score từ matchEvent table qua
+  // _computeScoreFromEvents, không có chỗ nhận raw score override khi match
+  // đang ongoing/event-driven.
   const [homeEvents, setHomeEvents] = useState([]);
   const [awayEvents, setAwayEvents] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
 
+  const homeGoalCount = useMemo(() => homeEvents.filter(e => e.type === 'goal').length, [homeEvents]);
+  const awayGoalCount = useMemo(() => awayEvents.filter(e => e.type === 'goal').length, [awayEvents]);
+
   const [matchStatus, setMatchStatus] = useState('');
 
-  const [isStarting, setIsStarting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
@@ -229,7 +266,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const _resetForm = () => {
     setSelectedMatchId('');
-    setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
     setMatchStatus('');
@@ -237,21 +273,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const handleMatchSelect = (matchId) => {
     setSelectedMatchId(matchId);
-    setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
-  };
-
-  const handleScoreChange = (side, val) => {
-    const n = Math.max(0, parseInt(val) || 0);
-    if (side === 'home') setHomeScore(n); else setAwayScore(n);
-    setIsDirty(true);
-  };
-
-  const updateScoreDelta = (side, delta) => {
-    if (side === 'home') setHomeScore(prev => Math.max(0, prev + delta));
-    else setAwayScore(prev => Math.max(0, prev + delta));
-    setIsDirty(true);
   };
 
   const addEvent = (side, type) => {
@@ -269,7 +292,15 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   };
 
   const updateEvent = (side, id, field, value) => {
-    const updater = evts => evts.map(e => e.id === id ? { ...e, [field]: value } : e);
+    // Guard phút: strip non-digit + clamp 0..MAX_MINUTE ngay tại input.
+    // Chỉ là UX guard — BE hiện KHÔNG validate minute theo period, client
+    // luôn có thể bypass qua raw API call, cần vá riêng ở BE.
+    let v = value;
+    if (field === 'minute') {
+      const digits = String(value).replace(/\D/g, '');
+      v = digits === '' ? '' : String(Math.min(MAX_MINUTE, Math.max(0, Number(digits))));
+    }
+    const updater = evts => evts.map(e => e.id === id ? { ...e, [field]: v } : e);
     if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
     setIsDirty(true);
   };
@@ -286,14 +317,23 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   };
 
   const validate = () => {
-    const homeGoalCount = homeEvents.filter(e => e.type === 'goal').length;
-    const awayGoalCount = awayEvents.filter(e => e.type === 'goal').length;
-    if (homeGoalCount !== homeScore)
-      return `Đội nhà có ${homeScore} bàn nhưng chỉ có ${homeGoalCount} sự kiện bàn thắng.`;
-    if (awayGoalCount !== awayScore)
-      return `Đội khách có ${awayScore} bàn nhưng chỉ có ${awayGoalCount} sự kiện bàn thắng.`;
     if (homeEvents.some(e => !e.minute) || awayEvents.some(e => !e.minute))
       return 'Vui lòng điền phút cho tất cả sự kiện.';
+
+    // Chặn thẻ vàng thứ 3+ cho cùng 1 cầu thủ trong cùng trận — sau thẻ vàng
+    // thứ 2 (=second_yellow=đỏ), cầu thủ đã bị truất quyền thi đấu. BE
+    // (recordEvent) chỉ chặn được lần đầu-vs-lần-hai (findFirst theo
+    // type='yellow_card'), không biết gì về "thẻ thứ 3" vì theo model BE,
+    // thẻ thứ 2 đã là type khác (second_yellow) — guard này phải nằm ở FE
+    // trước khi build payload.
+    for (const [label, events] of [['Đội nhà', homeEvents], ['Đội khách', awayEvents]]) {
+      const yellowCounts = countYellowsByPlayer(events);
+      for (const [, count] of yellowCounts) {
+        if (count > 2) {
+          return `${label}: một cầu thủ đã có ${count} thẻ vàng — cầu thủ bị truất quyền sau thẻ vàng thứ 2, không thể nhận thêm thẻ.`;
+        }
+      }
+    }
     return '';
   };
 
@@ -301,7 +341,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     const pushSide = async (events, teamId) => {
       for (const evt of events) {
         if (evt.isSaved) continue;
-        const payloads = buildEventPayload(evt, teamId);
+        const effectiveType = evt.type === 'yellow' ? getEffectiveYellowType(evt, events) : evt.type;
+        const payloads = buildEventPayload(evt, teamId, effectiveType);
         for (const payload of payloads) {
           try { await matchApi.recordEvent(selectedMatch.id, payload); }
           catch (err) { console.warn('[syncEvents] recordEvent failed:', payload, err); }
@@ -313,24 +354,18 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     await pushSide(awayEvents, selectedMatch.away_team_id);
   };
 
-  const handleStartMatch = async () => {
-    if (!selectedMatch) return;
-    setIsStarting(true);
-    try {
-      await matchApi.startMatch(selectedMatch.id);
-      setMatchStatus('ongoing');
-      toast.success('Trận đấu đã bắt đầu!');
-      handleRefresh();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể bắt đầu trận đấu.');
-    } finally { setIsStarting(false); }
-  };
-
   const handleSaveDraft = async () => {
     const err = validate();
     if (err) { toast.error(err); return; }
     setIsSavingDraft(true);
     try {
+      // Match còn 'scheduled' → chuyển ongoing trước khi BE chấp nhận event
+      // (giả định BE gate recordEvent theo status !== 'scheduled'; nếu BE
+      // không gate, gọi startMatch dư vẫn no-op an toàn — verify lại BE).
+      if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
+        await matchApi.startMatch(selectedMatch.id);
+        setMatchStatus('ongoing');
+      }
       await syncUnsavedEvents();
       toast.info('Đã đồng bộ sự kiện (chưa xác nhận kết quả).');
       setIsDirty(false);
@@ -344,12 +379,20 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     if (err) { toast.error(err); return; }
     setIsFinishing(true);
     try {
-      // 1. Sync all unsaved events (goals, cards, subs) first while match is still ongoing
+      // Gộp start+finish thành 1 action duy nhất — bỏ bước "Bắt đầu" tách
+      // riêng theo yêu cầu. Nếu match vẫn 'scheduled', chuyển ongoing trước
+      // khi sync event + finalize, để không phá gate status ở BE.
+      if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
+        await matchApi.startMatch(selectedMatch.id);
+      }
+
+      // 1. Sync toàn bộ sự kiện chưa lưu (goal, thẻ, thay người).
       await syncUnsavedEvents();
 
-      // 2. Finalize the match result with the score
+      // 2. Finalize kết quả — score lấy từ goal count vừa sync, không phải
+      // input tay, nên luôn khớp với event list vừa gửi lên.
       await matchApi.adminRecordResult(selectedMatch.id, {
-        homeScore: Number(homeScore), awayScore: Number(awayScore),
+        homeScore: homeGoalCount, awayScore: awayGoalCount,
         resultType: 'full_time',
       });
 
@@ -363,16 +406,17 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   };
 
   const handleReset = () => {
-    setHomeScore(0); setAwayScore(0);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
     toast.info('Đã đặt lại form.');
   };
 
-  const isOngoing = matchStatus === 'ongoing' || matchStatus === 'pending_official' || matchStatus === 'needs_review';
-  const isScheduled = matchStatus === 'scheduled' || matchStatus === 'postponed';
+  // isEditable thay cho isOngoing/isScheduled riêng lẻ — không còn nút Bắt
+  // đầu tách biệt nên mọi status "chưa xong" (scheduled/postponed/ongoing/
+  // pending_official/needs_review) đều cho phép thao tác event như nhau.
   const isFinished = matchStatus === 'finished';
   const isProtested = matchStatus === 'protested';
+  const isEditable = !isFinished && !isProtested;
 
   const handleModalSuccess = (msg) => {
     toast.success(msg);
@@ -380,7 +424,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     handleRefresh();
   };
 
-  // ── Formatted scheduled_at ─────────────────────────────────────────────────
   const fmtMatchDate = (m) => m?.scheduled_at
     ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
     : 'TBD';
@@ -389,9 +432,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   return (
     <>
-      <div className="space-y-5 animate-fade-in">
+      <div className="space-y-4 animate-fade-in">
         <MatchSelectorPanel
           matches={matches}
+          allSeasonMatchesCount={statusFilteredMatches.length}
           teams={teams}
           isLoading={isLoadingMatches}
           searchTerm={searchTerm}
@@ -404,150 +448,70 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
           onMatchSelect={handleMatchSelect}
           onRefresh={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
           isRefreshing={isLoadingMatches}
+          onGoToSchedule={onGoToSchedule}
         />
 
         {/* ── Main Workspace ── */}
         {selectedMatch && (
-          <div className="space-y-5">
+          <div className="space-y-4">
 
-            {/* ── Live Scoreboard ── */}
-            <div className="relative bg-navy border border-navy-light rounded-3xl overflow-hidden shadow-2xl shadow-black/40">
-              {/* Top accent line */}
-              <div className={`h-1 w-full ${isOngoing ? 'bg-linear-to-r from-red-600 via-orange-500 to-red-600 animate-gradient' : 'bg-linear-to-r from-blue-600 via-indigo-500 to-blue-600'}`} />
+            {/* ── Compact Scoreboard ── */}
+            <div className="relative bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg shadow-black/30">
+              <div className={`h-1 w-full ${matchStatus === 'ongoing' ? 'bg-linear-to-r from-red-600 via-orange-500 to-red-600 animate-gradient' : 'bg-linear-to-r from-blue-600 via-indigo-500 to-blue-600'}`} />
 
-              {/* BG glow */}
-              <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
-
-              <div className="p-5 sm:p-8 relative">
-                {/* Status row */}
-                <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-center gap-2 mb-2.5 text-xs">
                   <StatusBadge status={matchStatus || selectedMatch.status} />
-                  <span className="text-gray-600 text-xs">•</span>
-                  <span className="text-gray-500 text-xs font-medium">{fmtMatchDate(selectedMatch)}</span>
+                  <span className="text-gray-600">•</span>
+                  <span className="text-gray-500">{fmtMatchDate(selectedMatch)}</span>
                   {selectedMatch.venue?.name && (
                     <>
-                      <span className="text-gray-600 text-xs">•</span>
-                      <span className="text-gray-500 text-xs">{selectedMatch.venue.name}</span>
+                      <span className="text-gray-600">•</span>
+                      <span className="text-gray-500 hidden sm:inline">{selectedMatch.venue.name}</span>
                     </>
                   )}
                 </div>
 
-                {/* Teams + Score */}
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
-
-                  {/* Home Team */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-2xl sm:text-4xl shadow-lg shadow-blue-900/40 border-2 border-white/10">
+                <div className="flex items-center justify-center gap-3 sm:gap-6">
+                  <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                    <span className="font-black text-white text-sm truncate">{getHomeName()}</span>
+                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-sm shrink-0">
                       {getHomeName()[0]}
                     </div>
-                    <span className="font-black text-white text-sm sm:text-base text-center line-clamp-2 leading-tight">
-                      {getHomeName()}
-                    </span>
-                    {/* +/- controls */}
-                    <div className="flex items-center gap-1 bg-navy-dark border border-navy-light rounded-full p-1">
-                      <button onClick={() => updateScoreDelta('home', -1)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => updateScoreDelta('home', 1)} className="w-8 h-8 rounded-full flex items-center justify-center text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-all">
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
                   </div>
 
-                  {/* Score */}
-                  <div className="flex flex-col items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <input
-                        type="number" min="0" max="99" value={homeScore}
-                        onChange={e => handleScoreChange('home', e.target.value)}
-                        className="w-14 h-18 sm:w-20 sm:h-24 text-center text-4xl sm:text-6xl font-black bg-navy-dark border-2 border-navy-light rounded-2xl focus:border-blue-500 outline-none transition-all text-white shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-3xl sm:text-4xl font-black text-gray-700">–</span>
-                      </div>
-                      <input
-                        type="number" min="0" max="99" value={awayScore}
-                        onChange={e => handleScoreChange('away', e.target.value)}
-                        className="w-14 h-18 sm:w-20 sm:h-24 text-center text-4xl sm:text-6xl font-black bg-navy-dark border-2 border-navy-light rounded-2xl focus:border-orange-500 outline-none transition-all text-white shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleReset}
-                      className="flex items-center gap-1 py-1.5 px-4 bg-navy-dark hover:bg-navy-light text-gray-500 hover:text-gray-300 border border-navy-light rounded-xl text-xs font-bold transition-colors"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Đặt lại
-                    </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-2xl sm:text-3xl font-black text-white w-7 text-center">{homeGoalCount}</span>
+                    <span className="text-lg font-black text-gray-700">–</span>
+                    <span className="text-2xl sm:text-3xl font-black text-white w-7 text-center">{awayGoalCount}</span>
                   </div>
 
-                  {/* Away Team */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-linear-to-br from-orange-600 to-amber-700 flex items-center justify-center text-white font-black text-2xl sm:text-4xl shadow-lg shadow-orange-900/40 border-2 border-white/10">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-orange-600 to-amber-700 flex items-center justify-center text-white font-black text-sm shrink-0">
                       {getAwayName()[0]}
                     </div>
-                    <span className="font-black text-white text-sm sm:text-base text-center line-clamp-2 leading-tight">
-                      {getAwayName()}
-                    </span>
-                    <div className="flex items-center gap-1 bg-navy-dark border border-navy-light rounded-full p-1">
-                      <button onClick={() => updateScoreDelta('away', -1)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => updateScoreDelta('away', 1)} className="w-8 h-8 rounded-full flex items-center justify-center text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-all">
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <span className="font-black text-white text-sm truncate">{getAwayName()}</span>
                   </div>
                 </div>
 
-                {/* Match Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                  {isScheduled && (
-                    <button
-                      onClick={handleStartMatch}
-                      disabled={isStarting}
-                      className="flex-1 flex items-center justify-center gap-2.5 py-4 px-6 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 text-white font-black rounded-2xl shadow-lg shadow-emerald-900/40 transition-all uppercase tracking-wider text-sm"
-                    >
-                      {isStarting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Activity className="w-5 h-5" />}
-                      Bắt đầu trận đấu
+                {isEditable && (
+                  <div className="mt-3 pt-3 border-t border-navy-light flex flex-wrap gap-2 justify-center">
+                    <button onClick={handleReset} className="flex items-center gap-1 py-1.5 px-3 bg-navy-dark hover:bg-navy-light text-gray-500 hover:text-gray-300 border border-navy-light rounded-lg text-xs font-bold transition-colors">
+                      <RotateCcw className="w-3 h-3" /> Đặt lại
                     </button>
-                  )}
-
-                  {isOngoing && (
-                    <button
-                      onClick={handleFinishMatch}
-                      disabled={isFinishing}
-                      className="flex-1 flex items-center justify-center gap-2.5 py-4 px-6 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60 text-white font-black rounded-2xl shadow-lg shadow-blue-900/40 transition-all uppercase tracking-wider text-sm"
-                    >
-                      {isFinishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Flag className="w-5 h-5" />}
-                      Xác nhận kết quả
-                    </button>
-                  )}
-
-                  {isFinished && (
-                    <div className="flex-1 flex items-center justify-center gap-2.5 py-4 px-6 bg-navy border border-emerald-500/30 text-emerald-400 font-black rounded-2xl text-sm">
-                      <CheckCircle2 className="w-5 h-5" /> Trận đã kết thúc
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Advanced Match Controls ── */}
-                <div className="mt-4 pt-4 border-t border-navy-light flex flex-wrap gap-2 justify-center">
-                  {(isScheduled || isOngoing) && (
-                    <>
-                      <button onClick={() => setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
-                      <button onClick={() => setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
-                    </>
-                  )}
-                  {(isFinished || isProtested) && (
-                    <>
-                      <button onClick={() => setActiveModal('appeal')} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-bold border border-purple-500/20 transition-colors">Kháng cáo</button>
-                      <button onClick={() => setActiveModal('protest')} className="px-3 py-1.5 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 rounded-lg text-xs font-bold border border-pink-500/20 transition-colors">Khiếu nại</button>
-                      {isProtested && (
-                        <button onClick={() => setActiveModal('resolve')} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-xs font-bold border border-emerald-500/20 transition-colors">Giải quyết Khiếu nại</button>
-                      )}
-                    </>
-                  )}
-                </div>
+                    <button onClick={() => setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
+                    <button onClick={() => setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
+                  </div>
+                )}
+                {(isFinished || isProtested) && (
+                  <div className="mt-3 pt-3 border-t border-navy-light flex flex-wrap gap-2 justify-center">
+                    <button onClick={() => setActiveModal('appeal')} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-bold border border-purple-500/20 transition-colors">Kháng cáo</button>
+                    <button onClick={() => setActiveModal('protest')} className="px-3 py-1.5 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 rounded-lg text-xs font-bold border border-pink-500/20 transition-colors">Khiếu nại</button>
+                    {isProtested && (
+                      <button onClick={() => setActiveModal('resolve')} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-xs font-bold border border-emerald-500/20 transition-colors">Giải quyết Khiếu nại</button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -580,7 +544,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
           </div>
         )}
 
-        {/* ── Empty state ── */}
+        {/* ── Empty state (đã có match được chọn xong, không có match nào chọn) ── */}
         {!selectedMatch && effectiveSeasonId && !isLoadingMatches && matches.length > 0 && (
           <div className="text-center py-16 border border-dashed border-navy-light rounded-3xl">
             <div className="text-5xl mb-4">👆</div>
@@ -590,58 +554,41 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
       </div>
 
-      {/* ── Sticky Bottom Action Bar ── */}
+      {/* ── Sticky Bottom Action Bar ──
+          Compact: bỏ block score/goal/sub lặp lại (đã có ở scoreboard phía
+          trên) — chỉ giữ 1 dòng mini-stat (ẩn mobile) + trạng thái dirty +
+          action buttons. Padding/icon giảm để bar thấp hơn (~40px thay vì
+          ~64px), tránh che nội dung bên dưới không cần thiết. */}
       {selectedMatch && !isFinished && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-light bg-navy/80 backdrop-blur-xl px-4 py-3 sm:px-6">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            {/* Summary */}
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-400">
-                <Target className="w-4 h-4 text-emerald-400" />
-                <span className="font-black text-white">{homeScore}</span>
-                <span className="text-gray-600">–</span>
-                <span className="font-black text-white">{awayScore}</span>
-              </div>
-              <div className="text-gray-600 hidden sm:block">•</div>
-              <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
-                <span>⚽ {homeEvents.filter(e => e.type === 'goal').length + awayEvents.filter(e => e.type === 'goal').length} bàn</span>
-                <span>🟨 {homeEvents.filter(e => e.type === 'yellow').length + awayEvents.filter(e => e.type === 'yellow').length} thẻ vàng</span>
-                <span>🔄 {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length} thay</span>
-              </div>
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-light bg-navy/90 backdrop-blur-xl px-3 py-2 sm:px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
+              <span>⚽ {homeGoalCount + awayGoalCount}</span>
+              <span className="text-gray-700">·</span>
+              <span>🔄 {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length}</span>
+              {isDirty && <span className="ml-1 text-amber-400/80 font-semibold">• chưa lưu</span>}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              {isDirty && isOngoing && (
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {isDirty && isEditable && (
                 <button
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-navy-dark hover:bg-navy-light border border-navy-light hover:border-gray-500 text-gray-300 hover:text-white font-bold rounded-xl transition-all disabled:opacity-40 text-sm"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light hover:border-gray-500 text-gray-300 hover:text-white font-bold rounded-lg transition-all disabled:opacity-40 text-xs"
                 >
-                  {isSavingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   Lưu nháp
                 </button>
               )}
 
-              {isOngoing && (
+              {isEditable && (
                 <button
                   onClick={handleFinishMatch}
                   disabled={isFinishing}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-900/40 text-sm"
+                  className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-black rounded-lg transition-all shadow-md shadow-blue-900/30 text-xs"
                 >
-                  {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Flag className="w-4 h-4" />}
+                  {isFinishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}
                   Xác nhận
-                </button>
-              )}
-
-              {isScheduled && (
-                <button
-                  onClick={handleStartMatch}
-                  disabled={isStarting}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-black rounded-xl transition-all shadow-lg shadow-emerald-900/40 text-sm"
-                >
-                  {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                  Bắt đầu
                 </button>
               )}
             </div>
@@ -649,7 +596,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         </div>
       )}
 
-      {/* Advanced Control Modals */}
       <ForfeitMatchModal isOpen={activeModal === 'forfeit'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
@@ -673,42 +619,40 @@ function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers
 
   return (
     <div className="bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg flex flex-col">
-      {/* Header */}
-      <div className={`bg-linear-to-r ${headerGradient} border-b px-5 py-4`}>
-        <div className="flex items-center gap-3 mb-3">
-          <div className={`w-9 h-9 rounded-xl bg-linear-to-br ${avatarGradient} flex items-center justify-center text-white font-black text-base shadow-md shrink-0`}>
+      <div className={`bg-linear-to-r ${headerGradient} border-b px-4 py-3`}>
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className={`w-8 h-8 rounded-xl bg-linear-to-br ${avatarGradient} flex items-center justify-center text-white font-black text-sm shadow-md shrink-0`}>
             {title[0]}
           </div>
-          <h3 className={`font-black text-white text-base uppercase tracking-wide line-clamp-1`}>
+          <h3 className="font-black text-white text-sm uppercase tracking-wide line-clamp-1">
             {title}
           </h3>
         </div>
 
-        {/* Event counters */}
-        <div className="grid grid-cols-4 gap-1.5">
+        {/* Bỏ ô đếm Vàng — chỉ giữ Bàn / Đỏ / Thay. Thẻ vàng vẫn track ngầm
+            trong `events` cho logic thẻ-vàng-thứ-2 + validate, chỉ ẩn khỏi UI. */}
+        <div className="grid grid-cols-3 gap-1.5">
           {[
             { icon: '⚽', val: c.goals, label: 'Bàn', color: 'emerald' },
-            { icon: '🟨', val: c.yellow, label: 'Vàng', color: 'yellow' },
             { icon: '🟥', val: c.red, label: 'Đỏ', color: 'red' },
             { icon: '🔄', val: c.subs, label: 'Thay', color: 'blue' },
           ].map(({ icon, val, label, color }) => (
-            <div key={label} className={`flex flex-col items-center py-2 rounded-xl bg-${color}-500/10 border border-${color}-500/20`}>
-              <span className="text-base">{icon}</span>
+            <div key={label} className={`flex flex-col items-center py-1.5 rounded-lg bg-${color}-500/10 border border-${color}-500/20`}>
+              <span className="text-sm">{icon}</span>
               <span className={`text-sm font-black text-${color}-400`}>{val}</span>
-              <span className={`text-xs text-${color}-500/70`}>{label}</span>
+              <span className={`text-[10px] text-${color}-500/70`}>{label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Add Buttons */}
-      <div className="px-4 pt-4 pb-3 border-b border-navy-light">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="px-3 pt-3 pb-2.5 border-b border-navy-light">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           {EVENT_TYPES.map(et => (
             <button
               key={et.key}
               onClick={() => onAdd(et.key)}
-              className={`py-2.5 border rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${et.cls}`}
+              className={`py-2 border rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${et.cls}`}
             >
               <span className="text-sm">{et.icon}</span>
               <span className="hidden sm:inline">{et.label}</span>
@@ -718,8 +662,7 @@ function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers
         </div>
       </div>
 
-      {/* Events List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[400px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-navy-light [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[380px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-navy-light [&::-webkit-scrollbar-thumb]:rounded-full">
         {loadingPlayers ? (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
             <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />

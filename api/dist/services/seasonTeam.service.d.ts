@@ -1,4 +1,4 @@
-import { PrismaClient, Phase } from "../generated/prisma/client.js";
+import { PrismaClient, SeasonTeamStatus, SeasonStatus, Phase } from "../generated/prisma/client.js";
 import { AdminAddSeasonTeamDto, AssignGroupDto, SelfRegisterSeasonTeamDto, UpdateSeasonTeamStatusDto } from "../dtos/seasonTeam.schema.js";
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
@@ -62,6 +62,35 @@ export declare class SeasonTeamService {
      * luôn đúng, không còn phụ thuộc vào default của DB.
      */
     private createOrReactivate;
+    /**
+     * Danh sách team đã đăng ký 1 season cụ thể, kèm thông tin tournament +
+     * season (dùng cho trang "Quản lý Mùa giải & Bốc thăm" — trước đây FE gọi
+     * nhầm teamApi.getTeams() không filter season_id, trả về TOÀN BỘ team
+     * trong hệ thống thay vì chỉ team đã đăng ký season này).
+     *
+     * Mặc định chỉ trả status=approved (đội đã duyệt, đủ điều kiện bốc thăm/
+     * xếp bảng) — muốn lấy cả pending thì truyền statuses tường minh.
+     */
+    listBySeasonWithTeamInfo(seasonId: number, statuses?: SeasonTeamStatus[]): Promise<{
+        season: {
+            id: number;
+            name: string;
+            status: SeasonStatus;
+            tournament: {
+                id: number;
+                name: string;
+                logo: string | null;
+            };
+        };
+        teams: {
+            season_team_id: number;
+            team_id: number;
+            team_name: string;
+            team_logo: string | null;
+            status: SeasonTeamStatus;
+            group_id: number | null;
+        }[];
+    }>;
     getOrCreateGroupPhase(seasonId: number): Promise<Phase>;
 }
 //# sourceMappingURL=seasonTeam.service.d.ts.map

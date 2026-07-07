@@ -176,7 +176,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Pick_User.Exclude_keyofUser.password__": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"created_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"email":{"dataType":"string","required":true},"phone":{"dataType":"string","required":true},"email_verified":{"dataType":"boolean","required":true},"email_verified_at":{"dataType":"datetime","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"created_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"email":{"dataType":"string","required":true},"phone":{"dataType":"string","required":true},"avatar":{"dataType":"string","required":true},"email_verified":{"dataType":"boolean","required":true},"email_verified_at":{"dataType":"datetime","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Omit_User.password_": {
@@ -511,6 +511,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonTeamWithRelations": {
         "dataType": "refObject",
         "properties": {
@@ -525,7 +530,7 @@ const models: TsoaRoute.Models = {
             "deleted_at": {"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},
             "is_active": {"dataType":"boolean","required":true},
             "seed": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "season": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},
+            "season": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament":{"dataType":"nestedObjectLiteral","nestedProperties":{"logo":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"status":{"ref":"SeasonStatus","required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},
             "team": {"dataType":"nestedObjectLiteral","nestedProperties":{"logo":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},
             "user": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"email":{"dataType":"string","required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
             "group": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
@@ -596,11 +601,6 @@ const models: TsoaRoute.Models = {
     "PhaseStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["in_progress"]},{"dataType":"enum","enums":["locked"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "SeasonStatus": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonListItem": {
@@ -873,7 +873,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdatePlayerSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"avatar":{"dataType":"string"},"nationality":{"dataType":"string"},"weight":{"dataType":"double"},"height":{"dataType":"double"},"date_of_birth":{"dataType":"datetime"},"position":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}]}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"nationality":{"dataType":"string"},"weight":{"dataType":"double"},"height":{"dataType":"double"},"date_of_birth":{"dataType":"datetime"},"position":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}]},"avatar":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdatePlayerDto": {

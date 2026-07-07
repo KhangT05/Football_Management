@@ -45,6 +45,10 @@ let UserController = class UserController extends Controller {
             throw createAppError("VALIDATION_ERROR", "Thiếu file avatar");
         return this.service.updateAvatar(id, avatar);
     }
+    async updatePassword(id, body) {
+        this.setStatus(204);
+        return this.service.updatePassword(id, body.currentPassword, body.newPassword);
+    }
 };
 __decorate([
     Get("/"),
@@ -103,6 +107,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "updateAvatar", null);
+__decorate([
+    Patch("{id}/password"),
+    SuccessResponse(204, "OK"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "updatePassword", null);
 UserController = __decorate([
     Security("jwt", ["admin", "user", "organizing"]),
     Route("users"),
