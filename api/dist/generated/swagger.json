@@ -1525,6 +1525,96 @@
                 ],
                 "type": "object"
             },
+            "PlayerCareerStatEntry": {
+                "properties": {
+                    "season_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_name": {
+                        "type": "string"
+                    },
+                    "matches_played": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "goals": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "assists": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "yellow_cards": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "red_cards": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "season_id",
+                    "season_name",
+                    "matches_played",
+                    "goals",
+                    "assists",
+                    "yellow_cards",
+                    "red_cards"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "PlayerCareerStatsByTournament": {
+                "properties": {
+                    "tournament_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "tournament_name": {
+                        "type": "string"
+                    },
+                    "seasons": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerCareerStatEntry"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "tournament_id",
+                    "tournament_name",
+                    "seasons"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "PlayerCareerStats": {
+                "properties": {
+                    "player_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "player_name": {
+                        "type": "string"
+                    },
+                    "tournaments": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerCareerStatsByTournament"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "player_id",
+                    "player_name",
+                    "tournaments"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "SeasonTeamStatus": {
                 "type": "string",
                 "enum": [
@@ -2330,7 +2420,7 @@
                     "forward"
                 ]
             },
-            "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+            "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--assists-number--season_id-number--matches_played-number--player_58__id-number--user_58__name-string_--avatar-string_--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
                 "properties": {
                     "data": {
                         "items": {
@@ -2346,6 +2436,34 @@
                                     "type": "number",
                                     "format": "double"
                                 },
+                                "player": {
+                                    "properties": {
+                                        "avatar": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "name"
+                                            ],
+                                            "type": "object"
+                                        },
+                                        "id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "avatar",
+                                        "user",
+                                        "id"
+                                    ],
+                                    "type": "object"
+                                },
                                 "matches_played": {
                                     "type": "number",
                                     "format": "double"
@@ -2354,9 +2472,33 @@
                                     "type": "number",
                                     "format": "double"
                                 },
+                                "assists": {
+                                    "type": "number",
+                                    "format": "double"
+                                },
                                 "team_id": {
                                     "type": "number",
                                     "format": "double"
+                                },
+                                "team": {
+                                    "properties": {
+                                        "logo": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "logo",
+                                        "id",
+                                        "name"
+                                    ],
+                                    "type": "object"
                                 },
                                 "red_cards": {
                                     "type": "number",
@@ -2379,9 +2521,12 @@
                                 "is_suspended",
                                 "accumulated_yellow_cards",
                                 "player_id",
+                                "player",
                                 "matches_played",
                                 "season_id",
+                                "assists",
                                 "team_id",
+                                "team",
                                 "red_cards",
                                 "yellow_cards",
                                 "goals_scored",
@@ -7949,6 +8094,38 @@
                 ]
             }
         },
+        "/statistics/players/{playerId}/career": {
+            "get": {
+                "operationId": "GetPlayerCareerStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerCareerStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "playerId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
         "/seasonteams": {
             "get": {
                 "operationId": "FindAll",
@@ -9233,7 +9410,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_id-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
+                                    "$ref": "#/components/schemas/PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--assists-number--season_id-number--matches_played-number--player_58__id-number--user_58__name-string_--avatar-string_--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__"
                                 }
                             }
                         }

@@ -19,10 +19,29 @@ export declare const PLAYER_STATISTIC_SELECT: {
     season_id: true;
     matches_played: true;
     goals_scored: true;
+    assists: true;
     yellow_cards: true;
     red_cards: true;
     accumulated_yellow_cards: true;
     is_suspended: true;
+    player: {
+        select: {
+            id: true;
+            avatar: true;
+            user: {
+                select: {
+                    name: true;
+                };
+            };
+        };
+    };
+    team: {
+        select: {
+            id: true;
+            name: true;
+            logo: true;
+        };
+    };
 };
 export type TeamStandingRow = Prisma.TeamStandingGetPayload<{
     select: typeof TEAM_STANDING_SELECT;
