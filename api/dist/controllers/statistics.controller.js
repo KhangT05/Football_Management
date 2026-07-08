@@ -48,6 +48,9 @@ let StatisticsController = class StatisticsController extends Controller {
     async getBestPlayers(seasonId, limit) {
         return this.statisticsService.getBestPlayers(seasonId, limit ?? 10);
     }
+    async getPlayerCareerStats(playerId) {
+        return this.statisticsService.getPlayerCareerStats(playerId);
+    }
 };
 __decorate([
     Security("jwt", ["admin"]),
@@ -125,6 +128,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getBestPlayers", null);
+__decorate([
+    Get("players/{playerId}/career"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerCareerStats", null);
 StatisticsController = __decorate([
     Route("statistics"),
     Tags("Statistics"),

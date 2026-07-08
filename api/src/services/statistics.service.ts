@@ -16,6 +16,8 @@ import type {
     BestPlayerStats,
     PlayerRankingMetric,
     PlayerRankingStats,
+    PlayerCareerStatsByTournament,
+    PlayerCareerStats,
 } from "../types/statistics.type.js";
 
 const BUSINESS_TZ_OFFSET_HOURS = 7;
@@ -479,5 +481,70 @@ export class StatisticsService {
             .sort((a, b) => b.score - a.score || a.matches_played - b.matches_played)
             .slice(0, limit);
         return { season_id: seasonId, limit, weights, players: scored };
+    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAYER CAREER STATS — thống kê 1 cầu thủ qua các mùa, group theo giải
+    // đấu, giống bảng "Thống kê" theo tab của Pedri trên Google (tab = giải,
+    // hàng = mùa/năm).
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Đọc từ PlayerStatistic (denormalized) như getPlayerRanking/getBestPlayers
+    // — cùng assumption: PlayerStatistic được service khác update transactional
+    // khi ghi nhận match event.
+    //
+    // Số row = số season cầu thủ từng thi đấu (nhỏ, vài chục max) nên group
+    // theo tournament làm trong app, không cần raw SQL.
+    async getPlayerCareerStats(playerId: number): Promise<PlayerCareerStats> {
+        const player = await this.prisma.player.findUnique({
+            where: { id: playerId },
+            select: { id: true, user: { select: { name: true } } },
+        });
+        if (!player) {
+            throw createAppError(
+                "NOT_FOUND",
+                `Player id=${playerId} not found`,
+                "Không tìm thấy cầu thủ",
+            );
+        }
+
+        const rows = await this.prisma.playerStatistic.findMany({
+            where: { player_id: playerId },
+            include: {
+                season: {
+                    select: {
+                        id: true,
+                        name: true,
+                        tournament: { select: { id: true, name: true } },
+                    },
+                },
+            },
+            orderBy: { season: { created_at: "desc" } },
+        });
+
+        const byTournament = new Map<number, PlayerCareerStatsByTournament>();
+        for (const r of rows) {
+            const tId = r.season.tournament.id;
+            const entry = byTournament.get(tId) ?? {
+                tournament_id: tId,
+                tournament_name: r.season.tournament.name,
+                seasons: [],
+            };
+            entry.seasons.push({
+                season_id: r.season.id,
+                season_name: r.season.name,
+                matches_played: r.matches_played,
+                goals: r.goals_scored,
+                assists: r.assists,
+                yellow_cards: r.yellow_cards,
+                red_cards: r.red_cards,
+            });
+            byTournament.set(tId, entry);
+        }
+
+        return {
+            player_id: player.id,
+            player_name: player.user.name,
+            tournaments: [...byTournament.values()],
+        };
     }
 }

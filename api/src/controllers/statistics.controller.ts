@@ -73,4 +73,9 @@ export class StatisticsController extends Controller {
     async getBestPlayers(@Path() seasonId: number, @Query() limit?: number) {
         return this.statisticsService.getBestPlayers(seasonId, limit ?? 10);
     }
+
+    @Get("players/{playerId}/career")
+    async getPlayerCareerStats(@Path() playerId: number) {
+        return this.statisticsService.getPlayerCareerStats(playerId);
+    }
 }

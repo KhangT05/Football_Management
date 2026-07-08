@@ -95,4 +95,23 @@ export type BestPlayerStats = {
     weights: MvpWeights;
     players: BestPlayerEntry[];
 };
+export interface PlayerCareerStatEntry {
+    season_id: number;
+    season_name: string;
+    matches_played: number;
+    goals: number;
+    assists: number;
+    yellow_cards: number;
+    red_cards: number;
+}
+export interface PlayerCareerStatsByTournament {
+    tournament_id: number;
+    tournament_name: string;
+    seasons: PlayerCareerStatEntry[];
+}
+export interface PlayerCareerStats {
+    player_id: number;
+    player_name: string;
+    tournaments: PlayerCareerStatsByTournament[];
+}
 //# sourceMappingURL=statistics.type.d.ts.map
