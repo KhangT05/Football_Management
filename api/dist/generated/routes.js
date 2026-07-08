@@ -3661,33 +3661,6 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsSeasonController_getSeasonStandings = {
-        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
-    };
-    app.get('/seasons/:id/standings', ...(fetchMiddlewares(SeasonController)), ...(fetchMiddlewares(SeasonController.prototype.getSeasonStandings)), async function SeasonController_getSeasonStandings(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsSeasonController_getSeasonStandings, request, response });
-            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
-            const controller = await container.get(SeasonController);
-            if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-            }
-            await templateService.apiHandler({
-                methodName: 'getSeasonStandings',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsSeasonController_getGroupStandings = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         groupId: { "in": "path", "name": "groupId", "required": true, "dataType": "double" },

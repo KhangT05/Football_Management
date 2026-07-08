@@ -159,6 +159,8 @@ export const TournamentRuleScalarFieldEnum = {
     yellow_cards_suspension: 'yellow_cards_suspension',
     max_players_per_team: 'max_players_per_team',
     min_players_per_team: 'min_players_per_team',
+    bonus_per_goal: 'bonus_per_goal',
+    bonus_per_assist: 'bonus_per_assist',
     teams_advance_per_group: 'teams_advance_per_group',
     tiebreaker_order: 'tiebreaker_order',
     user_id: 'user_id'

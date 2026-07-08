@@ -36,21 +36,6 @@ export declare class SeasonController extends Controller {
    */
     cancelSeason(id: number, body: seasonSchema.CancelSeasonDto): Promise<Season>;
     updateStatus(id: number, body: seasonSchema.UpdateSeasonStatusDto): Promise<Season>;
-    /**
-     * Overview standings toàn season — tất cả groups, kiểu World Cup group stage.
-     * Không paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).
-     * Trả về array grouped theo group, mỗi group có teams sorted by position.
-     *
-     * Chỉ serve season ở status: ongoing / finished / cancelled.
-     */
-    getSeasonStandings(id: number): Promise<any>;
-    /**
-     * Standings chi tiết của 1 group — validate group thuộc season.
-     *
-     * Query params:
-     *   ?page=1&per_page=20
-     *   ?sort=position|points|goals_for|wins&direction=asc|desc
-     */
     getGroupStandings(id: number, groupId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
         group_id: number;

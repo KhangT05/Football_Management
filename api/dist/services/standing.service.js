@@ -9,7 +9,7 @@ import { PLAYER_STATISTIC_SELECT, TEAM_STANDING_SELECT, } from '../types/standin
 // `allowedStatuses.includes(...)` luôn true, guard/filter thành dead code dù
 // comment mô tả rõ ý đồ chỉ cho 3 status. Gom về 1 hằng số duy nhất để không
 // lặp lại sai lệch giữa 2 method.
-const VIEWABLE_SEASON_STATUSES = ['ongoing', 'finished', 'cancelled'];
+const VIEWABLE_SEASON_STATUSES = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
 export class StandingsService {
     prisma;
     standingQueryable;

@@ -395,6 +395,90 @@ export class StatisticsService {
         return { season_id: seasonId, limit, weights, players: scored };
     }
     // ═══════════════════════════════════════════════════════════════════════
+    // NEW — PLAYER FINANCE: thưởng ghi bàn/kiến tạo, phạt thẻ vàng/thẻ đỏ
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Đọc rate từ TournamentRule của season (qua season.tournamentRule —
+    // 1 season chỉ có đúng 1 rule, theo relation season.tournament_rule_id
+    // trong schema, không phải nhiều rule/tournament như listByTournament
+    // bên tournamentRule.service.ts).
+    //
+    // Tính "live" từ PlayerStatistic.goals_scored/assists/yellow_cards/
+    // red_cards × rate HIỆN TẠI — KHÔNG dùng PlayerStatistic.total_fine_owed
+    // (field đó, nếu được service khác ghi nhận theo rate tại THỜI ĐIỂM xảy
+    // ra thẻ, có thể lệch với rate hiện tại nếu rate đã đổi — xem cảnh báo
+    // RETROACTIVE_FIELDS ở tournamentRule.service.ts không bao gồm
+    // fine_per_yellow_card/red_card, nên đổi rate giữa mùa không có guard).
+    // Method này trả "nếu tính theo rate hiện tại thì mỗi người được/nợ bao
+    // nhiêu" — dùng cho preview/dashboard, KHÔNG dùng làm ledger thanh toán
+    // thật nếu rate từng đổi giữa mùa.
+    //
+    // REQUIRES migration: TournamentRule.bonus_per_goal, bonus_per_assist
+    // (xem comment đầu file).
+    async getPlayerFinanceStats(seasonId) {
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: {
+                id: true,
+                tournamentRule: {
+                    select: {
+                        bonus_per_goal: true,
+                        bonus_per_assist: true,
+                        fine_per_yellow_card: true,
+                        fine_per_red_card: true,
+                    },
+                },
+            },
+        });
+        if (!season) {
+            throw createAppError("NOT_FOUND", `Season id=${seasonId} not found`, "Không tìm thấy season");
+        }
+        if (!season.tournamentRule) {
+            throw createAppError("CONFLICT", `Season id=${seasonId} chưa gán tournament_rule_id`, "Season chưa có luật giải — không tính được thưởng/phạt");
+        }
+        const bonusPerGoal = Number(season.tournamentRule.bonus_per_goal);
+        const bonusPerAssist = Number(season.tournamentRule.bonus_per_assist);
+        const finePerYellow = Number(season.tournamentRule.fine_per_yellow_card);
+        const finePerRed = Number(season.tournamentRule.fine_per_red_card);
+        const rows = await this.prisma.playerStatistic.findMany({
+            where: { season_id: seasonId },
+            include: {
+                player: { select: { id: true, name: true } },
+                team: { select: { id: true, name: true } },
+            },
+        });
+        const players = rows
+            .map((r) => {
+            const bonus = r.goals_scored * bonusPerGoal + r.assists * bonusPerAssist;
+            const fine = r.yellow_cards * finePerYellow + r.red_cards * finePerRed;
+            return {
+                player_id: r.player.id,
+                player_name: r.player.name,
+                team_id: r.team.id,
+                team_name: r.team.name,
+                goals_scored: r.goals_scored,
+                assists: r.assists,
+                yellow_cards: r.yellow_cards,
+                red_cards: r.red_cards,
+                bonus_earned: bonus,
+                fine_owed: fine,
+                net_amount: bonus - fine,
+            };
+        })
+            // Chỉ trả cầu thủ có phát sinh thưởng/phạt — tránh trả cả roster
+            // toàn số 0 khi giải mới bắt đầu.
+            .filter((p) => p.bonus_earned !== 0 || p.fine_owed !== 0)
+            .sort((a, b) => b.net_amount - a.net_amount);
+        return {
+            season_id: seasonId,
+            bonus_per_goal: bonusPerGoal,
+            bonus_per_assist: bonusPerAssist,
+            fine_per_yellow_card: finePerYellow,
+            fine_per_red_card: finePerRed,
+            players,
+        };
+    }
+    // ═══════════════════════════════════════════════════════════════════════
     // PLAYER CAREER STATS — thống kê 1 cầu thủ qua các mùa, group theo giải
     // đấu, giống bảng "Thống kê" theo tab của Pedri trên Google (tab = giải,
     // hàng = mùa/năm).
