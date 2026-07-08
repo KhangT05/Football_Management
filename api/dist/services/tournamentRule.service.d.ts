@@ -19,5 +19,6 @@ export declare class TournamentRuleService {
     update(id: number, data: UpdateTournamentRuleDto, force?: boolean): Promise<TournamentRuleDto>;
     softDelete(id: number): Promise<void>;
     restore(id: number): Promise<TournamentRuleDto>;
+    listByTournament(tournamentId: number): Promise<TournamentRuleDto[]>;
 }
 //# sourceMappingURL=tournamentRule.service.d.ts.map

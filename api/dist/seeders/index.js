@@ -1,4 +1,3 @@
-import { seedSeasons } from "./season.seeder.js";
 export async function runSeeders(db) {
     console.log("[DataSeeder] starting...\n");
     // Tier 0: lookup tables
@@ -36,7 +35,7 @@ export async function runSeeders(db) {
     // Tier 5: matches
     // await seedMatches(db, seasonId, phaseResult, teams, defaultVenueId, adminUserId);
     // Tier 6: seed seasons để test auto-schedule
-    await seedSeasons(db, adminUserId, tournament.id, teams);
+    // await seedSeasons(db, adminUserId, tournament.id, teams);
     console.log("\n[DataSeeder] done.");
 }
 //# sourceMappingURL=index.js.map

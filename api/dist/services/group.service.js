@@ -20,22 +20,44 @@ export class GroupService {
      * Hệ quả: mọi write-path (create/draw/clear) trên group của 1 season
      * giờ serialize qua season lock — chấp nhận được vì đây vốn là các
      * thao tác admin tần suất thấp, không phải hot path.
+     *
+     * FIX (bug mới, xuất hiện từ khi có RR->RR): trước đây filter chỉ có
+     * is_active:true — đúng khi season CHỈ CÓ 1 round_robin phase suốt đời.
+     * Từ khi advanceToNextRoundRobin() tạo phase round_robin THỨ 2 cùng
+     * season (phase cũ locked vẫn giữ is_active:true để giữ lịch sử/audit),
+     * findFirst({is_active:true}) không orderBy sẽ trả về BẤT KỲ phase nào
+     * trong 2 phase — có thể là phase cũ đã locked. Thêm status:{not:locked}
+     * + orderBy order desc để luôn lấy đúng phase "đang mở" mới nhất.
      */
-    /** Chỉ dùng ở các entrypoint TẠO dữ liệu (createGroup, createGroupsBulk). */
     async getOrCreateRoundRobinPhase(tx, seasonId) {
         await lockSeason(tx, seasonId);
         let phase = await tx.phase.findFirst({
-            where: { season_id: seasonId, format: PhaseFormat.round_robin, is_active: true },
+            where: {
+                season_id: seasonId,
+                format: PhaseFormat.round_robin,
+                is_active: true,
+                status: { not: PhaseStatus.locked },
+            },
+            orderBy: { order: 'desc' },
         });
         if (!phase) {
+            // order kế tiếp phải nối tiếp phase round_robin gần nhất (kể cả
+            // đã locked) — tránh trùng order nếu season đã có 1 round_robin
+            // locked từ trước (case RR->RR, xem advanceToNextRoundRobin).
+            const lastRoundRobin = await tx.phase.findFirst({
+                where: { season_id: seasonId, format: PhaseFormat.round_robin },
+                orderBy: { order: 'desc' },
+                select: { order: true },
+            });
+            const nextOrder = (lastRoundRobin?.order ?? 0) + 1;
             phase = await tx.phase.create({
                 data: {
                     season_id: seasonId,
                     format: PhaseFormat.round_robin,
                     status: PhaseStatus.draft,
                     type: PhaseType.group_stage,
-                    order: 0,
-                    name: "Group Stage",
+                    order: nextOrder,
+                    name: nextOrder === 1 ? "Vòng bảng" : `Vòng bảng ${nextOrder}`,
                     is_active: true,
                 },
             });
@@ -48,10 +70,19 @@ export class GroupService {
      * season chưa từng tạo group sẽ tạo ra 1 phase rỗng vô nghĩa trước
      * khi throw "chưa có group"). Rõ ràng hơn: null nghĩa là "chưa có gì",
      * caller tự quyết định thông báo phù hợp.
+     *
+     * FIX: cùng lý do như getOrCreateRoundRobinPhase — loại phase đã locked,
+     * lấy phase round_robin "đang mở" mới nhất theo order.
      */
     async findRoundRobinPhase(tx, seasonId) {
         return tx.phase.findFirst({
-            where: { season_id: seasonId, format: PhaseFormat.round_robin, is_active: true },
+            where: {
+                season_id: seasonId,
+                format: PhaseFormat.round_robin,
+                is_active: true,
+                status: { not: PhaseStatus.locked },
+            },
+            orderBy: { order: 'desc' },
         });
     }
     // ============================================================
@@ -101,7 +132,6 @@ export class GroupService {
             if (existingCount > 0)
                 throw createAppError("CONFLICT", `Season đã có ${existingCount} group — xoá hết group cũ trước khi bulk-create lại`);
             const names = Array.from({ length: count }, (_, i) => `Bảng ${String.fromCharCode(65 + i)}`);
-            // FIX: is_active: true tường minh — xem comment ở createGroup().
             await tx.group.createMany({
                 data: names.map((name) => ({ phase_id: phase.id, name, is_active: true })),
             });
@@ -113,16 +143,182 @@ export class GroupService {
         });
     }
     /**
+     * NEW: preview thuần túy, không ghi DB — FE gọi mỗi lần user đổi số
+     * group trong popup, hiển thị ngay distribution + warning trước khi
+     * bấm xác nhận. VD 35 team / 2 group -> [18,17] hiện ngay, không cần
+     * trial-and-error qua createGroupsBulk + drawGroups như trước.
+     * Dùng lại snake-draft y hệt logic snakeDistribute() bên dưới.
+     */
+    previewGroupSplit(approvedTeamCount, desiredGroupCount) {
+        if (desiredGroupCount < 1)
+            throw createAppError("VALIDATION_ERROR", "desiredGroupCount phải >= 1");
+        if (approvedTeamCount < desiredGroupCount * 2)
+            return {
+                groupCount: desiredGroupCount,
+                distribution: [],
+                warning: `Chỉ có ${approvedTeamCount} team, không đủ cho ${desiredGroupCount} group (cần ít nhất ${desiredGroupCount * 2})`,
+            };
+        const dummy = Array.from({ length: approvedTeamCount }, (_, i) => i);
+        const distributed = this.snakeDistribute(dummy, desiredGroupCount);
+        const sizes = distributed.map(g => g.length);
+        const max = Math.max(...sizes);
+        const min = Math.min(...sizes);
+        return {
+            groupCount: desiredGroupCount,
+            distribution: sizes,
+            warning: max - min > 1
+                ? `Lệch ${min}-${max} team/group (không tránh được với ${approvedTeamCount} team / ${desiredGroupCount} group)`
+                : undefined,
+        };
+    }
+    /**
+     * NEW: gộp createGroupsBulk + drawGroups thành 1 transaction — season
+     * đã có approved SeasonTeam (qua selfRegister/adminAdd) trước đó, giờ
+     * chỉ cần nhập groupCount, team TỰ chia vào group theo snake-draft,
+     * không cần bước "tạo group rỗng" rồi "draw" tách rời như 2 API cũ.
+     * Đây là entrypoint chính cho flow: tạo season -> team đăng ký/duyệt ->
+     * admin nhập số group -> bấm 1 nút -> xong.
+     */
+    async createAndDrawGroups(seasonId, groupCount) {
+        return this.prisma.$transaction(async (tx) => {
+            const phase = await this.getOrCreateRoundRobinPhase(tx, seasonId);
+            if (!phase.is_active)
+                throw createAppError("CONFLICT", "Phase đã bị deactivate");
+            if (phase.status === PhaseStatus.locked)
+                throw createAppError("CONFLICT", "Phase đã locked, không thể tạo group mới");
+            const existingCount = await tx.group.count({ where: { phase_id: phase.id, is_active: true } });
+            if (existingCount > 0)
+                throw createAppError("CONFLICT", `Season đã có ${existingCount} group — clearDraw trước khi tạo lại`);
+            const approvedTeams = await tx.seasonTeam.findMany({
+                where: { season_id: seasonId, status: SeasonTeamStatus.approved, deleted_at: null },
+                select: { id: true, team_id: true },
+            });
+            if (approvedTeams.length < groupCount * 2)
+                throw createAppError("CONFLICT", `Chỉ có ${approvedTeams.length} approved team, cần ít nhất ${groupCount * 2} cho ${groupCount} group`);
+            const names = Array.from({ length: groupCount }, (_, i) => `Bảng ${String.fromCharCode(65 + i)}`);
+            await tx.group.createMany({ data: names.map((name) => ({ phase_id: phase.id, name, is_active: true })) });
+            const groups = await tx.group.findMany({
+                where: { phase_id: phase.id, name: { in: names } },
+                select: { id: true, name: true },
+                orderBy: { name: "asc" },
+            });
+            const shuffled = shuffle(approvedTeams);
+            const distributed = this.snakeDistribute(shuffled, groups.length);
+            const assignments = [];
+            distributed.forEach((teamsInGroup, i) => {
+                const group = groups[i];
+                for (const st of teamsInGroup) {
+                    assignments.push({ seasonTeamId: st.id, team_id: st.team_id, group_id: group.id });
+                }
+            });
+            await this.applyAssignments(tx, assignments);
+            const nominal = Math.max(...distributed.map((g) => g.length));
+            await tx.phase.update({ where: { id: phase.id }, data: { teams_per_group: nominal } });
+            return assignments.map(({ group_id, team_id }) => ({ group_id, team_id }));
+        });
+    }
+    /**
+     * NEW: advance top-N mỗi group của phase round_robin hiện tại sang
+     * phase round_robin TIẾP THEO cùng season (RR -> RR). Đọc
+     * phase.teams_advance_per_group (schema mới) để biết advance bao nhiêu
+     * team/group — không cần bảng blueprint riêng, chỉ cần Phase cũ đã
+     * locked + có cấu hình field này.
+     *
+     * Sau khi phase mới được tạo, getOrCreateRoundRobinPhase/findRoundRobinPhase
+     * (đã fix ở trên) sẽ tự động resolve đúng phase MỚI (status != locked,
+     * order lớn nhất) cho mọi thao tác draw/assign/clear tiếp theo — không
+     * cần thay đổi gì thêm ở các method đó.
+     */
+    async advanceToNextRoundRobin(fromPhaseId, newGroupCount) {
+        return this.prisma.$transaction(async (tx) => {
+            const fromPhase = await tx.phase.findUniqueOrThrow({ where: { id: fromPhaseId } });
+            if (fromPhase.format !== PhaseFormat.round_robin)
+                throw createAppError("VALIDATION_ERROR", `Phase ${fromPhaseId} không phải round_robin`);
+            if (fromPhase.status !== PhaseStatus.locked)
+                throw createAppError("CONFLICT", `Phase ${fromPhaseId} chưa locked — không thể advance`);
+            if (!fromPhase.teams_advance_per_group)
+                throw createAppError("VALIDATION_ERROR", `Phase ${fromPhaseId} chưa cấu hình teams_advance_per_group`);
+            await lockSeason(tx, fromPhase.season_id);
+            const advanceN = fromPhase.teams_advance_per_group;
+            const groups = await tx.group.findMany({ where: { phase_id: fromPhaseId, is_active: true } });
+            const advancedTeamIds = [];
+            for (const g of groups) {
+                const standings = await tx.teamStanding.findMany({
+                    where: { group_id: g.id, deleted_at: null },
+                    orderBy: { position: "asc" },
+                    take: advanceN,
+                    select: { team_id: true },
+                });
+                if (standings.length < advanceN)
+                    throw createAppError("CONFLICT", `Group ${g.id} chưa đủ ${advanceN} standings để advance`);
+                advancedTeamIds.push(...standings.map((s) => s.team_id));
+            }
+            const newPhase = await tx.phase.create({
+                data: {
+                    season_id: fromPhase.season_id,
+                    format: PhaseFormat.round_robin,
+                    type: PhaseType.group_stage,
+                    order: fromPhase.order + 1,
+                    status: PhaseStatus.draft,
+                    name: `Vòng bảng ${fromPhase.order + 1}`,
+                    is_active: true,
+                },
+            });
+            const names = Array.from({ length: newGroupCount }, (_, i) => `Bảng ${String.fromCharCode(65 + i)}`);
+            await tx.group.createMany({ data: names.map((name) => ({ phase_id: newPhase.id, name, is_active: true })) });
+            const newGroups = await tx.group.findMany({
+                where: { phase_id: newPhase.id, name: { in: names } },
+                select: { id: true, name: true },
+                orderBy: { name: "asc" },
+            });
+            // Team advance sang phase mới CẦN reset group_id — SeasonTeam.group_id
+            // season-scoped, trỏ 1 group tại 1 thời điểm (xem comment gốc
+            // SeasonTeamService.assignGroup). group_id cũ thuộc phase đã locked,
+            // không reuse được, reset về group mới ngay tại đây.
+            const seasonTeams = await tx.seasonTeam.findMany({
+                where: { season_id: fromPhase.season_id, team_id: { in: advancedTeamIds }, status: SeasonTeamStatus.approved },
+                select: { id: true, team_id: true },
+            });
+            const shuffled = shuffle(seasonTeams);
+            const distributed = this.snakeDistribute(shuffled, newGroups.length);
+            const assignments = [];
+            distributed.forEach((teamsInGroup, i) => {
+                const group = newGroups[i];
+                for (const st of teamsInGroup)
+                    assignments.push({ seasonTeamId: st.id, team_id: st.team_id, group_id: group.id });
+            });
+            await this.applyAssignments(tx, assignments);
+            const nominal = Math.max(...distributed.map((g) => g.length));
+            await tx.phase.update({ where: { id: newPhase.id }, data: { teams_per_group: nominal } });
+            return {
+                newPhaseId: newPhase.id,
+                assignments: assignments.map(({ group_id, team_id }) => ({ group_id, team_id })),
+            };
+        });
+    }
+    /**
      * FIX (breaking change so với bản phaseId cũ): giờ nhận seasonId, trả
      * { phase: null, groups: [] } nếu season chưa từng tạo group/phase —
      * đây là trạng thái HỢP LỆ ("chưa bắt đầu"), không phải lỗi và không
      * tự tạo phase trong 1 read endpoint. FE phân biệt trạng thái này với
      * lỗi thật (network/500) qua try/catch như bình thường, không cần
      * thêm 1 field boolean riêng.
+     *
+     * Lưu ý: sau khi season đã advance qua RR thứ 2, method này trả về
+     * phase MỚI NHẤT đang mở (nhờ fix findRoundRobinPhase ở trên) — nếu
+     * FE cần xem cả phase round_robin CŨ (đã locked) để hiện lịch sử/kết
+     * quả vòng trước, dùng findAllByPhase(phaseId) với id cụ thể thay vì
+     * findAllBySeason (method này chỉ trả phase "đang mở" theo season).
      */
     async findAllBySeason(seasonId) {
         const phase = await this.prisma.phase.findFirst({
-            where: { season_id: seasonId, format: PhaseFormat.round_robin, is_active: true },
+            where: {
+                season_id: seasonId,
+                format: PhaseFormat.round_robin,
+                is_active: true,
+                status: { not: PhaseStatus.locked },
+            },
+            orderBy: { order: 'desc' },
             select: { id: true, name: true, format: true, status: true, teams_per_group: true, season_id: true },
         });
         if (!phase)

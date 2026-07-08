@@ -59,8 +59,8 @@ export declare class SeasonController extends Controller {
         id: number;
         group_id: number;
         team_id: number;
-        position: number;
         matches_played: number;
+        position: number;
         wins: number;
         draws: number;
         losses: number;
@@ -71,8 +71,8 @@ export declare class SeasonController extends Controller {
     getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
         team: {
-            id: number;
             name: string;
+            id: number;
             logo: string | null;
         };
         player: {
@@ -82,41 +82,44 @@ export declare class SeasonController extends Controller {
             };
             avatar: string | null;
         };
-        player_id: number;
-        team_id: number;
-        season_id: number;
-        matches_played: number;
         goals_scored: number;
-        assists: number;
         yellow_cards: number;
         red_cards: number;
+        season_id: number;
+        team_id: number;
+        assists: number;
+        matches_played: number;
+        player_id: number;
         accumulated_yellow_cards: number;
         is_suspended: boolean;
     }>>;
     getSuspendedPlayers(id: number): Promise<({
         team: {
-            id: number;
             name: string;
+            id: number;
         };
         player: {
-            id: number;
             name: never;
+            id: number;
         };
     } & {
         id: number;
         created_at: Date;
         updated_at: Date | null;
-        player_id: number;
-        team_id: number;
-        season_id: number;
-        matches_played: number;
         goals_scored: number;
-        assists: number;
         yellow_cards: number;
         red_cards: number;
+        season_id: number;
+        team_id: number;
+        assists: number;
+        matches_played: number;
+        player_id: number;
         minutes_played: number;
         accumulated_yellow_cards: number;
+        yellow_cards_since_reset: number;
+        suspension_matches_remaining: number;
         is_suspended: boolean;
+        total_fine_owed: import("@prisma/client-runtime-utils").Decimal;
     })[]>;
 }
 export {};

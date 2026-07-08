@@ -34,46 +34,10 @@ export type MatchEventRow = Prisma.MatchEventGetPayload<{
 export type MatchResultRow = Prisma.MatchResultGetPayload<{
     select: typeof MATCH_RESULT_SELECT;
 }>;
-export type MatchForConfirmFull = Prisma.MatchGetPayload<{
-    select: typeof matchForConfirmSelect;
-}>;
 export type StatDelta = {
     goals: number;
     yellowCards: number;
     redCards: number;
-};
-export declare const matchForConfirmSelect: {
-    id: true;
-    status: true;
-    home_team_id: true;
-    away_team_id: true;
-    group_id: true;
-    phase_id: true;
-    phase: {
-        select: {
-            format: true;
-            season: {
-                select: {
-                    id: true;
-                    tournament: {
-                        select: {
-                            tournamentRule: {
-                                select: {
-                                    yellow_cards_suspension: true;
-                                    forfeit_score: true;
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-    matchResult: {
-        select: {
-            id: true;
-        };
-    };
 };
 export declare function toMatchMinute(elapsedSeconds: number): number;
 export declare const GOAL_EVENT_TYPES: MatchEventType[];
@@ -99,16 +63,6 @@ export declare function buildRound1Pairings(seeding: (number | null)[]): {
     home: number | null;
     away: number | null;
 }[];
-/**
- * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live), _computeScoreFromEvents (finalize)
- * VÀ buildGoalsTimeline (report) để đảm bảo 3 nơi không viết 3 ternary khác
- * nhau cho cùng business rule own_goal/goal_disallowed.
- *
- * own_goal:         team đá phản lưới → credit cho đối thủ
- * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
- * goal/penalty_scored: team ghi → credit cho chính mình
- */
 export declare function isCreditedToHomeTeam(homeTeamId: number, eventTeamId: number, type: MatchEventType, wasOwnGoal?: boolean): boolean;
 type LineupRow = {
     player_id: number;
@@ -156,25 +110,7 @@ export declare function buildGoalsTimeline(events: {
 export declare function formatMinuteLabel(e: MatchReportGoalEntry): string;
 export declare function assertMinuteInBounds(period: MatchPeriod | null | undefined, minute: number | null | undefined, addedMinute?: number | null): void;
 export declare function assertPlayerNotSentOff(tx: Prisma.TransactionClient, matchId: number, playerId: number | null | undefined): Promise<void>;
-/**
- * Kiểm tra bracket slot con (round kế tiếp) của 1 match knockout đã được
- * tạo hay chưa. Dùng để chặn sửa/xóa event hoặc override score sau khi
- * bracket đã advance dựa trên winner cũ — tránh đổi winner "dưới chân" 1
- * match đã tạo ra trận vòng sau (có thể đã đá).
- *
- * Trả về matchId của trận vòng sau nếu đã tồn tại, null nếu chưa (an toàn
- * để sửa). Extract từ overrideResultInTx cũ để dùng chung với
- * _recalculateResultTx (match.lifecycle.service.ts) — trước đây guard này
- * chỉ có ở editScore path, addEvent/deleteEvent/editEvent thiếu.
- */
 export declare function findAdvancedChildMatchId(tx: Prisma.TransactionClient, matchId: number): Promise<number | null>;
-/**
- * Season đã seed knockout bracket chưa (có phase format=knockout với ít
- * nhất 1 match). Dùng để khoá correction lên match round-robin sau khi
- * standings đã được dùng để seed bracket — sửa kết quả vòng bảng sau mốc
- * này có thể đổi thứ hạng/tie-break mà KHÔNG re-seed bracket, gây lệch
- * suất đi tiếp một cách âm thầm (không throw, không warning ở code cũ).
- */
 export declare function isKnockoutBracketSeeded(tx: Prisma.TransactionClient, seasonId: number): Promise<boolean>;
 export {};
 //# sourceMappingURL=match.helper.d.ts.map

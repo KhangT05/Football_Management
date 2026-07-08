@@ -2,7 +2,8 @@ import { MatchEventType, MatchResultType, MatchStatus, PhaseFormat, Prisma, } fr
 import { createAppError } from '../common/app.error.js';
 import { STATUS_BY_RESULT_TYPE, } from '../types/matchResult.type.js';
 import { Queryable } from '../libs/queryable.js';
-import { buildGoalsTimeline, buildMatchReportPlayerRows, buildStatDeltas, MATCH_EVENT_SELECT, matchForConfirmSelect, statKey, toMatchResultCreateInput, toMatchUpdateOnConfirm, findAdvancedChildMatchId, isKnockoutBracketSeeded, } from '../helper/match.helper.js';
+import { buildGoalsTimeline, buildMatchReportPlayerRows, buildStatDeltas, MATCH_EVENT_SELECT, statKey, toMatchResultCreateInput, toMatchUpdateOnConfirm, findAdvancedChildMatchId, isKnockoutBracketSeeded, } from '../helper/match.helper.js';
+import { matchForConfirmSelect, matchForOverrideSelect, phaseWithRuleSelect, } from '../types/match.queries.js';
 export class MatchResultService {
     prisma;
     knockoutService;
@@ -79,7 +80,7 @@ export class MatchResultService {
         if (!seasonId) {
             throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
         }
-        const yellowSuspension = match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
+        const yellowSuspension = match.phase.season.tournamentRule?.yellow_cards_suspension ?? 3;
         const resolution = this._resolveWinner(match.home_team_id, match.away_team_id, input);
         const targetMatchStatus = STATUS_BY_RESULT_TYPE[input.resultType] ?? MatchStatus.finished;
         const result = await tx.matchResult.create({
@@ -148,37 +149,20 @@ export class MatchResultService {
         return this.runPostConfirmSteps(matchId, core, scheduleOptions);
     }
     /**
-     * FIX (round-robin → knockout seeding lock, thêm sau bug report): khi
-     * knockout bracket của season đã seed (KnockoutService.generateKnockoutBracket
-     * đã chạy), override score lên match round-robin có thể đổi standings/
-     * tie-break mà KHÔNG re-seed bracket — sai suất đi tiếp âm thầm. Chặn
-     * cứng, đẩy case hiếm (lỗi phát hiện sau) sang resolveAppeal.
+     * FIX (round-robin → knockout seeding lock): khi knockout bracket của
+     * season đã seed, override score lên match round-robin có thể đổi
+     * standings/tie-break mà KHÔNG re-seed bracket — sai suất đi tiếp âm
+     * thầm. Chặn cứng, đẩy case hiếm sang resolveAppeal.
      *
-     * Bracket-advance guard (isKnockout branch) giữ nguyên logic cũ, chỉ
-     * extract ra findAdvancedChildMatchId để dùng chung với
-     * match.lifecycle.service.ts _recalculateResultTx (trước đây guard này
-     * chỉ có ở đây, addEvent/deleteEvent/editEvent thiếu — xem bug report).
+     * FIX (select layer): dùng matchForOverrideSelect từ match.queries.ts
+     * thay vì tự viết select inline — trước đây select tay ở đây trỏ nhầm
+     * `season.tournament.tournamentRule` (mảng, sai rule) và field này
+     * còn không được dùng ở đâu trong hàm, chỉ tốn thêm 1 join thừa.
      */
     async overrideResultInTx(tx, matchId, input) {
         const match = await tx.match.findUniqueOrThrow({
             where: { id: matchId },
-            select: {
-                home_team_id: true,
-                away_team_id: true,
-                group_id: true,
-                phase: {
-                    select: {
-                        format: true,
-                        season: {
-                            select: {
-                                id: true,
-                                tournament: { select: { tournamentRule: { select: { yellow_cards_suspension: true } } } },
-                            },
-                        },
-                    },
-                },
-                matchResult: { select: { id: true, result_type: true } },
-            },
+            select: matchForOverrideSelect,
         });
         if (!match.matchResult)
             throw createAppError('NOT_FOUND', `Match ${matchId} chưa có MatchResult`);
@@ -268,48 +252,20 @@ export class MatchResultService {
     /**
      * FIX (player stats drift — bug report #2): trước đây `played` set chỉ
      * suy từ match_events HIỆN TẠI của match này (đọc SAU khi đã
-     * delete/update). Hệ quả:
-     * - deleteEvent xóa event DUY NHẤT của 1 player trong match → player đó
-     *   biến mất khỏi `played` → không bao giờ recompute lại →
-     *   PlayerStatistic giữ nguyên count cũ (từ event đã xóa) vĩnh viễn.
-     * - editEvent đổi player_id (A → B): A (không còn event nào trong match
-     *   này) không nằm trong `played` → stats A vẫn tính event đã chuyển
-     *   sang B.
-     *
-     * Fix: nhận thêm `additionalPlayers` — player/team CAPTURED TRƯỚC khi
-     * mutate (caller ở match.lifecycle.service.ts truyền vào), union vào
-     * tập cần recompute. `_recomputeStatsForPlayers` vốn recompute TUYỆT ĐỐI
-     * theo toàn bộ match_events trong season (không phải incremental) nên
-     * gọi thêm cho player không còn event nào trong match này vẫn cho kết
-     * quả đúng (0 hoặc số liệu từ match khác trong season).
+     * delete/update). Fix: nhận thêm `additionalPlayers` — player/team
+     * CAPTURED TRƯỚC khi mutate (caller ở match.lifecycle.service.ts truyền
+     * vào), union vào tập cần recompute.
      */
     async recomputePlayerStats(matchId, additionalPlayers = []) {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
-            select: {
-                phase: {
-                    select: {
-                        season: {
-                            select: {
-                                id: true,
-                                tournament: {
-                                    select: {
-                                        tournamentRule: {
-                                            select: { yellow_cards_suspension: true },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+            select: { phase: phaseWithRuleSelect },
         });
         const seasonId = match.phase.season?.id;
         if (!seasonId) {
             throw createAppError('INTERNAL_SERVER_ERROR', `Match ${matchId}: phase không có season`);
         }
-        const yellowSuspension = match.phase.season.tournament.tournamentRule?.yellow_cards_suspension ?? 3;
+        const yellowSuspension = match.phase.season.tournamentRule?.yellow_cards_suspension ?? 3;
         const events = await this.prisma.matchEvent.findMany({
             where: { match_id: matchId },
             select: { player_id: true, team_id: true, type: true },

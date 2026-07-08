@@ -80,25 +80,29 @@ model Tournament {
   deleted_at DateTime?
 
   seasons        Season[]
-  user           User?           @relation(fields: [user_id], references: [id])
+  user           User?            @relation(fields: [user_id], references: [id])
   user_id        Int?
-  tournamentRule TournamentRule?
+  tournamentRule TournamentRule[]
 
   @@map("tournaments")
 }
 
 model TournamentRule {
-  id            Int       @id @default(autoincrement())
-  tournament_id Int       @unique
-  is_active     Boolean   @default(true)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime? @updatedAt
-  deleted_at    DateTime?
-
+  id                     Int       @id @default(autoincrement())
+  name                   String    @default("Default Rule")
+  tournament_id          Int
+  is_active              Boolean   @default(true)
+  created_at             DateTime  @default(now())
+  updated_at             DateTime? @updatedAt
+  deleted_at             DateTime?
+  seasons                Season[]
+  suspension_match_count Int       @default(1)
+  fine_per_yellow_card   Decimal   @default(0) @db.Decimal(10, 2) // NEW
+  fine_per_red_card      Decimal   @default(0) @db.Decimal(10, 2)
   // Scoring — không apply cho knockout phase
-  points_per_win  Int @default(3)
-  points_per_draw Int @default(1)
-  points_per_loss Int @default(0)
+  points_per_win         Int       @default(3)
+  points_per_draw        Int       @default(1)
+  points_per_loss        Int       @default(0)
 
   // Apply mọi phase format
   forfeit_score           Int  @default(3)
@@ -141,20 +145,21 @@ enum PhaseStatus {
 }
 
 model Phase {
-  id                     Int           @id @default(autoincrement())
-  season_id              Int
-  name                   String
-  type                   PhaseType
-  format                 PhaseFormat
-  order                  Int
-  start_date             DateTime?
-  end_date               DateTime?
-  min_rest_days_per_team Int           @default(3)
-  is_active              Boolean       @default(true)
-  legs                   Int           @default(1) // 1 = single-leg, 2 = two-legged
-  teams_per_group        Int?
-  bracket_slots          BracketSlot[]
-  status                 PhaseStatus   @default(draft)
+  id                      Int           @id @default(autoincrement())
+  season_id               Int
+  name                    String
+  type                    PhaseType
+  format                  PhaseFormat
+  order                   Int
+  start_date              DateTime?
+  end_date                DateTime?
+  min_rest_days_per_team  Int           @default(3)
+  is_active               Boolean       @default(true)
+  legs                    Int           @default(1) // 1 = single-leg, 2 = two-legged
+  teams_per_group         Int?
+  teams_advance_per_group Int?
+  bracket_slots           BracketSlot[]
+  status                  PhaseStatus   @default(draft)
 
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
@@ -229,14 +234,16 @@ model Season {
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
 
-  phases           Phase[]
-  season_teams     SeasonTeam[]
-  user             User?             @relation(fields: [user_id], references: [id])
-  user_id          Int?
-  playerStatistics PlayerStatistic[]
-  notifications    Notification[]
-  articles         Article[]
-  teamStandings    TeamStanding[]
+  phases             Phase[]
+  season_teams       SeasonTeam[]
+  user               User?             @relation(fields: [user_id], references: [id])
+  user_id            Int?
+  playerStatistics   PlayerStatistic[]
+  notifications      Notification[]
+  articles           Article[]
+  teamStandings      TeamStanding[]
+  tournament_rule_id Int
+  tournamentRule     TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
 
   @@map("seasons")
 }
@@ -690,20 +697,23 @@ model TeamStanding {
 }
 
 model PlayerStatistic {
-  id                       Int       @id @default(autoincrement())
-  player_id                Int
-  team_id                  Int
-  season_id                Int
-  matches_played           Int       @default(0)
-  goals_scored             Int       @default(0)
-  assists                  Int       @default(0)
-  yellow_cards             Int       @default(0)
-  red_cards                Int       @default(0)
-  minutes_played           Int       @default(0)
-  accumulated_yellow_cards Int       @default(0)
-  is_suspended             Boolean   @default(false)
-  created_at               DateTime  @default(now())
-  updated_at               DateTime? @updatedAt
+  id                           Int       @id @default(autoincrement())
+  player_id                    Int
+  team_id                      Int
+  season_id                    Int
+  matches_played               Int       @default(0)
+  goals_scored                 Int       @default(0)
+  assists                      Int       @default(0)
+  yellow_cards                 Int       @default(0)
+  red_cards                    Int       @default(0)
+  minutes_played               Int       @default(0)
+  accumulated_yellow_cards     Int       @default(0)
+  yellow_cards_since_reset     Int       @default(0) // NEW — driver riêng cho suspension, reset khi kích hoạt treo
+  suspension_matches_remaining Int       @default(0) // NEW
+  is_suspended                 Boolean   @default(false)
+  total_fine_owed              Decimal   @default(0) @db.Decimal(10, 2)
+  created_at                   DateTime  @default(now())
+  updated_at                   DateTime? @updatedAt
 
   player Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Cascade)

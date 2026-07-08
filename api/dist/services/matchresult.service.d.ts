@@ -33,17 +33,16 @@ export declare class MatchResultService {
     constructor(prisma: PrismaClient, knockoutService: KnockoutService, standingsService: StandingsService);
     getMatchResult(matchId: number): Promise<{
         winner_team: {
-            id: number;
             name: string;
+            id: number;
         } | null;
     } & {
-        id: number;
-        match_id: number;
-        status: import("../generated/prisma/enums.js").MatchResultStatus;
         is_active: boolean;
+        id: number;
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
+        match_id: number;
         winner_team_id: number | null;
         home_extra_time_score: number | null;
         away_extra_time_score: number | null;
@@ -52,13 +51,14 @@ export declare class MatchResultService {
         home_final_score: number;
         away_final_score: number;
         result_type: MatchResultType;
+        status: import("../generated/prisma/enums.js").MatchResultStatus;
         duration: number | null;
         notes: string | null;
         appeal_reason: string | null;
         appeal_note: string | null;
     }>;
     listMatchEvents(matchId: number, req: QueryRequest): Promise<PaginatedResult<MatchEventRow>>;
-    getMatchPlayerStats(matchId: number): Promise<(Prisma.PickEnumerable<Prisma.MatchEventGroupByOutputType, ("type" | "player_id" | "team_id")[]> & {
+    getMatchPlayerStats(matchId: number): Promise<(Prisma.PickEnumerable<Prisma.MatchEventGroupByOutputType, ("type" | "team_id" | "player_id")[]> & {
         _count: {
             type: number;
         };
@@ -68,16 +68,15 @@ export declare class MatchResultService {
     runPostConfirmSteps(matchId: number, core: ConfirmResultCore, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutputWithWarnings>;
     confirmResult(matchId: number, input: ConfirmResultInputWithExplicitWinner, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutputWithWarnings>;
     /**
-     * FIX (round-robin → knockout seeding lock, thêm sau bug report): khi
-     * knockout bracket của season đã seed (KnockoutService.generateKnockoutBracket
-     * đã chạy), override score lên match round-robin có thể đổi standings/
-     * tie-break mà KHÔNG re-seed bracket — sai suất đi tiếp âm thầm. Chặn
-     * cứng, đẩy case hiếm (lỗi phát hiện sau) sang resolveAppeal.
+     * FIX (round-robin → knockout seeding lock): khi knockout bracket của
+     * season đã seed, override score lên match round-robin có thể đổi
+     * standings/tie-break mà KHÔNG re-seed bracket — sai suất đi tiếp âm
+     * thầm. Chặn cứng, đẩy case hiếm sang resolveAppeal.
      *
-     * Bracket-advance guard (isKnockout branch) giữ nguyên logic cũ, chỉ
-     * extract ra findAdvancedChildMatchId để dùng chung với
-     * match.lifecycle.service.ts _recalculateResultTx (trước đây guard này
-     * chỉ có ở đây, addEvent/deleteEvent/editEvent thiếu — xem bug report).
+     * FIX (select layer): dùng matchForOverrideSelect từ match.queries.ts
+     * thay vì tự viết select inline — trước đây select tay ở đây trỏ nhầm
+     * `season.tournament.tournamentRule` (mảng, sai rule) và field này
+     * còn không được dùng ở đâu trong hàm, chỉ tốn thêm 1 join thừa.
      */
     overrideResultInTx(tx: Prisma.TransactionClient, matchId: number, input: EditScoreInput): Promise<{
         isKnockout: boolean;
@@ -87,20 +86,9 @@ export declare class MatchResultService {
     /**
      * FIX (player stats drift — bug report #2): trước đây `played` set chỉ
      * suy từ match_events HIỆN TẠI của match này (đọc SAU khi đã
-     * delete/update). Hệ quả:
-     * - deleteEvent xóa event DUY NHẤT của 1 player trong match → player đó
-     *   biến mất khỏi `played` → không bao giờ recompute lại →
-     *   PlayerStatistic giữ nguyên count cũ (từ event đã xóa) vĩnh viễn.
-     * - editEvent đổi player_id (A → B): A (không còn event nào trong match
-     *   này) không nằm trong `played` → stats A vẫn tính event đã chuyển
-     *   sang B.
-     *
-     * Fix: nhận thêm `additionalPlayers` — player/team CAPTURED TRƯỚC khi
-     * mutate (caller ở match.lifecycle.service.ts truyền vào), union vào
-     * tập cần recompute. `_recomputeStatsForPlayers` vốn recompute TUYỆT ĐỐI
-     * theo toàn bộ match_events trong season (không phải incremental) nên
-     * gọi thêm cho player không còn event nào trong match này vẫn cho kết
-     * quả đúng (0 hoặc số liệu từ match khác trong season).
+     * delete/update). Fix: nhận thêm `additionalPlayers` — player/team
+     * CAPTURED TRƯỚC khi mutate (caller ở match.lifecycle.service.ts truyền
+     * vào), union vào tập cần recompute.
      */
     recomputePlayerStats(matchId: number, additionalPlayers?: PlayerKey[]): Promise<void>;
     recomputeStandingsFor(groupId: number): Promise<void>;

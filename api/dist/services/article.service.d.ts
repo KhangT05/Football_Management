@@ -29,18 +29,18 @@ export declare class ArticleService {
         type: import("../generated/prisma/enums.js").MediaType;
         id: number;
         created_at: Date;
+        url: string;
         order: number;
         article_id: number;
-        url: string;
         caption: string | null;
     }[]>;
     addMedia(articleId: number, dto: AddArticleMediaDto): Promise<{
         type: import("../generated/prisma/enums.js").MediaType;
         id: number;
         created_at: Date;
+        url: string;
         order: number;
         article_id: number;
-        url: string;
         caption: string | null;
     }>;
     /** Upload file media (ảnh/video) → lưu vào ArticleMedia trong 1 flow */
@@ -52,9 +52,9 @@ export declare class ArticleService {
         type: import("../generated/prisma/enums.js").MediaType;
         id: number;
         created_at: Date;
+        url: string;
         order: number;
         article_id: number;
-        url: string;
         caption: string | null;
     }>;
     deleteMedia(articleId: number, mediaId: number): Promise<void>;

@@ -20,6 +20,7 @@ export type PhaseAvgAggregateOutputType = {
     min_rest_days_per_team: number | null;
     legs: number | null;
     teams_per_group: number | null;
+    teams_advance_per_group: number | null;
 };
 export type PhaseSumAggregateOutputType = {
     id: number | null;
@@ -28,6 +29,7 @@ export type PhaseSumAggregateOutputType = {
     min_rest_days_per_team: number | null;
     legs: number | null;
     teams_per_group: number | null;
+    teams_advance_per_group: number | null;
 };
 export type PhaseMinAggregateOutputType = {
     id: number | null;
@@ -42,6 +44,7 @@ export type PhaseMinAggregateOutputType = {
     is_active: boolean | null;
     legs: number | null;
     teams_per_group: number | null;
+    teams_advance_per_group: number | null;
     status: $Enums.PhaseStatus | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -59,6 +62,7 @@ export type PhaseMaxAggregateOutputType = {
     is_active: boolean | null;
     legs: number | null;
     teams_per_group: number | null;
+    teams_advance_per_group: number | null;
     status: $Enums.PhaseStatus | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -76,6 +80,7 @@ export type PhaseCountAggregateOutputType = {
     is_active: number;
     legs: number;
     teams_per_group: number;
+    teams_advance_per_group: number;
     status: number;
     created_at: number;
     updated_at: number;
@@ -88,6 +93,7 @@ export type PhaseAvgAggregateInputType = {
     min_rest_days_per_team?: true;
     legs?: true;
     teams_per_group?: true;
+    teams_advance_per_group?: true;
 };
 export type PhaseSumAggregateInputType = {
     id?: true;
@@ -96,6 +102,7 @@ export type PhaseSumAggregateInputType = {
     min_rest_days_per_team?: true;
     legs?: true;
     teams_per_group?: true;
+    teams_advance_per_group?: true;
 };
 export type PhaseMinAggregateInputType = {
     id?: true;
@@ -110,6 +117,7 @@ export type PhaseMinAggregateInputType = {
     is_active?: true;
     legs?: true;
     teams_per_group?: true;
+    teams_advance_per_group?: true;
     status?: true;
     created_at?: true;
     updated_at?: true;
@@ -127,6 +135,7 @@ export type PhaseMaxAggregateInputType = {
     is_active?: true;
     legs?: true;
     teams_per_group?: true;
+    teams_advance_per_group?: true;
     status?: true;
     created_at?: true;
     updated_at?: true;
@@ -144,6 +153,7 @@ export type PhaseCountAggregateInputType = {
     is_active?: true;
     legs?: true;
     teams_per_group?: true;
+    teams_advance_per_group?: true;
     status?: true;
     created_at?: true;
     updated_at?: true;
@@ -238,6 +248,7 @@ export type PhaseGroupByOutputType = {
     is_active: boolean;
     legs: number;
     teams_per_group: number | null;
+    teams_advance_per_group: number | null;
     status: $Enums.PhaseStatus;
     created_at: Date;
     updated_at: Date | null;
@@ -266,6 +277,7 @@ export type PhaseWhereInput = {
     is_active?: Prisma.BoolFilter<"Phase"> | boolean;
     legs?: Prisma.IntFilter<"Phase"> | number;
     teams_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
+    teams_advance_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
     status?: Prisma.EnumPhaseStatusFilter<"Phase"> | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFilter<"Phase"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Phase"> | Date | string | null;
@@ -287,6 +299,7 @@ export type PhaseOrderByWithRelationInput = {
     is_active?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrderInput | Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -312,6 +325,7 @@ export type PhaseWhereUniqueInput = Prisma.AtLeast<{
     is_active?: Prisma.BoolFilter<"Phase"> | boolean;
     legs?: Prisma.IntFilter<"Phase"> | number;
     teams_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
+    teams_advance_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
     status?: Prisma.EnumPhaseStatusFilter<"Phase"> | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFilter<"Phase"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Phase"> | Date | string | null;
@@ -333,6 +347,7 @@ export type PhaseOrderByWithAggregationInput = {
     is_active?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrderInput | Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -358,6 +373,7 @@ export type PhaseScalarWhereWithAggregatesInput = {
     is_active?: Prisma.BoolWithAggregatesFilter<"Phase"> | boolean;
     legs?: Prisma.IntWithAggregatesFilter<"Phase"> | number;
     teams_per_group?: Prisma.IntNullableWithAggregatesFilter<"Phase"> | number | null;
+    teams_advance_per_group?: Prisma.IntNullableWithAggregatesFilter<"Phase"> | number | null;
     status?: Prisma.EnumPhaseStatusWithAggregatesFilter<"Phase"> | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Phase"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Phase"> | Date | string | null;
@@ -373,6 +389,7 @@ export type PhaseCreateInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -394,6 +411,7 @@ export type PhaseUncheckedCreateInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -412,6 +430,7 @@ export type PhaseUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -433,6 +452,7 @@ export type PhaseUncheckedUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -453,6 +473,7 @@ export type PhaseCreateManyInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -468,6 +489,7 @@ export type PhaseUpdateManyMutationInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -485,6 +507,7 @@ export type PhaseUncheckedUpdateManyInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -507,6 +530,7 @@ export type PhaseCountOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -518,6 +542,7 @@ export type PhaseAvgOrderByAggregateInput = {
     min_rest_days_per_team?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrder;
 };
 export type PhaseMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -532,6 +557,7 @@ export type PhaseMaxOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -549,6 +575,7 @@ export type PhaseMinOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
@@ -560,6 +587,7 @@ export type PhaseSumOrderByAggregateInput = {
     min_rest_days_per_team?: Prisma.SortOrder;
     legs?: Prisma.SortOrder;
     teams_per_group?: Prisma.SortOrder;
+    teams_advance_per_group?: Prisma.SortOrder;
 };
 export type PhaseScalarRelationFilter = {
     is?: Prisma.PhaseWhereInput;
@@ -667,6 +695,7 @@ export type PhaseCreateWithoutBracket_slotsInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -687,6 +716,7 @@ export type PhaseUncheckedCreateWithoutBracket_slotsInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -717,6 +747,7 @@ export type PhaseUpdateWithoutBracket_slotsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -737,6 +768,7 @@ export type PhaseUncheckedUpdateWithoutBracket_slotsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -754,6 +786,7 @@ export type PhaseCreateWithoutSeasonInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -773,6 +806,7 @@ export type PhaseUncheckedCreateWithoutSeasonInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -817,6 +851,7 @@ export type PhaseScalarWhereInput = {
     is_active?: Prisma.BoolFilter<"Phase"> | boolean;
     legs?: Prisma.IntFilter<"Phase"> | number;
     teams_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
+    teams_advance_per_group?: Prisma.IntNullableFilter<"Phase"> | number | null;
     status?: Prisma.EnumPhaseStatusFilter<"Phase"> | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFilter<"Phase"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Phase"> | Date | string | null;
@@ -832,6 +867,7 @@ export type PhaseCreateWithoutGroupsInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -852,6 +888,7 @@ export type PhaseUncheckedCreateWithoutGroupsInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -882,6 +919,7 @@ export type PhaseUpdateWithoutGroupsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -902,6 +940,7 @@ export type PhaseUncheckedUpdateWithoutGroupsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -919,6 +958,7 @@ export type PhaseCreateWithoutMatchesInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -939,6 +979,7 @@ export type PhaseUncheckedCreateWithoutMatchesInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -969,6 +1010,7 @@ export type PhaseUpdateWithoutMatchesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -989,6 +1031,7 @@ export type PhaseUncheckedUpdateWithoutMatchesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1007,6 +1050,7 @@ export type PhaseCreateManySeasonInput = {
     is_active?: boolean;
     legs?: number;
     teams_per_group?: number | null;
+    teams_advance_per_group?: number | null;
     status?: $Enums.PhaseStatus;
     created_at?: Date | string;
     updated_at?: Date | string | null;
@@ -1022,6 +1066,7 @@ export type PhaseUpdateWithoutSeasonInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1041,6 +1086,7 @@ export type PhaseUncheckedUpdateWithoutSeasonInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1060,6 +1106,7 @@ export type PhaseUncheckedUpdateManyWithoutSeasonInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     legs?: Prisma.IntFieldUpdateOperationsInput | number;
     teams_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    teams_advance_per_group?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     status?: Prisma.EnumPhaseStatusFieldUpdateOperationsInput | $Enums.PhaseStatus;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1117,6 +1164,7 @@ export type PhaseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     is_active?: boolean;
     legs?: boolean;
     teams_per_group?: boolean;
+    teams_advance_per_group?: boolean;
     status?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
@@ -1139,11 +1187,12 @@ export type PhaseSelectScalar = {
     is_active?: boolean;
     legs?: boolean;
     teams_per_group?: boolean;
+    teams_advance_per_group?: boolean;
     status?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
 };
-export type PhaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_id" | "name" | "type" | "format" | "order" | "start_date" | "end_date" | "min_rest_days_per_team" | "is_active" | "legs" | "teams_per_group" | "status" | "created_at" | "updated_at", ExtArgs["result"]["phase"]>;
+export type PhaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_id" | "name" | "type" | "format" | "order" | "start_date" | "end_date" | "min_rest_days_per_team" | "is_active" | "legs" | "teams_per_group" | "teams_advance_per_group" | "status" | "created_at" | "updated_at", ExtArgs["result"]["phase"]>;
 export type PhaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     bracket_slots?: boolean | Prisma.Phase$bracket_slotsArgs<ExtArgs>;
     season?: boolean | Prisma.SeasonDefaultArgs<ExtArgs>;
@@ -1172,6 +1221,7 @@ export type $PhasePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         is_active: boolean;
         legs: number;
         teams_per_group: number | null;
+        teams_advance_per_group: number | null;
         status: $Enums.PhaseStatus;
         created_at: Date;
         updated_at: Date | null;
@@ -1493,6 +1543,7 @@ export interface PhaseFieldRefs {
     readonly is_active: Prisma.FieldRef<"Phase", 'Boolean'>;
     readonly legs: Prisma.FieldRef<"Phase", 'Int'>;
     readonly teams_per_group: Prisma.FieldRef<"Phase", 'Int'>;
+    readonly teams_advance_per_group: Prisma.FieldRef<"Phase", 'Int'>;
     readonly status: Prisma.FieldRef<"Phase", 'PhaseStatus'>;
     readonly created_at: Prisma.FieldRef<"Phase", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Phase", 'DateTime'>;
