@@ -185,22 +185,6 @@ export class SeasonController extends Controller {
     return this.standingsService.listGroupStandings(groupId, req, id);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GET — PLAYER STATS (public, paginated)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Thống kê cầu thủ trong season.
-   *
-   * Query params:
-   *   ?teamId=1
-   *   ?page=1&per_page=20
-   *   ?sort=goals_scored&direction=desc
-   */
-  @Get("players/{playerId}/career-stats")
-  async getPlayerCareerStats(@Path() playerId: number) {
-    return this.standingsService.getPlayerCareerStats(playerId);
-  }
   @Get("{id}/player-stats")
   async getPlayerStats(
     @Path() id: number,

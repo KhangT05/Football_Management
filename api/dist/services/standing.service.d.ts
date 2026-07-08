@@ -24,41 +24,6 @@ export declare class StandingsService {
         groupName: string;
         standings: TeamStandingRow[];
     }[]>;
-    /**
-     * List player stats trong season, optional filter theo team.
-     *
-     * seasonId là context chính — PlayerStatistic có season_id FK trực tiếp.
-     * team_id optional filter, inject từ req.filter.
-     */
-    getPlayerCareerStats(playerId: number): Promise<{
-        player: {
-            id: number;
-            name: never;
-        };
-        career: {
-            matches_played: number | null;
-            goals_scored: number | null;
-            assists: number | null;
-            yellow_cards: number | null;
-            red_cards: number | null;
-        };
-        seasons: {
-            season: {
-                name: string;
-                start_date: Date | null;
-            };
-            team: {
-                name: string;
-            };
-            team_id: number;
-            season_id: number;
-            matches_played: number;
-            goals_scored: number;
-            assists: number;
-            yellow_cards: number;
-            red_cards: number;
-        }[];
-    }>;
     listPlayerStats(seasonId: number, req: QueryRequest): Promise<PaginatedResult<PlayerStatisticRow>>;
     getSuspendedPlayers(seasonId: number): Promise<({
         team: {

@@ -68,43 +68,6 @@ export declare class SeasonController extends Controller {
         goals_against: number;
         points: number;
     }>>;
-    /**
-     * Thống kê cầu thủ trong season.
-     *
-     * Query params:
-     *   ?teamId=1
-     *   ?page=1&per_page=20
-     *   ?sort=goals_scored&direction=desc
-     */
-    getPlayerCareerStats(playerId: number): Promise<{
-        player: {
-            id: number;
-            name: never;
-        };
-        career: {
-            matches_played: number | null;
-            goals_scored: number | null;
-            assists: number | null;
-            yellow_cards: number | null;
-            red_cards: number | null;
-        };
-        seasons: {
-            season: {
-                name: string;
-                start_date: Date | null;
-            };
-            team: {
-                name: string;
-            };
-            team_id: number;
-            season_id: number;
-            matches_played: number;
-            goals_scored: number;
-            assists: number;
-            yellow_cards: number;
-            red_cards: number;
-        }[];
-    }>;
     getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
         id: number;
         team: {

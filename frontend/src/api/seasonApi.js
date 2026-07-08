@@ -82,15 +82,6 @@ export const seasonApi = {
     return axiosClient.get(`/seasons/${id}/standings`);
   },
 
-  /**
-   * Lấy danh sách thống kê cầu thủ (Bảng xếp hạng cầu thủ)
-   * GET /seasons/{id}/player-stats
-   * @param {number} id
-   * @param {{ page?, per_page?, sort?, direction?, teamId? }} params
-   */
-  getPlayerStats: (id, params = {}) => {
-    return axiosClient.get(`/seasons/${id}/player-stats`, { params });
-  },
 
   /**
    * Xóa mềm mùa giải
