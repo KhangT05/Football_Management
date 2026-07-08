@@ -768,15 +768,10 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PlayerPosition": {
-        "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--assists-number--season_id-number--matches_played-number--player_58__id-number--user_58__name-string_--avatar-string_--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean__": {
+    "PaginatedResult__id-number--goals_scored-number--yellow_cards-number--red_cards-number--team_58__name-string--id-number--logo-string_--team_id-number--assists-number--season_id-number--matches_played-number--player_id-number--accumulated_yellow_cards-number--is_suspended-boolean--player_58__id-number--user_58__name-string_--avatar-string___": {
         "dataType": "refObject",
         "properties": {
-            "data": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_suspended": { "dataType": "boolean", "required": true }, "accumulated_yellow_cards": { "dataType": "double", "required": true }, "player_id": { "dataType": "double", "required": true }, "player": { "dataType": "nestedObjectLiteral", "nestedProperties": { "avatar": { "dataType": "string", "required": true }, "user": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true } }, "required": true }, "id": { "dataType": "double", "required": true } }, "required": true }, "matches_played": { "dataType": "double", "required": true }, "season_id": { "dataType": "double", "required": true }, "assists": { "dataType": "double", "required": true }, "team_id": { "dataType": "double", "required": true }, "team": { "dataType": "nestedObjectLiteral", "nestedProperties": { "logo": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "required": true }, "red_cards": { "dataType": "double", "required": true }, "yellow_cards": { "dataType": "double", "required": true }, "goals_scored": { "dataType": "double", "required": true }, "id": { "dataType": "double", "required": true } } }, "required": true },
+            "data": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "player": { "dataType": "nestedObjectLiteral", "nestedProperties": { "avatar": { "dataType": "string", "required": true }, "user": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true } }, "required": true }, "id": { "dataType": "double", "required": true } }, "required": true }, "is_suspended": { "dataType": "boolean", "required": true }, "accumulated_yellow_cards": { "dataType": "double", "required": true }, "player_id": { "dataType": "double", "required": true }, "matches_played": { "dataType": "double", "required": true }, "season_id": { "dataType": "double", "required": true }, "assists": { "dataType": "double", "required": true }, "team_id": { "dataType": "double", "required": true }, "team": { "dataType": "nestedObjectLiteral", "nestedProperties": { "logo": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "required": true }, "red_cards": { "dataType": "double", "required": true }, "yellow_cards": { "dataType": "double", "required": true }, "goals_scored": { "dataType": "double", "required": true }, "id": { "dataType": "double", "required": true } } }, "required": true },
             "meta": { "ref": "PaginationMeta", "required": true },
         },
         "additionalProperties": false,
@@ -907,6 +902,11 @@ const models = {
     "UpdateRoleDto": {
         "dataType": "refAlias",
         "type": { "ref": "infer_typeofupdateRoleSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPosition": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerDto": {
@@ -3789,33 +3789,6 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'getGroupStandings',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsSeasonController_getPlayerCareerStats = {
-        playerId: { "in": "path", "name": "playerId", "required": true, "dataType": "double" },
-    };
-    app.get('/seasons/players/:playerId/career-stats', ...(fetchMiddlewares(SeasonController)), ...(fetchMiddlewares(SeasonController.prototype.getPlayerCareerStats)), async function SeasonController_getPlayerCareerStats(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsSeasonController_getPlayerCareerStats, request, response });
-            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
-            const controller = await container.get(SeasonController);
-            if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-            }
-            await templateService.apiHandler({
-                methodName: 'getPlayerCareerStats',
                 controller,
                 response,
                 next,
