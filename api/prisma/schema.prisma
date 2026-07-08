@@ -105,13 +105,15 @@ model TournamentRule {
   points_per_loss        Int       @default(0)
 
   // Apply mọi phase format
-  forfeit_score           Int  @default(3)
-  yellow_cards_suspension Int  @default(3)
-  max_players_per_team    Int  @default(11)
-  min_players_per_team    Int  @default(7)
+  forfeit_score           Int     @default(3)
+  yellow_cards_suspension Int     @default(3)
+  max_players_per_team    Int     @default(11)
+  min_players_per_team    Int     @default(7)
+  bonus_per_goal          Decimal @default(0) @db.Decimal(10, 2) // NEW — thưởng/bàn thắng
+  bonus_per_assist        Decimal @default(0) @db.Decimal(10, 2)
   // Chỉ apply cho round_robin phase
-  teams_advance_per_group Int  @default(2)
-  tiebreaker_order        Json @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
+  teams_advance_per_group Int     @default(2)
+  tiebreaker_order        Json    @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
   user       User?      @relation(fields: [user_id], references: [id])
@@ -242,7 +244,7 @@ model Season {
   notifications      Notification[]
   articles           Article[]
   teamStandings      TeamStanding[]
-  tournament_rule_id Int
+  tournament_rule_id Int?
   tournamentRule     TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
 
   @@map("seasons")

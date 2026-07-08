@@ -2215,6 +2215,8 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly yellow_cards_suspension: "yellow_cards_suspension";
     readonly max_players_per_team: "max_players_per_team";
     readonly min_players_per_team: "min_players_per_team";
+    readonly bonus_per_goal: "bonus_per_goal";
+    readonly bonus_per_assist: "bonus_per_assist";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
     readonly user_id: "user_id";
