@@ -94,13 +94,20 @@ export class UserService {
         const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
         if (!exists) throw createAppError("NOT_FOUND", `User ${id} not found`);
 
-        // Tách role_ids ra — không update trực tiếp qua user.update
+        // Tách role_ids ra — sync riêng qua RelationService
         const { role_ids, ...fields } = data;
         const patch = Object.fromEntries(
             Object.entries(fields).filter(([, v]) => v !== undefined)
         );
 
-        return this.prisma.user.update({ where: { id }, data: patch, ...USER_SELECT });
+        const updated = await this.prisma.user.update({ where: { id }, data: patch, ...USER_SELECT });
+
+        // Nếu role_ids được truyền vào (kể cả mảng rỗng) thì sync toàn bộ
+        if (Array.isArray(role_ids)) {
+            await this.syncRoles(id, role_ids);
+        }
+
+        return updated;
     }
 
     async updatePassword(id: number, currentPassword: string, newPassword: string): Promise<void> {

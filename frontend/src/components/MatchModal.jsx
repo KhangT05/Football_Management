@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Clock, Shield, Activity, Users } from 'lucide-react';
-import { teamApi, matchApi } from '../api';
+import { teamApi, matchApi, matchLineupApi } from '../api';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -61,16 +61,21 @@ const EVENT_ICON = {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function PlayerItem({ tp }) {
-  // Display name nằm ở User — path cũ (tp.player?.player?.name, double .player)
-  // không trỏ đến đâu cả, luôn rơi fallback #id. Cover cả 2 shape có thể có:
-  // tp.user (join thẳng) và tp.player.user (qua Player).
-  const name = tp.user?.name ?? tp.player?.user?.name ?? tp.player?.name ?? `#${tp.player_id}`;
-  const pos = tp.position;
+  const name = tp.name;
+  let rawPos = tp.position;
+  if (rawPos === 'goalkeeper') rawPos = 'GK';
+  if (rawPos === 'defender') rawPos = 'DEF';
+  if (rawPos === 'midfielder') rawPos = 'MID';
+  if (rawPos === 'forward') rawPos = 'FW';
+
   return (
     <li className="flex items-center gap-3 py-2.5 border-b border-navy-light/50 last:border-0 hover:bg-navy-light/30 px-2 rounded-lg transition-colors">
       <span className="w-7 h-7 flex items-center justify-center rounded-md bg-navy-light/50 font-mono text-neon font-bold text-xs shrink-0">{tp.jersey_number ?? '?'}</span>
-      <span className="font-medium text-white text-sm flex-1 truncate">{name}</span>
-      {pos && <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${POSITION_COLORS[pos] ?? 'bg-gray-400/10 text-gray-400'}`}>{POSITION_LABELS[pos] ?? pos}</span>}
+      <span className="font-medium text-white text-sm flex-1 truncate flex items-center gap-2">
+        {name}
+        {tp.is_captain && <span className="w-4 h-4 flex items-center justify-center bg-amber-500/20 text-amber-500 text-[10px] font-black rounded-full border border-amber-500/30" title="Đội trưởng">C</span>}
+      </span>
+      {rawPos && <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${POSITION_COLORS[rawPos] ?? 'bg-gray-400/10 text-gray-400'}`}>{POSITION_LABELS[rawPos] ?? rawPos}</span>}
     </li>
   );
 }
@@ -78,9 +83,12 @@ function PlayerItem({ tp }) {
 function PlayerColumn({ title, color, players, loading }) {
   const borderCls = color === 'blue' ? 'text-blue-400' : 'text-rose-400';
   const badgeCls = color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 'bg-rose-500/20 text-rose-400';
+
+  const starters = players.filter(p => p.lineup_type === 'starter');
+  const subs = players.filter(p => p.lineup_type === 'substitute');
+  const unregistered = players.filter(p => p.lineup_type === 'unregistered');
+
   return (
-    // min-h-0 bắt buộc: cha là flex/grid item, không có nó overflow-y-auto bên
-    // dưới không co được và không scroll (flex item mặc định min-height: auto).
     <div className="flex flex-col min-h-0 h-full bg-navy border border-navy-light rounded-2xl p-4 shadow-lg">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-navy-light/50 shrink-0">
         <Shield className={`w-5 h-5 ${borderCls}`} />
@@ -88,12 +96,34 @@ function PlayerColumn({ title, color, players, loading }) {
         <span className={`${badgeCls} text-[10px] font-black px-2 py-0.5 rounded uppercase shrink-0`}>Đội hình</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
-        {loading
-          ? [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
-          : players.length > 0
-            ? <ul>{players.map(p => <PlayerItem key={p.id} tp={p} />)}</ul>
-            : <p className="text-gray-500 text-center py-6 text-sm">Chưa có danh sách</p>
-        }
+        {loading ? (
+          [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
+        ) : unregistered.length > 0 ? (
+          <ul>{unregistered.map(p => <PlayerItem key={p.id} tp={p} />)}</ul>
+        ) : starters.length > 0 || subs.length > 0 ? (
+          <div className="space-y-6">
+            {starters.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  Đá chính
+                </h4>
+                <ul>{starters.map(p => <PlayerItem key={p.id} tp={p} />)}</ul>
+              </div>
+            )}
+            {subs.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                  Dự bị
+                </h4>
+                <ul>{subs.map(p => <PlayerItem key={p.id} tp={p} />)}</ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-center py-6 text-sm">Chưa có danh sách</p>
+        )}
       </div>
     </div>
   );
@@ -176,7 +206,7 @@ export default function MatchModal({ match, onClose }) {
     return () => { document.body.style.overflow = ''; };
   }, [match]);
 
-  // Fetch players
+  // Fetch players and lineups
   useEffect(() => {
     if (!match) return;
     let cancelled = false;
@@ -186,11 +216,47 @@ export default function MatchModal({ match, onClose }) {
     };
     setTimeout(() => { if (!cancelled) setPlayerState(s => ({ ...s, loading: true })); }, 0);
     Promise.allSettled([
-      teamApi.getPlayers(match.home_team_id, { per_page: 30 }),
-      teamApi.getPlayers(match.away_team_id, { per_page: 30 }),
-    ]).then(([h, a]) => {
+      teamApi.getPlayers(match.home_team_id, { per_page: 50 }),
+      teamApi.getPlayers(match.away_team_id, { per_page: 50 }),
+      matchLineupApi.getMatchLineups(match.id)
+    ]).then(([h, a, l]) => {
       if (cancelled) return;
-      setPlayerState({ home: h.status === 'fulfilled' ? parse(h.value) : [], away: a.status === 'fulfilled' ? parse(a.value) : [], loading: false });
+      const homeRoster = h.status === 'fulfilled' ? parse(h.value) : [];
+      const awayRoster = a.status === 'fulfilled' ? parse(a.value) : [];
+      const lineups = l.status === 'fulfilled' ? parse(l.value) : [];
+
+      const homeLineup = lineups.filter(x => x.team_id === match.home_team_id);
+      const awayLineup = lineups.filter(x => x.team_id === match.away_team_id);
+
+      const buildTeamPlayers = (roster, lineup) => {
+        if (lineup.length === 0) {
+           return roster.map(rPlayer => ({
+             id: rPlayer.id,
+             name: rPlayer?.user?.name ?? rPlayer?.player?.user?.name ?? rPlayer?.player?.name ?? rPlayer?.name ?? `#${rPlayer.player_id}`,
+             jersey_number: rPlayer.jersey_number ?? rPlayer.number ?? '?',
+             position: rPlayer.position,
+             lineup_type: 'unregistered',
+             is_captain: false
+           }));
+        }
+        return lineup.map(entry => {
+           const rPlayer = roster.find(p => p.player_id === entry.player_id || p.player?.id === entry.player_id);
+           return {
+             id: entry.player_id,
+             name: rPlayer?.user?.name ?? rPlayer?.player?.user?.name ?? rPlayer?.player?.name ?? rPlayer?.name ?? entry.player?.name ?? `Cầu thủ #${entry.player_id}`,
+             jersey_number: entry.jersey_number ?? rPlayer?.jersey_number ?? rPlayer?.number,
+             position: entry.position,
+             lineup_type: entry.lineup_type,
+             is_captain: entry.is_captain
+           };
+        });
+      };
+
+      setPlayerState({ 
+        home: buildTeamPlayers(homeRoster, homeLineup), 
+        away: buildTeamPlayers(awayRoster, awayLineup), 
+        loading: false 
+      });
     });
     return () => { cancelled = true; };
   }, [match]);

@@ -152,10 +152,22 @@ export default function ManageMatchLineup() {
       team_id: team.id,
       players: Object.entries(selections).map(([playerId, sel]) => {
         const playerDetails = allPlayers.find(p => String(p.player_id) === String(playerId) || String(p.player?.id) === String(playerId));
+        
+        let mappedPosition = 'midfielder';
+        const rawPos = (playerDetails?.position || '').toUpperCase();
+        if (rawPos === 'GK' || rawPos === 'GOALKEEPER') mappedPosition = 'goalkeeper';
+        else if (rawPos === 'DEF' || rawPos === 'DEFENDER') mappedPosition = 'defender';
+        else if (rawPos === 'MID' || rawPos === 'MIDFIELDER') mappedPosition = 'midfielder';
+        else if (rawPos === 'FW' || rawPos === 'FORWARD') mappedPosition = 'forward';
+        else mappedPosition = (playerDetails?.position || 'midfielder').toLowerCase();
+
+        const jNum = parseInt(playerDetails?.jersey_number || playerDetails?.number || 1, 10);
+        const validJersey = isNaN(jNum) || jNum < 1 ? 1 : (jNum > 99 ? 99 : jNum);
+
         return {
           player_id: Number(playerId),
-          jersey_number: playerDetails?.jersey_number || playerDetails?.number || 0,
-          position: playerDetails?.position || 'MID',
+          jersey_number: validJersey,
+          position: mappedPosition,
           lineup_type: sel.lineup_type,
           is_captain: sel.is_captain
         };

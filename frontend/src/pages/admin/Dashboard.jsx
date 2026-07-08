@@ -18,7 +18,7 @@ export default function Dashboard() {
   // Filter States
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
+  const [selectedPeriod, setSelectedPeriod] = useState('30ngày');
 
   // Stats States
   const [overviewStats, setOverviewStats] = useState({
@@ -170,12 +170,12 @@ export default function Dashboard() {
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
               >
-                <option value="7d">7 ngày qua</option>
-                <option value="30d">30 ngày qua</option>
-                <option value="90d">90 ngày qua</option>
-                <option value="3m">3 tháng qua</option>
-                <option value="6m">6 tháng qua</option>
-                <option value="1y">1 năm qua</option>
+                <option value="7 ngày">7 ngày qua</option>
+                <option value="30 ngày">30 ngày qua</option>
+                <option value="90 ngày">90 ngày qua</option>
+                <option value="3 tháng">3 tháng qua</option>
+                <option value="6 tháng">6 tháng qua</option>
+                <option value="1 năm">1 năm qua</option>
               </select>
             </div>
           )}

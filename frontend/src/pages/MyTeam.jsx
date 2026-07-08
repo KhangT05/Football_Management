@@ -459,6 +459,22 @@ export default function MyTeam() {
     }
   };
 
+  const handleExportMatchReport = async (matchId) => {
+    try {
+      const res = await matchApi.getMatchReport(matchId);
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      if (!blob.size) throw new Error('Empty response');
+      const filename = extractFilename(res?.headers?.['content-disposition'], `BienBanTranDau_${matchId}.pdf`);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename;
+      document.body.appendChild(link); link.click(); link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('Không thể tải biên bản trận đấu.');
+    }
+  };
+
   const openEditModal = (player) => {
     setEditingPlayer(player);
     setModalError('');
@@ -786,7 +802,13 @@ export default function MyTeam() {
                           </p>
                           <p className="text-sm text-gray-400 mt-1 truncate">Sân: {match.venue?.name || 'Chưa xếp sân'}</p>
                         </div>
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex items-center gap-2 flex-wrap justify-end">
+                          <button
+                            onClick={() => handleExportMatchReport(match.id)}
+                            className="w-full sm:w-auto px-4 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-xs transition-all whitespace-nowrap"
+                          >
+                            Xuất Biên Bản
+                          </button>
                           {isActive ? (
                             <button
                               onClick={() => setLineupModalMatch(match)}
