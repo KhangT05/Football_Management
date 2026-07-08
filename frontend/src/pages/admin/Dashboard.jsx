@@ -78,11 +78,16 @@ export default function Dashboard() {
           ]);
 
           if (isMounted) {
+            const revData = revenueRes.status === 'fulfilled' ? (revenueRes.value?.data || revenueRes.value) : null;
+            const tmsData = teamsRes.status === 'fulfilled' ? (teamsRes.value?.data || teamsRes.value) : null;
+            const topData = topScorersRes.status === 'fulfilled' ? (topScorersRes.value?.data || topScorersRes.value) : null;
+            const disData = disciplineRes.status === 'fulfilled' ? (disciplineRes.value?.data || disciplineRes.value) : null;
+
             setSeasonStats({
-              revenue: revenueRes.status === 'fulfilled' ? revenueRes.value?.data?.seasons?.[0] : null,
-              teamRegistrations: teamsRes.status === 'fulfilled' ? teamsRes.value?.data?.seasons?.[0] : null,
-              topScorers: topScorersRes.status === 'fulfilled' ? (topScorersRes.value?.data?.scorers || []) : [],
-              discipline: disciplineRes.status === 'fulfilled' ? (disciplineRes.value?.data?.teams || []) : []
+              revenue: revData?.seasons?.[0] || null,
+              teamRegistrations: tmsData?.seasons?.[0] || null,
+              topScorers: topData?.scorers || [],
+              discipline: disData?.teams || []
             });
           }
         } else {
@@ -94,7 +99,7 @@ export default function Dashboard() {
           ]);
 
           if (isMounted) {
-            const ov = overviewRes.status === 'fulfilled' ? overviewRes.value?.data : null;
+            const ov = overviewRes.status === 'fulfilled' ? (overviewRes.value?.data || overviewRes.value) : null;
             setOverviewStats({
               tournaments: ov?.tournament_count || 0,
               seasons: ov?.season_count || 0,
@@ -104,7 +109,8 @@ export default function Dashboard() {
               newUsers: ov?.new_user_count || 0
             });
 
-            const rawDaily = registrationsRes.status === 'fulfilled' ? (registrationsRes.value?.data?.daily || []) : [];
+            const regData = registrationsRes.status === 'fulfilled' ? (registrationsRes.value?.data || registrationsRes.value) : null;
+            const rawDaily = regData?.daily || [];
             // Format date for chart (e.g. "2023-10-01" -> "01/10")
             const formattedDaily = rawDaily.map(item => ({
               ...item,
