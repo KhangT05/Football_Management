@@ -561,6 +561,20 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SystemOverviewStats": {
+        "dataType": "refObject",
+        "properties": {
+            "tournament_count": {"dataType":"double","required":true},
+            "season_count": {"dataType":"double","required":true},
+            "team_count": {"dataType":"double","required":true},
+            "user_count": {"dataType":"double","required":true},
+            "total_revenue": {"dataType":"double","required":true},
+            "new_user_count": {"dataType":"double","required":true},
+            "period_days": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonTeamStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["approved"]},{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["eliminated"]},{"dataType":"enum","enums":["withdrawn"]}],"validators":{}},
@@ -3638,6 +3652,42 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'getPlayerCareerStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStatisticsController_getSystemOverviewStats: Record<string, TsoaRoute.ParameterSchema> = {
+                period: {"in":"query","name":"period","dataType":"union","subSchemas":[{"dataType":"enum","enums":["7d"]},{"dataType":"enum","enums":["30d"]},{"dataType":"enum","enums":["90d"]},{"dataType":"enum","enums":["3m"]},{"dataType":"enum","enums":["6m"]},{"dataType":"enum","enums":["1y"]}]},
+        };
+        app.get('/statistics/overview',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController)),
+            ...(fetchMiddlewares<RequestHandler>(StatisticsController.prototype.getSystemOverviewStats)),
+
+            async function StatisticsController_getSystemOverviewStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getSystemOverviewStats, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<StatisticsController>(StatisticsController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getSystemOverviewStats',
                 controller,
                 response,
                 next,

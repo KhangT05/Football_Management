@@ -114,4 +114,13 @@ export interface PlayerCareerStats {
     player_name: string;
     tournaments: PlayerCareerStatsByTournament[];
 }
+export interface SystemOverviewStats {
+    tournament_count: number;
+    season_count: number;
+    team_count: number;
+    user_count: number;
+    total_revenue: number;
+    new_user_count: number;
+    period_days: number;
+}
 //# sourceMappingURL=statistics.type.d.ts.map

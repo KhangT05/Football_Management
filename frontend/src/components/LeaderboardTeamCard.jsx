@@ -17,7 +17,7 @@ export default function LeaderboardTeamCard({ team, idx }) {
   );
   useEffect(() => {
     if (cachedPlayers === undefined) {
-      fetchPlayers(team.id, {}).catch(() => {});
+      fetchPlayers(team.id, {}).catch(() => { });
     }
   }, [team.id, cachedPlayers, fetchPlayers]);
 

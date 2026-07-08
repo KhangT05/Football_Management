@@ -450,5 +450,47 @@ export class StatisticsService {
             tournaments: [...byTournament.values()],
         };
     }
+    // ═══════════════════════════════════════════════════════════════════════
+    // SYSTEM OVERVIEW — KPI cards cho dashboard tổng quan ("Vận hành hệ thống"
+    // + "Tài chính & Tăng trưởng"). Gộp 1 endpoint để dashboard chỉ cần 1 call
+    // thay vì bắn 6 request riêng lẻ lúc load trang.
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Các count (tournament/season/team) chỉ cần Prisma.count đơn giản —
+    // không raw SQL vì không group/bucket gì cả.
+    //
+    // total_revenue: khác getSeasonRevenue() ở chỗ đây là SUM trực tiếp trên
+    // payments TOÀN HỆ THỐNG, không group theo season nên không cần join
+    // season_teams -> seasons.
+    async getSystemOverviewStats(period = "30d") {
+        const days = PERIOD_DAYS[period];
+        if (!days) {
+            throw createAppError("VALIDATION_ERROR", `getSystemOverviewStats called with invalid period=${period}`, "period không hợp lệ, dùng: 7d, 30d, 90d, 3m, 6m, 1y");
+        }
+        const [tournamentCount, seasonCount, teamCount, userCount, revenueRow, newUserCount,] = await Promise.all([
+            this.prisma.tournament.count({ where: { deleted_at: null } }),
+            this.prisma.season.count({ where: { deleted_at: null } }),
+            this.prisma.team.count({ where: { deleted_at: null } }),
+            this.prisma.user.count({ where: { is_active: true } }),
+            this.prisma.$queryRaw `
+                SELECT
+                    COALESCE(SUM(CASE WHEN status = 'confirmed' THEN amount ELSE 0 END), 0) AS confirmed,
+                    COALESCE(SUM(CASE WHEN status = 'refunded' THEN refund_amount ELSE 0 END), 0) AS refunded
+                FROM payments
+            `,
+            this.userQueryable.count({ period }),
+        ]);
+        const confirmed = Number(revenueRow[0]?.confirmed ?? 0);
+        const refunded = Number(revenueRow[0]?.refunded ?? 0);
+        return {
+            tournament_count: tournamentCount,
+            season_count: seasonCount,
+            team_count: teamCount,
+            user_count: userCount,
+            total_revenue: confirmed - refunded,
+            new_user_count: newUserCount,
+            period_days: days,
+        };
+    }
 }
 //# sourceMappingURL=statistics.service.js.map
