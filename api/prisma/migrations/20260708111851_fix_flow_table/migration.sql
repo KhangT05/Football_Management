@@ -19,7 +19,8 @@ ALTER TABLE `player_statistics` ADD COLUMN `suspension_matches_remaining` INTEGE
     ADD COLUMN `yellow_cards_since_reset` INTEGER NOT NULL DEFAULT 0;
 
 -- AlterTable
-ALTER TABLE `seasons` ADD COLUMN `tournament_rule_id` INTEGER NOT NULL;
+ALTER TABLE `seasons`
+ADD COLUMN `tournament_rule_id` INTEGER NULL;
 
 -- AlterTable
 ALTER TABLE `tournament_rules` ADD COLUMN `fine_per_red_card` DECIMAL(10, 2) NOT NULL DEFAULT 0,
@@ -29,6 +30,3 @@ ALTER TABLE `tournament_rules` ADD COLUMN `fine_per_red_card` DECIMAL(10, 2) NOT
 
 -- AddForeignKey
 ALTER TABLE `seasons` ADD CONSTRAINT `seasons_tournament_rule_id_fkey` FOREIGN KEY (`tournament_rule_id`) REFERENCES `tournament_rules`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `articles` ADD CONSTRAINT `articles_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

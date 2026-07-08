@@ -1,7 +1,18 @@
 import { SeasonListItem } from '../dtos/season.schema.js';
-import { Prisma, PrismaClient } from '../generated/prisma/client.js';
+import { Prisma, PrismaClient, PhaseStatus } from '../generated/prisma/client.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { PlayerStatisticRow, TeamStandingRow } from '../types/standing.type.js';
+type PhaseStandingsBlock = {
+    phaseId: number;
+    phaseName: string;
+    phaseOrder: number;
+    phaseStatus: PhaseStatus;
+    groups: {
+        groupId: number;
+        groupName: string;
+        standings: TeamStandingRow[];
+    }[];
+};
 export declare class StandingsService {
     private readonly prisma;
     private standingQueryable;
@@ -11,19 +22,43 @@ export declare class StandingsService {
      * List standings của 1 group cụ thể.
      *
      * API nhận groupId trực tiếp — TeamStanding có group_id FK nên không cần join.
-     * Không nhận seasonId vì:
-     *   - standings thuộc group, không phải season
-     *   - season có thể có nhiều group → caller phải chỉ định group nào
-     *   - nếu cần cross-group view, dùng listStandingsBySeason()
+     * Không nhận seasonId nếu chỉ cần xem 1 bảng; nếu có seasonId (từ route
+     * /seasons/:seasonId/standings/:groupId) thì validate group thuộc đúng
+     * season — tránh user gọi nhầm group thuộc season khác.
      *
      * QueryRequest từ HTTP: page, sort, direction, per_page
      */
     listGroupStandings(groupId: number, req: QueryRequest, seasonId?: number): Promise<PaginatedResult<TeamStandingRow>>;
-    listStandingsBySeason(seasonId: number): Promise<{
-        groupId: number;
-        groupName: string;
-        standings: TeamStandingRow[];
-    }[]>;
+    /**
+     * Trả standings của phase round_robin ĐANG MỞ (status != locked, order lớn
+     * nhất) trong season, group theo group_id. Mirror GroupService.findAllBySeason
+     * — FE KHÔNG cần biết phaseId, chỉ cần seasonId.
+     *
+     * FIX (root cause "RR2 hiện lẫn standings RR1 đã locked"): bản cũ
+     * (listStandingsBySeason) query `group: { phase: { season_id } }` KHÔNG
+     * filter phase — khi season đã advance RR1 -> RR2 (advanceToNextRoundRobin
+     * bên GroupService), TeamStanding của CẢ 2 phase cùng season_id đều lẫn
+     * vào 1 danh sách group phẳng. Vì group_id là unique giữa các phase
+     * (không trùng), rows không lỗi logic tính toán, nhưng FE nhận về danh
+     * sách "Bảng A, Bảng B" gộp chung của RR1 (đã xong, hạng cũ) lẫn RR2
+     * (đang đá) mà không có cách nào phân biệt — hiển thị sai ngữ cảnh
+     * ("giờ đang ở vòng nào").
+     *
+     * Trả về null nếu season chưa có round_robin phase nào — trạng thái hợp
+     * lệ ("chưa bắt đầu"), không phải lỗi (giống findAllBySeason).
+     */
+    listActiveGroupStandings(seasonId: number): Promise<PhaseStandingsBlock | null>;
+    /**
+     * Trả TOÀN BỘ lịch sử standings round_robin của season — mọi phase RR
+     * (kể cả đã locked), order tăng dần: RR1 (locked) -> RR2 (đang mở) -> ...
+     * Dùng cho FE render tab lịch sử ("Vòng bảng 1", "Vòng bảng 2") trong
+     * flow RR->RR->KO, tách biệt hẳn khỏi listActiveGroupStandings (chỉ trả
+     * phase hiện tại) để 2 use-case (xem hiện tại vs xem lại lịch sử) không
+     * lẫn payload vào nhau.
+     */
+    listGroupStandingsHistory(seasonId: number): Promise<PhaseStandingsBlock[]>;
+    private _assertSeasonViewable;
+    private _buildPhaseStandingsBlock;
     listPlayerStats(seasonId: number, req: QueryRequest): Promise<PaginatedResult<PlayerStatisticRow>>;
     getSuspendedPlayers(seasonId: number): Promise<({
         team: {
@@ -59,26 +94,38 @@ export declare class StandingsService {
      * Full scan là đúng ở scale này (group ≤ 8 teams, ≤ 28 matches/group).
      * Incremental update phức tạp hơn nhiều (phải undo kết quả cũ) và không đáng.
      *
-     * Flow:
-     *   1. Load TournamentRule (points config + tiebreaker order)
-     *   2. Load tất cả official finished matches của group
-     *   3. Accumulate stats cho từng team
-     *   4. Load card stats nếu tiebreaker cần
-     *   5. Build H2H map nếu tiebreaker cần
-     *   6. Sort với H2H mini-league logic (UEFA standard)
-     *   7. Upsert batch trong transaction
+     * FIX (race condition — lost update): bản cũ, khi gọi standalone (không
+     * có `tx` truyền vào), chạy TOÀN BỘ flow (load rule -> load match ->
+     * accumulate -> sort -> upsert) bằng `this.prisma` KHÔNG transaction —
+     * chỉ đoạn upsert cuối được bọc `$transaction`. 2 request confirmResult
+     * của 2 match KHÁC NHAU cùng group gần như đồng thời (hoàn toàn có thể —
+     * trọng tài nhập nhiều kết quả liền nhau) sẽ cùng đọc snapshot match cũ,
+     * tính 2 bộ standings khác nhau, rồi ghi đè lên nhau — request nào ghi
+     * sau "thắng", bộ standings của request đọc trước bị mất (lost update),
+     * standings cuối cùng sai dù cả 2 request đều chạy thành công không lỗi.
      *
-     * Không gọi từ bên ngoài transaction của confirmResult —
-     * standings recompute chạy sau khi match transaction commit (eventually consistent).
-     * Nếu fail: standings stale nhưng match đã finalized. Acceptable cho scale này.
+     * Fix bằng row lock trên group (SELECT ... FOR UPDATE), theo đúng pattern
+     * đã dùng ở GroupService.deactivateGroup — serialize các lần recompute
+     * CÙNG 1 group, không đụng group khác (khác lockSeason bên GroupService,
+     * vốn serialize toàn bộ write-path group của season — recompute không
+     * cần rộng vậy). Nếu gọi standalone (không có tx), tự mở 1 transaction
+     * bao trọn toàn bộ flow để lock giữ được xuyên suốt lúc đọc + tính + ghi.
      */
     recomputeGroupStandings(groupId: number, tx?: Prisma.TransactionClient): Promise<void>;
+    private _recomputeGroupStandingsLocked;
     /**
      * List seasons ở trạng thái người dùng quan tâm: ongoing, finished, cancelled.
      * upcoming / registration_open bị loại — chưa có standings để xem.
      *
      * Trả kèm tournament name để client render breadcrumb/filter.
      * Không load standings ở đây — lazy load khi user chọn season.
+     *
+     * FIX: `allowedStatuses` cũ liệt kê đủ cả 5 status (kể cả upcoming/
+     * registration_open) — trái với đúng comment ngay phía trên, khiến
+     * `statusFilter` mặc định (không truyền `status`) trả về CẢ 5 status
+     * thay vì chỉ 3. Dùng chung `VIEWABLE_SEASON_STATUSES` — nếu FE truyền
+     * status không nằm trong danh sách xem được (vd 'upcoming'), fallback
+     * về mặc định 3 status thay vì lọt qua.
      */
     listSeasons(params: {
         status?: 'ongoing' | 'finished' | 'cancelled' | 'registration_open' | 'upcoming';
@@ -108,4 +155,5 @@ export declare class StandingsService {
     private _compareOverall;
     private _applyTiebreakers;
 }
+export {};
 //# sourceMappingURL=standing.service.d.ts.map

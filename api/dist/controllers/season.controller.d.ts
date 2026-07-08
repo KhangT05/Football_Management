@@ -43,11 +43,7 @@ export declare class SeasonController extends Controller {
      *
      * Chỉ serve season ở status: ongoing / finished / cancelled.
      */
-    getSeasonStandings(id: number): Promise<{
-        groupId: number;
-        groupName: string;
-        standings: import("../types/standing.type.js").TeamStandingRow[];
-    }[]>;
+    getSeasonStandings(id: number): Promise<any>;
     /**
      * Standings chi tiết của 1 group — validate group thuộc season.
      *
