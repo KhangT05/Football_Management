@@ -189,11 +189,15 @@ export class PlayerService {
 
     /**
      * FIX: trước đây không validate user_id tồn tại (→ P2003 FK raw 500 nếu
-     * user_id sai) và không dedupe theo user_id (→ 2 Player row cho cùng 1
-     * user nếu Player.user_id không có @@unique DB — đã confirm schema.prisma
-     * có @unique trên Player.user_id, nên DB tự chặn ở mức constraint, nhưng
-     * vẫn check trước để trả lỗi rõ ràng thay vì raw P2002).
-     * Trả CONFLICT rõ ràng thay vì raw Prisma error hoặc silent duplicate.
+     * user_id sai), không dedupe theo user_id (→ CONFLICT rõ ràng thay vì raw
+     * P2002), và QUAN TRỌNG NHẤT — không gán role "player" cho user sau khi
+     * tạo Player. Khác với createPlayerForTeamWithUser/addPlayerToTeam/import
+     * (đều có ensurePlayerRole), path admin-gõ-tay này bị bỏ sót, khiến user
+     * có Player record nhưng không có Role -> mất quyền truy cập tính năng
+     * player-only ở phía FE/authorization middleware.
+     *
+     * Giờ wrap trong $transaction: create Player + upsert User_Role cùng lúc,
+     * đảm bảo không có trạng thái "có Player, thiếu Role" nếu 1 trong 2 fail.
      * Dùng khi admin đã biết user_id có sẵn. Không dùng cho case "thêm player +
      * chưa chắc user tồn tại" — xem createPlayerForTeamWithUser.
      */
@@ -212,10 +216,19 @@ export class PlayerService {
             throw createAppError("CONFLICT", `User ${dto.user_id} already has a player profile (id=${existing.id})`);
         }
 
-        const player = await this.prisma.player.create({
-            data: dto,
-            select: PLAYER_SELECT,
+        const player = await this.prisma.$transaction(async (tx) => {
+            const created = await tx.player.create({
+                data: dto,
+                select: PLAYER_SELECT,
+            });
+
+            // FIX: gán role "player" ngay khi tạo Player — trước đây thiếu,
+            // giờ nằm trong cùng transaction nên rollback cùng nhau nếu lỗi.
+            await this.ensurePlayerRole(dto.user_id, tx);
+
+            return created;
         });
+
         return this.mapPlayer(player);
     }
 
@@ -284,14 +297,27 @@ export class PlayerService {
     // ROLE HELPERS
     // ----------------------------------------------------------
 
+    /**
+     * FIX: trước đây role không tồn tại thì chỉ logger.warn rồi return ->
+     * fail silent, Player/TeamPlayer được tạo thành công nhưng KHÔNG có role,
+     * không có tín hiệu nào lộ ra response hay đủ nghiêm trọng để bị chú ý
+     * trong log prod. Đổi thành throw để lỗi cấu hình (role "player" thiếu
+     * hoặc tên sai trong bảng roles) bị phát hiện ngay, không âm thầm tích
+     * tụ user thiếu role.
+     *
+     * Verify tên role thật trong DB trước khi deploy: SELECT name FROM roles;
+     * PLAYER_ROLE_NAME phải khớp CHÍNH XÁC (case-sensitive).
+     */
     private async ensurePlayerRole(
         userId: number,
         tx: Prisma.TransactionClient | PrismaClient = this.prisma
     ): Promise<void> {
         const role = await tx.role.findUnique({ where: { name: PLAYER_ROLE_NAME } });
         if (!role) {
-            logger.warn(`Role "${PLAYER_ROLE_NAME}" not found — skipping role assignment for user ${userId}`);
-            return;
+            throw createAppError(
+                "INTERNAL_SERVER_ERROR",
+                `Role "${PLAYER_ROLE_NAME}" not found — kiểm tra lại seed data bảng roles`
+            );
         }
 
         await tx.user_Role.upsert({
@@ -591,19 +617,34 @@ export class PlayerService {
      * IDOR — team A có thể sửa TeamPlayer của team B nếu biết đúng id
      * (sequential integer, dễ enumerate). Giờ team_id là bắt buộc, service
      * là nơi enforce invariant này — không phụ thuộc controller nhớ pre-check.
+     *
+     * FIX #2: trước đây update không re-check role player -> nếu role bị
+     * thiếu từ lúc tạo (bug tên delegate/tên role cũ), sửa/approve/reject sau
+     * đó cũng không có cơ hội tự heal. Giờ mọi update đều ensurePlayerRole
+     * lại trong cùng transaction — idempotent (upsert), không tốn thêm gì
+     * đáng kể so với 1 query lookup + upsert.
      */
     async updateTeamPlayer(id: number, team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto> {
-        const exists = await this.prisma.teamPlayer.findFirst({
+        const existing = await this.prisma.teamPlayer.findFirst({
             where: { id, team_id, deleted_at: null },
-            select: { id: true },
+            select: { id: true, user_id: true },
         });
-        if (!exists) throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in team ${team_id}`);
+        if (!existing) throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in team ${team_id}`);
 
-        const tp = await this.prisma.teamPlayer.update({
-            where: { id },
-            data: dto,
-            select: TEAM_PLAYER_SELECT,
+        const tp = await this.prisma.$transaction(async (tx) => {
+            const updated = await tx.teamPlayer.update({
+                where: { id },
+                data: dto,
+                select: TEAM_PLAYER_SELECT,
+            });
+
+            if (existing.user_id) {
+                await this.ensurePlayerRole(existing.user_id, tx);
+            }
+
+            return updated;
         });
+
         return this.mapTeamPlayer(tp);
     }
 
@@ -836,7 +877,14 @@ export class PlayerService {
 
         const playerRole = await this.prisma.role.findUnique({ where: { name: PLAYER_ROLE_NAME } });
         if (!playerRole) {
-            logger.warn(`Role "${PLAYER_ROLE_NAME}" not found — imported users will not be auto-assigned this role`);
+            // Import xử lý nhiều dòng, throw ngay ở đây sẽ fail toàn bộ file
+            // dù có thể có dòng valid — giữ hành vi báo lỗi tổng quát 1 lần
+            // thay vì per-row, khác với ensurePlayerRole() ở các path khác
+            // (throw ngay vì chỉ ảnh hưởng 1 record).
+            throw createAppError(
+                "INTERNAL_SERVER_ERROR",
+                `Role "${PLAYER_ROLE_NAME}" not found — kiểm tra lại seed data bảng roles trước khi import`
+            );
         }
 
         for (const { rowNum, dto } of validRows) {
@@ -910,13 +958,11 @@ export class PlayerService {
                         },
                     });
 
-                    if (playerRole) {
-                        await tx.user_Role.upsert({
-                            where: { user_id_role_id: { user_id: userId, role_id: playerRole.id } },
-                            create: { user_id: userId, role_id: playerRole.id },
-                            update: {},
-                        });
-                    }
+                    await tx.user_Role.upsert({
+                        where: { user_id_role_id: { user_id: userId, role_id: playerRole.id } },
+                        create: { user_id: userId, role_id: playerRole.id },
+                        update: {},
+                    });
 
                     return { playerId, userId };
                 });

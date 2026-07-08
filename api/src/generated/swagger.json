@@ -448,8 +448,65 @@
 				"$ref": "#/components/schemas/Pick_User.Exclude_keyofUser.password__",
 				"description": "Construct a type with the properties of T except for those in type K."
 			},
+			"DefaultSelection__36_RolePayload_": {
+				"properties": {
+					"description": {
+						"type": "string"
+					},
+					"updated_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"description",
+					"updated_at",
+					"created_at",
+					"is_active",
+					"id",
+					"name"
+				],
+				"type": "object"
+			},
+			"RoleModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_RolePayload_",
+				"description": "Model Role"
+			},
+			"Role": {
+				"$ref": "#/components/schemas/RoleModel",
+				"description": "Model Role"
+			},
 			"SafeUser": {
-				"$ref": "#/components/schemas/Omit_User.password_"
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Omit_User.password_"
+					},
+					{
+						"properties": {
+							"roles": {
+								"items": {
+									"$ref": "#/components/schemas/Role"
+								},
+								"type": "array"
+							}
+						},
+						"type": "object"
+					}
+				]
 			},
 			"PaginatedResult_SafeUser_": {
 				"properties": {
@@ -2133,12 +2190,12 @@
 						"type": "number",
 						"format": "double"
 					},
-					"description": {
-						"type": "string"
-					},
 					"tournament_id": {
 						"type": "number",
 						"format": "double"
+					},
+					"description": {
+						"type": "string"
 					},
 					"deleted_at": {
 						"type": "string",
@@ -2173,8 +2230,8 @@
 					"start_date",
 					"status",
 					"user_id",
-					"description",
 					"tournament_id",
+					"description",
 					"deleted_at",
 					"updated_at",
 					"created_at",
@@ -2997,48 +3054,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"DefaultSelection__36_RolePayload_": {
-				"properties": {
-					"description": {
-						"type": "string"
-					},
-					"updated_at": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"created_at": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"is_active": {
-						"type": "boolean"
-					},
-					"id": {
-						"type": "number",
-						"format": "double"
-					},
-					"name": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"description",
-					"updated_at",
-					"created_at",
-					"is_active",
-					"id",
-					"name"
-				],
-				"type": "object"
-			},
-			"RoleModel": {
-				"$ref": "#/components/schemas/DefaultSelection__36_RolePayload_",
-				"description": "Model Role"
-			},
-			"Role": {
-				"$ref": "#/components/schemas/RoleModel",
-				"description": "Model Role"
 			},
 			"PaginatedResult_Role_": {
 				"properties": {
