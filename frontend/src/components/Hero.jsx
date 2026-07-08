@@ -24,7 +24,7 @@ export default function Hero() {
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.1] tracking-tight text-white uppercase">
             {HeroData.textNormal} <br />
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-neon italic font-black">
+            <span className="text-[#00529C] font-sans font-black">
               {HeroData.textHighlight}
             </span>
           </h1>
@@ -36,7 +36,7 @@ export default function Hero() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-5 pt-4 sm:pt-6">
             <Link 
               to="/dang-ky-doi-bong" 
-              className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 bg-linear-to-r from-neon to-emerald-500 text-navy-dark font-black rounded-2xl hover:from-emerald-400 hover:to-neon transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-wider text-sm shadow-[0_0_30px_rgba(57,255,20,0.5)] hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(57,255,20,0.7)]"
+              className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 bg-emerald-500 text-navy-dark font-black rounded-2xl hover:bg-emerald-400 transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-wider text-sm shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(16,185,129,0.7)]"
             >
               <TrophyIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               Đăng Ký Đội

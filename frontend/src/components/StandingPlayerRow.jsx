@@ -1,7 +1,7 @@
 import { getInitials, AVATAR_COLORS } from '../utils/constants';
 
 export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
-  const { player, team, goals_scored, assists, yellow_cards, red_cards } = playerStat;
+  const { player, team, goals_scored, assists, yellow_cards, red_cards, rating, reason, status } = playerStat;
   const playerName = player?.user?.name || player?.name || 'Cầu thủ không xác định';
   const teamName = team?.name || 'Đội bóng không xác định';
   
@@ -62,12 +62,19 @@ export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
 
       {/* Chỉ số chính được hiển thị theo tab (như UI yêu cầu) */}
       <td className="px-6 py-4 text-right">
-        <span className="text-lg font-bold text-white">
-          {activeStatTab === 'goals' && (goals_scored || 0)}
-          {activeStatTab === 'assists' && (assists || 0)}
-          {activeStatTab === 'yellow' && (yellow_cards || 0)}
-          {activeStatTab === 'red' && (red_cards || 0)}
-        </span>
+        {activeStatTab === 'suspended' ? (
+          <span className="text-sm font-bold text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
+            {reason || 'Bị treo giò'}
+          </span>
+        ) : (
+          <span className="text-lg font-bold text-white">
+            {activeStatTab === 'goals' && (goals_scored || 0)}
+            {activeStatTab === 'assists' && (assists || 0)}
+            {activeStatTab === 'yellow' && (yellow_cards || 0)}
+            {activeStatTab === 'red' && (red_cards || 0)}
+            {activeStatTab === 'best' && (rating ? rating.toFixed(1) : ((goals_scored || 0) * 2 + (assists || 0)))}
+          </span>
+        )}
       </td>
     </tr>
   );

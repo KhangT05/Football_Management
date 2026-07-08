@@ -109,5 +109,14 @@ export const seasonApi = {
   restore: (id) => {
     return axiosClient.patch(`/seasons/${id}/restore`);
   },
+
+  /**
+   * Lấy danh sách cầu thủ bị treo giò trong mùa giải
+   * GET /seasons/{id}/suspended-players
+   * @param {number} id 
+   */
+  getSuspendedPlayers: (id) => {
+    return axiosClient.get(`/seasons/${id}/suspended-players`);
+  },
 };
 

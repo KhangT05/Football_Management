@@ -14,6 +14,7 @@ import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 import Pagination from '../components/ui/Pagination';
 import { groupApi } from '../api/groupApi';
 import { seasonApi } from '../api/seasonApi';
+import { statisticsApi } from '../api/statisticsApi';
 import StandingPlayerRow from '../components/StandingPlayerRow';
 // ── Page ──────────────────────────────────────────────────────
 export default function LeaderboardTeams() {
@@ -57,9 +58,8 @@ export default function LeaderboardTeams() {
   const [seasonGroups, setSeasonGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
 
-  // --- NEW STATE FOR PLAYER LEADERBOARD ---
   const [activeMainTab, setActiveMainTab] = useState('teams'); // 'teams' | 'players'
-  const [activeStatTab, setActiveStatTab] = useState('goals'); // 'goals' | 'assists' | 'yellow' | 'red'
+  const [activeStatTab, setActiveStatTab] = useState('goals'); // 'goals' | 'assists' | 'yellow' | 'red' | 'best' | 'suspended'
   const [playerStats, setPlayerStats] = useState([]);
   const [isPlayerStatsLoading, setIsPlayerStatsLoading] = useState(false);
 
@@ -70,17 +70,21 @@ export default function LeaderboardTeams() {
     }
     setIsPlayerStatsLoading(true);
     try {
-      const sortMap = {
-        goals: 'goals_scored',
-        assists: 'assists',
-        yellow: 'yellow_cards',
-        red: 'red_cards'
-      };
-      const res = await seasonApi.getPlayerStats(seasonId, {
-        sort: sortMap[statTab],
-        direction: 'desc',
-        per_page: 50
-      });
+      let res;
+      if (statTab === 'goals') {
+        res = await seasonApi.getPlayerStats(seasonId, { sort: 'goals_scored', direction: 'desc', per_page: 50 });
+      } else if (statTab === 'assists') {
+        res = await statisticsApi.getTopAssists(seasonId, 50);
+      } else if (statTab === 'yellow') {
+        res = await statisticsApi.getTopYellowCards(seasonId, 50);
+      } else if (statTab === 'red') {
+        res = await statisticsApi.getTopRedCards(seasonId, 50);
+      } else if (statTab === 'best') {
+        res = await statisticsApi.getBestPlayers(seasonId, 50);
+      } else if (statTab === 'suspended') {
+        res = await seasonApi.getSuspendedPlayers(seasonId);
+      }
+      
       const items = res?.data?.data || res?.data || [];
       setPlayerStats(items);
     } catch (error) {
@@ -271,7 +275,7 @@ export default function LeaderboardTeams() {
               </div>
               <div>
                 <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
-                  Bảng <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon italic">Xếp Hạng</span>
+                  Bảng <span className="text-[#00529C] font-sans font-black">Xếp Hạng</span>
                 </h2>
                 {activeSeason && (
                   <p className="text-gray-400 text-sm mt-1 font-medium">Mùa giải: <strong className="text-white">{activeSeason.name}</strong></p>
@@ -321,7 +325,7 @@ export default function LeaderboardTeams() {
                 activeMainTab === 'players' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
               }`}
             >
-              Cầu thủ xuất sắc nhất
+              Thống kê Cá nhân
             </button>
           </div>
 
@@ -541,6 +545,14 @@ export default function LeaderboardTeams() {
                   Số lần kiến tạo
                 </button>
                 <button
+                  onClick={() => setActiveStatTab('best')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'best' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Cầu thủ XS
+                </button>
+                <button
                   onClick={() => setActiveStatTab('yellow')}
                   className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
                     activeStatTab === 'yellow' ? 'text-yellow-400 border-yellow-500' : 'text-gray-500 border-transparent hover:text-gray-300'
@@ -556,6 +568,14 @@ export default function LeaderboardTeams() {
                 >
                   Thẻ đỏ
                 </button>
+                <button
+                  onClick={() => setActiveStatTab('suspended')}
+                  className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${
+                    activeStatTab === 'suspended' ? 'text-red-500 border-red-500' : 'text-gray-500 border-transparent hover:text-gray-300'
+                  }`}
+                >
+                  Treo giò
+                </button>
               </div>
 
               {/* BẢNG XẾP HẠNG CẦU THỦ */}
@@ -566,12 +586,18 @@ export default function LeaderboardTeams() {
                       <tr>
                         <th className="py-4 px-6 text-center w-20">Hạng</th>
                         <th className="py-4 px-6">Vận động viên</th>
-                        <th className="py-4 px-6 text-right">
-                          {activeStatTab === 'goals' && 'Số bàn thắng'}
-                          {activeStatTab === 'assists' && 'Số lần kiến tạo'}
-                          {activeStatTab === 'yellow' && 'Thẻ vàng'}
-                          {activeStatTab === 'red' && 'Thẻ đỏ'}
-                        </th>
+                        {activeStatTab !== 'suspended' && (
+                          <th className="py-4 px-6 text-right">
+                            {activeStatTab === 'goals' && 'Số bàn thắng'}
+                            {activeStatTab === 'assists' && 'Số lần kiến tạo'}
+                            {activeStatTab === 'best' && 'Điểm Rating'}
+                            {activeStatTab === 'yellow' && 'Thẻ vàng'}
+                            {activeStatTab === 'red' && 'Thẻ đỏ'}
+                          </th>
+                        )}
+                        {activeStatTab === 'suspended' && (
+                          <th className="py-4 px-6 text-right">Tình trạng</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-transparent">
@@ -585,7 +611,7 @@ export default function LeaderboardTeams() {
                         </tr>
                       ) : (
                         playerStats.map((row, idx) => (
-                          <StandingPlayerRow key={row.id} playerStat={row} rank={idx + 1} activeStatTab={activeStatTab} />
+                          <StandingPlayerRow key={row.id || row.player_id || idx} playerStat={row} rank={idx + 1} activeStatTab={activeStatTab} />
                         ))
                       )}
                     </tbody>

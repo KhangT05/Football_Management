@@ -10,6 +10,7 @@ import PlayerCardSkeleton from '../components/skeletons/PlayerCardSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import useTeamStore from '../store/teamStore';
+import PlayerStatsModal from '../components/modals/PlayerStatsModal';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
@@ -41,7 +42,7 @@ function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
 }
 
 // ── Player Card ───────────────────────────────────────────────
-function PlayerCard({ tp, idx }) {
+function PlayerCard({ tp, idx, onClick }) {
   const player = tp.player ?? tp;
   const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
   const initial = getInitials(name);
@@ -55,7 +56,8 @@ function PlayerCard({ tp, idx }) {
 
   return (
     <div
-      className="bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/20 hover:border-blue-500/40 hover:shadow-blue-900/10 transition-all duration-300 animate-slide-up"
+      onClick={onClick}
+      className="bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/20 hover:border-blue-500/40 hover:shadow-blue-900/10 transition-all duration-300 animate-slide-up cursor-pointer group"
       style={{ animationDelay: `${idx * 40}ms` }}
     >
       <div className="flex items-center gap-3">
@@ -127,6 +129,7 @@ export default function TeamDetail() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   const handleItemsPerPageChange = (newLimit) => {
     setItemsPerPage(newLimit);
@@ -268,7 +271,7 @@ export default function TeamDetail() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {byPosition[pos].map((tp, idx) => (
-                      <PlayerCard key={tp.id} tp={tp} idx={idx} />
+                      <PlayerCard key={tp.id} tp={tp} idx={idx} onClick={() => setSelectedPlayer(tp)} />
                     ))}
                   </div>
                 </div>
@@ -290,6 +293,13 @@ export default function TeamDetail() {
         </section>
 
       </div>
+
+      {selectedPlayer && (
+        <PlayerStatsModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </div>
   );
 }

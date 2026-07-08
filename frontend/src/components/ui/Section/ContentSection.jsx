@@ -142,7 +142,7 @@ export default function ContentSection() {
                         
                         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 border-b border-navy-light/50 pb-8 relative z-10">
                             <div>
-                                <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-neon uppercase tracking-tight">Kết quả & Lịch thi đấu</h2>
+                                <h2 className="text-3xl md:text-4xl font-black text-[#00529C] font-sans uppercase tracking-tight">Kết quả & Lịch thi đấu</h2>
                                 <p className="text-gray-400 text-sm md:text-base mt-2 font-medium">Cập nhật nhanh diễn biến mới nhất của mùa giải hiện tại</p>
                             </div>
                             <Link to="/lich-thi-dau" className="shrink-0 flex items-center gap-2 text-white text-sm font-bold bg-blue-600 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all px-6 py-3.5 rounded-2xl group/link">

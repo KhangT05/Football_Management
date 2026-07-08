@@ -5,31 +5,31 @@ export default function TournamentFormats() {
         {
             title: "Loại trực tiếp",
             icon: <Network className="w-6 h-6" />,
-            image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=600&auto=format&fit=crop",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMZGE1aD4M033GOPs1TAKiFfuxeH_ykaCeAIQ8zvx64-2OOD1UwXdKJDAv&s=10",
             description: "Đội thua sẽ bị loại, đội thắng tiếp tục vào vòng trong."
         },
         {
             title: "Đấu vòng tròn",
             icon: <Repeat className="w-6 h-6" />,
-            image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop",
+            image: "https://vntournament.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fj1pyneif%2Fproduction%2F8e657eed839b5d261d1b59039845fda5c5789617-1376x768.png%3Fw%3D1000%26h%3D800%26q%3D80%26auto%3Dformat&w=2048&q=75",
             description: "Các đội thi đấu với nhau để tích lũy điểm số trên bảng xếp hạng."
         },
         {
             title: "Chia bảng đấu",
             icon: <LayoutGrid className="w-6 h-6" />,
-            image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop",
+            image: "https://bcp.cdnchinhphu.vn/334894974524682240/2023/7/28/dt-vietnam-1690510674715664968212.jpg",
             description: "Thi đấu vòng bảng để chọn ra các đội xuất sắc nhất tiến vào vòng loại trực tiếp."
         },
         {
             title: "Nhánh thắng - Nhánh thua",
             icon: <GitBranch className="w-6 h-6" />,
-            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop",
+            image: "https://static.gamehub.vn/img/files/2015/08/22/gamehub-vvc2-tu-ket-nhanh-thang-1.png",
             description: "Đội thua vẫn có cơ hội thứ hai ở nhánh dưới để giành quyền vào chung kết."
         },
         {
             title: "Thể thức hỗn hợp",
             icon: <Combine className="w-6 h-6" />,
-            image: "https://images.unsplash.com/photo-1551280857-2b9ebf241ac6?q=80&w=600&auto=format&fit=crop",
+            image: "https://bongrotuoitre.vn/wp-content/uploads/2020/06/so-do-thi-dau-lo%E1%BA%A1i-truc-tiep.jpg",
             description: "Tự do kết hợp các thể thức thi đấu phù hợp với giải đấu của riêng bạn."
         }
     ];
@@ -42,7 +42,7 @@ export default function TournamentFormats() {
             <div className="text-center space-y-4 mb-16 relative z-10 animate-fade-in">
                 <div className="flex items-center justify-center gap-4">
                     <div className="h-px w-12 bg-linear-to-r from-transparent to-blue-500/50"></div>
-                    <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-neon tracking-tight">
+                    <h2 className="text-3xl md:text-4xl font-black text-[#00529C] font-sans tracking-tight">
                         Hỗ trợ đa dạng thể thức thi đấu
                     </h2>
                     <div className="h-px w-12 bg-linear-to-l from-transparent to-blue-500/50"></div>
@@ -78,7 +78,7 @@ export default function TournamentFormats() {
 
                             {/* Icon badge, bridging the image and the text body */}
                             <div className="relative px-6 -mt-7">
-                                <div className="w-14 h-14 rounded-2xl bg-navy-light backdrop-blur-xl border border-navy-light/50 flex items-center justify-center text-cyan-400 shadow-xl shadow-black/20 group-hover:bg-cyan-400 group-hover:text-navy-dark group-hover:border-cyan-400 group-hover:shadow-[0_10px_25px_rgba(34,211,238,0.45)] transition-all duration-500 transform-gpu">
+                                <div className="w-14 h-14 rounded-2xl bg-navy-light backdrop-blur-xl border border-navy-light/50 flex items-center justify-center text-black shadow-xl shadow-black/20 group-hover:bg-cyan-400 group-hover:text-navy-dark group-hover:border-cyan-400 group-hover:shadow-[0_10px_25px_rgba(34,211,238,0.45)] transition-all duration-500 transform-gpu">
                                     {format.icon}
                                 </div>
                             </div>

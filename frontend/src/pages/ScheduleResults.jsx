@@ -230,8 +230,8 @@ export default function ScheduleResults() {
 
           {/* Title */}
           <div className="text-center mb-10 md:mb-16 animate-slide-up">
-            <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon uppercase italic tracking-tight mb-4 drop-shadow-md">
-              Lịch thi đấu &amp; <span className="text-white">Kết quả</span>
+            <h1 className="text-4xl md:text-6xl font-black text-[#00529C] font-sans uppercase tracking-tight mb-4 drop-shadow-md">
+              LỊCH THI ĐẤU & KẾT QUẢ
             </h1>
             <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto font-medium">
               Theo dõi lịch thi đấu, không bỏ lỡ trận cầu nào và cập nhật kết quả mới nhất của giải đấu.
@@ -480,7 +480,7 @@ export default function ScheduleResults() {
                 <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                   <LayoutGrid className="w-5 h-5 text-blue-400" />
                 </div>
-                <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon uppercase tracking-wider">
+                <h2 className="text-xl md:text-2xl font-black text-[#00529C] font-sans uppercase tracking-wider">
                   Các bảng đấu
                 </h2>
               </div>

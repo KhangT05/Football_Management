@@ -34,7 +34,7 @@ export const Information = {
   address: '65 Huỳnh Thúc Kháng, Phường Sài Gòn, TP.HCM',
   email: 'btc.football@it.edu.vn',
   phone: '0123.456.789',
-  logoTitle: 'IT Faculty',
-  logoSubtitle: 'SUPER LEAGUE',
+  logoTitle: 'CKC LEAGUE',
+  logoSubtitle: 'Khoa Công Nghệ Thông Tin',
   copyright: '© 2026 Giải bóng đá Khoa CNTT. Bản quyền đã được bảo hộ.',
 };
