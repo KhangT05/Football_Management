@@ -51,6 +51,9 @@ let StatisticsController = class StatisticsController extends Controller {
     async getPlayerCareerStats(playerId) {
         return this.statisticsService.getPlayerCareerStats(playerId);
     }
+    async getSystemOverviewStats(period) {
+        return this.statisticsService.getSystemOverviewStats(period);
+    }
 };
 __decorate([
     Security("jwt", ["admin"]),
@@ -135,6 +138,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getPlayerCareerStats", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("overview"),
+    __param(0, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getSystemOverviewStats", null);
 StatisticsController = __decorate([
     Route("statistics"),
     Tags("Statistics"),

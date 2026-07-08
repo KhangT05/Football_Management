@@ -1,5 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
-import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats } from "../types/statistics.type.js";
+import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats, SystemOverviewStats } from "../types/statistics.type.js";
 export declare class StatisticsService {
     private readonly prisma;
     private readonly userQueryable;
@@ -18,5 +18,6 @@ export declare class StatisticsService {
     static readonly DEFAULT_MVP_WEIGHTS: MvpWeights;
     getBestPlayers(seasonId: number, limit?: number, weights?: MvpWeights): Promise<BestPlayerStats>;
     getPlayerCareerStats(playerId: number): Promise<PlayerCareerStats>;
+    getSystemOverviewStats(period?: string): Promise<SystemOverviewStats>;
 }
 //# sourceMappingURL=statistics.service.d.ts.map

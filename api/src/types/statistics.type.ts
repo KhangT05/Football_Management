@@ -122,3 +122,13 @@ export interface PlayerCareerStats {
     player_name: string;
     tournaments: PlayerCareerStatsByTournament[];
 }
+
+export interface SystemOverviewStats {
+    tournament_count: number;
+    season_count: number;
+    team_count: number;
+    user_count: number;
+    total_revenue: number;   // net revenue toàn hệ thống (confirmed - refunded), KHÔNG tính pending
+    new_user_count: number;  // người dùng mới trong `period`
+    period_days: number;
+}

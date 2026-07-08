@@ -14,5 +14,6 @@ export declare class StatisticsController extends Controller {
     getTopRedCards(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").PlayerRankingStats>;
     getBestPlayers(seasonId: number, limit?: number): Promise<import("../types/statistics.type.js").BestPlayerStats>;
     getPlayerCareerStats(playerId: number): Promise<import("../types/statistics.type.js").PlayerCareerStats>;
+    getSystemOverviewStats(period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y"): Promise<import("../types/statistics.type.js").SystemOverviewStats>;
 }
 //# sourceMappingURL=statistics.controller.d.ts.map

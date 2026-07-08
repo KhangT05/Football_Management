@@ -1672,6 +1672,49 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "SystemOverviewStats": {
+                "properties": {
+                    "tournament_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "team_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "user_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "total_revenue": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "new_user_count": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "period_days": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "tournament_count",
+                    "season_count",
+                    "team_count",
+                    "user_count",
+                    "total_revenue",
+                    "new_user_count",
+                    "period_days"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "SeasonTeamStatus": {
                 "type": "string",
                 "enum": [
@@ -8136,6 +8179,51 @@
                         "schema": {
                             "format": "double",
                             "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/overview": {
+            "get": {
+                "operationId": "GetSystemOverviewStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemOverviewStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "7d",
+                                "30d",
+                                "90d",
+                                "3m",
+                                "6m",
+                                "1y"
+                            ]
                         }
                     }
                 ]

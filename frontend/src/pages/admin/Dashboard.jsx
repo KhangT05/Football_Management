@@ -1,10 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
-import { Users, Trophy, ListChecks, Shield, DollarSign, UserPlus, TrendingUp, AlertTriangle } from 'lucide-react';
+import {
+  Users, Trophy, ListChecks, Shield, DollarSign, UserPlus,
+  TrendingUp, AlertTriangle
+} from 'lucide-react';
 import StatCard from '../../components/StatCard';
 import useAuthStore from '../../store/authStore';
 import { useShallow } from 'zustand/react/shallow';
-import { tournamentApi, seasonApi, teamApi, userApi, statisticsApi } from '../../api';
+import { seasonApi, statisticsApi } from '../../api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -12,20 +15,31 @@ import {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+// Giá trị gửi lên API phải khớp với PERIOD_DAYS ở backend ("7d" | "30d" | "90d" | "3m" | "6m" | "1y").
+// Label tiếng Việt chỉ để hiển thị trong <select>.
+const PERIOD_OPTIONS = [
+  { value: '7d', label: '7 ngày qua' },
+  { value: '30d', label: '30 ngày qua' },
+  { value: '90d', label: '90 ngày qua' },
+  { value: '3m', label: '3 tháng qua' },
+  { value: '6m', label: '6 tháng qua' },
+  { value: '1y', label: '1 năm qua' },
+];
+
 export default function Dashboard() {
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
-  
+
   // Filter States
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState('30ngày');
+  const [selectedPeriod, setSelectedPeriod] = useState('30d');
 
   // Stats States
   const [overviewStats, setOverviewStats] = useState({
     tournaments: 0, seasons: 0, teams: 0, users: 0, revenue: 0, newUsers: 0
   });
   const [dailyRegistrations, setDailyRegistrations] = useState([]);
-  
+
   const [seasonStats, setSeasonStats] = useState({
     revenue: null,
     teamRegistrations: null,
@@ -62,7 +76,7 @@ export default function Dashboard() {
             statisticsApi.getTopScorers(selectedSeasonId, 10),
             statisticsApi.getTeamDiscipline(selectedSeasonId)
           ]);
-          
+
           if (isMounted) {
             setSeasonStats({
               revenue: revenueRes.status === 'fulfilled' ? revenueRes.value?.data?.seasons?.[0] : null,
@@ -72,31 +86,29 @@ export default function Dashboard() {
             });
           }
         } else {
-          // B. Fetch System Overview Stats
-          const results = await Promise.allSettled([
-            tournamentApi.getAll({ per_page: 1 }),
-            seasonApi.getAll({ per_page: 1 }),
-            teamApi.getAll({ per_page: 1 }),
-            userApi.getAll({ per_page: 1 }),
-            statisticsApi.getSeasonRevenue(),
+          // B. Fetch System Overview Stats — 1 call gộp (counts + revenue + new users)
+          // + 1 call riêng cho biểu đồ theo ngày (cần daily buckets, overview không trả cái này)
+          const [overviewRes, registrationsRes] = await Promise.allSettled([
+            statisticsApi.getSystemOverview(selectedPeriod),
             statisticsApi.getUserRegistrations(selectedPeriod)
           ]);
 
           if (isMounted) {
+            const ov = overviewRes.status === 'fulfilled' ? overviewRes.value?.data : null;
             setOverviewStats({
-              tournaments: results[0].status === 'fulfilled' ? (results[0].value?.data?.meta?.total || 0) : 0,
-              seasons: results[1].status === 'fulfilled' ? (results[1].value?.data?.meta?.total || 0) : 0,
-              teams: results[2].status === 'fulfilled' ? (results[2].value?.data?.meta?.total || 0) : 0,
-              users: results[3].status === 'fulfilled' ? (results[3].value?.data?.meta?.total || 0) : 0,
-              revenue: results[4].status === 'fulfilled' ? (results[4].value?.data?.total_net_revenue || 0) : 0,
-              newUsers: results[5].status === 'fulfilled' ? (results[5].value?.data?.total_new_users || 0) : 0
+              tournaments: ov?.tournament_count || 0,
+              seasons: ov?.season_count || 0,
+              teams: ov?.team_count || 0,
+              users: ov?.user_count || 0,
+              revenue: ov?.total_revenue || 0,
+              newUsers: ov?.new_user_count || 0
             });
-            
-            const rawDaily = results[5].status === 'fulfilled' ? (results[5].value?.data?.daily || []) : [];
+
+            const rawDaily = registrationsRes.status === 'fulfilled' ? (registrationsRes.value?.data?.daily || []) : [];
             // Format date for chart (e.g. "2023-10-01" -> "01/10")
             const formattedDaily = rawDaily.map(item => ({
               ...item,
-              displayDate: item.day.split('-').slice(1, 3).reverse().join('/') 
+              displayDate: item.day.split('-').slice(1, 3).reverse().join('/')
             }));
             setDailyRegistrations(formattedDaily);
           }
@@ -107,7 +119,7 @@ export default function Dashboard() {
         if (isMounted) setIsLoading(false);
       }
     };
-    
+
     fetchDashboardStats();
     return () => { isMounted = false; };
   }, [selectedSeasonId, selectedPeriod]);
@@ -128,6 +140,8 @@ export default function Dashboard() {
       { name: 'Rút lui', value: stats.withdrawn_count }
     ].filter(item => item.value > 0);
   }, [seasonStats.teamRegistrations]);
+
+  const periodLabel = PERIOD_OPTIONS.find(p => p.value === selectedPeriod)?.label || '';
 
   return (
     <AdminLayout>
@@ -150,7 +164,7 @@ export default function Dashboard() {
         <div className="bg-navy-light/30 p-4 rounded-xl border border-navy-light flex flex-wrap gap-4 items-center">
           <div className="flex flex-col">
             <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Mùa giải</label>
-            <select 
+            <select
               className="bg-navy border border-navy-light text-white text-sm rounded-lg focus:ring-neon focus:border-neon block p-2 outline-none"
               value={selectedSeasonId}
               onChange={(e) => setSelectedSeasonId(e.target.value)}
@@ -165,17 +179,14 @@ export default function Dashboard() {
           {!selectedSeasonId && (
             <div className="flex flex-col">
               <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Thời gian (User)</label>
-              <select 
+              <select
                 className="bg-navy border border-navy-light text-white text-sm rounded-lg focus:ring-neon focus:border-neon block p-2 outline-none"
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
               >
-                <option value="7 ngày">7 ngày qua</option>
-                <option value="30 ngày">30 ngày qua</option>
-                <option value="90 ngày">90 ngày qua</option>
-                <option value="3 tháng">3 tháng qua</option>
-                <option value="6 tháng">6 tháng qua</option>
-                <option value="1 năm">1 năm qua</option>
+                {PERIOD_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
           )}
@@ -198,14 +209,14 @@ export default function Dashboard() {
               <h3 className="text-lg font-bold text-white mb-4">Tài chính & Tăng trưởng</h3>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <StatCard title="Doanh thu hệ thống" value={isLoading ? '—' : formatCurrency(overviewStats.revenue)} icon={DollarSign} colorClass="border-navy-light text-yellow-400" />
-                <StatCard title={`Người dùng mới`} value={isLoading ? '—' : `+${overviewStats.newUsers}`} icon={UserPlus} colorClass="border-navy-light text-pink-400" />
+                <StatCard title="Người dùng mới" value={isLoading ? '—' : `+${overviewStats.newUsers}`} icon={UserPlus} colorClass="border-navy-light text-pink-400" />
               </div>
             </div>
 
             {/* Line Chart for Users */}
             <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
               <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-neon" /> Biểu đồ người dùng đăng ký ({selectedPeriod})
+                <TrendingUp className="w-5 h-5 text-neon" /> Biểu đồ người dùng đăng ký ({periodLabel})
               </h3>
               <div className="h-[300px] w-full">
                 {isLoading ? (
@@ -218,7 +229,7 @@ export default function Dashboard() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#2A303C" vertical={false} />
                       <XAxis dataKey="displayDate" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <RechartsTooltip 
+                      <RechartsTooltip
                         contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
                         itemStyle={{ color: '#00e5ff' }}
                         labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
@@ -235,140 +246,140 @@ export default function Dashboard() {
         {/* A. SEASON DETAILS (Season Selected) */}
         {selectedSeasonId && (
           <div className="space-y-8 animate-fade-in">
-             <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg border-l-4 border-l-purple-500">
-               <h3 className="text-xl font-bold text-white mb-2">{seasonStats.revenue?.season_name || 'Chi tiết Mùa giải'}</h3>
-               <p className="text-gray-400 text-sm">Thống kê chi tiết tài chính, đội bóng và chuyên môn.</p>
-             </div>
+            <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg border-l-4 border-l-purple-500">
+              <h3 className="text-xl font-bold text-white mb-2">{seasonStats.revenue?.season_name || 'Chi tiết Mùa giải'}</h3>
+              <p className="text-gray-400 text-sm">Thống kê chi tiết tài chính, đội bóng và chuyên môn.</p>
+            </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <StatCard 
-                  title="Doanh thu xác nhận" 
-                  value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.confirmed_revenue)} 
-                  icon={DollarSign} 
-                  colorClass="border-navy-light text-emerald-400" 
-                />
-                <StatCard 
-                  title="Đã hoàn tiền" 
-                  value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.refunded_amount)} 
-                  icon={DollarSign} 
-                  colorClass="border-navy-light text-red-400" 
-                />
-                <StatCard 
-                  title="Doanh thu thực (Net)" 
-                  value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.net_revenue)} 
-                  icon={DollarSign} 
-                  colorClass="border-navy-light text-neon" 
-                />
-             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <StatCard
+                title="Doanh thu xác nhận"
+                value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.confirmed_revenue)}
+                icon={DollarSign}
+                colorClass="border-navy-light text-emerald-400"
+              />
+              <StatCard
+                title="Đã hoàn tiền"
+                value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.refunded_amount)}
+                icon={DollarSign}
+                colorClass="border-navy-light text-red-400"
+              />
+              <StatCard
+                title="Doanh thu thực (Net)"
+                value={isLoading ? '—' : formatCurrency(seasonStats.revenue?.net_revenue)}
+                icon={DollarSign}
+                colorClass="border-navy-light text-neon"
+              />
+            </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               {/* Team Registration Pie Chart */}
-               <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
-                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                   <Users className="w-5 h-5 text-purple-400" /> Trạng thái đăng ký đội bóng
-                 </h3>
-                 <div className="h-[300px] w-full">
-                    {isLoading ? (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>
-                    ) : pieData.length === 0 ? (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">Không có dữ liệu đội bóng</div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={5}
-                            dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            labelStyle={{ fill: '#fff', fontSize: '12px' }}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip 
-                            contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
-                            itemStyle={{ color: '#fff' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                 </div>
-               </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Team Registration Pie Chart */}
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-400" /> Trạng thái đăng ký đội bóng
+                </h3>
+                <div className="h-[300px] w-full">
+                  {isLoading ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>
+                  ) : pieData.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">Không có dữ liệu đội bóng</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelStyle={{ fill: '#fff', fontSize: '12px' }}
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip
+                          contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
+                          itemStyle={{ color: '#fff' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
 
-               {/* Top Scorers */}
-               <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg overflow-hidden">
-                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                   <Trophy className="w-5 h-5 text-yellow-400" /> Top Ghi Bàn
-                 </h3>
-                 <div className="overflow-x-auto max-h-[260px] custom-scrollbar">
-                   <table className="w-full text-left text-sm text-gray-300">
-                     <thead className="bg-navy-light/50 text-xs uppercase text-gray-400 sticky top-0 z-10">
-                       <tr>
-                         <th className="px-4 py-3 rounded-tl-lg">Cầu thủ</th>
-                         <th className="px-4 py-3">Đội</th>
-                         <th className="px-4 py-3 rounded-tr-lg text-center">Bàn thắng</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {isLoading ? (
-                         <tr><td colSpan={3} className="text-center py-4">Đang tải...</td></tr>
-                       ) : seasonStats.topScorers?.length === 0 ? (
-                         <tr><td colSpan={3} className="text-center py-4">Chưa có dữ liệu</td></tr>
-                       ) : (
-                         seasonStats.topScorers?.map((scorer, idx) => (
-                           <tr key={idx} className="border-b border-navy-light last:border-0 hover:bg-navy-light/30">
-                             <td className="px-4 py-3 font-medium text-white">{scorer.player_name}</td>
-                             <td className="px-4 py-3">{scorer.team_name}</td>
-                             <td className="px-4 py-3 text-center text-neon font-bold">{scorer.goal_count}</td>
-                           </tr>
-                         ))
-                       )}
-                     </tbody>
-                   </table>
-                 </div>
-               </div>
-               
-               {/* Discipline Stats */}
-               <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg lg:col-span-2">
-                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                   <AlertTriangle className="w-5 h-5 text-red-500" /> Kỷ luật (Thẻ phạt)
-                 </h3>
-                 <div className="overflow-x-auto">
-                   <table className="w-full text-left text-sm text-gray-300">
-                     <thead className="bg-navy-light/50 text-xs uppercase text-gray-400">
-                       <tr>
-                         <th className="px-4 py-3 rounded-tl-lg">Đội bóng</th>
-                         <th className="px-4 py-3 text-center text-yellow-500">Thẻ Vàng</th>
-                         <th className="px-4 py-3 text-center text-red-500">Thẻ Đỏ</th>
-                         <th className="px-4 py-3 rounded-tr-lg text-center">Điểm Kỷ Luật</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {isLoading ? (
-                         <tr><td colSpan={4} className="text-center py-4">Đang tải...</td></tr>
-                       ) : seasonStats.discipline?.length === 0 ? (
-                         <tr><td colSpan={4} className="text-center py-4">Chưa có dữ liệu</td></tr>
-                       ) : (
-                         seasonStats.discipline?.map((team, idx) => (
-                           <tr key={idx} className="border-b border-navy-light last:border-0 hover:bg-navy-light/30">
-                             <td className="px-4 py-3 font-medium text-white">{team.team_name}</td>
-                             <td className="px-4 py-3 text-center">{team.yellow_card_count}</td>
-                             <td className="px-4 py-3 text-center">{team.red_card_count}</td>
-                             <td className="px-4 py-3 text-center font-bold text-red-400">{team.disciplinary_points}</td>
-                           </tr>
-                         ))
-                       )}
-                     </tbody>
-                   </table>
-                 </div>
-               </div>
+              {/* Top Scorers */}
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg overflow-hidden">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-400" /> Top Ghi Bàn
+                </h3>
+                <div className="overflow-x-auto max-h-[260px] custom-scrollbar">
+                  <table className="w-full text-left text-sm text-gray-300">
+                    <thead className="bg-navy-light/50 text-xs uppercase text-gray-400 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-4 py-3 rounded-tl-lg">Cầu thủ</th>
+                        <th className="px-4 py-3">Đội</th>
+                        <th className="px-4 py-3 rounded-tr-lg text-center">Bàn thắng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoading ? (
+                        <tr><td colSpan={3} className="text-center py-4">Đang tải...</td></tr>
+                      ) : seasonStats.topScorers?.length === 0 ? (
+                        <tr><td colSpan={3} className="text-center py-4">Chưa có dữ liệu</td></tr>
+                      ) : (
+                        seasonStats.topScorers?.map((scorer, idx) => (
+                          <tr key={idx} className="border-b border-navy-light last:border-0 hover:bg-navy-light/30">
+                            <td className="px-4 py-3 font-medium text-white">{scorer.player_name}</td>
+                            <td className="px-4 py-3">{scorer.team_name}</td>
+                            <td className="px-4 py-3 text-center text-neon font-bold">{scorer.goal_count}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-             </div>
+              {/* Discipline Stats */}
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg lg:col-span-2">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" /> Kỷ luật (Thẻ phạt)
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-gray-300">
+                    <thead className="bg-navy-light/50 text-xs uppercase text-gray-400">
+                      <tr>
+                        <th className="px-4 py-3 rounded-tl-lg">Đội bóng</th>
+                        <th className="px-4 py-3 text-center text-yellow-500">Thẻ Vàng</th>
+                        <th className="px-4 py-3 text-center text-red-500">Thẻ Đỏ</th>
+                        <th className="px-4 py-3 rounded-tr-lg text-center">Điểm Kỷ Luật</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoading ? (
+                        <tr><td colSpan={4} className="text-center py-4">Đang tải...</td></tr>
+                      ) : seasonStats.discipline?.length === 0 ? (
+                        <tr><td colSpan={4} className="text-center py-4">Chưa có dữ liệu</td></tr>
+                      ) : (
+                        seasonStats.discipline?.map((team, idx) => (
+                          <tr key={idx} className="border-b border-navy-light last:border-0 hover:bg-navy-light/30">
+                            <td className="px-4 py-3 font-medium text-white">{team.team_name}</td>
+                            <td className="px-4 py-3 text-center">{team.yellow_card_count}</td>
+                            <td className="px-4 py-3 text-center">{team.red_card_count}</td>
+                            <td className="px-4 py-3 text-center font-bold text-red-400">{team.disciplinary_points}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
 
