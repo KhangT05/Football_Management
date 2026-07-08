@@ -89,29 +89,6 @@ let SeasonController = class SeasonController extends Controller {
     async updateStatus(id, body) {
         return this.service.updateStatus(id, body.status, { cancel_reason: body.cancel_reason });
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — SEASON STANDINGS OVERVIEW (public, World Cup style)
-    // ═══════════════════════════════════════════════════════════════════════════
-    /**
-     * Overview standings toàn season — tất cả groups, kiểu World Cup group stage.
-     * Không paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).
-     * Trả về array grouped theo group, mỗi group có teams sorted by position.
-     *
-     * Chỉ serve season ở status: ongoing / finished / cancelled.
-     */
-    async getSeasonStandings(id) {
-        return this.standingsService.listStandingsBySeason(id);
-    }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GET — GROUP STANDINGS (public, paginated)
-    // ═══════════════════════════════════════════════════════════════════════════
-    /**
-     * Standings chi tiết của 1 group — validate group thuộc season.
-     *
-     * Query params:
-     *   ?page=1&per_page=20
-     *   ?sort=position|points|goals_for|wins&direction=asc|desc
-     */
     async getGroupStandings(id, groupId, page, per_page, sort, direction) {
         const req = buildStandingsQueryRequest({ page, per_page, sort, direction });
         return this.standingsService.listGroupStandings(groupId, req, id);
@@ -193,13 +170,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "updateStatus", null);
-__decorate([
-    Get("{id}/standings"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], SeasonController.prototype, "getSeasonStandings", null);
 __decorate([
     Get("{id}/standings/{groupId}"),
     __param(0, Path()),

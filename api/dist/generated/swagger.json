@@ -8846,37 +8846,6 @@
                 }
             }
         },
-        "/seasons/{id}/standings": {
-            "get": {
-                "operationId": "GetSeasonStandings",
-                "responses": {
-                    "200": {
-                        "description": "Ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    }
-                },
-                "description": "Overview standings toàn season — tất cả groups, kiểu World Cup group stage.\nKhông paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).\nTrả về array grouped theo group, mỗi group có teams sorted by position.\n\nChỉ serve season ở status: ongoing / finished / cancelled.",
-                "tags": [
-                    "Seasons"
-                ],
-                "security": [],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "schema": {
-                            "format": "double",
-                            "type": "number"
-                        }
-                    }
-                ]
-            }
-        },
         "/seasons/{id}/standings/{groupId}": {
             "get": {
                 "operationId": "GetGroupStandings",
@@ -8892,7 +8861,6 @@
                         }
                     }
                 },
-                "description": "Standings chi tiết của 1 group — validate group thuộc season.\n\nQuery params:\n  ?page=1&per_page=20\n  ?sort=position|points|goals_for|wins&direction=asc|desc",
                 "tags": [
                     "Seasons"
                 ],
