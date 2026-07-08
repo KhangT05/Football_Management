@@ -77,36 +77,56 @@ export default function ContentSection() {
 
                     // -- Process Matches --
                     const rawMatches = extractItems(matchRes);
+                    const nowMs = Date.now();
                     const mappedMatches = rawMatches.map(m => {
+                        const schedMs = new Date(m.scheduled_at || 0).getTime();
                         let displayStatus = 'UPCOMING';
-                        if (m.status === 'ongoing') displayStatus = 'LIVE';
-                        else if (['finished', 'abandoned', 'forfeited', 'cancelled', 'completed'].includes(m.status)) displayStatus = 'FT';
+                        let cardStatus = m.status;
+                        
+                        if (m.status === 'ongoing') {
+                            displayStatus = 'LIVE';
+                        } else if (['finished', 'abandoned', 'forfeited', 'cancelled', 'completed'].includes(m.status)) {
+                            displayStatus = 'FT';
+                        } else {
+                            const TWO_HOURS = 2 * 60 * 60 * 1000;
+                            if (schedMs <= nowMs && nowMs <= schedMs + TWO_HOURS) {
+                                displayStatus = 'LIVE';
+                                cardStatus = 'ongoing';
+                            } else if (nowMs > schedMs + TWO_HOURS) {
+                                displayStatus = 'FT';
+                                cardStatus = 'finished';
+                            } else {
+                                displayStatus = 'UPCOMING';
+                                cardStatus = 'scheduled';
+                            }
+                        }
                         
                         return {
                             id: m.id,
-                            status: displayStatus,
+                            status: cardStatus,
+                            columnCategory: displayStatus,
                             time: formatMatchTime(m.scheduled_at),
                             teamA: teamMap[m.home_team_id] || `Đội ${m.home_team_id}`,
                             teamB: teamMap[m.away_team_id] || `Đội ${m.away_team_id}`,
                             scoreA: m.home_score ?? 0,
                             scoreB: m.away_score ?? 0,
                             isUpcoming: displayStatus === 'UPCOMING',
-                            scheduled_at: new Date(m.scheduled_at || 0).getTime()
+                            scheduled_at: schedMs
                         };
                     });
 
                     const live = mappedMatches
-                        .filter(m => m.status === 'LIVE')
+                        .filter(m => m.columnCategory === 'LIVE')
                         .sort((a, b) => a.scheduled_at - b.scheduled_at)
                         .slice(0, 3);
 
                     const upcoming = mappedMatches
-                        .filter(m => m.status === 'UPCOMING')
+                        .filter(m => m.columnCategory === 'UPCOMING')
                         .sort((a, b) => a.scheduled_at - b.scheduled_at)
                         .slice(0, 3);
 
                     const finished = mappedMatches
-                        .filter(m => m.status === 'FT')
+                        .filter(m => m.columnCategory === 'FT')
                         .sort((a, b) => b.scheduled_at - a.scheduled_at)
                         .slice(0, 3);
 

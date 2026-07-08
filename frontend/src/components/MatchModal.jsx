@@ -129,7 +129,7 @@ function PlayerColumn({ title, color, players, loading }) {
   );
 }
 
-function EventTimeline({ events, status }) {
+function EventTimeline({ events, status, allPlayers = [] }) {
   if (NO_EVENT_STATUSES.has(status)) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10 opacity-70">
@@ -161,7 +161,7 @@ function EventTimeline({ events, status }) {
                   <span className="text-xs font-black text-gray-400">{ev.time}'</span>
                   {!isHome && EVENT_ICON[ev.type]}
                 </div>
-                <span className="text-sm font-bold text-white line-clamp-1">{ev.player}</span>
+                <span className="text-sm font-bold text-white line-clamp-1">{allPlayers.find(p => p.id === ev.player_id)?.name || ev.player}</span>
               </div>
             </div>
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-navy border-2 border-navy-light" />
@@ -283,7 +283,8 @@ export default function MatchModal({ match, onClose }) {
         time: ev.minute,
         team: ev.team_id === match.home_team_id ? 'home' : 'away',
         type: ev.type,
-        player: ev.player?.name ?? `Cầu thủ #${ev.player_id}`,
+        player_id: ev.player_id,
+        player: ev.player?.user?.name ?? ev.player?.name ?? `Cầu thủ #${ev.player_id}`,
       }));
       setEvents(mappedEvents.sort((a, b) => a.time - b.time));
     }).catch(err => {
@@ -361,7 +362,7 @@ export default function MatchModal({ match, onClose }) {
                 <h3 className="font-black text-white uppercase tracking-wider text-sm">Diễn biến trận đấu</h3>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto px-2 custom-scrollbar">
-                <EventTimeline events={events} status={match.status} />
+                <EventTimeline events={events} status={match.status} allPlayers={[...homePlayers, ...awayPlayers]} />
               </div>
             </div>
 

@@ -97,7 +97,7 @@ export default function SeasonTeamRow({
 
       {!hideSeason && (
         <td className="py-4 px-6">
-          <div className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-gray-200 text-[11px] font-bold whitespace-nowrap">
+          <div className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-black text-[11px] font-bold whitespace-nowrap">
             {seasons?.find(s => s.id === st.season_id)?.name || 'Không rõ'}
           </div>
         </td>
@@ -107,7 +107,7 @@ export default function SeasonTeamRow({
           {tournamentName ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-amber-400">
               <Trophy className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider">{tournamentName}</span>
+              <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider text-black">{tournamentName}</span>
             </div>
           ) : (
             <span className="text-gray-500 text-xs">—</span>

@@ -225,6 +225,16 @@ export default function ManageMatchLineup() {
             <p className="text-gray-400 mt-2 font-medium">
               Trận đấu: {match.home_team?.name} vs {match.away_team?.name}
             </p>
+            {team?.jersey_color && (
+              <div className="flex items-center gap-2 mt-2 text-gray-400 text-sm">
+                Màu áo ({team.name}): 
+                <div 
+                  className="w-5 h-5 rounded border border-gray-600 shadow-sm"
+                  style={{ backgroundColor: team.jersey_color }}
+                  title={team.jersey_color}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4">

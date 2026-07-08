@@ -1,14 +1,13 @@
 import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy } from 'lucide-react';
 
 export const navItems = [
-  { name: 'Dashboard', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
-  { name: 'Manage Teams', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
-  { name: 'Manage Accounts', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
-  { name: 'Season Teams', path: '/quan-ly-giai-dau/dang-ky-giai', icon: Users },
-  { name: 'Manage Matches', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
-  { name: 'Manage Articles', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
-  { name: 'Manage Tournaments', path: '/quan-ly-giai-dau/giai-dau&mua-giai', icon: Trophy },
-  { name: 'Venue Rules Settings', path: '/quan-ly-giai-dau/san-bong-luat', icon: Settings },
+  { name: 'Tổng quan', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
+  { name: '1. Thiết lập giải đấu', path: '/quan-ly-giai-dau/san-bong-luat', icon: Settings },
+  { name: '2. Mở đăng ký', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
+  { name: '3. Bốc thăm & lên lịch', path: '/quan-ly-giai-dau/dang-ky-giai', icon: CheckSquare },
+  { name: '4. Thi đấu & knockout', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
+  { name: 'Tài khoản & Phân quyền', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
+  { name: 'Quản lý bài viết', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
 ];
 
 export const getRowStyle = (rank) => {

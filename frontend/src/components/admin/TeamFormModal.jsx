@@ -98,6 +98,19 @@ export default function TeamFormModal({
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Màu áo thi đấu chính</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={form.jersey_color || '#ffffff'}
+                onChange={e => setForm(f => ({ ...f, jersey_color: e.target.value }))}
+                className="w-10 h-10 rounded cursor-pointer border-none bg-transparent"
+              />
+              <span className="text-sm text-gray-400">{form.jersey_color || 'Chưa chọn'}</span>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 py-2">
             <label className="flex items-center cursor-pointer gap-3">
               <div className="relative">

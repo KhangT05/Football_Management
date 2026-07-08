@@ -69,6 +69,7 @@ export default function RegisterTeam() {
     name: '',
     coach_name: '',
     description: '',
+    jersey_color: '#ffffff',
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -188,6 +189,7 @@ export default function RegisterTeam() {
         name: teamInfo.name,
         coach_name: teamInfo.coach_name || '',
         description: teamInfo.description || '',
+        jersey_color: teamInfo.jersey_color || '#ffffff',
       };
       if (logoFile) payload.logo = logoFile;
 
@@ -498,6 +500,20 @@ export default function RegisterTeam() {
                             placeholder="Mô tả ngắn gọn về tinh thần đội bóng..."
                             className="w-full bg-navy-dark/80 border border-navy-light rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium resize-none"
                           ></textarea>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-bold text-gray-300 ml-1">Màu áo thi đấu chính</label>
+                          <div className="flex items-center gap-4 bg-navy-dark/80 border border-navy-light rounded-2xl px-5 py-3">
+                            <input
+                              type="color"
+                              name="jersey_color"
+                              value={teamInfo.jersey_color}
+                              onChange={handleChange}
+                              className="w-12 h-12 rounded cursor-pointer border-none bg-transparent shrink-0"
+                            />
+                            <span className="text-gray-400 text-sm font-medium">Mã màu: <span className="text-white uppercase">{teamInfo.jersey_color}</span></span>
+                          </div>
                         </div>
                       </div>
                     </div>

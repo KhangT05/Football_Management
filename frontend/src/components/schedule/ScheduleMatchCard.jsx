@@ -102,6 +102,11 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch }) {
                 }`}>
                 {match.away_score}
               </span>
+              {(match.home_penalty_score != null && match.away_penalty_score != null) && (
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-bold text-gray-400">
+                  (Pen: <span className="text-white">{match.home_penalty_score}</span> - <span className="text-white">{match.away_penalty_score}</span>)
+                </div>
+              )}
             </div>
           ) : (
             <div className="relative">

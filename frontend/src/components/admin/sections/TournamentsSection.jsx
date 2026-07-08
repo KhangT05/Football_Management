@@ -90,7 +90,11 @@ export default function TournamentsSection() {
   const handleSave = () => {
     const name = (crud.form.name || '').trim();
     const description = (crud.form.description || '').trim();
-    if (!name) { crud.setFormError('Tên giải đấu không được bỏ trống.'); return; }
+    if (!name) { 
+      toast.error('Tên giải đấu không được bỏ trống.');
+      crud.setFormError('Tên giải đấu không được bỏ trống.'); 
+      return; 
+    }
     crud.save(async () => {
       if (crud.modal === 'add') {
         await tournamentApi.create({ name, description, logo: crud.form.logo, is_active: crud.form.is_active });

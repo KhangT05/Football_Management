@@ -173,7 +173,7 @@ export default function SeasonsSection() {
 
   const handleSave = () => {
     const err = validate();
-    if (err) { crud.setFormError(err); return; }
+    if (err) { toast.error(err); crud.setFormError(err); return; }
     crud.save(async () => {
       const basePayload = {
         name: crud.form.name.trim(),
@@ -456,15 +456,15 @@ export default function SeasonsSection() {
           </FormField>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Ngày bắt đầu" required>
-              <input type="date" className={INPUT} value={crud.form.start_date} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.start_date} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
             </FormField>
             <FormField label="Ngày kết thúc" required>
-              <input type="date" className={INPUT} value={crud.form.end_date} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.end_date} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Hạn đăng ký" required>
-              <input type="date" className={INPUT} value={crud.form.registration_deadline} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.registration_deadline} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
             </FormField>
             <FormField label="Tối đa đội">
               <input type="number" min="2" max="64" className={INPUT} value={crud.form.max_teams} onChange={e => crud.setForm(f => ({ ...f, max_teams: e.target.value }))} />

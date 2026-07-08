@@ -1,4 +1,5 @@
 import { Edit, Trash2, UserPlus, Users } from 'lucide-react';
+import PosBadge from '../myteam/PosBadge';
 
 /**
  * TeamRosterPanel
@@ -95,13 +96,7 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                       {player.player?.nationality || '—'}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="px-2 py-0.5 text-xs font-bold rounded bg-navy-dark text-gray-300 border border-navy-light">
-                        {player.position === 'goalkeeper' ? 'Thủ môn'
-                          : player.position === 'defender' ? 'Hậu vệ'
-                          : player.position === 'midfielder' ? 'Tiền vệ'
-                          : player.position === 'forward' ? 'Tiền đạo'
-                          : player.position ?? '—'}
-                      </span>
+                      <PosBadge pos={player.position} />
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`px-2 py-0.5 text-xs font-bold rounded border inline-block ${

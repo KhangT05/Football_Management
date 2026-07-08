@@ -9,6 +9,7 @@ import useAuthStore from '../store/authStore';
 import MatchHeaderSkeleton from '../components/skeletons/MatchHeaderSkeleton';
 import StatusBadge from '../components/ui/StatusBadge';
 import { teamApi, matchLineupApi } from '../api';
+import useTeamStore from '../store/teamStore';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
@@ -69,11 +70,20 @@ export default function MatchDetail() {
     getMatchDetailFromCache: state.getMatchDetailFromCache,
   })));
 
+  const { teams, fetchTeams } = useTeamStore(useShallow(state => ({
+    teams: state.teams,
+    fetchTeams: state.fetchAll
+  })));
+
   const [isLeader, setIsLeader] = useState(false);
   const [lineups, setLineups] = useState({ home: [], away: [] });
 
   const detailData = getMatchDetailFromCache(matchId);
   const match = detailData?.match || null;
+
+  useEffect(() => {
+    if (teams.length === 0) fetchTeams();
+  }, [fetchTeams, teams.length]);
 
   useEffect(() => {
     if (matchId) {
@@ -108,8 +118,11 @@ export default function MatchDetail() {
 
   const events = detailData?.events || [];
 
-  const homeName = match?.home_team?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
-  const awayName = match?.away_team?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
+  const homeTeamInfo = match?.home_team ?? teams.find(t => t.id === match?.home_team_id);
+  const awayTeamInfo = match?.away_team ?? teams.find(t => t.id === match?.away_team_id);
+
+  const homeName = homeTeamInfo?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
+  const awayName = awayTeamInfo?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
   const hasScore = match?.home_score != null && match?.away_score != null;
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
@@ -217,28 +230,42 @@ export default function MatchDetail() {
             </h3>
             
             {events.length > 0 ? (
-              <div className="bg-navy border border-navy-light rounded-2xl p-4 sm:p-6 shadow-lg shadow-black/20 space-y-4">
-                {events.map((evt) => {
-                  const isHome = evt.team_id === match.home_team_id;
-                  const icon = evt.type === 'goal' ? '⚽' : evt.type === 'yellow' ? '🟨' : evt.type === 'red' ? '🟥' : '🔄';
-                  const playerName = evt.player?.name ?? `Cầu thủ #${evt.player_id}`;
-                  
-                  return (
-                    <div key={evt.id} className={`flex items-center gap-4 ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
-                      <div className="w-12 text-center text-neon font-mono font-bold text-lg bg-navy-dark py-1 rounded-lg border border-navy-light shrink-0">
-                        {evt.minute}'
-                      </div>
-                      <div className={`flex-1 flex items-center gap-3 ${isHome ? 'justify-start' : 'justify-end'}`}>
-                        {isHome && <span className="text-xl">{icon}</span>}
-                        <div className={`flex flex-col ${isHome ? 'items-start' : 'items-end'}`}>
-                          <span className="font-bold text-white">{playerName}</span>
-                          <span className="text-xs text-gray-500 uppercase">{evt.type}</span>
+              <div className="bg-navy border border-navy-light rounded-2xl p-4 sm:p-6 shadow-lg shadow-black/20 relative overflow-hidden">
+                {/* Dây timeline dọc */}
+                <div className="absolute left-[39px] sm:left-[47px] top-8 bottom-8 w-px bg-navy-light z-0"></div>
+
+                <div className="space-y-6 relative z-10">
+                  {events.map((evt) => {
+                    const isHome = evt.team_id === match.home_team_id;
+                    const icon = evt.type === 'goal' ? '⚽' : evt.type === 'yellow' ? '🟨' : evt.type === 'red' ? '🟥' : '🔄';
+                    const allLineups = [...lineups.home, ...lineups.away];
+                    const allPlayers = [...(detailData?.homePlayers || []), ...(detailData?.awayPlayers || [])];
+                    const lineupPlayer = allLineups.find(l => l.player_id === evt.player_id);
+                    const rosterPlayer = allPlayers.find(p => p.player_id === evt.player_id || p.id === evt.player_id);
+                    const resolvedName = lineupPlayer ? (lineupPlayer.player?.name ?? lineupPlayer.player?.player?.name ?? lineupPlayer.name) : (rosterPlayer?.user?.name ?? rosterPlayer?.player?.user?.name ?? rosterPlayer?.player?.name ?? rosterPlayer?.name);
+                    const playerName = resolvedName ?? evt.player?.user?.name ?? evt.player?.name ?? `Cầu thủ #${evt.player_id}`;
+                    
+                    return (
+                      <div key={evt.id} className="flex items-center gap-4 sm:gap-6 group">
+                        <div className="w-12 h-12 rounded-full border-4 border-navy bg-navy-dark flex items-center justify-center shrink-0 shadow-md shadow-black/20 z-10 text-neon font-mono font-black text-sm group-hover:border-neon/30 transition-colors">
+                          {evt.minute}'
                         </div>
-                        {!isHome && <span className="text-xl">{icon}</span>}
+                        <div className={`flex-1 bg-navy-dark/50 border border-navy-light rounded-xl p-3 sm:p-4 flex items-center gap-4 shadow-sm hover:bg-navy-dark transition-colors ${isHome ? 'border-l-blue-500/50 border-l-4' : 'border-l-amber-500/50 border-l-4'}`}>
+                          <span className="text-2xl shrink-0 drop-shadow-md">{icon}</span>
+                          <div className="flex flex-col">
+                            <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                              <span className="font-bold text-white text-sm sm:text-base">{playerName}</span>
+                              <span className={`text-[10px] uppercase font-black tracking-widest px-1.5 py-0.5 rounded border ${isHome ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                                {isHome ? 'Sân nhà' : 'Sân khách'}
+                              </span>
+                            </div>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{evt.type}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="bg-navy-dark border border-navy-light rounded-xl p-8 text-center text-gray-500">

@@ -215,6 +215,16 @@ export default function TeamDetail() {
                     Huấn luyện viên: <span className="text-white font-bold">{team.coach_name}</span>
                   </p>
                 )}
+                {team?.jersey_color && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    Màu áo: 
+                    <div 
+                      className="w-6 h-6 rounded border border-gray-600 shadow-sm"
+                      style={{ backgroundColor: team.jersey_color }}
+                      title={team.jersey_color}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

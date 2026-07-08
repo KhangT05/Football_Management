@@ -13,11 +13,12 @@ import ProfileSettingsModal from '../components/admin/ProfileSettingsModal';
 const PAGE_NAMES = {
   '/quan-ly-giai-dau':              { label: 'Dashboard',         sub: 'Tổng quan hệ thống' },
   '/quan-ly-giai-dau/doi-bong':     { label: 'Quản lý Đội bóng', sub: 'Danh sách & đội hình' },
-  '/quan-ly-giai-dau/cau-thu':      { label: 'Quản lý Người dùng', sub: 'Tài khoản hệ thống' },
-  '/quan-ly-giai-dau/dang-ky-giai': { label: 'Đăng ký Giải',     sub: 'Quản lý đội tham gia mùa giải' },
-  '/quan-ly-giai-dau/tran-dau':     { label: 'Quản lý Trận đấu',          sub: 'Lịch thi đấu' },
-  '/quan-ly-giai-dau/ket-qua':      { label: 'Cập nhật Kết quả', sub: 'Nhập tỉ số trận đấu' },
-  '/quan-ly-giai-dau/giai-dau&mua-giai':      { label: 'Quản lý Giải đấu & Mùa giải',  sub: 'Tournament & Seasons' },
+  '/quan-ly-giai-dau/tai-khoan':    { label: 'Tài khoản & Phân quyền', sub: 'Tài khoản hệ thống' },
+  '/quan-ly-giai-dau/dang-ky-giai': { label: 'Quản lý Mùa giải',     sub: 'Đội bóng & Bốc thăm' },
+  '/quan-ly-giai-dau/tran-dau':     { label: 'Quản lý Trận đấu',          sub: 'Lịch thi đấu & Kết quả' },
+  '/quan-ly-giai-dau/bai-viet':     { label: 'Quản lý Bài viết', sub: 'Tin tức & Thông báo' },
+  '/quan-ly-giai-dau/giai-dau&mua-giai': { label: 'Giải đấu & Mùa giải',  sub: 'Quản lý giải và mùa' },
+  '/quan-ly-giai-dau/san-bong-luat': { label: 'Sân bóng & Luật giải', sub: 'Địa điểm & Điều lệ' },
 };
 
 export default function AdminLayout({ children }) {

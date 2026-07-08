@@ -26,7 +26,7 @@ const POSITIONS = [
   { value: 'FW', label: 'FW – Tiền đạo' },
 ];
 
-const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, is_active: true };
+const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
 const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
 
 export default function ManageTeams() {
@@ -111,6 +111,7 @@ export default function ManageTeams() {
       coach_name: team.coach_name ?? '',
       description: team.description ?? '',
       logo: null,
+      jersey_color: team.jersey_color ?? '#ffffff',
       is_active: team.is_active ?? true,
     });
   };
@@ -136,6 +137,7 @@ export default function ManageTeams() {
       coach_name: teamCrud.form.coach_name.trim() || undefined,
       description: teamCrud.form.description.trim() || undefined,
       logo: teamCrud.form.logo instanceof File ? teamCrud.form.logo : undefined,
+      jersey_color: teamCrud.form.jersey_color || undefined,
       is_active: teamCrud.form.is_active,
     };
     teamCrud.save(async () => {

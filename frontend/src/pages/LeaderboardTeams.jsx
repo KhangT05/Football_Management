@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } from 'lucide-react';
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
@@ -469,7 +470,7 @@ export default function LeaderboardTeams() {
                                     return (
                                       <tr key={row.team_id ?? idx} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="py-3 px-4">
-                                          <div className="flex items-center gap-3">
+                                          <Link to={`/doi-bong/${row.team_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                             <span className="text-xs font-bold text-gray-400 w-3">{idx + 1}</span>
                                             <div className="w-6 h-6 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-600 shrink-0 relative overflow-hidden">
                                               <span className="absolute inset-0 flex items-center justify-center">
@@ -484,10 +485,10 @@ export default function LeaderboardTeams() {
                                                 />
                                               )}
                                             </div>
-                                            <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]" title={teamName}>
+                                            <span className="text-sm font-bold text-blue-600 hover:underline truncate max-w-[120px]" title={teamName}>
                                               {teamName}
                                             </span>
-                                          </div>
+                                          </Link>
                                         </td>
                                         <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{played}</td>
                                         <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{won}</td>

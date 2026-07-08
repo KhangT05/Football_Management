@@ -113,7 +113,19 @@ const useScheduleStore = create((set, get) => ({
       ]);
 
       const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const match = payload;
+      let match = payload?.data || payload;
+      if (Array.isArray(match)) match = match[0];
+
+      // Fallback: Nếu API result bị thiếu thông tin team (do trả về dạng MatchResult), lấy bù từ scheduleCache
+      if (match && (!match.home_team_id || !match.home_team)) {
+        for (const seasonId in get().scheduleCache) {
+          const scheduleMatch = get().scheduleCache[seasonId]?.items?.find(m => String(m.id) === String(matchId));
+          if (scheduleMatch) {
+            match = { ...scheduleMatch, ...match };
+            break;
+          }
+        }
+      }
 
       let events = [];
       if (eventsRes) {
