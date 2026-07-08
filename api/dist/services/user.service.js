@@ -11,12 +11,26 @@ import { storageService } from "./storage.service.js";
 const USER_SELECT = {
     omit: { password: true },
 };
+// FIX: include cho Queryable.findAll() — trước đây không có, nên list user
+// luôn thiếu role (bug "danh sách user không lấy được role").
+const USER_ROLES_INCLUDE = {
+    user_roles: {
+        where: { role: { is_active: true } },
+        select: { role: true },
+    },
+};
 // ─── Service ──────────────────────────────────────────────────────────────────
 export class UserService {
     prisma;
     query;
+    // FIX: table name phải khớp CHÍNH XÁC tên delegate Prisma Client generate
+    // cho model "User_Role" (không có @@map trong schema.prisma) — Prisma
+    // lowercase ký tự đầu, giữ nguyên phần còn lại -> "user_Role", không phải
+    // "user_role". Trước đây sai tên -> RelationService.model() luôn throw
+    // "not found on Prisma client" ngay từ attach/detach/sync đầu tiên, khiến
+    // mọi thao tác sửa role user (RolesTab) fail 100%.
     rolesRelationService = new RelationService({
-        table: "user_role",
+        table: "user_Role",
         ownerKey: "user_id",
         targetKey: "role_id",
         validateOwner: async (id, db) => {
@@ -47,6 +61,17 @@ export class UserService {
             beforeBuild: (where) => {
                 where.push({ is_active: true });
             },
+            // FIX: thêm include để join user_roles trong list — không set kèm
+            // `select` nên không xung đột với logic build của Queryable.
+            include: USER_ROLES_INCLUDE,
+            // FIX: flatten user_roles[].role -> roles: Role[], đồng thời bỏ
+            // password (Prisma include không tự omit theo USER_SELECT được vì
+            // include và omit không kết hợp cùng lúc trong 1 query — xử lý ở
+            // afterFetch thay vì select).
+            afterFetch: (rows) => rows.map(({ password, user_roles, ...rest }) => ({
+                ...rest,
+                roles: (user_roles ?? []).map((ur) => ur.role),
+            })),
         });
     }
     findAll(req = {}) {
@@ -80,10 +105,16 @@ export class UserService {
         const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
         if (!exists)
             throw createAppError("NOT_FOUND", `User ${id} not found`);
-        // Tách role_ids ra — không update trực tiếp qua user.update
         const { role_ids, ...fields } = data;
         const patch = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined));
-        return this.prisma.user.update({ where: { id }, data: patch, ...USER_SELECT });
+        const user = await this.prisma.$transaction(async (tx) => {
+            const updated = await tx.user.update({ where: { id }, data: patch, ...USER_SELECT });
+            if (role_ids !== undefined) {
+                await this.rolesRelationService.sync(id, role_ids, tx);
+            }
+            return updated;
+        });
+        return user;
     }
     async updatePassword(id, currentPassword, newPassword) {
         const user = await this.prisma.user.findUnique({ where: { id } });
@@ -152,10 +183,6 @@ export class UserService {
         });
     }
     // ─── Forgot / Reset password ────────────────────────────────────────────────
-    /**
-     * Không leak việc email có tồn tại hay không (tránh user enumeration) —
-     * luôn trả về thành công dù email không tồn tại trong hệ thống.
-     */
     resetTokenKey(tokenHash) {
         return `reset-password:${tokenHash}`;
     }
@@ -165,7 +192,6 @@ export class UserService {
             return; // im lặng — tránh user enumeration
         const token = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-        // TTL 1 giờ — Redis tự xoá, không cần cột expires
         await redis.set(this.resetTokenKey(tokenHash), String(user.id), { EX: 60 * 60 });
         try {
             await mailService.sendResetPasswordEmail(user.email, { token, name: user.name });
@@ -185,7 +211,6 @@ export class UserService {
             where: { id: Number(userId) },
             data: { password: hashed },
         });
-        // Single-use — xoá ngay sau khi dùng, không đợi TTL tự hết hạn
         await redis.del(key);
     }
 }

@@ -11,7 +11,7 @@ import crypto from "crypto";
 import redis from "../libs/redis.js";
 import { storageService } from "./storage.service.js";
 
-export type SafeUser = Omit<User, "password">;
+export type SafeUser = Omit<User, "password"> & { roles?: Role[] };
 
 // ─── Projection ───────────────────────────────────────────────────────────────
 
@@ -19,13 +19,28 @@ const USER_SELECT = {
     omit: { password: true } as const,
 };
 
+// FIX: include cho Queryable.findAll() — trước đây không có, nên list user
+// luôn thiếu role (bug "danh sách user không lấy được role").
+const USER_ROLES_INCLUDE = {
+    user_roles: {
+        where: { role: { is_active: true } },
+        select: { role: true },
+    },
+} as const;
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class UserService {
     private readonly query: Queryable<SafeUser>;
 
+    // FIX: table name phải khớp CHÍNH XÁC tên delegate Prisma Client generate
+    // cho model "User_Role" (không có @@map trong schema.prisma) — Prisma
+    // lowercase ký tự đầu, giữ nguyên phần còn lại -> "user_Role", không phải
+    // "user_role". Trước đây sai tên -> RelationService.model() luôn throw
+    // "not found on Prisma client" ngay từ attach/detach/sync đầu tiên, khiến
+    // mọi thao tác sửa role user (RolesTab) fail 100%.
     private readonly rolesRelationService = new RelationService({
-        table: "user_role",
+        table: "user_Role",
         ownerKey: "user_id",
         targetKey: "role_id",
         validateOwner: async (id, db) => {
@@ -55,6 +70,18 @@ export class UserService {
             beforeBuild: (where) => {
                 where.push({ is_active: true });
             },
+            // FIX: thêm include để join user_roles trong list — không set kèm
+            // `select` nên không xung đột với logic build của Queryable.
+            include: USER_ROLES_INCLUDE,
+            // FIX: flatten user_roles[].role -> roles: Role[], đồng thời bỏ
+            // password (Prisma include không tự omit theo USER_SELECT được vì
+            // include và omit không kết hợp cùng lúc trong 1 query — xử lý ở
+            // afterFetch thay vì select).
+            afterFetch: (rows: any[]) =>
+                rows.map(({ password, user_roles, ...rest }) => ({
+                    ...rest,
+                    roles: (user_roles ?? []).map((ur: any) => ur.role),
+                })),
         });
     }
 
@@ -94,20 +121,20 @@ export class UserService {
         const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
         if (!exists) throw createAppError("NOT_FOUND", `User ${id} not found`);
 
-        // Tách role_ids ra — sync riêng qua RelationService
         const { role_ids, ...fields } = data;
         const patch = Object.fromEntries(
             Object.entries(fields).filter(([, v]) => v !== undefined)
         );
 
-        const updated = await this.prisma.user.update({ where: { id }, data: patch, ...USER_SELECT });
+        const user = await this.prisma.$transaction(async (tx) => {
+            const updated = await tx.user.update({ where: { id }, data: patch, ...USER_SELECT });
+            if (role_ids !== undefined) {
+                await this.rolesRelationService.sync(id, role_ids, tx);
+            }
+            return updated;
+        });
 
-        // Nếu role_ids được truyền vào (kể cả mảng rỗng) thì sync toàn bộ
-        if (Array.isArray(role_ids)) {
-            await this.syncRoles(id, role_ids);
-        }
-
-        return updated;
+        return user;
     }
 
     async updatePassword(id: number, currentPassword: string, newPassword: string): Promise<void> {
@@ -159,6 +186,7 @@ export class UserService {
             this.rolesRelationService.sync(userId, roleIds, tx)
         );
     }
+
     async restore(id: number): Promise<SafeUser> {
         const result = await this.prisma.user.updateMany({
             where: { id, is_active: false },
@@ -171,6 +199,7 @@ export class UserService {
         }
         return this.findByIdOrFail(id);
     }
+
     async updateAvatar(id: number, avatarFile: Express.Multer.File): Promise<SafeUser> {
         const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
         if (!exists) throw createAppError("NOT_FOUND", `User ${id} not found`);
@@ -187,10 +216,6 @@ export class UserService {
 
     // ─── Forgot / Reset password ────────────────────────────────────────────────
 
-    /**
-     * Không leak việc email có tồn tại hay không (tránh user enumeration) —
-     * luôn trả về thành công dù email không tồn tại trong hệ thống.
-     */
     private resetTokenKey(tokenHash: string): string {
         return `reset-password:${tokenHash}`;
     }
@@ -202,7 +227,6 @@ export class UserService {
         const token = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-        // TTL 1 giờ — Redis tự xoá, không cần cột expires
         await redis.set(this.resetTokenKey(tokenHash), String(user.id), { EX: 60 * 60 });
 
         try {
@@ -225,7 +249,6 @@ export class UserService {
             data: { password: hashed },
         });
 
-        // Single-use — xoá ngay sau khi dùng, không đợi TTL tự hết hạn
         await redis.del(key);
     }
 }
