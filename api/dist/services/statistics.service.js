@@ -35,15 +35,17 @@ export class StatisticsService {
         if (!days) {
             throw createAppError("VALIDATION_ERROR", `getUserRegistrationStats called with invalid period=${period}`, "period không hợp lệ, dùng: 7d, 30d, 90d, 3m, 6m, 1y");
         }
+        // Format đúng chuẩn CONVERT_TZ ('+07:00'), không truyền số giờ thô
+        const tzOffset = `+${String(BUSINESS_TZ_OFFSET_HOURS).padStart(2, "0")}:00`;
         const rows = await this.prisma.$queryRaw `
-            SELECT
-                DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET_HOURS})) AS day,
-                COUNT(*) AS count
-            FROM users
-            WHERE created_at >= DATE_SUB(${businessNow}, INTERVAL ${days} DAY)
-            GROUP BY DATE(CONVERT_TZ(created_at, '+00:00', ${BUSINESS_TZ_OFFSET_HOURS}))
-            ORDER BY day ASC
-        `;
+        SELECT
+            DATE(CONVERT_TZ(created_at, '+00:00', ${tzOffset})) AS day,
+            COUNT(*) AS count
+        FROM users
+        WHERE created_at >= DATE_SUB(${businessNow}, INTERVAL ${days} DAY)
+        GROUP BY day
+        ORDER BY day ASC
+    `;
         // Lấp ngày trống = 0 (dashboard cần continuous series, không skip ngày không có user mới)
         const dayMap = new Map();
         for (const r of rows) {
