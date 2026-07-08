@@ -24,8 +24,20 @@ export default function PlayerStatsModal({ player, onClose }) {
         const res = await statisticsApi.getPlayerCareer(playerId);
         setStats(res.data);
       } catch (err) {
+        // DEBUG: log đầy đủ để xác định nguyên nhân thật (404 route chưa
+        // regenerate / 500 lỗi Prisma / network). Xoá console.error này sau
+        // khi xác định xong nguyên nhân, giữ lại error message chi tiết cho
+        // môi trường dev để không phải mò DevTools mỗi lần.
         console.error('Lỗi khi tải thống kê cầu thủ:', err);
-        setError('Không thể tải thống kê cầu thủ lúc này.');
+        const status = err?.response?.status;
+        const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+        if (status === 404) {
+          setError('API thống kê chưa sẵn sàng (404) — kiểm tra lại route backend đã được deploy/regenerate chưa.');
+        } else if (status) {
+          setError(`Lỗi từ server (${status}): ${serverMsg || 'Không có chi tiết.'}`);
+        } else {
+          setError('Không thể kết nối tới server (network error / CORS). Kiểm tra backend có đang chạy không.');
+        }
       } finally {
         setLoading(false);
       }
@@ -37,7 +49,7 @@ export default function PlayerStatsModal({ player, onClose }) {
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      
+
       <div className="relative bg-navy border border-navy-light rounded-3xl shadow-2xl w-full max-w-3xl animate-scale-in flex flex-col overflow-hidden max-h-[90vh]">
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-transparent to-cyan-500/5 pointer-events-none" />
 

@@ -11,6 +11,7 @@ import { RoleController } from "../controllers/role.controller.js";
 import { ScheduleController } from "../controllers/schedule.controller.js";
 import { SeasonController } from "../controllers/season.controller.js";
 import { SeasonTeamController } from "../controllers/seasonteam.controller.js";
+import { StatisticsController } from "../controllers/statistics.controller.js";
 import { TeamController } from "../controllers/team.controller.js";
 import { TournamentController } from "../controllers/tournament.controller.js";
 import { TournamentRuleController } from "../controllers/tournamentrule.controller.js";
@@ -32,7 +33,7 @@ import { ScheduleService } from "../services/schedule.service.js";
 import { SeasonService } from "../services/season.service.js";
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import { StandingsService } from "../services/standing.service.js";
-import { StorageService } from "../services/storage.service.js";
+import { StatisticsService } from "../services/statistics.service.js";
 import { TeamService } from "../services/team.service.js";
 import { TournamentService } from "../services/tournament.service.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
@@ -40,7 +41,6 @@ import { UserService } from "../services/user.service.js";
 import { VenueService } from "../services/venue.service.js";
 import { WorkflowService } from "../services/workflow.service.js";
 import prisma from "./prisma.js";
-import { storageService } from "../services/storage.service.js";
 
 const standingsService = new StandingsService(prisma);
 const knockoutService = new KnockoutService(prisma, standingsService);
@@ -55,6 +55,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [VenueController, () => new VenueController(new VenueService(prisma))],
     [TournamentController, () => new TournamentController(new TournamentService(prisma))],
     [SeasonController, () => new SeasonController(new SeasonService(prisma), standingsService)],
+    [StatisticsController, () => new StatisticsController(new StatisticsService(prisma))],
     [TournamentRuleController, () => new TournamentRuleController(new TournamentRuleService(prisma))],
     [TeamController, () => new TeamController(new TeamService(prisma))],
     [PlayerController, () => new PlayerController(new PlayerService(prisma))],

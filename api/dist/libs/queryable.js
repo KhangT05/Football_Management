@@ -134,7 +134,8 @@ class QueryBuilder {
         const { dateField } = this.config;
         if (!period || !dateField)
             return this; // opt-in: config phải khai báo dateField
-        this.wheres.push({ [dateField]: { gte: parsePeriod(period) } });
+        const normalized = period.trim();
+        this.wheres.push({ [dateField]: { gte: parsePeriod(normalized) } });
         return this;
     }
     buildScroll(limit) {
