@@ -375,7 +375,7 @@ export class MatchLifecycleService {
             throw createAppError('CONFLICT', `Match ${matchId} đã '${match.status}' — không forfeit được`);
         if (forfeitingTeamId !== match.home_team_id && forfeitingTeamId !== match.away_team_id)
             throw createAppError('VALIDATION_ERROR', `Team ${forfeitingTeamId} không thuộc match ${matchId}`);
-        const rule = match.phase.season?.tournament?.tournamentRule;
+        const rule = match.phase.season?.tournamentRule;
         if (!rule)
             throw createAppError('NOT_FOUND', `Thiếu TournamentRule cho match ${matchId}`);
         const winnerIsHome = forfeitingTeamId !== match.home_team_id;

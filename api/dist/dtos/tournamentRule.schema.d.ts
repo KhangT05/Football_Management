@@ -38,12 +38,12 @@ export declare const createTournamentRuleSchema: z.ZodObject<{
     min_players_per_team: z.ZodDefault<z.ZodNumber>;
     teams_advance_per_group: z.ZodDefault<z.ZodNumber>;
     tiebreaker_order: z.ZodDefault<z.ZodArray<z.ZodEnum<{
-        goals_scored: "goals_scored";
-        yellow_cards: "yellow_cards";
-        red_cards: "red_cards";
         goal_diff: "goal_diff";
+        goals_scored: "goals_scored";
         head_to_head: "head_to_head";
         goals_conceded: "goals_conceded";
+        yellow_cards: "yellow_cards";
+        red_cards: "red_cards";
     }>>>;
 }, z.core.$strip>;
 export declare const updateTournamentRuleSchema: z.ZodObject<{
@@ -57,12 +57,12 @@ export declare const updateTournamentRuleSchema: z.ZodObject<{
     min_players_per_team: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     teams_advance_per_group: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     tiebreaker_order: z.ZodOptional<z.ZodDefault<z.ZodArray<z.ZodEnum<{
-        goals_scored: "goals_scored";
-        yellow_cards: "yellow_cards";
-        red_cards: "red_cards";
         goal_diff: "goal_diff";
+        goals_scored: "goals_scored";
         head_to_head: "head_to_head";
         goals_conceded: "goals_conceded";
+        yellow_cards: "yellow_cards";
+        red_cards: "red_cards";
     }>>>>;
 }, z.core.$strip>;
 export type CreateTournamentRuleDto = z.infer<typeof createTournamentRuleSchema>;

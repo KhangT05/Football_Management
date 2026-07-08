@@ -2199,11 +2199,15 @@ export declare const TournamentScalarFieldEnum: {
 export type TournamentScalarFieldEnum = (typeof TournamentScalarFieldEnum)[keyof typeof TournamentScalarFieldEnum];
 export declare const TournamentRuleScalarFieldEnum: {
     readonly id: "id";
+    readonly name: "name";
     readonly tournament_id: "tournament_id";
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
+    readonly suspension_match_count: "suspension_match_count";
+    readonly fine_per_yellow_card: "fine_per_yellow_card";
+    readonly fine_per_red_card: "fine_per_red_card";
     readonly points_per_win: "points_per_win";
     readonly points_per_draw: "points_per_draw";
     readonly points_per_loss: "points_per_loss";
@@ -2229,6 +2233,7 @@ export declare const PhaseScalarFieldEnum: {
     readonly is_active: "is_active";
     readonly legs: "legs";
     readonly teams_per_group: "teams_per_group";
+    readonly teams_advance_per_group: "teams_advance_per_group";
     readonly status: "status";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
@@ -2265,6 +2270,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly cancel_reason: "cancel_reason";
     readonly tournament_id: "tournament_id";
     readonly user_id: "user_id";
+    readonly tournament_rule_id: "tournament_rule_id";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
 export declare const GroupScalarFieldEnum: {
@@ -2468,7 +2474,10 @@ export declare const PlayerStatisticScalarFieldEnum: {
     readonly red_cards: "red_cards";
     readonly minutes_played: "minutes_played";
     readonly accumulated_yellow_cards: "accumulated_yellow_cards";
+    readonly yellow_cards_since_reset: "yellow_cards_since_reset";
+    readonly suspension_matches_remaining: "suspension_matches_remaining";
     readonly is_suspended: "is_suspended";
+    readonly total_fine_owed: "total_fine_owed";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
 };
@@ -2608,6 +2617,10 @@ export declare const QueryMode: {
     readonly insensitive: "insensitive";
 };
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+export declare const TournamentRuleOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+};
+export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
@@ -2709,6 +2722,10 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>;
 /**
+ * Reference to a field of type 'Decimal'
+ */
+export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>;
+/**
  * Reference to a field of type 'Json'
  */
 export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>;
@@ -2732,10 +2749,6 @@ export type EnumPhaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'SeasonStatus'
  */
 export type EnumSeasonStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SeasonStatus'>;
-/**
- * Reference to a field of type 'Decimal'
- */
-export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>;
 /**
  * Reference to a field of type 'GroupStatus'
  */

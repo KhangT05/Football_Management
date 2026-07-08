@@ -17,7 +17,6 @@ import { TournamentController } from "../controllers/tournament.controller.js";
 import { TournamentRuleController } from "../controllers/tournamentrule.controller.js";
 import { UserController } from "../controllers/user.controller.js";
 import { VenueController } from "../controllers/venue.controller.js";
-import { WorkflowController } from "../controllers/workflow.controller.js";
 import { ArticleService } from "../services/article.service.js";
 import { AuthService } from "../services/auth.service.js";
 import { GroupService } from "../services/group.service.js";
@@ -38,13 +37,12 @@ import { TournamentService } from "../services/tournament.service.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 import { UserService } from "../services/user.service.js";
 import { VenueService } from "../services/venue.service.js";
-import { WorkflowService } from "../services/workflow.service.js";
+// import { WorkflowService } from "../services/workflow.service.js";
 import prisma from "./prisma.js";
 const standingsService = new StandingsService(prisma);
 const knockoutService = new KnockoutService(prisma, standingsService);
 const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
 const lifecycleService = new MatchLifecycleService(prisma, matchResultService);
-const workflowService = new WorkflowService(prisma, knockoutService, lifecycleService, matchResultService, standingsService);
 // Map controller → factory function
 const controllerFactory = new Map([
     [UserController, () => new UserController(new UserService(prisma))],
@@ -64,7 +62,7 @@ const controllerFactory = new Map([
     [MatchController, () => new MatchController(lifecycleService)],
     [MatchResultController, () => new MatchResultController(matchResultService)],
     [MatchLineupController, () => new MatchLineupController(new MatchLineupService(prisma))],
-    [WorkflowController, () => new WorkflowController(workflowService)],
+    // [WorkflowController, () => new WorkflowController(workflowService)],
     [JerseyController, () => new JerseyController(new JerseyService(prisma))],
     [ArticleController, () => new ArticleController(new ArticleService(prisma))],
 ]);

@@ -16,9 +16,9 @@ export declare class GroupController extends Controller {
             season_id: number;
         };
         groups: {
+            name: string;
             id: number;
             status: import("../generated/prisma/enums.js").GroupStatus;
-            name: string;
             season_teams: {
                 id: number;
                 team_id: number;
@@ -47,9 +47,9 @@ export declare class GroupController extends Controller {
             season_id: number;
         };
         groups: {
+            name: string;
             id: number;
             status: import("../generated/prisma/enums.js").GroupStatus;
-            name: string;
             season_teams: {
                 id: number;
                 team_id: number;

@@ -22,6 +22,7 @@ const baseSeasonSchema = z.object({
     is_registration_open: z.boolean().optional().default(false),
     is_active: z.boolean().optional().default(true),
     tournament_id: z.number().int().positive(),
+    tournament_rule_id: z.number().int().positive(),
 })
 
 export const createSeasonSchema = baseSeasonSchema

@@ -1,12 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
-import { seedRoles } from "./roleSeeder.js";
-import { seedUsers } from "./userSeeder.js";
-import { seedVenues } from "./venueSeeder.js";
-import { seedTournaments } from "./tournamentSeeder.js";
-import { seedTeams } from "./teamSeeder.js";
-import { seedPhasesAndGroups } from "./phaseSeeder.js";
-import { seedMatches } from "./matchSeeder.js";
-import { seedSeasons } from "./season.seeder.js";
+
 
 export async function runSeeders(db: PrismaClient): Promise<void> {
     console.log("[DataSeeder] starting...\n");
@@ -54,7 +47,7 @@ export async function runSeeders(db: PrismaClient): Promise<void> {
     // await seedMatches(db, seasonId, phaseResult, teams, defaultVenueId, adminUserId);
 
     // Tier 6: seed seasons để test auto-schedule
-    await seedSeasons(db, adminUserId, tournament.id, teams);
+    // await seedSeasons(db, adminUserId, tournament.id, teams);
 
     console.log("\n[DataSeeder] done.");
 }

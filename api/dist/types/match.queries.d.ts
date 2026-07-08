@@ -1,4 +1,21 @@
 import { Prisma } from '../generated/prisma/client.js';
+declare const phaseWithRuleSelect: {
+    select: {
+        id: true;
+        format: true;
+        season: {
+            select: {
+                id: true;
+                tournamentRule: {
+                    select: {
+                        yellow_cards_suspension: true;
+                        forfeit_score: true;
+                    };
+                };
+            };
+        };
+    };
+};
 export declare const matchListSelect: {
     id: true;
     status: true;
@@ -144,18 +161,15 @@ export declare const matchForConfirmSelect: {
     phase_id: true;
     phase: {
         select: {
+            id: true;
             format: true;
             season: {
                 select: {
                     id: true;
-                    tournament: {
+                    tournamentRule: {
                         select: {
-                            tournamentRule: {
-                                select: {
-                                    yellow_cards_suspension: true;
-                                    forfeit_score: true;
-                                };
-                            };
+                            yellow_cards_suspension: true;
+                            forfeit_score: true;
                         };
                     };
                 };
@@ -165,6 +179,28 @@ export declare const matchForConfirmSelect: {
     matchResult: {
         select: {
             id: true;
+        };
+    };
+};
+export declare const matchForOverrideSelect: {
+    id: true;
+    home_team_id: true;
+    away_team_id: true;
+    group_id: true;
+    phase: {
+        select: {
+            format: true;
+            season: {
+                select: {
+                    id: true;
+                };
+            };
+        };
+    };
+    matchResult: {
+        select: {
+            id: true;
+            result_type: true;
         };
     };
 };
@@ -186,18 +222,15 @@ export declare const matchForForfeitSelect: {
     away_team_id: true;
     phase: {
         select: {
+            id: true;
             format: true;
             season: {
                 select: {
                     id: true;
-                    tournament: {
+                    tournamentRule: {
                         select: {
-                            tournamentRule: {
-                                select: {
-                                    yellow_cards_suspension: true;
-                                    forfeit_score: true;
-                                };
-                            };
+                            yellow_cards_suspension: true;
+                            forfeit_score: true;
                         };
                     };
                 };
@@ -308,10 +341,14 @@ export type MatchDetail = Prisma.MatchGetPayload<{
 export type MatchForConfirm = Prisma.MatchGetPayload<{
     select: typeof matchForConfirmSelect;
 }>;
+export type MatchForOverride = Prisma.MatchGetPayload<{
+    select: typeof matchForOverrideSelect;
+}>;
 export type MatchForFinalize = Prisma.MatchGetPayload<{
     select: typeof matchForFinalizeSelect;
 }>;
 export type MatchForForfeit = Prisma.MatchGetPayload<{
     select: typeof matchForForfeitSelect;
 }>;
+export { phaseWithRuleSelect };
 //# sourceMappingURL=match.queries.d.ts.map

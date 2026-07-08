@@ -43,9 +43,13 @@ export const MATCH_RESULT_SELECT = {
 export type MatchEventRow = Prisma.MatchEventGetPayload<{ select: typeof MATCH_EVENT_SELECT }>;
 export type MatchResultRow = Prisma.MatchResultGetPayload<{ select: typeof MATCH_RESULT_SELECT }>;
 
-export type MatchForConfirmFull = Prisma.MatchGetPayload<{
-    select: typeof matchForConfirmSelect;
-}>;
+// FIX (duplicate select bug): matchForConfirmSelect / MatchForConfirmFull KHÔNG
+// còn định nghĩa ở đây nữa. Trước đây file này tự khai lại select với path SAI
+// (season.tournament.tournamentRule — mảng, sai rule) song song với bản ĐÚNG ở
+// data/match.queries.ts (season.tournamentRule — quan hệ 1-1), gây lỗi TS 'never'
+// và đọc sai TournamentRule khi 2 import path bị lẫn. Giờ dùng thẳng
+// `matchForConfirmSelect` / `MatchForConfirm` export từ match.queries.ts — 1
+// nguồn sự thật duy nhất cho select này.
 
 export type StatDelta = {
     goals: number;
@@ -53,55 +57,13 @@ export type StatDelta = {
     redCards: number;
 };
 
-export const matchForConfirmSelect = {
-    id: true,
-    status: true,
-    home_team_id: true,
-    away_team_id: true,
-    group_id: true,
-    phase_id: true,
-    phase: {
-        select: {
-            format: true,
-            season: {
-                select: {
-                    id: true,
-                    tournament: {
-                        select: {
-                            tournamentRule: {
-                                select: { yellow_cards_suspension: true, forfeit_score: true },
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    },
-    matchResult: { select: { id: true } },
-} satisfies Prisma.MatchSelect;
-
 // ─── Minute rounding ──────────────────────────────────────────────────────────
-// Business rule: mọi mốc thời gian trận đấu lưu theo phút, làm tròn LÊN
-// (ceil), không floor. 0s-60s -> phút 1. Không có phút 0.
 
 export function toMatchMinute(elapsedSeconds: number): number {
     if (elapsedSeconds < 0)
         throw createAppError('VALIDATION_ERROR', `elapsedSeconds không thể âm: ${elapsedSeconds}`);
     return Math.max(1, Math.ceil(elapsedSeconds / 60));
 }
-
-// ─── Goal-minute uniqueness ───────────────────────────────────────────────────
-// Business rule: không cho phép 2 bàn thắng (goal/own_goal/penalty_scored)
-// trùng phút CHO CÙNG 1 TEAM (team_id trên MatchEvent). Khác team, cùng phút
-// vẫn hợp lệ — VD home ghi bàn phút 45 và away cũng ghi bàn phút 45 là 2 sự
-// kiện độc lập, không conflict. Không áp dụng cho thẻ/thay người.
-//
-// LƯU Ý own_goal: team_id của own_goal = team của cầu thủ đá phản lưới
-// (không phải team hưởng lợi — xem isCreditedToHomeTeam bên dưới). Guard này
-// dedup theo "team có cầu thủ ghi/phản lưới", KHÔNG phải "team được cộng vào
-// tỉ số". Nếu business muốn cấm theo team HƯỞNG LỢI, phải đảo ngược team_id
-// cho own_goal trước khi gọi guard — hiện KHÔNG làm vậy (ASSUMPTION, xem note
-// ở _assertNoGoalMinuteConflict trong match.lifecycle.service.ts).
 
 export const GOAL_EVENT_TYPES: MatchEventType[] = [
     MatchEventType.goal,
@@ -187,32 +149,26 @@ export function toMatchUpdateOnConfirm(
         finalize_away_penalty: null,
     };
 }
+
 export function buildMatchEventsQueryRequest(query: Record<string, any>): QueryRequest {
     return {
-        // Simple filters (defined in config.filterable)
         type: query.type,
         period: query.period,
-        // Complex filters — nếu có
         filter: {
-            ...query.filter, // passed as ?filter[type]=goal&filter[period]=first_half
+            ...query.filter,
         },
-        // Pagination + sort
         page: query.page,
         per_page: query.per_page,
         sort: query.sort,
         direction: query.direction,
-        // Search
         q: query.q,
     };
 }
 
 export function buildStandingsQueryRequest(query: Record<string, any>): QueryRequest {
     return {
-        // Simple filters
-        is_active: true, // fixed by service
-        // Complex filter: group_id
+        is_active: true,
         filter: query.groupId ? { group_id: { eq: query.groupId } } : {},
-        // Pagination + sort
         page: query.page,
         per_page: query.per_page,
         sort: query.sort,
@@ -222,9 +178,7 @@ export function buildStandingsQueryRequest(query: Record<string, any>): QueryReq
 
 export function buildPlayerStatsQueryRequest(query: Record<string, any>): QueryRequest {
     return {
-        // Complex filter: team_id
         filter: query.teamId ? { team_id: { eq: query.teamId } } : {},
-        // Pagination + sort
         page: query.page,
         per_page: query.per_page,
         sort: query.sort,
@@ -266,18 +220,12 @@ export function toMatchUpdateOnOverturn(
     };
 }
 
-// → helpers/bracket.helper.ts
 export function nextPowerOf2(n: number): number {
     let p = 1;
     while (p < n) p *= 2;
     return p;
 }
 
-// → helpers/bracket.helper.ts
-// Cross-seeding chuẩn: seed[i] vs seed[n-1-i] (KHÔNG phải seed[2i] vs
-// seed[2i+1]). Với input seed order là rank-major theo nhiều group
-// (VD [A1,B1,A2,B2] khi seed 2 bảng x top2), công thức này cho R1 =
-// (A1 vs B2), (B1 vs A2) — tránh 2 đội cùng bảng gặp nhau ngay round 1.
 export function buildRound1Pairings(
     seeding: (number | null)[],
 ): { home: number | null; away: number | null }[] {
@@ -287,16 +235,7 @@ export function buildRound1Pairings(
         away: seeding[n - 1 - i] ?? null,
     }));
 }
-/**
- * Xác định bàn thắng/trừ điểm có tính cho home hay không.
- * Dùng chung ở _applyScoreDelta (live), _computeScoreFromEvents (finalize)
- * VÀ buildGoalsTimeline (report) để đảm bảo 3 nơi không viết 3 ternary khác
- * nhau cho cùng business rule own_goal/goal_disallowed.
- *
- * own_goal:         team đá phản lưới → credit cho đối thủ
- * goal_disallowed:  nếu bàn bị huỷ là own_goal → đảo ngược (trừ về đúng bên đã được cộng)
- * goal/penalty_scored: team ghi → credit cho chính mình
- */
+
 export function isCreditedToHomeTeam(
     homeTeamId: number,
     eventTeamId: number,
@@ -304,13 +243,14 @@ export function isCreditedToHomeTeam(
     wasOwnGoal?: boolean,
 ): boolean {
     if (type === MatchEventType.own_goal) {
-        return eventTeamId !== homeTeamId; // team đá phản → đối thủ được điểm
+        return eventTeamId !== homeTeamId;
     }
     if (type === MatchEventType.goal_disallowed && wasOwnGoal) {
-        return eventTeamId !== homeTeamId; // huỷ own_goal → trừ của đối thủ
+        return eventTeamId !== homeTeamId;
     }
     return eventTeamId === homeTeamId;
 }
+
 type LineupRow = {
     player_id: number;
     team_id: number;
@@ -379,6 +319,7 @@ export function buildMatchReportPlayerRows(
         })
         .sort((a, b) => Number(b.isStarting) - Number(a.isStarting) || (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999));
 }
+
 export interface MatchReportGoalEntry {
     playerName: string;
     minute: number | null;
@@ -386,19 +327,11 @@ export interface MatchReportGoalEntry {
     isOwnGoal: boolean;
 }
 
-// FIX: trước đây hàm này tự viết ternary riêng để xác định creditTeamId
-// (own_goal → đảo home/away), trùng lặp và có thể lệch với
-// isCreditedToHomeTeam nếu rule thay đổi sau này mà quên sync 2 chỗ. Giờ
-// gọi thẳng isCreditedToHomeTeam để đảm bảo 1 nguồn sự thật duy nhất.
-//
-// FIX: ev.team_id không được null-check trước đây — event có team_id=null
-// (dữ liệu thiếu/join lỗi) sẽ rơi vào nhánh `away` một cách âm thầm. Giờ
-// skip hẳn event đó thay vì đoán.
 export function buildGoalsTimeline(
     events: { player_id: number | null; team_id: number | null; type: MatchEventType; minute: number | null; added_minute: number | null }[],
     homeTeamId: number,
     awayTeamId: number,
-    playerNameLookup: Map<number, string>, // player_id -> full name (join sẵn từ MatchLineup/TeamPlayer)
+    playerNameLookup: Map<number, string>,
 ): { home: MatchReportGoalEntry[]; away: MatchReportGoalEntry[] } {
     const home: MatchReportGoalEntry[] = [];
     const away: MatchReportGoalEntry[] = [];
@@ -425,20 +358,17 @@ export function buildGoalsTimeline(
     const byMinute = (a: MatchReportGoalEntry, b: MatchReportGoalEntry) => (a.minute ?? 0) - (b.minute ?? 0);
     return { home: home.sort(byMinute), away: away.sort(byMinute) };
 }
+
 export function formatMinuteLabel(e: MatchReportGoalEntry): string {
     const base = e.addedMinute ? `${e.minute}+${e.addedMinute}'` : `${e.minute}'`;
     return e.isOwnGoal ? `${base} (OG)` : base;
 }
-
-// match.helper.ts — chỉ thay hàm assertMinuteInBounds, phần còn lại của file giữ nguyên
 
 export function assertMinuteInBounds(
     period: MatchPeriod | null | undefined,
     minute: number | null | undefined,
     addedMinute?: number | null,
 ): void {
-    // penalty_shootout không có khái niệm "phút thi đấu" — không tồn tại trong
-    // MINUTE_BOUNDS, trước đây sẽ rơi vào nhánh INTERNAL_SERVER_ERROR sai chỗ.
     if (period === MatchPeriod.penalty_shootout) return;
 
     if (minute === null || minute === undefined || !Number.isInteger(minute)) {
@@ -464,13 +394,7 @@ export function assertMinuteInBounds(
         );
     }
 }
-// ── Sent-off player guard ────────────────────────────────────────────────
-// Gap có thật: BE hiện chỉ chặn "2 thẻ vàng cùng type" (findFirst yellow_card),
-// không có khái niệm "cầu thủ đã bị truất quyền" (red_card hoặc second_yellow)
-// → sau khi bị đuổi, cầu thủ đó vẫn có thể được ghi thêm goal/card/sub_in ở BE,
-// vỡ invariant bóng đá cơ bản. Check này BẮT BUỘC chạy trong transaction đã lock
-// match row (không phải check rời trước lock — race giữa 2 event cùng lúc cho
-// cùng player vẫn có thể lọt nếu check ở ngoài FOR UPDATE).
+
 export async function assertPlayerNotSentOff(
     tx: Prisma.TransactionClient,
     matchId: number,
@@ -492,17 +416,7 @@ export async function assertPlayerNotSentOff(
         );
     }
 }
-/**
- * Kiểm tra bracket slot con (round kế tiếp) của 1 match knockout đã được
- * tạo hay chưa. Dùng để chặn sửa/xóa event hoặc override score sau khi
- * bracket đã advance dựa trên winner cũ — tránh đổi winner "dưới chân" 1
- * match đã tạo ra trận vòng sau (có thể đã đá).
- *
- * Trả về matchId của trận vòng sau nếu đã tồn tại, null nếu chưa (an toàn
- * để sửa). Extract từ overrideResultInTx cũ để dùng chung với
- * _recalculateResultTx (match.lifecycle.service.ts) — trước đây guard này
- * chỉ có ở editScore path, addEvent/deleteEvent/editEvent thiếu.
- */
+
 export async function findAdvancedChildMatchId(
     tx: Prisma.TransactionClient,
     matchId: number,
@@ -517,13 +431,6 @@ export async function findAdvancedChildMatchId(
     return slot?.fed_as_a?.[0]?.match_id ?? slot?.fed_as_b?.[0]?.match_id ?? null;
 }
 
-/**
- * Season đã seed knockout bracket chưa (có phase format=knockout với ít
- * nhất 1 match). Dùng để khoá correction lên match round-robin sau khi
- * standings đã được dùng để seed bracket — sửa kết quả vòng bảng sau mốc
- * này có thể đổi thứ hạng/tie-break mà KHÔNG re-seed bracket, gây lệch
- * suất đi tiếp một cách âm thầm (không throw, không warning ở code cũ).
- */
 export async function isKnockoutBracketSeeded(
     tx: Prisma.TransactionClient,
     seasonId: number,

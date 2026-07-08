@@ -1,9 +1,4 @@
-// data/match.queries.ts
 import { Prisma } from '../generated/prisma/client.js';
-
-// ═══════════════════════════════════════════════════════════════
-// ATOMIC SELECTS — compose lên trên, không dùng trực tiếp
-// ═══════════════════════════════════════════════════════════════
 
 const venueSelect = {
     select: { id: true, name: true, address: true },
@@ -33,34 +28,28 @@ const matchResultSelect = {
     },
 } satisfies Prisma.MatchResultDefaultArgs;
 
+// Dùng cho MỌI nơi cần đọc TournamentRule của 1 season (confirm/forfeit/
+// recompute). 1 nguồn sự thật duy nhất — đừng inline lại field list ở nơi khác.
 const tournamentRuleSuspensionSelect = {
     select: { yellow_cards_suspension: true, forfeit_score: true },
 } satisfies Prisma.TournamentRuleDefaultArgs;
 
-// phase + tournamentRule — dùng cho confirm/forfeit cần business rule
+// phase + tournamentRule — dùng cho confirm/forfeit/recompute cần business rule.
+// LƯU Ý: rule nằm ở Season.tournamentRule (quan hệ 1-1 qua tournament_rule_id),
+// KHÔNG phải Tournament.tournamentRule (đó là mảng TournamentRule[] — toàn bộ
+// rule từng tạo cho tournament, không đảm bảo là rule đang active cho season này).
 const phaseWithRuleSelect = {
     select: {
+        id: true,
         format: true,
         season: {
             select: {
                 id: true,
-                tournament: {
-                    select: {
-                        tournamentRule: tournamentRuleSuspensionSelect,
-                    },
-                },
+                tournamentRule: tournamentRuleSuspensionSelect,
             },
         },
     },
 } satisfies Prisma.PhaseDefaultArgs;
-
-// ═══════════════════════════════════════════════════════════════
-// COMPOSED SELECTS — 1 use-case = 1 select object
-// ═══════════════════════════════════════════════════════════════
-
-// ── 1. List / schedule view ───────────────────────────────────
-// GET /matches, calendar, bracket display
-// Cần: teams, venue, score, status — KHÔNG cần events/result detail
 export const matchListSelect = {
     id: true,
     status: true,
@@ -92,8 +81,6 @@ export const matchListSelect = {
 } satisfies Prisma.MatchSelect;
 
 // ── 2. Detail / live view ─────────────────────────────────────
-// GET /matches/:id — referee app, spectator, live score polling
-// Cần: full matchResult + events
 export const matchDetailSelect = {
     ...matchListSelect,
     postponed_from: true,
@@ -116,8 +103,9 @@ export const matchDetailSelect = {
     },
 } satisfies Prisma.MatchSelect;
 
-// ── 3. Confirm result (internal — MatchResultService) ─────────
-// confirmResult() cần: status guard, phase.format, tournamentRule, matchResult existence check
+// ── 3. Confirm result (internal — MatchResultService.confirmResultInTx) ───
+// Cần: status guard, phase.format, tournamentRule (yellow_cards_suspension),
+// matchResult existence check, phase_id (trả về ConfirmResultCore).
 export const matchForConfirmSelect = {
     id: true,
     status: true,
@@ -129,8 +117,25 @@ export const matchForConfirmSelect = {
     matchResult: { select: { id: true } },
 } satisfies Prisma.MatchSelect;
 
-// ── 4. Finalize (internal — MatchLifecycleService) ───────────
-// finalizeMatch() cần: status, phase.format, home_team_id để compute score from events
+// ── 4. Override result (internal — MatchResultService.overrideResultInTx) ──
+// KHÔNG cần tournamentRule (overrideResultInTx hiện không tính yellowSuspension),
+// chỉ cần phase.format + season.id cho guard seeded-bracket. Giữ select nhẹ,
+// đừng tái sử dụng matchForConfirmSelect ở đây — 2 use-case khác field set.
+export const matchForOverrideSelect = {
+    id: true,
+    home_team_id: true,
+    away_team_id: true,
+    group_id: true,
+    phase: {
+        select: {
+            format: true,
+            season: { select: { id: true } },
+        },
+    },
+    matchResult: { select: { id: true, result_type: true } },
+} satisfies Prisma.MatchSelect;
+
+// ── 5. Finalize (internal — MatchLifecycleService) ───────────
 export const matchForFinalizeSelect = {
     id: true,
     status: true,
@@ -141,8 +146,8 @@ export const matchForFinalizeSelect = {
     },
 } satisfies Prisma.MatchSelect;
 
-// ── 5. Forfeit (internal — MatchLifecycleService) ────────────
-// forfeitMatch() cần: status, team ids, forfeit_score từ tournamentRule
+// ── 6. Forfeit (internal — MatchLifecycleService) ────────────
+// forfeitMatch() cần: status, team ids, forfeit_score từ tournamentRule.
 export const matchForForfeitSelect = {
     id: true,
     status: true,
@@ -151,8 +156,7 @@ export const matchForForfeitSelect = {
     phase: phaseWithRuleSelect,
 } satisfies Prisma.MatchSelect;
 
-// ── 6. Admin / management ─────────────────────────────────────
-// Admin panel: full audit fields + appeal info + article links
+// ── 7. Admin / management ─────────────────────────────────────
 export const Select = {
     ...matchDetailSelect,
     is_active: true,
@@ -173,14 +177,10 @@ export const Select = {
     },
 } satisfies Prisma.MatchSelect;
 
-// ═══════════════════════════════════════════════════════════════
-// PAYLOAD TYPES — derive từ select, không khai báo tay
-// ═══════════════════════════════════════════════════════════════
-
 export type MatchList = Prisma.MatchGetPayload<{ select: typeof matchListSelect }>;
-export type MatchDetail = Prisma.MatchGetPayload<{ select: typeof matchDetailSelect }>;
-
-// Internal types — service dùng, không expose ra ngoài
+export type MatchDetail = Prisma.MatchGetPayload<{ select: typeof matchDetailSelect }>
 export type MatchForConfirm = Prisma.MatchGetPayload<{ select: typeof matchForConfirmSelect }>;
+export type MatchForOverride = Prisma.MatchGetPayload<{ select: typeof matchForOverrideSelect }>;
 export type MatchForFinalize = Prisma.MatchGetPayload<{ select: typeof matchForFinalizeSelect }>;
 export type MatchForForfeit = Prisma.MatchGetPayload<{ select: typeof matchForForfeitSelect }>;
+export { phaseWithRuleSelect };

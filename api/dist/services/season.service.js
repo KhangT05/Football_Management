@@ -48,6 +48,11 @@ export class SeasonService {
     }
     async create(data, userId) {
         this.validateDatesIfPresent(data.start_date, data.end_date, data.registration_deadline);
+        const rule = await this.prisma.tournamentRule.findUnique({ where: { id: data.tournament_rule_id } });
+        if (!rule)
+            throw createAppError('NOT_FOUND', `TournamentRule ${data.tournament_rule_id} not found`);
+        if (rule.tournament_id !== data.tournament_id)
+            throw createAppError('VALIDATION_ERROR', `Rule ${data.tournament_rule_id} không thuộc tournament ${data.tournament_id}`);
         return this.prisma.season.create({
             data: {
                 ...data,

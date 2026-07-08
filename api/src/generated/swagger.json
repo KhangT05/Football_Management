@@ -7,258 +7,6 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"MatchResultType": {
-				"type": "string",
-				"enum": [
-					"full_time",
-					"extra_time",
-					"penalty",
-					"forfeit",
-					"walkover"
-				]
-			},
-			"MatchReport": {
-				"properties": {
-					"id": {
-						"type": "number",
-						"format": "double"
-					},
-					"home": {
-						"type": "string"
-					},
-					"away": {
-						"type": "string"
-					},
-					"score": {
-						"type": "string"
-					},
-					"resultType": {
-						"$ref": "#/components/schemas/MatchResultType"
-					}
-				},
-				"required": [
-					"id",
-					"home",
-					"away",
-					"score",
-					"resultType"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"StandingRow": {
-				"properties": {
-					"teamId": {
-						"type": "number",
-						"format": "double"
-					},
-					"team": {
-						"type": "string"
-					},
-					"played": {
-						"type": "number",
-						"format": "double"
-					},
-					"wins": {
-						"type": "number",
-						"format": "double"
-					},
-					"draws": {
-						"type": "number",
-						"format": "double"
-					},
-					"losses": {
-						"type": "number",
-						"format": "double"
-					},
-					"gf": {
-						"type": "number",
-						"format": "double"
-					},
-					"ga": {
-						"type": "number",
-						"format": "double"
-					},
-					"points": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"teamId",
-					"team",
-					"played",
-					"wins",
-					"draws",
-					"losses",
-					"gf",
-					"ga",
-					"points"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"WorkflowReport": {
-				"properties": {
-					"tournamentId": {
-						"type": "number",
-						"format": "double"
-					},
-					"seasonId": {
-						"type": "number",
-						"format": "double"
-					},
-					"phases": {
-						"properties": {
-							"knockoutPhaseId": {
-								"type": "number",
-								"format": "double"
-							},
-							"groupBPhaseId": {
-								"type": "number",
-								"format": "double"
-							},
-							"groupAPhaseId": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"knockoutPhaseId",
-							"groupBPhaseId",
-							"groupAPhaseId"
-						],
-						"type": "object"
-					},
-					"groupA": {
-						"properties": {
-							"standings": {
-								"items": {
-									"$ref": "#/components/schemas/StandingRow"
-								},
-								"type": "array"
-							},
-							"matches": {
-								"items": {
-									"$ref": "#/components/schemas/MatchReport"
-								},
-								"type": "array"
-							},
-							"groupId": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"standings",
-							"matches",
-							"groupId"
-						],
-						"type": "object"
-					},
-					"groupB": {
-						"properties": {
-							"standings": {
-								"items": {
-									"$ref": "#/components/schemas/StandingRow"
-								},
-								"type": "array"
-							},
-							"matches": {
-								"items": {
-									"$ref": "#/components/schemas/MatchReport"
-								},
-								"type": "array"
-							},
-							"groupId": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"standings",
-							"matches",
-							"groupId"
-						],
-						"type": "object"
-					},
-					"final": {
-						"properties": {
-							"winner": {
-								"type": "string",
-								"nullable": true
-							},
-							"match": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/MatchReport"
-									}
-								],
-								"nullable": true
-							}
-						},
-						"required": [
-							"winner",
-							"match"
-						],
-						"type": "object"
-					},
-					"log": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"tournamentId",
-					"seasonId",
-					"phases",
-					"groupA",
-					"groupB",
-					"final",
-					"log"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"WorkflowRunRequest": {
-				"properties": {
-					"teamIds": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array",
-						"description": "IDs của teams đã tồn tại trong DB.\r\nPhải là số chẵn, tối thiểu 4.\r\nMột nửa vào Group A, một nửa vào Group B.",
-						"example": [
-							1,
-							2,
-							3,
-							4
-						],
-						"minItems": 4
-					},
-					"venueId": {
-						"type": "number",
-						"format": "double",
-						"description": "ID của venue đã tồn tại trong DB.",
-						"example": 1
-					},
-					"seed": {
-						"type": "number",
-						"format": "double",
-						"description": "Optional seed cho RNG. Cùng seed → cùng kết quả score.",
-						"example": 42
-					}
-				},
-				"required": [
-					"teamIds",
-					"venueId"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"DefaultSelection__36_VenuePayload_": {
 				"properties": {
 					"deleted_at": {
@@ -2201,6 +1949,10 @@
 			},
 			"DefaultSelection__36_SeasonPayload_": {
 				"properties": {
+					"tournament_rule_id": {
+						"type": "number",
+						"format": "double"
+					},
 					"cancel_reason": {
 						"type": "string"
 					},
@@ -2264,6 +2016,7 @@
 					}
 				},
 				"required": [
+					"tournament_rule_id",
 					"cancel_reason",
 					"registration_fee",
 					"is_registration_open",
@@ -2309,6 +2062,10 @@
 					"description": {
 						"type": "string"
 					},
+					"tournament_rule_id": {
+						"type": "number",
+						"format": "double"
+					},
 					"tournament_id": {
 						"type": "number",
 						"format": "double"
@@ -2338,6 +2095,7 @@
 					}
 				},
 				"required": [
+					"tournament_rule_id",
 					"tournament_id",
 					"is_active",
 					"is_registration_open",
@@ -2352,6 +2110,10 @@
 			},
 			"infer_typeofupdateSeasonSchema_": {
 				"properties": {
+					"tournament_rule_id": {
+						"type": "number",
+						"format": "double"
+					},
 					"is_registration_open": {
 						"type": "boolean"
 					},
@@ -2829,6 +2591,16 @@
 					"extra_time_first",
 					"extra_time_second",
 					"penalty_shootout"
+				]
+			},
+			"MatchResultType": {
+				"type": "string",
+				"enum": [
+					"full_time",
+					"extra_time",
+					"penalty",
+					"forfeit",
+					"walkover"
 				]
 			},
 			"DefaultSelection__36_MatchPayload_": {
@@ -6171,39 +5943,6 @@
 		"contact": {}
 	},
 	"paths": {
-		"/workflow/run": {
-			"post": {
-				"operationId": "Run",
-				"responses": {
-					"200": {
-						"description": "OK",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/WorkflowReport"
-								}
-							}
-						}
-					}
-				},
-				"description": "Chạy toàn bộ tournament workflow test.\r\n\r\nBody:\r\n  - teamIds: số chẵn >= 4, phải tồn tại trong DB\r\n  - venueId: phải tồn tại trong DB\r\n  - seed?: optional — để RNG tái tạo được (debug)\r\n\r\nResponse:\r\n  - tournamentId, seasonId\r\n  - groupA / groupB: matches + standings\r\n  - final: match report + winner\r\n  - log: execution trace",
-				"tags": [
-					"Workflow"
-				],
-				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/WorkflowRunRequest"
-							}
-						}
-					}
-				}
-			}
-		},
 		"/venues": {
 			"get": {
 				"operationId": "FindAll",
@@ -8694,6 +8433,10 @@
 											"type": "number",
 											"format": "double"
 										},
+										"teams_advance_per_group": {
+											"type": "number",
+											"format": "double"
+										},
 										"format": {
 											"$ref": "#/components/schemas/PhaseFormat"
 										},
@@ -8728,6 +8471,7 @@
 										"order",
 										"status",
 										"season_id",
+										"teams_advance_per_group",
 										"format",
 										"type",
 										"updated_at",
@@ -9387,8 +9131,19 @@
 								"schema": {
 									"items": {
 										"properties": {
+											"total_fine_owed": {
+												"$ref": "#/components/schemas/Decimal"
+											},
 											"is_suspended": {
 												"type": "boolean"
+											},
+											"suspension_matches_remaining": {
+												"type": "number",
+												"format": "double"
+											},
+											"yellow_cards_since_reset": {
+												"type": "number",
+												"format": "double"
 											},
 											"accumulated_yellow_cards": {
 												"type": "number",
@@ -9444,7 +9199,10 @@
 											}
 										},
 										"required": [
+											"total_fine_owed",
 											"is_suspended",
+											"suspension_matches_remaining",
+											"yellow_cards_since_reset",
 											"accumulated_yellow_cards",
 											"minutes_played",
 											"player_id",

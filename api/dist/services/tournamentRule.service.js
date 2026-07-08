@@ -122,5 +122,12 @@ export class TournamentRuleService {
         }
         return this.findByIdOrFail(id);
     }
+    async listByTournament(tournamentId) {
+        const rules = await this.prisma.tournamentRule.findMany({
+            where: { tournament_id: tournamentId, is_active: true, deleted_at: null },
+            ...withRelations,
+        });
+        return rules.map(r => this.mapToDto(r));
+    }
 }
 //# sourceMappingURL=tournamentRule.service.js.map

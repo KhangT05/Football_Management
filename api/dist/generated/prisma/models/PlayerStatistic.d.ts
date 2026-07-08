@@ -24,6 +24,9 @@ export type PlayerStatisticAvgAggregateOutputType = {
     red_cards: number | null;
     minutes_played: number | null;
     accumulated_yellow_cards: number | null;
+    yellow_cards_since_reset: number | null;
+    suspension_matches_remaining: number | null;
+    total_fine_owed: runtime.Decimal | null;
 };
 export type PlayerStatisticSumAggregateOutputType = {
     id: number | null;
@@ -37,6 +40,9 @@ export type PlayerStatisticSumAggregateOutputType = {
     red_cards: number | null;
     minutes_played: number | null;
     accumulated_yellow_cards: number | null;
+    yellow_cards_since_reset: number | null;
+    suspension_matches_remaining: number | null;
+    total_fine_owed: runtime.Decimal | null;
 };
 export type PlayerStatisticMinAggregateOutputType = {
     id: number | null;
@@ -50,7 +56,10 @@ export type PlayerStatisticMinAggregateOutputType = {
     red_cards: number | null;
     minutes_played: number | null;
     accumulated_yellow_cards: number | null;
+    yellow_cards_since_reset: number | null;
+    suspension_matches_remaining: number | null;
     is_suspended: boolean | null;
+    total_fine_owed: runtime.Decimal | null;
     created_at: Date | null;
     updated_at: Date | null;
 };
@@ -66,7 +75,10 @@ export type PlayerStatisticMaxAggregateOutputType = {
     red_cards: number | null;
     minutes_played: number | null;
     accumulated_yellow_cards: number | null;
+    yellow_cards_since_reset: number | null;
+    suspension_matches_remaining: number | null;
     is_suspended: boolean | null;
+    total_fine_owed: runtime.Decimal | null;
     created_at: Date | null;
     updated_at: Date | null;
 };
@@ -82,7 +94,10 @@ export type PlayerStatisticCountAggregateOutputType = {
     red_cards: number;
     minutes_played: number;
     accumulated_yellow_cards: number;
+    yellow_cards_since_reset: number;
+    suspension_matches_remaining: number;
     is_suspended: number;
+    total_fine_owed: number;
     created_at: number;
     updated_at: number;
     _all: number;
@@ -99,6 +114,9 @@ export type PlayerStatisticAvgAggregateInputType = {
     red_cards?: true;
     minutes_played?: true;
     accumulated_yellow_cards?: true;
+    yellow_cards_since_reset?: true;
+    suspension_matches_remaining?: true;
+    total_fine_owed?: true;
 };
 export type PlayerStatisticSumAggregateInputType = {
     id?: true;
@@ -112,6 +130,9 @@ export type PlayerStatisticSumAggregateInputType = {
     red_cards?: true;
     minutes_played?: true;
     accumulated_yellow_cards?: true;
+    yellow_cards_since_reset?: true;
+    suspension_matches_remaining?: true;
+    total_fine_owed?: true;
 };
 export type PlayerStatisticMinAggregateInputType = {
     id?: true;
@@ -125,7 +146,10 @@ export type PlayerStatisticMinAggregateInputType = {
     red_cards?: true;
     minutes_played?: true;
     accumulated_yellow_cards?: true;
+    yellow_cards_since_reset?: true;
+    suspension_matches_remaining?: true;
     is_suspended?: true;
+    total_fine_owed?: true;
     created_at?: true;
     updated_at?: true;
 };
@@ -141,7 +165,10 @@ export type PlayerStatisticMaxAggregateInputType = {
     red_cards?: true;
     minutes_played?: true;
     accumulated_yellow_cards?: true;
+    yellow_cards_since_reset?: true;
+    suspension_matches_remaining?: true;
     is_suspended?: true;
+    total_fine_owed?: true;
     created_at?: true;
     updated_at?: true;
 };
@@ -157,7 +184,10 @@ export type PlayerStatisticCountAggregateInputType = {
     red_cards?: true;
     minutes_played?: true;
     accumulated_yellow_cards?: true;
+    yellow_cards_since_reset?: true;
+    suspension_matches_remaining?: true;
     is_suspended?: true;
+    total_fine_owed?: true;
     created_at?: true;
     updated_at?: true;
     _all?: true;
@@ -250,7 +280,10 @@ export type PlayerStatisticGroupByOutputType = {
     red_cards: number;
     minutes_played: number;
     accumulated_yellow_cards: number;
+    yellow_cards_since_reset: number;
+    suspension_matches_remaining: number;
     is_suspended: boolean;
+    total_fine_owed: runtime.Decimal;
     created_at: Date;
     updated_at: Date | null;
     _count: PlayerStatisticCountAggregateOutputType | null;
@@ -277,7 +310,10 @@ export type PlayerStatisticWhereInput = {
     red_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
     minutes_played?: Prisma.IntFilter<"PlayerStatistic"> | number;
     accumulated_yellow_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    yellow_cards_since_reset?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    suspension_matches_remaining?: Prisma.IntFilter<"PlayerStatistic"> | number;
     is_suspended?: Prisma.BoolFilter<"PlayerStatistic"> | boolean;
+    total_fine_owed?: Prisma.DecimalFilter<"PlayerStatistic"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFilter<"PlayerStatistic"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"PlayerStatistic"> | Date | string | null;
     player?: Prisma.XOR<Prisma.PlayerScalarRelationFilter, Prisma.PlayerWhereInput>;
@@ -296,7 +332,10 @@ export type PlayerStatisticOrderByWithRelationInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
     is_suspended?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     player?: Prisma.PlayerOrderByWithRelationInput;
@@ -319,7 +358,10 @@ export type PlayerStatisticWhereUniqueInput = Prisma.AtLeast<{
     red_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
     minutes_played?: Prisma.IntFilter<"PlayerStatistic"> | number;
     accumulated_yellow_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    yellow_cards_since_reset?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    suspension_matches_remaining?: Prisma.IntFilter<"PlayerStatistic"> | number;
     is_suspended?: Prisma.BoolFilter<"PlayerStatistic"> | boolean;
+    total_fine_owed?: Prisma.DecimalFilter<"PlayerStatistic"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFilter<"PlayerStatistic"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"PlayerStatistic"> | Date | string | null;
     player?: Prisma.XOR<Prisma.PlayerScalarRelationFilter, Prisma.PlayerWhereInput>;
@@ -338,7 +380,10 @@ export type PlayerStatisticOrderByWithAggregationInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
     is_suspended?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.PlayerStatisticCountOrderByAggregateInput;
@@ -362,7 +407,10 @@ export type PlayerStatisticScalarWhereWithAggregatesInput = {
     red_cards?: Prisma.IntWithAggregatesFilter<"PlayerStatistic"> | number;
     minutes_played?: Prisma.IntWithAggregatesFilter<"PlayerStatistic"> | number;
     accumulated_yellow_cards?: Prisma.IntWithAggregatesFilter<"PlayerStatistic"> | number;
+    yellow_cards_since_reset?: Prisma.IntWithAggregatesFilter<"PlayerStatistic"> | number;
+    suspension_matches_remaining?: Prisma.IntWithAggregatesFilter<"PlayerStatistic"> | number;
     is_suspended?: Prisma.BoolWithAggregatesFilter<"PlayerStatistic"> | boolean;
+    total_fine_owed?: Prisma.DecimalWithAggregatesFilter<"PlayerStatistic"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"PlayerStatistic"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"PlayerStatistic"> | Date | string | null;
 };
@@ -374,7 +422,10 @@ export type PlayerStatisticCreateInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     player: Prisma.PlayerCreateNestedOneWithoutPlayerStatisticsInput;
@@ -393,7 +444,10 @@ export type PlayerStatisticUncheckedCreateInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -405,7 +459,10 @@ export type PlayerStatisticUpdateInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     player?: Prisma.PlayerUpdateOneRequiredWithoutPlayerStatisticsNestedInput;
@@ -424,7 +481,10 @@ export type PlayerStatisticUncheckedUpdateInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -440,7 +500,10 @@ export type PlayerStatisticCreateManyInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -452,7 +515,10 @@ export type PlayerStatisticUpdateManyMutationInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -468,7 +534,10 @@ export type PlayerStatisticUncheckedUpdateManyInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -497,7 +566,10 @@ export type PlayerStatisticCountOrderByAggregateInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
     is_suspended?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
 };
@@ -513,6 +585,9 @@ export type PlayerStatisticAvgOrderByAggregateInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
 };
 export type PlayerStatisticMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -526,7 +601,10 @@ export type PlayerStatisticMaxOrderByAggregateInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
     is_suspended?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
 };
@@ -542,7 +620,10 @@ export type PlayerStatisticMinOrderByAggregateInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
     is_suspended?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
 };
@@ -558,6 +639,9 @@ export type PlayerStatisticSumOrderByAggregateInput = {
     red_cards?: Prisma.SortOrder;
     minutes_played?: Prisma.SortOrder;
     accumulated_yellow_cards?: Prisma.SortOrder;
+    yellow_cards_since_reset?: Prisma.SortOrder;
+    suspension_matches_remaining?: Prisma.SortOrder;
+    total_fine_owed?: Prisma.SortOrder;
 };
 export type PlayerStatisticCreateNestedManyWithoutSeasonInput = {
     create?: Prisma.XOR<Prisma.PlayerStatisticCreateWithoutSeasonInput, Prisma.PlayerStatisticUncheckedCreateWithoutSeasonInput> | Prisma.PlayerStatisticCreateWithoutSeasonInput[] | Prisma.PlayerStatisticUncheckedCreateWithoutSeasonInput[];
@@ -681,7 +765,10 @@ export type PlayerStatisticCreateWithoutSeasonInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     player: Prisma.PlayerCreateNestedOneWithoutPlayerStatisticsInput;
@@ -698,7 +785,10 @@ export type PlayerStatisticUncheckedCreateWithoutSeasonInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -738,7 +828,10 @@ export type PlayerStatisticScalarWhereInput = {
     red_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
     minutes_played?: Prisma.IntFilter<"PlayerStatistic"> | number;
     accumulated_yellow_cards?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    yellow_cards_since_reset?: Prisma.IntFilter<"PlayerStatistic"> | number;
+    suspension_matches_remaining?: Prisma.IntFilter<"PlayerStatistic"> | number;
     is_suspended?: Prisma.BoolFilter<"PlayerStatistic"> | boolean;
+    total_fine_owed?: Prisma.DecimalFilter<"PlayerStatistic"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFilter<"PlayerStatistic"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"PlayerStatistic"> | Date | string | null;
 };
@@ -750,7 +843,10 @@ export type PlayerStatisticCreateWithoutTeamInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     player: Prisma.PlayerCreateNestedOneWithoutPlayerStatisticsInput;
@@ -767,7 +863,10 @@ export type PlayerStatisticUncheckedCreateWithoutTeamInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -800,7 +899,10 @@ export type PlayerStatisticCreateWithoutPlayerInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
     team: Prisma.TeamCreateNestedOneWithoutPlayerStatisticsInput;
@@ -817,7 +919,10 @@ export type PlayerStatisticUncheckedCreateWithoutPlayerInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -853,7 +958,10 @@ export type PlayerStatisticCreateManySeasonInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -865,7 +973,10 @@ export type PlayerStatisticUpdateWithoutSeasonInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     player?: Prisma.PlayerUpdateOneRequiredWithoutPlayerStatisticsNestedInput;
@@ -882,7 +993,10 @@ export type PlayerStatisticUncheckedUpdateWithoutSeasonInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -897,7 +1011,10 @@ export type PlayerStatisticUncheckedUpdateManyWithoutSeasonInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -912,7 +1029,10 @@ export type PlayerStatisticCreateManyTeamInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -924,7 +1044,10 @@ export type PlayerStatisticUpdateWithoutTeamInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     player?: Prisma.PlayerUpdateOneRequiredWithoutPlayerStatisticsNestedInput;
@@ -941,7 +1064,10 @@ export type PlayerStatisticUncheckedUpdateWithoutTeamInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -956,7 +1082,10 @@ export type PlayerStatisticUncheckedUpdateManyWithoutTeamInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -971,7 +1100,10 @@ export type PlayerStatisticCreateManyPlayerInput = {
     red_cards?: number;
     minutes_played?: number;
     accumulated_yellow_cards?: number;
+    yellow_cards_since_reset?: number;
+    suspension_matches_remaining?: number;
     is_suspended?: boolean;
+    total_fine_owed?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Date | string;
     updated_at?: Date | string | null;
 };
@@ -983,7 +1115,10 @@ export type PlayerStatisticUpdateWithoutPlayerInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutPlayerStatisticsNestedInput;
@@ -1000,7 +1135,10 @@ export type PlayerStatisticUncheckedUpdateWithoutPlayerInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -1015,7 +1153,10 @@ export type PlayerStatisticUncheckedUpdateManyWithoutPlayerInput = {
     red_cards?: Prisma.IntFieldUpdateOperationsInput | number;
     minutes_played?: Prisma.IntFieldUpdateOperationsInput | number;
     accumulated_yellow_cards?: Prisma.IntFieldUpdateOperationsInput | number;
+    yellow_cards_since_reset?: Prisma.IntFieldUpdateOperationsInput | number;
+    suspension_matches_remaining?: Prisma.IntFieldUpdateOperationsInput | number;
     is_suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    total_fine_owed?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -1031,7 +1172,10 @@ export type PlayerStatisticSelect<ExtArgs extends runtime.Types.Extensions.Inter
     red_cards?: boolean;
     minutes_played?: boolean;
     accumulated_yellow_cards?: boolean;
+    yellow_cards_since_reset?: boolean;
+    suspension_matches_remaining?: boolean;
     is_suspended?: boolean;
+    total_fine_owed?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
     player?: boolean | Prisma.PlayerDefaultArgs<ExtArgs>;
@@ -1050,11 +1194,14 @@ export type PlayerStatisticSelectScalar = {
     red_cards?: boolean;
     minutes_played?: boolean;
     accumulated_yellow_cards?: boolean;
+    yellow_cards_since_reset?: boolean;
+    suspension_matches_remaining?: boolean;
     is_suspended?: boolean;
+    total_fine_owed?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
 };
-export type PlayerStatisticOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "player_id" | "team_id" | "season_id" | "matches_played" | "goals_scored" | "assists" | "yellow_cards" | "red_cards" | "minutes_played" | "accumulated_yellow_cards" | "is_suspended" | "created_at" | "updated_at", ExtArgs["result"]["playerStatistic"]>;
+export type PlayerStatisticOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "player_id" | "team_id" | "season_id" | "matches_played" | "goals_scored" | "assists" | "yellow_cards" | "red_cards" | "minutes_played" | "accumulated_yellow_cards" | "yellow_cards_since_reset" | "suspension_matches_remaining" | "is_suspended" | "total_fine_owed" | "created_at" | "updated_at", ExtArgs["result"]["playerStatistic"]>;
 export type PlayerStatisticInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     player?: boolean | Prisma.PlayerDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
@@ -1079,7 +1226,10 @@ export type $PlayerStatisticPayload<ExtArgs extends runtime.Types.Extensions.Int
         red_cards: number;
         minutes_played: number;
         accumulated_yellow_cards: number;
+        yellow_cards_since_reset: number;
+        suspension_matches_remaining: number;
         is_suspended: boolean;
+        total_fine_owed: runtime.Decimal;
         created_at: Date;
         updated_at: Date | null;
     }, ExtArgs["result"]["playerStatistic"]>;
@@ -1398,7 +1548,10 @@ export interface PlayerStatisticFieldRefs {
     readonly red_cards: Prisma.FieldRef<"PlayerStatistic", 'Int'>;
     readonly minutes_played: Prisma.FieldRef<"PlayerStatistic", 'Int'>;
     readonly accumulated_yellow_cards: Prisma.FieldRef<"PlayerStatistic", 'Int'>;
+    readonly yellow_cards_since_reset: Prisma.FieldRef<"PlayerStatistic", 'Int'>;
+    readonly suspension_matches_remaining: Prisma.FieldRef<"PlayerStatistic", 'Int'>;
     readonly is_suspended: Prisma.FieldRef<"PlayerStatistic", 'Boolean'>;
+    readonly total_fine_owed: Prisma.FieldRef<"PlayerStatistic", 'Decimal'>;
     readonly created_at: Prisma.FieldRef<"PlayerStatistic", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"PlayerStatistic", 'DateTime'>;
 }

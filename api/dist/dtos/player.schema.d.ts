@@ -82,17 +82,17 @@ export declare const createPlayerSchema: z.ZodObject<{
     avatar: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export declare const updatePlayerSchema: z.ZodObject<{
+    height: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
+    avatar: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    date_of_birth: z.ZodOptional<z.ZodCoercedDate<unknown>>;
     position: z.ZodOptional<z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";
         readonly defender: "defender";
         readonly midfielder: "midfielder";
         readonly forward: "forward";
     }>>;
-    date_of_birth: z.ZodOptional<z.ZodCoercedDate<unknown>>;
-    height: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     weight: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     nationality: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
-    avatar: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
 }, z.core.$strip>;
 export declare const addPlayerToTeamSchema: z.ZodObject<{
     player_id: z.ZodNumber;

@@ -115,11 +115,15 @@ export const TournamentScalarFieldEnum = {
 };
 export const TournamentRuleScalarFieldEnum = {
     id: 'id',
+    name: 'name',
     tournament_id: 'tournament_id',
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
+    suspension_match_count: 'suspension_match_count',
+    fine_per_yellow_card: 'fine_per_yellow_card',
+    fine_per_red_card: 'fine_per_red_card',
     points_per_win: 'points_per_win',
     points_per_draw: 'points_per_draw',
     points_per_loss: 'points_per_loss',
@@ -144,6 +148,7 @@ export const PhaseScalarFieldEnum = {
     is_active: 'is_active',
     legs: 'legs',
     teams_per_group: 'teams_per_group',
+    teams_advance_per_group: 'teams_advance_per_group',
     status: 'status',
     created_at: 'created_at',
     updated_at: 'updated_at'
@@ -177,7 +182,8 @@ export const SeasonScalarFieldEnum = {
     registration_fee: 'registration_fee',
     cancel_reason: 'cancel_reason',
     tournament_id: 'tournament_id',
-    user_id: 'user_id'
+    user_id: 'user_id',
+    tournament_rule_id: 'tournament_rule_id'
 };
 export const GroupScalarFieldEnum = {
     id: 'id',
@@ -367,7 +373,10 @@ export const PlayerStatisticScalarFieldEnum = {
     red_cards: 'red_cards',
     minutes_played: 'minutes_played',
     accumulated_yellow_cards: 'accumulated_yellow_cards',
+    yellow_cards_since_reset: 'yellow_cards_since_reset',
+    suspension_matches_remaining: 'suspension_matches_remaining',
     is_suspended: 'is_suspended',
+    total_fine_owed: 'total_fine_owed',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
@@ -491,6 +500,9 @@ export const JsonNullValueFilter = {
 export const QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
+};
+export const TournamentRuleOrderByRelevanceFieldEnum = {
+    name: 'name'
 };
 export const PhaseOrderByRelevanceFieldEnum = {
     name: 'name'

@@ -77,8 +77,8 @@ export declare class SeasonTeamService {
             name: string;
             status: SeasonStatus;
             tournament: {
-                id: number;
                 name: string;
+                id: number;
                 logo: string | null;
             };
         };

@@ -251,16 +251,12 @@ export class StandingsService {
                         season: {
                             select: {
                                 id: true,
-                                tournament: {
+                                tournamentRule: {
                                     select: {
-                                        tournamentRule: {
-                                            select: {
-                                                points_per_win: true,
-                                                points_per_draw: true,
-                                                points_per_loss: true,
-                                                tiebreaker_order: true,
-                                            },
-                                        },
+                                        points_per_win: true,
+                                        points_per_draw: true,
+                                        points_per_loss: true,
+                                        tiebreaker_order: true,
                                     },
                                 },
                             },
@@ -275,7 +271,7 @@ export class StandingsService {
             throw new Error(`Group ${groupId}: phase không có season — data integrity issue`);
         }
 
-        const rule = group.phase.season?.tournament?.tournamentRule;
+        const rule = group.phase.season.tournamentRule;
         const pointsWin = rule?.points_per_win ?? 3;
         const pointsDraw = rule?.points_per_draw ?? 1;
         const pointsLoss = rule?.points_per_loss ?? 0;
