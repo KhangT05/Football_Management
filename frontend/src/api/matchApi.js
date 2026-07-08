@@ -119,6 +119,9 @@ export const matchApi = {
   getMatchById: (id) =>
     axiosClient.get(`/matches/${id}/result`),
 
+  getMatchReport: (id) =>
+    axiosClient.get(`/matches/${id}/report`, { responseType: 'blob' }),
+
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
 

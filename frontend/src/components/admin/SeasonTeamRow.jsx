@@ -97,9 +97,21 @@ export default function SeasonTeamRow({
 
       {!hideSeason && (
         <td className="py-4 px-6">
-          <span className="px-2.5 py-1 bg-navy-light rounded-md text-[11px] font-medium text-gray-300 border border-navy-light/50 whitespace-nowrap shadow-sm">
+          <div className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-gray-200 text-[11px] font-bold whitespace-nowrap">
             {seasons?.find(s => s.id === st.season_id)?.name || 'Không rõ'}
-          </span>
+          </div>
+        </td>
+      )}
+      {!hideSeason && (
+        <td className="py-4 px-6">
+          {tournamentName ? (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-amber-400">
+              <Trophy className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider">{tournamentName}</span>
+            </div>
+          ) : (
+            <span className="text-gray-500 text-xs">—</span>
+          )}
         </td>
       )}
 

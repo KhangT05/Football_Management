@@ -18,9 +18,11 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
         const lineupData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
         setLineup(lineupData.map(p => ({
           player_id: p.player_id,
-          is_starting: p.is_starting,
-          position: p.position || 'MID',
-          jersey_number: p.jersey_number || 0
+          is_starting: p.lineup_type === 'starter' || p.is_starting,
+          lineup_type: p.lineup_type || (p.is_starting ? 'starter' : 'substitute'),
+          position: p.position || 'midfielder',
+          jersey_number: p.jersey_number || 1,
+          is_captain: p.is_captain || false
         })));
       } catch (err) {
         console.error(err);
@@ -38,16 +40,29 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
       const existing = prev.find(p => p.player_id === player.player_id);
       if (existing) {
         if (existing.is_starting) {
-          return prev.map(p => p.player_id === player.player_id ? { ...p, is_starting: false } : p);
+          return prev.map(p => p.player_id === player.player_id ? { ...p, is_starting: false, lineup_type: 'substitute' } : p);
         } else {
           return prev.filter(p => p.player_id !== player.player_id);
         }
       } else {
+        let mappedPosition = 'midfielder';
+        const rawPos = (player.position || '').toUpperCase();
+        if (rawPos === 'GK' || rawPos === 'GOALKEEPER') mappedPosition = 'goalkeeper';
+        else if (rawPos === 'DEF' || rawPos === 'DEFENDER') mappedPosition = 'defender';
+        else if (rawPos === 'MID' || rawPos === 'MIDFIELDER') mappedPosition = 'midfielder';
+        else if (rawPos === 'FW' || rawPos === 'FORWARD') mappedPosition = 'forward';
+        else mappedPosition = (player.position || 'midfielder').toLowerCase();
+
+        const jNum = parseInt(player.jersey_number || player.number || 1, 10);
+        const validJersey = isNaN(jNum) || jNum < 1 ? 1 : (jNum > 99 ? 99 : jNum);
+
         return [...prev, {
           player_id: player.player_id,
           is_starting: true,
-          position: player.position || 'MID',
-          jersey_number: player.number || 0
+          lineup_type: 'starter',
+          position: mappedPosition,
+          jersey_number: validJersey,
+          is_captain: false
         }];
       }
     });
@@ -56,7 +71,10 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const payload = { team_id: teamId, players: lineup };
+      const payload = { 
+        team_id: teamId, 
+        players: lineup.map(({ is_starting, ...rest }) => rest)
+      };
       await matchLineupApi.updateLineup(match.id, payload);
       toast.success('Đã lưu đội hình thành công!');
       if (onSave) onSave();

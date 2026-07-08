@@ -61,28 +61,24 @@ export default function UsersTab() {
   const userCrud = useCrudModal({ emptyForm: EMPTY_USER, onSuccess: fetchUsers });
 
   const handleSaveUser = async (payload) => {
-    try {
-      userCrud.setIsSaving(true);
+    await userCrud.save(async () => {
       if (userCrud.modal === 'add') {
-        await userApi.create(payload);
+        await userApi.create({
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+          phone: payload.phone || '',
+        });
         toast.success(`Đã tạo người dùng "${payload.name}"`);
       } else {
-        const updateData = {
+        await userApi.updateProfile(userCrud.editing.id, {
           name: payload.name,
           phone: payload.phone,
-          role_ids: payload.role_ids
-        };
-        await userApi.updateProfile(userCrud.editing.id, updateData);
+          role_ids: payload.role_ids,
+        });
         toast.success(`Đã cập nhật người dùng "${payload.name}"`);
       }
-      userCrud.closeModal();
-      fetchUsers();
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu người dùng');
-    } finally {
-      userCrud.setIsSaving(false);
-    }
+    });
   };
 
   const handleDeleteUser = () => {
@@ -90,7 +86,6 @@ export default function UsersTab() {
     userCrud.confirmDelete(async () => {
       await userApi.softDelete(user.id);
       toast.success(`Đã xóa người dùng "${user.name}".`);
-      fetchUsers();
     }).catch((err) => {
       console.error(err);
       toast.error(err?.response?.data?.message || 'Không thể xóa người dùng.');
@@ -206,7 +201,12 @@ export default function UsersTab() {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => userCrud.openEdit(u)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
+                        <button onClick={() => userCrud.openEdit(u, {
+                            name: u.name,
+                            email: u.email,
+                            phone: u.phone || '',
+                            role_ids: u.roles?.map(r => r.id) || [],
+                          })} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button onClick={() => userCrud.setDeleting(u)} className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors">

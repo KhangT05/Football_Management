@@ -3,7 +3,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, Users, CheckCircle2,
   ChevronDown, ChevronUp, AlertTriangle, Loader2,
-  UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight
+  UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight, Trophy
 } from 'lucide-react';
 import { useCrudModal, useDebouncedValue, useApiQuery } from '../../hooks';
 import useToastStore from '../../store/toastStore';
@@ -376,7 +376,8 @@ export default function ManageTeams() {
                       <th className="py-4 px-6 w-16 text-center">Logo</th>
                       <th className="py-4 px-6">Đội bóng</th>
                       <th className="py-4 px-6">HLV / Đội trưởng</th>
-                      <th className="py-4 px-6">Tham gia mùa giải</th>
+                      <th className="py-4 px-6">Mùa giải</th>
+                      <th className="py-4 px-6">Giải đấu</th>
                       <th className="py-4 px-6 text-center">Trạng thái</th>
                       <th className="py-4 px-6 text-right">Thao tác</th>
                     </tr>
@@ -385,7 +386,7 @@ export default function ManageTeams() {
                     {isLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i} className="border-b border-navy-light">
-                          {[1, 2, 3, 4, 5, 6].map(j => (
+                          {[1, 2, 3, 4, 5, 6, 7].map(j => (
                             <td key={j} className="py-4 px-6">
                               <div className="skeleton h-4 w-full rounded" />
                             </td>
@@ -394,7 +395,7 @@ export default function ManageTeams() {
                       ))
                     ) : fetchError ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-red-400">
+                        <td colSpan={7} className="py-16 text-center text-red-400">
                           <div className="flex flex-col items-center gap-3">
                             <AlertTriangle className="w-10 h-10 text-red-500/50" />
                             <p className="font-semibold">{fetchError}</p>
@@ -407,7 +408,7 @@ export default function ManageTeams() {
                       </tr>
                     ) : teamsWithSeasons.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-gray-400">
+                        <td colSpan={7} className="py-16 text-center text-gray-400">
                           <div className="flex flex-col items-center gap-3">
                             <Users className="w-10 h-10 text-gray-600" />
                             <p className="font-semibold">
@@ -448,12 +449,33 @@ export default function ManageTeams() {
                             </td>
                             <td className="py-4 px-6">
                               {team.season_teams && team.season_teams.length > 0 ? (
-                                <div className="flex flex-wrap gap-1.5 max-w-xs">
+                                <div className="flex flex-col gap-2">
                                   {team.season_teams.map(st => (
-                                    <span key={st.season.id} className="px-2 py-1 bg-navy-light rounded-md text-[11px] font-medium text-gray-300 border border-navy-light/50 whitespace-nowrap">
-                                      {st.season.name}
-                                    </span>
+                                    <div key={st.season.id} className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-black text-[11px] font-bold whitespace-nowrap self-start">
+                                      {st.season?.name || 'Không rõ'}
+                                    </div>
                                   ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-500 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              {team.season_teams && team.season_teams.length > 0 ? (
+                                <div className="flex flex-col gap-2">
+                                  {team.season_teams.map(st => {
+                                    const tName = st.season?.tournament?.name || st.tournament?.name;
+                                    return tName ? (
+                                      <div key={st.season.id} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-black self-start min-w-0">
+                                        <Trophy className="w-3.5 h-3.5 shrink-0" />
+                                        <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider">{tName}</span>
+                                      </div>
+                                    ) : (
+                                      <div key={st.season.id} className="h-7 flex items-center">
+                                        <span className="text-gray-500 text-xs">—</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               ) : (
                                 <span className="text-gray-500 text-xs">—</span>
@@ -502,7 +524,7 @@ export default function ManageTeams() {
                           {/* Expanded Roster */}
                           {expandedTeamId === team.id && (
                             <tr className="border-b border-navy-light">
-                              <td colSpan={6} className="p-0">
+                              <td colSpan={7} className="p-0">
                                 <TeamRosterPanel
                                   team={team}
                                   players={getTeamRoster(team)}

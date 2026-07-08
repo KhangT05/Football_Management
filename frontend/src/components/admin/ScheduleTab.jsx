@@ -8,7 +8,7 @@ import useScheduleStore from '../../store/scheduleStore';
 import useVenueStore from '../../store/venueStore';
 import useTeamStore from '../../store/teamStore';
 import useToastStore from '../../store/toastStore';
-import { groupApi } from '../../api';
+import { groupApi, matchApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import {
@@ -25,13 +25,19 @@ import {
 const getDatesInRange = getDatesInRangeUtc;
 const formatDateChip = formatDateChipUtc;
 
+const extractFilename = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback;
+  const m = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
+  return m ? decodeURIComponent(m[1]) : fallback;
+};
+
 // ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
 // native <input type="time"> render theo locale hệ điều hành của CLIENT
 // (Chrome/Edge lấy Intl locale máy, không theo `lang` attr set trên input),
 // nên máy admin locale en-US sẽ hiện AM/PM 12h — gõ "20" bị coi invalid,
 // đúng pattern "không nhập được time" bạn báo. Thay bằng 2 input số tự
 // control, cố định 24h, không phụ thuộc locale/OS.
-function TimeField({ value, onChange, placeholder }) {
+function TimeField({ value, onChange }) {
   const [h, m] = value ? value.split(':') : ['', ''];
 
   // Trong lúc gõ: không pad, không clamp — chỉ giữ digit thô để user
@@ -601,6 +607,23 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
+  const handleExportMatchReport = async (matchId) => {
+    try {
+      const res = await matchApi.getMatchReport(matchId);
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      if (!blob.size) throw new Error('Empty response');
+      const filename = extractFilename(res?.headers?.['content-disposition'], `BienBanTranDau_${matchId}.pdf`);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename;
+      document.body.appendChild(link); link.click(); link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Lỗi khi xuất biên bản:', err);
+      toast.error('Không thể tải biên bản trận đấu.');
+    }
+  };
+
   return (
     <>
       <div className="space-y-6 animate-fade-in">
@@ -712,12 +735,20 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                         <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                         <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
                       </div>
-                      <button
-                        onClick={() => onGoToLiveControl(m.id)}
-                        className="w-full py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Zap className="w-4 h-4" /> Cập nhật kết quả
-                      </button>
+                      <div className="flex gap-2 w-full mt-2">
+                        <button
+                          onClick={() => handleExportMatchReport(m.id)}
+                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                        >
+                          Xuất BB
+                        </button>
+                        <button
+                          onClick={() => onGoToLiveControl(m.id)}
+                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Zap className="w-4 h-4" /> Cập nhật
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
