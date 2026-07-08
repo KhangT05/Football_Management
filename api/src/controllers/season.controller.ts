@@ -145,33 +145,6 @@ export class SeasonController extends Controller {
     return this.service.updateStatus(id, body.status, { cancel_reason: body.cancel_reason });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GET — SEASON STANDINGS OVERVIEW (public, World Cup style)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Overview standings toàn season — tất cả groups, kiểu World Cup group stage.
-   * Không paginate — group nhỏ (≤ 8 teams/group, ≤ 8 groups/season).
-   * Trả về array grouped theo group, mỗi group có teams sorted by position.
-   *
-   * Chỉ serve season ở status: ongoing / finished / cancelled.
-   */
-  @Get("{id}/standings")
-  async getSeasonStandings(@Path() id: number) {
-    return this.standingsService.listStandingsBySeason(id);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GET — GROUP STANDINGS (public, paginated)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Standings chi tiết của 1 group — validate group thuộc season.
-   *
-   * Query params:
-   *   ?page=1&per_page=20
-   *   ?sort=position|points|goals_for|wins&direction=asc|desc
-   */
   @Get("{id}/standings/{groupId}")
   async getGroupStandings(
     @Path() id: number,
