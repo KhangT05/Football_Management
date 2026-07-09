@@ -52,11 +52,6 @@ export type SeasonListItem = Pick<
     _count: {
         phases: number;
     };
-
-    tournament_rule: {
-        id: number;
-        name: string;
-    };
 };
 
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>

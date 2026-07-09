@@ -592,9 +592,6 @@ export class StandingsService {
                     tournament: {
                         select: { id: true, name: true },
                     },
-                    tournament_rule: {
-                        select: { id: true, name: true },
-                    },
                     // Count phases để client biết season có group stage hay không
                     _count: { select: { phases: true } },
                 },
