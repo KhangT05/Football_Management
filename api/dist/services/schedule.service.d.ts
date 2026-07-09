@@ -33,6 +33,22 @@ export declare class ScheduleService extends ScheduleEngine {
         matchesScheduled: number;
         failedMatchIds: number[];
     }>;
+    /**
+     * FIX (player-sharing conflict): trước đây chỉ check trùng
+     * home_team_id/away_team_id CHÍNH XÁC của match đang reschedule — bỏ sót
+     * trường hợp 2 team KHÁC NHAU (khác season, khác giải) nhưng share chung
+     * 1 player. Player tham gia nhiều team/nhiều season là hợp lệ theo
+     * nghiệp vụ (xem SeasonTeamService) — nhưng khi 2 match cụ thể của 2 team
+     * đó rơi đúng cùng khung giờ, đó mới là xung đột thật (player không thể
+     * có mặt 2 nơi cùng lúc). Check này KHÔNG giới hạn theo season — cố ý,
+     * vì player có thể đá 2 giải khác nhau chạy song song.
+     *
+     * Toàn bộ hàm chạy trong 1 transaction với lock tuần tự trên match +
+     * mọi team liên quan (2 team của match, cộng mọi team khác share player)
+     * — đóng race giữa check và write khi 2 request reschedule chạy song
+     * song đụng chung 1 phần team set. Không lock được sẽ block chờ, KHÔNG
+     * throw ngay — đúng ngữ nghĩa serialize.
+     */
     rescheduleMatch(matchId: number, input: RescheduleInput): Promise<void>;
     getSeasonSchedule(seasonId: number): Promise<SeasonSchedule>;
     private resolveGroupCount;

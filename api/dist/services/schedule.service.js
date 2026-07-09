@@ -2,11 +2,7 @@ import { createAppError } from '../common/app.error.js';
 import { MatchStatus, PhaseFormat, PhaseStatus, PhaseType, SeasonStatus, SeasonTeamStatus, } from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
 import { shuffle } from '../libs/array.utils.js';
-import { ScheduleEngine } from '../libs/schedule.engine.js';
-// Match duration giả định cho overlap check khi reschedule.
-// Nếu giải có duration khác (futsal 2x20p, sân 11 người 2x45p+nghỉ), chỉnh
-// lại hằng số này hoặc đưa thành config theo tournament/season.
-const ASSUMED_MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h (đá + nghỉ + dự phòng)
+import { ScheduleEngine, ASSUMED_MATCH_DURATION_MS } from '../libs/schedule.engine.js';
 // Select dùng chung cho các query trả match kèm phase — thêm để FE (public
 // ScheduleResults) phân biệt được match thuộc group_stage hay knockout thay
 // vì chỉ có field `round` (knockout trước đây round luôn null/0, không đủ
@@ -16,6 +12,9 @@ const MATCH_WITH_PHASE_SELECT = {
     scheduled_at: true, venue_id: true, status: true,
     phase: { select: { id: true, name: true, type: true, format: true } },
 };
+// Status không tính vào conflict check (trận đã huỷ/xử thua không còn giữ
+// chỗ lịch của team/player nữa).
+const NON_BLOCKING_STATUSES = [MatchStatus.cancelled, MatchStatus.forfeited];
 export class ScheduleService extends ScheduleEngine {
     query;
     constructor(prisma) {
@@ -350,62 +349,118 @@ export class ScheduleService extends ScheduleEngine {
         }
         // Orchestration (MRV + multi-restart) đã move lên ScheduleEngine —
         // dùng chung với KnockoutService, không còn duplicate ở đây.
-        const { updates, unscheduled } = this.scheduleMatchesWithRetry(matches, pool, minRestDays);
+        //
+        // FIX (player-sharing conflict): trước đây ScheduleEngine chỉ biết
+        // teams/rest-days TRONG PHẠM VI matches của season này — không có
+        // khái niệm "team ở season khác share player với team đang xếp lịch
+        // ở đây". Giờ load conflictContext (conflictMap + occupiedWindows TỪ
+        // TOÀN BỘ HỆ THỐNG, không giới hạn season) TRƯỚC khi search, để
+        // greedy pass tự né những slot đã bị chiếm bởi team/player liên
+        // quan — thay vì assign rồi phát hiện conflict sau khi ghi.
+        const allTeamIds = [...new Set(matches.flatMap(m => [m.home_team_id, m.away_team_id]))];
+        const conflictContext = await this.loadPlayerConflictContext(this.prisma, allTeamIds);
+        const { updates, unscheduled } = this.scheduleMatchesWithRetry(matches, pool, minRestDays, undefined, conflictContext);
         const failedFromCollision = await this.writeScheduleBatch(updates);
-        const finalUnscheduled = [...unscheduled, ...failedFromCollision];
+        // Quarantine pass GIỜ CHỈ LÀ SAFETY NET cho race hiếm giữa lúc
+        // loadPlayerConflictContext đọc (trên) và writeScheduleBatch ghi
+        // (dưới) — ví dụ 1 rescheduleMatch khác commit đúng vào khoảng đó,
+        // đụng đúng team/player trong batch này. Với avoidance đã chạy ở
+        // bước search, số lượng bị quarantine ở đây kỳ vọng gần như luôn = 0
+        // trong điều kiện bình thường (không có ghi đè đồng thời).
+        const writtenIds = updates
+            .map(u => u.id)
+            .filter(id => !failedFromCollision.includes(id));
+        const quarantinedIds = await this.prisma.$transaction((tx) => this.quarantinePlayerConflicts(tx, writtenIds));
+        const finalUnscheduled = [...unscheduled, ...failedFromCollision, ...quarantinedIds];
         return {
-            matchesScheduled: updates.length - failedFromCollision.length,
+            matchesScheduled: updates.length - failedFromCollision.length - quarantinedIds.length,
             failedMatchIds: finalUnscheduled,
         };
     }
+    /**
+     * FIX (player-sharing conflict): trước đây chỉ check trùng
+     * home_team_id/away_team_id CHÍNH XÁC của match đang reschedule — bỏ sót
+     * trường hợp 2 team KHÁC NHAU (khác season, khác giải) nhưng share chung
+     * 1 player. Player tham gia nhiều team/nhiều season là hợp lệ theo
+     * nghiệp vụ (xem SeasonTeamService) — nhưng khi 2 match cụ thể của 2 team
+     * đó rơi đúng cùng khung giờ, đó mới là xung đột thật (player không thể
+     * có mặt 2 nơi cùng lúc). Check này KHÔNG giới hạn theo season — cố ý,
+     * vì player có thể đá 2 giải khác nhau chạy song song.
+     *
+     * Toàn bộ hàm chạy trong 1 transaction với lock tuần tự trên match +
+     * mọi team liên quan (2 team của match, cộng mọi team khác share player)
+     * — đóng race giữa check và write khi 2 request reschedule chạy song
+     * song đụng chung 1 phần team set. Không lock được sẽ block chờ, KHÔNG
+     * throw ngay — đúng ngữ nghĩa serialize.
+     */
     async rescheduleMatch(matchId, input) {
-        const match = await this.prisma.match.findUnique({
-            where: { id: matchId },
-            select: {
-                id: true,
-                status: true,
-                home_team_id: true,
-                away_team_id: true,
-                phase: { select: { min_rest_days_per_team: true } },
-            },
-        });
-        if (!match)
-            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
-        const RESCHEDULABLE = [MatchStatus.scheduled, MatchStatus.postponed];
-        if (!RESCHEDULABLE.includes(match.status))
-            throw createAppError('CONFLICT', `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`);
-        // Trước đây chỉ check exact-time equality, không bắt được overlap thực
-        // tế (trận trước chưa kết thúc, trận sau đã bắt đầu ở cùng sân/cùng
-        // đội nhưng lệch giờ). Đổi sang window check ±ASSUMED_MATCH_DURATION_MS.
-        // Note: không check rest-days ở đây — manual reschedule là override có
-        // chủ đích, caller (admin) chịu trách nhiệm. Nếu muốn enforce, thêm
-        // flag strictRestDays riêng.
-        const windowStart = new Date(input.scheduledAt.getTime() - ASSUMED_MATCH_DURATION_MS);
-        const windowEnd = new Date(input.scheduledAt.getTime() + ASSUMED_MATCH_DURATION_MS);
-        const conflict = await this.prisma.match.findFirst({
-            where: {
-                id: { not: matchId },
-                scheduled_at: { gte: windowStart, lte: windowEnd },
-                status: { notIn: [MatchStatus.cancelled, MatchStatus.forfeited] },
-                OR: [
-                    { venue_id: input.venueId },
-                    { home_team_id: { in: [match.home_team_id, match.away_team_id] } },
-                    { away_team_id: { in: [match.home_team_id, match.away_team_id] } },
-                ],
-            },
-            select: { id: true, status: true, scheduled_at: true },
-        });
-        if (conflict)
-            throw createAppError('CONFLICT', `Venue ${input.venueId} hoặc 1 trong 2 team đã có trận trong khoảng ` +
-                `±${ASSUMED_MATCH_DURATION_MS / 60000} phút quanh ${input.scheduledAt.toISOString()} ` +
-                `(match ${conflict.id} lúc ${conflict.scheduled_at?.toISOString()})`);
-        await this.prisma.match.update({
-            where: { id: matchId },
-            data: {
-                scheduled_at: input.scheduledAt,
-                venue_id: input.venueId,
-                status: MatchStatus.scheduled,
-            },
+        await this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+            const match = await tx.match.findUnique({
+                where: { id: matchId },
+                select: { id: true, status: true, home_team_id: true, away_team_id: true },
+            });
+            if (!match)
+                throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+            const RESCHEDULABLE = [MatchStatus.scheduled, MatchStatus.postponed];
+            if (!RESCHEDULABLE.includes(match.status))
+                throw createAppError('CONFLICT', `Match ${matchId} đang ở status '${match.status}' — chỉ reschedule được khi scheduled/postponed`);
+            const conflictMap = await this.buildTeamConflictMap(tx, [match.home_team_id, match.away_team_id]);
+            const conflictingTeamIds = [...new Set([
+                    ...(conflictMap.get(match.home_team_id) ?? [match.home_team_id]),
+                    ...(conflictMap.get(match.away_team_id) ?? [match.away_team_id]),
+                ])];
+            // Lock tất cả team liên quan theo thứ tự id cố định — tránh
+            // deadlock khi 2 request reschedule song song đụng chung 1 phần
+            // team set (cùng pattern SeasonTeamService.transferSeason lock 2
+            // season theo [firstId, secondId]).
+            for (const tid of [...conflictingTeamIds].sort((a, b) => a - b)) {
+                await tx.$executeRaw `SELECT id FROM teams WHERE id = ${tid} FOR UPDATE`;
+            }
+            const windowStart = new Date(input.scheduledAt.getTime() - ASSUMED_MATCH_DURATION_MS);
+            const windowEnd = new Date(input.scheduledAt.getTime() + ASSUMED_MATCH_DURATION_MS);
+            // Venue conflict — độc lập hoàn toàn với player/team, chỉ cần
+            // trùng sân trong khung giờ.
+            const venueConflict = await tx.match.findFirst({
+                where: {
+                    id: { not: matchId },
+                    venue_id: input.venueId,
+                    scheduled_at: { gte: windowStart, lte: windowEnd },
+                    status: { notIn: NON_BLOCKING_STATUSES },
+                },
+                select: { id: true, scheduled_at: true },
+            });
+            if (venueConflict)
+                throw createAppError('CONFLICT', `Venue ${input.venueId} đã có trận (match ${venueConflict.id}) trong khoảng ` +
+                    `±${ASSUMED_MATCH_DURATION_MS / 60000} phút quanh ${input.scheduledAt.toISOString()}`);
+            // Team/player conflict — bất kỳ match nào khác (không giới hạn
+            // season) có 1 trong các team liên quan (2 team trận này, hoặc
+            // team share player với 1 trong 2) đá trong cùng khung giờ.
+            const conflict = await tx.match.findFirst({
+                where: {
+                    id: { not: matchId },
+                    scheduled_at: { gte: windowStart, lte: windowEnd },
+                    status: { notIn: NON_BLOCKING_STATUSES },
+                    OR: [
+                        { home_team_id: { in: conflictingTeamIds } },
+                        { away_team_id: { in: conflictingTeamIds } },
+                    ],
+                },
+                select: { id: true, scheduled_at: true, home_team_id: true, away_team_id: true },
+            });
+            if (conflict)
+                throw createAppError('CONFLICT', `Trùng lịch: match ${conflict.id} (team ${conflict.home_team_id} vs ` +
+                    `${conflict.away_team_id}) đã xếp lúc ${conflict.scheduled_at?.toISOString()} — ` +
+                    `có team hoặc cầu thủ dùng chung roster với trận này trong khung ` +
+                    `±${ASSUMED_MATCH_DURATION_MS / 60000} phút quanh ${input.scheduledAt.toISOString()}`);
+            await tx.match.update({
+                where: { id: matchId },
+                data: {
+                    scheduled_at: input.scheduledAt,
+                    venue_id: input.venueId,
+                    status: MatchStatus.scheduled,
+                },
+            });
         });
     }
     async getSeasonSchedule(seasonId) {

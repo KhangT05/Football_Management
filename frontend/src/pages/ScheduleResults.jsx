@@ -406,7 +406,7 @@ export default function ScheduleResults() {
                 </div>
                 <div className="text-center">
                   <p className="font-black text-xl text-white mb-2 tracking-tight">
-                    {activeTab === 'upcoming' ? 'Chưa có lịch thi đấu vòng bảng' : 'Chưa có kết quả vòng bảng'}
+                    {activeTab === 'upcoming' ? 'Lịch thi đấu chưa được cập nhật' : 'Chưa có kết quả vòng bảng'}
                   </p>
                   <p className="text-sm font-medium">
                     {activeTab === 'upcoming' ? 'Các trận đấu sẽ được cập nhật sớm nhất.' : 'Giải đấu chưa có trận nào kết thúc.'}

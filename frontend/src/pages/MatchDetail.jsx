@@ -13,11 +13,16 @@ import useTeamStore from '../store/teamStore';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
-  GK:  'bg-amber-400/10 text-amber-400',
+  GK: 'bg-amber-400/10 text-amber-400',
   DEF: 'bg-blue-400/10 text-blue-400',
   MID: 'bg-emerald-400/10 text-emerald-400',
-  FW:  'bg-red-400/10 text-red-400',
+  FW: 'bg-red-400/10 text-red-400',
 };
+
+const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FW'];
+
+// Statuses that count as "chưa đá" — sửa lại cho khớp enum thật của bạn
+const UPCOMING_STATUSES = ['scheduled', 'pending', 'upcoming'];
 
 // ── Construction Banner ───────────────────────────────────────
 function ApiBanner({ message }) {
@@ -29,7 +34,7 @@ function ApiBanner({ message }) {
   );
 }
 
-// ── Player list item ──────────────────────────────────────────
+// ── Player list item (substitutes / fallback list) ─────────────
 function PlayerItem({ tp, isCap }) {
   const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
   const pos = tp.position;
@@ -49,6 +54,67 @@ function PlayerItem({ tp, isCap }) {
         </span>
       )}
     </li>
+  );
+}
+
+// ── Formation pitch (sơ đồ đội hình) ────────────────────────────
+function FormationPlayer({ tp }) {
+  const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
+  const jersey = tp.jersey_number ?? '?';
+  const isCap = !!tp.is_captain;
+
+  return (
+    <div className="flex flex-col items-center gap-1 w-14 sm:w-20 shrink-0">
+      <div className="relative">
+        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-navy-dark/90 border-2 border-white/70 flex items-center justify-center text-white font-black text-xs sm:text-base shadow-md shadow-black/30">
+          {jersey}
+        </div>
+        {isCap && (
+          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 absolute -top-1 -right-1 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
+        )}
+      </div>
+      <span className="text-[10px] sm:text-xs font-bold text-white text-center leading-tight line-clamp-2 drop-shadow-md">
+        {name}
+      </span>
+    </div>
+  );
+}
+
+function FormationRow({ players }) {
+  if (!players.length) return null;
+  return (
+    <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
+      {players.map(tp => (
+        <FormationPlayer key={tp.id} tp={tp} />
+      ))}
+    </div>
+  );
+}
+
+function FormationPitch({ starters = [] }) {
+  const rows = POSITION_ORDER
+    .map(pos => ({ pos, players: starters.filter(p => p.position === pos) }))
+    .filter(r => r.players.length > 0);
+
+  const others = starters.filter(p => !POSITION_ORDER.includes(p.position));
+
+  if (starters.length === 0) return null;
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-navy-light shadow-lg shadow-black/20 bg-linear-to-b from-emerald-700 to-emerald-800">
+      {/* Đường kẻ sân */}
+      <div className="absolute inset-3 border-2 border-white/25 rounded-md pointer-events-none" />
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-1/2 h-14 border-2 border-t-0 border-white/25 pointer-events-none" />
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-t-0 border-white/25 pointer-events-none" />
+      <div className="absolute left-1/2 -translate-x-1/2 top-1/2 w-24 h-24 border-2 border-white/25 rounded-full -translate-y-1/2 pointer-events-none" />
+
+      <div className="relative z-10 py-6 sm:py-8 flex flex-col gap-6 sm:gap-10">
+        {rows.map(row => (
+          <FormationRow key={row.pos} players={row.players} />
+        ))}
+        {others.length > 0 && <FormationRow players={others} />}
+      </div>
+    </div>
   );
 }
 
@@ -88,7 +154,6 @@ export default function MatchDetail() {
   useEffect(() => {
     if (matchId) {
       fetchMatchDetail(matchId);
-      // Fetch match lineups
       matchLineupApi.getMatchLineups(matchId).then(res => {
         const allLineups = Array.isArray(res?.data) ? res.data : [];
         setLineups({
@@ -103,8 +168,8 @@ export default function MatchDetail() {
     if (isAuthenticated && match && user) {
       teamApi.getTeams({ per_page: 50 }).then(res => {
         const teams = Array.isArray(res?.data) ? res.data : [];
-        const leader = teams.some(t => 
-          (t.id === match.home_team_id || t.id === match.away_team_id) && 
+        const leader = teams.some(t =>
+          (t.id === match.home_team_id || t.id === match.away_team_id) &&
           t.user_id === user.id
         );
         setIsLeader(leader);
@@ -124,9 +189,15 @@ export default function MatchDetail() {
   const homeName = homeTeamInfo?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = awayTeamInfo?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
   const hasScore = match?.home_score != null && match?.away_score != null;
+  const isUpcoming = !hasScore && UPCOMING_STATUSES.includes(match?.status);
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;
+
+  const homeStarters = lineups.home.filter(l => l.lineup_type === 'starter');
+  const homeSubs = lineups.home.filter(l => l.lineup_type === 'substitute');
+  const awayStarters = lineups.away.filter(l => l.lineup_type === 'starter');
+  const awaySubs = lineups.away.filter(l => l.lineup_type === 'substitute');
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-20">
@@ -172,7 +243,7 @@ export default function MatchDetail() {
                   </h2>
                 </div>
 
-                {/* Score / VS */}
+                {/* Score / VS / TBD */}
                 <div className="flex flex-col items-center shrink-0 gap-3">
                   <div className="px-6 py-4 md:px-10 md:py-6 bg-navy border-2 border-navy-light rounded-3xl shadow-lg shadow-black/30 flex items-center gap-4 md:gap-8">
                     {hasScore ? (
@@ -181,6 +252,10 @@ export default function MatchDetail() {
                         <span className="text-2xl md:text-4xl font-bold text-gray-500">–</span>
                         <span className="text-5xl md:text-7xl font-black text-white">{match.away_score}</span>
                       </>
+                    ) : isUpcoming ? (
+                      <span className="text-3xl md:text-5xl font-black text-gray-500 tracking-widest px-2">
+                        - vs -
+                      </span>
                     ) : (
                       <span className="text-xl md:text-3xl font-black text-gray-400 tracking-widest px-2">VS</span>
                     )}
@@ -228,10 +303,9 @@ export default function MatchDetail() {
             <h3 className="text-2xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3 animate-slide-up">
               <Activity className="w-6 h-6 text-neon" /> Diễn Biến Trận Đấu
             </h3>
-            
+
             {events.length > 0 ? (
               <div className="bg-navy border border-navy-light rounded-2xl p-4 sm:p-6 shadow-lg shadow-black/20 relative overflow-hidden">
-                {/* Dây timeline dọc */}
                 <div className="absolute left-[39px] sm:left-[47px] top-8 bottom-8 w-px bg-navy-light z-0"></div>
 
                 <div className="space-y-6 relative z-10">
@@ -244,7 +318,7 @@ export default function MatchDetail() {
                     const rosterPlayer = allPlayers.find(p => p.player_id === evt.player_id || p.id === evt.player_id);
                     const resolvedName = lineupPlayer ? (lineupPlayer.player?.name ?? lineupPlayer.player?.player?.name ?? lineupPlayer.name) : (rosterPlayer?.user?.name ?? rosterPlayer?.player?.user?.name ?? rosterPlayer?.player?.name ?? rosterPlayer?.name);
                     const playerName = resolvedName ?? evt.player?.user?.name ?? evt.player?.name ?? `Cầu thủ #${evt.player_id}`;
-                    
+
                     return (
                       <div key={evt.id} className="flex items-center gap-4 sm:gap-6 group">
                         <div className="w-12 h-12 rounded-full border-4 border-navy bg-navy-dark flex items-center justify-center shrink-0 shadow-md shadow-black/20 z-10 text-neon font-mono font-black text-sm group-hover:border-neon/30 transition-colors">
@@ -299,20 +373,19 @@ export default function MatchDetail() {
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
                 </div>
-                {lineups.home.length > 0 ? (
+                {homeStarters.length > 0 ? (
                   <>
-                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Đá chính</h5>
-                    <ul className="mb-4">
-                      {lineups.home.filter(l => l.lineup_type === 'starter').map(lu => (
-                        <PlayerItem key={lu.id} tp={lu} isStarter={true} isCap={lu.is_captain} />
-                      ))}
-                    </ul>
-                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Dự bị</h5>
-                    <ul>
-                      {lineups.home.filter(l => l.lineup_type === 'substitute').map(lu => (
-                        <PlayerItem key={lu.id} tp={lu} isStarter={false} />
-                      ))}
-                    </ul>
+                    <FormationPitch starters={homeStarters} />
+                    {homeSubs.length > 0 && (
+                      <>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
+                        <ul>
+                          {homeSubs.map(lu => (
+                            <PlayerItem key={lu.id} tp={lu} isCap={lu.is_captain} />
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
@@ -330,20 +403,19 @@ export default function MatchDetail() {
                   </div>
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>
                 </div>
-                {lineups.away.length > 0 ? (
+                {awayStarters.length > 0 ? (
                   <>
-                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Đá chính</h5>
-                    <ul className="mb-4">
-                      {lineups.away.filter(l => l.lineup_type === 'starter').map(lu => (
-                        <PlayerItem key={lu.id} tp={lu} isStarter={true} isCap={lu.is_captain} />
-                      ))}
-                    </ul>
-                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-2">Dự bị</h5>
-                    <ul>
-                      {lineups.away.filter(l => l.lineup_type === 'substitute').map(lu => (
-                        <PlayerItem key={lu.id} tp={lu} isStarter={false} />
-                      ))}
-                    </ul>
+                    <FormationPitch starters={awayStarters} />
+                    {awaySubs.length > 0 && (
+                      <>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
+                        <ul>
+                          {awaySubs.map(lu => (
+                            <PlayerItem key={lu.id} tp={lu} isCap={lu.is_captain} />
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
