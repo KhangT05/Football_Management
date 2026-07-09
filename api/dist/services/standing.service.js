@@ -2,13 +2,6 @@ import { createAppError } from '../common/app.error.js';
 import { PhaseFormat, PhaseStatus } from '../generated/prisma/client.js';
 import { Queryable } from '../libs/queryable.js';
 import { PLAYER_STATISTIC_SELECT, TEAM_STANDING_SELECT, } from '../types/standing.type.js';
-// Season status hợp lệ để XEM standings — khớp comment gốc của
-// listStandingsBySeason/listSeasons ("chỉ serve ongoing/finished/cancelled").
-// FIX (bug xuyên suốt file): trước đây 2 chỗ dùng biến cùng tên nhưng liệt kê
-// ĐỦ CẢ 5 status (kể cả upcoming/registration_open) — khiến check
-// `allowedStatuses.includes(...)` luôn true, guard/filter thành dead code dù
-// comment mô tả rõ ý đồ chỉ cho 3 status. Gom về 1 hằng số duy nhất để không
-// lặp lại sai lệch giữa 2 method.
 const VIEWABLE_SEASON_STATUSES = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
 export class StandingsService {
     prisma;

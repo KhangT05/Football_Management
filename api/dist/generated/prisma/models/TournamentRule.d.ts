@@ -1,4 +1,5 @@
 import type * as runtime from "@prisma/client/runtime/client";
+import type * as $Enums from "../enums.js";
 import type * as Prisma from "../internal/prismaNamespace.js";
 /**
  * Model TournamentRule
@@ -21,6 +22,7 @@ export type TournamentRuleAvgAggregateOutputType = {
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
+    round_robin_stages: number | null;
     forfeit_score: number | null;
     yellow_cards_suspension: number | null;
     max_players_per_team: number | null;
@@ -39,6 +41,7 @@ export type TournamentRuleSumAggregateOutputType = {
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
+    round_robin_stages: number | null;
     forfeit_score: number | null;
     yellow_cards_suspension: number | null;
     max_players_per_team: number | null;
@@ -62,6 +65,8 @@ export type TournamentRuleMinAggregateOutputType = {
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
+    format: $Enums.SeasonFormat | null;
+    round_robin_stages: number | null;
     forfeit_score: number | null;
     yellow_cards_suspension: number | null;
     max_players_per_team: number | null;
@@ -85,6 +90,8 @@ export type TournamentRuleMaxAggregateOutputType = {
     points_per_win: number | null;
     points_per_draw: number | null;
     points_per_loss: number | null;
+    format: $Enums.SeasonFormat | null;
+    round_robin_stages: number | null;
     forfeit_score: number | null;
     yellow_cards_suspension: number | null;
     max_players_per_team: number | null;
@@ -108,6 +115,8 @@ export type TournamentRuleCountAggregateOutputType = {
     points_per_win: number;
     points_per_draw: number;
     points_per_loss: number;
+    format: number;
+    round_robin_stages: number;
     forfeit_score: number;
     yellow_cards_suspension: number;
     max_players_per_team: number;
@@ -128,6 +137,7 @@ export type TournamentRuleAvgAggregateInputType = {
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
+    round_robin_stages?: true;
     forfeit_score?: true;
     yellow_cards_suspension?: true;
     max_players_per_team?: true;
@@ -146,6 +156,7 @@ export type TournamentRuleSumAggregateInputType = {
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
+    round_robin_stages?: true;
     forfeit_score?: true;
     yellow_cards_suspension?: true;
     max_players_per_team?: true;
@@ -169,6 +180,8 @@ export type TournamentRuleMinAggregateInputType = {
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
+    format?: true;
+    round_robin_stages?: true;
     forfeit_score?: true;
     yellow_cards_suspension?: true;
     max_players_per_team?: true;
@@ -192,6 +205,8 @@ export type TournamentRuleMaxAggregateInputType = {
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
+    format?: true;
+    round_robin_stages?: true;
     forfeit_score?: true;
     yellow_cards_suspension?: true;
     max_players_per_team?: true;
@@ -215,6 +230,8 @@ export type TournamentRuleCountAggregateInputType = {
     points_per_win?: true;
     points_per_draw?: true;
     points_per_loss?: true;
+    format?: true;
+    round_robin_stages?: true;
     forfeit_score?: true;
     yellow_cards_suspension?: true;
     max_players_per_team?: true;
@@ -316,6 +333,8 @@ export type TournamentRuleGroupByOutputType = {
     points_per_win: number;
     points_per_draw: number;
     points_per_loss: number;
+    format: $Enums.SeasonFormat;
+    round_robin_stages: number;
     forfeit_score: number;
     yellow_cards_suspension: number;
     max_players_per_team: number;
@@ -351,6 +370,8 @@ export type TournamentRuleWhereInput = {
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
+    format?: Prisma.EnumSeasonFormatFilter<"TournamentRule"> | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFilter<"TournamentRule"> | number;
     forfeit_score?: Prisma.IntFilter<"TournamentRule"> | number;
     yellow_cards_suspension?: Prisma.IntFilter<"TournamentRule"> | number;
     max_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -378,6 +399,8 @@ export type TournamentRuleOrderByWithRelationInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    format?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -409,6 +432,8 @@ export type TournamentRuleWhereUniqueInput = Prisma.AtLeast<{
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
+    format?: Prisma.EnumSeasonFormatFilter<"TournamentRule"> | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFilter<"TournamentRule"> | number;
     forfeit_score?: Prisma.IntFilter<"TournamentRule"> | number;
     yellow_cards_suspension?: Prisma.IntFilter<"TournamentRule"> | number;
     max_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -436,6 +461,8 @@ export type TournamentRuleOrderByWithAggregationInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    format?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -468,6 +495,8 @@ export type TournamentRuleScalarWhereWithAggregatesInput = {
     points_per_win?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
+    format?: Prisma.EnumSeasonFormatWithAggregatesFilter<"TournamentRule"> | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     forfeit_score?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     yellow_cards_suspension?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     max_players_per_team?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
@@ -490,6 +519,8 @@ export type TournamentRuleCreateInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -516,6 +547,8 @@ export type TournamentRuleUncheckedCreateInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -539,6 +572,8 @@ export type TournamentRuleUpdateInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -565,6 +600,8 @@ export type TournamentRuleUncheckedUpdateInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -590,6 +627,8 @@ export type TournamentRuleCreateManyInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -612,6 +651,8 @@ export type TournamentRuleUpdateManyMutationInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -635,6 +676,8 @@ export type TournamentRuleUncheckedUpdateManyInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -672,6 +715,8 @@ export type TournamentRuleCountOrderByAggregateInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    format?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -691,6 +736,7 @@ export type TournamentRuleAvgOrderByAggregateInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -714,6 +760,8 @@ export type TournamentRuleMaxOrderByAggregateInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    format?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -737,6 +785,8 @@ export type TournamentRuleMinOrderByAggregateInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    format?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -755,6 +805,7 @@ export type TournamentRuleSumOrderByAggregateInput = {
     points_per_win?: Prisma.SortOrder;
     points_per_draw?: Prisma.SortOrder;
     points_per_loss?: Prisma.SortOrder;
+    round_robin_stages?: Prisma.SortOrder;
     forfeit_score?: Prisma.SortOrder;
     yellow_cards_suspension?: Prisma.SortOrder;
     max_players_per_team?: Prisma.SortOrder;
@@ -851,6 +902,9 @@ export type DecimalFieldUpdateOperationsInput = {
     multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
+export type EnumSeasonFormatFieldUpdateOperationsInput = {
+    set?: $Enums.SeasonFormat;
+};
 export type TournamentRuleCreateNestedOneWithoutSeasonsInput = {
     create?: Prisma.XOR<Prisma.TournamentRuleCreateWithoutSeasonsInput, Prisma.TournamentRuleUncheckedCreateWithoutSeasonsInput>;
     connectOrCreate?: Prisma.TournamentRuleCreateOrConnectWithoutSeasonsInput;
@@ -877,6 +931,8 @@ export type TournamentRuleCreateWithoutUserInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -902,6 +958,8 @@ export type TournamentRuleUncheckedCreateWithoutUserInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -950,6 +1008,8 @@ export type TournamentRuleScalarWhereInput = {
     points_per_win?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_draw?: Prisma.IntFilter<"TournamentRule"> | number;
     points_per_loss?: Prisma.IntFilter<"TournamentRule"> | number;
+    format?: Prisma.EnumSeasonFormatFilter<"TournamentRule"> | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFilter<"TournamentRule"> | number;
     forfeit_score?: Prisma.IntFilter<"TournamentRule"> | number;
     yellow_cards_suspension?: Prisma.IntFilter<"TournamentRule"> | number;
     max_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
@@ -972,6 +1032,8 @@ export type TournamentRuleCreateWithoutTournamentInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -996,6 +1058,8 @@ export type TournamentRuleUncheckedCreateWithoutTournamentInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -1040,6 +1104,8 @@ export type TournamentRuleCreateWithoutSeasonsInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -1065,6 +1131,8 @@ export type TournamentRuleUncheckedCreateWithoutSeasonsInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -1100,6 +1168,8 @@ export type TournamentRuleUpdateWithoutSeasonsInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1125,6 +1195,8 @@ export type TournamentRuleUncheckedUpdateWithoutSeasonsInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1149,6 +1221,8 @@ export type TournamentRuleCreateManyUserInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -1170,6 +1244,8 @@ export type TournamentRuleUpdateWithoutUserInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1195,6 +1271,8 @@ export type TournamentRuleUncheckedUpdateWithoutUserInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1219,6 +1297,8 @@ export type TournamentRuleUncheckedUpdateManyWithoutUserInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1241,6 +1321,8 @@ export type TournamentRuleCreateManyTournamentInput = {
     points_per_win?: number;
     points_per_draw?: number;
     points_per_loss?: number;
+    format?: $Enums.SeasonFormat;
+    round_robin_stages?: number;
     forfeit_score?: number;
     yellow_cards_suspension?: number;
     max_players_per_team?: number;
@@ -1263,6 +1345,8 @@ export type TournamentRuleUpdateWithoutTournamentInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1287,6 +1371,8 @@ export type TournamentRuleUncheckedUpdateWithoutTournamentInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1311,6 +1397,8 @@ export type TournamentRuleUncheckedUpdateManyWithoutTournamentInput = {
     points_per_win?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_draw?: Prisma.IntFieldUpdateOperationsInput | number;
     points_per_loss?: Prisma.IntFieldUpdateOperationsInput | number;
+    format?: Prisma.EnumSeasonFormatFieldUpdateOperationsInput | $Enums.SeasonFormat;
+    round_robin_stages?: Prisma.IntFieldUpdateOperationsInput | number;
     forfeit_score?: Prisma.IntFieldUpdateOperationsInput | number;
     yellow_cards_suspension?: Prisma.IntFieldUpdateOperationsInput | number;
     max_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1359,6 +1447,8 @@ export type TournamentRuleSelect<ExtArgs extends runtime.Types.Extensions.Intern
     points_per_win?: boolean;
     points_per_draw?: boolean;
     points_per_loss?: boolean;
+    format?: boolean;
+    round_robin_stages?: boolean;
     forfeit_score?: boolean;
     yellow_cards_suspension?: boolean;
     max_players_per_team?: boolean;
@@ -1387,6 +1477,8 @@ export type TournamentRuleSelectScalar = {
     points_per_win?: boolean;
     points_per_draw?: boolean;
     points_per_loss?: boolean;
+    format?: boolean;
+    round_robin_stages?: boolean;
     forfeit_score?: boolean;
     yellow_cards_suspension?: boolean;
     max_players_per_team?: boolean;
@@ -1397,7 +1489,7 @@ export type TournamentRuleSelectScalar = {
     tiebreaker_order?: boolean;
     user_id?: boolean;
 };
-export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "suspension_match_count" | "fine_per_yellow_card" | "fine_per_red_card" | "points_per_win" | "points_per_draw" | "points_per_loss" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "bonus_per_goal" | "bonus_per_assist" | "teams_advance_per_group" | "tiebreaker_order" | "user_id", ExtArgs["result"]["tournamentRule"]>;
+export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "suspension_match_count" | "fine_per_yellow_card" | "fine_per_red_card" | "points_per_win" | "points_per_draw" | "points_per_loss" | "format" | "round_robin_stages" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "bonus_per_goal" | "bonus_per_assist" | "teams_advance_per_group" | "tiebreaker_order" | "user_id", ExtArgs["result"]["tournamentRule"]>;
 export type TournamentRuleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     seasons?: boolean | Prisma.TournamentRule$seasonsArgs<ExtArgs>;
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
@@ -1425,6 +1517,8 @@ export type $TournamentRulePayload<ExtArgs extends runtime.Types.Extensions.Inte
         points_per_win: number;
         points_per_draw: number;
         points_per_loss: number;
+        format: $Enums.SeasonFormat;
+        round_robin_stages: number;
         forfeit_score: number;
         yellow_cards_suspension: number;
         max_players_per_team: number;
@@ -1752,6 +1846,8 @@ export interface TournamentRuleFieldRefs {
     readonly points_per_win: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly points_per_draw: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly points_per_loss: Prisma.FieldRef<"TournamentRule", 'Int'>;
+    readonly format: Prisma.FieldRef<"TournamentRule", 'SeasonFormat'>;
+    readonly round_robin_stages: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly forfeit_score: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly yellow_cards_suspension: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly max_players_per_team: Prisma.FieldRef<"TournamentRule", 'Int'>;

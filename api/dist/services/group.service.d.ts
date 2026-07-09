@@ -1,8 +1,24 @@
-import { PhaseFormat, PrismaClient, SeasonTeamStatus, PhaseStatus } from "../generated/prisma/client.js";
+import { Prisma, PhaseFormat, PrismaClient, SeasonTeamStatus, PhaseStatus } from "../generated/prisma/client.js";
 import { DrawAssignment, DrawGroupsOptions } from "../types/group.type.js";
 export declare class GroupService {
     private readonly prisma;
     constructor(prisma: PrismaClient);
+    /**
+     * FIX (bug mới — thiếu guard season.status): trước đây getOrCreate/find
+     * RoundRobinPhase không hề check season.status. Hệ quả: có thể tạo group
+     * và chạy draw ngay khi season còn 'upcoming' (chưa mở đăng ký — approved
+     * team lúc này về mặt nghiệp vụ chưa có ý nghĩa) hoặc thậm chí sau khi
+     * season đã 'cancelled'/'finished' (season không is_active nhưng
+     * is_active không được check ở path ghi group). Check
+     * approvedTeams.length >= groupCount*2 không chặn được case này vì team
+     * có thể approved từ trước lúc season bị cancel.
+     *
+     * Thêm assertSeasonAcceptsGroupOps ngay sau lockSeason — chạy 1 lần duy
+     * nhất trong transaction, seasonId đã bị lock nên season.status đọc ra
+     * đây là consistent, không race với 1 request khác đang chuyển status
+     * season song song.
+     */
+    private assertSeasonAcceptsGroupOps;
     /**
      * Lock ở mức season, không phải phase — vì phase có thể CHƯA TỒN TẠI
      * (get-or-create). Lock 1 row phase không có tác dụng chống race khi
@@ -56,6 +72,18 @@ export declare class GroupService {
         name: string;
     }[]>;
     /**
+      * NEW: wrapper cho route — resolve seasonId -> approvedTeamCount rồi
+      * delegate previewGroupSplit() thuần túy bên dưới. Tách riêng vì
+      * previewGroupSplit() cố tình không đụng DB (dễ unit-test, không cần
+      * mock prisma) — controller không có quyền query trực tiếp nên cần
+      * lớp mỏng này ở service.
+      */
+    previewGroupSplitBySeason(seasonId: number, desiredGroupCount: number): Promise<{
+        groupCount: number;
+        distribution: number[];
+        warning?: string;
+    }>;
+    /**
      * NEW: preview thuần túy, không ghi DB — FE gọi mỗi lần user đổi số
      * group trong popup, hiển thị ngay distribution + warning trước khi
      * bấm xác nhận. VD 35 team / 2 group -> [18,17] hiện ngay, không cần
@@ -77,6 +105,33 @@ export declare class GroupService {
      */
     createAndDrawGroups(seasonId: number, groupCount: number): Promise<DrawAssignment[]>;
     /**
+     * NEW: tự động "chốt" số lượng group khi registration đóng lại (deadline
+     * qua hoặc admin chuyển season sang 'ongoing') — KHÔNG dùng group_count
+     * dự kiến ban đầu làm số cố định, mà tính lại theo SỐ TEAM APPROVED
+     * THỰC TẾ tại thời điểm gọi.
+     *
+     * Vấn đề gốc: season tạo sẵn N group rỗng lúc chưa biết sẽ có bao nhiêu
+     * team đăng ký (VD dự kiến 22 team / 2 group). Nếu thực tế chỉ có 9 team
+     * thì 2 group vẫn hợp lý (5-4), nhưng nếu chỉ có 3 team thì việc giữ
+     * nguyên 2 group tạo ra 1 group độc chiếm 1-2 team — vô nghĩa với thể
+     * thức round_robin. Method này dùng group cũ làm TRẦN (không tăng vượt
+     * quá số group admin đã định), đồng thời hạ xuống nếu team quá ít so
+     * với minTeamsPerGroup, và tách thêm group nếu team đông vượt
+     * maxTeamsPerGroup (trường hợp season không set trước group_count).
+     *
+     * An toàn: chỉ chạy được khi phase CHƯA có match nào (giống drawGroups/
+     * clearDraw) — nếu đã có lịch thi đấu thì đây là lỗi vận hành (admin gọi
+     * lại finalize sau khi đã schedule), không tự ý xoá kết quả.
+     *
+     * Trả về [] (no-op) nếu season chưa từng tạo phase round_robin nào —
+     * không phải season nào cũng dùng flow group-based, không nên throw lỗi
+     * chặn các season khác khi được gọi tự động từ updateStatus().
+     */
+    autoFinalizeGroups(seasonId: number, opts?: {
+        minTeamsPerGroup?: number;
+        maxTeamsPerGroup?: number;
+    }): Promise<DrawAssignment[]>;
+    /**
      * NEW: advance top-N mỗi group của phase round_robin hiện tại sang
      * phase round_robin TIẾP THEO cùng season (RR -> RR). Đọc
      * phase.teams_advance_per_group (schema mới) để biết advance bao nhiêu
@@ -87,6 +142,11 @@ export declare class GroupService {
      * (đã fix ở trên) sẽ tự động resolve đúng phase MỚI (status != locked,
      * order lớn nhất) cho mọi thao tác draw/assign/clear tiếp theo — không
      * cần thay đổi gì thêm ở các method đó.
+     *
+     * Không cần assertSeasonAcceptsGroupOps ở đây: advance chỉ hợp lệ khi
+     * season đang 'ongoing' (fromPhase.status phải locked, tức RR trước đã
+     * đá xong) — season không thể ở 'upcoming'/'cancelled'/'finished' và
+     * có phase locked cùng lúc trong flow bình thường.
      */
     advanceToNextRoundRobin(fromPhaseId: number, newGroupCount: number): Promise<{
         newPhaseId: number;
@@ -200,5 +260,16 @@ export declare class GroupService {
     private splitIntoPots;
     private applyAssignments;
     private assertNoForeignGroupAssignment;
+    createEmptyRoundRobinGroups(tx: Prisma.TransactionClient, seasonId: number, groupCount: number): Promise<{
+        phaseId: number;
+        groups: {
+            id: number;
+            name: string;
+        }[];
+    }>;
+    autoAssignApprovedTeamToGroup(tx: Prisma.TransactionClient, seasonId: number, seasonTeamId: number): Promise<{
+        groupId: number;
+        groupName: string;
+    } | null>;
 }
 //# sourceMappingURL=group.service.d.ts.map

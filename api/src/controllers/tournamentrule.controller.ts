@@ -27,7 +27,7 @@ export class TournamentRuleController extends Controller {
   async create(
     @Body() body: CreateTournamentRuleDto,
     @Request() req: AuthRequest
-  ): Promise<CreateTournamentRuleDto> {
+  ): Promise<TournamentRuleDto> {
     this.setStatus(201);
     return this.service.create(body, req.user.user_id);
   }
@@ -39,12 +39,6 @@ export class TournamentRuleController extends Controller {
     @Body() body: UpdateTournamentRuleDto,
     @Query() force?: boolean,
   ): Promise<TournamentRuleDto> {
-    // FIX: return type UpdateTournamentRuleDto → TournamentRuleDto (service.update
-    // trả full object + relations, sai response schema cũ gây lệch OpenAPI codegen).
-    // Expose `force` — service đã có escape hatch bypass retroactive-guard nhưng
-    // controller không truyền được, endpoint luôn throw CONFLICT không path nào
-    // recover. Cân nhắc siết force=true riêng về ["admin"] nếu không muốn
-    // organizing tự bypass integrity guard cho field retroactive.
     return this.service.update(id, body, force ?? false);
   }
 
@@ -60,5 +54,10 @@ export class TournamentRuleController extends Controller {
   @Security("jwt", ["admin", "organizing"])
   async restore(@Path() id: number): Promise<TournamentRuleDto> {
     return this.service.restore(id);
+  }
+
+  @Get("tournament/{tournamentId}")
+  async listByTournament(@Path() tournamentId: number): Promise<TournamentRuleDto[]> {
+    return this.service.listByTournament(tournamentId);
   }
 }

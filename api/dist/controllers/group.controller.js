@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Path, Tags, Route, Post, Delete, Body, Security, Put } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Delete, Body, Security, Put, Query } from "tsoa";
 import { GroupService } from "../services/group.service.js";
 import * as groupType from "../types/group.type.js";
 let GroupController = class GroupController extends Controller {
@@ -19,25 +19,12 @@ let GroupController = class GroupController extends Controller {
         super();
         this.service = service;
     }
-    // ---- literal-prefixed routes trước, tránh nhầm lẫn với {id} single-segment ----
-    /** Public: list group của season — service tự resolve phase round_robin active, không tự tạo */
     async findAllBySeason(seasonId) {
         return this.service.findAllBySeason(seasonId);
     }
-    /**
-     * Public: list group theo phase cụ thể — dùng khi FE đã biết phaseId
-     * (VD sau khi tạo phase mới, hoặc UI quản lý nhiều phase cùng season).
-     * FIX: trước đây gọi nhầm findAllBySeason(phaseId) — sai semantic,
-     * vì findAllBySeason filter theo season_id + format + is_active,
-     * không phải theo phase_id trực tiếp. Nếu 1 season có >1 active
-     * round_robin phase (multi-phase-with-groups), route này sẽ trả sai
-     * data. Tách hẳn method riêng trong service.
-     */
     async findAllByPhase(phaseId) {
         return this.service.findAllByPhase(phaseId);
     }
-    // ---- admin creation/draw ops: scope theo seasonId, service tự get-or-create phase ----
-    /** Admin: tạo 1 group — service tự get-or-create phase round_robin của season */
     async createGroup(seasonId, body) {
         this.setStatus(201);
         return this.service.createGroup(seasonId, body.name);
@@ -60,8 +47,20 @@ let GroupController = class GroupController extends Controller {
         this.setStatus(204);
         return this.service.clearDraw(seasonId);
     }
-    // ---- group/team-scoped (single-segment {id} — luôn khai báo SAU các route literal-prefixed ở trên) ----
-    /** Public: xem group + list team approved đang thuộc group (kèm phase info) */
+    /**
+     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
+     * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
+     * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
+     * deadline, muốn chốt group ngay mà chưa muốn đổi season status).
+     * minTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.
+     */
+    async autoFinalizeGroups(seasonId, body) {
+        return this.service.autoFinalizeGroups(seasonId, {
+            minTeamsPerGroup: body?.min_teams_per_group,
+            maxTeamsPerGroup: body?.max_teams_per_group,
+        });
+    }
     async findByIdWithTeams(id) {
         return this.service.findByIdWithTeams(id);
     }
@@ -79,6 +78,20 @@ let GroupController = class GroupController extends Controller {
     async swapTeams(body) {
         this.setStatus(204);
         return this.service.swapTeams(body.season_team_id_a, body.season_team_id_b);
+    }
+    /** Public: preview snake-draft distribution + warning trước khi confirm tạo group */
+    async previewGroupSplit(seasonId, groupCount) {
+        return this.service.previewGroupSplitBySeason(seasonId, groupCount);
+    }
+    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    async createAndDrawGroups(seasonId, body) {
+        this.setStatus(201);
+        return this.service.createAndDrawGroups(seasonId, body.group_count);
+    }
+    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    async advanceToNextRoundRobin(fromPhaseId, body) {
+        this.setStatus(201);
+        return this.service.advanceToNextRoundRobin(fromPhaseId, body.new_group_count);
     }
 };
 __decorate([
@@ -140,6 +153,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "clearDraw", null);
 __decorate([
+    Security("jwt", ["admin"]),
+    Post("season/{seasonId}/finalize"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], GroupController.prototype, "autoFinalizeGroups", null);
+__decorate([
     Get("{id}"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -170,6 +192,32 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "swapTeams", null);
+__decorate([
+    Get("season/{seasonId}/preview"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], GroupController.prototype, "previewGroupSplit", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("season/{seasonId}/create-and-draw"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], GroupController.prototype, "createAndDrawGroups", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Post("phase/{fromPhaseId}/advance"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], GroupController.prototype, "advanceToNextRoundRobin", null);
 GroupController = __decorate([
     Route("groups"),
     Tags("Groups"),

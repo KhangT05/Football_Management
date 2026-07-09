@@ -119,4 +119,19 @@ export class SeasonTeamController extends Controller {
   async getOrCreateGroupPhase(@Path() seasonId: number) {
     return this.service.getOrCreateGroupPhase(seasonId);
   }
+  /**
+ * List teams đã đăng ký của 1 season kèm team info (name/logo) + group_id.
+ * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
+ * hình public nào cần xem "season X có những team nào, đã vào group chưa".
+ *
+ * Public — không cần auth, giống các GET season/standings khác.
+ * default statuses = ['approved'] nếu không truyền (khớp default của service).
+ */
+  @Get("season/{seasonId}/teams")
+  async listBySeasonWithTeamInfo(
+    @Path() seasonId: number,
+    @Query() status?: SeasonTeamStatus[],
+  ) {
+    return this.service.listBySeasonWithTeamInfo(seasonId, status);
+  }
 }

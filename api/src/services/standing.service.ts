@@ -12,13 +12,6 @@ import {
     TeamStandingRow,
 } from '../types/standing.type.js';
 
-// Season status hợp lệ để XEM standings — khớp comment gốc của
-// listStandingsBySeason/listSeasons ("chỉ serve ongoing/finished/cancelled").
-// FIX (bug xuyên suốt file): trước đây 2 chỗ dùng biến cùng tên nhưng liệt kê
-// ĐỦ CẢ 5 status (kể cả upcoming/registration_open) — khiến check
-// `allowedStatuses.includes(...)` luôn true, guard/filter thành dead code dù
-// comment mô tả rõ ý đồ chỉ cho 3 status. Gom về 1 hằng số duy nhất để không
-// lặp lại sai lệch giữa 2 method.
 const VIEWABLE_SEASON_STATUSES: SeasonStatus[] = ['ongoing', 'finished', 'cancelled', 'upcoming', 'registration_open'];
 
 

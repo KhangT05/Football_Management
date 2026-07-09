@@ -1,11 +1,9 @@
 import { Controller } from "tsoa";
 import { GroupService } from "../services/group.service.js";
 import * as groupType from "../types/group.type.js";
-import { GroupWithTeams } from "../types/group.type.js";
 export declare class GroupController extends Controller {
     private service;
     constructor(service: GroupService);
-    /** Public: list group của season — service tự resolve phase round_robin active, không tự tạo */
     findAllBySeason(seasonId: number): Promise<{
         phase: {
             id: number;
@@ -28,15 +26,6 @@ export declare class GroupController extends Controller {
         phase: null;
         groups: never[];
     }>;
-    /**
-     * Public: list group theo phase cụ thể — dùng khi FE đã biết phaseId
-     * (VD sau khi tạo phase mới, hoặc UI quản lý nhiều phase cùng season).
-     * FIX: trước đây gọi nhầm findAllBySeason(phaseId) — sai semantic,
-     * vì findAllBySeason filter theo season_id + format + is_active,
-     * không phải theo phase_id trực tiếp. Nếu 1 season có >1 active
-     * round_robin phase (multi-phase-with-groups), route này sẽ trả sai
-     * data. Tách hẳn method riêng trong service.
-     */
     findAllByPhase(phaseId: number): Promise<{
         phase: {
             id: number;
@@ -59,7 +48,6 @@ export declare class GroupController extends Controller {
         phase: null;
         groups: never[];
     }>;
-    /** Admin: tạo 1 group — service tự get-or-create phase round_robin của season */
     createGroup(seasonId: number, body: groupType.CreateGroupBody): Promise<{
         id: number;
         name: string;
@@ -78,13 +66,27 @@ export declare class GroupController extends Controller {
     }): Promise<groupType.DrawAssignment[]>;
     /** Admin: xoá toàn bộ kết quả draw của season (reset group_id về null) */
     clearDraw(seasonId: number): Promise<void>;
-    /** Public: xem group + list team approved đang thuộc group (kèm phase info) */
-    findByIdWithTeams(id: number): Promise<GroupWithTeams>;
+    /**
+     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
+     * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
+     * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
+     * deadline, muốn chốt group ngay mà chưa muốn đổi season status).
+     * minTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.
+     */
+    autoFinalizeGroups(seasonId: number, body: groupType.AutoFinalizeGroupsBody): Promise<groupType.DrawAssignment[]>;
+    findByIdWithTeams(id: number): Promise<groupType.GroupWithTeams>;
     /** Admin: deactivate group (soft-delete, chặn nếu đã có match) */
     deactivateGroup(groupId: number): Promise<void>;
     /** Admin: assign thủ công 1 team vào 1 group */
     assignTeamToGroup(body: groupType.AssignTeamToGroupBody): Promise<void>;
     /** Admin: swap group giữa 2 team trong cùng phase */
     swapTeams(body: groupType.SwapTeamsBody): Promise<void>;
+    /** Public: preview snake-draft distribution + warning trước khi confirm tạo group */
+    previewGroupSplit(seasonId: number, groupCount: number): Promise<groupType.GroupSplitPreview>;
+    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    createAndDrawGroups(seasonId: number, body: groupType.CreateAndDrawGroupsBody): Promise<groupType.DrawAssignment[]>;
+    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    advanceToNextRoundRobin(fromPhaseId: number, body: groupType.AdvanceRoundRobinBody): Promise<groupType.AdvanceRoundRobinResult>;
 }
 //# sourceMappingURL=group.controller.d.ts.map
