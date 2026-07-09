@@ -4,6 +4,11 @@ export declare class TournamentRuleService {
     private readonly prisma;
     constructor(prisma: PrismaClient);
     private mapToDto;
+    /**
+     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages.
+     * Nhận full resolved state (không phải partial) — caller chịu trách nhiệm
+     * merge payload với DB hiện tại trước khi gọi (xem update()).
+     */
     private validateFormatConsistency;
     findAll(): Promise<TournamentRuleDto[]>;
     findByIdOrFail(id: number): Promise<TournamentRuleDto>;

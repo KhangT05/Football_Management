@@ -229,24 +229,24 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofcreateTournamentRuleSchema_": {
+    "input_typeofcreateTournamentRuleSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "tiebreaker_order": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goal_diff"] }, { "dataType": "enum", "enums": ["goals_scored"] }, { "dataType": "enum", "enums": ["head_to_head"] }, { "dataType": "enum", "enums": ["goals_conceded"] }, { "dataType": "enum", "enums": ["yellow_cards"] }, { "dataType": "enum", "enums": ["red_cards"] }] }, "required": true }, "format": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["round_robin"] }, { "dataType": "enum", "enums": ["knockout"] }, { "dataType": "enum", "enums": ["round_robin_knockout"] }, { "dataType": "enum", "enums": ["multi_round_robin_knockout"] }], "required": true }, "round_robin_stages": { "dataType": "double", "required": true }, "teams_advance_per_group": { "dataType": "double", "required": true }, "min_players_per_team": { "dataType": "double", "required": true }, "max_players_per_team": { "dataType": "double", "required": true }, "yellow_cards_suspension": { "dataType": "double", "required": true }, "forfeit_score": { "dataType": "double", "required": true }, "points_per_loss": { "dataType": "double", "required": true }, "points_per_draw": { "dataType": "double", "required": true }, "points_per_win": { "dataType": "double", "required": true }, "tournament_id": { "dataType": "double", "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "tiebreaker_order": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goal_diff"] }, { "dataType": "enum", "enums": ["goals_scored"] }, { "dataType": "enum", "enums": ["head_to_head"] }, { "dataType": "enum", "enums": ["goals_conceded"] }, { "dataType": "enum", "enums": ["yellow_cards"] }, { "dataType": "enum", "enums": ["red_cards"] }] } }, "format": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["round_robin"] }, { "dataType": "enum", "enums": ["knockout"] }, { "dataType": "enum", "enums": ["round_robin_knockout"] }, { "dataType": "enum", "enums": ["multi_round_robin_knockout"] }] }, "round_robin_stages": { "dataType": "double" }, "teams_advance_per_group": { "dataType": "double" }, "min_players_per_team": { "dataType": "double" }, "max_players_per_team": { "dataType": "double" }, "yellow_cards_suspension": { "dataType": "double" }, "forfeit_score": { "dataType": "double" }, "points_per_loss": { "dataType": "double" }, "points_per_draw": { "dataType": "double" }, "points_per_win": { "dataType": "double" }, "tournament_id": { "dataType": "double", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateTournamentRuleDto": {
+    "CreateTournamentRuleInput": {
         "dataType": "refAlias",
-        "type": { "ref": "infer_typeofcreateTournamentRuleSchema_", "validators": {} },
+        "type": { "ref": "input_typeofcreateTournamentRuleSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofupdateTournamentRuleSchema_": {
+    "input_typeofupdateTournamentRuleSchema_": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "tiebreaker_order": { "dataType": "array", "array": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goal_diff"] }, { "dataType": "enum", "enums": ["goals_scored"] }, { "dataType": "enum", "enums": ["head_to_head"] }, { "dataType": "enum", "enums": ["goals_conceded"] }, { "dataType": "enum", "enums": ["yellow_cards"] }, { "dataType": "enum", "enums": ["red_cards"] }] } }, "format": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["round_robin"] }, { "dataType": "enum", "enums": ["knockout"] }, { "dataType": "enum", "enums": ["round_robin_knockout"] }, { "dataType": "enum", "enums": ["multi_round_robin_knockout"] }] }, "round_robin_stages": { "dataType": "double" }, "teams_advance_per_group": { "dataType": "double" }, "min_players_per_team": { "dataType": "double" }, "max_players_per_team": { "dataType": "double" }, "yellow_cards_suspension": { "dataType": "double" }, "forfeit_score": { "dataType": "double" }, "points_per_loss": { "dataType": "double" }, "points_per_draw": { "dataType": "double" }, "points_per_win": { "dataType": "double" }, "tournament_id": { "dataType": "double" } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateTournamentRuleDto": {
+    "UpdateTournamentRuleInput": {
         "dataType": "refAlias",
-        "type": { "ref": "infer_typeofupdateTournamentRuleSchema_", "validators": {} },
+        "type": { "ref": "input_typeofupdateTournamentRuleSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_TournamentPayload_": {
@@ -2450,7 +2450,7 @@ export function RegisterRoutes(app, opts) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentRuleController_create = {
-        body: { "in": "body", "name": "body", "required": true, "ref": "CreateTournamentRuleDto" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "CreateTournamentRuleInput" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
     };
     app.post('/tournamentrules', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TournamentRuleController)), ...(fetchMiddlewares(TournamentRuleController.prototype.create)), async function TournamentRuleController_create(request, response, next) {
@@ -2479,7 +2479,7 @@ export function RegisterRoutes(app, opts) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsTournamentRuleController_update = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
-        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTournamentRuleDto" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTournamentRuleInput" },
         force: { "in": "query", "name": "force", "dataType": "boolean" },
     };
     app.patch('/tournamentrules/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TournamentRuleController)), ...(fetchMiddlewares(TournamentRuleController.prototype.update)), async function TournamentRuleController_update(request, response, next) {

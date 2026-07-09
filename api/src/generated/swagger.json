@@ -555,7 +555,7 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"infer_typeofcreateTournamentRuleSchema_": {
+			"input_typeofcreateTournamentRuleSchema_": {
 				"properties": {
 					"tiebreaker_order": {
 						"items": {
@@ -622,25 +622,14 @@
 					}
 				},
 				"required": [
-					"tiebreaker_order",
-					"format",
-					"round_robin_stages",
-					"teams_advance_per_group",
-					"min_players_per_team",
-					"max_players_per_team",
-					"yellow_cards_suspension",
-					"forfeit_score",
-					"points_per_loss",
-					"points_per_draw",
-					"points_per_win",
 					"tournament_id"
 				],
 				"type": "object"
 			},
-			"CreateTournamentRuleDto": {
-				"$ref": "#/components/schemas/infer_typeofcreateTournamentRuleSchema_"
+			"CreateTournamentRuleInput": {
+				"$ref": "#/components/schemas/input_typeofcreateTournamentRuleSchema_"
 			},
-			"infer_typeofupdateTournamentRuleSchema_": {
+			"input_typeofupdateTournamentRuleSchema_": {
 				"properties": {
 					"tiebreaker_order": {
 						"items": {
@@ -708,8 +697,8 @@
 				},
 				"type": "object"
 			},
-			"UpdateTournamentRuleDto": {
-				"$ref": "#/components/schemas/infer_typeofupdateTournamentRuleSchema_"
+			"UpdateTournamentRuleInput": {
+				"$ref": "#/components/schemas/input_typeofupdateTournamentRuleSchema_"
 			},
 			"DefaultSelection__36_TournamentPayload_": {
 				"properties": {
@@ -7018,7 +7007,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateTournamentRuleDto"
+								"$ref": "#/components/schemas/CreateTournamentRuleInput"
 							}
 						}
 					}
@@ -7105,7 +7094,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateTournamentRuleDto"
+								"$ref": "#/components/schemas/UpdateTournamentRuleInput"
 							}
 						}
 					}

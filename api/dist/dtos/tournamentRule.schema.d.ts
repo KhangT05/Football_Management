@@ -83,6 +83,8 @@ export declare const updateTournamentRuleSchema: z.ZodObject<{
         red_cards: "red_cards";
     }>>>>;
 }, z.core.$strip>;
-export type CreateTournamentRuleDto = z.infer<typeof createTournamentRuleSchema>;
-export type UpdateTournamentRuleDto = z.infer<typeof updateTournamentRuleSchema>;
+export type CreateTournamentRuleInput = z.input<typeof createTournamentRuleSchema>;
+export type UpdateTournamentRuleInput = z.input<typeof updateTournamentRuleSchema>;
+export type CreateTournamentRuleDto = z.output<typeof createTournamentRuleSchema>;
+export type UpdateTournamentRuleDto = z.output<typeof updateTournamentRuleSchema>;
 //# sourceMappingURL=tournamentRule.schema.d.ts.map
