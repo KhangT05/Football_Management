@@ -29,12 +29,6 @@ let TournamentRuleController = class TournamentRuleController extends Controller
         return this.service.create(body, req.user.user_id);
     }
     async update(id, body, force) {
-        // FIX: return type UpdateTournamentRuleDto → TournamentRuleDto (service.update
-        // trả full object + relations, sai response schema cũ gây lệch OpenAPI codegen).
-        // Expose `force` — service đã có escape hatch bypass retroactive-guard nhưng
-        // controller không truyền được, endpoint luôn throw CONFLICT không path nào
-        // recover. Cân nhắc siết force=true riêng về ["admin"] nếu không muốn
-        // organizing tự bypass integrity guard cho field retroactive.
         return this.service.update(id, body, force ?? false);
     }
     async softDelete(id) {
@@ -43,6 +37,9 @@ let TournamentRuleController = class TournamentRuleController extends Controller
     }
     async restore(id) {
         return this.service.restore(id);
+    }
+    async listByTournament(tournamentId) {
+        return this.service.listByTournament(tournamentId);
     }
 };
 __decorate([
@@ -95,6 +92,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TournamentRuleController.prototype, "restore", null);
+__decorate([
+    Get("tournament/{tournamentId}"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], TournamentRuleController.prototype, "listByTournament", null);
 TournamentRuleController = __decorate([
     Route("tournamentrules"),
     Tags("TournamentRules"),

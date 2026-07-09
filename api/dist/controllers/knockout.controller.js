@@ -43,6 +43,16 @@ let KnockoutController = class KnockoutController extends Controller {
     async getBracket(phaseId) {
         return this.service.getBracket(phaseId);
     }
+    /**
+     * Auto-seed knockout từ standing hiện tại của các group — không cần
+     * nhập tay SeedSource[]. Cùng idempotency guard với generate thường:
+     * CONFLICT nếu phase (get-or-create theo bracket size) đã có sẵn bracket.
+     */
+    async generateKnockoutFromStandings(seasonId, body) {
+        const parsed = knockoutSchema.autoSeedKnockoutRequestSchema.parse(body);
+        this.setStatus(201);
+        return this.service.generateKnockoutFromStandings({ ...parsed, seasonId });
+    }
 };
 __decorate([
     Security('jwt', ['admin']),
@@ -72,6 +82,16 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "getBracket", null);
+__decorate([
+    Security('jwt', ['admin']),
+    Post('seasons/{seasonId}/knockout/generate-from-standings'),
+    SuccessResponse(201, 'Created'),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], KnockoutController.prototype, "generateKnockoutFromStandings", null);
 KnockoutController = __decorate([
     Route(''),
     Tags('Knockout'),

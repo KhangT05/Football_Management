@@ -36,44 +36,8 @@ export declare class SeasonController extends Controller {
    */
     cancelSeason(id: number, body: seasonSchema.CancelSeasonDto): Promise<Season>;
     updateStatus(id: number, body: seasonSchema.UpdateSeasonStatusDto): Promise<Season>;
-    getGroupStandings(id: number, groupId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
-        id: number;
-        group_id: number;
-        team_id: number;
-        matches_played: number;
-        position: number;
-        wins: number;
-        draws: number;
-        losses: number;
-        goals_for: number;
-        goals_against: number;
-        points: number;
-    }>>;
-    getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<{
-        id: number;
-        team: {
-            name: string;
-            id: number;
-            logo: string | null;
-        };
-        player: {
-            id: number;
-            user: {
-                name: string;
-            };
-            avatar: string | null;
-        };
-        goals_scored: number;
-        yellow_cards: number;
-        red_cards: number;
-        season_id: number;
-        team_id: number;
-        assists: number;
-        matches_played: number;
-        player_id: number;
-        accumulated_yellow_cards: number;
-        is_suspended: boolean;
-    }>>;
+    getGroupStandings(id: number, groupId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<import("../types/standing.type.js").TeamStandingRow>>;
+    getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<import("../types/standing.type.js").PlayerStatisticRow>>;
     getSuspendedPlayers(id: number): Promise<({
         team: {
             name: string;
@@ -102,6 +66,28 @@ export declare class SeasonController extends Controller {
         is_suspended: boolean;
         total_fine_owed: import("@prisma/client-runtime-utils").Decimal;
     })[]>;
+    getActiveStandings(id: number): Promise<{
+        phaseId: number;
+        phaseName: string;
+        phaseOrder: number;
+        phaseStatus: import("../generated/prisma/enums.js").PhaseStatus;
+        groups: {
+            groupId: number;
+            groupName: string;
+            standings: import("../types/standing.type.js").TeamStandingRow[];
+        }[];
+    } | null>;
+    getStandingsHistory(id: number): Promise<{
+        phaseId: number;
+        phaseName: string;
+        phaseOrder: number;
+        phaseStatus: import("../generated/prisma/enums.js").PhaseStatus;
+        groups: {
+            groupId: number;
+            groupName: string;
+            standings: import("../types/standing.type.js").TeamStandingRow[];
+        }[];
+    }[]>;
 }
 export {};
 //# sourceMappingURL=season.controller.d.ts.map

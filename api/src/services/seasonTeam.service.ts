@@ -9,9 +9,8 @@ import {
 import { Queryable } from "../libs/queryable.js";
 import { SeasonTeamWithRelations, withRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
+import { GroupService } from "./group.service.js";
 
-// Transition matrix tối thiểu cho updateStatus (generic, không phải approve/transfer)
-// Không cho set ngược từ terminal state, không cho nhảy tắt pending -> active.
 const ALLOWED_TRANSITIONS: Record<SeasonTeamStatus, SeasonTeamStatus[]> = {
     [SeasonTeamStatus.pending]: [SeasonTeamStatus.approved, SeasonTeamStatus.withdrawn],
     [SeasonTeamStatus.approved]: [SeasonTeamStatus.active, SeasonTeamStatus.withdrawn],
@@ -23,7 +22,10 @@ const ALLOWED_TRANSITIONS: Record<SeasonTeamStatus, SeasonTeamStatus[]> = {
 export class SeasonTeamService {
     private readonly query: Queryable<SeasonTeamWithRelations>;
 
-    constructor(private readonly prisma: PrismaClient) {
+    constructor(
+        private readonly prisma: PrismaClient,
+        private readonly groupService: GroupService,
+    ) {
         this.query = new Queryable<SeasonTeamWithRelations>(prisma.seasonTeam, {
             searchFields: [],
             sortable: ["id", "created_at", "status"],
@@ -67,10 +69,17 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Registration deadline has passed");
 
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
+            // selfRegister luôn tạo pending — không cần auto-assign group ở đây.
             return this.createOrReactivate(tx, data.season_id, team.id, userId, SeasonTeamStatus.pending);
         });
     }
 
+    /**
+     * FIX (auto-assign hook): adminAdd() có thể tạo thẳng status='approved'
+     * (bỏ qua approve()) — nếu season đang dùng flow group_count (group đã
+     * pre-tạo rỗng lúc Season.create), team tạo qua đây cũng phải tự fill
+     * vào group ngay, không chỉ team đi qua approve() mới được xử lý.
+     */
     async adminAdd(data: AdminAddSeasonTeamDto, userId: number): Promise<SeasonTeamWithRelations> {
         return this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${data.season_id} FOR UPDATE`;
@@ -82,15 +91,31 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Season is not open for registration");
 
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
-            return this.createOrReactivate(
-                tx, data.season_id, data.team_id, userId, data.status ?? SeasonTeamStatus.approved
-            );
+
+            const finalStatus = data.status ?? SeasonTeamStatus.approved;
+            const created = await this.createOrReactivate(tx, data.season_id, data.team_id, userId, finalStatus);
+
+            if (finalStatus === SeasonTeamStatus.approved) {
+                await this.groupService.autoAssignApprovedTeamToGroup(tx, data.season_id, created.id);
+                return tx.seasonTeam.findUniqueOrThrow({ where: { id: created.id }, ...withRelations });
+            }
+            return created;
         });
     }
 
     /**
-     * Duyệt team (ban tổ chức / admin). Tách khỏi updateStatus vì có
-     * capacity check + season-state check riêng, không phải generic write.
+     * FIX (race condition — capacity check thiếu season lock): trước đây
+     * chỉ lock `season_teams WHERE id=${id}`, KHÔNG lock season. 2 request
+     * approve() đồng thời cho 2 SeasonTeam KHÁC NHAU cùng season đều đọc
+     * snapshot `count approved < maxTeams`, cùng pass check, cùng update —
+     * approved count có thể vượt max_teams (giống lost-update pattern đã
+     * fix ở StandingsService.recomputeGroupStandings). selfRegister/adminAdd
+     * đã lock season đúng; approve() thiếu — bổ sung ngay đầu transaction.
+     *
+     * FIX (auto-assign hook): sau khi set approved, gọi
+     * GroupService.autoAssignApprovedTeamToGroup — no-op (trả null) nếu
+     * season không dùng flow group_count, group_id giữ nguyên null chờ
+     * drawGroups thủ công như trước.
      */
     async approve(id: number, requesterId: number): Promise<SeasonTeamWithRelations> {
         return this.prisma.$transaction(async (tx) => {
@@ -101,6 +126,10 @@ export class SeasonTeamService {
             if (st.status !== SeasonTeamStatus.pending)
                 throw createAppError("CONFLICT", `Cannot approve team in status ${st.status}`);
 
+            // Lock season TRƯỚC assertSlotAvailable — serialize mọi approve()
+            // cùng season, đóng lỗ race đếm capacity.
+            await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${st.season_id} FOR UPDATE`;
+
             const season = await tx.season.findUnique({ where: { id: st.season_id } });
             if (!season) throw createAppError("NOT_FOUND", `Season ${st.season_id} not found`);
             if (season.status !== SeasonStatus.registration_open)
@@ -108,25 +137,17 @@ export class SeasonTeamService {
 
             await this.assertSlotAvailable(tx, st.season_id, season.max_teams);
 
-            return tx.seasonTeam.update({
+            await tx.seasonTeam.update({
                 where: { id },
                 data: { status: SeasonTeamStatus.approved, user_id: requesterId },
-                ...withRelations,
             });
+
+            await this.groupService.autoAssignApprovedTeamToGroup(tx, st.season_id, id);
+
+            return tx.seasonTeam.findUniqueOrThrow({ where: { id }, ...withRelations });
         });
     }
 
-    /**
-     * Chuyển season_team sang season khác (ban tổ chức / admin).
-     * - Chỉ cho phép từ pending|approved — active/eliminated đã có match/group
-     *   phụ thuộc (group_id, playerStatistics, matchLineups...), transfer sẽ
-     *   orphan reference. Nếu sau này audit thấy FK an toàn, có thể nới.
-     * - Deactivate record cũ (soft-delete) rồi createOrReactivate ở season đích,
-     *   dùng lại đúng logic revive khi unique(season_id, team_id) đã tồn tại
-     *   (case: team từng ở season đích rồi withdraw).
-     * - Reset về pending ở season đích — buộc duyệt lại vì capacity/eligibility
-     *   season mới có thể khác.
-     */
     async transferSeason(
         id: number,
         targetSeasonId: number,
@@ -150,8 +171,6 @@ export class SeasonTeamService {
             if (st.season_id === targetSeasonId)
                 throw createAppError("BAD_REQUEST", "Team already in this season");
 
-            // Lock cả season nguồn và đích theo thứ tự cố định (id tăng dần)
-            // để tránh deadlock khi 2 transfer chạy song song ngược chiều nhau.
             const [firstId, secondId] = [st.season_id, targetSeasonId].sort((a, b) => a - b);
             await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${firstId} FOR UPDATE`;
             await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${secondId} FOR UPDATE`;
@@ -161,24 +180,19 @@ export class SeasonTeamService {
             if (targetSeason.status !== SeasonStatus.registration_open)
                 throw createAppError("FORBIDDEN", "Target season is not open for registration");
 
-            await this.assertSlotAvailable(tx, targetSeasonId, targetSeason.max_teams, SeasonTeamStatus.pending);
+            await this.assertSlotAvailable(tx, targetSeasonId, targetSeason.max_teams);
 
             await tx.seasonTeam.update({
                 where: { id },
                 data: { is_active: false, deleted_at: new Date() },
             });
 
+            // Transfer luôn reset về pending — buộc duyệt lại ở season đích,
+            // không cần auto-assign group ở đây (chỉ khi approve() lần nữa).
             return this.createOrReactivate(tx, targetSeasonId, st.team_id, requesterId, SeasonTeamStatus.pending);
         });
     }
 
-    /**
-     * Generic status update (eliminated/withdrawn...). KHÔNG dùng cho approve —
-     * dùng approve() riêng vì có capacity check. Có transition guard tối thiểu,
-     * chưa lock — các transition ở đây không cạnh tranh capacity nên rủi ro
-     * race thấp hơn approve, nhưng nếu thêm transition ảnh hưởng slot count
-     * (vd revert approved -> pending) phải bọc transaction + lock như approve.
-     */
     async updateStatus(id: number, data: UpdateSeasonTeamStatusDto): Promise<SeasonTeamWithRelations> {
         const st = await this.findByIdOrFail(id);
 
@@ -197,11 +211,13 @@ export class SeasonTeamService {
     }
 
     /**
-     * group_id trên SeasonTeam season-scoped, Group phase-scoped — season có
-     * >1 phase round_robin sẽ overwrite lẫn nhau, không có FK nào chặn việc này.
-     * Mitigate (không fix triệt để) bằng cách chỉ cho gán khi: team đã approved,
-     * group/phase còn active, phase đúng format round_robin, group thuộc đúng
-     * season của team.
+     * FIX (capacity check thiếu — inconsistent với GroupService.assignTeamToGroup):
+     * trước đây method này set group_id trực tiếp KHÔNG check teams_per_group,
+     * trong khi GroupService.assignTeamToGroup (route khác, cùng field
+     * group_id) có FOR UPDATE + capacity check đầy đủ. 2 đường ghi cùng dữ
+     * liệu nhưng validate khác nhau — group có thể vượt capacity nếu FE gọi
+     * qua route seasonTeam.assignGroup. Thêm lock group + capacity check
+     * đồng nhất với GroupService.
      */
     async assignGroup(id: number, data: AssignGroupDto): Promise<SeasonTeamWithRelations> {
         return this.prisma.$transaction(async (tx) => {
@@ -212,9 +228,15 @@ export class SeasonTeamService {
             if (seasonTeam.status !== SeasonTeamStatus.approved)
                 throw createAppError("CONFLICT", "Chỉ team đã approved mới được gán group");
 
+            await tx.$queryRaw`SELECT id FROM groups WHERE id = ${data.group_id} FOR UPDATE`;
+
             const group = await tx.group.findUnique({
                 where: { id: data.group_id },
-                include: { phase: { select: { id: true, season_id: true, format: true, is_active: true } } },
+                include: {
+                    phase: {
+                        select: { id: true, season_id: true, format: true, is_active: true, teams_per_group: true },
+                    },
+                },
             });
             if (!group) throw createAppError("NOT_FOUND", `Group ${data.group_id} not found`);
             if (!group.is_active || !group.phase.is_active)
@@ -223,6 +245,13 @@ export class SeasonTeamService {
                 throw createAppError("CONFLICT", "Chỉ gán group cho phase round_robin");
             if (group.phase.season_id !== seasonTeam.season.id)
                 throw createAppError("CONFLICT", "Group không thuộc season của team này");
+
+            const capacity = group.phase.teams_per_group ?? Infinity;
+            const currentCount = await tx.seasonTeam.count({
+                where: { group_id: data.group_id, deleted_at: null, id: { not: id } },
+            });
+            if (currentCount >= capacity)
+                throw createAppError("CONFLICT", `Group ${data.group_id} đã full (${capacity} teams)`);
 
             return tx.seasonTeam.update({ where: { id }, data: { group_id: data.group_id }, ...withRelations });
         });
@@ -249,22 +278,6 @@ export class SeasonTeamService {
             throw createAppError("CONFLICT", "Season has reached maximum team capacity");
     }
 
-    /**
-     * @@unique([season_id, team_id]) không exclude deleted_at (MySQL không có
-     * partial unique index). Team withdraw rồi đăng ký lại (hoặc được transfer
-     * đến) phải reactivate row cũ, không create mới — create thẳng sẽ đụng
-     * unique constraint.
-     *
-     * FIX: nhánh tạo mới (create) giờ set `is_active: true` TƯỜNG MINH thay
-     * vì phụ thuộc default của cột trong Prisma schema. Đây chính là nguyên
-     * nhân của bug "team đã approved nhưng không hiện trong danh sách" —
-     * endpoint GET /seasonteams luôn ép where { is_active: true } (xem
-     * constructor Queryable ở trên), nên bất kỳ record nào insert mà cột
-     * is_active không đúng true (default sai, hoặc insert tay qua
-     * phpMyAdmin bỏ trống cột) sẽ bị ẩn hoàn toàn khỏi mọi danh sách dù
-     * status = approved. Set tường minh ở đây đảm bảo record tạo qua API
-     * luôn đúng, không còn phụ thuộc vào default của DB.
-     */
     private async createOrReactivate(
         tx: Prisma.TransactionClient,
         seasonId: number,
@@ -287,7 +300,7 @@ export class SeasonTeamService {
                     deleted_at: null,
                     status,
                     user_id: userId,
-                    group_id: null, // group cũ (nếu còn) có thể thuộc phase đã đóng — reset
+                    group_id: null,
                 },
                 ...withRelations,
             });
@@ -299,15 +312,6 @@ export class SeasonTeamService {
         });
     }
 
-    /**
-     * Danh sách team đã đăng ký 1 season cụ thể, kèm thông tin tournament +
-     * season (dùng cho trang "Quản lý Mùa giải & Bốc thăm" — trước đây FE gọi
-     * nhầm teamApi.getTeams() không filter season_id, trả về TOÀN BỘ team
-     * trong hệ thống thay vì chỉ team đã đăng ký season này).
-     *
-     * Mặc định chỉ trả status=approved (đội đã duyệt, đủ điều kiện bốc thăm/
-     * xếp bảng) — muốn lấy cả pending thì truyền statuses tường minh.
-     */
     async listBySeasonWithTeamInfo(
         seasonId: number,
         statuses: SeasonTeamStatus[] = [SeasonTeamStatus.approved]
@@ -358,9 +362,8 @@ export class SeasonTeamService {
         };
     }
 
-    async getOrCreateGroupPhase(seasonId: number): Promise<Phase> {
+    async getOrCreateGroupPhase(seasonId: number, stageOrder = 0): Promise<Phase> {
         return this.prisma.$transaction(async (tx) => {
-            // Lock season để tránh race: 2 request đồng thời cùng tạo 2 phase trùng nhau
             await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
 
             const season = await tx.season.findUnique({ where: { id: seasonId } });
@@ -371,6 +374,7 @@ export class SeasonTeamService {
                     season_id: seasonId,
                     type: PhaseType.group_stage,
                     format: PhaseFormat.round_robin,
+                    order: stageOrder,
                     is_active: true,
                 },
             });
@@ -379,10 +383,10 @@ export class SeasonTeamService {
             return tx.phase.create({
                 data: {
                     season_id: seasonId,
-                    name: "Vòng bảng",
+                    name: stageOrder === 0 ? "Vòng bảng" : `Vòng bảng - Vòng ${stageOrder + 1}`,
                     type: PhaseType.group_stage,
                     format: PhaseFormat.round_robin,
-                    order: 0,
+                    order: stageOrder,
                     status: PhaseStatus.draft,
                 },
             });

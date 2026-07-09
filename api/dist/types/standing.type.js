@@ -1,4 +1,3 @@
-// ─── Selects ──────────────────────────────────────────────────────────────────
 export const TEAM_STANDING_SELECT = {
     id: true,
     group_id: true,

@@ -155,6 +155,8 @@ export const TournamentRuleScalarFieldEnum = {
     points_per_win: 'points_per_win',
     points_per_draw: 'points_per_draw',
     points_per_loss: 'points_per_loss',
+    format: 'format',
+    round_robin_stages: 'round_robin_stages',
     forfeit_score: 'forfeit_score',
     yellow_cards_suspension: 'yellow_cards_suspension',
     max_players_per_team: 'max_players_per_team',
@@ -212,6 +214,7 @@ export const SeasonScalarFieldEnum = {
     registration_fee: 'registration_fee',
     cancel_reason: 'cancel_reason',
     tournament_id: 'tournament_id',
+    group_count: 'group_count',
     user_id: 'user_id',
     tournament_rule_id: 'tournament_rule_id'
 };

@@ -179,4 +179,19 @@ export class SeasonController extends Controller {
   async getSuspendedPlayers(@Path() id: number) {
     return this.standingsService.getSuspendedPlayers(id);
   }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET — STANDINGS OVERVIEW (public) — phase round_robin đang mở
+  // ═══════════════════════════════════════════════════════════════════════════
+  @Get("{id}/standings")
+  async getActiveStandings(@Path() id: number) {
+    return this.standingsService.listActiveGroupStandings(id);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET — STANDINGS HISTORY (public) — toàn bộ phase RR, kể cả đã locked
+  // ═══════════════════════════════════════════════════════════════════════════
+  @Get("{id}/standings/history")
+  async getStandingsHistory(@Path() id: number) {
+    return this.standingsService.listGroupStandingsHistory(id);
+  }
 }

@@ -88,38 +88,46 @@ model Tournament {
 }
 
 model TournamentRule {
-  id                     Int       @id @default(autoincrement())
-  name                   String    @default("Default Rule")
-  tournament_id          Int
-  is_active              Boolean   @default(true)
-  created_at             DateTime  @default(now())
-  updated_at             DateTime? @updatedAt
-  deleted_at             DateTime?
-  seasons                Season[]
-  suspension_match_count Int       @default(1)
-  fine_per_yellow_card   Decimal   @default(0) @db.Decimal(10, 2) // NEW
-  fine_per_red_card      Decimal   @default(0) @db.Decimal(10, 2)
+  id                      Int          @id @default(autoincrement())
+  name                    String       @default("Default Rule")
+  tournament_id           Int
+  is_active               Boolean      @default(true)
+  created_at              DateTime     @default(now())
+  updated_at              DateTime?    @updatedAt
+  deleted_at              DateTime?
+  seasons                 Season[]
+  suspension_match_count  Int          @default(1)
+  fine_per_yellow_card    Decimal      @default(0) @db.Decimal(10, 2) // NEW
+  fine_per_red_card       Decimal      @default(0) @db.Decimal(10, 2)
   // Scoring — không apply cho knockout phase
-  points_per_win         Int       @default(3)
-  points_per_draw        Int       @default(1)
-  points_per_loss        Int       @default(0)
-
+  points_per_win          Int          @default(3)
+  points_per_draw         Int          @default(1)
+  points_per_loss         Int          @default(0)
+  format                  SeasonFormat @default(round_robin_knockout)
+  round_robin_stages      Int          @default(1)
   // Apply mọi phase format
-  forfeit_score           Int     @default(3)
-  yellow_cards_suspension Int     @default(3)
-  max_players_per_team    Int     @default(11)
-  min_players_per_team    Int     @default(7)
-  bonus_per_goal          Decimal @default(0) @db.Decimal(10, 2) // NEW — thưởng/bàn thắng
-  bonus_per_assist        Decimal @default(0) @db.Decimal(10, 2)
+  forfeit_score           Int          @default(3)
+  yellow_cards_suspension Int          @default(3)
+  max_players_per_team    Int          @default(11)
+  min_players_per_team    Int          @default(7)
+  bonus_per_goal          Decimal      @default(0) @db.Decimal(10, 2) // NEW — thưởng/bàn thắng
+  bonus_per_assist        Decimal      @default(0) @db.Decimal(10, 2)
   // Chỉ apply cho round_robin phase
-  teams_advance_per_group Int     @default(2)
-  tiebreaker_order        Json    @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
+  teams_advance_per_group Int          @default(2)
+  tiebreaker_order        Json         @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
 
   tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
   user       User?      @relation(fields: [user_id], references: [id])
   user_id    Int?
 
   @@map("tournament_rules")
+}
+
+enum SeasonFormat {
+  round_robin // chỉ đá vòng tròn, không có knockout
+  knockout // chỉ đá loại trực tiếp toàn giải
+  round_robin_knockout // 1 vòng bảng (RR) -> loại trực tiếp
+  multi_round_robin_knockout // nhiều vòng bảng RR liên tiếp -> loại trực tiếp
 }
 
 // ============================================================
@@ -230,11 +238,11 @@ model Season {
   updated_at            DateTime?    @updatedAt
 
   deleted_at       DateTime?
-  registration_fee Decimal   @default(0) @db.Decimal(10, 2)
+  registration_fee Decimal    @default(0) @db.Decimal(10, 2)
   cancel_reason    String?
   tournament_id    Int
-
-  tournament Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
+  group_count      Int?
+  tournament       Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
 
   phases             Phase[]
   season_teams       SeasonTeam[]

@@ -81,6 +81,17 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
     async getOrCreateGroupPhase(seasonId) {
         return this.service.getOrCreateGroupPhase(seasonId);
     }
+    /**
+   * List teams đã đăng ký của 1 season kèm team info (name/logo) + group_id.
+   * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
+   * hình public nào cần xem "season X có những team nào, đã vào group chưa".
+   *
+   * Public — không cần auth, giống các GET season/standings khác.
+   * default statuses = ['approved'] nếu không truyền (khớp default của service).
+   */
+    async listBySeasonWithTeamInfo(seasonId, status) {
+        return this.service.listBySeasonWithTeamInfo(seasonId, status);
+    }
 };
 __decorate([
     Get("/"),
@@ -177,6 +188,14 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "getOrCreateGroupPhase", null);
+__decorate([
+    Get("season/{seasonId}/teams"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Array]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "listBySeasonWithTeamInfo", null);
 SeasonTeamController = __decorate([
     Route("seasonteams"),
     Tags("SeasonTeams"),

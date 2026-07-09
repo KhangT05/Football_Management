@@ -24,6 +24,33 @@ export declare const advanceWinnerInputSchema: z.ZodObject<{
     matchId: z.ZodNumber;
     winnerTeamId: z.ZodNumber;
 }, z.core.$strip>;
+export declare const knockoutSeedModeSchema: z.ZodEnum<{
+    straight: "straight";
+    cross: "cross";
+    random: "random";
+}>;
+export declare const autoSeedKnockoutRequestSchema: z.ZodObject<{
+    groupIds: z.ZodArray<z.ZodNumber>;
+    topN: z.ZodNumber;
+    mode: z.ZodEnum<{
+        straight: "straight";
+        cross: "cross";
+        random: "random";
+    }>;
+    legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+    phaseTypeOverride: z.ZodOptional<z.ZodEnum<{
+        readonly group_stage: "group_stage";
+        readonly round_of_16: "round_of_16";
+        readonly quarter_final: "quarter_final";
+        readonly semi_final: "semi_final";
+        readonly third_place: "third_place";
+        readonly final: "final";
+    }>>;
+    venueIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+}, z.core.$strip>;
 export declare const generateKnockoutRequestSchema: z.ZodObject<{
     legs: z.ZodUnion<readonly [z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     seeds: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
@@ -49,6 +76,7 @@ export declare const advanceWinnerRequestSchema: z.ZodObject<{
     venueIds: z.ZodArray<z.ZodNumber>;
     matchTimes: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
+export type AutoSeedKnockoutRequestDto = z.infer<typeof autoSeedKnockoutRequestSchema>;
 export type KnockoutGenerateOptionsDto = z.infer<typeof knockoutGenerateOptionsSchema>;
 export type GenerateKnockoutRequestDto = z.infer<typeof generateKnockoutRequestSchema>;
 export type AdvanceWinnerRequestDto = z.infer<typeof advanceWinnerRequestSchema>;

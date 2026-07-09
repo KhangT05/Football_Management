@@ -20,5 +20,11 @@ export declare class KnockoutController extends Controller {
         newMatchId?: number;
     }>;
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
+    /**
+     * Auto-seed knockout từ standing hiện tại của các group — không cần
+     * nhập tay SeedSource[]. Cùng idempotency guard với generate thường:
+     * CONFLICT nếu phase (get-or-create theo bracket size) đã có sẵn bracket.
+     */
+    generateKnockoutFromStandings(seasonId: number, body: knockoutSchema.AutoSeedKnockoutRequestDto): Promise<KnockoutGenerateResult>;
 }
 //# sourceMappingURL=knockout.controller.d.ts.map

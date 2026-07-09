@@ -7,6 +7,12 @@
 *
 * 🟢 You can import this file directly.
 */
+export const SeasonFormat = {
+    round_robin: 'round_robin',
+    knockout: 'knockout',
+    round_robin_knockout: 'round_robin_knockout',
+    multi_round_robin_knockout: 'multi_round_robin_knockout'
+};
 export const PhaseType = {
     group_stage: 'group_stage',
     round_of_16: 'round_of_16',
