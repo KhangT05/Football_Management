@@ -164,7 +164,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "findById", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
@@ -173,7 +173,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "create", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Patch("{id}"),
     __param(0, Path()),
     __param(1, Body()),
@@ -182,7 +182,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "update", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -205,7 +205,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "listTeamPlayers", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "user", "player", "leader"]),
     Get("{team_id}/team-players/export"),
     __param(0, Path()),
     __param(1, Res()),
@@ -222,7 +222,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "getTeamPlayer", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "user", "player", "leader"]),
     Post("{team_id}/team-players"),
     SuccessResponse(201, "Created"),
     __param(0, Path()),
@@ -232,7 +232,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "addPlayerToTeam", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "user", "player", "leader"]),
     Post("{team_id}/team-players/create-with-user"),
     SuccessResponse(201, "Created"),
     __param(0, Path()),
@@ -242,7 +242,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "createPlayerForTeamWithUser", null);
 __decorate([
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "leader"]),
     Patch("{team_id}/team-players/{id}"),
     __param(0, Path()),
     __param(1, Path()),
@@ -252,7 +252,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "updateTeamPlayer", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "user", "player", "leader"]),
     Post("{team_id}/team-players/{id}/approve"),
     __param(0, Path()),
     __param(1, Path()),
@@ -261,7 +261,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "approveTeamPlayer", null);
 __decorate([
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Post("{team_id}/team-players/{id}/reject"),
     __param(0, Path()),
     __param(1, Path()),
@@ -270,7 +270,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "rejectTeamPlayer", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Delete("{team_id}/team-players"),
     __param(0, Path()),
     __param(1, Body()),
@@ -279,7 +279,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "bulkDeleteTeamPlayers", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["admin", "organizing", "leader"]),
     Post("{team_id}/team-players/import"),
     Consumes("multipart/form-data"),
     __param(0, Path()),

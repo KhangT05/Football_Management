@@ -75,7 +75,7 @@ export class PlayerController extends Controller {
     return this.service.getPlayerByIdOrFail(id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(@Body() body: CreatePlayerDto): Promise<PlayerDto> {
@@ -83,7 +83,7 @@ export class PlayerController extends Controller {
     return this.service.createPlayer(body);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -92,7 +92,7 @@ export class PlayerController extends Controller {
     return this.service.updatePlayer(id, body);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -133,7 +133,7 @@ export class PlayerController extends Controller {
   //
   // FIX (file không mở được): đổi sang @Res()/TsoaResponse, lý do giống
   // hệt downloadImportTemplate ở trên — tránh tsoa ghi response 2 lần.
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "user", "player", "leader"])
   @Get("{team_id}/team-players/export")
   async exportTeamPlayers(
     @Path() team_id: number,
@@ -162,7 +162,7 @@ export class PlayerController extends Controller {
   // FIX: bỏ user_id — chưa từng được dùng trong body, AuthRequest param là dead
   // param. Nếu cần audit "ai thêm player này", thêm cột created_by ở service,
   // không giữ param không dùng ở controller.
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "user", "player", "leader"])
   @Post("{team_id}/team-players")
   @SuccessResponse(201, "Created")
   async addPlayerToTeam(
@@ -178,7 +178,7 @@ export class PlayerController extends Controller {
   // Khác addPlayerToTeam (yêu cầu player_id có sẵn). Path có 3 segment tĩnh
   // ("create-with-user") nên không đụng độ thứ tự với addPlayerToTeam
   // ("{team_id}/team-players", 2 segment) hay bất kỳ route POST nào khác.
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "user", "player", "leader"])
   @Post("{team_id}/team-players/create-with-user")
   @SuccessResponse(201, "Created")
   async createPlayerForTeamWithUser(
@@ -192,7 +192,7 @@ export class PlayerController extends Controller {
   // FIX: bỏ pre-check getTeamPlayerById ở controller — TOCTOU + fragile
   // (an toàn phụ thuộc discipline của caller, không phải data layer).
   // service.updateTeamPlayer giờ tự scope theo team_id và tự 404.
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "leader"])
   @Patch("{team_id}/team-players/{id}")
   async updateTeamPlayer(
     @Path() team_id: number,
@@ -202,7 +202,7 @@ export class PlayerController extends Controller {
     return this.service.updateTeamPlayer(id, team_id, body);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "user", "player", "leader"])
   @Post("{team_id}/team-players/{id}/approve")
   async approveTeamPlayer(
     @Path() team_id: number,
@@ -211,7 +211,7 @@ export class PlayerController extends Controller {
     return this.service.approveTeamPlayer(id, team_id);
   }
 
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Post("{team_id}/team-players/{id}/reject")
   async rejectTeamPlayer(
     @Path() team_id: number,
@@ -220,7 +220,7 @@ export class PlayerController extends Controller {
     return this.service.rejectTeamPlayer(id, team_id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Delete("{team_id}/team-players")
   async bulkDeleteTeamPlayers(
     @Path() team_id: number,
@@ -232,7 +232,7 @@ export class PlayerController extends Controller {
   // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer
   // + gán role vào bất kỳ team_id nào không cần auth. Đây là lỗ hổng nghiêm
   // trọng nhất trong file, không phải cosmetic.
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Post("{team_id}/team-players/import")
   @Consumes("multipart/form-data")
   async importTeamPlayers(
