@@ -3136,7 +3136,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logo: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.post('/teams',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","user","player","leader"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -3182,7 +3182,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 logoFile: {"in":"formData","name":"logo","dataType":"file"},
         };
         app.patch('/teams/:id',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             upload.fields([
                 {
                     name: "logo",
@@ -3224,7 +3224,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/teams/:id',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.softDelete)),
 
@@ -3295,7 +3295,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.patch('/teams/:id/restore',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(TeamController)),
             ...(fetchMiddlewares<RequestHandler>(TeamController.prototype.restore)),
 

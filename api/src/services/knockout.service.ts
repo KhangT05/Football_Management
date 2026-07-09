@@ -1019,13 +1019,40 @@ export class KnockoutService extends ScheduleEngine {
             round: m.round,
         }));
 
+        // Player-sharing conflict avoidance — same pattern as
+        // ScheduleService.autoScheduleMatches: preload conflictMap +
+        // occupiedWindows from the WHOLE system (not just this season) so
+        // the greedy search itself avoids slots already claimed by a
+        // related team, instead of assigning first and discovering the
+        // conflict only after write.
+        const conflictContext = await this.loadPlayerConflictContext(this.prisma, teamIds);
+
         const { updates, unscheduled } = this.scheduleMatchesWithRetry(
-            candidateMatches, pool, minRestDays, lastPlayedAt,
+            candidateMatches, pool, minRestDays, lastPlayedAt, conflictContext,
         );
 
-        const failed = await this.writeScheduleBatch(updates);
-        unscheduled.push(...failed);
-        return { matchesScheduled: updates.length - failed.length, failedMatchIds: unscheduled };
+        const failedFromCollision = await this.writeScheduleBatch(updates);
+
+        // Quarantine pass is a safety net for the rare race between
+        // loadPlayerConflictContext (read, above) and writeScheduleBatch
+        // (write, above) — e.g. a concurrent rescheduleMatch/autoSchedule
+        // committing into that exact window for a shared team/player. With
+        // avoidance already applied during search, the number quarantined
+        // here is expected to be ~0 under normal conditions.
+        const writtenIds = updates
+            .map(u => u.id)
+            .filter(id => !failedFromCollision.includes(id));
+
+        const quarantinedIds = await this.prisma.$transaction(
+            (tx) => this.quarantinePlayerConflicts(tx, writtenIds),
+        );
+
+        const finalUnscheduled = [...unscheduled, ...failedFromCollision, ...quarantinedIds];
+
+        return {
+            matchesScheduled: updates.length - failedFromCollision.length - quarantinedIds.length,
+            failedMatchIds: finalUnscheduled,
+        };
     }
 
     // ─── PRIVATE — BRACKET MATH ───────────────────────────────────────────────

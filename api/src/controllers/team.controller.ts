@@ -44,7 +44,7 @@ export class TeamController extends Controller {
     return this.service.findByIdOrFail(id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "user", "player", "leader"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(
@@ -67,7 +67,7 @@ export class TeamController extends Controller {
     return this.service.create({ name, coach_name, description, logo: logo_url }, req.user.user_id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -93,7 +93,7 @@ export class TeamController extends Controller {
     });
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -108,7 +108,7 @@ export class TeamController extends Controller {
   }
 
 
-  @Security("jwt", ["admin", "organizing"]) // override: guest/user không được restore
+  @Security("jwt", ["admin", "organizing", "leader"])
   @Patch("{id}/restore")
   @SuccessResponse(200, "OK")
   async restore(@Path() id: number): Promise<Team> {
