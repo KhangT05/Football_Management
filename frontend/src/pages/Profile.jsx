@@ -5,8 +5,9 @@ import useProfileStore from '../store/profileStore';
 import { useEffect, useRef, useState } from 'react';
 import { userApi } from '../api';
 import { useShallow } from 'zustand/react/shallow';
+import { INPUT_CLASS } from '../data/data';
 
-const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 disabled:opacity-50 disabled:bg-navy-dark disabled:cursor-not-allowed transition-all duration-300 text-sm";
+
 
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));

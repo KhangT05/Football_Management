@@ -4,8 +4,7 @@ import { userApi } from '../../api/userApi';
 import useAuthStore from '../../store/authStore';
 import useToastStore from '../../store/toastStore';
 import { useShallow } from 'zustand/react/shallow';
-
-const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-neon focus:ring-1 focus:ring-neon/50 transition-all text-sm';
+import { INPUT } from '../../utils/adminStyles';
 
 export default function ProfileSettingsModal({ onClose }) {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));

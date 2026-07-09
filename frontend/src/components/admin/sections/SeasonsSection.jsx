@@ -11,8 +11,7 @@ import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
 import Pagination from '../../ui/Pagination';
-
-const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
+import { INPUT } from '../../../utils/adminStyles';
 
 // Mirror backend STATUS_TRANSITIONS
 const STATUS_TRANSITIONS = {
@@ -115,8 +114,7 @@ export default function SeasonsSection() {
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      setTournaments(Array.isArray(payload?.data) ? payload.data : []);
+      setTournaments(res?.data?.data || res?.data || []);
     }).catch(() => { });
   }, []);
 
@@ -135,13 +133,13 @@ export default function SeasonsSection() {
   const openEdit = (item) => crud.openEdit(item, {
     name: item.name,
     description: item.description ?? '',
-    tournament_id: item.tournament_id ?? '',
+    tournament_id: item.tournament_id ?? item.tournament?.id ?? '',
     start_date: isoToVNDateInput(item.start_date),
     end_date: isoToVNDateInput(item.end_date),
     registration_deadline: isoToVNDateInput(item.registration_deadline),
-    max_teams: item.max_teams,
-    is_active: item.is_active,
-    status: item.status,
+    max_teams: item.max_teams ?? item.maxTeams ?? '',
+    is_active: item.is_active ?? true,
+    status: item.status ?? 'upcoming',
   });
 
   // ── Validate khớp backend validateDatesIfPresent ───
@@ -149,7 +147,8 @@ export default function SeasonsSection() {
     const { name, tournament_id, start_date, end_date, registration_deadline, max_teams } = crud.form;
     if (!name.trim()) return 'Tên mùa giải không được bỏ trống.';
     if (!tournament_id) return 'Vui lòng chọn giải đấu.';
-    if (!start_date || !end_date) return 'Vui lòng nhập ngày bắt đầu và kết thúc.';
+    if (!start_date) return 'Vui lòng nhập ngày bắt đầu.';
+    if (!end_date) return 'Vui lòng nhập ngày kết thúc.';
     if (!registration_deadline) return 'Vui lòng nhập hạn đăng ký.';
     if (Number(max_teams) < 2) return 'Số đội tham dự tối thiểu là 2.';
 
@@ -160,10 +159,10 @@ export default function SeasonsSection() {
     const rd = dateInputToLocalDate(registration_deadline);
     const ed = dateInputToLocalDate(end_date);
 
-    // Backend: start_date must be in the future
-    if (sd <= today) return 'Ngày bắt đầu phải là ngày trong tương lai.';
-    // Backend: registration_deadline must be in the future
-    if (rd <= today) return 'Hạn đăng ký phải là ngày trong tương lai.';
+    // Backend: start_date must be in the future (chỉ check khi thêm mới)
+    if (crud.modal === 'add' && sd <= today) return 'Ngày bắt đầu phải là ngày trong tương lai.';
+    // Backend: registration_deadline must be in the future (chỉ check khi thêm mới)
+    if (crud.modal === 'add' && rd <= today) return 'Hạn đăng ký phải là ngày trong tương lai.';
     // Backend: start_date must be before end_date
     if (sd >= ed) return 'Ngày kết thúc phải sau ngày bắt đầu.';
     // Backend: registration_deadline must be before start_date
@@ -293,7 +292,7 @@ export default function SeasonsSection() {
           <button onClick={fetchSeasons} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors ml-auto sm:ml-0 shrink-0">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-sm transition-colors shrink-0">
+          <button onClick={openAdd} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors shrink-0">
             <Plus className="w-4 h-4" /> Thêm mới
           </button>
         </div>
@@ -449,35 +448,35 @@ export default function SeasonsSection() {
             <input className={INPUT} value={crud.form.name} onChange={e => crud.setForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Mùa giải 2026" />
           </FormField>
           <FormField label="Giải đấu" required>
-            <select className={INPUT} value={crud.form.tournament_id} onChange={e => crud.setForm(f => ({ ...f, tournament_id: e.target.value }))}>
+            <select className={INPUT} value={crud.form.tournament_id} onChange={e => crud.setForm(f => ({ ...f, tournament_id: e.target.value }))} disabled={crud.modal === 'edit'}>
               <option value="">-- Chọn giải đấu --</option>
               {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </FormField>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Ngày bắt đầu" required>
-              <input type="date" className={INPUT} value={crud.form.start_date} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.start_date} onChange={e => crud.setForm(f => ({ ...f, start_date: e.target.value }))} disabled={crud.modal === 'edit'} />
             </FormField>
             <FormField label="Ngày kết thúc" required>
-              <input type="date" className={INPUT} value={crud.form.end_date} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} />
+              <input type="date" className={INPUT} value={crud.form.end_date} onChange={e => crud.setForm(f => ({ ...f, end_date: e.target.value }))} disabled={crud.modal === 'edit'} />
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Hạn đăng ký" required>
-              <input type="date" className={INPUT} value={crud.form.registration_deadline} min={new Date().toISOString().split('T')[0]} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
+            <FormField label={crud.modal === 'edit' ? 'Gia hạn đăng ký' : 'Hạn đăng ký'} required>
+              <input type="date" className={INPUT} value={crud.form.registration_deadline} onChange={e => crud.setForm(f => ({ ...f, registration_deadline: e.target.value }))} />
             </FormField>
             <FormField label="Tối đa đội">
               <input type="number" min="2" max="64" className={INPUT} value={crud.form.max_teams} onChange={e => crud.setForm(f => ({ ...f, max_teams: e.target.value }))} />
             </FormField>
           </div>
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-400/80">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-red-700">
             ⚠️ Ngày bắt đầu và hạn đăng ký phải là ngày trong tương lai. Hạn đăng ký phải trước ngày bắt đầu.
           </div>
           <FormField label="Mô tả">
             <textarea className={INPUT + ' resize-none'} rows={2} value={crud.form.description} onChange={e => crud.setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả mùa giải..." />
           </FormField>
           {crud.modal === 'edit' && (
-            <FormField label="Trạng thái">
+            <FormField label="Cập nhật trạng thái">
               <select className={INPUT} value={crud.form.status} onChange={e => crud.setForm(f => ({ ...f, status: e.target.value }))}>
                 {Object.entries(statusMeta).map(([key, val]) => (
                   <option key={key} value={key}>{val.label}</option>
@@ -489,7 +488,7 @@ export default function SeasonsSection() {
             <label className="flex items-center cursor-pointer gap-3">
               <div className="relative">
                 <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
-                <div className="w-11 h-6 bg-navy border border-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-400 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                <div className="w-11 h-6 bg-gray-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </div>
               <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
             </label>

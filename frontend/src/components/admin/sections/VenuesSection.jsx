@@ -9,8 +9,7 @@ import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
 import Pagination from '../../ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
-
-const INPUT = 'w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon text-sm';
+import { INPUT } from '../../../utils/adminStyles';
 
 export default function VenuesSection() {
   const toast = useToastStore();
@@ -186,7 +185,7 @@ export default function VenuesSection() {
             <label className="flex items-center cursor-pointer gap-3">
               <div className="relative">
                 <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
-                <div className="w-11 h-6 bg-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-gray-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </div>
               <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
             </label>

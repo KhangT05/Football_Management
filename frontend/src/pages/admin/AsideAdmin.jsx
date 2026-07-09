@@ -1,29 +1,6 @@
-import { Information, navItems } from "../../data/data";
+import { Information, MENU_GROUPS, navItems, VI_LABELS } from "../../data/data";
 import { LogOut, Trophy, X } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
-
-// Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
-const VI_LABELS = {};
-
-const MENU_GROUPS = [
-  {
-    groupLabel: 'Hệ thống',
-    items: ['Tổng quan']
-  },
-  {
-    groupLabel: 'Quy trình giải đấu',
-    items: [
-      'Thiết lập giải đấu',
-      'Quản lý đội bóng',
-      'Bốc thăm & lên lịch',
-      'Thi đấu & knockout'
-    ]
-  },
-  {
-    groupLabel: 'Truyền Thông & Bảo Mật',
-    items: ['Tài khoản & Phân quyền', 'Quản lý bài viết']
-  }
-];
 
 export default function AsideAdmin({ onClose }) {
   return (

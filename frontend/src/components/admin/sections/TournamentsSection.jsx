@@ -9,10 +9,9 @@ import ConfirmDeleteModal from '../ConfirmDeleteModal';
 import FormField from '../../ui/FormField';
 import Pagination from '../../ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
+import { INPUT } from '../../../data/data';
 
-const INPUT = 'w-full px-4 py-3 bg-navy border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm';
-
-export default function TournamentsSection() {
+export default function TournamentsSection({ refreshTrigger }) {
   const toast = useToastStore();
   const { invalidate: invalidateTournamentStore } = useTournamentStore(useShallow(state => ({ invalidate: state.invalidate })));
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +39,7 @@ export default function TournamentsSection() {
       });
     }, 300);
     return () => clearTimeout(delay);
-  }, [currentPage, itemsPerPage, searchTerm, statusFilter, fetchTournaments]);
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter, fetchTournaments, refreshTrigger]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -189,10 +188,11 @@ export default function TournamentsSection() {
             </button>
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/50 hover:shadow-blue-900/80 hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap shrink-0"
+              className="flex items-center gap-2 px-4 py-2.5 bg-navy-dark border border-navy-light hover:border-blue-500/50 text-gray-300 hover:text-white font-bold rounded-xl transition-all duration-300 whitespace-nowrap shrink-0"
+              title="Thêm nhanh (Chỉ tạo giải)"
             >
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Thêm mới</span>
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Thêm nhanh</span>
             </button>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function TournamentsSection() {
               <label className="flex items-center cursor-pointer gap-3">
                 <div className="relative">
                   <input type="checkbox" className="sr-only peer" checked={crud.form.is_active} onChange={e => crud.setForm(f => ({ ...f, is_active: e.target.checked }))} />
-                  <div className="w-11 h-6 bg-navy-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  <div className="w-11 h-6 bg-gray-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                 </div>
                 <span className="text-sm font-bold text-gray-300">Trạng thái hoạt động</span>
               </label>
