@@ -584,7 +584,15 @@ export class StandingsService {
                     status: true,
                     start_date: true,
                     end_date: true,
+                    registration_deadline: true,
+                    max_teams: true,
+                    cancel_reason: true,
+                    is_registration_open: true,
+                    group_count: true,
                     tournament: {
+                        select: { id: true, name: true },
+                    },
+                    tournament_rule: {
                         select: { id: true, name: true },
                     },
                     // Count phases để client biết season có group stage hay không

@@ -69,6 +69,12 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Registration deadline has passed");
 
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
+            // Không check "season overlap" ở đây: 1 team hoàn toàn có thể
+            // tham gia nhiều season chạy song song về mặt calendar range
+            // (bình thường trong thực tế). Xung đột thật sự chỉ xảy ra ở
+            // tầng LỊCH THI ĐẤU CỤ THỂ (2 match cùng ngày/cùng giờ cần
+            // chung player) — xem MatchService (chưa có trong scope hiện
+            // tại), không phải ở season registration.
             // selfRegister luôn tạo pending — không cần auto-assign group ở đây.
             return this.createOrReactivate(tx, data.season_id, team.id, userId, SeasonTeamStatus.pending);
         });
@@ -91,6 +97,7 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Season is not open for registration");
 
             await this.assertSlotAvailable(tx, data.season_id, season.max_teams);
+            // Xem ghi chú ở selfRegister() — không check season overlap ở đây.
 
             const finalStatus = data.status ?? SeasonTeamStatus.approved;
             const created = await this.createOrReactivate(tx, data.season_id, data.team_id, userId, finalStatus);
@@ -181,6 +188,7 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Target season is not open for registration");
 
             await this.assertSlotAvailable(tx, targetSeasonId, targetSeason.max_teams);
+            // Không check season overlap — xem ghi chú ở selfRegister().
 
             await tx.seasonTeam.update({
                 where: { id },
