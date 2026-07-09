@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Calendar, User, ArrowRight } from 'lucide-react';
-import { paymentApi } from '../../../api';
-import useToastStore from '../../../store/toastStore';
-import Pagination from '../../../components/ui/Pagination';
+import useToastStore from '../../store/toastStore';
+import { paymentApi } from '../../api';
+
 
 const STATUS_LABELS = {
     pending: { label: 'Chờ duyệt', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: AlertTriangle },

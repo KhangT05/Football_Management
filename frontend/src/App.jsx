@@ -166,6 +166,9 @@ function App() {
           <Route path="/quan-ly-giai-dau/bai-viet" element={
             <AdminRoute><ManageArticles /></AdminRoute>
           } />
+          <Route path="/quan-ly-giai-dau/xac-nhan-thanh-toan" element={
+            <AdminRoute><ManagePayments /></AdminRoute>
+          } />
 
           {/* 404 — phải để cuối cùng */}
           <Route path="*" element={<NotFoundPage />} />

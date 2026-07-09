@@ -714,7 +714,7 @@ export default function MyTeam() {
               >
                 <UserPlus className="w-4 h-4 shrink-0" />
                 <span className="hidden sm:inline">Thêm cầu thủ</span>
-                <span className="sm:hidden">Thêm CT</span>
+                <span className="sm:hidden">Thêm CT</span>D
               </button>
             </div>
           )}
