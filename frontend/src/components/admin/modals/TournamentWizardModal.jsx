@@ -55,15 +55,20 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   const validateStep = () => {
     if (step === 1) {
+      if (tournamentMode === 'new' && !tournamentForm.logo) return 'Vui lòng tải logo cho giải đấu';
       if (tournamentMode === 'new' && !tournamentForm.name.trim()) return 'Tên giải đấu không được để trống';
       if (tournamentMode === 'existing' && !selectedTournamentId) return 'Vui lòng chọn một giải đấu';
     }
-    if (step === 3 && format === 'round_robin' && (groupCount < 1 || groupCount > 32)) {
+    if (step === 3 && format.includes('round_robin') && (groupCount < 1 || groupCount > 32)) {
       return 'Số lượng bảng đấu phải từ 1 đến 32';
     }
     if (step === 4) {
       if (!seasonForm.name.trim()) return 'Tên mùa giải không được để trống';
       if (!seasonForm.start_date || !seasonForm.end_date) return 'Vui lòng chọn ngày bắt đầu và kết thúc';
+      if (!seasonForm.registration_deadline) return 'Vui lòng chọn hạn chót đăng ký';
+      if (new Date(seasonForm.registration_deadline) > new Date(seasonForm.start_date)) return 'Hạn đăng ký phải trước hoặc bằng ngày bắt đầu';
+      if (new Date(seasonForm.end_date) < new Date(seasonForm.start_date)) return 'Ngày kết thúc phải sau ngày bắt đầu';
+      if (!seasonForm.max_teams || Number(seasonForm.max_teams) < 2) return 'Số đội tối đa ít nhất là 2';
     }
     return null;
   };
@@ -112,14 +117,14 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       const sRes = await seasonApi.create({
         ...formattedSeasonForm,
         is_active: true,
-        group_count: format === 'round_robin' ? groupCount : 0,
+        group_count: format.includes('round_robin') ? Number(groupCount) : 0,
         tournament_id: finalTournamentId,
         tournament_rule_id: finalRuleId
       });
       const finalSeasonId = sRes.data?.id || sRes.id;
 
       // 4. Generate Groups if round_robin
-      if (format === 'round_robin' && groupCount > 0) {
+      if (format.includes('round_robin') && groupCount > 0) {
         await groupApi.createGroupsBulk(finalSeasonId, groupCount);
       }
 
@@ -239,24 +244,32 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
             {tournamentMode === 'new' ? (
               <div className="space-y-4 animate-fade-in bg-navy-dark/50 p-4 rounded-2xl border border-navy-light">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-20 h-20 rounded-2xl bg-navy border border-navy-light flex items-center justify-center overflow-hidden shadow-inner relative group">
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                      <Trophy className="w-8 h-8 text-gray-600" />
+                <div className="flex flex-col items-center gap-2 mb-2">
+                  <div className="relative group cursor-pointer" onClick={() => document.getElementById('wizard-logo-upload').click()}>
+                    <div className="w-24 h-24 rounded-2xl bg-navy border-2 border-dashed border-navy-light flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 group-hover:bg-navy-light/50 shadow-inner">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <UploadCloud className="w-8 h-8 text-gray-500 mb-1 group-hover:scale-110 transition-transform" />
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tải Logo <span className="text-red-400">*</span></span>
+                        </>
+                      )}
+                    </div>
+                    {logoPreview && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl backdrop-blur-sm">
+                        <UploadCloud className="w-6 h-6 text-white" />
+                      </div>
                     )}
-                    <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                      <UploadCloud className="w-5 h-5 text-white" />
-                      <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setTournamentForm(f => ({ ...f, logo: file }));
-                          setLogoPreview(URL.createObjectURL(file));
-                        }
-                      }} />
-                    </label>
                   </div>
+                  <input id="wizard-logo-upload" type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setTournamentForm(f => ({ ...f, logo: file }));
+                      setLogoPreview(URL.createObjectURL(file));
+                    }
+                  }} />
+                  {!logoPreview && <span className="text-xs text-red-400/80 italic">Logo là bắt buộc để tạo giải đấu</span>}
                 </div>
                 <FormField label="Tên giải đấu" required>
                   <input className={INPUT} value={tournamentForm.name} onChange={e => setTournamentForm(f => ({ ...f, name: e.target.value }))} placeholder="Nhập tên giải..." />
