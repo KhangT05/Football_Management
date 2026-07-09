@@ -42,6 +42,13 @@ export const playerApi = {
   getById: (id) => axiosClient.get(`/players/${id}`),
 
   /**
+   * Lấy danh sách tất cả cầu thủ (paginated)
+   * GET /players
+   * @param {{ page?, per_page?, q?, sort?, direction? }} params
+   */
+  getAll: (params = {}) => axiosClient.get('/players', { params }),
+
+  /**
    * Tạo cầu thủ mới (Bước 1 trước khi thêm vào đội)
    * POST /players
    * @param {{ name: string, date_of_birth?: string, nationality?: string }} data

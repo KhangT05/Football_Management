@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard } from 'lucide-react';
 
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
@@ -54,6 +54,10 @@ export const MENU_GROUPS = [
   {
     groupLabel: 'Truyền Thông & Bảo Mật',
     items: ['Tài khoản & Phân quyền', 'Quản lý bài viết']
+  },
+  {
+    groupLabel: 'Quản lý Tài chính',
+    items: ['Xác nhận thanh toán']
   }
 ];
 
@@ -65,6 +69,7 @@ export const navItems = [
   { name: 'Thi đấu & Loại trực tiếp', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Tài khoản & Phân quyền', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
   { name: 'Quản lý bài viết', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
+  { name: 'Xác nhận thanh toán', path: '/quan-ly-giai-dau/xac-nhan-thanh-toan', icon: CreditCard },
 ];
 
 export const getRowStyle = (rank) => {

@@ -12,6 +12,8 @@ import { useShallow } from 'zustand/react/shallow';
 const Home = lazy(() => import("./pages/Home"));
 const ScheduleResults = lazy(() => import("./pages/ScheduleResults"));
 const LeaderboardTeams = lazy(() => import("./pages/LeaderboardTeams"));
+const SearchTeams = lazy(() => import("./pages/SearchTeams"));
+const SearchPlayers = lazy(() => import("./pages/SearchPlayers"));
 const MatchDetail = lazy(() => import("./pages/MatchDetail"));
 const RegisterTeam = lazy(() => import("./pages/RegisterTeam"));
 const TeamDetail = lazy(() => import("./pages/TeamDetail"));
@@ -35,6 +37,7 @@ const ManageSetup = lazy(() => import("./pages/admin/ManageSetup"));
 const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
 const ManageArticles = lazy(() => import("./pages/admin/ManageArticles"));
 const ManageAccounts = lazy(() => import("./pages/admin/ManageAccounts"));
+const ManagePayments = lazy(() => import("./pages/admin/ManagePayments"));
 
 // News pages
 const News = lazy(() => import("./pages/News"));
@@ -104,6 +107,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/lich-thi-dau" element={<ScheduleResults />} />
             <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
+            <Route path="/tra-cuu-doi-bong" element={<SearchTeams />} />
+            <Route path="/tra-cuu-cau-thu" element={<SearchPlayers />} />
             <Route path="/doi-bong/:id" element={<TeamDetail />} />
             <Route path="/tran-dau/:id" element={<MatchDetail />} />
             <Route path="/tin-tuc" element={<News />} />
