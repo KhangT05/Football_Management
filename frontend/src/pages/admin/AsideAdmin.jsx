@@ -13,10 +13,10 @@ const MENU_GROUPS = [
   {
     groupLabel: 'Quy trình giải đấu',
     items: [
-      '1. Thiết lập giải đấu',
-      '2. Mở đăng ký',
-      '3. Bốc thăm & lên lịch',
-      '4. Thi đấu & knockout'
+      'Thiết lập giải đấu',
+      'Quản lý đội bóng',
+      'Bốc thăm & lên lịch',
+      'Thi đấu & knockout'
     ]
   },
   {

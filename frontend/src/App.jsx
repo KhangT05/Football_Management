@@ -152,13 +152,10 @@ function App() {
           <Route path="/quan-ly-giai-dau/tai-khoan" element={
             <AdminRoute><ManageAccounts /></AdminRoute>
           } />
-          <Route path="/quan-ly-giai-dau/dang-ky-giai" element={
+          <Route path="/quan-ly-giai-dau/boc-tham-len-lich" element={
             <AdminRoute><ManageSeasonTeams /></AdminRoute>
           } />
-          <Route path="/quan-ly-giai-dau/giai-dau&mua-giai" element={
-            <AdminRoute><ManageSetup defaultTab="seasons" /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/san-bong-luat" element={
+          <Route path="/quan-ly-giai-dau/thiet-lap-giai-dau" element={
             <AdminRoute><ManageSetup defaultTab="tournaments" /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/bai-viet" element={

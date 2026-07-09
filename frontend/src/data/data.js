@@ -2,10 +2,10 @@ import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, News
 
 export const navItems = [
   { name: 'Tổng quan', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
-  { name: '1. Thiết lập giải đấu', path: '/quan-ly-giai-dau/san-bong-luat', icon: Settings },
-  { name: '2. Mở đăng ký', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
-  { name: '3. Bốc thăm & lên lịch', path: '/quan-ly-giai-dau/dang-ky-giai', icon: CheckSquare },
-  { name: '4. Thi đấu & knockout', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
+  { name: 'Thiết lập giải đấu', path: '/quan-ly-giai-dau/thiet-lap-giai-dau', icon: Settings },
+  { name: 'Quản lý đội bóng', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
+  { name: 'Bốc thăm & lên lịch', path: '/quan-ly-giai-dau/boc-tham-len-lich', icon: CheckSquare },
+  { name: 'Thi đấu & knockout', path: '/quan-ly-giai-dau/tran-dau', icon: Calendar },
   { name: 'Tài khoản & Phân quyền', path: '/quan-ly-giai-dau/tai-khoan', icon: UserPlus },
   { name: 'Quản lý bài viết', path: '/quan-ly-giai-dau/bai-viet', icon: Newspaper },
 ];
