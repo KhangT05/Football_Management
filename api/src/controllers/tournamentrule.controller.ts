@@ -1,7 +1,14 @@
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request, Query } from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
-import { TournamentRuleDto, type CreateTournamentRuleDto, type UpdateTournamentRuleDto } from "../dtos/tournamentRule.schema.js";
+import {
+  TournamentRuleDto,
+  createTournamentRuleSchema,
+  updateTournamentRuleSchema,
+  type CreateTournamentRuleInput,
+  type UpdateTournamentRuleInput,
+} from "../dtos/tournamentRule.schema.js";
+import { createAppError } from "../common/app.error.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 
 @Route("tournamentrules")
@@ -25,21 +32,29 @@ export class TournamentRuleController extends Controller {
   @Security("jwt", ["admin", "organizing"])
   @SuccessResponse(201, "Created")
   async create(
-    @Body() body: CreateTournamentRuleDto,
+    @Body() body: CreateTournamentRuleInput,
     @Request() req: AuthRequest
   ): Promise<TournamentRuleDto> {
+    const parsed = createTournamentRuleSchema.safeParse(body);
+    if (!parsed.success) {
+      throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
+    }
     this.setStatus(201);
-    return this.service.create(body, req.user.user_id);
+    return this.service.create(parsed.data, req.user.user_id);
   }
 
   @Patch("{id}")
   @Security("jwt", ["admin", "organizing"])
   async update(
     @Path() id: number,
-    @Body() body: UpdateTournamentRuleDto,
+    @Body() body: UpdateTournamentRuleInput,
     @Query() force?: boolean,
   ): Promise<TournamentRuleDto> {
-    return this.service.update(id, body, force ?? false);
+    const parsed = updateTournamentRuleSchema.safeParse(body);
+    if (!parsed.success) {
+      throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
+    }
+    return this.service.update(id, parsed.data, force ?? false);
   }
 
   @Delete("{id}")

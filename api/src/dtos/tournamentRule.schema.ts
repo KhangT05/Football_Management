@@ -13,7 +13,7 @@ export interface TournamentRuleDto {
     max_players_per_team: number;
     min_players_per_team: number;
     teams_advance_per_group: number;
-    tiebreaker_order: TiebreakerOption[];   // ← không phải JsonValue
+    tiebreaker_order: TiebreakerOption[];
     created_at: Date;
     round_robin_stages: number;
     updated_at: Date | null;
@@ -38,7 +38,6 @@ export const SEASON_FORMATS = [
 ] as const;
 
 export type SeasonFormat = (typeof SEASON_FORMATS)[number];
-
 export type TiebreakerOption = (typeof TIEBREAKER_OPTIONS)[number];
 
 export const createTournamentRuleSchema = z.object({
@@ -51,7 +50,8 @@ export const createTournamentRuleSchema = z.object({
     max_players_per_team: z.number().int().min(1).max(50).default(25),
     min_players_per_team: z.number().int().min(1).max(50).default(11),
     teams_advance_per_group: z.number().int().min(1).default(2),
-    round_robin_stages: z.number().int().min(1).default(1),
+    // 0 = knockout thuần (không có vòng bảng). Business rule khớp với format nằm ở service.
+    round_robin_stages: z.number().int().min(0).max(50).default(1),
     format: z.enum(SEASON_FORMATS).default("round_robin_knockout"),
     tiebreaker_order: z.array(z.enum(TIEBREAKER_OPTIONS)).min(1).default([
         "goal_diff",
@@ -60,9 +60,9 @@ export const createTournamentRuleSchema = z.object({
     ]),
 });
 
-
-
 export const updateTournamentRuleSchema = createTournamentRuleSchema.partial();
 
-export type CreateTournamentRuleDto = z.infer<typeof createTournamentRuleSchema>;
-export type UpdateTournamentRuleDto = z.infer<typeof updateTournamentRuleSchema>;
+export type CreateTournamentRuleInput = z.input<typeof createTournamentRuleSchema>;
+export type UpdateTournamentRuleInput = z.input<typeof updateTournamentRuleSchema>;
+export type CreateTournamentRuleDto = z.output<typeof createTournamentRuleSchema>;
+export type UpdateTournamentRuleDto = z.output<typeof updateTournamentRuleSchema>;

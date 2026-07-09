@@ -1,4 +1,3 @@
-// tournamentRule.service.ts
 import { createAppError } from "../common/app.error.js";
 import { parseJsonField } from "../common/prisma.utils.js";
 import {
@@ -45,28 +44,52 @@ export class TournamentRuleService {
             tiebreaker_order: parseJsonField(rule.tiebreaker_order, isTiebreakerArray, ["goal_diff"]),
         };
     }
+
+    /**
+     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages.
+     * Nhận full resolved state (không phải partial) — caller chịu trách nhiệm
+     * merge payload với DB hiện tại trước khi gọi (xem update()).
+     */
     private validateFormatConsistency(
-        format: SeasonFormat | undefined,
-        round_robin_stages: number | undefined
+        format: SeasonFormat,
+        round_robin_stages: number
     ): void {
-        if (format === undefined && round_robin_stages === undefined) return;
+        switch (format) {
+            case SeasonFormat.knockout:
+                if (round_robin_stages !== 0) {
+                    throw createAppError(
+                        "VALIDATION_ERROR",
+                        "format = knockout (không có vòng bảng) yêu cầu round_robin_stages = 0"
+                    );
+                }
+                break;
 
-        if (format === SeasonFormat.round_robin_knockout
-            && round_robin_stages !== undefined
-            && round_robin_stages !== 1) {
-            throw createAppError(
-                "VALIDATION_ERROR",
-                "format = round_robin_knockout yêu cầu round_robin_stages = 1"
-            );
-        }
+            case SeasonFormat.round_robin_knockout:
+                if (round_robin_stages !== 1) {
+                    throw createAppError(
+                        "VALIDATION_ERROR",
+                        "format = round_robin_knockout yêu cầu round_robin_stages = 1"
+                    );
+                }
+                break;
 
-        if (format === SeasonFormat.multi_round_robin_knockout
-            && round_robin_stages !== undefined
-            && round_robin_stages < 2) {
-            throw createAppError(
-                "VALIDATION_ERROR",
-                "format = multi_round_robin_knockout yêu cầu round_robin_stages >= 2"
-            );
+            case SeasonFormat.multi_round_robin_knockout:
+                if (round_robin_stages < 2) {
+                    throw createAppError(
+                        "VALIDATION_ERROR",
+                        "format = multi_round_robin_knockout yêu cầu round_robin_stages >= 2"
+                    );
+                }
+                break;
+
+            case SeasonFormat.round_robin:
+                if (round_robin_stages < 1) {
+                    throw createAppError(
+                        "VALIDATION_ERROR",
+                        "format = round_robin yêu cầu round_robin_stages >= 1"
+                    );
+                }
+                break;
         }
     }
 
@@ -84,17 +107,15 @@ export class TournamentRuleService {
         return this.mapToDto(rule);
     }
 
-
     async create(data: CreateTournamentRuleDto, userId: number): Promise<TournamentRuleDto> {
+        // create(): schema đã resolve default cho cả 2 field liên quan -> validate thẳng
         this.validateFormatConsistency(data.format, data.round_robin_stages);
 
         const rule = await this.prisma.tournamentRule.create({
             data: {
                 ...data,
                 user_id: userId,
-                ...(data.tiebreaker_order !== undefined && {
-                    tiebreaker_order: JSON.stringify(data.tiebreaker_order),
-                }),
+                tiebreaker_order: JSON.stringify(data.tiebreaker_order),
             },
             ...withRelations,
         });
@@ -102,19 +123,30 @@ export class TournamentRuleService {
     }
 
     async update(id: number, data: UpdateTournamentRuleDto, force = false): Promise<TournamentRuleDto> {
-        this.validateFormatConsistency(data.format, data.round_robin_stages);
-
         const touchesRetroactive = RETROACTIVE_FIELDS.some((f) => data[f] !== undefined);
         const touchesStructural = STRUCTURAL_FIELDS.some((f) => data[f] !== undefined);
 
-        if ((touchesRetroactive || touchesStructural) && !force) {
-            const current = await this.prisma.tournamentRule.findUnique({
+        let current: { id: number; format: SeasonFormat; round_robin_stages: number } | null = null;
+
+        if (touchesRetroactive || touchesStructural) {
+            current = await this.prisma.tournamentRule.findUnique({
                 where: { id },
-                select: { id: true },
+                select: { id: true, format: true, round_robin_stages: true },
             });
             if (!current)
                 throw createAppError("NOT_FOUND", `TournamentRule ${id} not found`);
+        }
 
+        if (touchesStructural) {
+            // Merge payload (partial) với DB state hiện tại -> resolved state đầy đủ,
+            // rồi mới validate. Đây là chỗ trước đây bị bug: validate thẳng raw partial
+            // payload khiến field không gửi lên bị coi là "không cần check".
+            const resolvedFormat = data.format ?? current!.format;
+            const resolvedStages = data.round_robin_stages ?? current!.round_robin_stages;
+            this.validateFormatConsistency(resolvedFormat, resolvedStages);
+        }
+
+        if ((touchesRetroactive || touchesStructural) && !force) {
             if (touchesRetroactive) {
                 const hasOfficialMatch = await this.prisma.matchResult.findFirst({
                     where: {
