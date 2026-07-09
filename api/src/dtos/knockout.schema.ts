@@ -71,9 +71,21 @@ export const advanceWinnerInputSchema = z.object({
     winnerTeamId: z.number().int().positive(),
 });
 
-// phaseId KHÔNG omit ở đây vì generate request giờ không có phaseId trong
-// schema gốc nữa — omit({seasonId: true}) là đủ, phaseId đã biến mất khỏi
-// knockoutGenerateOptionsSchema từ đầu.
+export const knockoutSeedModeSchema = z.enum(['straight', 'cross', 'random']);
+
+export const autoSeedKnockoutRequestSchema = z.object({
+    groupIds: z.array(z.number().int().positive()).min(2),
+    topN: z.number().int().min(1),
+    mode: knockoutSeedModeSchema,
+    legs: z.union([z.literal(1), z.literal(2)]),
+    phaseTypeOverride: z.nativeEnum(PhaseType).optional(),
+    venueIds: z.array(z.number().int().positive()).optional(),
+    matchTimes: z.array(z.string()).optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+});
+
+
 export const generateKnockoutRequestSchema = knockoutGenerateOptionsSchema.omit({
     seasonId: true,
 });
@@ -83,6 +95,7 @@ export const advanceWinnerRequestSchema = advanceWinnerInputSchema.extend({
     matchTimes: matchTimesField,
 });
 
+export type AutoSeedKnockoutRequestDto = z.infer<typeof autoSeedKnockoutRequestSchema>;
 export type KnockoutGenerateOptionsDto = z.infer<typeof knockoutGenerateOptionsSchema>;
 export type GenerateKnockoutRequestDto = z.infer<typeof generateKnockoutRequestSchema>;
 export type AdvanceWinnerRequestDto = z.infer<typeof advanceWinnerRequestSchema>;

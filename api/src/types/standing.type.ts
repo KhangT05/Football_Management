@@ -1,5 +1,3 @@
-// ─── Selects ──────────────────────────────────────────────────────────────────
-
 import { Prisma } from "../generated/prisma/client.js";
 
 export const TEAM_STANDING_SELECT = {
@@ -32,10 +30,46 @@ export const PLAYER_STATISTIC_SELECT = {
     team: { select: { id: true, name: true, logo: true } },
 } satisfies Prisma.PlayerStatisticSelect;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
-export type TeamStandingRow = Prisma.TeamStandingGetPayload<{ select: typeof TEAM_STANDING_SELECT }>;
-export type PlayerStatisticRow = Prisma.PlayerStatisticGetPayload<{ select: typeof PLAYER_STATISTIC_SELECT }>;
+export interface TeamStandingRow {
+    id: number;
+    group_id: number;
+    team_id: number;
+    position: number;
+    matches_played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals_for: number;
+    goals_against: number;
+    points: number;
+}
+
+export interface PlayerStatisticRow {
+    id: number;
+    player_id: number;
+    team_id: number;
+    season_id: number;
+    matches_played: number;
+    goals_scored: number;
+    assists: number;
+    yellow_cards: number;
+    red_cards: number;
+    accumulated_yellow_cards: number;
+    is_suspended: boolean;
+    player: {
+        id: number;
+        avatar: string | null; // TODO: kiểm tra lại model Player, đổi thành `string` nếu không nullable
+        user: {
+            name: string;
+        };
+    };
+    team: {
+        id: number;
+        name: string;
+        logo: string | null; // TODO: kiểm tra lại model Team, đổi thành `string` nếu không nullable
+    };
+}
 
 export type StandingAccum = {
     teamId: number;

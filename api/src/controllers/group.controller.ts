@@ -1,7 +1,6 @@
-import { Controller, Get, Path, Tags, Route, Post, Delete, Body, Security, Put } from "tsoa";
+import { Controller, Get, Path, Tags, Route, Post, Delete, Body, Security, Put, Query } from "tsoa";
 import { GroupService } from "../services/group.service.js";
 import * as groupType from "../types/group.type.js";
-import { GroupWithTeams } from "../types/group.type.js";
 
 @Route("groups")
 @Tags("Groups")
@@ -10,31 +9,16 @@ export class GroupController extends Controller {
         super();
     }
 
-    // ---- literal-prefixed routes trước, tránh nhầm lẫn với {id} single-segment ----
-
-    /** Public: list group của season — service tự resolve phase round_robin active, không tự tạo */
     @Get("season/{seasonId}")
     async findAllBySeason(@Path() seasonId: number) {
         return this.service.findAllBySeason(seasonId);
     }
 
-    /**
-     * Public: list group theo phase cụ thể — dùng khi FE đã biết phaseId
-     * (VD sau khi tạo phase mới, hoặc UI quản lý nhiều phase cùng season).
-     * FIX: trước đây gọi nhầm findAllBySeason(phaseId) — sai semantic,
-     * vì findAllBySeason filter theo season_id + format + is_active,
-     * không phải theo phase_id trực tiếp. Nếu 1 season có >1 active
-     * round_robin phase (multi-phase-with-groups), route này sẽ trả sai
-     * data. Tách hẳn method riêng trong service.
-     */
     @Get("phase/{phaseId}")
     async findAllByPhase(@Path() phaseId: number) {
         return this.service.findAllByPhase(phaseId);
     }
 
-    // ---- admin creation/draw ops: scope theo seasonId, service tự get-or-create phase ----
-
-    /** Admin: tạo 1 group — service tự get-or-create phase round_robin của season */
     @Security("jwt", ["admin"])
     @Post("season/{seasonId}")
     async createGroup(
@@ -84,12 +68,29 @@ export class GroupController extends Controller {
         return this.service.clearDraw(seasonId);
     }
 
-    // ---- group/team-scoped (single-segment {id} — luôn khai báo SAU các route literal-prefixed ở trên) ----
+    /**
+     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
+     * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
+     * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
+     * deadline, muốn chốt group ngay mà chưa muốn đổi season status).
+     * minTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.
+     */
+    @Security("jwt", ["admin"])
+    @Post("season/{seasonId}/finalize")
+    async autoFinalizeGroups(
+        @Path() seasonId: number,
+        @Body() body: groupType.AutoFinalizeGroupsBody
+    ): Promise<groupType.DrawAssignment[]> {
+        return this.service.autoFinalizeGroups(seasonId, {
+            minTeamsPerGroup: body?.min_teams_per_group,
+            maxTeamsPerGroup: body?.max_teams_per_group,
+        });
+    }
 
-    /** Public: xem group + list team approved đang thuộc group (kèm phase info) */
     @Get("{id}")
-    async findByIdWithTeams(@Path() id: number): Promise<GroupWithTeams> {
-        return this.service.findByIdWithTeams(id) as Promise<GroupWithTeams>;
+    async findByIdWithTeams(@Path() id: number): Promise<groupType.GroupWithTeams> {
+        return this.service.findByIdWithTeams(id) as Promise<groupType.GroupWithTeams>;
     }
 
     /** Admin: deactivate group (soft-delete, chặn nếu đã có match) */
@@ -114,5 +115,36 @@ export class GroupController extends Controller {
     async swapTeams(@Body() body: groupType.SwapTeamsBody): Promise<void> {
         this.setStatus(204);
         return this.service.swapTeams(body.season_team_id_a, body.season_team_id_b);
+    }
+
+    /** Public: preview snake-draft distribution + warning trước khi confirm tạo group */
+    @Get("season/{seasonId}/preview")
+    async previewGroupSplit(
+        @Path() seasonId: number,
+        @Query() groupCount: number
+    ): Promise<groupType.GroupSplitPreview> {
+        return this.service.previewGroupSplitBySeason(seasonId, groupCount);
+    }
+
+    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    @Security("jwt", ["admin"])
+    @Post("season/{seasonId}/create-and-draw")
+    async createAndDrawGroups(
+        @Path() seasonId: number,
+        @Body() body: groupType.CreateAndDrawGroupsBody
+    ): Promise<groupType.DrawAssignment[]> {
+        this.setStatus(201);
+        return this.service.createAndDrawGroups(seasonId, body.group_count);
+    }
+
+    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    @Security("jwt", ["admin"])
+    @Post("phase/{fromPhaseId}/advance")
+    async advanceToNextRoundRobin(
+        @Path() fromPhaseId: number,
+        @Body() body: groupType.AdvanceRoundRobinBody
+    ): Promise<groupType.AdvanceRoundRobinResult> {
+        this.setStatus(201);
+        return this.service.advanceToNextRoundRobin(fromPhaseId, body.new_group_count);
     }
 }

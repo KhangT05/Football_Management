@@ -65,6 +65,34 @@ export declare class SeasonTeamController extends Controller {
         legs: number;
         teams_per_group: number | null;
     }>;
+    /**
+   * List teams đã đăng ký của 1 season kèm team info (name/logo) + group_id.
+   * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
+   * hình public nào cần xem "season X có những team nào, đã vào group chưa".
+   *
+   * Public — không cần auth, giống các GET season/standings khác.
+   * default statuses = ['approved'] nếu không truyền (khớp default của service).
+   */
+    listBySeasonWithTeamInfo(seasonId: number, status?: SeasonTeamStatus[]): Promise<{
+        season: {
+            id: number;
+            name: string;
+            status: import("../generated/prisma/enums.js").SeasonStatus;
+            tournament: {
+                name: string;
+                id: number;
+                logo: string | null;
+            };
+        };
+        teams: {
+            season_team_id: number;
+            team_id: number;
+            team_name: string;
+            team_logo: string | null;
+            status: SeasonTeamStatus;
+            group_id: number | null;
+        }[];
+    }>;
 }
 export {};
 //# sourceMappingURL=seasonteam.controller.d.ts.map

@@ -1,3 +1,10 @@
+export declare const SeasonFormat: {
+    readonly round_robin: "round_robin";
+    readonly knockout: "knockout";
+    readonly round_robin_knockout: "round_robin_knockout";
+    readonly multi_round_robin_knockout: "multi_round_robin_knockout";
+};
+export type SeasonFormat = (typeof SeasonFormat)[keyof typeof SeasonFormat];
 export declare const PhaseType: {
     readonly group_stage: "group_stage";
     readonly round_of_16: "round_of_16";

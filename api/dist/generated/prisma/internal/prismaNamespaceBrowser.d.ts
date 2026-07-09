@@ -117,6 +117,8 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly points_per_win: "points_per_win";
     readonly points_per_draw: "points_per_draw";
     readonly points_per_loss: "points_per_loss";
+    readonly format: "format";
+    readonly round_robin_stages: "round_robin_stages";
     readonly forfeit_score: "forfeit_score";
     readonly yellow_cards_suspension: "yellow_cards_suspension";
     readonly max_players_per_team: "max_players_per_team";
@@ -177,6 +179,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly registration_fee: "registration_fee";
     readonly cancel_reason: "cancel_reason";
     readonly tournament_id: "tournament_id";
+    readonly group_count: "group_count";
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
 };

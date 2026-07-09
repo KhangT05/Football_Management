@@ -6,6 +6,7 @@ export interface TournamentRuleDto {
     is_active: boolean;
     points_per_win: number;
     points_per_draw: number;
+    format: SeasonFormat;
     points_per_loss: number;
     forfeit_score: number;
     yellow_cards_suspension: number;
@@ -14,6 +15,7 @@ export interface TournamentRuleDto {
     teams_advance_per_group: number;
     tiebreaker_order: TiebreakerOption[];   // ← không phải JsonValue
     created_at: Date;
+    round_robin_stages: number;
     updated_at: Date | null;
     user?: { id: number; name: string; email: string; phone: string | null } | null;
     tournament?: { id: number; name: string } | null;
@@ -28,6 +30,15 @@ export const TIEBREAKER_OPTIONS = [
     "red_cards",
 ] as const;
 
+export const SEASON_FORMATS = [
+    "round_robin",
+    "knockout",
+    "round_robin_knockout",
+    "multi_round_robin_knockout",
+] as const;
+
+export type SeasonFormat = (typeof SEASON_FORMATS)[number];
+
 export type TiebreakerOption = (typeof TIEBREAKER_OPTIONS)[number];
 
 export const createTournamentRuleSchema = z.object({
@@ -40,12 +51,16 @@ export const createTournamentRuleSchema = z.object({
     max_players_per_team: z.number().int().min(1).max(50).default(25),
     min_players_per_team: z.number().int().min(1).max(50).default(11),
     teams_advance_per_group: z.number().int().min(1).default(2),
+    round_robin_stages: z.number().int().min(1).default(1),
+    format: z.enum(SEASON_FORMATS).default("round_robin_knockout"),
     tiebreaker_order: z.array(z.enum(TIEBREAKER_OPTIONS)).min(1).default([
         "goal_diff",
         "goals_scored",
         "head_to_head",
     ]),
 });
+
+
 
 export const updateTournamentRuleSchema = createTournamentRuleSchema.partial();
 

@@ -54,4 +54,20 @@ export class KnockoutController extends Controller {
     ): Promise<BracketSlotNode[]> {
         return this.service.getBracket(phaseId);
     }
+    /**
+     * Auto-seed knockout từ standing hiện tại của các group — không cần
+     * nhập tay SeedSource[]. Cùng idempotency guard với generate thường:
+     * CONFLICT nếu phase (get-or-create theo bracket size) đã có sẵn bracket.
+     */
+    @Security('jwt', ['admin'])
+    @Post('seasons/{seasonId}/knockout/generate-from-standings')
+    @SuccessResponse(201, 'Created')
+    async generateKnockoutFromStandings(
+        @Path() seasonId: number,
+        @Body() body: knockoutSchema.AutoSeedKnockoutRequestDto,
+    ): Promise<KnockoutGenerateResult> {
+        const parsed = knockoutSchema.autoSeedKnockoutRequestSchema.parse(body);
+        this.setStatus(201);
+        return this.service.generateKnockoutFromStandings({ ...parsed, seasonId });
+    }
 }

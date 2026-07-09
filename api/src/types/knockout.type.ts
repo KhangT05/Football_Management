@@ -103,3 +103,22 @@ export const slotWithParentLinksSelect = {
 export type SlotWithParentLinks = Prisma.BracketSlotGetPayload<{
     select: typeof slotWithParentLinksSelect;
 }>;
+
+export type KnockoutSeedMode = 'straight' | 'cross' | 'random';
+
+export interface AutoSeedKnockoutOptions {
+    seasonId: number;
+    /** Group tham gia knockout — thứ tự mảng quyết định cách ghép (straight/
+     *  cross ghép theo cặp group LIÊN TIẾP: [0]&[1], [2]&[3], ...). Mode
+     *  'random' không yêu cầu thứ tự hay số lượng chẵn. */
+    groupIds: number[];
+    /** Lấy top N đội mỗi group theo TeamStanding.position. */
+    topN: number;
+    mode: KnockoutSeedMode;
+    legs: 1 | 2;
+    phaseTypeOverride?: PhaseType;
+    venueIds?: number[];
+    matchTimes?: string[];
+    dateRangeStart?: Date;
+    dateRangeEnd?: Date;
+}

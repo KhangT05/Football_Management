@@ -28,6 +28,7 @@ export declare const createSeasonSchema: z.ZodObject<{
     is_active: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     tournament_id: z.ZodNumber;
     tournament_rule_id: z.ZodNumber;
+    group_count: z.ZodDefault<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const updateSeasonSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -45,6 +46,7 @@ export declare const updateSeasonSchema: z.ZodObject<{
     registration_deadline: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     max_teams: z.ZodOptional<z.ZodNumber>;
     is_registration_open: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
+    group_count: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     tournament_rule_id: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const UpdateSeasonStatusSchema: z.ZodObject<{

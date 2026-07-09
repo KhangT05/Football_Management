@@ -103,6 +103,18 @@ let SeasonController = class SeasonController extends Controller {
     async getSuspendedPlayers(id) {
         return this.standingsService.getSuspendedPlayers(id);
     }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — STANDINGS OVERVIEW (public) — phase round_robin đang mở
+    // ═══════════════════════════════════════════════════════════════════════════
+    async getActiveStandings(id) {
+        return this.standingsService.listActiveGroupStandings(id);
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET — STANDINGS HISTORY (public) — toàn bộ phase RR, kể cả đã locked
+    // ═══════════════════════════════════════════════════════════════════════════
+    async getStandingsHistory(id) {
+        return this.standingsService.listGroupStandingsHistory(id);
+    }
 };
 __decorate([
     Get(),
@@ -201,6 +213,20 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "getSuspendedPlayers", null);
+__decorate([
+    Get("{id}/standings"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonController.prototype, "getActiveStandings", null);
+__decorate([
+    Get("{id}/standings/history"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonController.prototype, "getStandingsHistory", null);
 SeasonController = __decorate([
     Route("seasons"),
     Tags("Seasons"),

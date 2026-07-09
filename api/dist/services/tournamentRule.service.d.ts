@@ -4,17 +4,9 @@ export declare class TournamentRuleService {
     private readonly prisma;
     constructor(prisma: PrismaClient);
     private mapToDto;
+    private validateFormatConsistency;
     findAll(): Promise<TournamentRuleDto[]>;
     findByIdOrFail(id: number): Promise<TournamentRuleDto>;
-    /**
-     * FIX (Medium #5): update() gọi JSON.stringify(tiebreaker_order) trước khi ghi
-     * (cột lưu string, mapToDto parse lại qua parseJsonField). create() trước đây
-     * ghi thẳng ...data (array) vào cùng cột — inconsistent. Nếu cột là String,
-     * create() ghi sai type; nếu cột là Json, update() đang double-encode. Đồng bộ
-     * theo hướng update() (stringify thủ công) vì mapToDto parse như đọc string.
-     * Return type sửa từ CreateTournamentRuleDto → TournamentRuleDto cho khớp giá
-     * trị thực trả về (mapToDto trả full object + relations).
-     */
     create(data: CreateTournamentRuleDto, userId: number): Promise<TournamentRuleDto>;
     update(id: number, data: UpdateTournamentRuleDto, force?: boolean): Promise<TournamentRuleDto>;
     softDelete(id: number): Promise<void>;
