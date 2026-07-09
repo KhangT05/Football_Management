@@ -2839,7 +2839,7 @@ export function RegisterRoutes(app, opts) {
         description: { "in": "formData", "name": "description", "dataType": "string" },
         logo: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.post('/teams', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+    app.post('/teams', authenticateMiddleware([{ "jwt": ["admin", "organizing", "user", "player", "leader"] }]), upload.fields([
         {
             name: "logo",
             maxCount: 1
@@ -2875,7 +2875,7 @@ export function RegisterRoutes(app, opts) {
         description: { "in": "formData", "name": "description", "dataType": "string" },
         logoFile: { "in": "formData", "name": "logo", "dataType": "file" },
     };
-    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+    app.patch('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), upload.fields([
         {
             name: "logo",
             maxCount: 1
@@ -2907,7 +2907,7 @@ export function RegisterRoutes(app, opts) {
     const argsTeamController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.softDelete)), async function TeamController_softDelete(request, response, next) {
+    app.delete('/teams/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.softDelete)), async function TeamController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -2961,7 +2961,7 @@ export function RegisterRoutes(app, opts) {
     const argsTeamController_restore = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.patch('/teams/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.restore)), async function TeamController_restore(request, response, next) {
+    app.patch('/teams/:id/restore', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(TeamController)), ...(fetchMiddlewares(TeamController.prototype.restore)), async function TeamController_restore(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {

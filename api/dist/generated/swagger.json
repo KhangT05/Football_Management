@@ -7617,7 +7617,10 @@
                     {
                         "jwt": [
                             "admin",
-                            "organizing"
+                            "organizing",
+                            "user",
+                            "player",
+                            "leader"
                         ]
                     }
                 ],
@@ -7704,7 +7707,8 @@
                     {
                         "jwt": [
                             "admin",
-                            "organizing"
+                            "organizing",
+                            "leader"
                         ]
                     }
                 ],
@@ -7759,7 +7763,8 @@
                     {
                         "jwt": [
                             "admin",
-                            "organizing"
+                            "organizing",
+                            "leader"
                         ]
                     }
                 ],
@@ -7835,7 +7840,8 @@
                     {
                         "jwt": [
                             "admin",
-                            "organizing"
+                            "organizing",
+                            "leader"
                         ]
                     }
                 ],
