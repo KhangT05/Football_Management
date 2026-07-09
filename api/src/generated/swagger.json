@@ -10377,7 +10377,8 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10417,7 +10418,8 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10456,7 +10458,8 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10589,7 +10592,10 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"user",
+							"player",
+							"leader"
 						]
 					}
 				],
@@ -10653,7 +10659,8 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10706,7 +10713,10 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"user",
+							"player",
+							"leader"
 						]
 					}
 				],
@@ -10783,7 +10793,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10841,7 +10852,10 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"user",
+							"player",
+							"leader"
 						]
 					}
 				],
@@ -10890,7 +10904,10 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"user",
+							"player",
+							"leader"
 						]
 					}
 				],
@@ -10937,7 +10954,9 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"admin",
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10985,7 +11004,8 @@
 					{
 						"jwt": [
 							"admin",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],

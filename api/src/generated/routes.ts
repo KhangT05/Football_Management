@@ -5130,7 +5130,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePlayerDto"},
         };
         app.post('/players',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.create)),
 
@@ -5167,7 +5167,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePlayerDto"},
         };
         app.patch('/players/:id',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.update)),
 
@@ -5203,7 +5203,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/players/:id',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.softDelete)),
 
@@ -5282,7 +5282,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 successResponse: {"in":"res","name":"200","required":true,"dataType":"buffer"},
         };
         app.get('/players/:team_id/team-players/export',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","user","player","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.exportTeamPlayers)),
 
@@ -5355,7 +5355,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"AddPlayerToTeamDto"},
         };
         app.post('/players/:team_id/team-players',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","user","player","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.addPlayerToTeam)),
 
@@ -5392,7 +5392,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePlayerForTeamDto"},
         };
         app.post('/players/:team_id/team-players/create-with-user',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","user","player","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.createPlayerForTeamWithUser)),
 
@@ -5430,7 +5430,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateTeamPlayerDto"},
         };
         app.patch('/players/:team_id/team-players/:id',
-            authenticateMiddleware([{"jwt":["organizing"]}]),
+            authenticateMiddleware([{"jwt":["organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.updateTeamPlayer)),
 
@@ -5467,7 +5467,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.post('/players/:team_id/team-players/:id/approve',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","user","player","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.approveTeamPlayer)),
 
@@ -5504,7 +5504,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.post('/players/:team_id/team-players/:id/reject',
-            authenticateMiddleware([{"jwt":["organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.rejectTeamPlayer)),
 
@@ -5541,7 +5541,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"BulkDeleteDto"},
         };
         app.delete('/players/:team_id/team-players',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(PlayerController)),
             ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.bulkDeleteTeamPlayers)),
 
@@ -5578,7 +5578,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 file: {"in":"formData","name":"file","required":true,"dataType":"file"},
         };
         app.post('/players/:team_id/team-players/import',
-            authenticateMiddleware([{"jwt":["admin","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
             upload.fields([
                 {
                     name: "file",

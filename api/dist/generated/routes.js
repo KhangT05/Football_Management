@@ -4370,7 +4370,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_create = {
         body: { "in": "body", "name": "body", "required": true, "ref": "CreatePlayerDto" },
     };
-    app.post('/players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.create)), async function PlayerController_create(request, response, next) {
+    app.post('/players', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.create)), async function PlayerController_create(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4398,7 +4398,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdatePlayerDto" },
     };
-    app.patch('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.update)), async function PlayerController_update(request, response, next) {
+    app.patch('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.update)), async function PlayerController_update(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4425,7 +4425,7 @@ export function RegisterRoutes(app, opts) {
     const argsPlayerController_softDelete = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.delete('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.softDelete)), async function PlayerController_softDelete(request, response, next) {
+    app.delete('/players/:id', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.softDelete)), async function PlayerController_softDelete(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4487,7 +4487,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         successResponse: { "in": "res", "name": "200", "required": true, "dataType": "buffer" },
     };
-    app.get('/players/:team_id/team-players/export', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
+    app.get('/players/:team_id/team-players/export', authenticateMiddleware([{ "jwt": ["admin", "organizing", "user", "player", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.exportTeamPlayers)), async function PlayerController_exportTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4543,7 +4543,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "AddPlayerToTeamDto" },
     };
-    app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
+    app.post('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing", "user", "player", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.addPlayerToTeam)), async function PlayerController_addPlayerToTeam(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4571,7 +4571,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "CreatePlayerForTeamDto" },
     };
-    app.post('/players/:team_id/team-players/create-with-user', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.createPlayerForTeamWithUser)), async function PlayerController_createPlayerForTeamWithUser(request, response, next) {
+    app.post('/players/:team_id/team-players/create-with-user', authenticateMiddleware([{ "jwt": ["admin", "organizing", "user", "player", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.createPlayerForTeamWithUser)), async function PlayerController_createPlayerForTeamWithUser(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4600,7 +4600,7 @@ export function RegisterRoutes(app, opts) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "UpdateTeamPlayerDto" },
     };
-    app.patch('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.updateTeamPlayer)), async function PlayerController_updateTeamPlayer(request, response, next) {
+    app.patch('/players/:team_id/team-players/:id', authenticateMiddleware([{ "jwt": ["organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.updateTeamPlayer)), async function PlayerController_updateTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4628,7 +4628,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.post('/players/:team_id/team-players/:id/approve', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.approveTeamPlayer)), async function PlayerController_approveTeamPlayer(request, response, next) {
+    app.post('/players/:team_id/team-players/:id/approve', authenticateMiddleware([{ "jwt": ["admin", "organizing", "user", "player", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.approveTeamPlayer)), async function PlayerController_approveTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4656,7 +4656,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
-    app.post('/players/:team_id/team-players/:id/reject', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.rejectTeamPlayer)), async function PlayerController_rejectTeamPlayer(request, response, next) {
+    app.post('/players/:team_id/team-players/:id/reject', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.rejectTeamPlayer)), async function PlayerController_rejectTeamPlayer(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4684,7 +4684,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         body: { "in": "body", "name": "body", "required": true, "ref": "BulkDeleteDto" },
     };
-    app.delete('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.bulkDeleteTeamPlayers)), async function PlayerController_bulkDeleteTeamPlayers(request, response, next) {
+    app.delete('/players/:team_id/team-players', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.bulkDeleteTeamPlayers)), async function PlayerController_bulkDeleteTeamPlayers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -4712,7 +4712,7 @@ export function RegisterRoutes(app, opts) {
         team_id: { "in": "path", "name": "team_id", "required": true, "dataType": "double" },
         file: { "in": "formData", "name": "file", "required": true, "dataType": "file" },
     };
-    app.post('/players/:team_id/team-players/import', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), upload.fields([
+    app.post('/players/:team_id/team-players/import', authenticateMiddleware([{ "jwt": ["admin", "organizing", "leader"] }]), upload.fields([
         {
             name: "file",
             maxCount: 1
