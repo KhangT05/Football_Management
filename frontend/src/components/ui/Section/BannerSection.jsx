@@ -173,31 +173,40 @@ export default function BannerSection() {
                             </span>
                         </h2>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto pt-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto pt-2">
                             <button
                                 onClick={() => setShowSearchModal(true)}
-                                className="px-4 py-3.5 md:px-5 md:py-4 flex items-center justify-center gap-3 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base"
+                                className="px-3 py-3 md:px-4 md:py-4 flex flex-col items-center justify-center gap-2 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-xs sm:text-sm text-center"
                             >
-                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 shrink-0">
-                                    <Search className="w-4 h-4" />
+                                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 shrink-0">
+                                    <Search className="w-5 h-5" />
                                 </span>
                                 Tìm giải đấu
                             </button>
                             <Link
-                                to="/dang-ky-doi-bong"
-                                className="px-4 py-3.5 md:px-5 md:py-4 flex items-center justify-center gap-3 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-sm sm:text-base"
+                                to="/tra-cuu-doi-bong"
+                                className="px-3 py-3 md:px-4 md:py-4 flex flex-col items-center justify-center gap-2 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-xs sm:text-sm text-center"
                             >
-                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0">
-                                    <Users className="w-4 h-4" />
+                                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0">
+                                    <Shield className="w-5 h-5" />
                                 </span>
-                                Tạo đội hình
+                                Tra cứu đội
+                            </Link>
+                            <Link
+                                to="/tra-cuu-cau-thu"
+                                className="px-3 py-3 md:px-4 md:py-4 flex flex-col items-center justify-center gap-2 bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/20 text-white font-bold rounded-2xl transition-all duration-300 hover:-translate-y-1 text-xs sm:text-sm text-center"
+                            >
+                                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 shrink-0">
+                                    <Users className="w-5 h-5" />
+                                </span>
+                                Tra cứu cầu thủ
                             </Link>
                             <button
                                 onClick={handleManageTeamClick}
-                                className="sm:col-span-2 px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-center gap-3 bg-linear-to-br from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:-translate-y-1 text-sm sm:text-base"
+                                className="px-3 py-3 md:px-4 md:py-4 flex flex-col items-center justify-center gap-2 bg-linear-to-br from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:-translate-y-1 text-xs sm:text-sm text-center"
                             >
-                                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/15 shrink-0">
-                                    <Shield className="w-4 h-4" />
+                                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 shrink-0">
+                                    <Trophy className="w-5 h-5" />
                                 </span>
                                 Quản lý đội
                             </button>

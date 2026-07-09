@@ -18,6 +18,7 @@ import PlayerDeleteModal from '../components/myteam/PlayerDeleteModal';
 import PlayerFormModal from '../components/admin/PlayerFormModal';
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
+import TransactionsTab from '../components/myteam/TransactionsTab';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 import { parseApiError } from '../utils/errorHelper';
 
@@ -724,6 +725,7 @@ export default function MyTeam() {
             {[
               { id: 'roster', label: `Đội hình (${players.length})` },
               { id: 'matches', label: 'Lịch thi đấu' },
+              { id: 'transactions', label: 'Lịch sử giao dịch' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -795,10 +797,16 @@ export default function MyTeam() {
                               {formatMatchTime(match.start_time)}
                             </span>
                           </div>
-                          <p className="text-lg font-black text-white truncate">
-                            {match.home_team?.name || 'Đội nhà'}
-                            <span className="text-gray-500 font-medium mx-2">vs</span>
-                            {match.away_team?.name || 'Đội khách'}
+                          <p className="text-lg font-black text-white truncate flex items-center gap-2">
+                            <span>{match.home_team?.name || 'Đội nhà'}</span>
+                            {['completed', 'finished'].includes(match.status) ? (
+                                <span className="bg-navy-dark border border-navy-light px-3 py-1 rounded-lg text-neon text-xl tracking-widest tabular-nums mx-2">
+                                  {match.home_score ?? 0} - {match.away_score ?? 0}
+                                </span>
+                            ) : (
+                                <span className="text-gray-500 font-medium mx-2">vs</span>
+                            )}
+                            <span>{match.away_team?.name || 'Đội khách'}</span>
                           </p>
                           <p className="text-sm text-gray-400 mt-1 truncate">Sân: {match.venue?.name || 'Chưa xếp sân'}</p>
                         </div>
@@ -817,9 +825,12 @@ export default function MyTeam() {
                               Xếp Đội Hình
                             </button>
                           ) : (
-                            <span className="block w-full sm:w-auto px-5 py-3 bg-gray-500/10 text-gray-500 border border-gray-500/30 rounded-xl font-black uppercase tracking-widest text-xs text-center whitespace-nowrap">
-                              Đã kết thúc
-                            </span>
+                            <button
+                              onClick={() => navigate(`/tran-dau/${match.id}`)}
+                              className="w-full sm:w-auto px-5 py-3 bg-navy-light/50 hover:bg-blue-500/20 text-gray-300 hover:text-blue-400 border border-navy-light hover:border-blue-500/50 rounded-xl font-black uppercase tracking-widest text-xs transition-all whitespace-nowrap"
+                            >
+                              Xem Kết Quả
+                            </button>
                           )}
                         </div>
                       </div>
@@ -827,6 +838,11 @@ export default function MyTeam() {
                   })
                 )}
               </div>
+            )}
+
+            {/* ─── Transactions Tab ───────────────────────── */}
+            {activeTab === 'transactions' && (
+              <TransactionsTab teamId={activeTeamId} />
             )}
 
             {/* ─── Roster Tab ───────────────────────────── */}
