@@ -129,6 +129,17 @@ const ruleDtoToFormShape = (rule) => ({
   tiebreaker_order: Array.isArray(rule.tiebreaker_order) ? [...rule.tiebreaker_order] : [],
 });
 
+// So sánh theo string ISO date (YYYY-MM-DD), KHÔNG qua Date object.
+// new Date('2026-07-09') parse theo UTC midnight trong khi new Date() là local time,
+// nên gần biên ngày sẽ off-by-one nếu user không ở UTC. So string tránh hoàn toàn vấn đề này.
+const todayStr = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 const initialWizardState = {
   step: 1,
   isSubmitting: false,
@@ -291,8 +302,13 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (!seasonForm.name.trim()) return 'Tên mùa giải không được để trống';
       if (!seasonForm.start_date || !seasonForm.end_date) return 'Vui lòng chọn ngày bắt đầu và kết thúc';
       if (!seasonForm.registration_deadline) return 'Vui lòng chọn hạn chót đăng ký';
-      if (new Date(seasonForm.registration_deadline) > new Date(seasonForm.start_date)) return 'Hạn đăng ký phải trước hoặc bằng ngày bắt đầu';
-      if (new Date(seasonForm.end_date) < new Date(seasonForm.start_date)) return 'Ngày kết thúc phải sau ngày bắt đầu';
+
+      // Chặn quá khứ — so string ISO, không qua Date object (tránh timezone drift).
+      if (seasonForm.start_date < todayStr()) return 'Ngày bắt đầu không được ở quá khứ';
+      if (seasonForm.registration_deadline < todayStr()) return 'Hạn đăng ký không được ở quá khứ';
+
+      if (seasonForm.registration_deadline > seasonForm.start_date) return 'Hạn đăng ký phải trước hoặc bằng ngày bắt đầu';
+      if (seasonForm.end_date < seasonForm.start_date) return 'Ngày kết thúc phải sau ngày bắt đầu';
       if (!seasonForm.max_teams || Number(seasonForm.max_teams) < 2) return 'Số đội tối đa ít nhất là 2';
     }
     return null;
@@ -425,7 +441,13 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      toast.apiError(err, 'Đã xảy ra lỗi trong quá trình khởi tạo.');
+      const isDuplicateName = err?.response?.data?.body?.message?.includes('Unique constraint');
+      toast.apiError(
+        err,
+        isDuplicateName
+          ? 'Tên giải đấu đã tồn tại, vui lòng chọn tên khác.'
+          : 'Đã xảy ra lỗi trong quá trình khởi tạo.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -443,13 +465,13 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
           <p className="text-xs font-mono tracking-widest text-blue-400 uppercase mb-1">
             Bước {displayIndex} / {visibleSteps.length}
           </p>
-          <h3 className="text-lg font-black text-white uppercase tracking-tight leading-none">
+          <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none">
             {current.title}
           </h3>
           <p className="text-sm text-gray-400 mt-1">{current.subtitle}</p>
         </div>
 
-        <div className="flex items-center justify-between relative">
+        <div className="flex items-center justify-between relative max-w-2xl">
           <div className="absolute left-0 top-5 w-full h-1 bg-navy-light -z-10 rounded-full"></div>
           <div
             className="absolute left-0 top-5 h-1 bg-linear-to-r from-blue-600 to-blue-400 -z-10 rounded-full transition-all duration-500"
@@ -493,6 +515,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   const isLastStep = step === 4;
   const showRuleForm = ruleMode === 'blank' || (ruleMode === 'template' && selectedRuleId);
+  const todayMin = todayStr();
 
   return (
     <AdminModal
@@ -500,7 +523,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       icon={Trophy}
       iconClass="text-blue-400"
       onClose={onClose}
-      size="lg"
+      size="xl"
       footer={
         <>
           {step > 1 ? (
@@ -531,35 +554,43 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
     >
       {renderStepper()}
 
-      <div className="min-h-[380px] animate-slide-up">
+      <div className="min-h-[440px] animate-slide-up">
         {/* ================= STEP 1: TOURNAMENT ================= */}
         {step === 1 && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${tournamentMode === 'new' ? 'border-blue-500 bg-blue-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Cột trái: chọn mode */}
+            <div className="space-y-4">
+              <label className={`cursor-pointer p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${tournamentMode === 'new' ? 'border-blue-500 bg-blue-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
                 <input type="radio" className="hidden" checked={tournamentMode === 'new'} onChange={() => setTournamentMode('new')} />
-                <Trophy className={`w-8 h-8 ${tournamentMode === 'new' ? 'text-blue-400' : 'text-gray-500'}`} />
-                <span className={`font-bold ${tournamentMode === 'new' ? 'text-white' : 'text-gray-400'}`}>Tạo giải đấu mới</span>
+                <Trophy className={`w-9 h-9 shrink-0 ${tournamentMode === 'new' ? 'text-blue-400' : 'text-gray-500'}`} />
+                <div>
+                  <span className={`font-bold block ${tournamentMode === 'new' ? 'text-white' : 'text-gray-400'}`}>Tạo giải đấu mới</span>
+                  <span className="text-xs text-gray-500">Nhập tên, mô tả và logo cho giải đấu</span>
+                </div>
               </label>
 
-              <label className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${tournamentMode === 'existing' ? 'border-indigo-500 bg-indigo-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
+              <label className={`cursor-pointer p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${tournamentMode === 'existing' ? 'border-indigo-500 bg-indigo-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
                 <input type="radio" className="hidden" checked={tournamentMode === 'existing'} onChange={() => setTournamentMode('existing')} />
-                <LayoutGrid className={`w-8 h-8 ${tournamentMode === 'existing' ? 'text-indigo-400' : 'text-gray-500'}`} />
-                <span className={`font-bold ${tournamentMode === 'existing' ? 'text-white' : 'text-gray-400'}`}>Chọn giải hiện có</span>
+                <LayoutGrid className={`w-9 h-9 shrink-0 ${tournamentMode === 'existing' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                <div>
+                  <span className={`font-bold block ${tournamentMode === 'existing' ? 'text-white' : 'text-gray-400'}`}>Chọn giải hiện có</span>
+                  <span className="text-xs text-gray-500">Thêm một mùa giải mới vào giải đấu đã tồn tại</span>
+                </div>
               </label>
             </div>
 
+            {/* Cột phải: chi tiết form */}
             {tournamentMode === 'new' ? (
-              <div className="space-y-4 animate-fade-in bg-navy-dark/50 p-4 rounded-2xl border border-navy-light">
-                <div className="flex flex-col items-center gap-2 mb-2">
+              <div className="flex gap-5 animate-fade-in bg-navy-dark/50 p-5 rounded-2xl border border-navy-light">
+                <div className="flex flex-col items-center gap-2 shrink-0">
                   <div className="relative group cursor-pointer" onClick={() => logoInputRef.current?.click()}>
-                    <div className="w-24 h-24 rounded-2xl bg-navy border-2 border-dashed border-navy-light flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 group-hover:bg-navy-light/50 shadow-inner">
+                    <div className="w-28 h-28 rounded-2xl bg-navy border-2 border-dashed border-navy-light flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 group-hover:bg-navy-light/50 shadow-inner">
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                       ) : (
                         <>
                           <UploadCloud className="w-8 h-8 text-gray-500 mb-1 group-hover:scale-110 transition-transform" />
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tải Logo <span className="text-red-400">*</span></span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider text-center px-1">Tải Logo <span className="text-red-400">*</span></span>
                         </>
                       )}
                     </div>
@@ -570,17 +601,19 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     )}
                   </div>
                   <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                  {!logoPreview && <span className="text-xs text-red-400/80 italic">Logo là bắt buộc, tối đa 5MB</span>}
+                  {!logoPreview && <span className="text-[11px] text-red-400/80 italic text-center">Bắt buộc<br />tối đa 5MB</span>}
                 </div>
-                <FormField label="Tên giải đấu" required>
-                  <input className={INPUT} value={tournamentForm.name} onChange={e => setTournamentForm(f => ({ ...f, name: e.target.value }))} placeholder="Nhập tên giải..." />
-                </FormField>
-                <FormField label="Mô tả">
-                  <textarea rows={2} className={`${INPUT} resize-none`} value={tournamentForm.description} onChange={e => setTournamentForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả giải đấu..." />
-                </FormField>
+                <div className="flex-1 space-y-4 min-w-0">
+                  <FormField label="Tên giải đấu" required>
+                    <input className={INPUT} value={tournamentForm.name} onChange={e => setTournamentForm(f => ({ ...f, name: e.target.value }))} placeholder="Nhập tên giải..." />
+                  </FormField>
+                  <FormField label="Mô tả">
+                    <textarea rows={4} className={`${INPUT} resize-none`} value={tournamentForm.description} onChange={e => setTournamentForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả giải đấu..." />
+                  </FormField>
+                </div>
               </div>
             ) : (
-              <div className="space-y-4 animate-fade-in bg-navy-dark/50 p-4 rounded-2xl border border-navy-light">
+              <div className="space-y-4 animate-fade-in bg-navy-dark/50 p-5 rounded-2xl border border-navy-light">
                 <FormField label="Chọn giải đấu" required>
                   <select className={INPUT} value={selectedTournamentId} onChange={e => setSelectedTournamentId(e.target.value)}>
                     <option value="">-- Chọn một giải đấu --</option>
@@ -589,6 +622,11 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     ))}
                   </select>
                 </FormField>
+                {tournaments.length === 0 && (
+                  <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0" /> Chưa có giải đấu nào đang hoạt động.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -596,111 +634,122 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
         {/* ================= STEP 2: RULE + FORMAT ================= */}
         {step === 2 && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${ruleMode === 'blank' ? 'border-blue-500 bg-blue-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
-                <input type="radio" className="hidden" checked={ruleMode === 'blank'} onChange={() => switchRuleMode('blank')} />
-                <Settings className={`w-7 h-7 ${ruleMode === 'blank' ? 'text-blue-400' : 'text-gray-500'}`} />
-                <span className={`font-bold text-sm text-center ${ruleMode === 'blank' ? 'text-white' : 'text-gray-400'}`}>Tạo rule mới hoàn toàn</span>
-              </label>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 animate-fade-in">
+            {/* Cột trái (2/5): nguồn rule + thể thức */}
+            <div className="lg:col-span-2 space-y-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nguồn rule</p>
+                <div className="space-y-3">
+                  <label className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${ruleMode === 'blank' ? 'border-blue-500 bg-blue-500/10' : 'border-navy-light bg-navy hover:border-gray-600'}`}>
+                    <input type="radio" className="hidden" checked={ruleMode === 'blank'} onChange={() => switchRuleMode('blank')} />
+                    <Settings className={`w-6 h-6 shrink-0 ${ruleMode === 'blank' ? 'text-blue-400' : 'text-gray-500'}`} />
+                    <span className={`font-bold text-sm ${ruleMode === 'blank' ? 'text-white' : 'text-gray-400'}`}>Tạo rule mới hoàn toàn</span>
+                  </label>
 
-              <label
-                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${!effectiveTournamentId ? 'opacity-40 cursor-not-allowed border-navy-light bg-navy' :
-                  ruleMode === 'template' ? 'cursor-pointer border-indigo-500 bg-indigo-500/10' : 'cursor-pointer border-navy-light bg-navy hover:border-gray-600'
-                  }`}
-              >
-                <input
-                  type="radio" className="hidden"
-                  checked={ruleMode === 'template'}
-                  disabled={!effectiveTournamentId}
-                  onChange={() => switchRuleMode('template')}
-                />
-                <LayoutGrid className={`w-7 h-7 ${ruleMode === 'template' ? 'text-indigo-400' : 'text-gray-500'}`} />
-                <span className={`font-bold text-sm text-center ${ruleMode === 'template' ? 'text-white' : 'text-gray-400'}`}>Áp từ rule template có sẵn</span>
-              </label>
-            </div>
-            {!effectiveTournamentId && (
-              <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 shrink-0" /> Giải đấu mới chưa có rule nào — chỉ tạo được rule mới.
-              </p>
-            )}
+                  <label
+                    className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${!effectiveTournamentId ? 'opacity-40 cursor-not-allowed border-navy-light bg-navy' :
+                      ruleMode === 'template' ? 'cursor-pointer border-indigo-500 bg-indigo-500/10' : 'cursor-pointer border-navy-light bg-navy hover:border-gray-600'
+                      }`}
+                  >
+                    <input
+                      type="radio" className="hidden"
+                      checked={ruleMode === 'template'}
+                      disabled={!effectiveTournamentId}
+                      onChange={() => switchRuleMode('template')}
+                    />
+                    <LayoutGrid className={`w-6 h-6 shrink-0 ${ruleMode === 'template' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                    <span className={`font-bold text-sm ${ruleMode === 'template' ? 'text-white' : 'text-gray-400'}`}>Áp từ rule template có sẵn</span>
+                  </label>
+                </div>
+                {!effectiveTournamentId && (
+                  <p className="text-xs text-gray-500 italic flex items-center gap-1.5 mt-2">
+                    <Info className="w-3.5 h-3.5 shrink-0" /> Giải đấu mới chưa có rule nào — chỉ tạo được rule mới.
+                  </p>
+                )}
+              </div>
 
-            {ruleMode === 'template' && !selectedRuleId && (
-              <div className="bg-navy-dark/50 p-4 rounded-2xl border border-navy-light space-y-2 max-h-72 overflow-y-auto">
-                {isLoadingRuleTemplates ? (
-                  <div className="flex items-center justify-center py-8 text-gray-400 gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" /> Đang tải rule template...
+              {ruleMode === 'template' && !selectedRuleId && (
+                <div className="bg-navy-dark/50 p-3 rounded-2xl border border-navy-light space-y-2 max-h-64 overflow-y-auto">
+                  {isLoadingRuleTemplates ? (
+                    <div className="flex items-center justify-center py-8 text-gray-400 gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" /> Đang tải rule template...
+                    </div>
+                  ) : ruleTemplates.length === 0 ? (
+                    <p className="text-center text-sm text-gray-500 py-8">Giải đấu này chưa có rule template nào.</p>
+                  ) : (
+                    ruleTemplates.map(rule => {
+                      const meta = getFormatMeta(rule.format);
+                      const Icon = meta.icon;
+                      return (
+                        <button
+                          type="button"
+                          key={rule.id}
+                          onClick={() => applyTemplate(rule)}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-navy-light hover:border-blue-500 transition-all text-left"
+                        >
+                          <Icon className="w-5 h-5 shrink-0 text-gray-500" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm truncate text-gray-300">{rule.name || `Rule #${rule.id}`}</p>
+                            <p className="text-xs text-gray-500">{meta.label} · {rule.points_per_win}-{rule.points_per_draw}-{rule.points_per_loss} điểm (T-H-T)</p>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {ruleMode === 'template' && selectedRuleId && (
+                <div className={`flex flex-col gap-2 p-3.5 rounded-xl border ${willCreateNewRule ? 'border-amber-500/40 bg-amber-500/10' : 'border-emerald-500/40 bg-emerald-500/10'}`}>
+                  <div className="flex items-start gap-2">
+                    {willCreateNewRule ? (
+                      <>
+                        <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <span className="text-xs text-amber-300 flex-1">Đã chỉnh sửa — khi submit sẽ tạo <b>rule mới</b>, không đổi rule template gốc (#{selectedRuleObj?.id}).</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <span className="text-xs text-emerald-300 flex-1">Dùng nguyên bản rule <b>#{selectedRuleObj?.id} — {selectedRuleObj?.name}</b>, không tạo rule mới.</span>
+                      </>
+                    )}
                   </div>
-                ) : ruleTemplates.length === 0 ? (
-                  <p className="text-center text-sm text-gray-500 py-8">Giải đấu này chưa có rule template nào.</p>
-                ) : (
-                  ruleTemplates.map(rule => {
-                    const meta = getFormatMeta(rule.format);
-                    const Icon = meta.icon;
-                    return (
-                      <button
-                        type="button"
-                        key={rule.id}
-                        onClick={() => applyTemplate(rule)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-navy-light hover:border-blue-500 transition-all text-left"
-                      >
-                        <Icon className="w-5 h-5 shrink-0 text-gray-500" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-sm truncate text-gray-300">{rule.name || `Rule #${rule.id}`}</p>
-                          <p className="text-xs text-gray-500">{meta.label} · {rule.points_per_win}-{rule.points_per_draw}-{rule.points_per_loss} điểm (T-H-T)</p>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            )}
+                  <button type="button" onClick={clearTemplateSelection} className="self-start text-xs text-gray-400 hover:text-white flex items-center gap-1">
+                    <RefreshCcw className="w-3.5 h-3.5" /> Đổi template
+                  </button>
+                </div>
+              )}
 
-            {ruleMode === 'template' && selectedRuleId && (
-              <div className={`flex items-center gap-3 p-3 rounded-xl border ${willCreateNewRule ? 'border-amber-500/40 bg-amber-500/10' : 'border-emerald-500/40 bg-emerald-500/10'}`}>
-                {willCreateNewRule ? (
-                  <>
-                    <Info className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="text-xs text-amber-300 flex-1">Đã chỉnh sửa — khi submit sẽ tạo <b>rule mới</b>, không đổi rule template gốc (#{selectedRuleObj?.id}).</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span className="text-xs text-emerald-300 flex-1">Dùng nguyên bản rule <b>#{selectedRuleObj?.id} — {selectedRuleObj?.name}</b>, không tạo rule mới.</span>
-                  </>
-                )}
-                <button type="button" onClick={clearTemplateSelection} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 shrink-0">
-                  <RefreshCcw className="w-3.5 h-3.5" /> Đổi template
-                </button>
-              </div>
-            )}
-
-            {showRuleForm && (
-              <>
+              {showRuleForm && (
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Thể thức thi đấu</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2.5">
                     {FORMAT_META.map(f => {
                       const Icon = f.icon;
                       const active = ruleForm.format === f.value;
                       return (
                         <label
                           key={f.value}
-                          className={`cursor-pointer p-3 rounded-2xl border-2 transition-all flex flex-col gap-1.5 ${active ? `border-${f.color}-500 bg-${f.color}-500/10` : 'border-navy-light bg-navy hover:border-gray-600'}`}
+                          className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 ${active ? `border-${f.color}-500 bg-${f.color}-500/10` : 'border-navy-light bg-navy hover:border-gray-600'}`}
                         >
                           <input type="radio" className="hidden" checked={active} onChange={() => setRuleForm(r => ({ ...r, format: f.value }))} />
-                          <div className="flex items-center gap-2">
-                            <Icon className={`w-5 h-5 shrink-0 ${active ? `text-${f.color}-400` : 'text-gray-500'}`} />
-                            <span className={`font-bold text-sm ${active ? 'text-white' : 'text-gray-400'}`}>{f.label}</span>
+                          <Icon className={`w-6 h-6 shrink-0 ${active ? `text-${f.color}-400` : 'text-gray-500'}`} />
+                          <div className="min-w-0">
+                            <span className={`font-bold text-sm block ${active ? 'text-white' : 'text-gray-400'}`}>{f.label}</span>
+                            <p className="text-[11px] text-gray-500 leading-snug">{f.desc}</p>
                           </div>
-                          <p className="text-[11px] text-gray-500 leading-snug">{f.desc}</p>
                         </label>
                       );
                     })}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="bg-navy-dark/50 p-4 rounded-2xl border border-navy-light space-y-4">
+            {/* Cột phải (3/5): chi tiết số liệu */}
+            {showRuleForm && (
+              <div className="lg:col-span-3 bg-navy-dark/50 p-5 rounded-2xl border border-navy-light space-y-5 lg:max-h-[560px] lg:overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="Tên rule">
                     <input className={INPUT} value={ruleForm.name} onChange={e => setRuleForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Luật chuẩn 2026" />
                   </FormField>
@@ -716,12 +765,17 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                       />
                     </FormField>
                   ) : (
-                    <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5 shrink-0" />
-                      Thể thức này cố định round_robin_stages = {ruleForm.round_robin_stages} (BE bắt buộc).
-                    </p>
+                    <div className="flex items-end pb-2.5">
+                      <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
+                        <Info className="w-3.5 h-3.5 shrink-0" />
+                        round_robin_stages cố định = {ruleForm.round_robin_stages} (BE bắt buộc).
+                      </p>
+                    </div>
                   )}
+                </div>
 
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
                   <div className="grid grid-cols-3 gap-4">
                     <FormField label="Điểm Thắng" required>
                       <input type="number" className={INPUT} value={ruleForm.points_per_win} onChange={e => setRuleForm(f => ({ ...f, points_per_win: +e.target.value }))} />
@@ -733,71 +787,39 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                       <input type="number" className={INPUT} value={ruleForm.points_per_loss} onChange={e => setRuleForm(f => ({ ...f, points_per_loss: +e.target.value }))} />
                     </FormField>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {activeFormatMeta.hasGroupPhase && (
-                      <FormField label="Số đội đi tiếp / bảng" required>
-                        <input type="number" min="1" className={INPUT} value={ruleForm.teams_advance_per_group} onChange={e => setRuleForm(f => ({ ...f, teams_advance_per_group: +e.target.value }))} />
-                      </FormField>
-                    )}
-                    <FormField label="Điểm xử thua (Forfeit)" required>
-                      <input type="number" className={INPUT} value={ruleForm.forfeit_score} onChange={e => setRuleForm(f => ({ ...f, forfeit_score: +e.target.value }))} />
-                    </FormField>
-                  </div>
-
-                  {activeFormatMeta.hasGroupPhase && (
-                    <FormField label="Tiêu chí xếp hạng phụ (thứ tự ưu tiên)" required>
-                      <div className="space-y-2">
-                        {ruleForm.tiebreaker_order.map((key, idx) => (
-                          <div key={key} className="flex items-center gap-2 bg-navy border border-navy-light rounded-lg px-3 py-2">
-                            <span className="text-xs font-mono text-gray-500 w-4">{idx + 1}</span>
-                            <span className="text-sm text-white flex-1">{TIEBREAKER_LABELS[key] || key}</span>
-                            <button type="button" onClick={() => moveTiebreaker(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-white disabled:opacity-30">
-                              <ChevronUp className="w-4 h-4" />
-                            </button>
-                            <button type="button" onClick={() => moveTiebreaker(idx, 1)} disabled={idx === ruleForm.tiebreaker_order.length - 1} className="text-gray-400 hover:text-white disabled:opacity-30">
-                              <ChevronDown className="w-4 h-4" />
-                            </button>
-                            <button type="button" onClick={() => toggleTiebreaker(key)} className="text-gray-500 hover:text-red-400">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        {ALL_TIEBREAKERS.filter(k => !ruleForm.tiebreaker_order.includes(k)).length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {ALL_TIEBREAKERS.filter(k => !ruleForm.tiebreaker_order.includes(k)).map(k => (
-                              <button
-                                key={k} type="button" onClick={() => toggleTiebreaker(k)}
-                                className="text-xs px-2.5 py-1 rounded-full border border-dashed border-navy-light text-gray-400 hover:text-white hover:border-blue-500"
-                              >
-                                + {TIEBREAKER_LABELS[k]}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </FormField>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
+                  <div className={`grid gap-4 ${activeFormatMeta.hasGroupPhase ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <FormField label="Số người tối đa / đội" required>
                       <input type="number" className={INPUT} value={ruleForm.max_players_per_team} onChange={e => setRuleForm(f => ({ ...f, max_players_per_team: +e.target.value }))} />
                     </FormField>
                     <FormField label="Số người tối thiểu" required>
                       <input type="number" className={INPUT} value={ruleForm.min_players_per_team} onChange={e => setRuleForm(f => ({ ...f, min_players_per_team: +e.target.value }))} />
                     </FormField>
+                    <FormField label="Điểm xử thua" required>
+                      <input type="number" className={INPUT} value={ruleForm.forfeit_score} onChange={e => setRuleForm(f => ({ ...f, forfeit_score: +e.target.value }))} />
+                    </FormField>
                   </div>
+                  {activeFormatMeta.hasGroupPhase && (
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      <FormField label="Số đội đi tiếp / bảng" required>
+                        <input type="number" min="1" className={INPUT} value={ruleForm.teams_advance_per_group} onChange={e => setRuleForm(f => ({ ...f, teams_advance_per_group: +e.target.value }))} />
+                      </FormField>
+                    </div>
+                  )}
+                </div>
 
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỷ luật</p>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Số thẻ vàng tích lũy / treo giò" required>
+                    <FormField label="Thẻ vàng tích lũy / treo giò" required>
                       <input type="number" min="1" className={INPUT} value={ruleForm.yellow_cards_suspension} onChange={e => setRuleForm(f => ({ ...f, yellow_cards_suspension: +e.target.value }))} />
                     </FormField>
                     <FormField label="Số trận bị treo giò" required>
                       <input type="number" min="1" className={INPUT} value={ruleForm.suspension_match_count} onChange={e => setRuleForm(f => ({ ...f, suspension_match_count: +e.target.value }))} />
                     </FormField>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <FormField label="Phạt tiền / thẻ vàng">
                       <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.fine_per_yellow_card} onChange={e => setRuleForm(f => ({ ...f, fine_per_yellow_card: +e.target.value }))} />
                     </FormField>
@@ -805,7 +827,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                       <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.fine_per_red_card} onChange={e => setRuleForm(f => ({ ...f, fine_per_red_card: +e.target.value }))} />
                     </FormField>
                   </div>
+                </div>
 
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Thưởng</p>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField label="Thưởng / bàn thắng">
                       <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.bonus_per_goal} onChange={e => setRuleForm(f => ({ ...f, bonus_per_goal: +e.target.value }))} />
@@ -815,54 +840,109 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     </FormField>
                   </div>
                 </div>
-              </>
+
+                {activeFormatMeta.hasGroupPhase && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                      Tiêu chí xếp hạng phụ <span className="text-red-400">*</span>
+                    </p>
+                    <div className="space-y-2">
+                      {ruleForm.tiebreaker_order.map((key, idx) => (
+                        <div key={key} className="flex items-center gap-2 bg-navy border border-navy-light rounded-lg px-3 py-2">
+                          <span className="text-xs font-mono text-gray-500 w-4">{idx + 1}</span>
+                          <span className="text-sm text-white flex-1">{TIEBREAKER_LABELS[key] || key}</span>
+                          <button type="button" onClick={() => moveTiebreaker(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-white disabled:opacity-30">
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button type="button" onClick={() => moveTiebreaker(idx, 1)} disabled={idx === ruleForm.tiebreaker_order.length - 1} className="text-gray-400 hover:text-white disabled:opacity-30">
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <button type="button" onClick={() => toggleTiebreaker(key)} className="text-gray-500 hover:text-red-400">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {ALL_TIEBREAKERS.filter(k => !ruleForm.tiebreaker_order.includes(k)).length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {ALL_TIEBREAKERS.filter(k => !ruleForm.tiebreaker_order.includes(k)).map(k => (
+                            <button
+                              key={k} type="button" onClick={() => toggleTiebreaker(k)}
+                              className="text-xs px-2.5 py-1 rounded-full border border-dashed border-navy-light text-gray-400 hover:text-white hover:border-blue-500"
+                            >
+                              + {TIEBREAKER_LABELS[k]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
 
         {/* ================= STEP 3: GROUP COUNT (auto-skip nếu format = knockout thuần) ================= */}
         {step === 3 && hasGroupPhase && (
-          <div className="bg-navy-dark/50 p-6 rounded-2xl border border-navy-light animate-fade-in text-center space-y-4">
+          <div className="max-w-xl mx-auto bg-navy-dark/50 p-8 rounded-2xl border border-navy-light animate-fade-in text-center space-y-5">
+            <LayoutGrid className="w-10 h-10 text-blue-400 mx-auto" />
             <p className="text-gray-400 text-sm">
               Thể thức <span className="text-white font-bold">{activeFormatMeta.label}</span> — nhập số lượng bảng đấu cho vòng round-robin.
             </p>
             <div className="flex justify-center items-center gap-4">
               <label className="font-bold text-white">Số lượng Group:</label>
-              <input type="number" min="1" max="32" className={`${INPUT} w-24 text-center text-xl font-black`} value={groupCount} onChange={e => setGroupCount(+e.target.value)} />
+              <input type="number" min="1" max="32" className={`${INPUT} w-28 text-center text-2xl font-black`} value={groupCount} onChange={e => setGroupCount(+e.target.value)} />
             </div>
+            <p className="text-xs text-gray-500">Từ 1 đến 32 bảng.</p>
           </div>
         )}
 
         {/* ================= STEP 4: SEASON ================= */}
         {step === 4 && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 flex items-center gap-2 text-xs text-blue-300">
-              <Info className="w-4 h-4 shrink-0" />
-              Season sẽ thi đấu theo thể thức: <span className="font-bold">{activeFormatMeta.label}</span>
-            </div>
-            <div className="bg-navy-dark/50 p-4 rounded-2xl border border-navy-light space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+            <div className="lg:col-span-2 bg-navy-dark/50 p-5 rounded-2xl border border-navy-light space-y-4">
               <FormField label="Tên mùa giải" required>
                 <input className={INPUT} value={seasonForm.name} onChange={e => setSeasonForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Season 2026 - Mùa Hè" />
               </FormField>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Ngày bắt đầu" required>
-                  <input type="date" className={INPUT} value={seasonForm.start_date} onChange={e => setSeasonForm(f => ({ ...f, start_date: e.target.value }))} />
+                  <input
+                    type="date" min={todayMin} className={INPUT}
+                    value={seasonForm.start_date}
+                    onChange={e => setSeasonForm(f => ({ ...f, start_date: e.target.value }))}
+                  />
                 </FormField>
                 <FormField label="Ngày kết thúc" required>
-                  <input type="date" className={INPUT} value={seasonForm.end_date} onChange={e => setSeasonForm(f => ({ ...f, end_date: e.target.value }))} />
+                  <input
+                    type="date" min={seasonForm.start_date || todayMin} className={INPUT}
+                    value={seasonForm.end_date}
+                    onChange={e => setSeasonForm(f => ({ ...f, end_date: e.target.value }))}
+                  />
                 </FormField>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="Số đội tối đa">
-                  <input type="number" className={INPUT} value={seasonForm.max_teams} onChange={e => setSeasonForm(f => ({ ...f, max_teams: +e.target.value }))} />
+                <FormField label="Số đội tối đa" required>
+                  <input type="number" min="2" className={INPUT} value={seasonForm.max_teams} onChange={e => setSeasonForm(f => ({ ...f, max_teams: +e.target.value }))} />
                 </FormField>
-                <FormField label="Hạn chót đăng ký">
-                  <input type="date" className={INPUT} value={seasonForm.registration_deadline} onChange={e => setSeasonForm(f => ({ ...f, registration_deadline: e.target.value }))} />
+                <FormField label="Hạn chót đăng ký" required>
+                  <input
+                    type="date" min={todayMin} max={seasonForm.start_date || undefined} className={INPUT}
+                    value={seasonForm.registration_deadline}
+                    onChange={e => setSeasonForm(f => ({ ...f, registration_deadline: e.target.value }))}
+                  />
                 </FormField>
               </div>
-              <div className="flex items-center gap-3 pt-2">
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 flex items-start gap-2 text-xs text-blue-300">
+                <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Season sẽ thi đấu theo thể thức: <span className="font-bold">{activeFormatMeta.label}</span></span>
+              </div>
+
+              <div className="bg-navy-dark/50 p-4 rounded-2xl border border-navy-light">
                 <label className="flex items-center cursor-pointer gap-3">
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <input type="checkbox" className="sr-only peer" checked={seasonForm.is_registration_open} onChange={e => setSeasonForm(f => ({ ...f, is_registration_open: e.target.checked }))} />
                     <div className="w-11 h-6 bg-gray-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                   </div>

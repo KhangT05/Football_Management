@@ -41,6 +41,10 @@ export class TournamentRuleService {
     private mapToDto(rule: TournamentRuleWithRelations): TournamentRuleDto {
         return {
             ...rule,
+            fine_per_yellow_card: rule.fine_per_yellow_card.toNumber(),
+            fine_per_red_card: rule.fine_per_red_card.toNumber(),
+            bonus_per_goal: rule.bonus_per_goal.toNumber(),
+            bonus_per_assist: rule.bonus_per_assist.toNumber(),
             tiebreaker_order: parseJsonField(rule.tiebreaker_order, isTiebreakerArray, ["goal_diff"]),
         };
     }

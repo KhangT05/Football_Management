@@ -433,6 +433,9 @@
 						"type": "number",
 						"format": "double"
 					},
+					"name": {
+						"type": "string"
+					},
 					"is_active": {
 						"type": "boolean"
 					},
@@ -452,6 +455,26 @@
 						"format": "double"
 					},
 					"forfeit_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"suspension_match_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_yellow_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_red_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_goal": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_assist": {
 						"type": "number",
 						"format": "double"
 					},
@@ -537,12 +560,18 @@
 				"required": [
 					"id",
 					"tournament_id",
+					"name",
 					"is_active",
 					"points_per_win",
 					"points_per_draw",
 					"format",
 					"points_per_loss",
 					"forfeit_score",
+					"suspension_match_count",
+					"fine_per_yellow_card",
+					"fine_per_red_card",
+					"bonus_per_goal",
+					"bonus_per_assist",
 					"yellow_cards_suspension",
 					"max_players_per_team",
 					"min_players_per_team",
@@ -596,7 +625,27 @@
 						"type": "number",
 						"format": "double"
 					},
+					"bonus_per_assist": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_goal": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_red_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_yellow_card": {
+						"type": "number",
+						"format": "double"
+					},
 					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"suspension_match_count": {
 						"type": "number",
 						"format": "double"
 					},
@@ -615,6 +664,9 @@
 					"points_per_win": {
 						"type": "number",
 						"format": "double"
+					},
+					"name": {
+						"type": "string"
 					},
 					"tournament_id": {
 						"type": "number",
@@ -670,7 +722,27 @@
 						"type": "number",
 						"format": "double"
 					},
+					"bonus_per_assist": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_goal": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_red_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_yellow_card": {
+						"type": "number",
+						"format": "double"
+					},
 					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"suspension_match_count": {
 						"type": "number",
 						"format": "double"
 					},
@@ -689,6 +761,9 @@
 					"points_per_win": {
 						"type": "number",
 						"format": "double"
+					},
+					"name": {
+						"type": "string"
 					},
 					"tournament_id": {
 						"type": "number",
