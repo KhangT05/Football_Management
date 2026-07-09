@@ -644,9 +644,14 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["in_progress"]},{"dataType":"enum","enums":["locked"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true},"status":{"ref":"SeasonStatus","required":true},"start_date":{"dataType":"datetime","required":true},"end_date":{"dataType":"datetime","required":true},"registration_deadline":{"dataType":"datetime","required":true},"max_teams":{"dataType":"double","required":true},"is_registration_open":{"dataType":"boolean","required":true},"cancel_reason":{"dataType":"string","required":true},"group_count":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonListItem": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"_count":{"dataType":"nestedObjectLiteral","nestedProperties":{"phases":{"dataType":"double","required":true}},"required":true},"tournament":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"end_date":{"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},"start_date":{"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},"status":{"ref":"SeasonStatus","required":true},"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_"},{"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},"_count":{"dataType":"nestedObjectLiteral","nestedProperties":{"phases":{"dataType":"double","required":true}},"required":true},"tournament":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true}}}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PaginatedResult_SeasonListItem_": {

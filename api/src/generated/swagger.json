@@ -1898,67 +1898,120 @@
 					"locked"
 				]
 			},
-			"SeasonListItem": {
+			"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_": {
 				"properties": {
-					"_count": {
-						"properties": {
-							"phases": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"phases"
-						],
-						"type": "object"
-					},
-					"tournament": {
-						"properties": {
-							"name": {
-								"type": "string"
-							},
-							"id": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"name",
-							"id"
-						],
-						"type": "object"
-					},
-					"end_date": {
-						"type": "string",
-						"format": "date-time",
-						"nullable": true
-					},
-					"start_date": {
-						"type": "string",
-						"format": "date-time",
-						"nullable": true
-					},
-					"status": {
-						"$ref": "#/components/schemas/SeasonStatus"
-					},
 					"name": {
 						"type": "string"
 					},
 					"id": {
 						"type": "number",
 						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/SeasonStatus"
+					},
+					"start_date": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"end_date": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"registration_deadline": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"max_teams": {
+						"type": "number",
+						"format": "double"
+					},
+					"is_registration_open": {
+						"type": "boolean"
+					},
+					"cancel_reason": {
+						"type": "string"
+					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
-					"_count",
-					"tournament",
-					"end_date",
-					"start_date",
-					"status",
 					"name",
-					"id"
+					"id",
+					"status",
+					"start_date",
+					"end_date",
+					"registration_deadline",
+					"max_teams",
+					"is_registration_open",
+					"cancel_reason",
+					"group_count"
 				],
-				"type": "object"
+				"type": "object",
+				"description": "From T, pick a set of properties whose keys are in the union K"
+			},
+			"SeasonListItem": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_"
+					},
+					{
+						"properties": {
+							"tournament_rule": {
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"name",
+									"id"
+								],
+								"type": "object"
+							},
+							"_count": {
+								"properties": {
+									"phases": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"phases"
+								],
+								"type": "object"
+							},
+							"tournament": {
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"name",
+									"id"
+								],
+								"type": "object"
+							}
+						},
+						"required": [
+							"tournament_rule",
+							"_count",
+							"tournament"
+						],
+						"type": "object"
+					}
+				]
 			},
 			"PaginatedResult_SeasonListItem_": {
 				"properties": {
