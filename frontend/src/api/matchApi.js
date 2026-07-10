@@ -121,26 +121,23 @@ export const matchApi = {
 
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
+  /**
+       * GET /matches/{matchId}/report — trả PDF binary (Content-Type:
+       * application/pdf, Content-Disposition: attachment). responseType: 'blob'
+       * bắt buộc, nếu không axios sẽ cố parse binary PDF như text/JSON và
+       * corrupt data trước khi ScheduleTab kịp tạo Blob từ res.data.
+       */
+  getMatchReport: (matchId) =>
+    apiClient.get(`/matches/${matchId}/report`, { responseType: 'blob' }),
 
   /**
-   * Correction window — chỉ dùng sau khi match finished, trong 15p.
-   * Manual path only: backend reject nếu match có events.
-   * Nếu có events → dùng addEvent / editEvent / deleteEvent thay vì.
-   *
-   * body: {
-   *   homeScore: number,
-   *   awayScore: number,
-   *   homeExtraTime?: number,
-   *   awayExtraTime?: number,
-   *   homePenalty?: number,
-   *   awayPenalty?: number,
-   *   homeHalfTime?: number,
-   *   awayHalfTime?: number,
-   *   resultType?: MatchResultType,
-   *   notes?: string,
-   * }
-   * → PATCH /matches/{id}/score
+   * GET /matches/{matchId}/report/data — JSON preview (MatchReportOutput),
+   * dùng nếu cần hiện chi tiết lineup/goals trước khi admin bấm xuất PDF
+   * (ConfirmExportModal hiện tại chưa gọi, optional).
    */
+  getMatchReportData: (matchId) =>
+    apiClient.get(`/matches/${matchId}/report/data`),
+
   editScore: (id, body) =>
     axiosClient.patch(`/matches/${id}/score`, body),
 
