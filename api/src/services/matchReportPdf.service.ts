@@ -1,5 +1,7 @@
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { MatchReportOutput, MatchReportPlayerRow } from '../types/matchReport.type.js';
 import { MatchReportGoalEntry } from '../helper/match.helper.js';
 
@@ -11,10 +13,51 @@ import { MatchReportGoalEntry } from '../helper/match.helper.js';
 // trong font đó. Phải embed 1 font TTF hỗ trợ Unicode đầy đủ (Roboto/Noto
 // Sans) thì mới hiện đúng dấu tiếng Việt.
 //
-// Cần đặt 3 file font (Regular / Bold / Italic) vào thư mục assets/fonts
-// của project, ví dụ tải từ Google Fonts:
-//   Roboto-Regular.ttf, Roboto-Bold.ttf, Roboto-Italic.ttf
-const FONT_DIR = path.join(process.cwd(), 'assets', 'fonts');
+// FIX #2 (production ENOENT): bản cũ dùng path.join(process.cwd(), 'assets',
+// 'fonts') — SAI vì process.cwd() phụ thuộc vào chỗ bạn `node` được khởi
+// chạy (Docker WORKDIR, PM2 cwd, ts-node vs dist, v.v.), không đảm bảo là
+// thư mục chứa app. Khi cwd khác project root, hoặc khi bước build/Dockerfile
+// không copy assets/ vào image, readFileSync ném ENOENT giữa lúc render PDF
+// (crash khó debug, message không nói rõ thiếu file nào).
+//
+// Thay bằng resolve theo vị trí thực của FILE NÀY (import.meta.url), không
+// phụ thuộc cwd. Đồng thời thử vài vị trí ứng viên phổ biến (cùng cấp dist,
+// lên project root, cwd) để chịu được cả 2 kiểu deploy (build copy assets
+// vào dist/ hoặc giữ assets/ ở project root cạnh dist/). Nếu vẫn không thấy
+// file, ném lỗi rõ ràng liệt kê các đường dẫn đã thử — thay vì để PDFKit
+// ném ENOENT khó hiểu.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function resolveFontDir(): string {
+    const candidates = [
+        // 1. Cạnh file compiled, vd dist/services/../../assets/fonts -> dist/assets/fonts
+        //    (nếu build script copy assets/ vào trong dist/)
+        path.join(__dirname, '..', 'assets', 'fonts'),
+        // 2. Lên tới project root từ dist/services -> <root>/assets/fonts
+        //    (nếu assets/ nằm ở root, ngang hàng với dist/, không bị build động tới)
+        path.join(__dirname, '..', '..', 'assets', 'fonts'),
+        // 3. Fallback: cwd (giữ tương thích ngược nếu ai đó chạy đúng từ root)
+        path.join(process.cwd(), 'assets', 'fonts'),
+    ];
+
+    for (const dir of candidates) {
+        if (fs.existsSync(path.join(dir, 'Roboto-Regular.ttf'))) {
+            return dir;
+        }
+    }
+
+    throw new Error(
+        `[matchReportPdf] Không tìm thấy font Roboto-Regular.ttf. Đã thử các đường dẫn sau:\n` +
+        candidates.map(c => `  - ${c}`).join('\n') +
+        `\nHãy đảm bảo thư mục assets/fonts (Roboto-Regular.ttf, Roboto-Bold.ttf, ` +
+        `Roboto-Italic.ttf) được copy vào image/deploy (vd: bước COPY trong Dockerfile, ` +
+        `hoặc copy-assets script sau khi build TypeScript), vì tsc KHÔNG tự copy file ` +
+        `non-.ts như .ttf vào thư mục dist.`,
+    );
+}
+
+const FONT_DIR = resolveFontDir();
 const FONT_REGULAR = path.join(FONT_DIR, 'Roboto-Regular.ttf');
 const FONT_BOLD = path.join(FONT_DIR, 'Roboto-Bold.ttf');
 const FONT_ITALIC = path.join(FONT_DIR, 'Roboto-Italic.ttf');
