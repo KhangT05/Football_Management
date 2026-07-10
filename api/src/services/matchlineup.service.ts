@@ -11,15 +11,12 @@ type MatchContext = {
     home_team_id: number;
     away_team_id: number;
     status: MatchStatus;
+    tournament_rule: { min_players_per_team: number; max_players_per_team: number } | null;
 };
-
-// Chỉ cho register/update lineup khi match còn ở trạng thái này.
 const LINEUP_MUTABLE_STATUSES: MatchStatus[] = [MatchStatus.scheduled];
 
 export class MatchLineupService {
     constructor(private readonly prisma: PrismaClient) { }
-
-    // ─── Guards ───────────────────────────────────────────────────────────────
 
     private async getMatchContextOrFail(
         matchId: number,
@@ -27,13 +24,37 @@ export class MatchLineupService {
     ): Promise<MatchContext> {
         const match = await tx.match.findUnique({
             where: { id: matchId },
-            select: { scheduled_at: true, home_team_id: true, away_team_id: true, status: true },
+            select: {
+                scheduled_at: true,
+                home_team_id: true,
+                away_team_id: true,
+                status: true,
+                phase: {
+                    select: {
+                        season: {
+                            select: {
+                                tournamentRule: {
+                                    select: { min_players_per_team: true, max_players_per_team: true },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
         if (!match) throw createAppError('NOT_FOUND', `Match ${matchId} not found`);
         if (!match.scheduled_at)
             throw createAppError('BAD_REQUEST', `Match ${matchId} chưa có lịch thi đấu`);
-        return match as MatchContext;
+
+        return {
+            scheduled_at: match.scheduled_at,
+            home_team_id: match.home_team_id,
+            away_team_id: match.away_team_id,
+            status: match.status,
+            tournament_rule: match.phase?.season?.tournamentRule ?? null,
+        };
     }
+
 
     private assertTeamInMatch(ctx: MatchContext, teamId: number): void {
         if (teamId !== ctx.home_team_id && teamId !== ctx.away_team_id)
@@ -72,8 +93,19 @@ export class MatchLineupService {
             throw createAppError('BAD_REQUEST', 'Danh sách đăng ký có player_id bị trùng lặp');
     }
 
-    // ─── Read ─────────────────────────────────────────────────────────────────
+    private assertRule(ctx: MatchContext): { min: number; max: number } {
+        if (!ctx.tournament_rule)
+            throw createAppError('BAD_REQUEST', 'Không tìm thấy rule cho giải đấu này (season chưa gán TournamentRule)');
+        return { min: ctx.tournament_rule.min_players_per_team, max: ctx.tournament_rule.max_players_per_team };
+    }
 
+    private assertSquadSize(count: number, min: number, max: number): void {
+        if (count < min || count > max)
+            throw createAppError(
+                'BAD_REQUEST',
+                `Số lượng đăng ký phải từ ${min} đến ${max} cầu thủ (hiện tại: ${count})`,
+            );
+    }
     getByMatch(matchId: number): Promise<MatchLineup[]> {
         return this.prisma.matchLineup.findMany({
             where: { match_id: matchId },
@@ -106,6 +138,8 @@ export class MatchLineupService {
             this.assertCanRegister(ctx.scheduled_at);
             this.assertSingleCaptain(dto.players);
             this.assertNoDuplicatePlayerId(dto.players);
+            const { min, max } = await this.assertRule(ctx);
+            this.assertSquadSize(dto.players.length, min, max);
 
             const playerIds = dto.players.map(p => p.player_id);
 

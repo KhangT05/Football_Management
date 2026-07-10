@@ -10,6 +10,8 @@ export declare class MatchLineupService {
     private assertCanUpdate;
     private assertSingleCaptain;
     private assertNoDuplicatePlayerId;
+    private assertRule;
+    private assertSquadSize;
     getByMatch(matchId: number): Promise<MatchLineup[]>;
     getByTeam(matchId: number, teamId: number): Promise<MatchLineup[]>;
     register(dto: RegisterLineupDto): Promise<MatchLineup[]>;
