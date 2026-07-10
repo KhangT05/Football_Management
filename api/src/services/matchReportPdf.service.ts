@@ -259,35 +259,30 @@ export class MatchReportPdfRenderer {
     // image_url cho trang phục thường là ảnh minh hoạ lớn, không hợp render
     // nhỏ cạnh tên đội; color swatch luôn render được kể cả khi thiếu image_url,
     // miễn có primaryColor (là field bắt buộc theo nghiệp vụ khi tạo jersey).
-    private renderJerseySwatch(jersey: MatchReportTeamInfo['jersey']) {
+    private renderJerseySwatch(jersey: MatchReportTeamInfo['jersey'], x: number, y: number) {
         const doc = this.doc;
         if (!jersey.primaryColor) return;
-        const swatchY = doc.y + 2;
-        const startX = doc.x;
         try {
-            doc.rect(startX, swatchY, 12, 12).fill(jersey.primaryColor);
+            doc.rect(x, y, 12, 12).fill(jersey.primaryColor);
             if (jersey.secondaryColor) {
-                doc.rect(startX + 14, swatchY, 12, 12).fill(jersey.secondaryColor);
+                doc.rect(x + 14, y, 12, 12).fill(jersey.secondaryColor);
             }
-        } catch {
-            // color string không hợp lệ (không phải hex/tên màu PDFKit hiểu) — bỏ qua swatch
-        }
-        doc.fillColor('black'); // reset fill color sau .fill(), ảnh hưởng text theo sau
+        } catch { /* invalid color string */ }
+        doc.fillColor('black');
     }
+
 
     private renderTeamSection(team: MatchReportTeamInfo, rows: MatchReportPlayerRow[]) {
         const doc = this.doc;
         if (doc.y > 650) doc.addPage();
 
+        const leftX = doc.page.margins.left;   // luôn neo lại left margin tường minh
         const titleY = doc.y;
-        doc.fontSize(13).font('Body-Bold').text(team.name, doc.x, titleY, { continued: false });
+        doc.fontSize(13).font('Body-Bold').text(team.name, leftX, titleY, { continued: false });
 
         const swatchX = doc.page.width - doc.page.margins.right - 40;
-        doc.save();
-        doc.x = swatchX;
-        doc.y = titleY + 2;
-        this.renderJerseySwatch(team.jersey);
-        doc.restore();
+        this.renderJerseySwatch(team.jersey, swatchX, titleY + 2);
+        doc.x = leftX;              // reset cursor tường minh, không phụ thuộc save/restore
         doc.y = titleY + 20;
 
         doc.moveDown(0.3);

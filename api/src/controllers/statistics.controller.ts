@@ -78,6 +78,7 @@ export class StatisticsController extends Controller {
     async getPlayerCareerStats(@Path() playerId: number) {
         return this.statisticsService.getPlayerCareerStats(playerId);
     }
+
     @Security("jwt", ["admin"])
     @Get("overview")
     async getSystemOverviewStats(@Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y") {
