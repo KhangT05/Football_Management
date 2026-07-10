@@ -4969,6 +4969,22 @@
                     "awayHalfTimeScore": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "homeExtraTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayExtraTimeScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "homePenaltyScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "awayPenaltyScore": {
+                        "type": "number",
+                        "format": "double"
                     }
                 },
                 "required": [

@@ -41,12 +41,25 @@ import {
 
 type PlayerKey = { player_id: number; team_id: number };
 
-// Retry cap cho grace period auto-confirm — sau N lần fail liên tiếp (lỗi
-// deterministic: thiếu TournamentRule, data hỏng...), escalate needs_review
-// thay vì retry vô thời hạn mỗi cron tick. Yêu cầu migration:
-// Match.grace_period_retry_count Int @default(0).
 const MAX_GRACE_PERIOD_RETRY = 5;
 
+// Marker string prepended vào message của lỗi CONFLICT khi knockout hoà ở
+// full_time. KHÔNG dùng 1 error kind riêng vì createAppError's kind enum
+// hiện không có type cho case này (chỉ NOT_FOUND/VALIDATION_ERROR/CONFLICT/
+// FORBIDDEN/NOT_IMPLEMENTED/INTERNAL_SERVER_ERROR) — team BE cần cân nhắc
+// thêm 1 kind chuyên biệt (vd 'KNOCKOUT_DRAW') thay vì so message string,
+// đây là giải pháp tạm nhưng đủ để FE phân biệt case này với CONFLICT khác.
+// Marker cho case knockout hoà ở full_time (90') — chưa vào ET/pen.
+export const KNOCKOUT_DRAW_MARKER = 'KNOCKOUT_DRAW_NEEDS_EXTRA_TIME_OR_PENALTY';
+
+// Marker cho case knockout vẫn hoà SAU khi đã nhập kết quả extra_time —
+// chỉ còn đường vào loạt sút luân lưu, không có "hiệp phụ phụ" nào khác.
+export const KNOCKOUT_ET_DRAW_MARKER = 'KNOCKOUT_ET_DRAW_NEEDS_PENALTY';
+// Marker để FE detect lỗi "knockout draw" ném từ MatchResultService._guardConfirm
+// — message gốc: `Match ${id}: knockout draw ở ${resultType} — cần extra_time
+// hoặc penalty`. Export marker này thay vì để FE tự đoán string, tránh 2 nơi
+// hard-code cùng 1 chuỗi khác nhau (bug đã xảy ra ở bản fix trước).
+export const KNOCKOUT_DRAW_MESSAGE_MARKER = 'knockout draw ở';
 export class MatchLifecycleService {
     constructor(
         private readonly prisma: PrismaClient,
@@ -223,7 +236,7 @@ export class MatchLifecycleService {
             if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
                 const { home90, away90 } = await this._computeScoreFromEvents(matchId, match.home_team_id, tx);
                 if (home90 === away90)
-                    throw createAppError('CONFLICT', `Match ${matchId} đang hoà ${home90}-${away90} ở knockout — cần extra_time/penalty`);
+                    throw createAppError('CONFLICT', `${KNOCKOUT_DRAW_MARKER}: Match ${matchId} đang hoà ${home90}-${away90} ở knockout — cần extra_time/penalty`);
             }
             await tx.match.update({
                 where: { id: matchId },
@@ -259,7 +272,7 @@ export class MatchLifecycleService {
         if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
             const isTwoLegged = (match.phase.legs as 1 | 2) === 2 && match.leg != null;
             if (!isTwoLegged && input.homeScore === input.awayScore)
-                throw createAppError('CONFLICT', `Match ${matchId} đang hoà ${input.homeScore}-${input.awayScore} ở knockout — cần extra_time/penalty`);
+                throw createAppError('CONFLICT', `${KNOCKOUT_DRAW_MARKER}: Match ${matchId} đang hoà ${input.homeScore}-${input.awayScore} ở knockout — cần extra_time/penalty`);
         }
         await this.prisma.match.update({
             where: { id: matchId },
@@ -342,13 +355,6 @@ export class MatchLifecycleService {
         );
     }
 
-    /**
-     * FIX (retry cap — bug report #5): trước đây fail (không phải idempotency
-     * conflict) → reset pending_official_at về mốc quá hạn, retry vô thời
-     * hạn mỗi cron tick nếu lỗi deterministic (thiếu TournamentRule, data
-     * hỏng...). Giờ đếm grace_period_retry_count, sau MAX_GRACE_PERIOD_RETRY
-     * lần escalate thẳng needs_review thay vì tiếp tục retry.
-     */
     async handleGracePeriodTimeout(
         gracePeriodMinutes = 15,
         scheduleOptions: OptionalScheduleOptions,
@@ -410,8 +416,6 @@ export class MatchLifecycleService {
                     });
                 } else {
                     console.error(`[GracePeriod] auto-confirm failed for match ${matchId} (retry ${nextRetryCount}/${MAX_GRACE_PERIOD_RETRY}):`, err);
-                    // Claim đã null hoá pending_official_at nhưng confirmOfficial fail —
-                    // reset lại mốc cutoff để retry ở lần chạy cron sau.
                     await this.prisma.match.updateMany({
                         where: { id: matchId, status: MatchStatus.pending_official, pending_official_at: null },
                         data: {
@@ -471,14 +475,6 @@ export class MatchLifecycleService {
         );
     }
 
-    /**
-     * FIX (field reuse conflict — bug report #4): trước đây check
-     * `match.postponed_reason` để tránh ghi đè, nhưng field đó có thể còn
-     * giá trị từ lần postpone TRƯỚC nếu match từng postpone rồi resume
-     * (status → ongoing) — check này block nhầm abandon hợp lệ có kèm
-     * reason. Tách hẳn field abandoned_reason (migration required), không
-     * dùng chung với postponed_reason nữa.
-     */
     async abandonMatch(matchId: number, minute: number, reason?: string): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
@@ -523,24 +519,6 @@ export class MatchLifecycleService {
         });
     }
 
-    /**
-     * FIX (race condition — bug report #3): trước đây KHÔNG lock row, đọc
-     * match/matchResult bằng plain findUniqueOrThrow/findUnique NGOÀI
-     * transaction, ghi 2 statement (overturn) TRONG 1 transaction riêng —
-     * 2 admin resolve cùng lúc là race, last-write-wins, không CONFLICT.
-     * Giờ toàn bộ đọc+ghi gộp vào 1 transaction có FOR UPDATE lock ngay từ
-     * đầu, serialize đúng với addEvent/deleteEvent/editEvent/editScore/
-     * confirmResult (đều lock cùng row).
-     *
-     * KNOWN GAP (chưa giải quyết, cần confirm nghiệp vụ trước khi ship):
-     * overturn ghi thẳng home_final_score/away_final_score MỚI nhưng KHÔNG
-     * đụng match_events — phá invariant "score = f(events)" mà
-     * overrideResultInTx/_recalculateResultTx bảo vệ. PlayerStatistic (tính
-     * từ events) sẽ KHÔNG đổi theo overturn này. Nếu overturn có thể do đổi
-     * 1 bàn thắng cụ thể (offside phát hiện sau), cần sửa match_events
-     * tương ứng qua addEvent/deleteEvent TRƯỚC KHI gọi overturn, hoặc mở
-     * rộng ResolveAppealInput nhận eventChanges và tự áp dụng ở đây.
-     */
     async resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<void> {
         const { isKnockout, groupId } = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -669,8 +647,6 @@ export class MatchLifecycleService {
             });
             return this._recalculateResultTx(tx, matchId, match.home_team_id);
         });
-        // Event mới thêm — không có player "biến mất" cần recompute bù, natural
-        // query trong recomputePlayerStats(matchId) đã bắt được player mới này.
         await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
     }
 
@@ -696,9 +672,6 @@ export class MatchLifecycleService {
                 throw createAppError('VALIDATION_ERROR', `Event ${eventId} không thuộc match ${matchId}`);
             await tx.matchEvent.delete({ where: { id: eventId } });
             const recalc = await this._recalculateResultTx(tx, matchId, match.home_team_id);
-            // FIX (player stats drift — bug report #2): capture player/team
-            // TRƯỚC delete — player này có thể không còn event nào trong match
-            // này sau khi xóa, cần force recompute để loại count đã xóa.
             const affectedPlayers: PlayerKey[] = event.player_id
                 ? [{ player_id: event.player_id, team_id: event.team_id! }]
                 : [];
@@ -788,9 +761,6 @@ export class MatchLifecycleService {
                 data: updateData,
             });
             const recalc = await this._recalculateResultTx(tx, matchId, match.home_team_id);
-            // FIX (player stats drift — bug report #2): capture player/team CŨ
-            // trước update — nếu playerId hoặc teamId đổi, combo cũ cần force
-            // recompute (có thể không còn event nào trong match này nữa).
             const affectedPlayers: PlayerKey[] = event.player_id
                 ? [{ player_id: event.player_id, team_id: event.team_id! }]
                 : [];
@@ -826,20 +796,6 @@ export class MatchLifecycleService {
         }
     }
 
-    /**
-     * FIX (bracket-advance guard + round-robin seeding lock — bug report #1
-     * và câu hỏi "round robin rồi tới knockout"): trước đây method này
-     * KHÔNG có guard nào — sửa event có thể đổi winner_team_id của 1 match
-     * knockout đã advance (round kế tiếp đã tạo, có thể đã đá), hoặc đổi
-     * kết quả round-robin sau khi standings đã dùng để seed knockout bracket
-     * (đổi thứ hạng mà bracket không re-seed theo).
-     *
-     * Fix: 1 điểm check duy nhất, chạy TRONG transaction (throw sẽ rollback
-     * cả insert/delete/update event ở caller):
-     * - Round-robin: chặn cứng nếu season đã seed knockout bracket.
-     * - Knockout: chỉ chặn nếu winner THỰC SỰ đổi so với trước VÀ round kế
-     *   tiếp đã tạo — sửa minute/note không đổi winner thì vẫn cho qua.
-     */
     private async _recalculateResultTx(
         tx: Prisma.TransactionClient,
         matchId: number,
@@ -956,6 +912,73 @@ export class MatchLifecycleService {
         }
     }
 
+    /**
+     * FIX (knockout draw guard + penalty forwarding):
+     * - Trước đây không guard gì cho knockout hoà ở full_time → confirm được
+     *   0-0, winner_team_id=null, bracket advance sai/silent. Giờ chặn với
+     *   marker KNOCKOUT_DRAW_MARKER để FE bắt và show modal nhập pen — luồng
+     *   dự kiến: admin bấm "Xác nhận" (full_time) -> BE reject với marker ->
+     *   FE mở modal nhập penalty -> gọi lại adminRecordResult với
+     *   resultType='penalty' + homePenaltyScore/awayPenaltyScore.
+     * - Trước đây input.homePenaltyScore/awayPenaltyScore (nếu có) KHÔNG
+     *   được forward vào confirmResultInTx — winner luôn tính theo
+     *   home/awayScore (90') nên penalty không ảnh hưởng gì tới winner.
+     *   Giờ forward đúng field.
+     * - REQUIRES: AdminRecordResultInput cần có 2 field optional
+     *   `homePenaltyScore?: number` và `awayPenaltyScore?: number` trong
+     *   types/match.type.ts — chưa xác nhận được field này đã tồn tại chưa
+     *   vì không có file đó trong context, cần bổ sung nếu thiếu.
+     */
+    /**
+     * FIX (knockout draw + extra_time + penalty flow):
+     *
+     * Luồng dự kiến cho knockout hoà:
+     *   1. Admin bấm "Xác nhận" với resultType='full_time', homeScore=awayScore
+     *      -> BE reject với KNOCKOUT_DRAW_MARKER.
+     *   2. FE mở modal hiệp phụ. Admin có 2 lựa chọn:
+     *      a. Nhập thêm bàn ET -> gọi lại với resultType='extra_time',
+     *         homeScore/awayScore = TỔNG SAU HIỆP PHỤ (không phải chỉ bàn ET).
+     *         Nếu vẫn hoà -> BE reject KNOCKOUT_ET_DRAW_MARKER -> FE mở modal pen.
+     *      b. Bỏ qua hiệp phụ (giải không đá ET) -> gọi thẳng resultType='penalty'.
+     *   3. resultType='penalty' -> cần homePenaltyScore/awayPenaltyScore, không
+     *      được hoà.
+     *
+     * GIỚI HẠN THỰC TẾ (đã kiểm tra lại): match_events hiện KHÔNG có period
+     * tag đáng tin cậy (FE không gửi period khi tạo event qua recordEvent),
+     * nên KHÔNG THỂ tự tách 90' vs ET từ event data như _computeScoreFromEvents
+     * làm cho recordEvent-driven flow. Do đó với admin path này, homeScore/
+     * awayScore LUÔN được hiểu là "tỉ số cuối cùng tại thời điểm gọi" (có thể
+     * đã bao gồm ET), và được dùng làm cả homeScore lẫn homeExtraTime khi
+     * resultType cần ET — ĐÂY LÀ GIẢ ĐỊNH CHƯA VERIFY được với
+     * matchresult.service.ts (không có trong context). Cần xác nhận
+     * confirmResultInTx có nhận & xử lý đúng homeExtraTime/awayExtraTime
+     * giống confirmResult (dùng ở confirmOfficial) hay không — nếu
+     * confirmResultInTx bỏ qua field này, home_extra_time_score sẽ bị null
+     * sai lệch dù winner vẫn đúng (vì final score dùng luôn homeScore).
+     */
+    // Marker để FE detect lỗi "knockout draw" ném từ MatchResultService._guardConfirm
+    // — message gốc: `Match ${id}: knockout draw ở ${resultType} — cần extra_time
+    // hoặc penalty`. Export marker này thay vì để FE tự đoán string, tránh 2 nơi
+    // hard-code cùng 1 chuỗi khác nhau (bug đã xảy ra ở bản fix trước).
+
+    /**
+     * FIX (bug report kép — bản fix trước tự viết guard riêng, SAI 2 chỗ):
+     * 1. Không cần tự check draw ở đây nữa — confirmResultInTx đã gọi
+     *    _guardConfirm, tự throw VALIDATION_ERROR đúng cho cả full_time và
+     *    extra_time (kiểm tra qua homeExtraTime, không phải homeScore).
+     *    Viết lại guard riêng ở lifecycle service tạo 2 nguồn sự thật có thể
+     *    lệch nhau (bản trước: so sai field cho case extra_time).
+     * 2. homeExtraTimeScore/awayExtraTimeScore là field RIÊNG với homeScore/
+     *    awayScore — theo _resolveWinner: case extra_time dùng
+     *    `homeExtraTime ?? homeScore` làm homeFinal TRỰC TIẾP, không cộng dồn.
+     *    Bản fix trước gán homeExtraTime = homeScore (dùng lại chung 1 giá
+     *    trị) là sai model — phải tách 2 input riêng ở FE.
+     *
+     * Luồng FE dự kiến không đổi (full_time draw -> modal ET -> vẫn draw ->
+     * modal pen), chỉ khác: modal ET giờ gửi homeExtraTimeScore/
+     * awayExtraTimeScore là TỔNG SAU HIỆP PHỤ, còn homeScore/awayScore vẫn
+     * giữ nguyên tỉ số 90' đã đóng băng lúc mở modal (không đổi theo ET input).
+     */
     async adminRecordResult(
         matchId: number,
         input: AdminRecordResultInput,
@@ -983,6 +1006,7 @@ export class MatchLifecycleService {
                     `Dùng correction window (addEvent/editScore) cho match đã finished.`,
                 );
             }
+
             if (input.scorers?.length) {
                 for (const s of input.scorers) {
                     assertMinuteInBounds(s.period ?? null, s.minute, undefined);
@@ -1060,11 +1084,19 @@ export class MatchLifecycleService {
                     })),
                 });
             }
+
+            // Không tự guard draw/penalty ở đây — confirmResultInTx (bên dưới)
+            // gọi _guardConfirm, tự throw đúng cho mọi resultType. Chỉ forward
+            // field, KHÔNG suy diễn thêm.
             return this.matchResultService.confirmResultInTx(tx, matchId, {
                 homeScore: input.homeScore,
                 awayScore: input.awayScore,
                 homeHalfTimeScore: input.homeHalfTimeScore,
                 awayHalfTimeScore: input.awayHalfTimeScore,
+                homeExtraTime: input.homeExtraTimeScore,
+                awayExtraTime: input.awayExtraTimeScore,
+                homePenalty: input.homePenaltyScore,
+                awayPenalty: input.awayPenaltyScore,
                 resultType,
             });
         });

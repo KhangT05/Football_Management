@@ -89,5 +89,9 @@ export interface AdminRecordResultInput {
     resultType?: MatchResultType;
     homeHalfTimeScore?: number;
     awayHalfTimeScore?: number;
+    homeExtraTimeScore?: number;
+    awayExtraTimeScore?: number;
+    homePenaltyScore?: number;
+    awayPenaltyScore?: number;
 }
 //# sourceMappingURL=match.type.d.ts.map

@@ -32,16 +32,26 @@ const EVENT_TYPES = [
   { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
 ];
 
-// Ngưỡng phút hợp lệ — chỉ là UX guard, KHÔNG thay thế validation ở BE.
-// BE (matchlifecycle.service.ts: recordEvent/addEvent/editEvent) hiện không
-// bound-check `minute` theo `period`. Cần vá riêng ở BE — đây chỉ chặn input
-// bất thường trên UI, client vẫn có thể bypass qua raw API call.
 const MAX_MINUTE = 130;
 
-// ─── Second-yellow detection ────────────────────────────────────────────────
-// Local model giữ evt.type === 'yellow' cho MỌI thẻ vàng (kể cả thẻ thứ 2) để
-// UI đơn giản — effective type (yellow_card vs second_yellow) chỉ resolve tại
-// thời điểm build payload gửi BE, dựa theo thứ tự tạo event (id = Date.now()).
+// Message do BE ném ra khi knockout hoà, xuất phát từ
+// MatchResultService._guardConfirm (matchresult.service.ts), được
+// adminRecordResult gọi qua confirmResultInTx. Message gốc dạng:
+//   "Match {id}: knockout draw ở {resultType} — cần extra_time hoặc penalty"
+// resultType được nhúng thẳng vào message ('full_time' hoặc 'extra_time'),
+// dùng chuỗi đó để phân biệt 2 bước (mở modal hiệp phụ hay mở thẳng modal pen).
+//
+// LƯU Ý QUAN TRỌNG: matchlifecycle.service.ts có export
+// KNOCKOUT_DRAW_MARKER ('KNOCKOUT_DRAW_NEEDS_EXTRA_TIME_OR_PENALTY') và
+// KNOCKOUT_ET_DRAW_MARKER ('KNOCKOUT_ET_DRAW_NEEDS_PENALTY'), nhưng 2 marker
+// đó CHỈ được throw ở finalizeMatch()/submitManualScore() (luồng
+// recordEvent trực tiếp) — KHÔNG áp dụng cho adminRecordResult(), vì hàm
+// này đi qua _guardConfirm ở matchresult.service.ts, hàm không dùng 2
+// marker trên (và KNOCKOUT_ET_DRAW_MARKER hiện không được throw ở bất kỳ
+// đâu cả). Dùng nhầm 2 marker đó ở màn hình này sẽ khiến check luôn fail —
+// modal hiệp phụ/pen sẽ không tự mở, chỉ hiện toast lỗi chung chung.
+const KNOCKOUT_DRAW_MESSAGE_MARKER = 'knockout draw ở';
+
 function getEffectiveYellowType(evt, sideEvents) {
   if (evt.type !== 'yellow' || !evt.player) return 'yellow';
   const earlierYellowSamePlayer = sideEvents.some(
@@ -59,10 +69,81 @@ function countYellowsByPlayer(sideEvents) {
   return map;
 }
 
-// ─── Payload builders ─────────────────────────────────────────────────────────
-// NHẬN effectiveType riêng thay vì đọc evt.type trực tiếp — bắt buộc để
-// second-yellow thật sự đi thành type='second_yellow' lên BE, khớp với badge
-// cảnh báo đã hiển thị trong EventCard.jsx.
+function ExtraTimeModal({ isOpen, onClose, homeName, awayName, homeGoalCount, awayGoalCount, draft, setDraft, onConfirm, onSkip, isSubmitting }) {
+  if (!isOpen) return null;
+
+  const setField = (side, value) => {
+    const digits = String(value).replace(/\D/g, '');
+    setDraft(prev => ({ ...prev, [side]: digits }));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl max-w-sm w-full p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Zap className="w-5 h-5 text-amber-400" />
+          <h3 className="font-black text-white text-sm uppercase tracking-wide">Hiệp phụ</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          {homeName} {homeGoalCount} – {awayGoalCount} {awayName} sau 90 phút. Nhập tổng tỉ số sau hiệp phụ,
+          hoặc bỏ qua nếu giải không đá hiệp phụ.
+        </p>
+
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col items-center gap-1 flex-1">
+            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{homeName}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={draft.home}
+              onChange={e => setField('home', e.target.value)}
+              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+          <span className="text-gray-600 font-black text-lg mt-4">–</span>
+          <div className="flex flex-col items-center gap-1 flex-1">
+            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{awayName}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={draft.away}
+              onChange={e => setField('away', e.target.value)}
+              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="flex items-center justify-center gap-1.5 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white rounded-lg text-xs font-black transition-colors"
+          >
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+            Xác nhận kết quả hiệp phụ
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
+            >
+              Huỷ
+            </button>
+            <button
+              onClick={onSkip}
+              disabled={isSubmitting}
+              className="flex-1 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
+            >
+              Không đá HP, vào Pen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function buildEventPayload(evt, teamId, effectiveType) {
   const base = { teamId, minute: Number(evt.minute) || 1 };
   switch (effectiveType) {
@@ -87,16 +168,11 @@ function countEvents(events) {
   };
 }
 
-// ─── Robust API response unwrapping ────────────────────────────────────────
-// PREV BUG: `typeof res?.status === 'boolean'` giả định custom wrapper.
-// axios thật trả res.status = number (200) → luôn rơi vào else, payload =
-// toàn bộ response object → parse ra [] mọi lúc.
-// Fix: thử tuần tự các shape phổ biến, không đoán qua typeof status.
 function unwrapListResponse(res, label) {
   const candidates = [
-    res?.data?.data,   // axios response, paginated envelope
-    res?.data,         // axios response, raw array HOẶC đã-unwrap paginated
-    res,               // đã-unwrap raw array
+    res?.data?.data,
+    res?.data,
+    res,
   ];
   for (const c of candidates) {
     if (Array.isArray(c)) return c;
@@ -133,9 +209,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Danh sách trận "khả dụng cho live control": chỉ scheduled/ongoing.
-  // Tách riêng thành statusFilteredMatches (chưa áp search) để phân biệt
-  // "season không có trận nào" vs "search filter loại hết" ở MatchSelectorPanel.
   const statusFilteredMatches = useMemo(
     () => allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing'),
     [allSeasonMatches]
@@ -147,8 +220,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     return statusFilteredMatches.filter(m => {
       const hName = m.home_team?.name ?? teams.find(t => Number(t.id) === Number(m.home_team_id))?.name;
       const aName = m.away_team?.name ?? teams.find(t => Number(t.id) === Number(m.away_team_id))?.name;
-      // teams store chưa load xong (race với fetchTeams ở trên) → không loại
-      // kết quả, tránh false-negative khi search chạy trước khi tên resolve.
       if (hName == null && aName == null) return true;
       return (hName ?? '').toLowerCase().includes(lower) || (aName ?? '').toLowerCase().includes(lower);
     });
@@ -185,9 +256,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         ]);
         if (cancelled) return;
 
-        // Surface fetch failure ra toast — trước đây chỉ log console, UI im
-        // lặng → nhìn giống "dropdown rỗng do bug logic" trong khi thực tế là
-        // request fail. Phân biệt rõ data issue vs UI bug.
         if (homeRes.status === 'rejected') {
           console.error(`[LiveControlTab] getPlayers(home_team_id=${selectedMatch.home_team_id}) failed:`, homeRes.reason);
           toast.error(`Không tải được danh sách cầu thủ đội nhà (team_id=${selectedMatch.home_team_id}).`);
@@ -200,9 +268,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         const parsedHome = homeRes.status === 'fulfilled' ? unwrapListResponse(homeRes.value, 'homePlayers') : [];
         const parsedAway = awayRes.status === 'fulfilled' ? unwrapListResponse(awayRes.value, 'awayPlayers') : [];
 
-        // Fetch fulfilled nhưng trả 0 phần tử = data issue (team chưa có
-        // player trong DB), không phải parse lỗi — log riêng để không tốn
-        // thời gian debug lại unwrapListResponse.
         if (homeRes.status === 'fulfilled' && parsedHome.length === 0) {
           console.warn(`[LiveControlTab] home_team_id=${selectedMatch.home_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
         }
@@ -215,8 +280,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
         const allLineups = lineupRes.status === 'fulfilled' ? unwrapListResponse(lineupRes.value, 'lineups') : [];
 
-        // Coerce cả 2 vế về Number — tránh lệch string/number giữa
-        // lineup.team_id và match.home_team_id/away_team_id.
         const homeTeamId = Number(selectedMatch.home_team_id);
         const awayTeamId = Number(selectedMatch.away_team_id);
         setLineups({
@@ -232,10 +295,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   }, [selectedMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Events ──────────────────────────────────────────────────────────────────
-  // Score KHÔNG phải state riêng — derive từ homeEvents/awayEvents (type='goal')
-  // để KHÔNG THỂ desync với BE. BE luôn tính lại score từ matchEvent table qua
-  // _computeScoreFromEvents, không có chỗ nhận raw score override khi match
-  // đang ongoing/event-driven.
   const [homeEvents, setHomeEvents] = useState([]);
   const [awayEvents, setAwayEvents] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
@@ -250,6 +309,24 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
   const [activeModal, setActiveModal] = useState(null); // 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
 
+  // ── Knockout draw → extra time → penalty flow ────────────────────────────
+  // 3 bước: full_time draw -> mở ExtraTimeModal (nhập tổng bàn sau ET, hoặc
+  // bỏ qua ET) -> nếu vẫn hoà -> PenaltyModal.
+  // penaltyBaseScore = tỉ số nền hiển thị & gửi lên BE làm homeScore/
+  // awayScore cho bước pen — là tỉ số 90' nếu bỏ qua ET, hoặc tổng sau ET
+  // nếu đã qua bước hiệp phụ.
+  const isKnockout = selectedMatch?.phase?.format === 'knockout';
+  const isDrawNow = homeGoalCount === awayGoalCount;
+
+  const [etModalOpen, setEtModalOpen] = useState(false);
+  const [etDraft, setEtDraft] = useState({ home: '', away: '' });
+  const [isSubmittingEt, setIsSubmittingEt] = useState(false);
+
+  const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
+  const [penaltyDraft, setPenaltyDraft] = useState({ home: '', away: '' });
+  const [isSubmittingPenalty, setIsSubmittingPenalty] = useState(false);
+  const [penaltyBaseScore, setPenaltyBaseScore] = useState({ home: 0, away: 0 });
+
   useEffect(() => {
     if (!effectiveSeasonId) return;
     fetchBySeason(Number(effectiveSeasonId), { force: true });
@@ -263,6 +340,12 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     }
   }, [selectedMatch]);
 
+  useEffect(() => {
+    if (etModalOpen) {
+      setEtDraft({ home: String(homeGoalCount), away: String(awayGoalCount) });
+    }
+  }, [etModalOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const _resetForm = () => {
     setSelectedMatchId('');
@@ -275,6 +358,9 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setSelectedMatchId(matchId);
     setHomeEvents([]); setAwayEvents([]);
     setIsDirty(false);
+    setEtModalOpen(false); setEtDraft({ home: '', away: '' });
+    setPenaltyModalOpen(false); setPenaltyDraft({ home: '', away: '' });
+    setPenaltyBaseScore({ home: 0, away: 0 });
   };
 
   const addEvent = (side, type) => {
@@ -292,9 +378,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   };
 
   const updateEvent = (side, id, field, value) => {
-    // Guard phút: strip non-digit + clamp 0..MAX_MINUTE ngay tại input.
-    // Chỉ là UX guard — BE hiện KHÔNG validate minute theo period, client
-    // luôn có thể bypass qua raw API call, cần vá riêng ở BE.
     let v = value;
     if (field === 'minute') {
       const digits = String(value).replace(/\D/g, '');
@@ -320,12 +403,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     if (homeEvents.some(e => !e.minute) || awayEvents.some(e => !e.minute))
       return 'Vui lòng điền phút cho tất cả sự kiện.';
 
-    // Chặn thẻ vàng thứ 3+ cho cùng 1 cầu thủ trong cùng trận — sau thẻ vàng
-    // thứ 2 (=second_yellow=đỏ), cầu thủ đã bị truất quyền thi đấu. BE
-    // (recordEvent) chỉ chặn được lần đầu-vs-lần-hai (findFirst theo
-    // type='yellow_card'), không biết gì về "thẻ thứ 3" vì theo model BE,
-    // thẻ thứ 2 đã là type khác (second_yellow) — guard này phải nằm ở FE
-    // trước khi build payload.
     for (const [label, events] of [['Đội nhà', homeEvents], ['Đội khách', awayEvents]]) {
       const yellowCounts = countYellowsByPlayer(events);
       for (const [, count] of yellowCounts) {
@@ -359,9 +436,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     if (err) { toast.error(err); return; }
     setIsSavingDraft(true);
     try {
-      // Match còn 'scheduled' → chuyển ongoing trước khi BE chấp nhận event
-      // (giả định BE gate recordEvent theo status !== 'scheduled'; nếu BE
-      // không gate, gọi startMatch dư vẫn no-op an toàn — verify lại BE).
       if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
         await matchApi.startMatch(selectedMatch.id);
         setMatchStatus('ongoing');
@@ -374,35 +448,138 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     } finally { setIsSavingDraft(false); }
   };
 
+  // Kiểm tra chuỗi lỗi trả về từ BE (message string) xem có phải case
+  // "knockout hoà ở full_time, cần nhập ET/pen" hay không — xem giải thích
+  // đầy đủ ở KNOCKOUT_DRAW_MESSAGE_MARKER phía trên file.
+  const isKnockoutDrawError = (err) => {
+    const msg = err?.response?.data?.message || err?.message || '';
+    return typeof msg === 'string'
+      && msg.includes(KNOCKOUT_DRAW_MESSAGE_MARKER)
+      && msg.includes('full_time');
+  };
+
+  // Case "vẫn hoà sau khi đã nhập extra_time" — cùng message format với
+  // trên nhưng resultType nhúng trong message là 'extra_time'.
+  const isKnockoutEtDrawError = (err) => {
+    const msg = err?.response?.data?.message || err?.message || '';
+    return typeof msg === 'string'
+      && msg.includes(KNOCKOUT_DRAW_MESSAGE_MARKER)
+      && msg.includes('extra_time');
+  };
+
+  const submitAdminResult = async (extra = {}) => {
+    return matchApi.adminRecordResult(selectedMatch.id, {
+      homeScore: homeGoalCount, awayScore: awayGoalCount,
+      resultType: 'full_time',
+      ...extra,
+    });
+  };
+
   const handleFinishMatch = async () => {
     const err = validate();
     if (err) { toast.error(err); return; }
     setIsFinishing(true);
     try {
-      // Gộp start+finish thành 1 action duy nhất — bỏ bước "Bắt đầu" tách
-      // riêng theo yêu cầu. Nếu match vẫn 'scheduled', chuyển ongoing trước
-      // khi sync event + finalize, để không phá gate status ở BE.
       if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
         await matchApi.startMatch(selectedMatch.id);
       }
 
-      // 1. Sync toàn bộ sự kiện chưa lưu (goal, thẻ, thay người).
       await syncUnsavedEvents();
 
-      // 2. Finalize kết quả — score lấy từ goal count vừa sync, không phải
-      // input tay, nên luôn khớp với event list vừa gửi lên.
-      await matchApi.adminRecordResult(selectedMatch.id, {
-        homeScore: homeGoalCount, awayScore: awayGoalCount,
-        resultType: 'full_time',
-      });
+      // Knockout hoà ở 90' — không gọi API (chắc chắn fail), mở thẳng modal
+      // hiệp phụ. Events đã sync ở trên, chỉ còn thiếu quyết định ET/pen.
+      if (isKnockout && isDrawNow) {
+        setEtModalOpen(true);
+        return;
+      }
+
+      await submitAdminResult();
 
       setMatchStatus('finished');
       toast.success('Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉', 5000);
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
+      if (isKnockoutDrawError(err)) {
+        setEtModalOpen(true);
+        return;
+      }
       toast.error('Lỗi khi xác nhận kết quả: ' + (err?.response?.data?.message || err.message));
     } finally { setIsFinishing(false); }
+  };
+
+  // Bước ET: admin nhập TỔNG bàn thắng sau hiệp phụ (không phải riêng bàn
+  // ghi trong ET) — khớp với semantics homeScore=tổng cuối cùng ở BE
+  // (adminRecordResult forward thẳng homeScore làm homeFinal khi không có
+  // homeExtraTimeScore riêng — xem _resolveWinner case extra_time).
+  const handleConfirmExtraTime = async () => {
+    const h = Number(etDraft.home);
+    const a = Number(etDraft.away);
+    if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
+      toast.error('Tỉ số sau hiệp phụ phải là số nguyên không âm.');
+      return;
+    }
+    if (h < homeGoalCount || a < awayGoalCount) {
+      toast.error('Tỉ số sau hiệp phụ không thể thấp hơn tỉ số 90 phút hiện tại.');
+      return;
+    }
+    setIsSubmittingEt(true);
+    try {
+      await matchApi.adminRecordResult(selectedMatch.id, {
+        homeScore: h, awayScore: a,
+        resultType: 'extra_time',
+      });
+      setMatchStatus('finished');
+      setEtModalOpen(false);
+      toast.success('Xác nhận kết quả (kèm hiệp phụ) thành công! 🎉', 5000);
+      setIsDirty(false);
+      handleRefresh();
+    } catch (err) {
+      if (isKnockoutEtDrawError(err)) {
+        // Vẫn hoà sau ET — chuyển sang pen, giữ nguyên tổng sau ET làm nền.
+        setPenaltyBaseScore({ home: h, away: a });
+        setEtModalOpen(false);
+        setPenaltyModalOpen(true);
+        return;
+      }
+      toast.error('Lỗi khi xác nhận kết quả hiệp phụ: ' + (err?.response?.data?.message || err.message));
+    } finally { setIsSubmittingEt(false); }
+  };
+
+  // Bỏ qua hiệp phụ — vào thẳng loạt sút luân lưu với tỉ số 90'.
+  const handleSkipExtraTime = () => {
+    setPenaltyBaseScore({ home: homeGoalCount, away: awayGoalCount });
+    setEtModalOpen(false);
+    setPenaltyModalOpen(true);
+  };
+
+  const handleConfirmPenalty = async () => {
+    const h = Number(penaltyDraft.home);
+    const a = Number(penaltyDraft.away);
+    if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
+      toast.error('Điểm loạt sút luân lưu phải là số nguyên không âm.');
+      return;
+    }
+    if (h === a) {
+      toast.error('Loạt sút luân lưu không thể hoà.');
+      return;
+    }
+    setIsSubmittingPenalty(true);
+    try {
+      await matchApi.adminRecordResult(selectedMatch.id, {
+        homeScore: penaltyBaseScore.home, awayScore: penaltyBaseScore.away,
+        resultType: 'penalty',
+        homePenaltyScore: h,
+        awayPenaltyScore: a,
+      });
+      setMatchStatus('finished');
+      setPenaltyModalOpen(false);
+      toast.success('Xác nhận kết quả (kèm loạt sút luân lưu) thành công! 🎉', 5000);
+      setIsDirty(false);
+      handleRefresh();
+    } catch (err) {
+      toast.error('Lỗi khi xác nhận kết quả pen: ' + (err?.response?.data?.message || err.message));
+    } finally { setIsSubmittingPenalty(false); }
   };
 
   const handleReset = () => {
@@ -411,9 +588,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     toast.info('Đã đặt lại form.');
   };
 
-  // isEditable thay cho isOngoing/isScheduled riêng lẻ — không còn nút Bắt
-  // đầu tách biệt nên mọi status "chưa xong" (scheduled/postponed/ongoing/
-  // pending_official/needs_review) đều cho phép thao tác event như nhau.
   const isFinished = matchStatus === 'finished';
   const isProtested = matchStatus === 'protested';
   const isEditable = !isFinished && !isProtested;
@@ -427,8 +601,6 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const fmtMatchDate = (m) => m?.scheduled_at
     ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
     : 'TBD';
-
-  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -470,6 +642,12 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                       <span className="text-gray-500 hidden sm:inline">{selectedMatch.venue.name}</span>
                     </>
                   )}
+                  {isKnockout && (
+                    <>
+                      <span className="text-gray-600">•</span>
+                      <span className="text-purple-400 font-semibold">Knockout</span>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-center gap-3 sm:gap-6">
@@ -493,6 +671,12 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                     <span className="font-black text-white text-sm truncate">{getAwayName()}</span>
                   </div>
                 </div>
+
+                {isEditable && isKnockout && isDrawNow && (
+                  <p className="mt-2 text-center text-xs text-amber-400/90 font-semibold">
+                    Đang hoà ở knockout — bấm "Xác nhận" sẽ mở form nhập hiệp phụ / loạt sút luân lưu.
+                  </p>
+                )}
 
                 {isEditable && (
                   <div className="mt-3 pt-3 border-t border-navy-light flex flex-wrap gap-2 justify-center">
@@ -544,7 +728,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
           </div>
         )}
 
-        {/* ── Empty state (đã có match được chọn xong, không có match nào chọn) ── */}
+        {/* ── Empty state ── */}
         {!selectedMatch && effectiveSeasonId && !isLoadingMatches && matches.length > 0 && (
           <div className="text-center py-16 border border-dashed border-navy-light rounded-3xl">
             <div className="text-5xl mb-4">👆</div>
@@ -554,11 +738,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
       </div>
 
-      {/* ── Sticky Bottom Action Bar ──
-          Compact: bỏ block score/goal/sub lặp lại (đã có ở scoreboard phía
-          trên) — chỉ giữ 1 dòng mini-stat (ẩn mobile) + trạng thái dirty +
-          action buttons. Padding/icon giảm để bar thấp hơn (~40px thay vì
-          ~64px), tránh che nội dung bên dưới không cần thiết. */}
+      {/* ── Sticky Bottom Action Bar ── */}
       {selectedMatch && !isFinished && (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-light bg-navy/90 backdrop-blur-xl px-3 py-2 sm:px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
@@ -600,7 +780,105 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
       <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
       <ResolveAppealModal isOpen={activeModal === 'resolve'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
+
+      <ExtraTimeModal
+        isOpen={etModalOpen}
+        onClose={() => { if (!isSubmittingEt) setEtModalOpen(false); }}
+        homeName={getHomeName()}
+        awayName={getAwayName()}
+        homeGoalCount={homeGoalCount}
+        awayGoalCount={awayGoalCount}
+        draft={etDraft}
+        setDraft={setEtDraft}
+        onConfirm={handleConfirmExtraTime}
+        onSkip={handleSkipExtraTime}
+        isSubmitting={isSubmittingEt}
+      />
+      <PenaltyShootoutModal
+        isOpen={penaltyModalOpen}
+        onClose={() => { if (!isSubmittingPenalty) setPenaltyModalOpen(false); }}
+        homeName={getHomeName()}
+        awayName={getAwayName()}
+        homeGoalCount={penaltyBaseScore.home}
+        awayGoalCount={penaltyBaseScore.away}
+        draft={penaltyDraft}
+        setDraft={setPenaltyDraft}
+        onConfirm={handleConfirmPenalty}
+        isSubmitting={isSubmittingPenalty}
+      />
     </>
+  );
+}
+
+// ─── PenaltyShootoutModal ─────────────────────────────────────────────────────
+// Modal riêng cho bước nhập loạt sút luân lưu khi knockout hoà ở full_time.
+// Không dùng chung với AdvancedMatchControlModals vì use-case khác hẳn (chỉ
+// 2 input số, không cần fetch dữ liệu ngoài).
+
+function PenaltyShootoutModal({ isOpen, onClose, homeName, awayName, homeGoalCount, awayGoalCount, draft, setDraft, onConfirm, isSubmitting }) {
+  if (!isOpen) return null;
+
+  const setField = (side, value) => {
+    const digits = String(value).replace(/\D/g, '');
+    setDraft(prev => ({ ...prev, [side]: digits }));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl max-w-sm w-full p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Target className="w-5 h-5 text-purple-400" />
+          <h3 className="font-black text-white text-sm uppercase tracking-wide">Loạt sút luân lưu</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          {homeName} {homeGoalCount} – {awayGoalCount} {awayName} sau 90 phút. Nhập kết quả pen để xác định đội thắng.
+        </p>
+
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col items-center gap-1 flex-1">
+            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{homeName}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={draft.home}
+              onChange={e => setField('home', e.target.value)}
+              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-purple-500"
+              placeholder="0"
+            />
+          </div>
+          <span className="text-gray-600 font-black text-lg mt-4">–</span>
+          <div className="flex flex-col items-center gap-1 flex-1">
+            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{awayName}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={draft.away}
+              onChange={e => setField('away', e.target.value)}
+              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-purple-500"
+              placeholder="0"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-lg text-xs font-black transition-colors"
+          >
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}
+            Xác nhận kết quả
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -629,8 +907,6 @@ function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers
           </h3>
         </div>
 
-        {/* Bỏ ô đếm Vàng — chỉ giữ Bàn / Đỏ / Thay. Thẻ vàng vẫn track ngầm
-            trong `events` cho logic thẻ-vàng-thứ-2 + validate, chỉ ẩn khỏi UI. */}
         <div className="grid grid-cols-3 gap-1.5">
           {[
             { icon: '⚽', val: c.goals, label: 'Bàn', color: 'emerald' },
