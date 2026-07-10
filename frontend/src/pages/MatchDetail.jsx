@@ -144,7 +144,8 @@ export default function MatchDetail() {
 
   const homeName = homeTeamInfo?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = awayTeamInfo?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
-  const hasScore = match?.home_score != null && match?.away_score != null;
+  const hasScore = RESULT_AVAILABLE_STATUSES.has(match?.status)
+    && match?.home_score != null && match?.away_score != null;
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;

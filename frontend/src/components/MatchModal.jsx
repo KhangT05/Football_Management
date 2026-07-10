@@ -12,6 +12,7 @@ import {
   STATUS_BADGE_COLOR,
   NO_EVENT_STATUSES,
   getVsLabel,
+  RESULT_AVAILABLE_STATUSES
 } from './MatchShared';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -324,7 +325,8 @@ export default function MatchModal({ match, onClose }) {
 
   const homeName = match.home_team?.name ?? `Đội #${match.home_team_id}`;
   const awayName = match.away_team?.name ?? `Đội #${match.away_team_id}`;
-  const hasScore = match.home_score != null && match.away_score != null;
+  const hasScore = RESULT_AVAILABLE_STATUSES.has(match.status)
+    && match.home_score != null && match.away_score != null;
   const statusLabel = STATUS_LABEL[match.status] ?? match.status;
   const badgeCls = STATUS_BADGE_COLOR[match.status] ?? 'bg-blue-500/10 border-blue-500/20 text-blue-400';
 

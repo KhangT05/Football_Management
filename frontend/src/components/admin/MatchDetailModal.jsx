@@ -3,7 +3,7 @@ import { X, FileText, Edit, Save, Plus, Minus, Loader2 } from 'lucide-react';
 import { matchApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 
-// ─── Enums (mirror Prisma — server-only, không import trực tiếp) ──────────────
+import { RESULT_AVAILABLE_STATUSES } from '../MatchShared'
 
 const MatchStatus = {
   scheduled: 'scheduled',
@@ -294,7 +294,9 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
   if (!match) return null;
 
   const statusMeta = STATUS_META[match.status] ?? { label: match.status, cls: 'text-gray-400 bg-gray-400/10 border-gray-400/20' };
-  const hasResult = match.home_score != null && match.away_score != null;
+
+  const hasResult = RESULT_AVAILABLE_STATUSES.has(match.status)
+    && match.home_score != null && match.away_score != null;
   const canEdit = EDITABLE.has(match.status);
 
   const handleSave = async () => {

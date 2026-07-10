@@ -9,6 +9,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
+COPY assets ./assets
 COPY . .
 RUN npx prisma generate
 RUN npx tsoa spec-and-routes
