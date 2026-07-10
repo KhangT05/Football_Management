@@ -1,12 +1,13 @@
 import { Controller } from "tsoa";
 import type { TsoaResponse } from "tsoa";
 import { PlayerService } from "../services/player.service.js";
-import { type CreatePlayerDto, type UpdatePlayerDto, type PlayerDto, type TeamPlayerDto, type AddPlayerToTeamDto, type CreatePlayerForTeamDto, type UpdateTeamPlayerDto, type BulkDeleteDto } from "../dtos/player.schema.js";
+import { type CreatePlayerDto, type UpdatePlayerDto, type PlayerDto, type TeamPlayerDto, type AddPlayerToTeamDto, type CreatePlayerForTeamDto, type UpdateTeamPlayerDto, type BulkDeleteDto, PlayerPublicDto } from "../dtos/player.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult } from "../types/player.type.js";
 export declare class PlayerController extends Controller {
     private readonly service;
     constructor(service: PlayerService);
+    list(page?: number, per_page?: number, sort?: string, direction?: "asc" | "desc", position?: string, nationality?: string): Promise<PaginatedResult<PlayerPublicDto>>;
     downloadImportTemplate(minRows: number | undefined, successResponse: TsoaResponse<200, Buffer>): Promise<void>;
     findById(id: number): Promise<PlayerDto>;
     create(body: CreatePlayerDto): Promise<PlayerDto>;

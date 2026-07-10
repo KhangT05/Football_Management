@@ -25,6 +25,19 @@ export interface PlayerDto {
     user?: { id: number; name: string; email: string; phone: string | null } | null;
     user_id: number;
 }
+
+// dto/player.dto.ts — plain interface, KHÔNG derive từ Prisma.PlayerGetPayload
+export interface PlayerPublicDto {
+    id: number;
+    date_of_birth: string | null; // serialize Date -> string cho JSON/OpenAPI luôn, tránh Date ambiguity
+    position: string | null;
+    height: number | null;        // Decimal cũng không resolve được trong tsoa -> phải ép về number
+    weight: number | null;
+    nationality: string | null;
+    avatar: string | null;
+    user: { id: number; name: string };
+}
+
 export interface PlayerSeasonInfo {
     season_id: number;
     season_name: string;

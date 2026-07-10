@@ -27,7 +27,7 @@ const ForbiddenPage = lazy(() => import("./pages/ForbiddenPage"));
 const PaymentResultPage = lazy(() => import("./pages/PaymentResultPage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-
+const PlayerCareer = lazy(() => import("./pages/PlayerCareer"));
 // Admin pages — các trang lớn nhất, tách riêng chunk
 const ManageMatches = lazy(() => import("./pages/admin/ManageMatches"));
 const ManageTeams = lazy(() => import("./pages/admin/ManageTeams"));
@@ -114,7 +114,7 @@ function App() {
             <Route path="/tin-tuc" element={<News />} />
             <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
             <Route path="/giai-dau/:id" element={<TournamentDetail />} />
-
+            <Route path="/players/:playerId/career" element={<PlayerCareer />} />
             {/* Protected routes – cần đăng nhập */}
             <Route path="/dang-ky-doi-bong" element={
               <ProtectedRoute><RegisterTeam /></ProtectedRoute>

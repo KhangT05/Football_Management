@@ -911,6 +911,30 @@ const models = {
         "type": { "ref": "infer_typeofupdateRoleSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPublicDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": { "dataType": "double", "required": true },
+            "date_of_birth": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "position": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "height": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "weight": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "nationality": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "avatar": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "user": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PaginatedResult_PlayerPublicDto_": {
+        "dataType": "refObject",
+        "properties": {
+            "data": { "dataType": "array", "array": { "dataType": "refObject", "ref": "PlayerPublicDto" }, "required": true },
+            "meta": { "ref": "PaginationMeta", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerPosition": {
         "dataType": "refAlias",
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
@@ -4258,6 +4282,38 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'restore',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPlayerController_list = {
+        page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
+        per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
+        sort: { "in": "query", "name": "sort", "dataType": "string" },
+        direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
+        position: { "in": "query", "name": "position", "dataType": "string" },
+        nationality: { "in": "query", "name": "nationality", "dataType": "string" },
+    };
+    app.get('/players', ...(fetchMiddlewares(PlayerController)), ...(fetchMiddlewares(PlayerController.prototype.list)), async function PlayerController_list(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_list, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PlayerController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'list',
                 controller,
                 response,
                 next,
