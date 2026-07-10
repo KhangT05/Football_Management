@@ -9,6 +9,7 @@ import axiosClient from './axiosClient';
  * ✅ GET  /schedules/seasons/{seasonId}/schedule
  * ✅ GET  /schedules/seasons/{seasonId}/teams/{teamId}/schedule
  * ✅ POST /schedules/seasons/{seasonId}/generate
+ * ✅ POST /schedules/seasons/{seasonId}/generate-from-groups
  * ✅ POST /schedules/seasons/{seasonId}/schedule
  * ✅ PATCH /schedules/matches/{matchId}/reschedule
  * ✅ GET  /phases/{phaseId}/knockout/bracket
@@ -27,6 +28,9 @@ import axiosClient from './axiosClient';
  * Match result (matchResult.controller.ts):
  * ✅ GET  /matches/{id}/result          → getMatchById
  * ✅ GET  /matches/{id}/events          → getMatchEvents
+ * ✅ GET  /matches/{id}/report          → getMatchReport (blob PDF)
+ * ✅ GET  /matches/{id}/report/data     → getMatchReportData (JSON preview,
+ *      chưa có UI nào gọi — optional, giữ lại cho preview trước khi export)
  * ✅ PATCH /matches/{id}/score          → editScore (correction window, manual path only)
  *
  * ❌ POST /matches/{id}/void-result  — CHƯA IMPLEMENT
@@ -51,6 +55,9 @@ export const matchApi = {
 
   generateSchedule: (seasonId, body) =>
     axiosClient.post(`/schedules/seasons/${seasonId}/generate`, body),
+
+  generateFromGroups: (seasonId, body) =>
+    axiosClient.post(`/schedules/seasons/${seasonId}/generate-from-groups`, body),
 
   autoSchedule: (seasonId, body) =>
     axiosClient.post(`/schedules/seasons/${seasonId}/schedule`, body),
@@ -121,22 +128,25 @@ export const matchApi = {
 
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
-  /**
-       * GET /matches/{matchId}/report — trả PDF binary (Content-Type:
-       * application/pdf, Content-Disposition: attachment). responseType: 'blob'
-       * bắt buộc, nếu không axios sẽ cố parse binary PDF như text/JSON và
-       * corrupt data trước khi ScheduleTab kịp tạo Blob từ res.data.
-       */
-  getMatchReport: (matchId) =>
-    apiClient.get(`/matches/${matchId}/report`, { responseType: 'blob' }),
 
   /**
-   * GET /matches/{matchId}/report/data — JSON preview (MatchReportOutput),
-   * dùng nếu cần hiện chi tiết lineup/goals trước khi admin bấm xuất PDF
-   * (ConfirmExportModal hiện tại chưa gọi, optional).
+   * GET /matches/{matchId}/report — trả PDF binary (Content-Type:
+   * application/pdf, Content-Disposition: attachment). responseType: 'blob'
+   * bắt buộc, nếu không axios sẽ cố parse binary PDF như text/JSON và
+   * corrupt data trước khi ScheduleTab kịp tạo Blob từ res.data.
+   */
+  getMatchReport: (matchId) =>
+    axiosClient.get(`/matches/${matchId}/report`, { responseType: 'blob' }),
+
+  /**
+   * GET /matches/{matchId}/report/data — JSON preview (MatchReportOutput).
+   * Chưa có UI nào gọi — ConfirmExportModal hiện fetch trực tiếp field từ
+   * `match`/`teams` truyền vào props thay vì gọi API riêng. Giữ lại cho
+   * trường hợp cần preview server-computed data (lineup, goal timeline...)
+   * trước khi admin bấm xuất PDF thật.
    */
   getMatchReportData: (matchId) =>
-    apiClient.get(`/matches/${matchId}/report/data`),
+    axiosClient.get(`/matches/${matchId}/report/data`),
 
   editScore: (id, body) =>
     axiosClient.patch(`/matches/${id}/score`, body),
@@ -183,21 +193,4 @@ export const matchApi = {
 
   delete: () =>
     Promise.reject(new Error('DELETE /matches/{id} không tồn tại trên backend.')),
-
-  generateSchedule: (seasonId, body) =>
-    axiosClient.post(`/schedules/seasons/${seasonId}/generate`, body),
-
-  generateFromGroups: (seasonId, body) =>
-    axiosClient.post(`/schedules/seasons/${seasonId}/generate-from-groups`, body),
-
-  autoSchedule: (seasonId, body) =>
-    axiosClient.post(`/schedules/seasons/${seasonId}/schedule`, body),
-  /**
-  * Xuất biên bản trận đấu (PDF).
-  * responseType: 'blob' — bắt buộc, nếu không axios sẽ parse response
-  * dạng binary PDF thành string và làm hỏng file khi build Blob ở FE.
-  * → GET /matches/{id}/report
-  */
-  getMatchReport: (id) =>
-    axiosClient.get(`/matches/${id}/report`, { responseType: 'blob' }),
 };
