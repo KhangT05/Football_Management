@@ -6,7 +6,7 @@ import { createAppError } from "../common/app.error.js";
 import { ApprovalStatus, PlayerPosition, Prisma } from "../generated/prisma/client.js";
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
-import { PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, TEAM_PLAYER_SELECT } from "../types/player.type.js";
+import { PLAYER_PUBLIC_SELECT, PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, TEAM_PLAYER_SELECT } from "../types/player.type.js";
 import { mailService } from "./mail.service.js";
 import redis from "../libs/redis.js";
 const MAX_IMPORT_ROWS = 200;
@@ -144,6 +144,7 @@ function worksheetToRawRows(ws) {
 export class PlayerService {
     prisma;
     teamPlayerQuery;
+    playerQuery;
     constructor(prisma) {
         this.prisma = prisma;
         this.teamPlayerQuery = new Queryable(prisma.teamPlayer, {
@@ -154,6 +155,36 @@ export class PlayerService {
             defaultPerPage: 20,
             maxPerPage: 100,
         });
+        this.playerQuery = new Queryable(prisma.player, {
+            select: PLAYER_PUBLIC_SELECT,
+            sortable: ["id", "created_at", "date_of_birth"], // chỉ field scalar thật trên Player
+            defaultSort: { column: "id", direction: "desc" },
+            filterable: ["position", "nationality"], // nếu 2 cột này tồn tại trên Player, đúng như PLAYER_SELECT có
+            defaultPerPage: 20,
+            maxPerPage: 500, // FE đang gọi per_page=500 để tải hết 1 lần — cho phép
+        });
+    }
+    toPlayerPublicDto(row) {
+        return {
+            id: row.id,
+            date_of_birth: row.date_of_birth?.toISOString() ?? null,
+            position: row.position,
+            height: row.height ? Number(row.height) : null,
+            weight: row.weight ? Number(row.weight) : null,
+            nationality: row.nationality,
+            avatar: row.avatar,
+            user: { id: row.user.id, name: row.user.name },
+        };
+    }
+    listPlayers(query) {
+        return this.playerQuery
+            .run(query, {
+            beforeBuild: (where) => { where.push({ deleted_at: null }); },
+        })
+            .then((res) => ({
+            ...res,
+            data: res.data.map((p) => this.toPlayerPublicDto(p)),
+        }));
     }
     // ----------------------------------------------------------
     // PLAYER CRUD

@@ -45,6 +45,13 @@ let PlayerController = class PlayerController extends Controller {
     // Cách đúng theo tsoa: dùng @Res() + TsoaResponse — tsoa nhận diện
     // đây là "custom response", tự gọi hàm callback để gửi response DUY
     // NHẤT, không tự động ghi thêm lần 2 nữa.
+    async list(page = 1, per_page = 20, sort, direction, position, nationality) {
+        return this.service.listPlayers({
+            page, per_page, sort, direction,
+            ...(position && { position }),
+            ...(nationality && { nationality }),
+        });
+    }
     async downloadImportTemplate(minRows = 7, successResponse) {
         const buffer = await this.service.exportImportTemplate(minRows);
         successResponse(200, buffer, {
@@ -148,6 +155,18 @@ let PlayerController = class PlayerController extends Controller {
         return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
     }
 };
+__decorate([
+    Get("/"),
+    __param(0, Query()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __param(5, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "list", null);
 __decorate([
     Get("import-template"),
     __param(0, Query()),

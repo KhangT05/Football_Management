@@ -3136,6 +3136,87 @@
             "UpdateRoleDto": {
                 "$ref": "#/components/schemas/infer_typeofupdateRoleSchema_"
             },
+            "PlayerPublicDto": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "date_of_birth": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "position": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "height": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "nationality": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "user": {
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "id"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "id",
+                    "date_of_birth",
+                    "position",
+                    "height",
+                    "weight",
+                    "nationality",
+                    "avatar",
+                    "user"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "PaginatedResult_PlayerPublicDto_": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerPublicDto"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                },
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
             "PlayerPosition": {
                 "type": "string",
                 "enum": [
@@ -10151,6 +10232,123 @@
                 ]
             }
         },
+        "/players": {
+            "get": {
+                "operationId": "List",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResult_PlayerPublicDto_"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "position",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "nationality",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayerDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Players"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin",
+                            "organizing",
+                            "leader"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreatePlayerDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/players/import-template": {
             "get": {
                 "operationId": "DownloadImportTemplate",
@@ -10297,46 +10495,6 @@
                         }
                     }
                 ]
-            }
-        },
-        "/players": {
-            "post": {
-                "operationId": "Create",
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlayerDto"
-                                }
-                            }
-                        }
-                    }
-                },
-                "tags": [
-                    "Players"
-                ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "organizing",
-                            "leader"
-                        ]
-                    }
-                ],
-                "parameters": [],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreatePlayerDto"
-                            }
-                        }
-                    }
-                }
             }
         },
         "/players/{team_id}/team-players": {

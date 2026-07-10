@@ -31,6 +31,14 @@ export const PLAYER_SELECT = {
     },
 } satisfies Prisma.PlayerSelect;
 
+export const PLAYER_PUBLIC_SELECT = {
+    id: true, date_of_birth: true, position: true, height: true,
+    weight: true, nationality: true, avatar: true,
+    user: { select: { id: true, name: true } }, // bỏ email, phone
+} satisfies Prisma.PlayerSelect;
+
+export type PlayerPublicRow = Prisma.PlayerGetPayload<{ select: typeof PLAYER_PUBLIC_SELECT }>;
+
 export const TEAM_PLAYER_SELECT = {
     id: true,
     team_id: true,

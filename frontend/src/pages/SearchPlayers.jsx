@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Search, UserCircle, Loader2, ArrowUpDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, UserCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { playerApi } from '../api';
-import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
+import { AVATAR_COLORS, getInitials } from '../utils/constants';
 import PosBadge from '../components/myteam/PosBadge';
 import Pagination from '../components/ui/Pagination';
 
 export default function SearchPlayers() {
+  const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  
-  // Pagination
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
 
-  // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-      setCurrentPage(1); // Reset page on new search
+      setCurrentPage(1);
     }, 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -27,12 +28,21 @@ export default function SearchPlayers() {
   useEffect(() => {
     const fetchPlayers = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const res = await playerApi.getAll({ per_page: 500 });
-        const list = (typeof res?.status === 'boolean') ? res.data?.data || res.data : res?.data?.data || res?.data || res || [];
+        // axiosClient interceptor unwrap response.data ->
+        // res = ApiResponseShape<PaginatedResult<PlayerDto>> = { status, message, data: { data, meta } }
+        const list = res?.data?.data;
         setPlayers(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error('Lỗi khi tải danh sách cầu thủ:', err);
+        setError(
+          err?.response?.status === 401
+            ? 'Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập.'
+            : 'Không thể tải danh sách cầu thủ. Vui lòng thử lại sau.'
+        );
+        setPlayers([]);
       } finally {
         setIsLoading(false);
       }
@@ -40,7 +50,6 @@ export default function SearchPlayers() {
     fetchPlayers();
   }, []);
 
-  // Format player list (xử lý dữ liệu trả về từ API)
   const normalizedPlayers = players.map(p => ({
     id: p.id,
     name: p.user?.name || p.name || 'Cầu thủ vô danh',
@@ -51,7 +60,6 @@ export default function SearchPlayers() {
     dateOfBirth: p.date_of_birth,
   }));
 
-  // Lọc
   const filteredPlayers = normalizedPlayers.filter(p =>
     p.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
     (p.email && p.email.toLowerCase().includes(debouncedQuery.toLowerCase()))
@@ -61,12 +69,13 @@ export default function SearchPlayers() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = filteredPlayers.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
+  const goToCareer = (playerId) => navigate(`/players/${playerId}/career`);
+
   return (
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12 relative overflow-hidden">
-      {/* Background elements */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
-      
+
       <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="mb-10 text-center animate-slide-up">
           <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-neon uppercase tracking-tight mb-4">
@@ -77,7 +86,6 @@ export default function SearchPlayers() {
           </p>
         </div>
 
-        {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12 animate-slide-up" style={{ animationDelay: '100ms' }}>
           <div className="relative group">
             <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
@@ -96,8 +104,13 @@ export default function SearchPlayers() {
           </div>
         </div>
 
-        {/* Results */}
-        {isLoading ? (
+        {error ? (
+          <div className="bg-navy/40 backdrop-blur-md border border-red-500/30 rounded-3xl p-12 text-center max-w-2xl mx-auto">
+            <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Không thể tải dữ liệu</h3>
+            <p className="text-gray-400">{error}</p>
+          </div>
+        ) : isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-12 h-12 text-neon animate-spin mb-4" />
             <p className="text-gray-400 font-bold">Đang tải danh sách cầu thủ...</p>
@@ -131,7 +144,12 @@ export default function SearchPlayers() {
                       return (
                         <tr
                           key={player.id}
-                          className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
+                          onClick={() => goToCareer(player.id)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') goToCareer(player.id); }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Xem thống kê sự nghiệp của ${player.name}`}
+                          className="cursor-pointer hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in focus:outline-none focus:bg-navy-light/30"
                           style={{ animationDelay: `${(idx % 10) * 40}ms` }}
                         >
                           <td className="py-4 px-6">
