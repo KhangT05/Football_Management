@@ -1,8 +1,25 @@
 import PDFDocument from 'pdfkit';
+import path from 'path';
 import { MatchReportOutput, MatchReportPlayerRow } from '../types/matchReport.type.js';
 import { MatchReportGoalEntry } from '../helper/match.helper.js';
 
-const COL_WIDTHS = [35, 170, 55, 55, 35, 55, 45, 45];
+// ─── Font Unicode tiếng Việt ───────────────────────────────────────────────
+// FIX GỐC: PDFKit mặc định dùng 14 font chuẩn PDF (Helvetica, Times, ...),
+// các font này KHÔNG có glyph cho ký tự có dấu tiếng Việt (ư, ơ, đ, ệ...).
+// Kết quả là PDF hiện chữ vỡ kiểu "BIÊN B ¢N TR ¬N êEP" thay vì
+// "BIÊN BẢN TRẬN ĐẤU" — vì các byte dấu bị map sang glyph không tồn tại
+// trong font đó. Phải embed 1 font TTF hỗ trợ Unicode đầy đủ (Roboto/Noto
+// Sans) thì mới hiện đúng dấu tiếng Việt.
+//
+// Cần đặt 3 file font (Regular / Bold / Italic) vào thư mục assets/fonts
+// của project, ví dụ tải từ Google Fonts:
+//   Roboto-Regular.ttf, Roboto-Bold.ttf, Roboto-Italic.ttf
+const FONT_DIR = path.join(process.cwd(), 'assets', 'fonts');
+const FONT_REGULAR = path.join(FONT_DIR, 'Roboto-Regular.ttf');
+const FONT_BOLD = path.join(FONT_DIR, 'Roboto-Bold.ttf');
+const FONT_ITALIC = path.join(FONT_DIR, 'Roboto-Italic.ttf');
+
+const COL_WIDTHS = [30, 150, 55, 50, 30, 45, 40, 40];
 const COL_HEADERS = ['Số áo', 'Cầu thủ', 'Vị trí', 'BT/DB', 'Bàn', 'Phản lưới', 'Thẻ V', 'Thẻ Đ'];
 
 export function renderMatchReportPdf(report: MatchReportOutput): Promise<Buffer> {
@@ -14,6 +31,12 @@ export function renderMatchReportPdf(report: MatchReportOutput): Promise<Buffer>
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
+        // Đăng ký font Unicode — bắt buộc phải làm TRƯỚC khi gọi .text() lần đầu.
+        doc.registerFont('Body', FONT_REGULAR);
+        doc.registerFont('Body-Bold', FONT_BOLD);
+        doc.registerFont('Body-Italic', FONT_ITALIC);
+        doc.font('Body');
+
         renderHeader(doc, report);
         renderScoreBlock(doc, report);
         renderGoalsTimeline(doc, report);
@@ -23,6 +46,7 @@ export function renderMatchReportPdf(report: MatchReportOutput): Promise<Buffer>
         doc.moveDown(1);
         renderTeamSection(doc, report.away.name, report.lineups.away);
 
+        renderSignatureSection(doc, report);
         renderFooter(doc, report);
 
         doc.end();
@@ -30,9 +54,9 @@ export function renderMatchReportPdf(report: MatchReportOutput): Promise<Buffer>
 }
 
 function renderHeader(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
-    doc.fontSize(16).font('Helvetica-Bold').text('BIÊN BẢN TRẬN ĐẤU', { align: 'center' });
+    doc.fontSize(16).font('Body-Bold').text('BIÊN BẢN TRẬN ĐẤU', { align: 'center' });
     doc.moveDown(0.4);
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('Body');
 
     const playedAt = report.playedAt
         ? new Date(report.playedAt).toLocaleString('vi-VN', {
@@ -52,17 +76,35 @@ function renderHeader(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
 
 function renderScoreBlock(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
     const s = report.score;
-    doc.fontSize(18).font('Helvetica-Bold').text(
+    doc.fontSize(18).font('Body-Bold').text(
         `${report.home.name}   ${s.homeFinal} - ${s.awayFinal}   ${report.away.name}`,
         { align: 'center' },
     );
     doc.moveDown(0.3);
 
-    const parts: string[] = [`HT: ${s.homeHalfTime ?? '-'} - ${s.awayHalfTime ?? '-'}`];
-    if (s.homeExtraTime != null) parts.push(`ET: ${s.homeExtraTime}-${s.awayExtraTime}`);
-    if (s.homePenalty != null) parts.push(`Pen: ${s.homePenalty}-${s.awayPenalty}`);
+    // Bảng tỉ số theo từng hiệp — bám theo layout biên bản mẫu
+    // (Hiệp 1 / Hiệp 2 / Luân lưu / Chung cuộc) thay vì gộp một dòng text.
+    const rows: [string, string][] = [
+        ['Hiệp 1', `${s.homeHalfTime ?? '-'} - ${s.awayHalfTime ?? '-'}`],
+    ];
+    if (s.homeExtraTime != null) {
+        rows.push(['Hiệp phụ', `${s.homeExtraTime} - ${s.awayExtraTime}`]);
+    }
+    if (s.homePenalty != null) {
+        rows.push(['Luân lưu', `${s.homePenalty} - ${s.awayPenalty}`]);
+    }
+    rows.push(['Chung cuộc', `${s.homeFinal} - ${s.awayFinal}`]);
 
-    doc.fontSize(9).font('Helvetica').text(parts.join('   |   '), { align: 'center' });
+    const tableWidth = 220;
+    const startX = (doc.page.width - tableWidth) / 2;
+    doc.fontSize(9).font('Body');
+    let y = doc.y;
+    for (const [label, value] of rows) {
+        doc.font('Body').text(label, startX, y, { width: tableWidth * 0.55, align: 'left' });
+        doc.font('Body-Bold').text(value, startX + tableWidth * 0.55, y, { width: tableWidth * 0.45, align: 'right' });
+        y = doc.y;
+    }
+    doc.y = y;
     doc.moveDown(0.5);
 }
 
@@ -76,8 +118,8 @@ function renderGoalsTimeline(doc: PDFKit.PDFDocument, report: MatchReportOutput)
     const { home, away } = report.goalsTimeline;
     if (home.length === 0 && away.length === 0) return;
 
-    doc.fontSize(9).font('Helvetica-Bold').text('Bàn thắng:', { continued: false });
-    doc.font('Helvetica').fontSize(8.5);
+    doc.fontSize(9).font('Body-Bold').text('Bàn thắng:', { continued: false });
+    doc.font('Body').fontSize(8.5);
 
     const maxRows = Math.max(home.length, away.length);
     const halfWidth = 250;
@@ -94,22 +136,22 @@ function renderGoalsTimeline(doc: PDFKit.PDFDocument, report: MatchReportOutput)
 }
 
 function renderTeamSection(doc: PDFKit.PDFDocument, teamName: string, rows: MatchReportPlayerRow[]) {
-    if (doc.y > 680) doc.addPage();
+    if (doc.y > 650) doc.addPage();
 
-    doc.fontSize(13).font('Helvetica-Bold').text(teamName);
+    doc.fontSize(13).font('Body-Bold').text(teamName);
     doc.moveDown(0.3);
 
-    doc.fontSize(8.5).font('Helvetica-Bold');
+    doc.fontSize(8.5).font('Body-Bold');
     drawRow(doc, COL_HEADERS);
     doc.moveTo(doc.x, doc.y).lineTo(555, doc.y).strokeColor('#cccccc').stroke();
     doc.moveDown(0.2);
 
-    doc.font('Helvetica').fontSize(8.5);
+    doc.font('Body').fontSize(8.5);
     const starters = rows.filter(r => r.isStarting);
     const subs = rows.filter(r => !r.isStarting);
 
     for (const p of [...starters, ...subs]) {
-        if (doc.y > 750) doc.addPage();
+        if (doc.y > 720) doc.addPage();
         drawRow(doc, [
             p.jerseyNumber?.toString() ?? '-',
             p.fullName + (p.isCaptain ? ' (C)' : ''),
@@ -137,9 +179,46 @@ function drawRow(doc: PDFKit.PDFDocument, cells: string[]) {
     doc.moveDown(1);
 }
 
-function renderFooter(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
+// ─── Phần chữ ký xác nhận kết quả của 2 đội ───────────────────────────────
+// Thêm mới theo yêu cầu — mỗi đội một ô "Thay mặt đội bóng" + dòng kẻ để ký tay
+// sau khi in ra giấy, giống mẫu biên bản tham khảo.
+function renderSignatureSection(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
+    const boxHeight = 90;
+    if (doc.y > doc.page.height - boxHeight - 60) doc.addPage();
+
     doc.moveDown(1.5);
-    doc.fontSize(8).font('Helvetica-Oblique').fillColor('#888888').text(
+    const pageLeft = doc.page.margins.left;
+    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const colWidth = pageWidth / 2;
+    const topY = doc.y;
+
+    // Khung ngoài
+    doc.rect(pageLeft, topY, pageWidth, boxHeight).strokeColor('#cccccc').stroke();
+    doc.moveTo(pageLeft + colWidth, topY)
+        .lineTo(pageLeft + colWidth, topY + boxHeight)
+        .strokeColor('#cccccc').stroke();
+
+    doc.fontSize(9).font('Body-Bold');
+    doc.text(`Thay mặt đội bóng: ${report.home.name}`, pageLeft + 10, topY + 10, { width: colWidth - 20 });
+    doc.text(`Thay mặt đội bóng: ${report.away.name}`, pageLeft + colWidth + 10, topY + 10, { width: colWidth - 20 });
+
+    doc.fontSize(9).font('Body');
+    doc.text('Chữ ký:', pageLeft + 10, topY + 60);
+    doc.text('Chữ ký:', pageLeft + colWidth + 10, topY + 60);
+
+    doc.y = topY + boxHeight + 10;
+
+    // Ô ký của trọng tài/giám sát bên dưới
+    const refBoxTop = doc.y;
+    doc.rect(pageLeft, refBoxTop, pageWidth, 60).strokeColor('#cccccc').stroke();
+    doc.fontSize(9).font('Body-Bold').text('Trọng tài điều khiển trận đấu', pageLeft + 10, refBoxTop + 10, { width: pageWidth - 20 });
+    doc.fontSize(9).font('Body').text('Chữ ký:', pageLeft + 10, refBoxTop + 40);
+    doc.y = refBoxTop + 70;
+}
+
+function renderFooter(doc: PDFKit.PDFDocument, report: MatchReportOutput) {
+    doc.moveDown(1);
+    doc.fontSize(8).font('Body-Italic').fillColor('#888888').text(
         `Biên bản được xuất tự động lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`,
         { align: 'right' },
     );
