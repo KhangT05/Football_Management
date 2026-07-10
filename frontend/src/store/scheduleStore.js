@@ -230,18 +230,6 @@ const useScheduleStore = create((set, get) => ({
     return res;
   },
 
-  /**
-     * Tạo lịch thi đấu tự động (admin)
-     * POST /schedules/seasons/{seasonId}/generate
-     *
-     * @param {number} seasonId
-     * @param {object} body — GenerateScheduleDto
-     */
-  generateSchedule: async (seasonId, body) => {
-    const res = await matchApi.generateSchedule(seasonId, body);
-    get().invalidateSeason(seasonId);
-    return res;
-  },
 
   /**
    * Tạo lịch thi đấu từ các bảng/nhóm đã chia (admin)
