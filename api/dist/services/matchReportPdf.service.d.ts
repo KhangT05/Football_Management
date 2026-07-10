@@ -7,10 +7,14 @@ export declare class MatchReportPdfRenderer {
     private static resolveFontDir;
     private static getFonts;
     private fetchImageBuffer;
+    private hasSpaceFor;
     private renderHeader;
     private renderScoreBlock;
-    private renderGoalsTimeline;
-    private formatGoalLabel;
+    private renderEventsTimeline;
+    private toEventRow;
+    private collectCardEvents;
+    private toCardEventRow;
+    private eventIcon;
     private renderJerseySwatch;
     private renderTeamSection;
     private drawRow;

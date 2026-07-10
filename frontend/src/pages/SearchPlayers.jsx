@@ -31,10 +31,39 @@ export default function SearchPlayers() {
       setError(null);
       try {
         const res = await playerApi.getAll({ per_page: 500 });
-        // axiosClient interceptor unwrap response.data ->
-        // res = ApiResponseShape<PaginatedResult<PlayerDto>> = { status, message, data: { data, meta } }
-        const list = res?.data?.data;
-        setPlayers(Array.isArray(list) ? list : []);
+
+        // FIX: code cũ giả định response luôn có 2 lớp bọc
+        //   res = { status, message, data: { data: [...], meta } }
+        // và đọc thẳng res?.data?.data.
+        // Nhưng PlayerController.list() (GET /players) return thẳng
+        // PaginatedResult<PlayerPublicDto> = { data: [...], meta },
+        // không đi qua envelope {status,message,data} như các route khác.
+        // => sau khi axiosClient interceptor unwrap response.data,
+        // res chính là { data: [...], meta } luôn rồi, nên res.data.data
+        // là undefined -> players luôn rỗng dù server trả đủ data
+        // (thấy rõ trong Network tab: request có payload nhưng UI báo
+        // "Không tìm thấy cầu thủ nào").
+        //
+        // Tự nhận diện cả 2 shape để không vỡ nếu backend đổi cách bọc:
+        //  A) { data: [...], meta }                            (không envelope)
+        //  B) { status, message, data: { data: [...], meta } } (có envelope)
+        const payload = res?.data;
+        const list = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.data?.data)
+              ? payload.data.data
+              : [];
+
+        if (list.length === 0) {
+          console.warn(
+            'playerApi.getAll trả về nhưng không tìm thấy mảng player trong response:',
+            res
+          );
+        }
+
+        setPlayers(list);
       } catch (err) {
         console.error('Lỗi khi tải danh sách cầu thủ:', err);
         setError(

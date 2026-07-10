@@ -79,6 +79,7 @@ export class SeasonService {
                 data: {
                     ...seasonData,
                     user_id: userId,
+                    status: SeasonStatus.upcoming,
                     description: data.description ?? null,
                     start_date: data.start_date ?? null,
                     end_date: data.end_date ?? null,
