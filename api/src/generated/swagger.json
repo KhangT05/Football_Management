@@ -2235,16 +2235,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"upcoming",
-							"registration_open",
-							"ongoing",
-							"finished",
-							"cancelled"
-						]
-					},
 					"name": {
 						"type": "string"
 					}
@@ -2256,7 +2246,6 @@
 					"is_active",
 					"is_registration_open",
 					"max_teams",
-					"status",
 					"name"
 				],
 				"type": "object"
@@ -2292,16 +2281,6 @@
 					"start_date": {
 						"type": "string",
 						"format": "date-time"
-					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"upcoming",
-							"registration_open",
-							"ongoing",
-							"finished",
-							"cancelled"
-						]
 					},
 					"description": {
 						"type": "string"
