@@ -1,102 +1,42 @@
-import { useState, useEffect } from 'react';
-import { X, Save, Loader2, Users, CheckCircle2, AlertCircle } from 'lucide-react';
-import { matchLineupApi } from '../../api';
-import useToastStore from '../../store/toastStore';
+import { useMemo } from 'react';
+import { X, Save, Loader2, Users, AlertCircle } from 'lucide-react';
+import useLineupSelection from '../../hooks/useLineupSelection';
+import { mapPosition, getSquadLimit, POS_LABEL_VI } from '../../utils/position';
+import PitchFormation from '../PitchFormation';
 
-export default function LineupBuilderModal({ match, teamId, roster, onClose, onSave }) {
-  const toast = useToastStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [lineup, setLineup] = useState([]); // { player_id, is_starting, position, jersey_number }
+// roster (prop): [{ player_id, name, number, position, avatar }]
+export default function LineupBuilderModal({ match, teamId, roster: rawRoster, onClose, onSave }) {
+  const squadLimit = useMemo(() => getSquadLimit(match), [match]);
 
-  useEffect(() => {
-    const fetchLineup = async () => {
-      setIsLoading(true);
-      try {
-        const res = await matchLineupApi.getLineup(match.id, teamId);
-        const data = (typeof res?.status === 'boolean') ? res.data : res;
-        const lineupData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-        setLineup(lineupData.map(p => ({
-          player_id: p.player_id,
-          is_starting: p.lineup_type === 'starter' || p.is_starting,
-          lineup_type: p.lineup_type || (p.is_starting ? 'starter' : 'substitute'),
-          position: p.position || 'midfielder',
-          jersey_number: p.jersey_number || 1,
-          is_captain: p.is_captain || false
-        })));
-      } catch (err) {
-        console.error(err);
-        // If not found or error, initialize empty
-        setLineup([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchLineup();
-  }, [match.id, teamId]);
+  // Normalize field names khớp với hook + PitchFormation (jersey_number, không phải number).
+  const roster = useMemo(() => rawRoster.map(p => ({
+    player_id: p.player_id,
+    name: p.name,
+    jersey_number: p.number,
+    position: p.position,
+    avatar: p.avatar,
+  })), [rawRoster]);
 
-  const togglePlayerStatus = (player) => {
-    setLineup(prev => {
-      const existing = prev.find(p => p.player_id === player.player_id);
-      if (existing) {
-        if (existing.is_starting) {
-          return prev.map(p => p.player_id === player.player_id ? { ...p, is_starting: false, lineup_type: 'substitute' } : p);
-        } else {
-          return prev.filter(p => p.player_id !== player.player_id);
-        }
-      } else {
-        let mappedPosition = 'midfielder';
-        const rawPos = (player.position || '').toUpperCase();
-        if (rawPos === 'GK' || rawPos === 'GOALKEEPER') mappedPosition = 'goalkeeper';
-        else if (rawPos === 'DEF' || rawPos === 'DEFENDER') mappedPosition = 'defender';
-        else if (rawPos === 'MID' || rawPos === 'MIDFIELDER') mappedPosition = 'midfielder';
-        else if (rawPos === 'FW' || rawPos === 'FORWARD') mappedPosition = 'forward';
-        else mappedPosition = (player.position || 'midfielder').toLowerCase();
+  const {
+    selections, isLoading, isSaving,
+    startersCount, maxStarters,
+    starters, substitutes,
+    toggleLineupType, handleDropOnPitch, setCaptain, save,
+  } = useLineupSelection({
+    matchId: match?.id,
+    teamId,
+    roster,
+    squadLimit,
+    onSaved: () => { onSave?.(); onClose(); },
+  });
 
-        const jNum = parseInt(player.jersey_number || player.number || 1, 10);
-        const validJersey = isNaN(jNum) || jNum < 1 ? 1 : (jNum > 99 ? 99 : jNum);
-
-        return [...prev, {
-          player_id: player.player_id,
-          is_starting: true,
-          lineup_type: 'starter',
-          position: mappedPosition,
-          jersey_number: validJersey,
-          is_captain: false
-        }];
-      }
-    });
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const payload = { 
-        team_id: teamId, 
-        players: lineup.map(({ is_starting, ...rest }) => rest)
-      };
-      await matchLineupApi.updateLineup(match.id, payload);
-      toast.success('Đã lưu đội hình thành công!');
-      if (onSave) onSave();
-      onClose();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu đội hình.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const starters = lineup.filter(p => p.is_starting);
-  const subs = lineup.filter(p => !p.is_starting);
-
-  const getPlayerDetails = (playerId) => roster.find(p => p.player_id === playerId);
+  if (!match?.id) return null; // không render nếu thiếu match — chặn crash tại nguồn thay vì fail ở API call
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
+      <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
 
-        {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 shrink-0">
           <div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
@@ -116,12 +56,51 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-6 bg-navy/20">
 
-          {/* Roster Selection */}
-          <div className="flex-1 bg-navy/50 border border-navy-light rounded-3xl p-5 overflow-y-auto max-h-[500px] custom-scrollbar">
-            <h4 className="text-lg font-black text-white mb-4 border-b border-navy-light pb-2">Danh sách đội bóng ({roster.length})</h4>
+          {/* Sơ đồ sân — kéo cầu thủ từ danh sách bên phải vào đúng hàng vị trí */}
+          <div className="flex-1 min-w-[280px]">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Sơ đồ đội hình</h4>
+              <span className={`text-xs font-black px-2 py-1 rounded-md ${startersCount === maxStarters ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                {startersCount}/{maxStarters}
+              </span>
+            </div>
+
+            {isLoading ? (
+              <div className="aspect-[3/4] flex items-center justify-center bg-emerald-800/20 rounded-3xl border border-emerald-500/20">
+                <Loader2 className="w-8 h-8 text-neon animate-spin" />
+              </div>
+            ) : (
+              <PitchFormation
+                starters={starters}
+                onRemove={pid => toggleLineupType(pid, 'starter')}
+                onSetCaptain={setCaptain}
+                onDropPlayer={handleDropOnPitch}
+              />
+            )}
+
+            <div className="mt-4 bg-navy/50 border border-blue-500/20 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-black text-blue-400 uppercase">Dự bị</span>
+                <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md">{substitutes.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {substitutes.length === 0 && <span className="text-xs text-gray-500">Chưa chọn</span>}
+                {substitutes.map(p => (
+                  <span key={p.player_id} className="text-xs font-bold text-gray-300 bg-navy-light/50 px-2 py-1 rounded-lg">
+                    {p.jersey_number} · {p.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Roster — vừa là nguồn kéo-thả vừa toggle Chính/Dự bị bằng nút */}
+          <div className="flex-1 bg-navy/50 border border-navy-light rounded-3xl p-5 overflow-y-auto max-h-[600px] custom-scrollbar">
+            <h4 className="text-sm font-black text-white mb-3 uppercase tracking-wider border-b border-navy-light pb-2">
+              Danh sách đội bóng ({roster.length})
+            </h4>
             {isLoading ? (
               <div className="flex items-center justify-center py-10">
                 <Loader2 className="w-8 h-8 text-neon animate-spin" />
@@ -129,38 +108,49 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
             ) : (
               <div className="space-y-2">
                 {roster.map(player => {
-                  const statusInfo = lineup.find(p => p.player_id === player.player_id);
-                  const isStarting = statusInfo?.is_starting;
-                  const isSub = statusInfo && !isStarting;
+                  const sel = selections[player.player_id];
+                  const isStarter = sel?.lineup_type === 'starter';
+                  const isSub = sel?.lineup_type === 'substitute';
+                  const mappedPos = mapPosition(player.position);
 
                   return (
                     <div
-                      key={player.id}
-                      onClick={() => togglePlayerStatus(player)}
-                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isStarting ? 'bg-emerald-500/10 border-emerald-500/30' :
-                        isSub ? 'bg-blue-500/10 border-blue-500/30' :
-                          'bg-navy-light/30 border-transparent hover:bg-navy-light/60'
+                      key={player.player_id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('app/player-id', String(player.player_id));
+                        e.dataTransfer.setData(`app/position-${mappedPos}`, '1');
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all ${isStarter ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : isSub ? 'bg-blue-500/10 border-blue-500/30'
+                          : 'bg-navy-light/30 border-transparent hover:bg-navy-light/60'
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-navy border border-navy-light flex items-center justify-center overflow-hidden font-black text-gray-300">
-                          {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover" /> : player.number}
+                        <div className="w-9 h-9 rounded-full bg-navy border border-navy-light flex items-center justify-center overflow-hidden font-black text-gray-300 text-sm">
+                          {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover" /> : player.jersey_number}
                         </div>
                         <div>
-                          <p className={`font-bold ${isStarting ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
+                          <p className={`font-bold text-sm ${isStarter ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
                           <p className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
-                            Số {player.number} • {{
-                              GK: 'Thủ môn', GOALKEEPER: 'Thủ môn',
-                              DEF: 'Hậu vệ', DEFENDER: 'Hậu vệ',
-                              MID: 'Tiền vệ', MIDFIELDER: 'Tiền vệ',
-                              FW: 'Tiền đạo', FORWARD: 'Tiền đạo',
-                            }[player.position?.toUpperCase()] ?? player.position}
+                            Số {player.jersey_number} · {POS_LABEL_VI[mappedPos]}
                           </p>
                         </div>
                       </div>
-                      <div>
-                        {isStarting && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                        {isSub && <div className="text-xs font-black text-blue-400 px-2 py-1 rounded-md bg-blue-500/20">Dự bị</div>}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => toggleLineupType(player.player_id, 'starter')}
+                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isStarter ? 'bg-emerald-500 text-white' : 'bg-navy-light text-gray-400 hover:text-emerald-400'}`}
+                        >
+                          Chính
+                        </button>
+                        <button
+                          onClick={() => toggleLineupType(player.player_id, 'substitute')}
+                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isSub ? 'bg-blue-500 text-white' : 'bg-navy-light text-gray-400 hover:text-blue-400'}`}
+                        >
+                          Dự bị
+                        </button>
                       </div>
                     </div>
                   );
@@ -168,84 +158,20 @@ export default function LineupBuilderModal({ match, teamId, roster, onClose, onS
               </div>
             )}
           </div>
-
-          {/* Lineup View */}
-          <div className="flex-1 space-y-6 flex flex-col">
-
-            {/* Starters */}
-            <div className="bg-navy/50 border border-emerald-500/20 rounded-3xl p-5 flex-1 overflow-y-auto max-h-[250px] custom-scrollbar shadow-[0_0_20px_rgba(16,185,129,0.05)]">
-              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2 mb-4">
-                <h4 className="text-lg font-black text-emerald-400 uppercase tracking-tight">Đội hình chính</h4>
-                <span className={`text-xs font-black px-2 py-1 rounded-md ${starters.length === 7 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {starters.length}/7
-                </span>
-              </div>
-              <div className="space-y-2">
-                {starters.length === 0 && (
-                  <div className="text-center py-6 text-gray-500 text-sm font-medium">Chưa chọn cầu thủ đá chính</div>
-                )}
-                {starters.map(p => {
-                  const details = getPlayerDetails(p.player_id);
-                  return (
-                    <div key={p.player_id} className="flex items-center gap-3 p-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-xs">
-                        {p.jersey_number}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-white text-sm">{details?.name}</p>
-                        <p className="text-[10px] text-emerald-500/70 uppercase font-black">{p.position}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Substitutes */}
-            <div className="bg-navy/50 border border-blue-500/20 rounded-3xl p-5 flex-1 overflow-y-auto max-h-[200px] custom-scrollbar shadow-[0_0_20px_rgba(59,130,246,0.05)]">
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2 mb-4">
-                <h4 className="text-lg font-black text-blue-400 uppercase tracking-tight">Dự bị</h4>
-                <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2 py-1 rounded-md">
-                  {subs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {subs.length === 0 && (
-                  <div className="text-center py-6 text-gray-500 text-sm font-medium">Chưa chọn cầu thủ dự bị</div>
-                )}
-                {subs.map(p => {
-                  const details = getPlayerDetails(p.player_id);
-                  return (
-                    <div key={p.player_id} className="flex items-center gap-3 p-2 bg-blue-500/5 rounded-xl border border-blue-500/10">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 font-black flex items-center justify-center text-xs">
-                        {p.jersey_number}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-300 text-sm">{details?.name}</p>
-                        <p className="text-[10px] text-blue-500/70 uppercase font-black">{p.position}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-          </div>
         </div>
 
-        {/* Footer */}
         <div className="px-8 py-5 border-t border-navy-light bg-navy/40 shrink-0 flex justify-between items-center">
           <div className="flex items-center gap-2 text-yellow-500/80 text-xs font-medium">
-            <AlertCircle className="w-4 h-4" /> Bấm vào danh sách để chọn Đá chính / Dự bị / Bỏ chọn
+            <AlertCircle className="w-4 h-4" /> Kéo cầu thủ vào sân hoặc dùng nút Chính/Dự bị. Bấm ★ trên sân để chọn đội trưởng.
           </div>
           <div className="flex gap-4">
-            <button onClick={onClose} className="px-6 py-3 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-xl transition-all duration-300">
+            <button onClick={onClose} className="px-6 py-3 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-xl transition-all">
               Hủy bỏ
             </button>
             <button
-              onClick={handleSave}
-              disabled={isSaving || starters.length !== 7}
-              className="px-8 py-3 font-black bg-neon text-black rounded-xl flex items-center gap-2 hover:bg-neon-dark transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:-translate-y-0.5"
+              onClick={save}
+              disabled={isSaving || startersCount !== maxStarters}
+              className="px-8 py-3 font-black bg-neon text-black rounded-xl flex items-center gap-2 hover:bg-neon-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               Lưu Đội Hình
