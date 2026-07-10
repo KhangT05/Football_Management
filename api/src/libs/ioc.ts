@@ -23,7 +23,6 @@ import { AuthService } from "../services/auth.service.js";
 import { GroupService } from "../services/group.service.js";
 import { JerseyService } from "../services/jersey.service.js";
 import { KnockoutService } from "../services/knockout.service.js";
-import { MatchReportService } from "../services/match.report.js";
 import { MatchLifecycleService } from "../services/match.service.js";
 import { MatchLineupService } from "../services/matchlineup.service.js";
 import { MatchResultService } from "../services/matchresult.service.js";
@@ -68,7 +67,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     // [WorkflowController, () => new WorkflowController(workflowService)],
     [JerseyController, () => new JerseyController(new JerseyService(prisma))],
     [ArticleController, () => new ArticleController(new ArticleService(prisma))],
-    [MatchReportController, () => new MatchReportController(new MatchReportService())],
+    [MatchReportController, () => new MatchReportController(matchResultService)],
 ]);
 export const iocContainer = {
     get<T>(controller: new (...args: unknown[]) => T): T {
