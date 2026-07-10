@@ -1,5 +1,6 @@
 import { CalendarDays, MapPin, Clock } from 'lucide-react';
 import { DEFAULT_KIT } from './MatchShared';
+import { RESULT_AVAILABLE_STATUSES } from './MatchShared'
 
 function TeamSide({ name, logo, jerseyImage, kit, isWinner, reverse }) {
     const displayName = name || '—';
@@ -50,7 +51,7 @@ function TeamSide({ name, logo, jerseyImage, kit, isWinner, reverse }) {
 export default function MatchRow({ match, isResult }) {
     // scoreA/scoreB có thể null (chưa có kết quả, hoặc match cancelled/bye) —
     // guard trước khi so sánh để tránh NaN/false-positive winner.
-    const hasScore = match.scoreA != null && match.scoreB != null;
+    const hasScore = RESULT_AVAILABLE_STATUSES.has(match.status) && match.scoreA != null && match.scoreB != null;
     const isAWin = isResult && hasScore && match.scoreA > match.scoreB;
     const isBWin = isResult && hasScore && match.scoreB > match.scoreA;
 

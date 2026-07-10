@@ -5,35 +5,36 @@ import { fileURLToPath } from 'url';
 // ─── Font Unicode tiếng Việt ───────────────────────────────────────────────
 // FIX GỐC: PDFKit mặc định dùng 14 font chuẩn PDF (Helvetica, Times, ...),
 // các font này KHÔNG có glyph cho ký tự có dấu tiếng Việt (ư, ơ, đ, ệ...).
-// Kết quả là PDF hiện chữ vỡ kiểu "BIÊN B ¢N TR ¬N êEP" thay vì
-// "BIÊN BẢN TRẬN ĐẤU" — vì các byte dấu bị map sang glyph không tồn tại
-// trong font đó. Phải embed 1 font TTF hỗ trợ Unicode đầy đủ (Roboto/Noto
-// Sans) thì mới hiện đúng dấu tiếng Việt.
+// Phải embed 1 font TTF hỗ trợ Unicode đầy đủ (Roboto/Noto Sans).
 //
-// FIX #2 (production ENOENT): bản cũ dùng path.join(process.cwd(), 'assets',
-// 'fonts') — SAI vì process.cwd() phụ thuộc vào chỗ bạn `node` được khởi
-// chạy (Docker WORKDIR, PM2 cwd, ts-node vs dist, v.v.), không đảm bảo là
-// thư mục chứa app. Khi cwd khác project root, hoặc khi bước build/Dockerfile
-// không copy assets/ vào image, readFileSync ném ENOENT giữa lúc render PDF
-// (crash khó debug, message không nói rõ thiếu file nào).
+// FIX #2 (production ENOENT): resolve theo vị trí thực của FILE NÀY
+// (import.meta.url), không phụ thuộc process.cwd().
 //
-// Thay bằng resolve theo vị trí thực của FILE NÀY (import.meta.url), không
-// phụ thuộc cwd. Đồng thời thử vài vị trí ứng viên phổ biến (cùng cấp dist,
-// lên project root, cwd) để chịu được cả 2 kiểu deploy (build copy assets
-// vào dist/ hoặc giữ assets/ ở project root cạnh dist/). Nếu vẫn không thấy
-// file, ném lỗi rõ ràng liệt kê các đường dẫn đã thử — thay vì để PDFKit
-// ném ENOENT khó hiểu.
+// FIX #3 (CRITICAL — sập cả server, không chỉ tính năng PDF):
+// Bản trước gọi resolveFontDir() ở top-level lúc MODULE ĐƯỢC IMPORT
+// (`const FONT_DIR = resolveFontDir()`). app.ts import
+// MatchReportBinaryController -> import module này ngay từ lúc khởi động,
+// nên nếu thiếu font là process.exit ngay khi boot — toàn bộ API (live
+// score, team management, ...) chết theo, không riêng gì xuất PDF.
+// Đúng ra thiếu 1 asset không quan trọng bằng cả hệ thống thì không nên
+// crash toàn app; chỉ nên fail đúng cái request xuất báo cáo đó thôi.
+//
+// Fix: đổi sang lazy resolution — chỉ resolve + throw lúc thực sự có người
+// gọi renderMatchReportPdf(), và cache lại kết quả (hoặc lỗi) cho lần sau
+// khỏi phải stat lại filesystem mỗi request.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+let cachedFonts = null;
+let cachedError = null;
 function resolveFontDir() {
     const candidates = [
-        // 1. Cạnh file compiled, vd dist/services/../../assets/fonts -> dist/assets/fonts
+        // 1. Cạnh file compiled, vd dist/services/../assets -> dist/assets/fonts
         //    (nếu build script copy assets/ vào trong dist/)
         path.join(__dirname, '..', 'assets', 'fonts'),
         // 2. Lên tới project root từ dist/services -> <root>/assets/fonts
-        //    (nếu assets/ nằm ở root, ngang hàng với dist/, không bị build động tới)
+        //    (nếu assets/ nằm ở root, ngang hàng với dist/)
         path.join(__dirname, '..', '..', 'assets', 'fonts'),
-        // 3. Fallback: cwd (giữ tương thích ngược nếu ai đó chạy đúng từ root)
+        // 3. Fallback: cwd (giữ tương thích ngược nếu chạy đúng từ root)
         path.join(process.cwd(), 'assets', 'fonts'),
     ];
     for (const dir of candidates) {
@@ -48,23 +49,49 @@ function resolveFontDir() {
         `hoặc copy-assets script sau khi build TypeScript), vì tsc KHÔNG tự copy file ` +
         `non-.ts như .ttf vào thư mục dist.`);
 }
-const FONT_DIR = resolveFontDir();
-const FONT_REGULAR = path.join(FONT_DIR, 'Roboto-Regular.ttf');
-const FONT_BOLD = path.join(FONT_DIR, 'Roboto-Bold.ttf');
-const FONT_ITALIC = path.join(FONT_DIR, 'Roboto-Italic.ttf');
+function getFonts() {
+    if (cachedFonts)
+        return cachedFonts;
+    // Không retry filesystem mỗi request nếu đã biết chắc thiếu file —
+    // nhưng vẫn throw lại lỗi gốc (không nuốt lỗi) để controller trả 500
+    // với message rõ ràng thay vì lỗi mơ hồ khác ở chỗ dùng font.
+    if (cachedError)
+        throw cachedError;
+    try {
+        const dir = resolveFontDir();
+        cachedFonts = {
+            regular: path.join(dir, 'Roboto-Regular.ttf'),
+            bold: path.join(dir, 'Roboto-Bold.ttf'),
+            italic: path.join(dir, 'Roboto-Italic.ttf'),
+        };
+        return cachedFonts;
+    }
+    catch (err) {
+        cachedError = err;
+        throw cachedError;
+    }
+}
 const COL_WIDTHS = [30, 150, 55, 50, 30, 45, 40, 40];
 const COL_HEADERS = ['Số áo', 'Cầu thủ', 'Vị trí', 'BT/DB', 'Bàn', 'Phản lưới', 'Thẻ V', 'Thẻ Đ'];
 export function renderMatchReportPdf(report) {
     return new Promise((resolve, reject) => {
+        let fonts;
+        try {
+            fonts = getFonts();
+        }
+        catch (err) {
+            reject(err);
+            return;
+        }
         const doc = new PDFDocument({ size: 'A4', margin: 40 });
         const chunks = [];
         doc.on('data', (chunk) => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
         // Đăng ký font Unicode — bắt buộc phải làm TRƯỚC khi gọi .text() lần đầu.
-        doc.registerFont('Body', FONT_REGULAR);
-        doc.registerFont('Body-Bold', FONT_BOLD);
-        doc.registerFont('Body-Italic', FONT_ITALIC);
+        doc.registerFont('Body', fonts.regular);
+        doc.registerFont('Body-Bold', fonts.bold);
+        doc.registerFont('Body-Italic', fonts.italic);
         doc.font('Body');
         renderHeader(doc, report);
         renderScoreBlock(doc, report);
@@ -187,8 +214,8 @@ function drawRow(doc, cells) {
     doc.moveDown(1);
 }
 // ─── Phần chữ ký xác nhận kết quả của 2 đội ───────────────────────────────
-// Thêm mới theo yêu cầu — mỗi đội một ô "Thay mặt đội bóng" + dòng kẻ để ký tay
-// sau khi in ra giấy, giống mẫu biên bản tham khảo.
+// Mỗi đội một ô "Thay mặt đội bóng" + dòng kẻ để ký tay sau khi in ra giấy,
+// giống mẫu biên bản tham khảo.
 function renderSignatureSection(doc, report) {
     const boxHeight = 90;
     if (doc.y > doc.page.height - boxHeight - 60)

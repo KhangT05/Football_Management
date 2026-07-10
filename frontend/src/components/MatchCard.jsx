@@ -1,6 +1,6 @@
 import { CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
+import { RESULT_AVAILABLE_STATUSES } from './MatchShared'
 // Map đầy đủ theo MatchStatus enum thật (scheduled, ongoing, pending_official,
 // needs_review, finished, cancelled, postponed, bye, abandoned, forfeited).
 // Trước đây chỉ có 3 key ('LIVE'/'FT'/fallback), mọi status khác rơi vào
@@ -89,9 +89,7 @@ function TeamRow({ name, score, showScore }) {
 
 export default function MatchCard({ id, status, time, teamA, teamB, scoreA, scoreB }) {
   const cfg = STATUS_CFG[status] ?? DEFAULT_CFG;
-  // Nguồn sự thật duy nhất cho "hiện score hay VS" là dữ liệu score thật,
-  // không phải 1 flag rời (isUpcoming) dễ desync với status.
-  const showScore = scoreA != null && scoreB != null;
+  const showScore = RESULT_AVAILABLE_STATUSES.has(status) && scoreA != null && scoreB != null;
 
   if (!id) {
     // Fail loud thay vì silent-default id=3 và route sai trận trong production.
