@@ -12,6 +12,8 @@ import { errorMiddleware } from "./middleware/error.middleware.js";
 import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
 import { runSeeders } from "./seeders/index.js";
+import { MatchReportBinaryController } from "./controllers/matchReportBinary.controller.js";
+import { matchResultService } from "./libs/ioc.js";
 
 const app = express();
 
@@ -28,6 +30,12 @@ app.use(cookieParser());
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerOutput));
 
 const router = express.Router();
+const matchReportBinaryController = new MatchReportBinaryController(matchResultService);
+
+app.get('/api/v1/matches/:id/report', (req, res) =>
+    matchReportBinaryController.download(req, res),
+);
+
 RegisterRoutes(router);
 
 app.use("/api/v1/", router);

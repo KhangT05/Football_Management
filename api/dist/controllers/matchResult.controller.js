@@ -55,9 +55,6 @@ let MatchResultController = class MatchResultController extends Controller {
         this.setStatus(201);
         return result;
     }
-    async getMatchReport(id) {
-        return this.matchResultService.getMatchReport(id);
-    }
 };
 __decorate([
     Get("{id}/result"),
@@ -96,13 +93,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], MatchResultController.prototype, "confirmResult", null);
-__decorate([
-    Get("{id}/report"),
-    __param(0, Path()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], MatchResultController.prototype, "getMatchReport", null);
 MatchResultController = __decorate([
     Route("matches"),
     Tags("Match Result"),

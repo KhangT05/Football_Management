@@ -64,6 +64,5 @@ export declare class MatchResultController extends Controller {
     confirmResult(id: number, body: matchResultType.ConfirmOfficialBody): Promise<matchResultType.ConfirmResultOutput & {
         postCommitWarnings?: string[];
     }>;
-    getMatchReport(id: number): Promise<import("../types/matchReport.type.js").MatchReportOutput>;
 }
 //# sourceMappingURL=matchResult.controller.d.ts.map

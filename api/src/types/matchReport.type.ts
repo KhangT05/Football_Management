@@ -1,4 +1,5 @@
 import { MatchEventType, MatchResultType, MatchStatus, PlayerPosition } from '../generated/prisma/client.js';
+import { MatchReportGoalEntry } from '../helper/match.helper.js';
 
 export interface MatchReportJerseyInfo {
     logoUrl: string | null;
@@ -57,5 +58,11 @@ export interface MatchReportOutput {
     lineups: {
         home: MatchReportPlayerRow[];
         away: MatchReportPlayerRow[];
+    };
+    // FIX: trước đây service tính goalsTimeline nhưng không đưa vào response —
+    // biến chết, và PDF/UI không thể hiển thị timeline bàn thắng theo phút.
+    goalsTimeline: {
+        home: MatchReportGoalEntry[];
+        away: MatchReportGoalEntry[];
     };
 }
