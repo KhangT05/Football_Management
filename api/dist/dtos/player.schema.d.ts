@@ -40,6 +40,19 @@ export interface PlayerDto {
     } | null;
     user_id: number;
 }
+export interface PlayerPublicDto {
+    id: number;
+    date_of_birth: string | null;
+    position: string | null;
+    height: number | null;
+    weight: number | null;
+    nationality: string | null;
+    avatar: string | null;
+    user: {
+        id: number;
+        name: string;
+    };
+}
 export interface PlayerSeasonInfo {
     season_id: number;
     season_name: string;

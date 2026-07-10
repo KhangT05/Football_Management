@@ -18,9 +18,10 @@ import {
   type CreatePlayerForTeamDto,
   type UpdateTeamPlayerDto,
   type BulkDeleteDto,
+  PlayerPublicDto,
 } from "../dtos/player.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
+import { ImportResult, ListTeamPlayersQuery, PlayerPublicRow } from "../types/player.type.js";
 
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -58,6 +59,23 @@ export class PlayerController extends Controller {
   // Cách đúng theo tsoa: dùng @Res() + TsoaResponse — tsoa nhận diện
   // đây là "custom response", tự gọi hàm callback để gửi response DUY
   // NHẤT, không tự động ghi thêm lần 2 nữa.
+  @Get("/")
+  async list(
+    @Query() page = 1,
+    @Query() per_page = 20,
+    @Query() sort?: string,
+    @Query() direction?: "asc" | "desc",
+    @Query() position?: string,
+    @Query() nationality?: string
+  ): Promise<PaginatedResult<PlayerPublicDto>> {
+    return this.service.listPlayers({
+      page, per_page, sort, direction,
+      ...(position && { position }),
+      ...(nationality && { nationality }),
+    });
+  }
+
+
   @Get("import-template")
   async downloadImportTemplate(
     @Query() minRows: number = 7,

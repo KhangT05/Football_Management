@@ -7,7 +7,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, seasonApi, matchApi, seasonTeamApi, jerseyApi, userApi } from '../api';
+import { teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -69,7 +69,6 @@ const extractFilename = (contentDisposition, fallback) => {
 };
 
 // ─── Parse helpers ─────────────────────────────────────────
-
 
 const parseList = (res) => {
   const payload = (typeof res?.status === 'boolean') ? res.data : res;
@@ -201,26 +200,39 @@ export default function MyTeam() {
         logo: myTeam.logo,
       };
 
-      // Load season info
+      // ── FIX: load season info — CHỈ lấy season mà team ĐÃ đăng ký
+      // (bảng season_team), KHÔNG lấy toàn bộ season của hệ thống.
+      //
+      // Bug cũ: gọi seasonApi.getAll() → trả về mọi season trong DB (kể cả
+      // season team này chưa từng đăng ký), khiến season switcher ở tab
+      // "Lịch thi đấu" hiện nhầm season, và activeMatchSeasonId có thể bị
+      // set vào season mà team không tham gia → loadMatches() luôn rỗng.
+      //
+      // ASSUMPTION: seasonTeamApi.getAll trả về mỗi record season_team kèm
+      // nested `season` object (giống pattern tp.player.user.name ở
+      // normalizePlayer). Nếu BE chỉ trả season_id phẳng (không nested),
+      // cần đổi thành 1 lookup bổ sung — nhưng vẫn PHẢI filter theo
+      // season_team trước, không được quay lại seasonApi.getAll().
       try {
-        const seasonsRes = await seasonApi.getAll();
-        const seasonList = parseList(seasonsRes);
+        const stAllRes = await seasonTeamApi.getAll({ team_id: teamId });
+        const stAllList = parseList(stAllRes);
+
+        const seasonList = stAllList.map(st => st.season).filter(Boolean);
         setAllSeasons(seasonList);
-        const active = seasonList.find(s =>
-          ['registration_open', 'ongoing', 'upcoming'].includes(s.status)
-        ) || seasonList[0];
+
+        const activeSt = stAllList.find(st =>
+          ['registration_open', 'ongoing', 'upcoming'].includes(st.season?.status)
+        ) || stAllList[0];
+
+        const active = activeSt?.season ?? null;
 
         if (active) {
           if (!activeMatchSeasonId) setActiveMatchSeasonId(active.id);
 
-          const stRes = await seasonTeamApi.getAll({ team_id: teamId, season_id: active.id });
-          const stData = stRes?.data?.data || stRes?.data || [];
-          const st = Array.isArray(stData) ? stData[0] : stData;
-
           let homeJersey = null;
-          if (st) {
+          if (activeSt) {
             try {
-              const jRes = await jerseyApi.getBySeasonTeam(st.id);
+              const jRes = await jerseyApi.getBySeasonTeam(activeSt.id);
               const jerseys = Array.isArray(jRes?.data?.data) ? jRes.data.data
                 : Array.isArray(jRes?.data) ? jRes.data
                   : Array.isArray(jRes) ? jRes : [];
@@ -232,11 +244,13 @@ export default function MyTeam() {
             ...enriched,
             season: active.name,
             activeSeasonId: active.id,
-            activeSeasonTeamId: st?.id ?? null,
-            registrationStatus: st?.status ?? null,
+            activeSeasonTeamId: activeSt?.id ?? null,
+            registrationStatus: activeSt?.status ?? null,
             primaryColor: homeJersey?.secondary_color || enriched.primaryColor,
             colorHex: homeJersey?.primary_color || enriched.colorHex,
           };
+        } else {
+          setAllSeasons([]);
         }
       } catch (e) { console.warn('Cannot load season info:', e); }
 
@@ -714,7 +728,7 @@ export default function MyTeam() {
               >
                 <UserPlus className="w-4 h-4 shrink-0" />
                 <span className="hidden sm:inline">Thêm cầu thủ</span>
-                <span className="sm:hidden">Thêm CT</span>D
+                <span className="sm:hidden">Thêm CT</span>
               </button>
             </div>
           )}
@@ -800,11 +814,11 @@ export default function MyTeam() {
                           <p className="text-lg font-black text-white truncate flex items-center gap-2">
                             <span>{match.home_team?.name || 'Đội nhà'}</span>
                             {['completed', 'finished'].includes(match.status) ? (
-                                <span className="bg-navy-dark border border-navy-light px-3 py-1 rounded-lg text-neon text-xl tracking-widest tabular-nums mx-2">
-                                  {match.home_score ?? 0} - {match.away_score ?? 0}
-                                </span>
+                              <span className="bg-navy-dark border border-navy-light px-3 py-1 rounded-lg text-neon text-xl tracking-widest tabular-nums mx-2">
+                                {match.home_score ?? 0} - {match.away_score ?? 0}
+                              </span>
                             ) : (
-                                <span className="text-gray-500 font-medium mx-2">vs</span>
+                              <span className="text-gray-500 font-medium mx-2">vs</span>
                             )}
                             <span>{match.away_team?.name || 'Đội khách'}</span>
                           </p>

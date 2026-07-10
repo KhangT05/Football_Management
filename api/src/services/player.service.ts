@@ -5,7 +5,7 @@ import {
     CreatePlayerDto, CreatePlayerForTeamDto, ImportPlayerRowDto,
     importPlayerRowSchema,
     PlayerDetailDto,
-    PlayerDto, TeamPlayerDto,
+    PlayerDto, PlayerPublicDto, TeamPlayerDto,
     UpdatePlayerDto, UpdateTeamPlayerDto
 } from "../dtos/player.schema.js";
 import { Queryable } from "../libs/queryable.js";
@@ -15,8 +15,8 @@ import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import {
-    ImportResult, ListTeamPlayersQuery, PLAYER_SELECT,
-    PLAYER_SELECT_WITH_SEASONS, PlayerRow, PlayerSeasonInfo,
+    ImportResult, ListTeamPlayersQuery, PLAYER_PUBLIC_SELECT, PLAYER_SELECT,
+    PLAYER_SELECT_WITH_SEASONS, PlayerPublicRow, PlayerRow, PlayerSeasonInfo,
     PlayerWithSeasonsRow, TEAM_PLAYER_SELECT, TeamPlayerRow
 } from "../types/player.type.js";
 import { mailService } from "./mail.service.js";
@@ -169,7 +169,7 @@ function worksheetToRawRows(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
 
 export class PlayerService {
     private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
-
+    private readonly playerQuery: Queryable<PlayerRow>;
     constructor(
         private readonly prisma: PrismaClient
     ) {
@@ -181,8 +181,40 @@ export class PlayerService {
             defaultPerPage: 20,
             maxPerPage: 100,
         });
+        this.playerQuery = new Queryable<PlayerRow>(prisma.player, {
+            select: PLAYER_PUBLIC_SELECT,
+            sortable: ["id", "created_at", "date_of_birth"], // chỉ field scalar thật trên Player
+            defaultSort: { column: "id", direction: "desc" },
+            filterable: ["position", "nationality"], // nếu 2 cột này tồn tại trên Player, đúng như PLAYER_SELECT có
+            defaultPerPage: 20,
+            maxPerPage: 500, // FE đang gọi per_page=500 để tải hết 1 lần — cho phép
+        });
+
     }
 
+    toPlayerPublicDto(row: PlayerPublicRow): PlayerPublicDto {
+        return {
+            id: row.id,
+            date_of_birth: row.date_of_birth?.toISOString() ?? null,
+            position: row.position,
+            height: row.height ? Number(row.height) : null,
+            weight: row.weight ? Number(row.weight) : null,
+            nationality: row.nationality,
+            avatar: row.avatar,
+            user: { id: row.user.id, name: row.user.name },
+        };
+    }
+
+    listPlayers(query: Record<string, unknown>): Promise<PaginatedResult<PlayerPublicDto>> {
+        return this.playerQuery
+            .run(query, {
+                beforeBuild: (where) => { where.push({ deleted_at: null }); },
+            })
+            .then((res) => ({
+                ...res,
+                data: res.data.map((p) => this.toPlayerPublicDto(p)),
+            }));
+    }
     // ----------------------------------------------------------
     // PLAYER CRUD
     // ----------------------------------------------------------

@@ -5,6 +5,7 @@ import { JerseyController } from "../controllers/jersey.controller.js";
 import { KnockoutController } from "../controllers/knockout.controller.js";
 import { MatchController } from "../controllers/match.controller.js";
 import { MatchLineupController } from "../controllers/matchlineup.controller.js";
+import { MatchReportController } from "../controllers/matchReport.controller.js";
 import { MatchResultController } from "../controllers/matchResult.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
@@ -42,7 +43,7 @@ import prisma from "./prisma.js";
 
 const standingsService = new StandingsService(prisma);
 const knockoutService = new KnockoutService(prisma, standingsService);
-const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
+export const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
 const lifecycleService = new MatchLifecycleService(prisma, matchResultService);
 // Map controller → factory function
 const controllerFactory = new Map<Function, () => unknown>([
@@ -66,6 +67,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     // [WorkflowController, () => new WorkflowController(workflowService)],
     [JerseyController, () => new JerseyController(new JerseyService(prisma))],
     [ArticleController, () => new ArticleController(new ArticleService(prisma))],
+    [MatchReportController, () => new MatchReportController(matchResultService)],
 ]);
 export const iocContainer = {
     get<T>(controller: new (...args: unknown[]) => T): T {

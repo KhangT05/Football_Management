@@ -12,7 +12,6 @@ export const CancelSeasonSchema = z.object({
 const baseSeasonSchema = z.object({
     name: z.string().min(1).max(255),
     description: z.string().optional(),
-    status: SeasonStatusSchema.default("upcoming"),
     start_date: z.coerce.date().optional().nullable(),
     end_date: z.coerce.date().optional().nullable(),
     registration_deadline: z.coerce.date().optional().nullable(),

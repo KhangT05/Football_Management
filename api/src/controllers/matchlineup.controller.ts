@@ -13,7 +13,7 @@ import {
     Get,
 } from "tsoa";
 import { MatchLineupService } from "../services/matchlineup.service.js";
-import { RegisterLineupDto, UpdateLineupEntryDto } from "../dtos/matchlineup.schema.js";
+import * as matchlineupSchema from "../dtos/matchlineup.schema.js";
 import { MatchLineup } from "../generated/prisma/client.js";
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -66,9 +66,10 @@ export class MatchLineupController extends Controller {
     @Post("{matchId}/lineups")
     async registerLineup(
         @Path() matchId: number,
-        @Body() body: Omit<RegisterLineupDto, "match_id">,
+        @Body() body: matchlineupSchema.RegisterLineupBody,
     ): Promise<MatchLineup[]> {
-        return this.lineupService.register({ ...body, match_id: matchId });
+        const parsed = matchlineupSchema.registerLineupSchema.parse({ ...body, match_id: matchId });
+        return this.lineupService.register(parsed);
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ export class MatchLineupController extends Controller {
         @Path() matchId: number,
         @Path() teamId: number,
         @Path() playerId: number,
-        @Body() body: Omit<UpdateLineupEntryDto, "match_id" | "team_id" | "player_id">,
+        @Body() body: Omit<matchlineupSchema.UpdateLineupEntryDto, "match_id" | "team_id" | "player_id">,
     ): Promise<MatchLineup> {
         return this.lineupService.updateEntry({
             ...body,

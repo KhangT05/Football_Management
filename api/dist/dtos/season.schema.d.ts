@@ -13,13 +13,6 @@ export declare const CancelSeasonSchema: z.ZodObject<{
 export declare const createSeasonSchema: z.ZodObject<{
     name: z.ZodString;
     description: z.ZodOptional<z.ZodString>;
-    status: z.ZodDefault<z.ZodEnum<{
-        upcoming: "upcoming";
-        registration_open: "registration_open";
-        ongoing: "ongoing";
-        finished: "finished";
-        cancelled: "cancelled";
-    }>>;
     start_date: z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
     end_date: z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
     registration_deadline: z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
@@ -34,13 +27,6 @@ export declare const updateSeasonSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     is_active: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
     description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-    status: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
-        upcoming: "upcoming";
-        registration_open: "registration_open";
-        ongoing: "ongoing";
-        finished: "finished";
-        cancelled: "cancelled";
-    }>>>;
     start_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     end_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     registration_deadline: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;

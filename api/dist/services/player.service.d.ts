@@ -1,11 +1,14 @@
-import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, CreatePlayerForTeamDto, PlayerDetailDto, PlayerDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
+import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, CreatePlayerForTeamDto, PlayerDetailDto, PlayerDto, PlayerPublicDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
 import { PrismaClient } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../types/queryable.type.js";
-import { ImportResult, ListTeamPlayersQuery } from "../types/player.type.js";
+import { ImportResult, ListTeamPlayersQuery, PlayerPublicRow } from "../types/player.type.js";
 export declare class PlayerService {
     private readonly prisma;
     private readonly teamPlayerQuery;
+    private readonly playerQuery;
     constructor(prisma: PrismaClient);
+    toPlayerPublicDto(row: PlayerPublicRow): PlayerPublicDto;
+    listPlayers(query: Record<string, unknown>): Promise<PaginatedResult<PlayerPublicDto>>;
     /**
      * FIX: trước đây không validate user_id tồn tại (→ P2003 FK raw 500 nếu
      * user_id sai), không dedupe theo user_id (→ CONFLICT rõ ràng thay vì raw

@@ -1,6 +1,6 @@
 import { Controller } from "tsoa";
 import { MatchLineupService } from "../services/matchlineup.service.js";
-import { RegisterLineupDto, UpdateLineupEntryDto } from "../dtos/matchlineup.schema.js";
+import * as matchlineupSchema from "../dtos/matchlineup.schema.js";
 import { MatchLineup } from "../generated/prisma/client.js";
 export declare class MatchLineupController extends Controller {
     private readonly lineupService;
@@ -19,13 +19,13 @@ export declare class MatchLineupController extends Controller {
      * Admin: bất kỳ team nào.
      * Leader: chỉ team của mình (ownership check tại middleware).
      */
-    registerLineup(matchId: number, body: Omit<RegisterLineupDto, "match_id">): Promise<MatchLineup[]>;
+    registerLineup(matchId: number, body: matchlineupSchema.RegisterLineupBody): Promise<MatchLineup[]>;
     /**
      * Sửa 1 player entry trong lineup.
      * Chỉ được gọi trước giờ thi đấu ít nhất 10 phút.
      * Admin only.
      */
-    updateLineupEntry(matchId: number, teamId: number, playerId: number, body: Omit<UpdateLineupEntryDto, "match_id" | "team_id" | "player_id">): Promise<MatchLineup>;
+    updateLineupEntry(matchId: number, teamId: number, playerId: number, body: Omit<matchlineupSchema.UpdateLineupEntryDto, "match_id" | "team_id" | "player_id">): Promise<MatchLineup>;
     /**
      * Xóa 1 player khỏi lineup.
      * Chỉ được gọi trước giờ thi đấu ít nhất 10 phút.

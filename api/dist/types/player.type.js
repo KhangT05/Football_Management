@@ -16,6 +16,11 @@ export const PLAYER_SELECT = {
         select: { id: true, name: true, email: true, phone: true },
     },
 };
+export const PLAYER_PUBLIC_SELECT = {
+    id: true, date_of_birth: true, position: true, height: true,
+    weight: true, nationality: true, avatar: true,
+    user: { select: { id: true, name: true } }, // bỏ email, phone
+};
 export const TEAM_PLAYER_SELECT = {
     id: true,
     team_id: true,

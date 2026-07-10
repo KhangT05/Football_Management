@@ -691,7 +691,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofcreateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"group_count":{"dataType":"double","required":true},"tournament_rule_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}],"required":true},"name":{"dataType":"string","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"group_count":{"dataType":"double","required":true},"tournament_rule_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateSeasonDto": {
@@ -701,7 +701,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double"},"group_count":{"dataType":"double"},"is_registration_open":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]},{"dataType":"enum","enums":["cancelled"]}]},"description":{"dataType":"string"},"is_active":{"dataType":"boolean"},"name":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double"},"group_count":{"dataType":"double"},"is_registration_open":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"is_active":{"dataType":"boolean"},"name":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateSeasonDto": {
@@ -920,6 +920,30 @@ const models: TsoaRoute.Models = {
     "UpdateRoleDto": {
         "dataType": "refAlias",
         "type": {"ref":"infer_typeofupdateRoleSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPublicDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"double","required":true},
+            "date_of_birth": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "position": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "height": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "weight": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "nationality": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "avatar": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "user": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PaginatedResult_PlayerPublicDto_": {
+        "dataType": "refObject",
+        "properties": {
+            "data": {"dataType":"array","array":{"dataType":"refObject","ref":"PlayerPublicDto"},"required":true},
+            "meta": {"ref":"PaginationMeta","required":true},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerPosition": {
@@ -1223,72 +1247,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportJerseyInfo": {
-        "dataType": "refObject",
-        "properties": {
-            "logoUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "primaryColor": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "secondaryColor": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportTeamInfo": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"double","required":true},
-            "name": {"dataType":"string","required":true},
-            "jersey": {"ref":"MatchReportJerseyInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportEventEntry": {
-        "dataType": "refObject",
-        "properties": {
-            "minute": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "addedMinute": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportPlayerRow": {
-        "dataType": "refObject",
-        "properties": {
-            "playerId": {"dataType":"double","required":true},
-            "jerseyNumber": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "fullName": {"dataType":"string","required":true},
-            "position": {"ref":"PlayerPosition","required":true},
-            "isCaptain": {"dataType":"boolean","required":true},
-            "isStarting": {"dataType":"boolean","required":true},
-            "minuteIn": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "minuteOut": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "goals": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "ownGoals": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "yellowCards": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "redCards": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportOutput": {
-        "dataType": "refObject",
-        "properties": {
-            "matchId": {"dataType":"double","required":true},
-            "playedAt": {"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},
-            "venueName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "referee": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "status": {"ref":"MatchStatus","required":true},
-            "resultType": {"ref":"MatchResultType","required":true},
-            "score": {"dataType":"nestedObjectLiteral","nestedProperties":{"awayFinal":{"dataType":"double","required":true},"homeFinal":{"dataType":"double","required":true},"awayPenalty":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homePenalty":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayExtraTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeExtraTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayFullTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeFullTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayHalfTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeHalfTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true}},"required":true},
-            "winnerTeamId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "home": {"ref":"MatchReportTeamInfo","required":true},
-            "away": {"ref":"MatchReportTeamInfo","required":true},
-            "lineups": {"dataType":"nestedObjectLiteral","nestedProperties":{"away":{"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportPlayerRow"},"required":true},"home":{"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportPlayerRow"},"required":true}},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchPlayerStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["injured"]},{"dataType":"enum","enums":["suspended"]},{"dataType":"enum","enums":["available"]},{"dataType":"enum","enums":["absent"]}],"validators":{}},
@@ -1314,14 +1272,28 @@ const models: TsoaRoute.Models = {
         "type": {"ref":"MatchLineupModel","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"validators":{}},
+    "LineupEntryBody": {
+        "dataType": "refObject",
+        "properties": {
+            "player_id": {"dataType":"double","required":true},
+            "jersey_number": {"dataType":"double","required":true},
+            "position": {"ref":"PlayerPosition","required":true},
+            "lineup_type": {"ref":"LineupType"},
+            "is_captain": {"dataType":"boolean"},
+            "minute_in": {"dataType":"double"},
+            "minute_out": {"dataType":"double"},
+            "status": {"ref":"MatchPlayerStatus"},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Omit_RegisterLineupDto.match_id_": {
-        "dataType": "refAlias",
-        "type": {"ref":"Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__","validators":{}},
+    "RegisterLineupBody": {
+        "dataType": "refObject",
+        "properties": {
+            "team_id": {"dataType":"double","required":true},
+            "players": {"dataType":"array","array":{"dataType":"refObject","ref":"LineupEntryBody"},"required":true},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__": {
@@ -5065,6 +5037,46 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPlayerController_list: Record<string, TsoaRoute.ParameterSchema> = {
+                page: {"default":1,"in":"query","name":"page","dataType":"double"},
+                per_page: {"default":20,"in":"query","name":"per_page","dataType":"double"},
+                sort: {"in":"query","name":"sort","dataType":"string"},
+                direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
+                position: {"in":"query","name":"position","dataType":"string"},
+                nationality: {"in":"query","name":"nationality","dataType":"string"},
+        };
+        app.get('/players',
+            ...(fetchMiddlewares<RequestHandler>(PlayerController)),
+            ...(fetchMiddlewares<RequestHandler>(PlayerController.prototype.list)),
+
+            async function PlayerController_list(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPlayerController_list, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<PlayerController>(PlayerController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'list',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsPlayerController_downloadImportTemplate: Record<string, TsoaRoute.ParameterSchema> = {
                 minRows: {"default":7,"in":"query","name":"minRows","dataType":"double"},
                 successResponse: {"in":"res","name":"200","required":true,"dataType":"buffer"},
@@ -6070,41 +6082,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMatchResultController_getMatchReport: Record<string, TsoaRoute.ParameterSchema> = {
-                id: {"in":"path","name":"id","required":true,"dataType":"double"},
-        };
-        app.get('/matches/:id/report',
-            ...(fetchMiddlewares<RequestHandler>(MatchResultController)),
-            ...(fetchMiddlewares<RequestHandler>(MatchResultController.prototype.getMatchReport)),
-
-            async function MatchResultController_getMatchReport(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMatchResultController_getMatchReport, request, response });
-
-                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
-
-                const controller: any = await container.get<MatchResultController>(MatchResultController);
-                if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-                }
-
-              await templateService.apiHandler({
-                methodName: 'getMatchReport',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMatchLineupController_getLineups: Record<string, TsoaRoute.ParameterSchema> = {
                 matchId: {"in":"path","name":"matchId","required":true,"dataType":"double"},
         };
@@ -6178,7 +6155,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMatchLineupController_registerLineup: Record<string, TsoaRoute.ParameterSchema> = {
                 matchId: {"in":"path","name":"matchId","required":true,"dataType":"double"},
-                body: {"in":"body","name":"body","required":true,"ref":"Omit_RegisterLineupDto.match_id_"},
+                body: {"in":"body","name":"body","required":true,"ref":"RegisterLineupBody"},
         };
         app.post('/matches/:matchId/lineups',
             authenticateMiddleware([{"jwt":["admin","leader"]}]),

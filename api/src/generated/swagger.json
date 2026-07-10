@@ -2235,16 +2235,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"upcoming",
-							"registration_open",
-							"ongoing",
-							"finished",
-							"cancelled"
-						]
-					},
 					"name": {
 						"type": "string"
 					}
@@ -2256,7 +2246,6 @@
 					"is_active",
 					"is_registration_open",
 					"max_teams",
-					"status",
 					"name"
 				],
 				"type": "object"
@@ -2292,16 +2281,6 @@
 					"start_date": {
 						"type": "string",
 						"format": "date-time"
-					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"upcoming",
-							"registration_open",
-							"ongoing",
-							"finished",
-							"cancelled"
-						]
 					},
 					"description": {
 						"type": "string"
@@ -3135,6 +3114,87 @@
 			},
 			"UpdateRoleDto": {
 				"$ref": "#/components/schemas/infer_typeofupdateRoleSchema_"
+			},
+			"PlayerPublicDto": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"date_of_birth": {
+						"type": "string",
+						"nullable": true
+					},
+					"position": {
+						"type": "string",
+						"nullable": true
+					},
+					"height": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"weight": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"nationality": {
+						"type": "string",
+						"nullable": true
+					},
+					"avatar": {
+						"type": "string",
+						"nullable": true
+					},
+					"user": {
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"id",
+					"date_of_birth",
+					"position",
+					"height",
+					"weight",
+					"nationality",
+					"avatar",
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaginatedResult_PlayerPublicDto_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/PlayerPublicDto"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"PlayerPosition": {
 				"type": "string",
@@ -4043,284 +4103,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"MatchReportJerseyInfo": {
-				"properties": {
-					"logoUrl": {
-						"type": "string",
-						"nullable": true
-					},
-					"primaryColor": {
-						"type": "string",
-						"nullable": true
-					},
-					"secondaryColor": {
-						"type": "string",
-						"nullable": true
-					}
-				},
-				"required": [
-					"logoUrl",
-					"primaryColor",
-					"secondaryColor"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MatchReportTeamInfo": {
-				"properties": {
-					"id": {
-						"type": "number",
-						"format": "double"
-					},
-					"name": {
-						"type": "string"
-					},
-					"jersey": {
-						"$ref": "#/components/schemas/MatchReportJerseyInfo"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"jersey"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MatchReportEventEntry": {
-				"properties": {
-					"minute": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					},
-					"addedMinute": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					}
-				},
-				"required": [
-					"minute",
-					"addedMinute"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MatchReportPlayerRow": {
-				"properties": {
-					"playerId": {
-						"type": "number",
-						"format": "double"
-					},
-					"jerseyNumber": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					},
-					"fullName": {
-						"type": "string"
-					},
-					"position": {
-						"$ref": "#/components/schemas/PlayerPosition"
-					},
-					"isCaptain": {
-						"type": "boolean"
-					},
-					"isStarting": {
-						"type": "boolean"
-					},
-					"minuteIn": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					},
-					"minuteOut": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					},
-					"goals": {
-						"items": {
-							"$ref": "#/components/schemas/MatchReportEventEntry"
-						},
-						"type": "array"
-					},
-					"ownGoals": {
-						"items": {
-							"$ref": "#/components/schemas/MatchReportEventEntry"
-						},
-						"type": "array"
-					},
-					"yellowCards": {
-						"items": {
-							"$ref": "#/components/schemas/MatchReportEventEntry"
-						},
-						"type": "array"
-					},
-					"redCards": {
-						"items": {
-							"$ref": "#/components/schemas/MatchReportEventEntry"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"playerId",
-					"jerseyNumber",
-					"fullName",
-					"position",
-					"isCaptain",
-					"isStarting",
-					"minuteIn",
-					"minuteOut",
-					"goals",
-					"ownGoals",
-					"yellowCards",
-					"redCards"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MatchReportOutput": {
-				"properties": {
-					"matchId": {
-						"type": "number",
-						"format": "double"
-					},
-					"playedAt": {
-						"type": "string",
-						"format": "date-time",
-						"nullable": true
-					},
-					"venueName": {
-						"type": "string",
-						"nullable": true
-					},
-					"referee": {
-						"type": "string",
-						"nullable": true
-					},
-					"status": {
-						"$ref": "#/components/schemas/MatchStatus"
-					},
-					"resultType": {
-						"$ref": "#/components/schemas/MatchResultType"
-					},
-					"score": {
-						"properties": {
-							"awayFinal": {
-								"type": "number",
-								"format": "double"
-							},
-							"homeFinal": {
-								"type": "number",
-								"format": "double"
-							},
-							"awayPenalty": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"homePenalty": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"awayExtraTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"homeExtraTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"awayFullTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"homeFullTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"awayHalfTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							},
-							"homeHalfTime": {
-								"type": "number",
-								"format": "double",
-								"nullable": true
-							}
-						},
-						"required": [
-							"awayFinal",
-							"homeFinal",
-							"awayPenalty",
-							"homePenalty",
-							"awayExtraTime",
-							"homeExtraTime",
-							"awayFullTime",
-							"homeFullTime",
-							"awayHalfTime",
-							"homeHalfTime"
-						],
-						"type": "object"
-					},
-					"winnerTeamId": {
-						"type": "number",
-						"format": "double",
-						"nullable": true
-					},
-					"home": {
-						"$ref": "#/components/schemas/MatchReportTeamInfo"
-					},
-					"away": {
-						"$ref": "#/components/schemas/MatchReportTeamInfo"
-					},
-					"lineups": {
-						"properties": {
-							"away": {
-								"items": {
-									"$ref": "#/components/schemas/MatchReportPlayerRow"
-								},
-								"type": "array"
-							},
-							"home": {
-								"items": {
-									"$ref": "#/components/schemas/MatchReportPlayerRow"
-								},
-								"type": "array"
-							}
-						},
-						"required": [
-							"away",
-							"home"
-						],
-						"type": "object"
-					}
-				},
-				"required": [
-					"matchId",
-					"playedAt",
-					"venueName",
-					"referee",
-					"status",
-					"resultType",
-					"score",
-					"winnerTeamId",
-					"home",
-					"away",
-					"lineups"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"MatchPlayerStatus": {
 				"type": "string",
 				"enum": [
@@ -4403,14 +4185,64 @@
 				"$ref": "#/components/schemas/MatchLineupModel",
 				"description": "Model MatchLineup"
 			},
-			"Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__": {
-				"properties": {},
+			"LineupEntryBody": {
+				"properties": {
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"position": {
+						"$ref": "#/components/schemas/PlayerPosition"
+					},
+					"lineup_type": {
+						"$ref": "#/components/schemas/LineupType"
+					},
+					"is_captain": {
+						"type": "boolean"
+					},
+					"minute_in": {
+						"type": "number",
+						"format": "double"
+					},
+					"minute_out": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/MatchPlayerStatus"
+					}
+				},
+				"required": [
+					"player_id",
+					"jersey_number",
+					"position"
+				],
 				"type": "object",
-				"description": "From T, pick a set of properties whose keys are in the union K"
+				"additionalProperties": false
 			},
-			"Omit_RegisterLineupDto.match_id_": {
-				"$ref": "#/components/schemas/Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__",
-				"description": "Construct a type with the properties of T except for those in type K."
+			"RegisterLineupBody": {
+				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"players": {
+						"items": {
+							"$ref": "#/components/schemas/LineupEntryBody"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"team_id",
+					"players"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__": {
 				"properties": {},
@@ -10379,6 +10211,123 @@
 				]
 			}
 		},
+		"/players": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedResult_PlayerPublicDto_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "position",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "nationality",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerDto"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"leader"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePlayerDto"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/players/import-template": {
 			"get": {
 				"operationId": "DownloadImportTemplate",
@@ -10525,46 +10474,6 @@
 						}
 					}
 				]
-			}
-		},
-		"/players": {
-			"post": {
-				"operationId": "Create",
-				"responses": {
-					"201": {
-						"description": "Created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/PlayerDto"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Players"
-				],
-				"security": [
-					{
-						"jwt": [
-							"admin",
-							"organizing",
-							"leader"
-						]
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreatePlayerDto"
-							}
-						}
-					}
-				}
 			}
 		},
 		"/players/{team_id}/team-players": {
@@ -11899,38 +11808,6 @@
 				}
 			}
 		},
-		"/matches/{id}/report": {
-			"get": {
-				"operationId": "GetMatchReport",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MatchReportOutput"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Match Result"
-				],
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "id",
-						"required": true,
-						"schema": {
-							"format": "double",
-							"type": "number"
-						}
-					}
-				]
-			}
-		},
 		"/matches/{matchId}/lineups": {
 			"get": {
 				"operationId": "GetLineups",
@@ -12011,7 +11888,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/Omit_RegisterLineupDto.match_id_"
+								"$ref": "#/components/schemas/RegisterLineupBody"
 							}
 						}
 					}

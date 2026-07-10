@@ -560,6 +560,7 @@ export class MatchResultService {
                 home: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.home_team_id),
                 away: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.away_team_id),
             },
+            goalsTimeline, // FIX: thêm vào response, trước đây tính xong rồi bỏ
         };
     }
 }
