@@ -1,4 +1,5 @@
 import { MatchResultType, MatchStatus, PlayerPosition } from '../generated/prisma/client.js';
+import { MatchReportGoalEntry } from '../helper/match.helper.js';
 export interface MatchReportJerseyInfo {
     logoUrl: string | null;
     primaryColor: string | null;
@@ -52,6 +53,10 @@ export interface MatchReportOutput {
     lineups: {
         home: MatchReportPlayerRow[];
         away: MatchReportPlayerRow[];
+    };
+    goalsTimeline: {
+        home: MatchReportGoalEntry[];
+        away: MatchReportGoalEntry[];
     };
 }
 //# sourceMappingURL=matchReport.type.d.ts.map

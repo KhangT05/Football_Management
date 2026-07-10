@@ -117,9 +117,10 @@ const useScheduleStore = create((set, get) => ({
       if (Array.isArray(match)) match = match[0];
 
       // Fallback: Nếu API result bị thiếu thông tin team (do trả về dạng MatchResult), lấy bù từ scheduleCache
+      // Fallback: Nếu API result bị thiếu thông tin team (do trả về dạng MatchResult), lấy bù từ scheduleCache
       if (match && (!match.home_team_id || !match.home_team)) {
         for (const seasonId in get().scheduleCache) {
-          const scheduleMatch = get().scheduleCache[seasonId]?.items?.find(m => String(m.id) === String(matchId));
+          const scheduleMatch = get().scheduleCache[seasonId]?.matches?.find(m => String(m.id) === String(matchId));
           if (scheduleMatch) {
             match = { ...scheduleMatch, ...match };
             break;

@@ -1223,72 +1223,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportJerseyInfo": {
-        "dataType": "refObject",
-        "properties": {
-            "logoUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "primaryColor": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "secondaryColor": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportTeamInfo": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"double","required":true},
-            "name": {"dataType":"string","required":true},
-            "jersey": {"ref":"MatchReportJerseyInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportEventEntry": {
-        "dataType": "refObject",
-        "properties": {
-            "minute": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "addedMinute": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportPlayerRow": {
-        "dataType": "refObject",
-        "properties": {
-            "playerId": {"dataType":"double","required":true},
-            "jerseyNumber": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "fullName": {"dataType":"string","required":true},
-            "position": {"ref":"PlayerPosition","required":true},
-            "isCaptain": {"dataType":"boolean","required":true},
-            "isStarting": {"dataType":"boolean","required":true},
-            "minuteIn": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "minuteOut": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "goals": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "ownGoals": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "yellowCards": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-            "redCards": {"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportEventEntry"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MatchReportOutput": {
-        "dataType": "refObject",
-        "properties": {
-            "matchId": {"dataType":"double","required":true},
-            "playedAt": {"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},
-            "venueName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "referee": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "status": {"ref":"MatchStatus","required":true},
-            "resultType": {"ref":"MatchResultType","required":true},
-            "score": {"dataType":"nestedObjectLiteral","nestedProperties":{"awayFinal":{"dataType":"double","required":true},"homeFinal":{"dataType":"double","required":true},"awayPenalty":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homePenalty":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayExtraTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeExtraTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayFullTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeFullTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"awayHalfTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},"homeHalfTime":{"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true}},"required":true},
-            "winnerTeamId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "home": {"ref":"MatchReportTeamInfo","required":true},
-            "away": {"ref":"MatchReportTeamInfo","required":true},
-            "lineups": {"dataType":"nestedObjectLiteral","nestedProperties":{"away":{"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportPlayerRow"},"required":true},"home":{"dataType":"array","array":{"dataType":"refObject","ref":"MatchReportPlayerRow"},"required":true}},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchPlayerStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["injured"]},{"dataType":"enum","enums":["suspended"]},{"dataType":"enum","enums":["available"]},{"dataType":"enum","enums":["absent"]}],"validators":{}},
@@ -6059,41 +5993,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'confirmResult',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMatchResultController_getMatchReport: Record<string, TsoaRoute.ParameterSchema> = {
-                id: {"in":"path","name":"id","required":true,"dataType":"double"},
-        };
-        app.get('/matches/:id/report',
-            ...(fetchMiddlewares<RequestHandler>(MatchResultController)),
-            ...(fetchMiddlewares<RequestHandler>(MatchResultController.prototype.getMatchReport)),
-
-            async function MatchResultController_getMatchReport(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMatchResultController_getMatchReport, request, response });
-
-                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
-
-                const controller: any = await container.get<MatchResultController>(MatchResultController);
-                if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-                }
-
-              await templateService.apiHandler({
-                methodName: 'getMatchReport',
                 controller,
                 response,
                 next,

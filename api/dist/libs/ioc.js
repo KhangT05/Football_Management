@@ -41,7 +41,7 @@ import { VenueService } from "../services/venue.service.js";
 import prisma from "./prisma.js";
 const standingsService = new StandingsService(prisma);
 const knockoutService = new KnockoutService(prisma, standingsService);
-const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
+export const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
 const lifecycleService = new MatchLifecycleService(prisma, matchResultService);
 // Map controller → factory function
 const controllerFactory = new Map([

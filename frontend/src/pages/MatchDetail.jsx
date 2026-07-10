@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings, Star } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings } from 'lucide-react';
 
-import { getInitials, POSITION_LABELS } from '../utils/constants';
+import { getInitials } from '../utils/constants';
 import { useShallow } from 'zustand/react/shallow';
 import useScheduleStore from '../store/scheduleStore';
 import useAuthStore from '../store/authStore';
@@ -10,19 +10,11 @@ import MatchHeaderSkeleton from '../components/skeletons/MatchHeaderSkeleton';
 import StatusBadge from '../components/ui/StatusBadge';
 import { teamApi, matchLineupApi } from '../api';
 import useTeamStore from '../store/teamStore';
-
-// ── Helpers ───────────────────────────────────────────────────
-const POSITION_COLORS = {
-  GK: 'bg-amber-400/10 text-amber-400',
-  DEF: 'bg-blue-400/10 text-blue-400',
-  MID: 'bg-emerald-400/10 text-emerald-400',
-  FW: 'bg-red-400/10 text-red-400',
-};
-
-const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FW'];
-
-// Statuses that count as "chưa đá" — sửa lại cho khớp enum thật của bạn
-const UPCOMING_STATUSES = ['scheduled', 'pending', 'upcoming'];
+import {
+  useMatchExtras, TeamAvatar, PlayerItem, FormationPlayerDot,
+  normalizePosition, POSITION_ORDER, STATUS_LABEL, STATUS_BADGE_COLOR,
+  NO_EVENT_STATUSES, getVsLabel,
+} from '../components/MatchShared';
 
 // ── Construction Banner ───────────────────────────────────────
 function ApiBanner({ message }) {
@@ -34,69 +26,26 @@ function ApiBanner({ message }) {
   );
 }
 
-// ── Player list item (substitutes / fallback list) ─────────────
-function PlayerItem({ tp, isCap }) {
-  const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
-  const pos = tp.position;
-  const jersey = tp.jersey_number ?? '?';
-  return (
-    <li className="flex items-center gap-2.5 py-2 border-b border-navy-light/50 last:border-0 relative group">
-      <span className="w-7 text-right font-mono text-neon font-bold text-xs shrink-0">
-        #{jersey}
-      </span>
-      <span className="font-medium text-white text-sm flex-1 truncate flex items-center gap-2">
-        {name}
-        {isCap && <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" title="Đội trưởng" />}
-      </span>
-      {pos && (
-        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${POSITION_COLORS[pos] ?? 'bg-gray-400/10 text-gray-400'}`}>
-          {POSITION_LABELS[pos] ?? pos}
-        </span>
-      )}
-    </li>
-  );
-}
-
 // ── Formation pitch (sơ đồ đội hình) ────────────────────────────
-function FormationPlayer({ tp }) {
-  const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
-  const jersey = tp.jersey_number ?? '?';
-  const isCap = !!tp.is_captain;
-
-  return (
-    <div className="flex flex-col items-center gap-1 w-14 sm:w-20 shrink-0">
-      <div className="relative">
-        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-navy-dark/90 border-2 border-white/70 flex items-center justify-center text-white font-black text-xs sm:text-base shadow-md shadow-black/30">
-          {jersey}
-        </div>
-        {isCap && (
-          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 absolute -top-1 -right-1 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
-        )}
-      </div>
-      <span className="text-[10px] sm:text-xs font-bold text-white text-center leading-tight line-clamp-2 drop-shadow-md">
-        {name}
-      </span>
-    </div>
-  );
-}
-
-function FormationRow({ players }) {
+function FormationRow({ players, kit }) {
   if (!players.length) return null;
   return (
     <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
       {players.map(tp => (
-        <FormationPlayer key={tp.id} tp={tp} />
+        <FormationPlayerDot key={tp.id} tp={tp} kit={kit} size="md" />
       ))}
     </div>
   );
 }
 
-function FormationPitch({ starters = [] }) {
+// FIX: trước đây so `p.position === pos` trực tiếp (chỉ khớp short-code
+// GK/DEF/MID/FW). Nếu BE trả long-form (goalkeeper/defender/...) ở endpoint
+// này, toàn bộ cầu thủ rơi ra ngoài group → sơ đồ trống dù data đủ. Dùng
+// normalizePosition (dùng chung với matchShared/MatchModal) để tránh phân kỳ.
+function FormationPitch({ starters = [], kit }) {
   const rows = POSITION_ORDER
-    .map(pos => ({ pos, players: starters.filter(p => p.position === pos) }))
+    .map(pos => ({ pos, players: starters.filter(p => normalizePosition(p.position) === pos) }))
     .filter(r => r.players.length > 0);
-
-  const others = starters.filter(p => !POSITION_ORDER.includes(p.position));
 
   if (starters.length === 0) return null;
 
@@ -110,9 +59,8 @@ function FormationPitch({ starters = [] }) {
 
       <div className="relative z-10 py-6 sm:py-8 flex flex-col gap-6 sm:gap-10">
         {rows.map(row => (
-          <FormationRow key={row.pos} players={row.players} />
+          <FormationRow key={row.pos} players={row.players} kit={kit} />
         ))}
-        {others.length > 0 && <FormationRow players={others} />}
       </div>
     </div>
   );
@@ -142,27 +90,35 @@ export default function MatchDetail() {
   })));
 
   const [isLeader, setIsLeader] = useState(false);
-  const [lineups, setLineups] = useState({ home: [], away: [] });
+  const [rawLineups, setRawLineups] = useState([]);
 
   const detailData = getMatchDetailFromCache(matchId);
   const match = detailData?.match || null;
+
+  const { matchResult, jerseys, kitFor, isPenaltyResult, isExtraTimeResult } = useMatchExtras(match);
 
   useEffect(() => {
     if (teams.length === 0) fetchTeams();
   }, [fetchTeams, teams.length]);
 
   useEffect(() => {
-    if (matchId) {
-      fetchMatchDetail(matchId);
-      matchLineupApi.getMatchLineups(matchId).then(res => {
-        const allLineups = Array.isArray(res?.data) ? res.data : [];
-        setLineups({
-          home: allLineups.filter(l => l.team_id === match?.home_team_id),
-          away: allLineups.filter(l => l.team_id === match?.away_team_id)
-        });
-      }).catch(err => console.warn('Could not fetch lineups', err));
-    }
-  }, [matchId, fetchMatchDetail, match?.home_team_id, match?.away_team_id]);
+    if (matchId) fetchMatchDetail(matchId);
+  }, [matchId, fetchMatchDetail]);
+
+  useEffect(() => {
+    if (!matchId) return;
+    let cancelled = false;
+    matchLineupApi.getMatchLineups(matchId).then(res => {
+      if (cancelled) return;
+      setRawLineups(Array.isArray(res?.data) ? res.data : []);
+    }).catch(err => console.warn('Could not fetch lineups', err));
+    return () => { cancelled = true; };
+  }, [matchId]);
+
+  const lineups = useMemo(() => ({
+    home: rawLineups.filter(l => l.team_id === match?.home_team_id),
+    away: rawLineups.filter(l => l.team_id === match?.away_team_id),
+  }), [rawLineups, match?.home_team_id, match?.away_team_id]);
 
   useEffect(() => {
     if (isAuthenticated && match && user) {
@@ -189,7 +145,6 @@ export default function MatchDetail() {
   const homeName = homeTeamInfo?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = awayTeamInfo?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
   const hasScore = match?.home_score != null && match?.away_score != null;
-  const isUpcoming = !hasScore && UPCOMING_STATUSES.includes(match?.status);
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;
@@ -223,7 +178,7 @@ export default function MatchDetail() {
           ) : matchApiError ? (
             <div className="text-center space-y-4">
               <ApiBanner message={matchApiError} />
-              <p className="text-gray-500 text-sm">Match ID: #{matchId}</p>
+              <p className="text-gray-500 text-sm">Match ID: {matchId}</p>
             </div>
           ) : hasError || !match ? (
             <div className="flex flex-col items-center gap-4 text-gray-400 py-8">
@@ -233,15 +188,9 @@ export default function MatchDetail() {
           ) : (
             <div className="animate-slide-up">
               <div className="flex justify-center items-center gap-4 md:gap-16">
-                {/* Home */}
-                <div className="flex flex-col items-center flex-1 max-w-[200px]">
-                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-linear-to-br from-blue-700 to-cyan-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-blue-900/30 hover:border-blue-400 transition-colors duration-300">
-                    {getInitials(homeName)}
-                  </div>
-                  <h2 className="mt-4 text-center font-black text-lg md:text-2xl text-white tracking-widest uppercase line-clamp-2">
-                    {homeName}
-                  </h2>
-                </div>
+                {/* Jersey/kit chỉ hiện khi đã có tỉ số xác nhận — trước đó
+                    kit có thể chưa chốt (đổi áo phút chót), tránh gây hiểu nhầm */}
+                <TeamAvatar name={homeName} side="home" logo={homeTeamInfo?.logo} jersey={hasScore ? jerseys.home : null} size="lg" />
 
                 {/* Score / VS / TBD */}
                 <div className="flex flex-col items-center shrink-0 gap-3">
@@ -252,26 +201,26 @@ export default function MatchDetail() {
                         <span className="text-2xl md:text-4xl font-bold text-gray-500">–</span>
                         <span className="text-5xl md:text-7xl font-black text-white">{match.away_score}</span>
                       </>
-                    ) : isUpcoming ? (
-                      <span className="text-3xl md:text-5xl font-black text-gray-500 tracking-widest px-2">
-                        - vs -
-                      </span>
                     ) : (
-                      <span className="text-xl md:text-3xl font-black text-gray-400 tracking-widest px-2">VS</span>
+                      <span className="text-3xl md:text-5xl font-black text-gray-500 tracking-widest px-2">
+                        {getVsLabel(match.status)}
+                      </span>
                     )}
                   </div>
+
+                  {isExtraTimeResult && (
+                    <span className="text-xs text-amber-400 font-black uppercase tracking-widest">Sau hiệp phụ</span>
+                  )}
+                  {isPenaltyResult && (
+                    <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-black uppercase tracking-widest rounded-full">
+                      Pen {matchResult.home_penalty_score} – {matchResult.away_penalty_score}
+                    </span>
+                  )}
+
                   <StatusBadge status={match.status} size="fancy" />
                 </div>
 
-                {/* Away */}
-                <div className="flex flex-col items-center flex-1 max-w-[200px]">
-                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-2 border-navy-light bg-linear-to-br from-amber-700 to-orange-800 flex items-center justify-center font-black text-3xl md:text-5xl text-white shadow-lg shadow-amber-900/30 hover:border-amber-400 transition-colors duration-300">
-                    {getInitials(awayName)}
-                  </div>
-                  <h2 className="mt-4 text-center font-black text-lg md:text-2xl text-white tracking-widest uppercase line-clamp-2">
-                    {awayName}
-                  </h2>
-                </div>
+                <TeamAvatar name={awayName} side="away" logo={awayTeamInfo?.logo} jersey={hasScore ? jerseys.away : null} size="lg" />
               </div>
 
               {/* Match Meta */}
@@ -317,7 +266,7 @@ export default function MatchDetail() {
                     const lineupPlayer = allLineups.find(l => l.player_id === evt.player_id);
                     const rosterPlayer = allPlayers.find(p => p.player_id === evt.player_id || p.id === evt.player_id);
                     const resolvedName = lineupPlayer ? (lineupPlayer.player?.name ?? lineupPlayer.player?.player?.name ?? lineupPlayer.name) : (rosterPlayer?.user?.name ?? rosterPlayer?.player?.user?.name ?? rosterPlayer?.player?.name ?? rosterPlayer?.name);
-                    const playerName = resolvedName ?? evt.player?.user?.name ?? evt.player?.name ?? `Cầu thủ #${evt.player_id}`;
+                    const playerName = resolvedName ?? evt.player?.user?.name ?? evt.player?.name ?? (evt.player_id ? `Cầu thủ #${evt.player_id}` : 'Không rõ cầu thủ');
 
                     return (
                       <div key={evt.id} className="flex items-center gap-4 sm:gap-6 group">
@@ -375,7 +324,7 @@ export default function MatchDetail() {
                 </div>
                 {homeStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={homeStarters} />
+                    <FormationPitch starters={homeStarters} kit={kitFor('home')} />
                     {homeSubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
@@ -405,7 +354,7 @@ export default function MatchDetail() {
                 </div>
                 {awayStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={awayStarters} />
+                    <FormationPitch starters={awayStarters} kit={kitFor('away')} />
                     {awaySubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>

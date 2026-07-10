@@ -119,9 +119,6 @@ export const matchApi = {
   getMatchById: (id) =>
     axiosClient.get(`/matches/${id}/result`),
 
-  getMatchReport: (id) =>
-    axiosClient.get(`/matches/${id}/report`, { responseType: 'blob' }),
-
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
 
@@ -198,4 +195,12 @@ export const matchApi = {
 
   autoSchedule: (seasonId, body) =>
     axiosClient.post(`/schedules/seasons/${seasonId}/schedule`, body),
+  /**
+  * Xuất biên bản trận đấu (PDF).
+  * responseType: 'blob' — bắt buộc, nếu không axios sẽ parse response
+  * dạng binary PDF thành string và làm hỏng file khi build Blob ở FE.
+  * → GET /matches/{id}/report
+  */
+  getMatchReport: (id) =>
+    axiosClient.get(`/matches/${id}/report`, { responseType: 'blob' }),
 };

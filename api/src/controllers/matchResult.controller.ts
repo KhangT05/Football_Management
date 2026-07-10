@@ -86,8 +86,4 @@ export class MatchResultController extends Controller {
         return result;
     }
 
-    @Get("{id}/report")
-    async getMatchReport(@Path() id: number) {
-        return this.matchResultService.getMatchReport(id);
-    }
 }

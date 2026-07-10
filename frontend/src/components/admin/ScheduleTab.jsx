@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   CalendarPlus, Zap, Edit3, X, Save,
-  MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus
+  MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus,
+  FileText, ShieldCheck, AlertTriangle,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
@@ -517,6 +518,93 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
   );
 }
 
+// ─── Component: Confirm Export Report Modal ───────────────────────────────
+// Màn hình check trước khi xuất — admin phải xem lại thông tin trận đấu
+// và bấm "Xác nhận xuất" thì mới thực sự gọi API tải file PDF về.
+function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
+  if (!match) return null;
+
+  const homeTeam = match.home_team || teams?.find(t => t.id === match.home_team_id);
+  const awayTeam = match.away_team || teams?.find(t => t.id === match.away_team_id);
+  const homeName = homeTeam?.name ?? `Đội ${match.home_team_id}`;
+  const awayName = awayTeam?.name ?? `Đội ${match.away_team_id}`;
+
+  const scheduledLabel = match.scheduled_at
+    ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
+    : 'Chưa xếp lịch';
+
+  const hasFinalScore = match.home_score != null && match.away_score != null;
+  const isFinished = match.status === 'finished';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-navy border border-navy-light rounded-3xl w-full max-w-md shadow-2xl animate-slide-up overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 bg-navy-dark border-b border-navy-light">
+          <h3 className="font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-400" /> Xác Nhận Xuất Biên Bản
+          </h3>
+          <button onClick={onClose} disabled={isExporting} className="p-1.5 text-gray-400 hover:text-white rounded-lg transition-colors disabled:opacity-40">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div className="flex items-center gap-2 justify-between">
+            <p className="flex-1 text-center text-emerald-400 font-black text-sm truncate" title={homeName}>{homeName}</p>
+            <span className="text-gray-500 font-black text-xs shrink-0 px-2">VS</span>
+            <p className="flex-1 text-center text-blue-400 font-black text-sm truncate" title={awayName}>{awayName}</p>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-gray-300">
+              <Clock className="w-4 h-4 text-gray-500 shrink-0" /> {scheduledLabel}
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <MapPin className="w-4 h-4 text-gray-500 shrink-0" /> {match.venue?.name ?? 'Chưa xếp sân'}
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={match.status} />
+            </div>
+          </div>
+
+          {!isFinished && (
+            <div className="flex items-start gap-2 text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Trận đấu chưa ở trạng thái kết thúc. Biên bản xuất ra có thể chưa đầy đủ tỉ số / sự kiện cuối cùng.</span>
+            </div>
+          )}
+
+          {isFinished && !hasFinalScore && (
+            <div className="flex items-start gap-2 text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Không tìm thấy tỉ số cuối cùng cho trận đấu này.</span>
+            </div>
+          )}
+
+          <div className="flex items-start gap-2 text-sm text-gray-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <span>Vui lòng kiểm tra lại thông tin trận đấu trước khi xuất. File PDF sẽ được tải xuống ngay sau khi xác nhận.</span>
+          </div>
+
+          <div className="pt-2 flex justify-end gap-3">
+            <button type="button" onClick={onClose} disabled={isExporting} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors disabled:opacity-50">
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(match.id)}
+              disabled={isExporting}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              Xác nhận xuất
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Component: ScheduleTab ─────────────────────────────────────────────────
 export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
@@ -530,6 +618,11 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null);
+
+  // Màn check trước khi xuất PDF — giữ match object đang chờ admin xác nhận.
+  const [confirmExportMatch, setConfirmExportMatch] = useState(null);
+  // matchId đang thực sự gọi API tải PDF (để disable nút + hiện spinner đúng trận).
+  const [exportingMatchId, setExportingMatchId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -607,7 +700,14 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
-  const handleExportMatchReport = async (matchId) => {
+  // Bước xác nhận: chỉ mở modal check, CHƯA gọi API.
+  const handleRequestExportMatchReport = (match) => {
+    setConfirmExportMatch(match);
+  };
+
+  // Admin đã bấm "Xác nhận xuất" trong modal -> mới thực sự tải PDF.
+  const handleConfirmExportMatchReport = async (matchId) => {
+    setExportingMatchId(matchId);
     try {
       const res = await matchApi.getMatchReport(matchId);
       const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
@@ -618,9 +718,13 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       link.href = url; link.download = filename;
       document.body.appendChild(link); link.click(); link.remove();
       window.URL.revokeObjectURL(url);
+      toast.success('Đã xuất biên bản trận đấu.');
+      setConfirmExportMatch(null);
     } catch (err) {
       console.error('Lỗi khi xuất biên bản:', err);
       toast.error('Không thể tải biên bản trận đấu.');
+    } finally {
+      setExportingMatchId(null);
     }
   };
 
@@ -689,6 +793,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
                 const homeLogo = homeTeam?.logo;
                 const awayLogo = awayTeam?.logo;
+                const isExportingThis = exportingMatchId === m.id;
                 return (
                   <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
                     <div className="flex justify-between items-start mb-3">
@@ -737,10 +842,12 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                       </div>
                       <div className="flex gap-2 w-full mt-2">
                         <button
-                          onClick={() => handleExportMatchReport(m.id)}
-                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                          onClick={() => handleRequestExportMatchReport(m)}
+                          disabled={isExportingThis}
+                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                          Xuất BB
+                          {isExportingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                          Xuất Biên bản
                         </button>
                         <button
                           onClick={() => onGoToLiveControl(m.id)}
@@ -785,6 +892,17 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
           teams={teams}
           onClose={() => setRescheduleMatchData(null)}
           onSave={handleReschedule}
+        />,
+        document.body
+      )}
+
+      {confirmExportMatch && createPortal(
+        <ConfirmExportModal
+          match={confirmExportMatch}
+          teams={teams}
+          isExporting={exportingMatchId === confirmExportMatch.id}
+          onClose={() => setConfirmExportMatch(null)}
+          onConfirm={handleConfirmExportMatchReport}
         />,
         document.body
       )}
