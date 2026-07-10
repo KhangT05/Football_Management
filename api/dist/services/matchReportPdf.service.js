@@ -38,14 +38,14 @@ function resolveFontDir() {
         path.join(process.cwd(), 'assets', 'fonts'),
     ];
     for (const dir of candidates) {
-        if (fs.existsSync(path.join(dir, 'Roboto-Regular.ttf'))) {
+        if (fs.existsSync(path.join(dir, 'NotoSans-Regular.ttf'))) {
             return dir;
         }
     }
-    throw new Error(`[matchReportPdf] Không tìm thấy font Roboto-Regular.ttf. Đã thử các đường dẫn sau:\n` +
+    throw new Error(`[matchReportPdf] Không tìm thấy font NotoSans-Regular.ttf. Đã thử các đường dẫn sau:\n` +
         candidates.map(c => `  - ${c}`).join('\n') +
-        `\nHãy đảm bảo thư mục assets/fonts (Roboto-Regular.ttf, Roboto-Bold.ttf, ` +
-        `Roboto-Italic.ttf) được copy vào image/deploy (vd: bước COPY trong Dockerfile, ` +
+        `\nHãy đảm bảo thư mục assets/fonts (NotoSans-Regular.ttf, NotoSans-Bold.ttf, ` +
+        `NotoSans-Italic.ttf) được copy vào image/deploy (vd: bước COPY trong Dockerfile, ` +
         `hoặc copy-assets script sau khi build TypeScript), vì tsc KHÔNG tự copy file ` +
         `non-.ts như .ttf vào thư mục dist.`);
 }
@@ -60,9 +60,9 @@ function getFonts() {
     try {
         const dir = resolveFontDir();
         cachedFonts = {
-            regular: path.join(dir, 'Roboto-Regular.ttf'),
-            bold: path.join(dir, 'Roboto-Bold.ttf'),
-            italic: path.join(dir, 'Roboto-Italic.ttf'),
+            regular: path.join(dir, 'NotoSans-Regular.ttf'),
+            bold: path.join(dir, 'NotoSans-Bold.ttf'),
+            italic: path.join(dir, 'NotoSans-Italic.ttf'),
         };
         return cachedFonts;
     }

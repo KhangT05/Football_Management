@@ -1237,14 +1237,28 @@ const models = {
         "type": { "ref": "MatchLineupModel", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__": {
-        "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": {}, "validators": {} },
+    "LineupEntryBody": {
+        "dataType": "refObject",
+        "properties": {
+            "player_id": { "dataType": "double", "required": true },
+            "jersey_number": { "dataType": "double", "required": true },
+            "position": { "ref": "PlayerPosition", "required": true },
+            "lineup_type": { "ref": "LineupType" },
+            "is_captain": { "dataType": "boolean" },
+            "minute_in": { "dataType": "double" },
+            "minute_out": { "dataType": "double" },
+            "status": { "ref": "MatchPlayerStatus" },
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Omit_RegisterLineupDto.match_id_": {
-        "dataType": "refAlias",
-        "type": { "ref": "Pick_RegisterLineupDto.Exclude_keyofRegisterLineupDto.match_id__", "validators": {} },
+    "RegisterLineupBody": {
+        "dataType": "refObject",
+        "properties": {
+            "team_id": { "dataType": "double", "required": true },
+            "players": { "dataType": "array", "array": { "dataType": "refObject", "ref": "LineupEntryBody" }, "required": true },
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Pick_UpdateLineupEntryDto.Exclude_keyofUpdateLineupEntryDto.match_id-or-team_id-or-player_id__": {
@@ -5083,7 +5097,7 @@ export function RegisterRoutes(app, opts) {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsMatchLineupController_registerLineup = {
         matchId: { "in": "path", "name": "matchId", "required": true, "dataType": "double" },
-        body: { "in": "body", "name": "body", "required": true, "ref": "Omit_RegisterLineupDto.match_id_" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "RegisterLineupBody" },
     };
     app.post('/matches/:matchId/lineups', authenticateMiddleware([{ "jwt": ["admin", "leader"] }]), ...(fetchMiddlewares(MatchLineupController)), ...(fetchMiddlewares(MatchLineupController.prototype.registerLineup)), async function MatchLineupController_registerLineup(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
