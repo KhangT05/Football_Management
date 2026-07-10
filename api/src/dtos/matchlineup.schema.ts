@@ -32,7 +32,21 @@ export const updateLineupEntrySchema = z.object({
     team_id: z.number().int().positive(),
     player_id: z.number().int().positive(),
 }).merge(lineupEntrySchema);
-// updateLineupEntrySchema: patch 1 player entry
+export interface LineupEntryBody {
+    player_id: number;
+    jersey_number: number;
+    position: PlayerPosition;
+    lineup_type?: LineupType;
+    is_captain?: boolean;
+    minute_in?: number;
+    minute_out?: number;
+    status?: MatchPlayerStatus;
+}
+
+export interface RegisterLineupBody {
+    team_id: number;
+    players: LineupEntryBody[];
+}
 
 export type RegisterLineupDto = z.infer<typeof registerLineupSchema>;
 export type UpdateLineupEntryDto = z.infer<typeof updateLineupEntrySchema>;

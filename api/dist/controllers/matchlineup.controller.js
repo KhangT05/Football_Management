@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 // controllers/match-lineup.controller.ts
 import { Controller, Path, Tags, Route, Post, Patch, Delete, Body, SuccessResponse, Security, Get, } from "tsoa";
 import { MatchLineupService } from "../services/matchlineup.service.js";
+import * as matchlineupSchema from "../dtos/matchlineup.schema.js";
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/lineups
 //
@@ -50,7 +51,8 @@ let MatchLineupController = class MatchLineupController extends Controller {
      * Leader: chỉ team của mình (ownership check tại middleware).
      */
     async registerLineup(matchId, body) {
-        return this.lineupService.register({ ...body, match_id: matchId });
+        const parsed = matchlineupSchema.registerLineupSchema.parse({ ...body, match_id: matchId });
+        return this.lineupService.register(parsed);
     }
     // ─── Update ───────────────────────────────────────────────────────────────
     /**

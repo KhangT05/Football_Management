@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft, Save, Shield, Users, Loader2, Info
-} from 'lucide-react';
+import { ArrowLeft, Save, Shield, Users, Loader2, Info } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useScheduleStore from '../store/scheduleStore';
-import { teamApi, matchLineupApi } from '../api';
+import { teamApi } from '../api';
 import { POSITION_LABELS } from '../utils/constants';
+import { mapPosition, getSquadLimit } from '../utils/position';
+import useLineupSelection from '../hooks/useLineupSelection';
 import PitchFormation from '../components/PitchFormation';
 
 const POS_COLORS = {
@@ -19,21 +19,9 @@ const POS_COLORS = {
   FW: 'bg-red-400/10 text-red-400 border-red-400/30',
 };
 
-const DEFAULT_SQUAD_LIMIT = { min_players_per_team: 7, max_players_per_team: 11 };
-
-// Map mọi biến thể vị trí (GK/DEF/MID/FW hoặc full-word) về 1 chuẩn duy nhất
-// dùng cho cả payload lưu server lẫn logic kéo-thả trên sơ đồ sân.
-function mapPosition(rawPos) {
-  const p = (rawPos || '').toUpperCase();
-  if (p === 'GK' || p === 'GOALKEEPER') return 'goalkeeper';
-  if (p === 'DEF' || p === 'DEFENDER') return 'defender';
-  if (p === 'MID' || p === 'MIDFIELDER') return 'midfielder';
-  if (p === 'FW' || p === 'FORWARD') return 'forward';
-  return (rawPos || 'midfielder').toLowerCase();
-}
-
 export default function ManageMatchLineup() {
   const { matchId } = useParams();
+  const numericMatchId = Number(matchId);
   const navigate = useNavigate();
   const toast = useToastStore();
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
@@ -41,33 +29,19 @@ export default function ManageMatchLineup() {
   const { fetchMatchDetail, getMatchDetailFromCache } = useScheduleStore();
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
   const [team, setTeam] = useState(null);
   const [allPlayers, setAllPlayers] = useState([]);
 
-  // key: player_id, value: { lineup_type: 'starter' | 'substitute' | null, is_captain: boolean }
-  const [selections, setSelections] = useState({});
-
-  const matchDetailData = getMatchDetailFromCache(Number(matchId));
+  const matchDetailData = getMatchDetailFromCache(numericMatchId);
   const match = matchDetailData?.match;
-
-  // Rule đăng ký đội hình đi theo đúng chuỗi quan hệ Prisma thật:
-  // Match -> phase -> season -> tournamentRule (Match KHÔNG có field `season`
-  // trực tiếp). Fallback nếu API chưa include quan hệ này tới tận nơi.
-  // Tính trực tiếp từ `match` mỗi render, không cần thêm state/effect riêng.
-  const rule = match?.phase?.season?.tournament_rule ?? match?.phase?.season?.tournamentRule;
-  const squadLimit = {
-    min_players_per_team: rule?.min_players_per_team ?? DEFAULT_SQUAD_LIMIT.min_players_per_team,
-    max_players_per_team: rule?.max_players_per_team ?? DEFAULT_SQUAD_LIMIT.max_players_per_team,
-  };
+  const squadLimit = useMemo(() => getSquadLimit(match), [match]);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        await fetchMatchDetail(Number(matchId));
-        const currentMatch = getMatchDetailFromCache(Number(matchId))?.match;
+        await fetchMatchDetail(numericMatchId);
+        const currentMatch = getMatchDetailFromCache(numericMatchId)?.match;
         if (!currentMatch) throw new Error('Không tìm thấy trận đấu');
 
         const userTeamsRes = await teamApi.getTeams({ per_page: 50 });
@@ -91,19 +65,6 @@ export default function ManageMatchLineup() {
         const playersRes = await teamApi.getPlayers(myTeamId, { per_page: 50 });
         const players = Array.isArray(playersRes?.data) ? playersRes.data : [];
         setAllPlayers(players);
-
-        const lineupRes = await matchLineupApi.getLineup(matchId, myTeamId);
-        const existingLineup = Array.isArray(lineupRes?.data) ? lineupRes.data : [];
-
-        const initialSelections = {};
-        existingLineup.forEach(lu => {
-          initialSelections[lu.player_id] = {
-            lineup_type: lu.lineup_type,
-            is_captain: lu.is_captain
-          };
-        });
-        setSelections(initialSelections);
-
       } catch (err) {
         toast.error(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
       } finally {
@@ -114,123 +75,28 @@ export default function ManageMatchLineup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
-  const startersCount = Object.values(selections).filter(s => s.lineup_type === 'starter').length;
-  const subsCount = Object.values(selections).filter(s => s.lineup_type === 'substitute').length;
-  const hasCaptain = Object.values(selections).some(s => s.is_captain);
+  // Normalize allPlayers (shape API trả về) sang shape chung mà hook + PitchFormation dùng.
+  const roster = useMemo(() => allPlayers.map(tp => ({
+    player_id: tp.player_id ?? tp.player?.id,
+    name: tp.player?.name ?? tp.name,
+    jersey_number: tp.jersey_number ?? tp.number,
+    position: tp.position,
+    avatar: tp.player?.avatar,
+  })), [allPlayers]);
 
-  const findPlayer = (playerId) =>
-    allPlayers.find(p => String(p.player_id ?? p.player?.id) === String(playerId));
+  const {
+    selections, isLoading: lineupLoading, isSaving,
+    startersCount, subsCount, hasCaptain,
+    starters, toggleLineupType, handleDropOnPitch, setCaptain, save,
+  } = useLineupSelection({
+    matchId: numericMatchId,
+    teamId: team?.id,
+    roster,
+    squadLimit,
+    onSaved: () => navigate(`/matches/${matchId}`),
+  });
 
-  const toggleLineupType = (playerId, type) => {
-    setSelections(prev => {
-      const current = prev[playerId];
-      const newSelections = { ...prev };
-
-      if (current?.lineup_type === type) {
-        // Deselect
-        delete newSelections[playerId];
-      } else {
-        if (type === 'starter' && current?.lineup_type !== 'starter' && startersCount >= squadLimit.max_players_per_team) {
-          toast.error(`Chỉ được chọn tối đa ${squadLimit.max_players_per_team} cầu thủ đá chính`);
-          return prev;
-        }
-
-        newSelections[playerId] = {
-          lineup_type: type,
-          is_captain: current?.is_captain || false
-        };
-      }
-
-      return newSelections;
-    });
-  };
-
-  // Được gọi khi thả 1 cầu thủ vào 1 hàng vị trí trên sơ đồ sân.
-  // Chỉ chấp nhận nếu vị trí thật của cầu thủ khớp với hàng đích
-  // (ví dụ: GK chỉ thả được vào hàng thủ môn).
-  const handleDropOnPitch = (playerId, rowPosition) => {
-    const tp = findPlayer(playerId);
-    if (!tp) return;
-
-    const playerPos = mapPosition(tp.position);
-    if (playerPos !== rowPosition) {
-      toast.error(
-        `${tp.player?.name ?? tp.name} chơi vị trí ${POSITION_LABELS[tp.position] || tp.position}, không thể xếp vào vị trí này`
-      );
-      return;
-    }
-
-    setSelections(prev => {
-      const current = prev[playerId];
-      if (current?.lineup_type === 'starter') return prev; // đã có trên sân rồi
-
-      if (startersCount >= squadLimit.max_players_per_team) {
-        toast.error(`Chỉ được chọn tối đa ${squadLimit.max_players_per_team} cầu thủ đá chính`);
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [playerId]: { lineup_type: 'starter', is_captain: current?.is_captain || false }
-      };
-    });
-  };
-
-  const setCaptain = (playerId) => {
-    setSelections(prev => {
-      if (!prev[playerId]) return prev; // Must be selected first
-
-      const newSelections = { ...prev };
-      Object.keys(newSelections).forEach(id => {
-        newSelections[id] = { ...newSelections[id], is_captain: false };
-      });
-      newSelections[playerId].is_captain = true;
-      return newSelections;
-    });
-  };
-
-  const handleSave = async () => {
-    if (startersCount === 0) {
-      toast.error('Vui lòng chọn đội hình xuất phát');
-      return;
-    }
-    if (!hasCaptain) {
-      toast.error('Vui lòng chọn một đội trưởng');
-      return;
-    }
-
-    const payload = {
-      team_id: team.id,
-      players: Object.entries(selections).map(([playerId, sel]) => {
-        const playerDetails = findPlayer(playerId);
-        const mappedPosition = mapPosition(playerDetails?.position);
-
-        const jNum = parseInt(playerDetails?.jersey_number || playerDetails?.number || 1, 10);
-        const validJersey = isNaN(jNum) || jNum < 1 ? 1 : (jNum > 99 ? 99 : jNum);
-
-        return {
-          player_id: Number(playerId),
-          jersey_number: validJersey,
-          position: mappedPosition,
-          lineup_type: sel.lineup_type,
-          is_captain: sel.is_captain
-        };
-      })
-    };
-
-    setSaving(true);
-    try {
-      await matchLineupApi.updateLineup(matchId, payload);
-      toast.success('Lưu đội hình thành công!');
-      navigate(`/matches/${matchId}`);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (loading || lineupLoading) {
     return (
       <div className="min-h-screen bg-navy-dark flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
@@ -246,21 +112,6 @@ export default function ManageMatchLineup() {
       </div>
     );
   }
-
-  // Danh sách cầu thủ đá chính, kèm vị trí đã chuẩn hoá (goalkeeper/defender/...)
-  // để PitchFormation gom đúng hàng.
-  const starters = allPlayers
-    .filter(tp => selections[tp.player_id ?? tp.player?.id]?.lineup_type === 'starter')
-    .map(tp => {
-      const pid = tp.player_id ?? tp.player?.id;
-      return {
-        ...selections[pid],
-        player_id: pid,
-        name: tp.player?.name ?? tp.name,
-        jersey_number: tp.jersey_number ?? tp.number,
-        position: mapPosition(tp.position),
-      };
-    });
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-24 relative overflow-hidden">
@@ -304,9 +155,7 @@ export default function ManageMatchLineup() {
             </div>
             <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-[100px]">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Dự bị</span>
-              <span className="text-xl font-black text-gray-300">
-                {subsCount}
-              </span>
+              <span className="text-xl font-black text-gray-300">{subsCount}</span>
             </div>
           </div>
         </div>
@@ -431,11 +280,11 @@ export default function ManageMatchLineup() {
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-navy-dark/90 backdrop-blur-xl border-t border-navy-light z-40 flex justify-center">
           <button
-            onClick={handleSave}
-            disabled={saving}
+            onClick={save}
+            disabled={isSaving}
             className="w-full max-w-md py-4 px-8 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-70 text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all uppercase tracking-wider text-sm"
           >
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             Lưu Đội Hình
           </button>
         </div>
