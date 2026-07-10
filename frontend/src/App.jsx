@@ -14,6 +14,7 @@ const ScheduleResults = lazy(() => import("./pages/ScheduleResults"));
 const LeaderboardTeams = lazy(() => import("./pages/LeaderboardTeams"));
 const SearchTeams = lazy(() => import("./pages/SearchTeams"));
 const SearchPlayers = lazy(() => import("./pages/SearchPlayers"));
+const SearchTournaments = lazy(() => import("./pages/SearchTournaments"));
 const MatchDetail = lazy(() => import("./pages/MatchDetail"));
 const RegisterTeam = lazy(() => import("./pages/RegisterTeam"));
 const TeamDetail = lazy(() => import("./pages/TeamDetail"));
@@ -108,6 +109,7 @@ function App() {
             <Route path="/lich-thi-dau" element={<ScheduleResults />} />
             <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
             <Route path="/tra-cuu-doi-bong" element={<SearchTeams />} />
+            <Route path="/tim-kiem-giai-dau" element={<SearchTournaments />} />
             <Route path="/tra-cuu-cau-thu" element={<SearchPlayers />} />
             <Route path="/doi-bong/:id" element={<TeamDetail />} />
             <Route path="/tran-dau/:id" element={<MatchDetail />} />

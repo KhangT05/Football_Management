@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
-import {
-  Plus, Edit, Trash2, Users, CheckCircle2,
-  ChevronDown, ChevronUp, AlertTriangle, Loader2,
-  UserPlus, RefreshCw, Search, CalendarDays, ChevronLeft, ChevronRight, Trophy
-} from 'lucide-react';
+import { Users, AlertTriangle } from 'lucide-react';
 import { useCrudModal, useDebouncedValue, useApiQuery } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
@@ -12,22 +8,17 @@ import useSeasonStore from '../../store/seasonStore';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import TeamFormModal from '../../components/admin/TeamFormModal';
 import PlayerFormModal from '../../components/admin/PlayerFormModal';
-import TeamRosterPanel from '../../components/admin/TeamRosterPanel';
 import Pagination from '../../components/ui/Pagination';
 import ApproveTeamsTab from '../../components/admin/ApproveTeamsTab';
+import TeamsHeader from '../../components/admin/teams/TeamsHeader';
+import TeamsTabs from '../../components/admin/teams/TeamsTabs';
+import TeamsSearch from '../../components/admin/teams/TeamsSearch';
+import TeamRow from '../../components/admin/teams/TeamRow';
 import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
 import { playerApi, seasonTeamApi } from '../../api';
+import { POSITIONS, EMPTY_TEAM, EMPTY_PLAYER } from '../../data/data';
 
-const POSITIONS = [
-  { value: 'GK', label: 'GK – Thủ môn' },
-  { value: 'DEF', label: 'DEF – Hậu vệ' },
-  { value: 'MID', label: 'MID – Tiền vệ' },
-  { value: 'FW', label: 'FW – Tiền đạo' },
-];
-
-const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
-const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
 
 export default function ManageTeams() {
   const toast = useToastStore();
@@ -306,68 +297,20 @@ export default function ManageTeams() {
       <div className="w-full space-y-6 animate-fade-in">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">Quản lý Đội Bóng</h2>
-            <p className="text-gray-400 text-sm mt-1">
-              <span className="font-bold text-neon">{meta?.total || 0}</span> đội trong hệ thống
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={refetchTeams}
-              disabled={isLoading}
-              className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-              title="Tải lại"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={openAddTeam}
-              className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md hover:shadow-emerald-500/20 transition-all"
-            >
-              <Plus className="w-5 h-5" /> Thêm đội bóng
-            </button>
-          </div>
-        </div>
+        <TeamsHeader 
+          metaTotal={meta?.total}
+          isLoading={isLoading}
+          onRefetch={refetchTeams}
+          onAddTeam={openAddTeam}
+        />
 
         {/* Tabs Navigation */}
-        <div className="flex bg-navy border-b border-navy-light overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setActiveTab('teams')}
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'teams'
-              ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-gray-400 hover:text-white hover:bg-navy-light/50'
-              }`}
-          >
-            <Users className="w-4 h-4" /> Danh sách Đội bóng
-          </button>
-          <button
-            onClick={() => setActiveTab('approve_teams')}
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'approve_teams'
-              ? 'border-neon text-neon'
-              : 'border-transparent text-gray-400 hover:text-white hover:bg-navy-light/50'
-              }`}
-          >
-            <CheckCircle2 className="w-4 h-4" /> Duyệt Đội bóng đăng ký giải
-          </button>
-        </div>
+        <TeamsTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === 'teams' ? (
           <div className="space-y-6 animate-fade-in">
             {/* Search */}
-            <div className="bg-navy p-4 rounded-xl border border-navy-light flex flex-col sm:flex-row gap-3 shadow-lg shadow-black/20">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm theo tên đội..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-navy-dark border border-navy-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm transition-colors"
-                />
-              </div>
-            </div>
+            <TeamsSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
             {/* Teams Table */}
             <div className="bg-navy border border-navy-light rounded-xl shadow-lg shadow-black/20 overflow-hidden">
@@ -423,122 +366,21 @@ export default function ManageTeams() {
                       </tr>
                     ) : (
                       teamsWithSeasons.map((team, idx) => (
-                        <Fragment key={team.id}>
-                          {/* Team Row */}
-                          <tr key={team.id} className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
-                            <td className="py-4 px-6 text-center">
-                              {team.logo ? (
-                                <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover mx-auto border border-navy-light" />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
-                                  {team.name?.[0]?.toUpperCase()}
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              <p className="font-bold text-white">{team.name}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">#{team.id}</p>
-                            </td>
-                            <td className="py-4 px-6">
-                              {team.user?.name ? (
-                                <div>
-                                  <span className="font-bold text-white">{team.user.name}</span>
-                                  <span className="block text-xs text-gray-500 mt-0.5">Người đăng ký (Đội trưởng)</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-300 text-sm">{team.coach_name || '—'}</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              {team.season_teams && team.season_teams.length > 0 ? (
-                                <div className="flex flex-col gap-2">
-                                  {team.season_teams.map(st => (
-                                    <div key={st.season.id} className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-black text-[11px] font-bold whitespace-nowrap self-start">
-                                      {st.season?.name || 'Không rõ'}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500 text-xs">—</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              {team.season_teams && team.season_teams.length > 0 ? (
-                                <div className="flex flex-col gap-2">
-                                  {team.season_teams.map(st => {
-                                    const tName = st.season?.tournament?.name || st.tournament?.name;
-                                    return tName ? (
-                                      <div key={st.season.id} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-black self-start min-w-0">
-                                        <Trophy className="w-3.5 h-3.5 shrink-0" />
-                                        <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider">{tName}</span>
-                                      </div>
-                                    ) : (
-                                      <div key={st.season.id} className="h-7 flex items-center">
-                                        <span className="text-gray-500 text-xs">—</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500 text-xs">—</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              {team.is_active ? (
-                                <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
-                                  Đã Duyệt
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-yellow-400/10 text-yellow-400 border-yellow-400/30">
-                                  Chờ Duyệt
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6">
-                              <div className="flex items-center justify-end gap-2">
-                                {!team.is_active && (
-                                  <button onClick={() => handleApproveTeam(team)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors" title="Duyệt Đội bóng">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    <span className="text-xs font-bold">Duyệt</span>
-                                  </button>
-                                )}
-                                <button onClick={() => openEditTeam(team)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors" title="Chỉnh sửa">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => teamCrud.setDeleting(team)} className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors" title="Xóa đội">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => toggleTeamExpand(team.id)}
-                                  className={`flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-lg border transition-all ${expandedTeamId === team.id
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'bg-navy-dark text-gray-300 border-navy-light hover:bg-navy-light'
-                                    }`}
-                                >
-                                  <Users className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Đội hình</span>
-                                  {expandedTeamId === team.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* Expanded Roster */}
-                          {expandedTeamId === team.id && (
-                            <tr className="border-b border-navy-light">
-                              <td colSpan={7} className="p-0">
-                                <TeamRosterPanel
-                                  team={team}
-                                  players={getTeamRoster(team)}
-                                  isLoading={!!playersLoading[team.id]}
-                                  onAddPlayer={openAddPlayer}
-                                  onEditPlayer={openEditPlayer}
-                                  onDeletePlayer={(player, teamId) => setDeletePlayerState({ player, teamId })}
-                                />
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
+                        <TeamRow 
+                          key={team.id}
+                          team={team}
+                          idx={idx}
+                          expandedTeamId={expandedTeamId}
+                          onToggleExpand={toggleTeamExpand}
+                          onApprove={handleApproveTeam}
+                          onEdit={openEditTeam}
+                          onDelete={(team) => teamCrud.setDeleting(team)}
+                          getTeamRoster={getTeamRoster}
+                          playersLoading={playersLoading}
+                          onAddPlayer={openAddPlayer}
+                          onEditPlayer={openEditPlayer}
+                          onDeletePlayer={(player, teamId) => setDeletePlayerState({ player, teamId })}
+                        />
                       ))
                     )}
                   </tbody>

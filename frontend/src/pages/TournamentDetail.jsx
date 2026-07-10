@@ -2,58 +2,26 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Trophy, Calendar, Users, Shield, ArrowLeft, ChevronRight,
-  Clock, Activity, XCircle, BarChart2, Zap, AlertCircle
+  Clock, Activity, XCircle, BarChart2, Zap, AlertCircle, BookOpen
 } from 'lucide-react';
-import { tournamentApi, seasonApi, seasonTeamApi } from '../api';
+import { tournamentApi, seasonApi, seasonTeamApi, tournamentRuleApi } from '../api';
 import { AVATAR_COLORS, getInitials } from '../utils/constants';
+import { STATUS_CONFIG } from '../data/data';
+import StatusBadge from '../components/badges/StatusBadge';
 
-// ── Helpers ───────────────────────────────────────────────────
-const STATUS_CONFIG = {
-  upcoming: {
-    label: 'Sắp diễn ra',
-    cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    dotCls: 'bg-blue-400',
-  },
-  registration_open: {
-    label: 'Mở đăng ký',
-    cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    dotCls: 'bg-emerald-400 animate-pulse',
-  },
-  ongoing: {
-    label: 'Đang diễn ra',
-    cls: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    dotCls: 'bg-orange-400 animate-pulse',
-  },
-  finished: {
-    label: 'Đã kết thúc',
-    cls: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-    dotCls: 'bg-gray-400',
-  },
-  cancelled: {
-    label: 'Đã hủy',
-    cls: 'bg-red-700/10 text-red-500 border-red-700/20',
-    dotCls: 'bg-red-500',
-  },
+const TIEBREAKER_LABELS = {
+  goal_diff: 'Hiệu số bàn thắng',
+  goals_scored: 'Tổng bàn thắng',
+  head_to_head: 'Đối đầu trực tiếp',
+  goals_conceded: 'Bàn thủng',
+  yellow_cards: 'Thẻ vàng',
+  red_cards: 'Thẻ đỏ',
 };
 
 const parseList = (res) => {
   const payload = typeof res?.status === 'boolean' ? res.data : res;
   return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
 };
-
-function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] || {
-    label: status || 'Không rõ',
-    cls: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-    dotCls: 'bg-gray-400',
-  };
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${cfg.cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotCls}`} />
-      {cfg.label}
-    </span>
-  );
-}
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function TournamentDetail() {
@@ -62,6 +30,7 @@ export default function TournamentDetail() {
 
   const [tournament, setTournament] = useState(null);
   const [seasons, setSeasons] = useState([]);
+  const [rules, setRules] = useState(null);
   const [seasonTeamsMap, setSeasonTeamsMap] = useState({});
   const [activeSeasonId, setActiveSeasonId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,9 +43,10 @@ export default function TournamentDetail() {
       setLoading(true);
       setError('');
       try {
-        const [tRes, sRes] = await Promise.all([
+        const [tRes, sRes, rRes] = await Promise.all([
           tournamentApi.getById(id),
           seasonApi.getAll({ tournament_id: id, per_page: 50 }),
+          tournamentRuleApi.getAll({ tournament_id: id }).catch(() => ({ data: [] })),
         ]);
         if (cancelled) return;
 
@@ -86,6 +56,9 @@ export default function TournamentDetail() {
         const sList = parseList(sRes);
         sList.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
         setSeasons(sList);
+
+        const rList = parseList(rRes);
+        setRules(rList.length > 0 ? rList[0] : null);
 
         if (sList.length > 0) {
           const active = sList.find(s => ['registration_open', 'ongoing'].includes(s.status)) || sList[0];
@@ -231,32 +204,73 @@ export default function TournamentDetail() {
 
         {/* ── Body ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar: seasons */}
+          {/* Sidebar: seasons & rules */}
           <div className="lg:col-span-4">
-            <div className="bg-navy border border-navy-light rounded-2xl p-5 sticky top-4">
-              <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-blue-400" />
-                Các mùa giải
-              </h2>
+            <div className="sticky top-4 space-y-6">
+              {/* Mùa giải */}
+              <div className="bg-navy border border-navy-light rounded-2xl p-5">
+                <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-blue-400" />
+                  Các mùa giải
+                </h2>
 
-              {seasons.length === 0 ? (
-                <p className="text-sm text-gray-500 py-6 text-center">Chưa có mùa giải nào</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {seasons.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => setActiveSeasonId(s.id)}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between gap-3 text-sm font-bold
-                        ${activeSeasonId === s.id
-                          ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
-                          : 'text-gray-400 hover:bg-navy-light hover:text-white border border-transparent'
-                        }`}
-                    >
-                      <span className="truncate">{s.name}</span>
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_CONFIG[s.status]?.dotCls || 'bg-gray-500'}`} />
-                    </button>
-                  ))}
+                {seasons.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-6 text-center">Chưa có mùa giải nào</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {seasons.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveSeasonId(s.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between gap-3 text-sm font-bold
+                          ${activeSeasonId === s.id
+                            ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+                            : 'text-gray-400 hover:bg-navy-light hover:text-white border border-transparent'
+                          }`}
+                      >
+                        <span className="truncate">{s.name}</span>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_CONFIG[s.status]?.dotCls || 'bg-gray-500'}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Luật Giải */}
+              {rules && (
+                <div className="bg-navy border border-navy-light rounded-2xl p-5"> 
+                   <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                     <BookOpen className="w-4 h-4 text-orange-400" />
+                     Luật Giải Đấu
+                   </h2>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex justify-between items-center border-b border-navy-light pb-2">
+                       <span className="text-gray-500">Điểm (T/H/B)</span>
+                       <span className="font-bold text-white">{rules.points_per_win} / {rules.points_per_draw} / {rules.points_per_loss}</span>
+                     </div>
+                     <div className="flex justify-between items-center border-b border-navy-light pb-2">
+                       <span className="text-gray-500">Số HV / Đội</span>
+                       <span className="font-bold text-white">{rules.min_players_per_team} - {rules.max_players_per_team}</span>
+                     </div>
+                     <div className="flex justify-between items-center border-b border-navy-light pb-2">
+                       <span className="text-gray-500">Thẻ vàng cấm TĐ</span>
+                       <span className="font-bold text-amber-400">{rules.yellow_cards_suspension} thẻ</span>
+                     </div>
+                     <div className="flex justify-between items-center border-b border-navy-light pb-2">
+                       <span className="text-gray-500">Bỏ cuộc xử thua</span>
+                       <span className="font-bold text-red-400">0 - {rules.forfeit_score}</span>
+                     </div>
+                     <div className="pt-1">
+                       <span className="text-gray-500 block mb-2">Tiêu chí phân hạng:</span>
+                       <div className="flex flex-wrap gap-1.5">
+                         {rules.tiebreaker_order?.map((tb, idx) => (
+                           <span key={tb} className="text-[10px] font-bold px-2 py-1 rounded-md bg-navy-light text-gray-300 border border-navy-light/50">
+                             {idx + 1}. {TIEBREAKER_LABELS[tb] || tb}
+                           </span>
+                         ))}
+                       </div>
+                     </div>
+                   </div>
                 </div>
               )}
             </div>

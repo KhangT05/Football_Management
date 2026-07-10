@@ -11,6 +11,35 @@ export const STEP_META = [
   { id: 4, title: 'Mùa giải', subtitle: 'Tạo mùa giải, mở đăng ký', icon: CalendarDays },
 ];
 
+// ── Helpers ───────────────────────────────────────────────────
+export const STATUS_CONFIG = {
+  upcoming: {
+    label: 'Sắp diễn ra',
+    cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    dotCls: 'bg-blue-400',
+  },
+  registration_open: {
+    label: 'Mở đăng ký',
+    cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    dotCls: 'bg-emerald-400 animate-pulse',
+  },
+  ongoing: {
+    label: 'Đang diễn ra',
+    cls: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    dotCls: 'bg-orange-400 animate-pulse',
+  },
+  finished: {
+    label: 'Đã kết thúc',
+    cls: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    dotCls: 'bg-gray-400',
+  },
+  cancelled: {
+    label: 'Đã hủy',
+    cls: 'bg-red-700/10 text-red-500 border-red-700/20',
+    dotCls: 'bg-red-500',
+  },
+};
+
 export const INPUT_CLASS = "w-full pl-11 pr-4 py-3.5 bg-navy/50 border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 disabled:opacity-50 disabled:bg-navy-dark disabled:cursor-not-allowed transition-all duration-300 text-sm";
 
 export const INPUT = 'w-full px-4 py-3 bg-navy border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm';
@@ -99,3 +128,12 @@ export const Information = {
   logoSubtitle: 'Khoa Công Nghệ Thông Tin',
   copyright: '© 2026 Giải bóng đá Khoa CNTT. Bản quyền đã được bảo hộ.',
 };
+
+export const POSITIONS = [
+  { value: 'GK', label: 'GK – Thủ môn' },
+  { value: 'DEF', label: 'DEF – Hậu vệ' },
+  { value: 'MID', label: 'MID – Tiền vệ' },
+  { value: 'FW', label: 'FW – Tiền đạo' },
+];
+export const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
+export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
