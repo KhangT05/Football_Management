@@ -33,7 +33,7 @@ import { seedMatchDetails } from "./matchDetailSeeder.js";
 import { seedPlayerStatistics } from "./playerStatisticSeeder.js";
 import { seedPayments } from "./paymentSeeder.js";
 import prisma from "../libs/prisma.js";
-async function main() {
+export async function seedDatabase() {
     console.log("🌱 Bắt đầu seed World Cup demo...\n");
     // 1-2. Role + User
     const roleMap = await seedRoles(prisma);
@@ -85,12 +85,4 @@ async function main() {
     await seedPayments(prisma, seasonTeamIdByTeamId);
     console.log(`\n✅ Seed hoàn tất! Vô địch: team #${championTeamId}`);
 }
-main()
-    .catch((e) => {
-    console.error("❌ Seed lỗi:", e);
-    process.exit(1);
-})
-    .finally(async () => {
-    await prisma.$disconnect();
-});
 //# sourceMappingURL=index.js.map

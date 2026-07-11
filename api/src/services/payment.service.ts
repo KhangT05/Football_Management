@@ -5,8 +5,6 @@ import {
 } from '../generated/prisma/client.js';
 import {
     VNPay,
-    VNPAY_GATEWAY_SANDBOX_HOST,
-    HashAlgorithm,
     VnpLocale,
     VnpCurrCode,
     ProductCode,
@@ -27,20 +25,6 @@ import {
     IpnResponse,
     PaymentRow,
 } from '../types/payment.type.js';
-
-// ─── VNPay instance ───────────────────────────────────────────────────────────
-
-export function createVNPayInstance(): VNPay {
-    return new VNPay({
-        tmnCode: process.env.VNPAY_TMN_CODE!,
-        secureSecret: process.env.VNPAY_SECURE_SECRET!,
-        vnpayHost: process.env.VNPAY_HOST ?? VNPAY_GATEWAY_SANDBOX_HOST,
-        queryDrAndRefundHost: process.env.VNPAY_QUERY_REFUND_HOST ?? process.env.VNPAY_HOST ?? VNPAY_GATEWAY_SANDBOX_HOST,
-        testMode: process.env.NODE_ENV !== 'production',
-        hashAlgorithm: HashAlgorithm.SHA512,
-        enableLog: process.env.NODE_ENV !== 'production',
-    });
-}
 // Input cho refund — tạm định nghĩa local vì chưa thấy payment.type.ts đầy đủ.
 // Nên move vào payment.type.ts cho nhất quán với pattern hiện có.
 export interface RefundPaymentInput {

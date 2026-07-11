@@ -1,19 +1,7 @@
 import { randomBytes } from 'crypto';
 import { PaymentStatus, } from '../generated/prisma/client.js';
-import { VNPay, VNPAY_GATEWAY_SANDBOX_HOST, HashAlgorithm, VnpLocale, VnpCurrCode, ProductCode, VnpTransactionType, dateFormat, getDateInGMT7, } from 'vnpay';
+import { VnpLocale, VnpCurrCode, ProductCode, VnpTransactionType, dateFormat, getDateInGMT7, } from 'vnpay';
 import { createAppError } from '../common/app.error.js';
-// ─── VNPay instance ───────────────────────────────────────────────────────────
-export function createVNPayInstance() {
-    return new VNPay({
-        tmnCode: process.env.VNPAY_TMN_CODE,
-        secureSecret: process.env.VNPAY_SECURE_SECRET,
-        vnpayHost: process.env.VNPAY_HOST ?? VNPAY_GATEWAY_SANDBOX_HOST,
-        queryDrAndRefundHost: process.env.VNPAY_QUERY_REFUND_HOST ?? process.env.VNPAY_HOST ?? VNPAY_GATEWAY_SANDBOX_HOST,
-        testMode: process.env.NODE_ENV !== 'production',
-        hashAlgorithm: HashAlgorithm.SHA512,
-        enableLog: process.env.NODE_ENV !== 'production',
-    });
-}
 // ─── Service ──────────────────────────────────────────────────────────────────
 // Flow:
 //   Leader POST /payments/initiate
