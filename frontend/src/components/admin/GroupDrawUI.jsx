@@ -1,16 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Users, Shuffle, AlertTriangle, Loader2, Trash2, LayoutGrid, Hash, ListChecks } from 'lucide-react';
+import { Users, Shuffle, AlertTriangle, Loader2, Trash2, LayoutGrid, Hash, ListChecks, ShieldCheck, Lock, Unlock } from 'lucide-react';
 import { seasonTeamApi, groupApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 
-const DEBUG_RESPONSE_SHAPE = false;
-
-function unwrapResponse(res, label) {
-  if (DEBUG_RESPONSE_SHAPE) {
-    console.log(`[GroupDrawUI][DEBUG raw response] ${label}:`, res);
-  }
+function unwrapResponse(res) {
   return typeof res?.status === 'boolean' ? res.data : res;
 }
 
@@ -23,10 +18,6 @@ function extractTotalCount(payload) {
   ];
   const found = candidates.find((v) => typeof v === 'number');
   if (typeof found === 'number') return found;
-
-  // Không có meta.total tin cậy được -> KHÔNG suy ra từ data.length khi ta
-  // chủ động giới hạn per_page, vì data.length lúc đó chỉ phản ánh per_page,
-  // không phải tổng thật. Trả về null để UI báo lỗi thay vì hiển thị số sai.
   return null;
 }
 
@@ -52,21 +43,20 @@ export default function GroupDrawUI({ seasonId }) {
   const [loading, setLoading] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isCreatingGroups, setIsCreatingGroups] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [deletingGroupId, setDeletingGroupId] = useState(null);
   const [draggedTeam, setDraggedTeam] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
-  // NEW: highlight đúng 1 dòng team đang là drop-target, để phân biệt trực
-  // quan với "thả vào vùng trống của cả bảng" (dragOverGroup). Khi cả 2
-  // cùng active, dragOverTeamId ưu tiên hiển thị (xem className bên dưới).
   const [dragOverTeamId, setDragOverTeamId] = useState(null);
 
-  const [teamsPerGroup, setTeamsPerGroup] = useState(4);
+  // numPots: chỉ dùng riêng cho bốc thăm hạt giống.
+  // teams_per_group KHÔNG còn là input của user nữa — tự tính từ
+  // totalTeams / groups.length (xem computedTeamsPerGroup bên dưới),
+  // BE vẫn nhận field này như upper-bound để validate.
   const [numPots, setNumPots] = useState(4);
   const [groupCount, setGroupCount] = useState(4);
 
-  const [persistedTeamsPerGroup, setPersistedTeamsPerGroup] = useState(null);
   const [phaseInfo, setPhaseInfo] = useState(null);
-
   const [groups, setGroups] = useState([]);
   const [originalGroups, setOriginalGroups] = useState([]);
   const [totalTeams, setTotalTeams] = useState(null);
@@ -76,15 +66,6 @@ export default function GroupDrawUI({ seasonId }) {
   const requestIdRef = useRef(0);
   const isMountedRef = useRef(true);
 
-  // FIX (root cause "stuck loading" dưới StrictMode dev): effect cleanup-only
-  // trước đây set isMountedRef.current = false ở cleanup nhưng KHÔNG set lại
-  // true khi mount lại. StrictMode double-invoke (mount -> cleanup -> mount)
-  // khiến flag kẹt false vĩnh viễn sau lần mount thứ 2, trong khi request
-  // thật (reqId khớp) vẫn đang in-flight. Khi response về, guard
-  // `!isMountedRef.current` fail-safe sai -> bỏ qua setState -> loading kẹt
-  // true, groups/phase kẹt giá trị reset, dù network đã 200 hợp lệ.
-  // Set lại true ở mount body để lần mount thứ 2 tự sửa flag trước khi
-  // response resolve.
   useEffect(() => {
     isMountedRef.current = true;
     return () => { isMountedRef.current = false; };
@@ -103,32 +84,25 @@ export default function GroupDrawUI({ seasonId }) {
       if (reqId !== requestIdRef.current || !isMountedRef.current) return;
 
       if (groupsRes.status === 'fulfilled') {
-        const payload = unwrapResponse(groupsRes.value, 'groupApi.listBySeason');
+        const payload = unwrapResponse(groupsRes.value);
         setGroupsLoadError(false);
         setPhaseInfo(payload?.phase ?? null);
         const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
         setGroups(fetchedGroups);
         setOriginalGroups(JSON.parse(JSON.stringify(fetchedGroups)));
-        setPersistedTeamsPerGroup(
-          typeof payload?.phase?.teams_per_group === 'number' ? payload.phase.teams_per_group : null
-        );
       } else {
         console.error('[GroupDrawUI] loadGroups failed:', groupsRes.reason);
         toast.error(groupsRes.reason?.response?.data?.message || 'Không thể tải danh sách bảng đấu');
         setGroups([]);
-        setPersistedTeamsPerGroup(null);
         setPhaseInfo(null);
         setGroupsLoadError(true);
       }
 
       if (teamsRes.status === 'fulfilled') {
-        const payload = unwrapResponse(teamsRes.value, 'seasonTeamApi.getAll');
+        const payload = unwrapResponse(teamsRes.value);
         const total = extractTotalCount(payload);
         if (total === null) {
-          console.warn(
-            '[GroupDrawUI] Không xác định được tổng số team approved từ response. Raw payload:',
-            payload
-          );
+          console.warn('[GroupDrawUI] Không xác định được tổng số team approved. Raw payload:', payload);
           setTeamsCountError(true);
           setTotalTeams(null);
         } else {
@@ -151,18 +125,30 @@ export default function GroupDrawUI({ seasonId }) {
     setGroupsLoadError(false);
     setTeamsCountError(false);
     setTotalTeams(null);
-    setPersistedTeamsPerGroup(null);
     setOriginalGroups([]);
     setPhaseInfo(null);
     if (seasonId) {
       loadData();
     } else {
-      // FIX (edge case): seasonId falsy -> loadData() không chạy -> không có
-      // finally nào tắt loading nếu nhánh trước đó đã set true. Guard tường
-      // minh thay vì phụ thuộc side-effect của loadData.
       setLoading(false);
     }
   }, [seasonId, loadData]);
+
+  const isConfirmed = phaseInfo?.status === 'in_progress';
+  const isLocked = phaseInfo?.status === 'locked';
+  const hasBeenDrawn = groups.some(g => (g.season_teams?.length || 0) > 0);
+  const showDrawConfig = groups.length > 0 && !isConfirmed && !isLocked;
+
+  // Capacity thật ra chỉ là upper-bound gửi cho BE để validate — không cần
+  // user nhập tay, tự tính từ số đội / số bảng hiện có (làm tròn lên,
+  // tối thiểu 2). Nếu chưa đủ dữ liệu (đang load totalTeams / chưa có group)
+  // thì null, disable nút draw.
+  const computedTeamsPerGroup = useMemo(() => {
+    if (typeof totalTeams !== 'number' || groups.length === 0) return null;
+    return Math.max(2, Math.ceil(totalTeams / groups.length));
+  }, [totalTeams, groups.length]);
+
+  const anyBusy = isDrawing || isCreatingGroups || isConfirming || deletingGroupId !== null || loading;
 
   const handleCreateGroups = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
@@ -188,9 +174,10 @@ export default function GroupDrawUI({ seasonId }) {
   const handleDrawRandom = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
+    if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
     setIsDrawing(true);
     try {
-      await groupApi.drawGroups(seasonId, { teams_per_group: Number(teamsPerGroup) });
+      await groupApi.drawGroups(seasonId, { teams_per_group: computedTeamsPerGroup });
       toast.success('Bốc thăm ngẫu nhiên thành công!');
       loadData();
     } catch (error) {
@@ -204,6 +191,7 @@ export default function GroupDrawUI({ seasonId }) {
   const handleDrawSeeded = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
+    if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
 
     const pots = Number(numPots);
     if (!Number.isInteger(pots) || pots < 1)
@@ -220,7 +208,7 @@ export default function GroupDrawUI({ seasonId }) {
 
     setIsDrawing(true);
     try {
-      await groupApi.drawSeeded(seasonId, { teams_per_group: Number(teamsPerGroup), num_pots: pots });
+      await groupApi.drawSeeded(seasonId, { teams_per_group: computedTeamsPerGroup, num_pots: pots });
       toast.success('Bốc thăm hạt giống thành công!');
       loadData();
     } catch (error) {
@@ -247,14 +235,8 @@ export default function GroupDrawUI({ seasonId }) {
     }
   };
 
-  // NEW: xoá 1 group riêng lẻ (khác handleClearDraw — cái đó xoá toàn bộ
-  // kết quả draw của phase, không xoá group). Dùng khi tạo nhầm số lượng/tên
-  // bảng và muốn gỡ từng cái thay vì clear draw + xoá hết rồi bulk-create lại.
-  // Backend (deactivateGroup) chặn nếu group đã có match, nhưng KHÔNG chặn
-  // nếu group đang có team — nó set group_id=null cho các season_teams rồi
-  // mới deactivate. Vì vậy confirm phải nêu rõ số đội bị ảnh hưởng.
   const handleDeleteGroup = async (group) => {
-    if (isDrawing || isCreatingGroups || deletingGroupId !== null) return;
+    if (anyBusy) return;
 
     const teamCount = group.season_teams?.length || 0;
     const confirmMsg = teamCount > 0
@@ -276,25 +258,42 @@ export default function GroupDrawUI({ seasonId }) {
     }
   };
 
+  const canConfirm = groups.length > 0 && !isConfirmed && !isLocked &&
+    groups.every(g => (g.season_teams?.length || 0) >= 2);
+
+  const handleConfirmGroups = async () => {
+    if (!seasonId || !canConfirm) return;
+    if (!confirm('Xác nhận bảng đấu? Sau khi xác nhận sẽ không tạo/xoá/bốc thăm lại được — chỉ còn đổi chỗ (swap) từng đội.')) return;
+    setIsConfirming(true);
+    try {
+      await groupApi.confirmGroups(seasonId);
+      toast.success('Đã xác nhận bảng đấu');
+      loadData();
+    } catch (error) {
+      console.error('[GroupDrawUI] confirmGroups failed:', error);
+      toast.error(error?.response?.data?.message || 'Lỗi xác nhận bảng đấu');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleUnconfirmGroups = async () => {
+    if (!seasonId || !isConfirmed) return;
+    if (!confirm('Hủy xác nhận để mở lại chỉnh sửa cấu trúc bảng?')) return;
+    setIsConfirming(true);
+    try {
+      await groupApi.unconfirmGroups(seasonId);
+      toast.success('Đã hủy xác nhận');
+      loadData();
+    } catch (error) {
+      console.error('[GroupDrawUI] unconfirmGroups failed:', error);
+      toast.error(error?.response?.data?.message || 'Lỗi hủy xác nhận (có thể đã có lịch thi đấu)');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   // ── Drag & Drop Handlers ──
-  //
-  // Có 2 loại thao tác kéo-thả khác nhau, PHẢI phân biệt rõ:
-  //
-  // 1) Thả vào 1 ĐỘI cụ thể ở bảng khác (handleTeamDrop) -> SWAP 1-1.
-  //    Sĩ số 2 bảng không đổi -> luôn được phép, kể cả khi 2 bảng đang
-  //    bằng quân số.
-  //
-  // 2) Thả vào VÙNG TRỐNG của cả bảng, không nhắm vào đội nào (handleDrop)
-  //    -> MOVE (chuyển hẳn 1 đội sang bảng khác). Việc này làm bảng nguồn
-  //    -1, bảng đích +1 -> CHỈ hợp lệ khi 2 bảng đang lệch quân số (dùng để
-  //    cân lại). Nếu 2 bảng đang bằng nhau, move sẽ tạo ra đúng bug trong
-  //    ảnh (3/2 và 1/2) nên phải chặn và bắt buộc người dùng thả trúng vào
-  //    1 đội để trigger swap thay vì move.
-  //
-  // Lưu ý về "thả vào giữa 2 dòng": vì các <tr> xếp sát nhau không có
-  // khoảng cách thật trong DOM, con trỏ giữa 2 dòng luôn nằm trên rìa của
-  // 1 trong 2 <tr> đó -> event luôn rơi vào (1), không lọt xuống (2).
-  // Khoảng trống thật của (2) chỉ tồn tại dưới dòng cuối/bảng rỗng.
   const handleDragStart = (e, stId, sourceGroupId) => {
     e.dataTransfer.setData('stId', stId);
     e.dataTransfer.setData('sourceGroupId', sourceGroupId);
@@ -315,8 +314,6 @@ export default function GroupDrawUI({ seasonId }) {
     }
   };
 
-  // Thả vào vùng trống của cả bảng -> MOVE. Chặn nếu 2 bảng đang bằng
-  // quân số, vì move trong trường hợp đó luôn làm lệch sĩ số 1 bên.
   const handleDrop = (e, targetGroupId) => {
     e.preventDefault();
     setDragOverGroup(null);
@@ -355,9 +352,6 @@ export default function GroupDrawUI({ seasonId }) {
     });
   };
 
-  // Thả trúng vào 1 đội cụ thể -> SWAP 1-1. Luôn cho phép vì không đổi
-  // sĩ số 2 bên. stopPropagation để container's onDrop (handleDrop) không
-  // chạy tiếp và hiểu nhầm thành move.
   const handleTeamDragOver = (e, stId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -380,7 +374,7 @@ export default function GroupDrawUI({ seasonId }) {
     const sourceGroupId = Number(e.dataTransfer.getData('sourceGroupId'));
 
     if (!stId || stId === targetStId) return;
-    if (sourceGroupId === targetGroupId) return; // thả vào chính bảng của nó — bỏ qua
+    if (sourceGroupId === targetGroupId) return;
 
     setGroups(prevGroups => {
       const newGroups = JSON.parse(JSON.stringify(prevGroups));
@@ -392,7 +386,6 @@ export default function GroupDrawUI({ seasonId }) {
       const targetIdx = targetGroup.season_teams.findIndex(st => st.id === targetStId);
       if (sourceIdx === -1 || targetIdx === -1) return prevGroups;
 
-      // Đổi chỗ 2 đội cho nhau tại đúng vị trí — sĩ số 2 bảng giữ nguyên
       const tmp = sourceGroup.season_teams[sourceIdx];
       sourceGroup.season_teams[sourceIdx] = targetGroup.season_teams[targetIdx];
       targetGroup.season_teams[targetIdx] = tmp;
@@ -407,7 +400,6 @@ export default function GroupDrawUI({ seasonId }) {
     const originalGroupOf = new Map();
     originalGroups.forEach(g => g.season_teams.forEach(st => originalGroupOf.set(st.id, g.id)));
 
-    // Tất cả đội đã đổi bảng so với bản gốc
     const moves = [];
     groups.forEach(currentGroup => {
       currentGroup.season_teams.forEach(st => {
@@ -420,14 +412,6 @@ export default function GroupDrawUI({ seasonId }) {
 
     if (moves.length === 0) return;
 
-    // FIX: ghép các cặp "A đi G1->G2 và B đi G2->G1" thành 1 lệnh swap thật
-    // (seasonTeamApi.swapTeams) thay vì 2 lệnh assignGroup độc lập chạy
-    // song song. Lý do: assignGroup kiểm tra capacity dựa trên số đội đã
-    // COMMIT trong group đích tại thời điểm request đó chạy; 2 request
-    // song song cho 1 swap có thể đọc capacity trước khi lệnh kia commit,
-    // dẫn tới bị BE từ chối "group đã full" dù về bản chất sĩ số không đổi.
-    // swapTeams xử lý atomic trong 1 transaction, không đụng đến capacity
-    // nên luôn an toàn cho đúng loại thao tác đổi chỗ này.
     const used = new Set();
     const swapPairs = [];
     for (let i = 0; i < moves.length; i++) {
@@ -445,15 +429,11 @@ export default function GroupDrawUI({ seasonId }) {
     }
     const singleMoves = moves.filter(m => !used.has(m.teamId));
 
-    setIsDrawing(true); // Reuse isDrawing state to show loading
+    setIsDrawing(true);
     try {
-      // groupApi.swapTeams / groupApi.assignTeam (PUT /groups/swap, /groups/assign)
-      // — field name khớp đúng SwapTeamsBody { season_team_id_a, season_team_id_b }
-      // và AssignTeamToGroupBody { season_team_id, group_id } phía BE.
       for (const [teamAId, teamBId] of swapPairs) {
         await groupApi.swapTeams({ season_team_id_a: teamAId, season_team_id_b: teamBId });
       }
-      // Move đơn lẻ còn lại (trường hợp cân lại quân số giữa 2 bảng lệch)
       if (singleMoves.length > 0) {
         await Promise.all(
           singleMoves.map(m => groupApi.assignTeam({ season_team_id: m.teamId, group_id: m.toGroupId }))
@@ -475,18 +455,16 @@ export default function GroupDrawUI({ seasonId }) {
 
   const hasTeamCount = typeof totalTeams === 'number';
   const minRequired = groups.length * 2;
-  const maxAllowed = groups.length * Number(teamsPerGroup || 0);
   const belowMin = hasTeamCount && groups.length > 0 && totalTeams < minRequired;
-  const aboveMax = hasTeamCount && groups.length > 0 && totalTeams > maxAllowed;
-  const outOfRange = belowMin || aboveMax;
-
-  const displayedCapacity = persistedTeamsPerGroup ?? Number(teamsPerGroup || 0);
+  const outOfRange = showDrawConfig && belowMin;
 
   let headerSubtitle;
   if (loading) {
     headerSubtitle = 'Đang tải vòng đấu...';
   } else if (groupsLoadError) {
     headerSubtitle = 'Không tải được thông tin vòng đấu — thử tải lại trang';
+  } else if (isConfirmed) {
+    headerSubtitle = `Vòng đấu: ${phaseInfo.name} · đã xác nhận`;
   } else if (phaseInfo) {
     headerSubtitle = `Vòng đấu: ${phaseInfo.name}`;
   } else {
@@ -504,24 +482,18 @@ export default function GroupDrawUI({ seasonId }) {
             <h3 className="text-base font-extrabold text-white leading-none">Bốc thăm chia bảng</h3>
             <p className="text-xs text-gray-500 mt-1">{headerSubtitle}</p>
           </div>
+          {isConfirmed && (
+            <span className="ml-auto flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full">
+              <ShieldCheck className="w-3.5 h-3.5" /> Đã xác nhận
+            </span>
+          )}
         </div>
 
         <div className="p-5 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1.5">Số đội mỗi bảng (capacity)</label>
-              <input
-                type="number"
-                min={2}
-                value={teamsPerGroup}
-                onChange={e => setTeamsPerGroup(e.target.value)}
-                className="w-full bg-navy-dark border border-navy-light rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-colors"
-              />
-              <p className="text-[11px] text-gray-500 mt-1.5">
-                Upper bound để validate — số thật lưu sau draw có thể thấp hơn nếu team lệch số.
-              </p>
-            </div>
-            <div>
+          {/* Chỉ còn input số pot — dùng riêng cho bốc thăm hạt giống.
+              Số đội/bảng không còn là input, tự tính ngầm. */}
+          {showDrawConfig && (
+            <div className="max-w-xs">
               <label className="block text-xs font-bold text-gray-400 mb-1.5">Số pot (chỉ dùng cho bốc thăm hạt giống)</label>
               <input
                 type="number"
@@ -534,9 +506,9 @@ export default function GroupDrawUI({ seasonId }) {
                 Độc lập với số bảng — pot lớn nhất phải ≤ số bảng, ngược lại server sẽ từ chối.
               </p>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${outOfRange ? 'bg-amber-500/10 border-amber-500/30' : 'bg-navy-dark border-navy-light'}`}>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${outOfRange ? 'bg-amber-500/20' : 'bg-emerald-500/15'}`}>
                 <Users className={`w-4 h-4 ${outOfRange ? 'text-amber-400' : 'text-emerald-400'}`} />
@@ -557,44 +529,22 @@ export default function GroupDrawUI({ seasonId }) {
                 <p className="text-lg font-black text-white leading-tight mt-0.5">{groups.length}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-navy-dark border-navy-light">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0">
-                <Hash className="w-4 h-4 text-purple-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-500 font-medium leading-none">Capacity thật (đã lưu)</p>
-                <p className="text-lg font-black text-white leading-tight mt-0.5">
-                  {persistedTeamsPerGroup ?? '—'}
-                </p>
-              </div>
-            </div>
           </div>
 
           {teamsCountError && (
             <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                Không xác định được số đội đã duyệt từ server (response shape không như mong đợi). Mở console
-                (F12) để xem log <code>Raw payload</code>, hoặc bật <code>DEBUG_RESPONSE_SHAPE = true</code> ở
-                đầu file này để log toàn bộ response.
-              </span>
+              <span>Không xác định được số đội đã duyệt từ server. Xem console (F12) để biết chi tiết.</span>
             </div>
           )}
 
           {outOfRange && (
             <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              {belowMin ? (
-                <span>
-                  Cần ít nhất <strong>{minRequired}</strong> đội cho <strong>{groups.length}</strong> bảng
-                  (2 đội/bảng tối thiểu), hiện chỉ có <strong>{totalTeams}</strong>. Bốc thăm sẽ bị từ chối.
-                </span>
-              ) : (
-                <span>
-                  <strong>{totalTeams}</strong> đội vượt capacity <strong>{groups.length}</strong> bảng ×{' '}
-                  <strong>{teamsPerGroup}</strong> = <strong>{maxAllowed}</strong>. Tăng số đội/bảng hoặc tạo thêm bảng.
-                </span>
-              )}
+              <span>
+                Cần ít nhất <strong>{minRequired}</strong> đội cho <strong>{groups.length}</strong> bảng
+                (2 đội/bảng tối thiểu), hiện chỉ có <strong>{totalTeams}</strong>. Bốc thăm sẽ bị từ chối.
+              </span>
             </div>
           )}
 
@@ -622,35 +572,65 @@ export default function GroupDrawUI({ seasonId }) {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <button
-              onClick={handleDrawRandom}
-              disabled={isDrawing || loading || groups.length === 0}
-              className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
-              Bốc thăm ngẫu nhiên
-            </button>
+          {/* Action bar: draw/clear chỉ hiện khi CÒN sửa được cấu trúc.
+              Confirm/Unconfirm luôn hiện (miễn có group) để đổi trạng thái. */}
+          {groups.length > 0 && !isLocked && (
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {!isConfirmed && (
+                <>
+                  <button
+                    onClick={handleDrawRandom}
+                    disabled={anyBusy || groups.length === 0 || !computedTeamsPerGroup}
+                    className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
+                    Bốc thăm ngẫu nhiên
+                  </button>
 
-            <button
-              onClick={handleDrawSeeded}
-              disabled={isDrawing || loading || groups.length === 0}
-              className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
-              Bốc thăm có hạt giống
-            </button>
+                  <button
+                    onClick={handleDrawSeeded}
+                    disabled={anyBusy || groups.length === 0 || !computedTeamsPerGroup}
+                    className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    {isDrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
+                    Bốc thăm có hạt giống
+                  </button>
+                </>
+              )}
 
-            <div className="flex-1" />
+              <div className="flex-1" />
 
-            <button
-              onClick={handleClearDraw}
-              disabled={isDrawing || loading || groups.length === 0}
-              className="flex items-center gap-2 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Trash2 className="w-4 h-4" /> Xóa bốc thăm
-            </button>
-          </div>
+              {!isConfirmed ? (
+                <>
+                  <button
+                    onClick={handleClearDraw}
+                    disabled={anyBusy || groups.length === 0}
+                    className="flex items-center gap-2 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" /> Xóa bốc thăm
+                  </button>
+                  <button
+                    onClick={handleConfirmGroups}
+                    disabled={anyBusy || !canConfirm}
+                    title={!canConfirm ? 'Mỗi bảng cần tối thiểu 2 đội trước khi xác nhận' : undefined}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                    Xác nhận bảng đấu
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleUnconfirmGroups}
+                  disabled={anyBusy}
+                  className="flex items-center gap-2 bg-transparent border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlock className="w-4 h-4" />}
+                  Hủy xác nhận
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -666,19 +646,20 @@ export default function GroupDrawUI({ seasonId }) {
                 <h4 className="font-black text-base tracking-wide uppercase">{group.name}</h4>
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1.5 bg-white/15 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                    <Users className="w-3 h-3" /> {group.season_teams?.length || 0}
-                    {displayedCapacity ? ` / ${displayedCapacity}` : ''} đội
+                    <Users className="w-3 h-3" /> {group.season_teams?.length || 0} đội
                   </span>
-                  <button
-                    onClick={() => handleDeleteGroup(group)}
-                    disabled={deletingGroupId !== null || isDrawing || isCreatingGroups || loading}
-                    title="Xoá bảng này (tạo nhầm)"
-                    className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {deletingGroupId === group.id
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : <Trash2 className="w-3.5 h-3.5" />}
-                  </button>
+                  {!isConfirmed && !isLocked && (
+                    <button
+                      onClick={() => handleDeleteGroup(group)}
+                      disabled={anyBusy}
+                      title="Xoá bảng này (tạo nhầm)"
+                      className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {deletingGroupId === group.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                 </div>
               </div>
               <div
@@ -731,11 +712,6 @@ export default function GroupDrawUI({ seasonId }) {
       )}
 
       {hasChanges && (
-        // FIX: trước đây là 1 thanh full-width (flex justify-end trên div
-        // rộng hết container) nên trông như che gần hết khu vực bên dưới dù
-        // nội dung thật chỉ gói gọn bên phải. Giờ chuyển thành 1 card nhỏ
-        // gọn, fixed ở góc phải-dưới màn hình (giống toast/snackbar), không
-        // chiếm ngang layout, thu nhỏ padding/chữ.
         <div className="fixed bottom-4 right-4 z-20 flex items-center gap-3 bg-navy-dark/95 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-blue-500/30 shadow-xl shadow-black/40">
           <span className="text-xs font-bold text-amber-400 whitespace-nowrap">Chưa lưu thay đổi</span>
           <button

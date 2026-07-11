@@ -195,6 +195,31 @@ export function TeamAvatar({ name, side, logo, jersey, size = 'md' }) {
     );
 }
 
+// ── Badge nhỏ (logo hoặc initials theo màu áo) — dùng ở góc sơ đồ đội hình
+// và ở header khối "Dự bị" để người xem nhận ra ngay đây là đội nào, không
+// cần đọc chữ.
+export function TeamBadge({ name, logo, kit, size = 20 }) {
+    const dim = `${size}px`;
+    if (logo) {
+        return (
+            <img
+                src={logo}
+                alt={name}
+                style={{ width: dim, height: dim }}
+                className="rounded-full object-cover border border-white/30 shrink-0"
+            />
+        );
+    }
+    return (
+        <div
+            style={{ width: dim, height: dim, backgroundColor: kit?.bg ?? '#0b1220', color: kit?.text ?? '#ffffff' }}
+            className="rounded-full flex items-center justify-center text-[9px] font-black border border-white/30 shrink-0"
+        >
+            {getInitials(name)[0]}
+        </div>
+    );
+}
+
 // ── Danh sách cầu thủ (dự bị / unregistered) ──────────────────
 export function PlayerItem({ tp, isCap }) {
     const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
@@ -225,19 +250,20 @@ export function PlayerItem({ tp, isCap }) {
 }
 
 // ── Chấm cầu thủ trên sơ đồ đội hình ───────────────────────────
+// size mặc định "sm" — sơ đồ chỉ cần đủ nhận diện số áo/tên, không cần to.
 const DOT_PRESET = {
     md: 'w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-base',
-    sm: 'w-8 h-8 sm:w-9 sm:h-9 text-[11px]',
+    sm: 'w-7 h-7 sm:w-9 sm:h-9 text-[10px] sm:text-xs',
 };
 
-export function FormationPlayerDot({ tp, kit, size = 'md' }) {
+export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
     const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
     const jersey = tp.jersey_number ?? '?';
     const isCap = !!tp.is_captain;
-    const dotCls = DOT_PRESET[size] ?? DOT_PRESET.md;
+    const dotCls = DOT_PRESET[size] ?? DOT_PRESET.sm;
 
     return (
-        <div className="flex flex-col items-center gap-1 w-14 sm:w-16 shrink-0">
+        <div className="flex flex-col items-center gap-1 w-12 sm:w-14 shrink-0">
             <div className="relative">
                 <div
                     className={`${dotCls} rounded-full border-2 flex items-center justify-center font-black shadow-md shadow-black/30`}
@@ -255,10 +281,12 @@ export function FormationPlayerDot({ tp, kit, size = 'md' }) {
                     </span>
                 )}
             </div>
-            {/* font-black + text-shadow đậm hơn để đọc được trên nền sân cỏ sáng/tối lẫn lộn */}
+            {/* Nền pill đen mờ + text-shadow: chữ đọc được trên mọi màu sân
+                (cỏ sáng lẫn tối), thay vì chỉ dựa vào text-shadow như trước. */}
             <span
-                className="text-[9px] sm:text-[10px] font-black text-white text-center leading-tight line-clamp-2"
-                style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.9)' }}
+                className="text-[8px] sm:text-[9px] font-black text-white text-center leading-tight line-clamp-2 px-1 py-0.5 rounded bg-black/50 max-w-full truncate"
+                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                title={name}
             >
                 {name}
             </span>

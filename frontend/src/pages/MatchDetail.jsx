@@ -12,7 +12,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import { teamApi, matchLineupApi } from '../api';
 import useTeamStore from '../store/teamStore';
 import {
-  useMatchExtras, TeamAvatar, PlayerItem, FormationPlayerDot,
+  useMatchExtras, TeamAvatar, TeamBadge, PlayerItem, FormationPlayerDot,
   normalizePosition, POSITION_ORDER, STATUS_LABEL, STATUS_BADGE_COLOR,
   NO_EVENT_STATUSES, getVsLabel,
 } from '../components/MatchShared';
@@ -33,7 +33,7 @@ function FormationRow({ players, kit }) {
   return (
     <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
       {players.map(tp => (
-        <FormationPlayerDot key={tp.id} tp={tp} kit={kit} size="md" />
+        <FormationPlayerDot key={tp.id} tp={tp} kit={kit} size="sm" />
       ))}
     </div>
   );
@@ -43,7 +43,11 @@ function FormationRow({ players, kit }) {
 // GK/DEF/MID/FW). Nếu BE trả long-form (goalkeeper/defender/...) ở endpoint
 // này, toàn bộ cầu thủ rơi ra ngoài group → sơ đồ trống dù data đủ. Dùng
 // normalizePosition (dùng chung với matchShared/MatchModal) để tránh phân kỳ.
-function FormationPitch({ starters = [], kit }) {
+//
+// team: { name, logo } — hiển thị badge (logo thật hoặc initials theo màu
+// áo) ở góc sân, để phân biệt "sơ đồ này là của đội nào" mà không cần đọc
+// tiêu đề card bên ngoài. Nhỏ gọn, không chiếm chỗ của sơ đồ.
+function FormationPitch({ starters = [], kit, team }) {
   const rows = POSITION_ORDER
     .map(pos => ({ pos, players: starters.filter(p => normalizePosition(p.position) === pos) }))
     .filter(r => r.players.length > 0);
@@ -57,6 +61,13 @@ function FormationPitch({ starters = [], kit }) {
       <div className="absolute top-3 left-1/2 -translate-x-1/2 w-1/2 h-14 border-2 border-t-0 border-white/25 pointer-events-none" />
       <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-t-0 border-white/25 pointer-events-none" />
       <div className="absolute left-1/2 -translate-x-1/2 top-1/2 w-24 h-24 border-2 border-white/25 rounded-full -translate-y-1/2 pointer-events-none" />
+
+      {team && (
+        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/45 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 border border-white/15 max-w-[65%]">
+          <TeamBadge name={team.name} logo={team.logo} kit={kit} size={18} />
+          <span className="text-[10px] font-bold text-white uppercase tracking-wide truncate">{team.name}</span>
+        </div>
+      )}
 
       <div className="relative z-10 py-6 sm:py-8 flex flex-col gap-6 sm:gap-10">
         {rows.map(row => (
@@ -155,6 +166,9 @@ export default function MatchDetail() {
   const homeSubs = lineups.home.filter(l => l.lineup_type === 'substitute');
   const awayStarters = lineups.away.filter(l => l.lineup_type === 'starter');
   const awaySubs = lineups.away.filter(l => l.lineup_type === 'substitute');
+
+  const homeKit = kitFor('home');
+  const awayKit = kitFor('away');
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-20">
@@ -319,14 +333,12 @@ export default function MatchDetail() {
               {/* Home */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <div className="w-5 h-5 rounded bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white text-xs font-black">
-                    {getInitials(homeName)[0]}
-                  </div>
+                  <TeamBadge name={homeName} logo={homeTeamInfo?.logo} kit={homeKit} size={20} />
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
                 </div>
                 {homeStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={homeStarters} kit={kitFor('home')} />
+                    <FormationPitch starters={homeStarters} kit={homeKit} team={{ name: homeName, logo: homeTeamInfo?.logo }} />
                     {homeSubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
@@ -349,14 +361,12 @@ export default function MatchDetail() {
               {/* Away */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <div className="w-5 h-5 rounded bg-linear-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white text-xs font-black">
-                    {getInitials(awayName)[0]}
-                  </div>
+                  <TeamBadge name={awayName} logo={awayTeamInfo?.logo} kit={awayKit} size={20} />
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>
                 </div>
                 {awayStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={awayStarters} kit={kitFor('away')} />
+                    <FormationPitch starters={awayStarters} kit={awayKit} team={{ name: awayName, logo: awayTeamInfo?.logo }} />
                     {awaySubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
