@@ -15,6 +15,7 @@ export const ERROR_REGISTRY = {
     TIMEOUT: { httpStatus: 504, expose: 500, isAuthError: false },
     NOT_IMPLEMENTED: { httpStatus: 501, expose: 500, isAuthError: false },
     SERVICE_UNAVAILABLE: { httpStatus: 503, expose: 500, isAuthError: false },
+    RULE_LOCKED: { httpStatus: 503, expose: 500, isAuthError: false },
 };
 export const AUTH_CODE = new Set(Object.entries(ERROR_REGISTRY)
     .filter(([, v]) => v.isAuthError)

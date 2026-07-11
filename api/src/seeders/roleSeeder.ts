@@ -1,7 +1,7 @@
 import { PrismaClient } from "../generated/prisma/client.js";
 
 
-export const ROLE_NAMES = ["admin", "leader", "player", "referee", "user"] as const;
+export const ROLE_NAMES = ["admin", "leader", "player", "referee", "user", "organizing"] as const;
 export type RoleName = (typeof ROLE_NAMES)[number];
 
 const ROLES: { name: RoleName; description: string }[] = [
@@ -10,6 +10,7 @@ const ROLES: { name: RoleName; description: string }[] = [
     { name: "player", description: "Cầu thủ đã claim tài khoản" },
     { name: "referee", description: "Trọng tài" },
     { name: "user", description: "Tài khoản mặc định khi đăng ký" },
+    { name: "organizing", description: "Ban tổ chức" },
 ];
 
 export async function seedRoles(db: PrismaClient): Promise<Record<RoleName, number>> {

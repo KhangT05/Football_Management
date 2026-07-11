@@ -11,10 +11,9 @@ import swaggerOutput from "./generated/swagger.json" with { type: "json" };
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
-import { runSeeders } from "./seeders/index.js";
 import { MatchReportBinaryController } from "./controllers/matchReportBinary.controller.js";
 import { matchResultService } from "./libs/ioc.js";
-
+import { seedDatabase } from "./seeders/index.js";
 const app = express();
 
 app.use(cors({
@@ -51,7 +50,7 @@ async function bootstrap() {
 
     await prisma.$connect();
 
-    // await runSeeders(prisma);
+    await seedDatabase();
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });

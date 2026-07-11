@@ -10,6 +10,20 @@ export declare class TournamentRuleService {
      * merge payload với DB hiện tại trước khi gọi (xem update()).
      */
     private validateFormatConsistency;
+    /**
+     * Lock hàng Tournament (SELECT ... FOR UPDATE) để serialize mọi transaction
+     * đang cố set is_active=true cho rule của CÙNG tournament_id. Đây là cách
+     * giả lập "unique constraint có điều kiện" mà không cần đổi schema/DDL —
+     * đánh đổi: chỉ đúng khi MỌI code path set is_active=true đều đi qua hàm
+     * này trong cùng transaction. Không có DB-level backstop nếu sau này có
+     * chỗ khác (script, raw query, migration data) set is_active=true mà quên
+     * gọi qua đây.
+     *
+     * Phải gọi bên trong transaction đang chạy create/update, và PHẢI gọi
+     * TRƯỚC khi đọc/ghi tournamentRule để đảm bảo thứ tự lock nhất quán,
+     * tránh deadlock với các transaction khác cũng lock theo tournament_id.
+     */
+    private lockTournamentForActiveRuleWrite;
     findAll(): Promise<TournamentRuleDto[]>;
     findByIdOrFail(id: number): Promise<TournamentRuleDto>;
     create(data: CreateTournamentRuleDto, userId: number): Promise<TournamentRuleDto>;

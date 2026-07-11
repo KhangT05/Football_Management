@@ -1,10 +1,11 @@
-export const ROLE_NAMES = ["admin", "leader", "player", "referee", "user"];
+export const ROLE_NAMES = ["admin", "leader", "player", "referee", "user", "organizing"];
 const ROLES = [
     { name: "admin", description: "Quản trị hệ thống" },
     { name: "leader", description: "Trưởng đội / đại diện đội bóng" },
     { name: "player", description: "Cầu thủ đã claim tài khoản" },
     { name: "referee", description: "Trọng tài" },
     { name: "user", description: "Tài khoản mặc định khi đăng ký" },
+    { name: "organizing", description: "Ban tổ chức" },
 ];
 export async function seedRoles(db) {
     for (const role of ROLES) {

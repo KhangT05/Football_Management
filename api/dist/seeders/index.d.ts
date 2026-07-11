@@ -1,3 +1,2 @@
-import { PrismaClient } from "../generated/prisma/client.js";
-export declare function runSeeders(db: PrismaClient): Promise<void>;
+export {};
 //# sourceMappingURL=index.d.ts.map
