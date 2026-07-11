@@ -31,7 +31,6 @@ const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await connectRedis();
     await prisma.$connect();
-    // await runSeeders(prisma);
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });

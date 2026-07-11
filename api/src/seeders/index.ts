@@ -1,53 +1,125 @@
-import { PrismaClient } from "../generated/prisma/client.js";
+// prisma/seed/index.ts
+//
+// Chạy: npx tsx prisma/seed/index.ts
+//
+// ===== THỨ TỰ SEED (đã sửa lại cho đúng dependency FK) =====
+// 1. Role
+// 2. User
+// 3. Player  <- User(role=player)
+// 4. Team + TeamLeader <- User(role=leader)
+// 5. Squad
+// 6. Tournament + TournamentRule
+// 7. Venue + Season + SeasonTeam + SeasonTeamJersey
+// 8. Phase(group_stage) + Group(A-H) + SeasonTeam.group_id
+// 9. Match vòng bảng + MatchResult + TeamStanding
+// 10. Knockout: R16 -> QF -> SF -> third_place -> final
+// 11. MatchDetail (Lineup + JerseyAssignment + Event) cho TẤT CẢ match ở bước 9+10
+// 12. PlayerStatistic (tổng hợp từ MatchLineup + MatchEvent, phải chạy SAU bước 11)
+// 13. Payment cho từng SeasonTeam
+//
+// Bước 11-13 trước đây tồn tại như file riêng nhưng KHÔNG được gọi — bổ sung
+// lại vào flow chính, nếu không toàn bộ Lineup/Event/Statistic/Payment rỗng.
+import { seedRoles } from "./roleSeeder.js";
+import { seedUsers } from "./userSeeder.js";
+import { seedPlayersFromExistingUsers } from "./playerSeeder.js";
+import { seedTeams, seedTeamLeadersFromExistingUsers } from "./teamSeeder.js";
+import { seedSquads } from "./squadSeeder.js";
+import { seedWorldCupTournament } from "./tournamentSeeder.js";
+import { seedSeason } from "./seasonSeeder.js";
+import { seedGroupStage } from "./groupPhaseSeeder.js";
+import { seedGroupMatchesAndStandings } from "./groupMatchSeeder.js";
+import { seedKnockoutBracket } from "./knockoutSeeder.js";
+import { seedMatchDetails } from "./matchDetailSeeder.js";
+import { seedPlayerStatistics } from "./playerStatisticSeeder.js";
+import { seedPayments } from "./paymentSeeder.js";
+import prisma from "../libs/prisma.js";
 
+export async function seedDatabase() {
+    console.log("🌱 Bắt đầu seed World Cup demo...\n");
 
-export async function runSeeders(db: PrismaClient): Promise<void> {
-    console.log("[DataSeeder] starting...\n");
+    // 1-2. Role + User
+    const roleMap = await seedRoles(prisma);
+    await seedUsers(prisma, roleMap);
 
-    // Tier 0: lookup tables
-    // await seedRoles(db);
+    const adminUser = await prisma.user.findUniqueOrThrow({ where: { email: "admin@gmail.com" } });
 
-    // Tier 1: users + venues
-    // await seedUsers(db, roleMap);
-    // await seedVenues(db);
+    // 3. Player <- User(role=player)
+    const linkedPlayerIds = await seedPlayersFromExistingUsers(prisma);
 
-    const adminUser = await db.user.findUniqueOrThrow({ where: { email: "admin@gmail.com" } });
-    const adminUserId = adminUser.id;
+    // 4. Team + TeamLeader
+    const { teamIdByName } = await seedTeams(prisma, adminUser.id);
+    await seedTeamLeadersFromExistingUsers(prisma, teamIdByName);
 
-    // const firstVenue = await db.venue.findFirstOrThrow({ where: { is_active: true } });
-    // const defaultVenueId = firstVenue.id;
+    // 5. Squad
+    const unassignedRealPlayerIds = Object.values(linkedPlayerIds);
+    await seedSquads(prisma, teamIdByName, unassignedRealPlayerIds);
 
-    // Tier 2: tournament + season gốc
-    // const { seasonId, tournamentId } = await seedTournaments(db, adminUserId);
-    const tournament = await db.tournament.findFirstOrThrow({ where: { is_active: true } });
+    // 6. Tournament + TournamentRule
+    const { tournamentId, tournamentRuleId } = await seedWorldCupTournament(prisma, adminUser.id);
 
-    // Tier 3: teams
-    // const teams = await seedTeams(db, adminUserId, seasonId);
-    const teamRows = await db.team.findMany({
-        where: { is_active: true },
-        include: {
-            season_teams: { take: 1, orderBy: { created_at: "asc" } },
-            team_players: {
-                where: { approval_status: "approved", is_active: true },
-                select: { player_id: true },
-            },
-        },
-    });
-    const teams = teamRows.map((t) => ({
-        teamId: t.id,
-        teamName: t.name,
-        seasonTeamId: t.season_teams[0]?.id ?? 0,
-        playerIds: t.team_players.map((tp) => tp.player_id),
-    }));
+    // 7. Venue + Season + SeasonTeam + SeasonTeamJersey
+    const { seasonId, venueIds, seasonTeamIdByTeamId } = await seedSeason(
+        prisma,
+        tournamentId,
+        tournamentRuleId,
+        adminUser.id,
+        teamIdByName
+    );
 
-    // Tier 4: phases + groups
-    // const phaseResult = await seedPhasesAndGroups(db, seasonId, teams.map(t => t.teamId));
+    // 8. Phase(group_stage) + Group(A-H)
+    const { groupStagePhaseId, groupIdByLetter } = await seedGroupStage(
+        prisma,
+        seasonId,
+        teamIdByName,
+        seasonTeamIdByTeamId
+    );
 
-    // Tier 5: matches
-    // await seedMatches(db, seasonId, phaseResult, teams, defaultVenueId, adminUserId);
+    // 9. Match vòng bảng + TeamStanding
+    const { topTwoByGroup, createdMatches: groupMatches } = await seedGroupMatchesAndStandings(
+        prisma,
+        groupStagePhaseId,
+        groupIdByLetter,
+        teamIdByName,
+        seasonId,
+        venueIds
+    );
 
-    // Tier 6: seed seasons để test auto-schedule
-    // await seedSeasons(db, adminUserId, tournament.id, teams);
+    // 10. Knockout
+    const { championTeamId, allMatches: knockoutMatches } = await seedKnockoutBracket(
+        prisma,
+        seasonId,
+        topTwoByGroup,
+        venueIds
+    );
 
-    console.log("\n[DataSeeder] done.");
+    // 11. MatchDetail cho toàn bộ trận (group + knockout)
+    const allMatches = [...groupMatches, ...knockoutMatches];
+    let detailCount = 0;
+    for (const m of allMatches) {
+        const homeSeasonTeamId = seasonTeamIdByTeamId[m.homeTeamId];
+        const awaySeasonTeamId = seasonTeamIdByTeamId[m.awayTeamId];
+        if (homeSeasonTeamId === undefined || awaySeasonTeamId === undefined) {
+            console.warn(`[Index] Bỏ qua matchDetail cho match #${m.matchId}: thiếu seasonTeamId`);
+            continue;
+        }
+        await seedMatchDetails(prisma, {
+            matchId: m.matchId,
+            homeTeamId: m.homeTeamId,
+            awayTeamId: m.awayTeamId,
+            homeScore: m.homeScore,
+            awayScore: m.awayScore,
+            homeSeasonTeamId,
+            awaySeasonTeamId,
+        });
+        detailCount++;
+    }
+    console.log(`[Index] MatchDetail xong cho ${detailCount}/${allMatches.length} trận`);
+
+    // 12. PlayerStatistic — PHẢI chạy sau bước 11 vì đọc từ MatchLineup + MatchEvent
+    await seedPlayerStatistics(prisma, seasonId);
+
+    // 13. Payment
+    await seedPayments(prisma, seasonTeamIdByTeamId);
+
+    console.log(`\n✅ Seed hoàn tất! Vô địch: team #${championTeamId}`);
 }
