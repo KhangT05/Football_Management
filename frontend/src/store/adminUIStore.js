@@ -50,6 +50,21 @@ const useAdminUIStore = create((set) => ({
   clearSeasonTeamFilters: () => set({
     seasonTeamFilters: { selectedSeason: '', filterStatus: '', filterSeasonStatus: '' }
   }),
+
+  // --- Quản lý Thanh toán (ManagePayments) ---
+  paymentFilters: {
+    status: 'all',
+    search: '',
+    page: 1,
+    limit: 10,
+    activeTab: 'pending'
+  },
+  setPaymentFilters: (filters) => set((state) => ({
+    paymentFilters: { ...state.paymentFilters, ...filters, page: filters.page || 1 }
+  })),
+  clearPaymentFilters: () => set({
+    paymentFilters: { status: 'all', search: '', page: 1, limit: 10, activeTab: 'pending' }
+  }),
 }));
 
 export default useAdminUIStore;
