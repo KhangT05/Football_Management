@@ -11,6 +11,7 @@ import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
+import { Link } from 'react-router-dom';
 
 function unwrapGroupsResponse(res) {
   const candidates = [res?.data?.data, res?.data, res];
@@ -502,7 +503,7 @@ export default function ScheduleResults() {
                         const team = teamMap[st.team_id];
                         if (!team) return null;
                         return (
-                          <div key={st.id} className="flex items-center gap-4 bg-navy/40 p-3 rounded-2xl border border-navy-light/30 hover:bg-navy-light/50 hover:border-blue-500/30 transition-all cursor-default group/team">
+                          <Link key={st.id} to={`/doi-bong/${team.id}`} className="flex items-center gap-4 bg-navy/40 p-3 rounded-2xl border border-navy-light/30 hover:bg-navy-light/50 hover:border-blue-500/30 transition-all cursor-pointer group/team">
                             <div className="w-10 h-10 rounded-xl shadow-sm group-hover/team:shadow-md transition-all relative overflow-hidden bg-linear-to-br from-gray-200 to-gray-300 border border-white/10 shrink-0">
                               <span className="absolute inset-0 flex items-center justify-center font-black text-gray-600 text-lg">
                                 {team.name ? team.name.charAt(0).toUpperCase() : '?'}
@@ -519,7 +520,7 @@ export default function ScheduleResults() {
                               )}
                             </div>
                             <span className="text-sm font-bold text-black group-hover/team:text-gray-600 transition-colors">{team.name}</span>
-                          </div>
+                          </Link>
                         );
                       })
                     )}
