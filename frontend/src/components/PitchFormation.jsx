@@ -69,8 +69,17 @@ export default function PitchFormation({ starters, onRemove, onSetCaptain, onDro
                                     {p.jersey_number ?? p.player_id}
                                 </button>
                                 {p.is_captain && <Star className="w-3 h-3 text-amber-400 absolute -top-1 -right-1 fill-current" />}
-                                <span className="text-[10px] text-white/80 font-bold mt-1 max-w-[64px] truncate">{p.name}</span>
-                                <span className="text-[9px] text-white/50">{POS_LABEL_SHORT[p.position]}</span>
+                                {/* Pill nền đen mờ + text-shadow: tên đọc được trên mọi nền sân,
+                                    không phụ thuộc màu cỏ sáng/tối phía sau (trước đây text-white/80
+                                    trực tiếp trên nền emerald-800/40 nên mờ, khó đọc). */}
+                                <span
+                                    className="mt-1 max-w-[70px] truncate text-[10px] font-black text-white text-center px-1.5 py-0.5 rounded bg-black/60"
+                                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                                    title={p.name}
+                                >
+                                    {p.name}
+                                </span>
+                                <span className="text-[9px] font-bold text-white/70 mt-0.5">{POS_LABEL_SHORT[p.position]}</span>
                                 <button
                                     onClick={() => onRemove(p.player_id)}
                                     className="absolute -top-2 -left-2 w-4 h-4 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center"

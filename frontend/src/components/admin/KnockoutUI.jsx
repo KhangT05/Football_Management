@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, AlertTriangle, Loader2, X, Plus, CalendarClock, Zap } from 'lucide-react';
+import { Trophy, AlertTriangle, Loader2, X, Plus, CalendarClock, Zap, Info } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { knockoutApi, seasonApi, seasonTeamApi } from '../../api';
 import useToastStore from '../../store/toastStore';
@@ -9,8 +9,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { BTN_PRIMARY } from '../../utils/adminStyles';
 import BracketView from './BracketView';
 
-const VALID_BRACKET_SIZES = [2, 4, 8, 16];
-
 const TIME_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500 scheme-dark cursor-pointer';
@@ -19,7 +17,15 @@ const SELECT_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500';
 
-function ScheduleBracketModal({ phaseId, unscheduledCount, venues, onClose, onScheduled }) {
+// Khớp helper.match.helper.ts::nextPowerOf2 phía BE — dùng để PREVIEW
+// bracket size / số bye cho user trước khi submit, KHÔNG dùng để chặn submit
+// (validation thật nằm ở BE, xem generateKnockoutBracket()._buildBracketInPhase).
+function nextPowerOf2(n) {
+  if (n < 1) return 1;
+  return Math.pow(2, Math.ceil(Math.log2(n)));
+}
+
+function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
   const toast = useToastStore();
   const [venueIds, setVenueIds] = useState([]);
   const [matchTimes, setMatchTimes] = useState([]);
@@ -76,8 +82,7 @@ function ScheduleBracketModal({ phaseId, unscheduledCount, venues, onClose, onSc
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
           <p className="text-xs text-gray-500">
-            {unscheduledCount} trận trong phase này chưa có sân/giờ. Trận đã xếp lịch trước đó sẽ giữ nguyên,
-            không bị ghi đè.
+            Trận đã xếp lịch trước đó sẽ giữ nguyên, không bị ghi đè — có thể bấm xếp lịch nhiều lần an toàn.
           </p>
 
           <div>
@@ -256,13 +261,25 @@ export default function KnockoutUI({ seasonId }) {
     if (seasonId) fetchData();
   }, [seasonId]);
 
+  // FIX: KnockoutService.getBracket() trả THẲNG một mảng BracketSlotNode[]
+  // (slotId, round, slotNumber, matchId, isBye, seededHomeTeamId,
+  // seededAwayTeamId, sourceASlotId, sourceBSlotId) — KHÔNG có field
+  // `.matches`, và mỗi node cũng KHÔNG có `scheduled_at`. Trước đây code
+  // set bracketData = payload (mảng) rồi lại đọc bracketData?.matches ở
+  // chỗ khác -> luôn undefined -> unscheduledCount luôn = 0 -> nút "Xếp
+  // lịch" không bao giờ hiện dù bracket vừa tạo chưa có sân/giờ.
+  // Không có scheduled_at trong response nên KHÔNG thể tính chính xác số
+  // trận "chưa xếp lịch" ở client. Giải pháp đúng: đếm số slot round 1
+  // không phải bye (đây là các trận thực sự cần xếp lịch khi vừa generate),
+  // và luôn cho phép mở modal xếp lịch — backend tự bỏ qua trận đã có lịch
+  // (xem comment "không bị ghi đè" trong modal).
   const fetchBracket = async (phaseId) => {
     if (!phaseId) return;
     setLoadingBracket(true);
     try {
       const res = await knockoutApi.getBracket(phaseId);
       const payload = typeof res?.status === 'boolean' ? res.data : res;
-      setBracketData(payload);
+      setBracketData(Array.isArray(payload) ? payload : []);
     } catch (err) {
       console.log('Chưa có bracket hoặc lỗi:', err);
       setBracketData(null);
@@ -302,13 +319,14 @@ export default function KnockoutUI({ seasonId }) {
       ? seededTeamIds.map(teamId => ({ kind: 'manual', teamId }))
       : buildStandingSeeds(groupConfigs);
 
+    // FIX: bỏ chặn "seeds.length phải nằm trong [2,4,8,16]". Service thật
+    // (generateKnockoutBracket -> _buildBracketInPhase) tự tính
+    // nextPowerOf2(seeds.length) và tự tạo bye slot cho phần dư — nghĩa là
+    // 3, 5, 6, 7, 9..15 đội... đều hợp lệ, không cần đúng luỹ thừa 2. Chặn
+    // cứng như cũ chặn nhầm rất nhiều trường hợp hợp lệ. Chỉ cần seeds >= 2;
+    // nếu size sau khi làm tròn không map được PhaseType (vd quá lớn), BE
+    // sẽ trả VALIDATION_ERROR rõ ràng và mình hiện toast.error như cũ.
     if (seeds.length < 2) return toast.error('Cần ít nhất 2 seed');
-    if (!VALID_BRACKET_SIZES.includes(seeds.length)) {
-      return toast.error(
-        `Số seed phải là ${VALID_BRACKET_SIZES.join('/')} — hiện tại ${seeds.length}. ` +
-        (seedMode === 'standing' ? 'Điều chỉnh Top N hoặc số bảng chọn.' : 'Chọn/bỏ bớt đội hạt giống.')
-      );
-    }
 
     setGenerating(true);
     try {
@@ -318,13 +336,8 @@ export default function KnockoutUI({ seasonId }) {
       const result = typeof res?.status === 'boolean' ? res.data : res;
       const newPhaseId = result?.phaseId;
 
-      // Bracket đã tạo thành công (nếu tới được đây, request không throw).
-      // Luôn báo success cho việc tạo bracket — KHÔNG phụ thuộc vào warnings.
       toast.success(`Đã tạo sơ đồ Knockout — ${result?.round1Matches} trận, ${result?.byeSlots} bye`);
 
-      // warnings ở đây chỉ là thông tin phụ (vd: chưa xếp lịch tự động vì
-      // thiếu venue/giờ — chuyện bình thường vì xếp lịch là bước riêng).
-      // Hiển thị nhẹ, không phải toast.error để tránh nhìn như request fail.
       if (result?.warnings?.length) {
         result.warnings.forEach(w => {
           if (toast.info) toast.info(w);
@@ -349,8 +362,18 @@ export default function KnockoutUI({ seasonId }) {
     ? seededTeamIds.length
     : buildStandingSeeds(groupConfigs).length;
 
-  const unscheduledCount = Array.isArray(bracketData?.matches)
-    ? bracketData.matches.filter(m => !m.scheduled_at).length
+  // Preview thuần client-side để user thấy trước bracket sẽ to cỡ nào /
+  // có bao nhiêu bye — KHÔNG dùng để chặn submit (xem comment handleGenerate).
+  const previewBracketSize = currentSeedCount >= 2 ? nextPowerOf2(currentSeedCount) : null;
+  const previewByeCount = previewBracketSize ? previewBracketSize - currentSeedCount : 0;
+
+  // FIX: bracketData giờ là mảng slot thô (đúng shape getBracket() trả về).
+  // Không có scheduled_at nên đếm "trận thật sự tồn tại trong round 1, không
+  // phải bye" làm số hiển thị trên nút — không khẳng định là "chưa xếp lịch"
+  // 100% chính xác (vì có thể đã xếp ở lần trước), chỉ để user biết có trận
+  // cần kiểm tra lịch. Modal xếp lịch tự bỏ qua trận đã có sân/giờ.
+  const round1MatchCount = Array.isArray(bracketData)
+    ? bracketData.filter(s => s.round === 1 && !s.isBye && s.matchId).length
     : 0;
 
   return (
@@ -441,13 +464,20 @@ export default function KnockoutUI({ seasonId }) {
                         <>
                           <button type="button" onClick={() => moveGroupConfig(g.id, -1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển lên">↑</button>
                           <button type="button" onClick={() => moveGroupConfig(g.id, 1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển xuống">↓</button>
+                          {/* FIX: trước đây khoá cứng chỉ Top 1 / Top 2 dù
+                              buildStandingSeeds không có giới hạn topN nào —
+                              chỉ cần group có đủ standing. Mở rộng lên Top 6,
+                              đủ dùng cho hầu hết giải; số thật vẫn bị giới
+                              hạn tự nhiên bởi số đội trong bảng (BE sẽ báo
+                              lỗi CONFLICT nếu topN vượt số đội thật). */}
                           <select
                             value={cfg.topN}
                             onChange={(e) => setGroupConfigs(prev => prev.map(c => c.groupId === g.id ? { ...c, topN: Number(e.target.value) } : c))}
                             className="bg-navy-dark border border-navy-light rounded px-2 py-1 text-xs text-gray-300"
                           >
-                            <option value={1}>Top 1</option>
-                            <option value={2}>Top 2</option>
+                            {[1, 2, 3, 4, 5, 6].map(n => (
+                              <option key={n} value={n}>Top {n}</option>
+                            ))}
                           </select>
                         </>
                       )}
@@ -459,10 +489,10 @@ export default function KnockoutUI({ seasonId }) {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <button
             onClick={handleGenerate}
-            disabled={generating}
+            disabled={generating || currentSeedCount < 2}
             className={`${BTN_PRIMARY} bg-amber-600 hover:bg-amber-500`}
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
@@ -470,8 +500,11 @@ export default function KnockoutUI({ seasonId }) {
           </button>
           <span className="text-xs text-gray-500">
             {currentSeedCount} seed đã chọn
-            {!VALID_BRACKET_SIZES.includes(currentSeedCount) && currentSeedCount > 0 && (
-              <span className="text-red-400"> — cần {VALID_BRACKET_SIZES.join('/')}</span>
+            {previewBracketSize && (
+              <span className="text-gray-400">
+                {' '}→ bracket {previewBracketSize} ô
+                {previewByeCount > 0 && <span className="text-amber-400"> ({previewByeCount} bye)</span>}
+              </span>
             )}
           </span>
         </div>
@@ -497,20 +530,30 @@ export default function KnockoutUI({ seasonId }) {
         <div className="text-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-amber-400 mx-auto" />
         </div>
-      ) : bracketData ? (
+      ) : Array.isArray(bracketData) && bracketData.length > 0 ? (
         <div className="bg-navy border border-navy-light rounded-xl p-5 overflow-x-auto">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-bold text-white">Sơ đồ Knockout</h4>
-            {unscheduledCount > 0 && (
+            {round1MatchCount > 0 && (
               <button
                 onClick={() => setScheduleModalOpen(true)}
                 className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-black flex items-center gap-2"
+                title="getBracket() không trả scheduled_at nên không biết chính xác trận nào đã có lịch — bấm để mở modal, BE tự bỏ qua trận đã xếp"
               >
                 <CalendarClock className="w-4 h-4" />
-                Xếp lịch ({unscheduledCount} trận chưa có lịch)
+                Xếp lịch ({round1MatchCount} trận vòng 1)
               </button>
             )}
           </div>
+          {round1MatchCount > 0 && (
+            <div className="flex items-start gap-2 text-[11px] text-gray-500 bg-navy-dark/60 border border-navy-light rounded-lg px-3 py-2 mb-4">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                Sơ đồ hiện chưa hiển thị được trạng thái "đã xếp lịch hay chưa" cho từng trận vì API bracket
+                chưa trả field này. Bấm "Xếp lịch" vẫn an toàn — trận đã có sân/giờ sẽ được giữ nguyên.
+              </span>
+            </div>
+          )}
           <BracketView slots={bracketData} teams={teams} />
         </div>
       ) : (
@@ -524,7 +567,6 @@ export default function KnockoutUI({ seasonId }) {
       {scheduleModalOpen && (
         <ScheduleBracketModal
           phaseId={selectedPhaseId}
-          unscheduledCount={unscheduledCount}
           venues={venues}
           onClose={() => setScheduleModalOpen(false)}
           onScheduled={() => {

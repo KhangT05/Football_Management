@@ -2,9 +2,6 @@ import { createAppError } from "../common/app.error.js";
 import { Prisma, PhaseFormat, SeasonStatus, SeasonTeamStatus, PhaseStatus, PhaseType } from "../generated/prisma/client.js";
 import { lockSeason } from "../helper/season-lock.helper.js";
 import { shuffle } from "../libs/array.utils.js";
-// Season phải ở 1 trong 2 trạng thái này mới được tạo/sửa group. Guard đặt
-// ở service này (không phải ở route/controller) vì mọi entrypoint ghi group
-// (create/bulk/createAndDraw/draw/clear) đều đi qua đây trong transaction.
 const GROUP_OPS_ALLOWED_SEASON_STATUS = [
     SeasonStatus.registration_open,
     SeasonStatus.ongoing,
@@ -14,24 +11,6 @@ export class GroupService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    // ============================================================
-    // PHASE RESOLUTION (season-scoped, internal — FE không biết phaseId)
-    // ============================================================
-    /**
-     * FIX (bug mới — thiếu guard season.status): trước đây getOrCreate/find
-     * RoundRobinPhase không hề check season.status. Hệ quả: có thể tạo group
-     * và chạy draw ngay khi season còn 'upcoming' (chưa mở đăng ký — approved
-     * team lúc này về mặt nghiệp vụ chưa có ý nghĩa) hoặc thậm chí sau khi
-     * season đã 'cancelled'/'finished' (season không is_active nhưng
-     * is_active không được check ở path ghi group). Check
-     * approvedTeams.length >= groupCount*2 không chặn được case này vì team
-     * có thể approved từ trước lúc season bị cancel.
-     *
-     * Thêm assertSeasonAcceptsGroupOps ngay sau lockSeason — chạy 1 lần duy
-     * nhất trong transaction, seasonId đã bị lock nên season.status đọc ra
-     * đây là consistent, không race với 1 request khác đang chuyển status
-     * season song song.
-     */
     async assertSeasonAcceptsGroupOps(tx, seasonId) {
         const season = await tx.season.findUnique({
             where: { id: seasonId },
@@ -46,24 +25,20 @@ export class GroupService {
                 `'registration_open' hoặc 'ongoing'`);
     }
     /**
-     * Lock ở mức season, không phải phase — vì phase có thể CHƯA TỒN TẠI
-     * (get-or-create). Lock 1 row phase không có tác dụng chống race khi
-     * row đó chưa được tạo; 2 request createGroupsBulk đồng thời cho cùng
-     * season đều sẽ pass check "findFirst -> null" rồi cùng insert phase
-     * mới nếu không serialize qua season trước.
-     *
-     * Hệ quả: mọi write-path (create/draw/clear) trên group của 1 season
-     * giờ serialize qua season lock — chấp nhận được vì đây vốn là các
-     * thao tác admin tần suất thấp, không phải hot path.
-     *
-     * FIX (bug mới, xuất hiện từ khi có RR->RR): trước đây filter chỉ có
-     * is_active:true — đúng khi season CHỈ CÓ 1 round_robin phase suốt đời.
-     * Từ khi advanceToNextRoundRobin() tạo phase round_robin THỨ 2 cùng
-     * season (phase cũ locked vẫn giữ is_active:true để giữ lịch sử/audit),
-     * findFirst({is_active:true}) không orderBy sẽ trả về BẤT KỲ phase nào
-     * trong 2 phase — có thể là phase cũ đã locked. Thêm status:{not:locked}
-     * + orderBy order desc để luôn lấy đúng phase "đang mở" mới nhất.
+     * NEW: gộp check "phase còn sửa được không" ở 1 chỗ duy nhất.
+     * - locked: phase đã đá xong / đã advance — không bao giờ sửa lại được.
+     * - in_progress: phase đã được admin "xác nhận" (confirmGroups) — cấu trúc
+     *   group coi như chốt, muốn sửa cấu trúc (tạo/xoá/draw/clear group) phải
+     *   unconfirmGroups() về draft trước. assignTeamToGroup/swapTeams KHÔNG
+     *   đi qua check này — đó là thao tác "sửa nhẹ" (đổi chỗ 1-1, không đổi
+     *   sĩ số/cấu trúc) nên vẫn cho phép ngay cả khi đã confirm.
      */
+    assertPhaseIsDraft(phase, action) {
+        if (phase.status === PhaseStatus.locked)
+            throw createAppError("CONFLICT", `Phase đã locked — không thể ${action}`);
+        if (phase.status === PhaseStatus.in_progress)
+            throw createAppError("CONFLICT", `Phase đã được xác nhận (in_progress) — hủy xác nhận trước khi ${action}`);
+    }
     async getOrCreateRoundRobinPhase(tx, seasonId) {
         await lockSeason(tx, seasonId);
         await this.assertSeasonAcceptsGroupOps(tx, seasonId);
@@ -77,15 +52,20 @@ export class GroupService {
             orderBy: { order: 'desc' },
         });
         if (!phase) {
-            // order kế tiếp phải nối tiếp phase round_robin gần nhất (kể cả
-            // đã locked) — tránh trùng order nếu season đã có 1 round_robin
-            // locked từ trước (case RR->RR, xem advanceToNextRoundRobin).
             const lastRoundRobin = await tx.phase.findFirst({
                 where: { season_id: seasonId, format: PhaseFormat.round_robin },
                 orderBy: { order: 'desc' },
                 select: { order: true },
             });
             const nextOrder = (lastRoundRobin?.order ?? 0) + 1;
+            // FIX: seed teams_advance_per_group từ TournamentRule.default_teams_advance_per_group
+            // — trước đây field này luôn null trên Phase mới tạo, khiến
+            // advanceToNextRoundRobin() luôn throw "chưa cấu hình" dù wizard
+            // đã cho admin nhập giá trị này ở bước tạo rule.
+            const season = await tx.season.findUnique({
+                where: { id: seasonId },
+                select: { tournamentRule: { select: { teams_advance_per_group: true } } },
+            });
             phase = await tx.phase.create({
                 data: {
                     season_id: seasonId,
@@ -95,21 +75,12 @@ export class GroupService {
                     order: nextOrder,
                     name: nextOrder === 1 ? "Vòng bảng" : `Vòng bảng ${nextOrder}`,
                     is_active: true,
+                    teams_advance_per_group: season?.tournamentRule?.teams_advance_per_group ?? null,
                 },
             });
         }
         return phase;
     }
-    /**
-     * Dùng cho read/draw/clear — KHÔNG tự tạo phase. Auto-create trong 1
-     * GET hoặc trong draw/clear là side-effect ẩn (gọi drawGroups trên
-     * season chưa từng tạo group sẽ tạo ra 1 phase rỗng vô nghĩa trước
-     * khi throw "chưa có group"). Rõ ràng hơn: null nghĩa là "chưa có gì",
-     * caller tự quyết định thông báo phù hợp.
-     *
-     * FIX: cùng lý do như getOrCreateRoundRobinPhase — loại phase đã locked,
-     * lấy phase round_robin "đang mở" mới nhất theo order.
-     */
     async findRoundRobinPhase(tx, seasonId) {
         return tx.phase.findFirst({
             where: {
@@ -124,25 +95,12 @@ export class GroupService {
     // ============================================================
     // CREATE GROUP
     // ============================================================
-    /**
-     * FIX (root cause "bốc thăm không được dù đã tạo bảng"): insert giờ
-     * set `is_active: true` TƯỜNG MINH thay vì phụ thuộc default cột
-     * trong Prisma schema. Mọi read-path (buildGroupsPayload, drawGroups,
-     * drawGroupsSeeded, clearDraw) đều filter cứng `is_active: true` —
-     * nếu default schema/generated client không đảm bảo true, group vừa
-     * tạo bị ẩn hoàn toàn khỏi list -> FE luôn thấy groups.length === 0
-     * -> nút bốc thăm bị disable, và drawGroups() cũng tự throw "Phase
-     * chưa có group nào" dù DB đã có row. Đây cùng bug class với fix đã
-     * áp ở SeasonTeamService.createOrReactivate — không tự động lan sang
-     * đây vì là 2 service riêng.
-     */
     async createGroup(seasonId, name) {
         return this.prisma.$transaction(async (tx) => {
             const phase = await this.getOrCreateRoundRobinPhase(tx, seasonId);
             if (!phase.is_active)
                 throw createAppError("CONFLICT", "Phase đã bị deactivate");
-            if (phase.status === PhaseStatus.locked)
-                throw createAppError("CONFLICT", "Phase đã locked, không thể tạo group mới");
+            this.assertPhaseIsDraft(phase, "tạo group mới");
             const existing = await tx.group.findFirst({
                 where: { phase_id: phase.id, name, is_active: true },
                 select: { id: true },
@@ -162,8 +120,7 @@ export class GroupService {
             const phase = await this.getOrCreateRoundRobinPhase(tx, seasonId);
             if (!phase.is_active)
                 throw createAppError("CONFLICT", "Phase đã bị deactivate");
-            if (phase.status === PhaseStatus.locked)
-                throw createAppError("CONFLICT", "Phase đã locked, không thể tạo group mới");
+            this.assertPhaseIsDraft(phase, "tạo group mới");
             const existingCount = await tx.group.count({ where: { phase_id: phase.id, is_active: true } });
             if (existingCount > 0)
                 throw createAppError("CONFLICT", `Season đã có ${existingCount} group — xoá hết group cũ trước khi bulk-create lại`);
@@ -178,26 +135,12 @@ export class GroupService {
             });
         });
     }
-    /**
-      * NEW: wrapper cho route — resolve seasonId -> approvedTeamCount rồi
-      * delegate previewGroupSplit() thuần túy bên dưới. Tách riêng vì
-      * previewGroupSplit() cố tình không đụng DB (dễ unit-test, không cần
-      * mock prisma) — controller không có quyền query trực tiếp nên cần
-      * lớp mỏng này ở service.
-      */
     async previewGroupSplitBySeason(seasonId, desiredGroupCount) {
         const approvedTeamCount = await this.prisma.seasonTeam.count({
             where: { season_id: seasonId, status: SeasonTeamStatus.approved, deleted_at: null },
         });
         return this.previewGroupSplit(approvedTeamCount, desiredGroupCount);
     }
-    /**
-     * NEW: preview thuần túy, không ghi DB — FE gọi mỗi lần user đổi số
-     * group trong popup, hiển thị ngay distribution + warning trước khi
-     * bấm xác nhận. VD 35 team / 2 group -> [18,17] hiện ngay, không cần
-     * trial-and-error qua createGroupsBulk + drawGroups như trước.
-     * Dùng lại snake-draft y hệt logic snakeDistribute() bên dưới.
-     */
     previewGroupSplit(approvedTeamCount, desiredGroupCount) {
         if (desiredGroupCount < 1)
             throw createAppError("VALIDATION_ERROR", "desiredGroupCount phải >= 1");
@@ -220,21 +163,12 @@ export class GroupService {
                 : undefined,
         };
     }
-    /**
-     * NEW: gộp createGroupsBulk + drawGroups thành 1 transaction — season
-     * đã có approved SeasonTeam (qua selfRegister/adminAdd) trước đó, giờ
-     * chỉ cần nhập groupCount, team TỰ chia vào group theo snake-draft,
-     * không cần bước "tạo group rỗng" rồi "draw" tách rời như 2 API cũ.
-     * Đây là entrypoint chính cho flow: tạo season -> team đăng ký/duyệt ->
-     * admin nhập số group -> bấm 1 nút -> xong.
-     */
     async createAndDrawGroups(seasonId, groupCount) {
         return this.prisma.$transaction(async (tx) => {
             const phase = await this.getOrCreateRoundRobinPhase(tx, seasonId);
             if (!phase.is_active)
                 throw createAppError("CONFLICT", "Phase đã bị deactivate");
-            if (phase.status === PhaseStatus.locked)
-                throw createAppError("CONFLICT", "Phase đã locked, không thể tạo group mới");
+            this.assertPhaseIsDraft(phase, "tạo group mới");
             const existingCount = await tx.group.count({ where: { phase_id: phase.id, is_active: true } });
             if (existingCount > 0)
                 throw createAppError("CONFLICT", `Season đã có ${existingCount} group — clearDraw trước khi tạo lại`);
@@ -266,29 +200,6 @@ export class GroupService {
             return assignments.map(({ group_id, team_id }) => ({ group_id, team_id }));
         });
     }
-    /**
-     * NEW: tự động "chốt" số lượng group khi registration đóng lại (deadline
-     * qua hoặc admin chuyển season sang 'ongoing') — KHÔNG dùng group_count
-     * dự kiến ban đầu làm số cố định, mà tính lại theo SỐ TEAM APPROVED
-     * THỰC TẾ tại thời điểm gọi.
-     *
-     * Vấn đề gốc: season tạo sẵn N group rỗng lúc chưa biết sẽ có bao nhiêu
-     * team đăng ký (VD dự kiến 22 team / 2 group). Nếu thực tế chỉ có 9 team
-     * thì 2 group vẫn hợp lý (5-4), nhưng nếu chỉ có 3 team thì việc giữ
-     * nguyên 2 group tạo ra 1 group độc chiếm 1-2 team — vô nghĩa với thể
-     * thức round_robin. Method này dùng group cũ làm TRẦN (không tăng vượt
-     * quá số group admin đã định), đồng thời hạ xuống nếu team quá ít so
-     * với minTeamsPerGroup, và tách thêm group nếu team đông vượt
-     * maxTeamsPerGroup (trường hợp season không set trước group_count).
-     *
-     * An toàn: chỉ chạy được khi phase CHƯA có match nào (giống drawGroups/
-     * clearDraw) — nếu đã có lịch thi đấu thì đây là lỗi vận hành (admin gọi
-     * lại finalize sau khi đã schedule), không tự ý xoá kết quả.
-     *
-     * Trả về [] (no-op) nếu season chưa từng tạo phase round_robin nào —
-     * không phải season nào cũng dùng flow group-based, không nên throw lỗi
-     * chặn các season khác khi được gọi tự động từ updateStatus().
-     */
     async autoFinalizeGroups(seasonId, opts = {}) {
         const minPerGroup = opts.minTeamsPerGroup ?? 2;
         const maxPerGroup = opts.maxTeamsPerGroup ?? 8;
@@ -301,7 +212,8 @@ export class GroupService {
             await this.assertSeasonAcceptsGroupOps(tx, seasonId);
             const phase = await this.findRoundRobinPhase(tx, seasonId);
             if (!phase)
-                return []; // season không dùng flow group-based — no-op, không throw
+                return [];
+            this.assertPhaseIsDraft(phase, "auto-finalize group");
             const existingMatches = await tx.match.count({ where: { phase_id: phase.id, deleted_at: null } });
             if (existingMatches > 0)
                 throw createAppError("CONFLICT", "Phase đã có match — không thể auto-finalize lại (xoá schedule trước nếu thực sự cần đổi số group)");
@@ -311,26 +223,17 @@ export class GroupService {
             });
             if (approvedTeams.length < minPerGroup)
                 throw createAppError("CONFLICT", `Chỉ có ${approvedTeams.length} approved team — không đủ ${minPerGroup} team tối thiểu để tổ chức 1 group`);
-            // group hiện có (tạo lúc dự kiến ban đầu) dùng làm TRẦN cho số
-            // group mới — finalize không tự ý tăng số group vượt quá những
-            // gì admin đã định trước, chỉ được phép GIẢM xuống cho khớp
-            // team thực tế, hoặc tăng nếu chưa từng tạo group nào trước đó.
             const currentGroupCount = await tx.group.count({ where: { phase_id: phase.id, is_active: true } });
             const byMin = Math.max(1, Math.floor(approvedTeams.length / minPerGroup));
             const byMax = Math.max(1, Math.ceil(approvedTeams.length / maxPerGroup));
             let groupCount;
             if (currentGroupCount > 0) {
-                // có trần từ trước: không vượt quá trần, không để group nào
-                // dưới minPerGroup team.
                 groupCount = Math.max(byMax, Math.min(currentGroupCount, byMin));
             }
             else {
-                // chưa từng tạo group (season không dùng group_count lúc
-                // create) — tự chọn số group hợp lý theo maxPerGroup/minPerGroup.
                 groupCount = Math.max(byMax, Math.min(byMin, 26));
             }
             groupCount = Math.min(groupCount, 26);
-            // dọn group cũ — an toàn vì đã xác nhận chưa có match ở trên.
             const oldGroups = await tx.group.findMany({
                 where: { phase_id: phase.id, is_active: true },
                 select: { id: true },
@@ -367,23 +270,6 @@ export class GroupService {
             return assignments.map(({ group_id, team_id }) => ({ group_id, team_id }));
         });
     }
-    /**
-     * NEW: advance top-N mỗi group của phase round_robin hiện tại sang
-     * phase round_robin TIẾP THEO cùng season (RR -> RR). Đọc
-     * phase.teams_advance_per_group (schema mới) để biết advance bao nhiêu
-     * team/group — không cần bảng blueprint riêng, chỉ cần Phase cũ đã
-     * locked + có cấu hình field này.
-     *
-     * Sau khi phase mới được tạo, getOrCreateRoundRobinPhase/findRoundRobinPhase
-     * (đã fix ở trên) sẽ tự động resolve đúng phase MỚI (status != locked,
-     * order lớn nhất) cho mọi thao tác draw/assign/clear tiếp theo — không
-     * cần thay đổi gì thêm ở các method đó.
-     *
-     * Không cần assertSeasonAcceptsGroupOps ở đây: advance chỉ hợp lệ khi
-     * season đang 'ongoing' (fromPhase.status phải locked, tức RR trước đã
-     * đá xong) — season không thể ở 'upcoming'/'cancelled'/'finished' và
-     * có phase locked cùng lúc trong flow bình thường.
-     */
     async advanceToNextRoundRobin(fromPhaseId, newGroupCount) {
         return this.prisma.$transaction(async (tx) => {
             const fromPhase = await tx.phase.findUniqueOrThrow({ where: { id: fromPhaseId } });
@@ -417,6 +303,10 @@ export class GroupService {
                     status: PhaseStatus.draft,
                     name: `Vòng bảng ${fromPhase.order + 1}`,
                     is_active: true,
+                    // FIX: kế thừa teams_advance_per_group từ TournamentRule của
+                    // season — cùng lý do với getOrCreateRoundRobinPhase, tránh
+                    // chain RR->RR->RR thứ 3 lại throw "chưa cấu hình".
+                    teams_advance_per_group: fromPhase.teams_advance_per_group,
                 },
             });
             const names = Array.from({ length: newGroupCount }, (_, i) => `Bảng ${String.fromCharCode(65 + i)}`);
@@ -426,10 +316,6 @@ export class GroupService {
                 select: { id: true, name: true },
                 orderBy: { name: "asc" },
             });
-            // Team advance sang phase mới CẦN reset group_id — SeasonTeam.group_id
-            // season-scoped, trỏ 1 group tại 1 thời điểm (xem comment gốc
-            // SeasonTeamService.assignGroup). group_id cũ thuộc phase đã locked,
-            // không reuse được, reset về group mới ngay tại đây.
             const seasonTeams = await tx.seasonTeam.findMany({
                 where: { season_id: fromPhase.season_id, team_id: { in: advancedTeamIds }, status: SeasonTeamStatus.approved },
                 select: { id: true, team_id: true },
@@ -451,20 +337,6 @@ export class GroupService {
             };
         });
     }
-    /**
-     * FIX (breaking change so với bản phaseId cũ): giờ nhận seasonId, trả
-     * { phase: null, groups: [] } nếu season chưa từng tạo group/phase —
-     * đây là trạng thái HỢP LỆ ("chưa bắt đầu"), không phải lỗi và không
-     * tự tạo phase trong 1 read endpoint. FE phân biệt trạng thái này với
-     * lỗi thật (network/500) qua try/catch như bình thường, không cần
-     * thêm 1 field boolean riêng.
-     *
-     * Lưu ý: sau khi season đã advance qua RR thứ 2, method này trả về
-     * phase MỚI NHẤT đang mở (nhờ fix findRoundRobinPhase ở trên) — nếu
-     * FE cần xem cả phase round_robin CŨ (đã locked) để hiện lịch sử/kết
-     * quả vòng trước, dùng findAllByPhase(phaseId) với id cụ thể thay vì
-     * findAllBySeason (method này chỉ trả phase "đang mở" theo season).
-     */
     async findAllBySeason(seasonId) {
         const phase = await this.prisma.phase.findFirst({
             where: {
@@ -480,16 +352,6 @@ export class GroupService {
             return { phase: null, groups: [] };
         return this.buildGroupsPayload(phase);
     }
-    /**
-     * NEW: list group theo phase_id trực tiếp — dùng khi FE đã biết
-     * phaseId cụ thể (route GET /groups/phase/{phaseId}). Tách biệt khỏi
-     * findAllBySeason vì khác semantic: cái này KHÔNG filter theo
-     * season_id/format, chỉ cần đúng phase tồn tại và active. Cần thiết
-     * cho trường hợp 1 season có nhiều phase (vd multi-stage: nhiều
-     * round_robin phase, hoặc phase group_stage không phải round_robin)
-     * — trước đây route này gọi nhầm findAllBySeason(phaseId), coi
-     * phaseId như seasonId, sẽ trả sai/rỗng data khi 2 giá trị lệch nhau.
-     */
     async findAllByPhase(phaseId) {
         const phase = await this.prisma.phase.findUnique({
             where: { id: phaseId },
@@ -518,10 +380,23 @@ export class GroupService {
     }
     async deactivateGroup(groupId) {
         return this.prisma.$transaction(async (tx) => {
-            await tx.$queryRaw `SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`;
-            const group = await tx.group.findUnique({ where: { id: groupId }, select: { id: true } });
+            // FIX: "groups" là từ khóa reserved trong MySQL 8.0+ (dùng cho
+            // window frame ROWS/RANGE/GROUPS). Raw query trước đây không bọc
+            // backtick nên MySQL parse nhầm thành keyword -> lỗi cú pháp 1064
+            // "near 'groups WHERE id = ? FOR UPDATE'", khiến deactivateGroup()
+            // (và mọi thao tác xoá bảng ở UI) luôn trả 500. Bọc tên bảng bằng
+            // backtick để MySQL hiểu đúng đây là identifier, không phải keyword.
+            await tx.$queryRaw `SELECT id FROM \`groups\` WHERE id = ${groupId} FOR UPDATE`;
+            const group = await tx.group.findUnique({
+                where: { id: groupId },
+                select: { id: true, phase_id: true, phase: { select: { status: true } } },
+            });
             if (!group)
                 throw createAppError("NOT_FOUND", `Group ${groupId} not found`);
+            // FIX: trước đây chỉ chặn theo matchCount, không chặn theo phase.status
+            // — cho phép xoá 1 group ngay cả khi phase đã confirmGroups(), phá vỡ
+            // cấu trúc mà admin vừa chốt mà không cần unconfirm trước.
+            this.assertPhaseIsDraft(group.phase, "xoá group");
             const matchCount = await tx.match.count({ where: { group_id: groupId, deleted_at: null } });
             if (matchCount > 0)
                 throw createAppError("CONFLICT", "Group đã có match — không thể xoá");
@@ -543,6 +418,9 @@ export class GroupService {
                 throw createAppError("CONFLICT", "Season chưa có group nào, tạo group trước khi draw");
             if (!phase.is_active)
                 throw createAppError("CONFLICT", "Phase đã bị deactivate");
+            // FIX: findRoundRobinPhase chỉ loại trừ locked, không loại trừ
+            // in_progress — thiếu dòng này, đã confirmGroups() vẫn re-draw được.
+            this.assertPhaseIsDraft(phase, "bốc thăm");
             const existingMatches = await tx.match.count({
                 where: { phase_id: phase.id, deleted_at: null },
             });
@@ -589,7 +467,8 @@ export class GroupService {
             await lockSeason(tx, seasonId);
             const phase = await this.findRoundRobinPhase(tx, seasonId);
             if (!phase)
-                return; // chưa từng tạo phase/group thì không có gì để xoá
+                return;
+            this.assertPhaseIsDraft(phase, "xoá bốc thăm");
             const existingMatches = await tx.match.count({
                 where: { phase_id: phase.id, deleted_at: null },
             });
@@ -608,13 +487,74 @@ export class GroupService {
             });
         });
     }
+    /**
+     * NEW: chốt cấu trúc group của phase hiện tại — draft -> in_progress.
+     * Yêu cầu mọi group active phải có >= 2 team approved (đồng nhất điều
+     * kiện tối thiểu của drawGroups). Sau khi confirm, mọi thao tác cấu
+     * trúc (tạo/xoá group, draw, clear) bị chặn qua assertPhaseIsDraft —
+     * chỉ còn assignTeamToGroup/swapTeams (đổi chỗ 1-1, không đổi cấu trúc)
+     * là còn dùng được, phục vụ đúng nhu cầu "confirm rồi chỉ còn swap".
+     */
+    async confirmGroups(seasonId) {
+        return this.prisma.$transaction(async (tx) => {
+            await lockSeason(tx, seasonId);
+            await this.assertSeasonAcceptsGroupOps(tx, seasonId);
+            const phase = await this.findRoundRobinPhase(tx, seasonId);
+            if (!phase)
+                throw createAppError("CONFLICT", "Season chưa có group nào để xác nhận");
+            if (phase.status === PhaseStatus.in_progress)
+                return; // idempotent
+            const groups = await tx.group.findMany({
+                where: { phase_id: phase.id, is_active: true },
+                select: {
+                    id: true,
+                    name: true,
+                    _count: {
+                        select: {
+                            season_teams: {
+                                where: { deleted_at: null, is_active: true, status: SeasonTeamStatus.approved },
+                            },
+                        },
+                    },
+                },
+            });
+            if (groups.length === 0)
+                throw createAppError("CONFLICT", "Chưa có group nào để xác nhận");
+            const empty = groups.filter((g) => g._count.season_teams < 2);
+            if (empty.length > 0)
+                throw createAppError("CONFLICT", `${empty.length} group chưa đủ tối thiểu 2 đội (${empty.map((g) => g.name).join(", ")}) — ` +
+                    `bốc thăm/gán đội trước khi xác nhận`);
+            await tx.phase.update({ where: { id: phase.id }, data: { status: PhaseStatus.in_progress } });
+        });
+    }
+    /**
+     * NEW: hủy xác nhận — in_progress -> draft, để admin mở lại draw/clear/
+     * xoá group. Chặn nếu đã có match (giống mọi thao tác cấu trúc khác) vì
+     * lúc đó việc "mở khoá" chỉ tạo ảo giác sửa được trong khi lịch đã chốt.
+     */
+    async unconfirmGroups(seasonId) {
+        return this.prisma.$transaction(async (tx) => {
+            await lockSeason(tx, seasonId);
+            const phase = await this.findRoundRobinPhase(tx, seasonId);
+            if (!phase)
+                throw createAppError("NOT_FOUND", "Season chưa có group");
+            if (phase.status !== PhaseStatus.in_progress)
+                return; // idempotent
+            const existingMatches = await tx.match.count({ where: { phase_id: phase.id, deleted_at: null } });
+            if (existingMatches > 0)
+                throw createAppError("CONFLICT", "Đã có lịch thi đấu — không thể hủy xác nhận");
+            await tx.phase.update({ where: { id: phase.id }, data: { status: PhaseStatus.draft } });
+        });
+    }
     async assignTeamToGroup(seasonTeamId, groupId) {
         return this.prisma.$transaction(async (tx) => {
             const seasonTeamRows = await tx.$queryRaw `SELECT id, status, group_id, season_id FROM season_teams WHERE id = ${seasonTeamId} FOR UPDATE`;
             const seasonTeam = seasonTeamRows[0];
             if (!seasonTeam)
                 throw createAppError("NOT_FOUND", `SeasonTeam ${seasonTeamId} not found`);
-            const groupRows = await tx.$queryRaw `SELECT id, phase_id FROM groups WHERE id = ${groupId} AND is_active = 1 FOR UPDATE`;
+            // FIX: bọc backtick quanh `groups` — cùng nguyên nhân với
+            // deactivateGroup() ở trên (GROUPS là reserved keyword MySQL 8+).
+            const groupRows = await tx.$queryRaw `SELECT id, phase_id FROM \`groups\` WHERE id = ${groupId} AND is_active = 1 FOR UPDATE`;
             const group = groupRows[0];
             if (!group)
                 throw createAppError("NOT_FOUND", `Group ${groupId} not found hoặc inactive`);
@@ -697,6 +637,7 @@ export class GroupService {
                 throw createAppError("CONFLICT", "Season chưa có group nào, tạo group trước khi draw");
             if (!phase.is_active)
                 throw createAppError("CONFLICT", "Phase đã deactivate");
+            this.assertPhaseIsDraft(phase, "bốc thăm");
             const existingMatches = await tx.match.count({
                 where: { phase_id: phase.id, deleted_at: null },
             });
@@ -889,7 +830,10 @@ export class GroupService {
         });
         if (groups.length === 0)
             return null;
-        await tx.$queryRaw `SELECT id FROM groups WHERE id IN (${Prisma.join(groups.map((g) => g.id))}) FOR UPDATE`;
+        // FIX: bọc backtick quanh `groups` — cùng nguyên nhân với
+        // deactivateGroup() (GROUPS là reserved keyword MySQL 8+), tránh lỗi
+        // 1064 tương tự khi auto-assign 1 team approved vào group ít quân nhất.
+        await tx.$queryRaw `SELECT id FROM \`groups\` WHERE id IN (${Prisma.join(groups.map((g) => g.id))}) FOR UPDATE`;
         const counts = await tx.seasonTeam.groupBy({
             by: ["group_id"],
             where: { group_id: { in: groups.map((g) => g.id) }, deleted_at: null },

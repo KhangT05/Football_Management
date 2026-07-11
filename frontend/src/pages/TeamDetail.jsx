@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Users, Trophy, Target, Shield, Activity,
-  WifiOff, Crown, UserCheck, UserX, Hash
+import {
+  ArrowLeft, Users, Trophy, Target, Shield, Activity,
+  WifiOff, Crown, UserCheck, UserX, Hash, CalendarDays
 } from 'lucide-react';
 
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
@@ -14,10 +15,10 @@ import PlayerStatsModal from '../components/modals/PlayerStatsModal';
 
 // ── Helpers ───────────────────────────────────────────────────
 const POSITION_COLORS = {
-  GK:  'bg-amber-400/10 text-amber-400 border-amber-400/30',
+  GK: 'bg-amber-400/10 text-amber-400 border-amber-400/30',
   DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30',
   MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
-  FW:  'bg-red-400/10 text-red-400 border-red-400/30',
+  FW: 'bg-red-400/10 text-red-400 border-red-400/30',
 };
 
 const normalizePosition = (posStr) => {
@@ -30,6 +31,23 @@ const normalizePosition = (posStr) => {
   return p;
 };
 
+// Kit mặc định khi team chưa có jersey_color — tránh chấm trắng-trên-trắng.
+const FALLBACK_KIT = { bg: '#1d4ed8', text: '#ffffff', border: 'rgba(255,255,255,0.6)' };
+
+// Contrast tối thiểu: nếu jersey_color sáng thì chữ tối, ngược lại chữ trắng.
+// Không cần chính xác WCAG, chỉ cần tránh chữ biến mất trên nền sáng.
+function textColorFor(hex) {
+  if (!hex || hex[0] !== '#' || (hex.length !== 7 && hex.length !== 4)) return '#ffffff';
+  const full = hex.length === 4
+    ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    : hex;
+  const r = parseInt(full.slice(1, 3), 16);
+  const g = parseInt(full.slice(3, 5), 16);
+  const b = parseInt(full.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.65 ? '#0b1220' : '#ffffff';
+}
+
 // ── StatBox ───────────────────────────────────────────────────
 function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
   return (
@@ -41,7 +59,88 @@ function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
   );
 }
 
-// ── Player Card ───────────────────────────────────────────────
+// ── Formation dot (chấm cầu thủ trên sơ đồ) ────────────────────
+// Pill nền đen mờ + text-shadow cho tên: đọc được trên mọi nền sân,
+// không phụ thuộc màu kit sáng/tối. Kích thước nhỏ theo yêu cầu (7-9 (mobile)/9-11 (md)).
+function FormationDot({ tp, kit, onClick }) {
+  const player = tp.player ?? tp;
+  const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id ?? tp.id}`;
+  const jersey = tp.jersey_number ?? '?';
+  const isCap = tp.role === 'captain';
+  const isVice = tp.role === 'vice_captain';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 w-14 sm:w-16 shrink-0 group"
+    >
+      <div className="relative">
+        <div
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center font-black text-[11px] sm:text-xs shadow-md shadow-black/40 transition-transform group-hover:scale-110"
+          style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
+        >
+          {jersey}
+        </div>
+        {isCap && (
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">
+            C
+          </span>
+        )}
+        {isVice && !isCap && (
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">
+            P
+          </span>
+        )}
+      </div>
+      <span
+        className="text-[8px] sm:text-[9px] font-black text-white text-center leading-tight line-clamp-2 px-1 py-0.5 rounded bg-black/60 max-w-full truncate"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+        title={name}
+      >
+        {name}
+      </span>
+    </button>
+  );
+}
+
+// ── Formation pitch (sơ đồ đội hình, FW trên cùng, GK dưới cùng) ─
+function FormationPitch({ byPosition, kit, badge, onSelectPlayer }) {
+  const rows = ['FW', 'MID', 'DEF', 'GK'];
+  const hasAny = rows.some(pos => byPosition[pos]?.length);
+  if (!hasAny) return null;
+
+  return (
+    <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20">
+      {/* Nền sân: gradient xanh lá + vạch giữa sân mờ, chỉ mang tính trang trí */}
+      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/40 via-emerald-950/50 to-emerald-900/40" />
+      <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
+      <div className="absolute inset-4 border border-white/10 rounded-lg pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col justify-between gap-3 px-3 py-4 sm:px-6 sm:py-6 min-h-[260px] sm:min-h-[300px]">
+        {/* Badge màu áo + số lượng cầu thủ, góc trên trái — nhận diện nhanh đội nào */}
+        {badge}
+
+        {rows.map(pos => (
+          byPosition[pos]?.length ? (
+            <div key={pos} className="flex flex-wrap justify-center gap-2 sm:gap-4">
+              {byPosition[pos].map((tp, idx) => (
+                <FormationDot
+                  key={tp.id ?? `${pos}-${idx}`}
+                  tp={tp}
+                  kit={kit}
+                  onClick={() => onSelectPlayer(tp)}
+                />
+              ))}
+            </div>
+          ) : null
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Player Card (giữ nguyên cho danh sách chi tiết bên dưới) ───
 function PlayerCard({ tp, idx, onClick }) {
   const player = tp.player ?? tp;
   const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
@@ -61,7 +160,6 @@ function PlayerCard({ tp, idx, onClick }) {
       style={{ animationDelay: `${idx * 40}ms` }}
     >
       <div className="flex items-center gap-3">
-        {/* Avatar */}
         <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative overflow-hidden`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
@@ -80,7 +178,6 @@ function PlayerCard({ tp, idx, onClick }) {
           )}
         </div>
 
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="font-bold text-white text-sm truncate">{name}</div>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -93,7 +190,6 @@ function PlayerCard({ tp, idx, onClick }) {
           </div>
         </div>
 
-        {/* Jersey Number */}
         <div className="shrink-0 text-right">
           <div className="text-lg font-black text-neon leading-none">#{jerseyNum}</div>
         </div>
@@ -122,7 +218,7 @@ export default function TeamDetail() {
 
   const isLoading = teamDetailLoading[teamId] || false;
   const hasError = !teamId || teamDetailError[teamId];
-  
+
   const detailData = getTeamDetailFromCache(teamId);
   const team = detailData?.team || null;
   const players = detailData?.players || [];
@@ -140,7 +236,6 @@ export default function TeamDetail() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedPlayers = players.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // Group paginated players by position for roster display
   const totalByPosition = players.reduce((acc, tp) => {
     const player = tp.player ?? tp;
     const rawPos = tp.position ?? player.position;
@@ -150,7 +245,6 @@ export default function TeamDetail() {
     return acc;
   }, {});
 
-  // Group paginated players by position for roster display
   const byPosition = paginatedPlayers.reduce((acc, tp) => {
     const player = tp.player ?? tp;
     const rawPos = tp.position ?? player.position;
@@ -159,16 +253,35 @@ export default function TeamDetail() {
     acc[pos].push(tp);
     return acc;
   }, {});
+
+  // Formation dùng TOÀN BỘ roster (không phân trang) — pitch nhỏ, chỉ mang
+  // tính overview; danh sách chi tiết bên dưới vẫn giữ pagination.
+  const byPositionFull = players.reduce((acc, tp) => {
+    const player = tp.player ?? tp;
+    const rawPos = tp.position ?? player.position;
+    const pos = normalizePosition(rawPos);
+    if (!acc[pos]) acc[pos] = [];
+    acc[pos].push(tp);
+    return acc;
+  }, {});
+
   const positionOrder = ['GK', 'DEF', 'MID', 'FW', 'OTHER'];
 
   const homeName = team?.name ?? '—';
   const initial = getInitials(homeName);
   const colorIdx = (teamId ?? 0) % AVATAR_COLORS.length;
 
+  const kit = team?.jersey_color
+    ? { bg: team.jersey_color, text: textColorFor(team.jersey_color), border: 'rgba(255,255,255,0.6)' }
+    : FALLBACK_KIT;
+
+  // Số mùa giải đội đã tham gia — chỉ hiển thị nếu backend trả field này,
+  // không tự gọi thêm API để đoán (chưa có endpoint per-team xác nhận).
+  const seasonCount = team?.season_count ?? team?.seasons_count ?? team?.total_seasons ?? null;
+
   return (
     <div className="pb-20 bg-navy-dark min-h-screen">
 
-      {/* Back */}
       <div className="container mx-auto px-4 lg:px-8 pt-6 animate-fade-in">
         <Link
           to="/bang-xep-hang"
@@ -192,18 +305,28 @@ export default function TeamDetail() {
             </div>
           ) : (
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              {/* Avatar */}
-              <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-2xl shadow-blue-900/30 shrink-0 border-4 border-white/10 animate-fade-in`}>
+              <div
+                className="w-32 h-32 md:w-48 md:h-48 rounded-full flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-2xl shrink-0 border-4 border-white/10 animate-fade-in"
+                style={{ backgroundColor: kit.bg, color: kit.text }}
+              >
                 {initial}
               </div>
 
               <div className="text-center md:text-left space-y-4 max-w-3xl">
-                {team?.is_active !== undefined && (
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${team.is_active ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30' : 'bg-gray-400/10 text-gray-400 border border-gray-400/30'}`}>
-                    {team.is_active ? <UserCheck className="w-3 h-3" /> : <UserX className="w-3 h-3" />}
-                    {team.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                  {team?.is_active !== undefined && (
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${team.is_active ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30' : 'bg-gray-400/10 text-gray-400 border border-gray-400/30'}`}>
+                      {team.is_active ? <UserCheck className="w-3 h-3" /> : <UserX className="w-3 h-3" />}
+                      {team.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
+                    </div>
+                  )}
+                  {seasonCount != null && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-400/10 text-blue-400 border border-blue-400/30">
+                      <CalendarDays className="w-3 h-3" />
+                      {seasonCount} mùa giải
+                    </div>
+                  )}
+                </div>
                 <h1 className="text-4xl md:text-6xl font-extrabold text-white uppercase italic tracking-tight">
                   {team?.name}
                 </h1>
@@ -216,9 +339,9 @@ export default function TeamDetail() {
                   </p>
                 )}
                 {team?.jersey_color && (
-                  <div className="flex items-center gap-2 text-gray-400">
-                    Màu áo: 
-                    <div 
+                  <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400">
+                    Màu áo:
+                    <div
                       className="w-6 h-6 rounded border border-gray-600 shadow-sm"
                       style={{ backgroundColor: team.jersey_color }}
                       title={team.jersey_color}
@@ -246,6 +369,33 @@ export default function TeamDetail() {
               <StatBox label="Tiền vệ" value={totalByPosition['MID'] ?? 0} icon={Activity} colorClass="text-emerald-400" />
               <StatBox label="Tiền đạo" value={totalByPosition['FW'] ?? 0} icon={Target} colorClass="text-red-400" />
             </div>
+          </section>
+        )}
+
+        {/* Formation Pitch */}
+        {!isLoading && !hasError && players.length > 0 && (
+          <section className="animate-slide-up">
+            <h2 className="text-2xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3">
+              <Trophy className="w-6 h-6 text-neon" /> Sơ Đồ Đội Hình
+            </h2>
+            <FormationPitch
+              byPosition={byPositionFull}
+              kit={kit}
+              onSelectPlayer={setSelectedPlayer}
+              badge={
+                <div className="flex items-center gap-2 self-start">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black border border-white/30"
+                    style={{ backgroundColor: kit.bg, color: kit.text }}
+                  >
+                    {initial[0]}
+                  </div>
+                  <span className="text-xs font-bold text-white/80 bg-black/40 px-2 py-0.5 rounded">
+                    {team?.name} · {players.length} cầu thủ
+                  </span>
+                </div>
+              }
+            />
           </section>
         )}
 
@@ -286,7 +436,7 @@ export default function TeamDetail() {
                   </div>
                 </div>
               ))}
-              
+
               {totalPages > 1 && (
                 <div className="mt-8 flex justify-center">
                   <Pagination
