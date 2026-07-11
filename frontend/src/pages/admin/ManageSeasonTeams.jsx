@@ -143,35 +143,6 @@ export default function ManageSeasonTeams() {
   const paginatedGroups = groupedTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
   const paginatedTeams = paginatedGroups.flat();
 
-  const columnCount = selectedSeason ? 5 : 6;
-
-  // ── Collapse/expand per team group ─────────────────────────
-  // Default = COLLAPSED. Track Set<team.id> đã được user bấm mở, không phải
-  // ngược lại — tránh phải tính trước "group nào có size > 1" mỗi lần data
-  // đổi chỉ để pre-populate collapsed set. Set rỗng = tất cả collapsed.
-  const [expandedTeamIds, setExpandedTeamIds] = useState(() => new Set());
-  const toggleTeamGroup = (tid) => {
-    setExpandedTeamIds(prev => {
-      const next = new Set(prev);
-      next.has(tid) ? next.delete(tid) : next.add(tid);
-      return next;
-    });
-  };
-  useEffect(() => {
-    setExpandedTeamIds(new Set());
-  }, [safePage, filterStatus, selectedSeason, debouncedSearch]);
-
-  // groupSizeMap giờ tính trực tiếp từ paginatedGroups (mỗi group đã trọn vẹn
-  // trong trang), không phải đếm lại trên danh sách row phẳng.
-  const groupSizeMap = useMemo(() => {
-    const map = new Map();
-    paginatedGroups.forEach(g => {
-      const tid = g[0].team?.id ?? `noteam-${g[0].id}`;
-      map.set(tid, g.length);
-    });
-    return map;
-  }, [paginatedGroups]);
-
   const stats = useMemo(() => {
     let base = allSeasonTeams;
     if (selectedSeason) {
@@ -363,7 +334,9 @@ export default function ManageSeasonTeams() {
 
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {STATS_CARDS.map(({ label, statusKey, color, icon: Icon }) => (
+            {STATS_CARDS.map(({ label, statusKey, color, icon }) => {
+              const CardIcon = icon;
+              return (
               <div
                 key={label}
                 onClick={() => {
@@ -374,11 +347,11 @@ export default function ManageSeasonTeams() {
               >
                 <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
                 <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
-                  <Icon className={`w-3 h-3 text-${color}-400`} />
+                  <CardIcon className={`w-3 h-3 text-${color}-400`} />
                   {label}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="flex items-center gap-2 border-b border-navy-light">
@@ -456,7 +429,6 @@ export default function ManageSeasonTeams() {
                       <th className="py-4 px-6 w-16 text-center">ID</th>
                       <th className="py-4 px-6">Đội bóng</th>
                       {!selectedSeason && <th className="py-4 px-6">Mùa giải</th>}
-                      {!selectedSeason && <th className="py-4 px-6">Giải đấu</th>}
                       <th className="py-4 px-6 text-center">Trạng thái</th>
                       <th className="py-4 px-6 text-center">Duyệt</th>
                       <th className="py-4 px-6 text-right">Thao tác</th>

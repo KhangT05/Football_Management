@@ -83,4 +83,20 @@ export const paymentApi = {
   queryTransaction: (id) => {
     return axiosClient.get(`/payments/${id}/query`);
   },
+
+  /**
+   * Leader: Khởi tạo thanh toán thủ công
+   * POST /payments/manual
+   */
+  initiateManualPayment: (data) => {
+    return axiosClient.post('/payments/manual', data);
+  },
+
+  /**
+   * Admin: Từ chối thanh toán
+   * POST /payments/{id}/reject
+   */
+  rejectPayment: (id, data) => {
+    return axiosClient.post(`/payments/${id}/reject`, data);
+  },
 };

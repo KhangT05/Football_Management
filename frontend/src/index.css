@@ -60,6 +60,12 @@
   *, *::before, *::after {
     transition: background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
   }
+
+  /* Responsive Typography */
+  h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.2; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); line-height: 1.25; }
+  h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); line-height: 1.3; }
+  h4 { font-size: clamp(1.125rem, 2vw, 1.5rem); line-height: 1.4; }
 }
 
 /* ─── Pastel Theme overrides (applied via JS on <html>) ─── */
@@ -421,7 +427,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
+  padding: 0.75rem 1.25rem; /* ~44px minimum height for touch target */
   border-radius: 0.75rem;
   font-weight: 700;
   font-size: 0.875rem;

@@ -28,6 +28,7 @@ export default function AdminLayout({ children }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -73,14 +74,14 @@ export default function AdminLayout({ children }) {
         transition-transform duration-300 ease-in-out shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <AsideAdmin onClose={() => setSidebarOpen(false)} />
+        <AsideAdmin onClose={() => setSidebarOpen(false)} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       </div>
 
       {/* Main content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
 
         {/* ─── Header ─────────────────────────────────────────────── */}
-        <header className="h-16 md:h-[72px] bg-navy border-b border-navy-light px-4 md:px-6 flex items-center justify-between shrink-0 gap-3 shadow-lg shadow-black/30 relative z-10">
+        <header className="h-16 md:h-[72px] bg-navy border-b border-navy-light px-4 md:px-6 flex items-center justify-between shrink-0 gap-3 shadow-lg shadow-black/30 relative z-10 transition-all duration-300">
 
           {/* Left: Mobile menu + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
@@ -91,9 +92,17 @@ export default function AdminLayout({ children }) {
             >
               <Menu className="w-5 h-5" />
             </button>
+            
+            {/* Desktop collapse toggle */}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden md:block p-2 rounded-lg text-gray-400 hover:text-white hover:bg-navy-light transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 ml-1">
               <Link
                 to="/"
                 className="hidden sm:flex items-center gap-1.5 text-gray-400 hover:text-neon transition-colors text-sm font-medium"

@@ -102,18 +102,6 @@ export default function SeasonTeamRow({
           </div>
         </td>
       )}
-      {!hideSeason && (
-        <td className="py-4 px-6">
-          {tournamentName ? (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-amber-400">
-              <Trophy className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider text-black">{tournamentName}</span>
-            </div>
-          ) : (
-            <span className="text-gray-500 text-xs">—</span>
-          )}
-        </td>
-      )}
 
       <td className="py-4 px-6 text-center">
         <StatusBadge status={st.status} variant="seasonTeam" />

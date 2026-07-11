@@ -82,14 +82,14 @@ export default function Footer() {
                 />
             </div>
             <div className="flex gap-3">
-                <button className="flex items-center gap-2 bg-[#ffffff] border border-gray-700 px-3 py-1.5 rounded-lg hover:border-gray-500 hover:bg-[#2a2a2a] transition-all">
+                <button className="flex items-center gap-2 bg-[#1a1a1a] border border-gray-700 px-3 py-1.5 rounded-lg hover:border-gray-500 hover:bg-[#2a2a2a] transition-all">
                     <Smartphone className="w-5 h-5 text-white" />
                     <div className="flex flex-col items-start">
                         <span className="text-[8px] text-gray-400 leading-none">Available on</span>
                         <span className="text-xs font-bold text-white leading-tight">App Store</span>
                     </div>
                 </button>
-                <button className="flex items-center gap-2 bg-[#ffffff] border border-gray-700 px-3 py-1.5 rounded-lg hover:border-gray-500 hover:bg-[#2a2a2a] transition-all">
+                <button className="flex items-center gap-2 bg-[#1a1a1a] border border-gray-700 px-3 py-1.5 rounded-lg hover:border-gray-500 hover:bg-[#2a2a2a] transition-all">
                     <Play className="w-5 h-5 text-green-500" />
                     <div className="flex flex-col items-start">
                         <span className="text-[8px] text-gray-400 leading-none">Available on</span>

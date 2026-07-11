@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
@@ -137,3 +137,32 @@ export const POSITIONS = [
 ];
 export const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
 export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
+export const STATUS_LABELS = {
+    pending: { label: 'Chờ duyệt', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: AlertTriangle },
+    success: { label: 'Đã thanh toán', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: CheckCircle },
+    confirmed: { label: 'Đã thanh toán', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: CheckCircle },
+    failed: { label: 'Thất bại', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/30', icon: XCircle },
+    refunded: { label: 'Hoàn tiền', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: XCircle },
+};
+
+export const MATCH_STATUS_LABEL = {
+  scheduled: 'Chưa đấu',
+  upcoming: 'Sắp diễn ra',
+  ongoing: 'Đang diễn ra',
+  live: 'Đang diễn ra',
+  completed: 'Đã kết thúc',
+  finished: 'Đã kết thúc',
+  cancelled: 'Bị hủy',
+  postponed: 'Hoãn',
+};
+
+export const MATCH_STATUS_CLASS = {
+  scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  upcoming: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  ongoing: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
+  live: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
+  completed: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  finished: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+  postponed: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+};

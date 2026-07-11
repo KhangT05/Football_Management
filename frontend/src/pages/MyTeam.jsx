@@ -21,29 +21,9 @@ import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import TransactionsTab from '../components/myteam/TransactionsTab';
 import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 import { parseApiError } from '../utils/errorHelper';
+import { MATCH_STATUS_CLASS, MATCH_STATUS_LABEL } from '../data/data';
 
 // ─── Constants ─────────────────────────────────────────────
-const MATCH_STATUS_LABEL = {
-  scheduled: 'Chưa đấu',
-  upcoming: 'Sắp diễn ra',
-  ongoing: 'Đang diễn ra',
-  live: 'Đang diễn ra',
-  completed: 'Đã kết thúc',
-  finished: 'Đã kết thúc',
-  cancelled: 'Bị hủy',
-  postponed: 'Hoãn',
-};
-
-const MATCH_STATUS_CLASS = {
-  scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  upcoming: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  ongoing: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
-  live: 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse',
-  completed: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  finished: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
-  postponed: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-};
 
 const normalizePosition = (posStr) => {
   if (!posStr) return 'OTHER';
@@ -150,7 +130,7 @@ function RosterPitchDot({ player, kit, onClick }) {
           hơn 1 chút với tên dài (đã giãn khoảng cách hàng ở PITCH_ROW_TOP để
           bù lại). title vẫn giữ để xem full tên khi hover trên desktop. */}
       <span
-        className="text-[9px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80 inline-block max-w-full break-words group-hover:bg-black/95 transition-colors"
+        className="text-[9px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80 inline-block max-w-full wrap-break-words group-hover:bg-black/95 transition-colors"
         style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
       >
         {player.name}
@@ -600,6 +580,7 @@ export default function MyTeam() {
       document.body.appendChild(link); link.click(); link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
+      console.error(err);
       toast.error('Không thể tải biên bản trận đấu.');
     }
   };

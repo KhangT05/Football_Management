@@ -318,12 +318,11 @@ export default function ManageTeams() {
                 <table className="w-full text-left whitespace-nowrap min-w-[1000px]">
                   <thead>
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
-                      <th className="py-4 px-6 w-16 text-center">Logo</th>
+                      <th className="py-4 px-6 w-16 text-center">ID</th>
                       <th className="py-4 px-6">Đội bóng</th>
-                      <th className="py-4 px-6">HLV / Đội trưởng</th>
                       <th className="py-4 px-6">Mùa giải</th>
-                      <th className="py-4 px-6">Giải đấu</th>
                       <th className="py-4 px-6 text-center">Trạng thái</th>
+                      <th className="py-4 px-6 text-center">Duyệt</th>
                       <th className="py-4 px-6 text-right">Thao tác</th>
                     </tr>
                   </thead>
@@ -331,7 +330,7 @@ export default function ManageTeams() {
                     {isLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i} className="border-b border-navy-light">
-                          {[1, 2, 3, 4, 5, 6, 7].map(j => (
+                          {[1, 2, 3, 4, 5, 6].map(j => (
                             <td key={j} className="py-4 px-6">
                               <div className="skeleton h-4 w-full rounded" />
                             </td>
@@ -340,7 +339,7 @@ export default function ManageTeams() {
                       ))
                     ) : fetchError ? (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center text-red-400">
+                        <td colSpan={6} className="py-16 text-center text-red-400">
                           <div className="flex flex-col items-center gap-3">
                             <AlertTriangle className="w-10 h-10 text-red-500/50" />
                             <p className="font-semibold">{fetchError}</p>
@@ -353,7 +352,7 @@ export default function ManageTeams() {
                       </tr>
                     ) : teamsWithSeasons.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center text-gray-400">
+                        <td colSpan={6} className="py-16 text-center text-gray-400">
                           <div className="flex flex-col items-center gap-3">
                             <Users className="w-10 h-10 text-gray-600" />
                             <p className="font-semibold">

@@ -109,7 +109,7 @@ export default function PaymentResultPage() {
 
             <div className="px-6 pb-6 space-y-3">
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
-                <p className="text-emerald-400 text-sm font-medium">✓ Đội bóng của bạn đã được xác nhận tham gia giải đấu</p>
+                <p className="text-emerald-400 text-sm font-medium">✓ Giao dịch thành công. Vui lòng chờ Ban tổ chức duyệt đội bóng!</p>
               </div>
               <Link
                 to="/doi-cua-toi"

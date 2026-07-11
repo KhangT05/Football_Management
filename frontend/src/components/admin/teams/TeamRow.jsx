@@ -18,85 +18,105 @@ export default function TeamRow({
 }) {
   const isExpanded = expandedTeamId === team.id;
 
+  // Extract unique tournaments
+  const tournaments = Array.from(new Set(
+    (team.season_teams || [])
+      .map(st => st.season?.tournament?.name || st.tournament?.name)
+      .filter(Boolean)
+  ));
+
+  // Extract unique seasons
+  const seasons = Array.from(new Set(
+    (team.season_teams || [])
+      .map(st => st.season?.name)
+      .filter(Boolean)
+  ));
+
   return (
     <Fragment>
       <tr className="border-b border-navy-light hover:bg-navy-dark/70 transition-colors animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
-        <td className="py-4 px-6 text-center">
-          {team.logo ? (
-            <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover mx-auto border border-navy-light" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center font-bold text-base mx-auto text-white">
-              {team.name?.[0]?.toUpperCase()}
-            </div>
-          )}
+        {/* ID */}
+        <td className="py-4 px-6 text-center text-gray-400 font-medium text-xs">
+          {team.id}
         </td>
+
+        {/* Đội bóng */}
         <td className="py-4 px-6">
-          <p className="font-bold text-white">{team.name}</p>
-          <p className="text-xs text-gray-500 mt-0.5">#{team.id}</p>
-        </td>
-        <td className="py-4 px-6">
-          {team.user?.name ? (
-            <div>
-              <span className="font-bold text-white">{team.user.name}</span>
-              <span className="block text-xs text-gray-500 mt-0.5">Người đăng ký (Đội trưởng)</span>
-            </div>
-          ) : (
-            <span className="text-gray-300 text-sm">{team.coach_name || '—'}</span>
-          )}
-        </td>
-        <td className="py-4 px-6">
-          {team.season_teams && team.season_teams.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {team.season_teams.map(st => (
-                <div key={st.season.id} className="inline-flex items-center px-2.5 py-1.5 bg-navy-light rounded-lg border border-navy-light/50 shadow-sm text-black text-[11px] font-bold whitespace-nowrap self-start">
-                  {st.season?.name || 'Không rõ'}
+          <div className="flex items-center gap-3">
+            <div className="shrink-0">
+              {team.logo ? (
+                <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-xl object-cover border border-navy-light bg-white" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-base text-blue-600 shadow-sm border border-gray-200">
+                  {team.name?.[0]?.toUpperCase()}
                 </div>
-              ))}
+              )}
             </div>
-          ) : (
-            <span className="text-gray-500 text-xs">—</span>
-          )}
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-white text-sm truncate leading-tight max-w-[250px]">{team.name}</span>
+              {tournaments.length > 0 && (
+                <div className="flex items-center gap-1.5 text-gray-400 mt-1">
+                  <Trophy className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                  <span className="text-[11px] font-medium leading-tight truncate max-w-[180px]">{tournaments[0]}</span>
+                  {tournaments.length > 1 && (
+                    <span className="text-[10px] font-bold bg-navy-light px-1.5 py-0.5 rounded text-gray-300 shrink-0">
+                      +{tournaments.length - 1}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </td>
+
+        {/* Mùa giải */}
         <td className="py-4 px-6">
-          {team.season_teams && team.season_teams.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {team.season_teams.map(st => {
-                const tName = st.season?.tournament?.name || st.tournament?.name;
-                return tName ? (
-                  <div key={st.season.id} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-navy-light/40 rounded-lg border border-navy-light/70 text-black self-start min-w-0">
-                    <Trophy className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-[10px] font-bold leading-tight truncate uppercase tracking-wider">{tName}</span>
-                  </div>
-                ) : (
-                  <div key={st.season.id} className="h-7 flex items-center">
-                    <span className="text-gray-500 text-xs">—</span>
-                  </div>
-                );
-              })}
+          {seasons.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {seasons.slice(0, 2).map((sName, i) => (
+                <span key={i} className="inline-flex items-center px-2.5 py-1 bg-white text-black rounded-lg border border-gray-200 shadow-sm text-xs font-bold whitespace-nowrap">
+                  {sName}
+                </span>
+              ))}
+              {seasons.length > 2 && (
+                <span className="inline-flex items-center px-2 py-1 bg-navy-light text-gray-300 rounded-lg text-[11px] font-bold whitespace-nowrap">
+                  +{seasons.length - 2}
+                </span>
+              )}
             </div>
           ) : (
-            <span className="text-gray-500 text-xs">—</span>
+            <span className="inline-flex items-center px-2.5 py-1 bg-navy-dark text-gray-500 rounded-lg border border-navy-light shadow-sm text-xs font-medium whitespace-nowrap">
+              Chưa tham gia
+            </span>
           )}
         </td>
+
+        {/* Trạng thái */}
         <td className="py-4 px-6 text-center">
           {team.is_active ? (
-            <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-emerald-400/10 text-emerald-400 border-emerald-400/30">
-              Đã Duyệt
+            <span className="inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full bg-emerald-400/10 text-emerald-500 border border-emerald-400/20">
+              Đã duyệt
             </span>
           ) : (
-            <span className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-yellow-400/10 text-yellow-400 border-yellow-400/30">
-              Chờ Duyệt
+            <span className="inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full bg-blue-400/10 text-blue-500 border border-blue-400/20">
+              Hoạt động
             </span>
           )}
         </td>
+
+        {/* Duyệt */}
+        <td className="py-4 px-6 text-center">
+          {!team.is_active && (
+            <button onClick={() => onApprove(team)} className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors mx-auto" title="Duyệt Đội bóng">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs font-bold">Duyệt</span>
+            </button>
+          )}
+        </td>
+
+        {/* Thao tác */}
         <td className="py-4 px-6">
           <div className="flex items-center justify-end gap-2">
-            {!team.is_active && (
-              <button onClick={() => onApprove(team)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors" title="Duyệt Đội bóng">
-                <CheckCircle2 className="w-4 h-4" />
-                <span className="text-xs font-bold">Duyệt</span>
-              </button>
-            )}
             <button onClick={() => onEdit(team)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors" title="Chỉnh sửa">
               <Edit className="w-4 h-4" />
             </button>
@@ -120,7 +140,7 @@ export default function TeamRow({
 
       {isExpanded && (
         <tr className="border-b border-navy-light">
-          <td colSpan={7} className="p-0">
+          <td colSpan={6} className="p-0">
             <TeamRosterPanel
               team={team}
               players={getTeamRoster(team)}
