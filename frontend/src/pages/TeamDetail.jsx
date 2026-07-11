@@ -31,8 +31,11 @@ const normalizePosition = (posStr) => {
   return p;
 };
 
-// Kit mặc định khi team chưa có jersey_color — tránh chấm trắng-trên-trắng.
-const FALLBACK_KIT = { bg: '#1d4ed8', text: '#ffffff', border: 'rgba(255,255,255,0.6)' };
+// Kit mặc định khi team CHƯA có jersey_color — dùng tông trung tính (xám-navy)
+// thay vì xanh dương nổi bật như trước. Lý do: màu xanh dương rực trước đây
+// dễ khiến người xem tưởng nhầm đó là màu áo thật của đội, trong khi thực ra
+// là fallback do BE chưa trả jersey_color.
+const FALLBACK_KIT = { bg: '#334155', text: '#e2e8f0', border: 'rgba(255,255,255,0.35)' };
 
 // Contrast tối thiểu: nếu jersey_color sáng thì chữ tối, ngược lại chữ trắng.
 // Không cần chính xác WCAG, chỉ cần tránh chữ biến mất trên nền sáng.
@@ -51,30 +54,25 @@ function textColorFor(hex) {
 // ── StatBox ───────────────────────────────────────────────────
 function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
   return (
-    <div className="bg-navy border border-navy-light rounded-xl p-4 text-center shadow-lg shadow-black/20">
-      {Icon && <Icon className={`w-5 h-5 ${colorClass} mx-auto mb-2`} />}
-      <div className={`text-3xl font-black ${colorClass} mb-1`}>{value ?? '—'}</div>
-      <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">{label}</div>
+    <div className="bg-navy border border-navy-light rounded-xl p-3 text-center shadow-lg shadow-black/20">
+      {Icon && <Icon className={`w-4 h-4 ${colorClass} mx-auto mb-1.5`} />}
+      <div className={`text-2xl font-black ${colorClass} mb-0.5`}>{value ?? '—'}</div>
+      <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{label}</div>
     </div>
   );
 }
 
-// ── Formation dot (chấm cầu thủ trên sơ đồ) ────────────────────
-// Pill nền đen mờ + text-shadow cho tên: đọc được trên mọi nền sân,
-// không phụ thuộc màu kit sáng/tối. Kích thước nhỏ theo yêu cầu (7-9 (mobile)/9-11 (md)).
+// FIX (blank pill) + bỏ border
 function FormationDot({ tp, kit, onClick }) {
   const player = tp.player ?? tp;
-  const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id ?? tp.id}`;
+  const rawName = player?.user?.name || player?.name || tp.name || '';
+  const name = rawName.trim() || `#${tp.player_id ?? tp.id}`;
   const jersey = tp.jersey_number ?? '?';
   const isCap = tp.role === 'captain';
   const isVice = tp.role === 'vice_captain';
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 w-14 sm:w-16 shrink-0 group"
-    >
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1 w-20 sm:w-24 shrink-0 group">
       <div className="relative">
         <div
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center font-black text-[11px] sm:text-xs shadow-md shadow-black/40 transition-transform group-hover:scale-110"
@@ -83,18 +81,20 @@ function FormationDot({ tp, kit, onClick }) {
           {jersey}
         </div>
         {isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">
-            C
-          </span>
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">C</span>
         )}
         {isVice && !isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">
-            P
-          </span>
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">P</span>
         )}
       </div>
+      {/* FIX (không đọc được tên): trước đây "truncate" trên khung cố định
+          max-w-[70px] cắt gần hết tên tiếng Việt có dấu. Giờ bỏ truncate,
+          cho chữ wrap tự nhiên (không giới hạn số dòng) — KHÔNG dùng
+          line-clamp vì từng gây mất chữ hoàn toàn khi lỡ kết hợp với
+          "block"/"inline-block" khác thứ tự CSS. title vẫn giữ để xem full
+          tên khi hover trên desktop. */}
       <span
-        className="text-[8px] sm:text-[9px] font-black text-white text-center leading-tight line-clamp-2 px-1 py-0.5 rounded bg-black/60 max-w-full truncate"
+        className="mt-1 max-w-full inline-block break-words text-[10px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80"
         style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
         title={name}
       >
@@ -104,38 +104,52 @@ function FormationDot({ tp, kit, onClick }) {
   );
 }
 
+// Vị trí thật trên sân theo % chiều cao — thay cho việc chia đều 4 hàng
+// bằng flex justify-between (bản cũ), vì cách đó khiến hàng rỗng vẫn chiếm
+// chỗ và tạo khoảng trắng lớn khi đội chưa đủ 4 tuyến (vd chỉ có GK+DEF).
+// FIX (đội hình dính liền): giãn lại khoảng cách hàng — tên giờ có thể
+// wrap 2 dòng nên mỗi hàng cao hơn trước, cần nhiều chỗ hơn để không đè
+// lên hàng kế tiếp.
+const PITCH_ROW_TOP = { FW: '10%', MID: '37%', DEF: '64%', GK: '92%' };
+
 // ── Formation pitch (sơ đồ đội hình, FW trên cùng, GK dưới cùng) ─
+// Chỉ render hàng có cầu thủ; height co theo số hàng thực có, không cố định
+// min-h lớn như trước.
 function FormationPitch({ byPosition, kit, badge, onSelectPlayer }) {
-  const rows = ['FW', 'MID', 'DEF', 'GK'];
-  const hasAny = rows.some(pos => byPosition[pos]?.length);
-  if (!hasAny) return null;
+  const rows = ['FW', 'MID', 'DEF', 'GK'].filter(pos => byPosition[pos]?.length);
+  if (rows.length === 0) return null;
+
+  const minHeight = rows.length <= 2 ? 240 : 360;
 
   return (
-    <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20">
+    <div
+      className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20"
+      style={{ minHeight }}
+    >
       {/* Nền sân: gradient xanh lá + vạch giữa sân mờ, chỉ mang tính trang trí */}
-      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/40 via-emerald-950/50 to-emerald-900/40" />
+      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/50 via-emerald-950/60 to-emerald-900/50" />
       <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
-      <div className="absolute inset-4 border border-white/10 rounded-lg pointer-events-none" />
+      <div className="absolute inset-3 border border-white/10 rounded-lg pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col justify-between gap-3 px-3 py-4 sm:px-6 sm:py-6 min-h-[260px] sm:min-h-[300px]">
-        {/* Badge màu áo + số lượng cầu thủ, góc trên trái — nhận diện nhanh đội nào */}
-        {badge}
+      {/* Badge màu áo + số lượng cầu thủ, góc trên trái — nhận diện nhanh đội nào */}
+      {badge && <div className="absolute top-3 left-3 z-20">{badge}</div>}
 
-        {rows.map(pos => (
-          byPosition[pos]?.length ? (
-            <div key={pos} className="flex flex-wrap justify-center gap-2 sm:gap-4">
-              {byPosition[pos].map((tp, idx) => (
-                <FormationDot
-                  key={tp.id ?? `${pos}-${idx}`}
-                  tp={tp}
-                  kit={kit}
-                  onClick={() => onSelectPlayer(tp)}
-                />
-              ))}
-            </div>
-          ) : null
-        ))}
-      </div>
+      {rows.map(pos => (
+        <div
+          key={pos}
+          className="absolute left-0 right-0 flex flex-wrap justify-center gap-2 sm:gap-4 px-3"
+          style={{ top: PITCH_ROW_TOP[pos], transform: 'translateY(-50%)' }}
+        >
+          {byPosition[pos].map((tp, idx) => (
+            <FormationDot
+              key={tp.id ?? `${pos}-${idx}`}
+              tp={tp}
+              kit={kit}
+              onClick={() => onSelectPlayer(tp)}
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -272,7 +286,7 @@ export default function TeamDetail() {
   const colorIdx = (teamId ?? 0) % AVATAR_COLORS.length;
 
   const kit = team?.jersey_color
-    ? { bg: team.jersey_color, text: textColorFor(team.jersey_color), border: 'rgba(255,255,255,0.6)' }
+    ? { bg: team.jersey_color, text: textColorFor(team.jersey_color), border: 'rgba(255,255,255,0)' }
     : FALLBACK_KIT;
 
   // Số mùa giải đội đã tham gia — chỉ hiển thị nếu backend trả field này,
@@ -293,9 +307,9 @@ export default function TeamDetail() {
       </div>
 
       {/* Hero Header */}
-      <section className="relative mt-6 mb-12 bg-navy border-b border-navy-light shadow-lg shadow-black/20 overflow-hidden">
+      <section className="relative mt-6 mb-8 bg-navy border-b border-navy-light shadow-lg shadow-black/20 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-blue-900/10 via-transparent to-cyan-900/5 pointer-events-none" />
-        <div className="container relative z-10 mx-auto px-4 lg:px-8 py-12 md:py-20 animate-slide-up">
+        <div className="container relative z-10 mx-auto px-4 lg:px-8 py-8 md:py-14 animate-slide-up">
           {isLoading ? (
             <TeamHeaderSkeleton />
           ) : hasError ? (
@@ -304,12 +318,21 @@ export default function TeamDetail() {
               <p className="font-bold">Không thể tải thông tin đội bóng.</p>
             </div>
           ) : (
-            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              <div
-                className="w-32 h-32 md:w-48 md:h-48 rounded-full flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-2xl shrink-0 border-4 border-white/10 animate-fade-in"
-                style={{ backgroundColor: kit.bg, color: kit.text }}
-              >
-                {initial}
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
+              {/* Kích thước cũ (w-48 h-48 ở desktop) quá to so với nội dung còn lại,
+                  và không có nhánh hiển thị team.logo — luôn render initials dù
+                  BE đã trả logo. Giờ ưu tiên logo thật, fallback về kit màu áo. */}
+              <div className="w-20 h-20 md:w-28 md:h-28 rounded-full shadow-2xl shrink-0 border-4 border-white/10 animate-fade-in overflow-hidden bg-navy-dark">
+                {team?.logo ? (
+                  <img src={team.logo} alt={homeName} className="w-full h-full object-cover" />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center font-black text-3xl md:text-4xl"
+                    style={{ backgroundColor: kit.bg, color: kit.text }}
+                  >
+                    {initial}
+                  </div>
+                )}
               </div>
 
               <div className="text-center md:text-left space-y-4 max-w-3xl">
@@ -354,7 +377,7 @@ export default function TeamDetail() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 lg:px-8 space-y-12 max-w-6xl">
+      <div className="container mx-auto px-4 lg:px-8 space-y-8 max-w-6xl">
 
         {/* Stats */}
         {!isLoading && !hasError && (

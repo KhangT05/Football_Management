@@ -84,7 +84,10 @@ const normalizePlayer = (tp) => ({
   id: tp.id,
   player_id: tp.player_id ?? tp.player?.id,
   user_id: tp.player?.user_id ?? tp.player?.user?.id,
-  name: tp.player?.user?.name ?? tp.player?.name ?? tp.name ?? `Cầu thủ #${tp.id}`,
+  // FIX: || + trim thay vì ?? — user.name = "" trước đây không fallback,
+  // khiến pill trên sơ đồ đội hình render tên rỗng (ảnh chụp).
+  name: (tp.player?.user?.name || tp.player?.name || tp.name || '').trim()
+    || `Cầu thủ #${tp.id}`,
   email: tp.player?.user?.email ?? null,
   number: tp.jersey_number ?? tp.number ?? 0,
   position: tp.position ?? 'MID',
@@ -93,6 +96,108 @@ const normalizePlayer = (tp) => ({
   role: tp.role ?? 'player',
   avatar: tp.player?.user?.avatar ?? tp.player?.avatar ?? null,
 });
+
+// ── Sơ đồ đội hình tổng quan cho tab "Đội hình" ─────────────
+// Khác LineupBuilderModal (kéo-thả để chốt đội hình cho 1 trận cụ thể):
+// đây chỉ là overview read-only của toàn bộ roster, dùng cùng cách đặt vị
+// trí theo % chiều cao thật trên sân như TeamDetail.jsx (không chia đều 4
+// hàng cố định — hàng nào không có cầu thủ thì không chiếm chỗ).
+//
+// TECH DEBT: logic dot + pitch này hiện lặp lại 3 nơi (TeamDetail.jsx,
+// PitchFormation.jsx, và đây). Nên gộp về 1 component dùng chung
+// (vd trong matchShared.js) khi có thời gian refactor — rủi ro thấp vì cả
+// 3 chỗ đều thuần hiển thị, không có state ràng buộc lẫn nhau.
+// FIX (đội hình dính liền): trước đây các hàng cách nhau 14/42/70/90% —
+// đủ khi tên 1 dòng, nhưng khi tên xuống 2 dòng (fix bên dưới) thì mỗi
+// hàng cao hơn → các hàng đè/dính lên nhau. Giãn lại khoảng cách.
+const PITCH_ROW_TOP = { FW: '10%', MID: '37%', DEF: '64%', GK: '92%' };
+
+function RosterPitchDot({ player, kit, onClick }) {
+  const isCap = player.role === 'captain';
+  const isVice = player.role === 'vice_captain';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${player.name} — bấm để xem/sửa`}
+      className="flex flex-col items-center gap-1 w-20 sm:w-24 shrink-0 group cursor-pointer"
+    >
+      <div className="relative">
+        <div
+          className="w-9 h-9 rounded-full border-2 flex items-center justify-center font-black text-xs shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40"
+          style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
+        >
+          {player.number || '?'}
+        </div>
+        {isCap && (
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">
+            C
+          </span>
+        )}
+        {isVice && !isCap && (
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">
+            P
+          </span>
+        )}
+      </div>
+      {/* FIX (không đọc được tên — lần 2): bản trước dùng chung "line-clamp-2"
+          với "block" trên cùng 1 span. line-clamp cần display:-webkit-box để
+          hoạt động, còn "block" ép display:block — 2 class này đè lẫn nhau
+          tùy thứ tự Tailwind sinh CSS, và trong trường hợp này chữ bị ẩn mất
+          hoàn toàn (chỉ còn thanh nền đen trống, đúng như ảnh chụp lỗi).
+          Giờ bỏ hẳn line-clamp, chỉ cho chữ xuống dòng tự nhiên (không giới
+          hạn số dòng) — đảm bảo luôn hiện được chữ, đổi lại pill có thể cao
+          hơn 1 chút với tên dài (đã giãn khoảng cách hàng ở PITCH_ROW_TOP để
+          bù lại). title vẫn giữ để xem full tên khi hover trên desktop. */}
+      <span
+        className="text-[9px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80 inline-block max-w-full break-words group-hover:bg-black/95 transition-colors"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+      >
+        {player.name}
+      </span>
+    </button>
+  );
+}
+
+function RosterPitch({ players, kit, onSelectPlayer }) {
+  const grouped = players.reduce((acc, p) => {
+    const pos = normalizePosition(p.position);
+    const key = ['GK', 'DEF', 'MID', 'FW'].includes(pos) ? pos : 'MID';
+    (acc[key] ||= []).push(p);
+    return acc;
+  }, {});
+  const rows = ['FW', 'MID', 'DEF', 'GK'].filter(pos => grouped[pos]?.length);
+
+  if (rows.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 rounded-2xl border border-dashed border-navy-light text-gray-500 text-sm font-medium text-center px-4">
+        Chưa có cầu thủ để hiển thị sơ đồ
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20"
+      style={{ minHeight: rows.length <= 2 ? 280 : 420 }}
+    >
+      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/50 via-emerald-950/60 to-emerald-900/50" />
+      <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
+      <div className="absolute inset-3 border border-white/10 rounded-lg pointer-events-none" />
+      {rows.map(pos => (
+        <div
+          key={pos}
+          className="absolute left-0 right-0 flex flex-wrap justify-center gap-4 px-3"
+          style={{ top: PITCH_ROW_TOP[pos], transform: 'translateY(-50%)' }}
+        >
+          {grouped[pos].map(p => (
+            <RosterPitchDot key={p.id} player={p} kit={kit} onClick={() => onSelectPlayer?.(p)} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ─── Main Component ────────────────────────────────────────
 export default function MyTeam() {
@@ -118,6 +223,14 @@ export default function MyTeam() {
     () => teamDetail ?? teams.find(t => t.id === activeTeamId) ?? null,
     [teamDetail, teams, activeTeamId],
   );
+
+  // Kit màu áo dùng chung cho header + sơ đồ đội hình — fallback về xanh
+  // dương mặc định khi team chưa có màu áo (jersey chưa upsert / BE chưa trả).
+  const teamKit = useMemo(() => ({
+    bg: activeTeam?.colorHex || '#1d4ed8',
+    text: '#ffffff',
+    border: 'rgba(255,255,255,0.5)',
+  }), [activeTeam?.colorHex]);
 
   // ── UI State ─────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('roster');
@@ -277,7 +390,8 @@ export default function MyTeam() {
       const basicTeams = myTeams.map(t => ({
         id: t.id,
         name: t.name,
-        emoji: '🛡️',
+        logo: t.logo ?? null,          // NEW — dùng logo thật nếu có
+        colorHex: t.color_hex ?? '#334155', // NEW — fallback màu khi chưa có logo
         status: t.is_active ? 'approved' : 'pending',
       }));
       setTeams(basicTeams);
@@ -588,12 +702,21 @@ export default function MyTeam() {
                 <button
                   key={t.id}
                   onClick={() => handleSwitchTeam(t.id)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${t.id === activeTeamId
+                  className={`snap-start shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${t.id === activeTeamId
                     ? 'bg-neon/10 border-neon/40 text-neon shadow-[0_0_15px_rgba(57,255,20,0.2)]'
-                    : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white hover:-translate-y-0.5'
+                    : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white'
                     }`}
                 >
-                  <span className="text-xl">{t.emoji}</span>
+                  {t.logo ? (
+                    <img src={t.logo} alt={t.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+                      style={{ backgroundColor: t.colorHex }}
+                    >
+                      {getInitials(t.name)[0]}
+                    </div>
+                  )}
                   <span className="truncate max-w-[140px]">{t.name}</span>
                   {t.id === activeTeamId && (
                     <span className="w-2 h-2 rounded-full bg-neon shadow-[0_0_6px_rgba(57,255,20,0.6)] shrink-0" />
@@ -686,9 +809,24 @@ export default function MyTeam() {
               </>
             ) : (
               <>
-                <div className="w-20 h-20 shrink-0 bg-navy-dark/80 backdrop-blur-md border-[3px] border-neon/50 rounded-3xl flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(57,255,20,0.2)] relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-neon/10 group-hover:bg-neon/20 transition-colors duration-300" />
-                  <span className="relative z-10 group-hover:scale-110 transition-transform duration-300">{activeTeam?.emoji}</span>
+                {/* Logo thật nếu có, fallback về initials tô màu áo (colorHex) —
+                    trước đây luôn render emoji 🛡️ tĩnh, bỏ qua cả logo lẫn màu áo
+                    dù teamDetail đã có sẵn 2 field này. */}
+                <div className="w-20 h-20 shrink-0 bg-navy-dark/80 backdrop-blur-md border border-neon/40 rounded-3xl shadow-[0_0_30px_rgba(57,255,20,0.2)] relative group overflow-hidden">
+                  {activeTeam?.logo ? (
+                    <img
+                      src={activeTeam.logo}
+                      alt={activeTeam.name}
+                      className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0 flex items-center justify-center font-black text-2xl text-white group-hover:scale-110 transition-transform duration-300"
+                      style={{ backgroundColor: teamKit.bg }}
+                    >
+                      {getInitials(activeTeam?.name || '')}
+                    </div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center flex-wrap gap-2 mb-1.5">
@@ -860,174 +998,197 @@ export default function MyTeam() {
             )}
 
             {/* ─── Roster Tab ───────────────────────────── */}
+            {/* Layout mới: sơ đồ đội hình (trái) + danh sách/quản lý cầu thủ
+                (phải) — trước đây chỉ có bảng danh sách, không có overview
+                trực quan theo vị trí trên sân. Stack theo cột trên < xl,
+                chia 2 cột từ xl trở lên (container này đã nằm trong
+                lg:col-span-2 của grid ngoài nên cần breakpoint rộng hơn để
+                tránh bóp méo 2 cột con). */}
             {activeTab === 'roster' && (
-              <>
-                {!isLoading && (
-                  <div className="flex gap-2 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
-                    <div className="relative flex-1 min-w-0">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 shrink-0" />
-                      <input
-                        type="text"
-                        placeholder="Tìm tên hoặc số áo..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all"
-                      />
-                    </div>
-                    <div className="relative shrink-0">
-                      <select
-                        value={sortField}
-                        onChange={e => setSortField(e.target.value)}
-                        className="pl-3 pr-8 py-3 bg-navy-dark border border-navy-light rounded-xl text-white text-sm font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer transition-all"
-                      >
-                        <option value="number">Sắp xếp: Số áo</option>
-                        <option value="name">Sắp xếp: Tên</option>
-                        <option value="goals">Sắp xếp: Bàn thắng</option>
-                      </select>
-                      <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 overflow-hidden">
-                  <div className="px-6 py-5 border-b border-navy-light/50 flex items-center justify-between bg-navy-dark/40">
-                    <h2 className="text-lg font-black text-white flex items-center gap-2.5 tracking-tight">
-                      <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30">
-                        <Users className="w-4 h-4 text-blue-400" />
+                {/* Sơ đồ đội hình */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                    <Trophy className="w-3.5 h-3.5" /> Sơ đồ đội hình
+                    <span className="normal-case font-medium text-gray-600">— bấm vào cầu thủ để xem/sửa</span>
+                  </p>
+                  {isLoading ? (
+                    <div className="skeleton h-72 rounded-2xl" />
+                  ) : (
+                    <RosterPitch players={players} kit={teamKit} onSelectPlayer={openEditModal} />
+                  )}
+                </div>
+
+                {/* Danh sách cầu thủ */}
+                <div className="space-y-4">
+                  {!isLoading && (
+                    <div className="flex gap-2 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
+                      <div className="relative flex-1 min-w-0">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Tìm tên hoặc số áo..."
+                          value={search}
+                          onChange={e => setSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm font-medium transition-all"
+                        />
                       </div>
-                      Danh Sách Cầu Thủ
-                    </h2>
-                    {!isLoading && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-blue-400 bg-navy-dark px-3 py-1.5 rounded-xl border border-navy-light shadow-inner">
-                          {players.length}/20
-                        </span>
-                        {players.length >= 20 && (
-                          <span className="text-xs text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 py-1.5 rounded-xl uppercase tracking-widest whitespace-nowrap hidden sm:block">
-                            Đủ quân
+                      <div className="relative shrink-0">
+                        <select
+                          value={sortField}
+                          onChange={e => setSortField(e.target.value)}
+                          className="pl-3 pr-8 py-3 bg-navy-dark border border-navy-light rounded-xl text-white text-sm font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer transition-all"
+                        >
+                          <option value="number">Sắp xếp: Số áo</option>
+                          <option value="name">Sắp xếp: Tên</option>
+                          <option value="goals">Sắp xếp: Bàn thắng</option>
+                        </select>
+                        <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 overflow-hidden">
+                    <div className="px-6 py-5 border-b border-navy-light/50 flex items-center justify-between bg-navy-dark/40">
+                      <h2 className="text-lg font-black text-white flex items-center gap-2.5 tracking-tight">
+                        <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30">
+                          <Users className="w-4 h-4 text-blue-400" />
+                        </div>
+                        Danh Sách Cầu Thủ
+                      </h2>
+                      {!isLoading && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-blue-400 bg-navy-dark px-3 py-1.5 rounded-xl border border-navy-light shadow-inner">
+                            {players.length}/20
                           </span>
-                        )}
+                          {players.length >= 20 && (
+                            <span className="text-xs text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 py-1.5 rounded-xl uppercase tracking-widest whitespace-nowrap hidden sm:block">
+                              Đủ quân
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left whitespace-nowrap">
+                        <thead>
+                          <tr className="bg-navy-dark/60 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-navy-light/50">
+                            <th className="py-4 px-4 w-14 text-center">
+                              <button onClick={() => setSortField('number')} className="flex items-center justify-center gap-1 w-full hover:text-white transition-colors group">
+                                Số <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                              </button>
+                            </th>
+                            <th className="py-4 px-4">
+                              <button onClick={() => setSortField('name')} className="flex items-center gap-1 hover:text-white transition-colors group">
+                                Cầu thủ <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                              </button>
+                            </th>
+                            <th className="py-4 px-4 text-center">Vị trí</th>
+                            <th className="py-4 px-4 text-center">
+                              <button onClick={() => setSortField('goals')} className="flex items-center justify-center gap-1 w-full hover:text-white transition-colors group">
+                                Bàn <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                              </button>
+                            </th>
+                            <th className="py-4 px-4 text-right">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-navy-light/50">
+                          {isLoading ? (
+                            <><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /></>
+                          ) : paginatedPlayers.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-20 text-center text-gray-500">
+                                <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
+                                <p className="font-bold text-gray-400 text-lg">
+                                  {players.length === 0 ? 'Chưa có cầu thủ nào trong đội' : 'Không tìm thấy cầu thủ'}
+                                </p>
+                                <p className="text-sm mt-1">
+                                  {players.length === 0 ? 'Nhấn "Thêm CT" để thêm cầu thủ đầu tiên!' : 'Thử thay đổi từ khóa tìm kiếm'}
+                                </p>
+                              </td>
+                            </tr>
+                          ) : (
+                            paginatedPlayers.map((player, idx) => (
+                              <tr
+                                key={player.id}
+                                className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
+                                style={{ animationDelay: `${idx * 40}ms` }}
+                              >
+                                <td className="py-5 px-4 text-center">
+                                  <span className="font-black text-2xl text-transparent bg-clip-text bg-linear-to-b from-white to-gray-500">{player.number}</span>
+                                </td>
+                                <td className="py-5 px-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="relative shrink-0">
+                                      <div className="absolute inset-0 bg-blue-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity" />
+                                      {player.avatar ? (
+                                        <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-full bg-navy-dark border-2 border-navy-light relative z-10 object-cover" />
+                                      ) : (
+                                        <div className={`w-10 h-10 rounded-full bg-linear-to-br ${AVATAR_COLORS[(player.id || idx) % AVATAR_COLORS.length]} border-2 border-navy-light flex items-center justify-center font-black text-white text-xs relative z-10`}>
+                                          {getInitials(player.name)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors truncate">{player.name}</p>
+                                      <p className="text-xs font-medium text-gray-500 mt-0.5">
+                                        {player.role === 'captain' && '⭐ Đội trưởng'}
+                                        {player.role === 'vice_captain' && '🔹 Phó đội trưởng'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-5 px-4 text-center"><PosBadge pos={player.position} /></td>
+                                <td className="py-5 px-4 text-center">
+                                  <span className="font-black text-neon text-xl drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+                                    {player.goals > 0 ? player.goals : <span className="text-navy-light font-normal text-base">—</span>}
+                                  </span>
+                                </td>
+                                <td className="py-5 px-4">
+                                  <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-4 sm:group-hover:translate-x-0">
+                                    <button
+                                      onClick={() => openEditModal(player)}
+                                      className="w-9 h-9 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all"
+                                      title="Chỉnh sửa"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => setDeletingPlayer(player)}
+                                      className="w-9 h-9 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                                      title="Xóa"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!isLoading && displayed.length > 0 && (
+                      <div className="px-6 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
+                        <span>Hiển thị <span className="text-white">{displayed.length}</span>/{players.length} cầu thủ</span>
+                        {search && <button onClick={() => setSearch('')} className="text-blue-400 hover:text-blue-300 transition-colors">Xóa bộ lọc</button>}
                       </div>
                     )}
                   </div>
-                  <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left whitespace-nowrap">
-                      <thead>
-                        <tr className="bg-navy-dark/60 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-navy-light/50">
-                          <th className="py-4 px-4 w-14 text-center">
-                            <button onClick={() => setSortField('number')} className="flex items-center justify-center gap-1 w-full hover:text-white transition-colors group">
-                              Số <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                            </button>
-                          </th>
-                          <th className="py-4 px-4">
-                            <button onClick={() => setSortField('name')} className="flex items-center gap-1 hover:text-white transition-colors group">
-                              Cầu thủ <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                            </button>
-                          </th>
-                          <th className="py-4 px-4 text-center">Vị trí</th>
-                          <th className="py-4 px-4 text-center">
-                            <button onClick={() => setSortField('goals')} className="flex items-center justify-center gap-1 w-full hover:text-white transition-colors group">
-                              Bàn <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-                            </button>
-                          </th>
-                          <th className="py-4 px-4 text-right">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-navy-light/50">
-                        {isLoading ? (
-                          <><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /><PlayerRowSkeleton /></>
-                        ) : paginatedPlayers.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="py-20 text-center text-gray-500">
-                              <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
-                              <p className="font-bold text-gray-400 text-lg">
-                                {players.length === 0 ? 'Chưa có cầu thủ nào trong đội' : 'Không tìm thấy cầu thủ'}
-                              </p>
-                              <p className="text-sm mt-1">
-                                {players.length === 0 ? 'Nhấn "Thêm CT" để thêm cầu thủ đầu tiên!' : 'Thử thay đổi từ khóa tìm kiếm'}
-                              </p>
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedPlayers.map((player, idx) => (
-                            <tr
-                              key={player.id}
-                              className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
-                              style={{ animationDelay: `${idx * 40}ms` }}
-                            >
-                              <td className="py-5 px-4 text-center">
-                                <span className="font-black text-2xl text-transparent bg-clip-text bg-linear-to-b from-white to-gray-500">{player.number}</span>
-                              </td>
-                              <td className="py-5 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="relative shrink-0">
-                                    <div className="absolute inset-0 bg-blue-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity" />
-                                    {player.avatar ? (
-                                      <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-full bg-navy-dark border-2 border-navy-light relative z-10 object-cover" />
-                                    ) : (
-                                      <div className={`w-10 h-10 rounded-full bg-linear-to-br ${AVATAR_COLORS[(player.id || idx) % AVATAR_COLORS.length]} border-2 border-navy-light flex items-center justify-center font-black text-white text-xs relative z-10`}>
-                                        {getInitials(player.name)}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors truncate">{player.name}</p>
-                                    <p className="text-xs font-medium text-gray-500 mt-0.5">
-                                      {player.role === 'captain' && '⭐ Đội trưởng'}
-                                      {player.role === 'vice_captain' && '🔹 Phó đội trưởng'}
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-5 px-4 text-center"><PosBadge pos={player.position} /></td>
-                              <td className="py-5 px-4 text-center">
-                                <span className="font-black text-neon text-xl drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
-                                  {player.goals > 0 ? player.goals : <span className="text-navy-light font-normal text-base">—</span>}
-                                </span>
-                              </td>
-                              <td className="py-5 px-4">
-                                <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-4 sm:group-hover:translate-x-0">
-                                  <button
-                                    onClick={() => openEditModal(player)}
-                                    className="w-9 h-9 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all"
-                                    title="Chỉnh sửa"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeletingPlayer(player)}
-                                    className="w-9 h-9 rounded-xl bg-navy-dark border border-navy-light flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-                                    title="Xóa"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!isLoading && displayed.length > 0 && (
-                    <div className="px-6 py-4 bg-navy-dark/40 border-t border-navy-light/50 text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
-                      <span>Hiển thị <span className="text-white">{displayed.length}</span>/{players.length} cầu thủ</span>
-                      {search && <button onClick={() => setSearch('')} className="text-blue-400 hover:text-blue-300 transition-colors">Xóa bộ lọc</button>}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center">
+                      <Pagination
+                        currentPage={safePage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        itemsPerPage={itemsPerPage}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                      />
                     </div>
                   )}
                 </div>
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-6">
-                    <Pagination
-                      currentPage={safePage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      itemsPerPage={itemsPerPage}
-                      onItemsPerPageChange={handleItemsPerPageChange}
-                    />
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
 
@@ -1061,7 +1222,7 @@ export default function MyTeam() {
                       label: 'Màu áo',
                       value: (
                         <div className="flex items-center gap-2 bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light">
-                          <div className="w-4 h-4 rounded-full border-2 border-white/20 shadow-sm shrink-0" style={{ backgroundColor: activeTeam?.colorHex }} />
+                          <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0" style={{ backgroundColor: activeTeam?.colorHex }} />
                           <span className="font-bold text-white text-sm truncate max-w-[90px]">{activeTeam?.primaryColor}</span>
                         </div>
                       ),

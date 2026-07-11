@@ -65,6 +65,7 @@ const tournamentRuleBaseSchema = z.object({
     teams_advance_per_group: z.number().int().min(1).default(2),
     round_robin_stages: z.number().int().min(0).max(50).default(1),
     format: z.enum(SEASON_FORMATS).default("round_robin_knockout"),
+    is_active: z.boolean().default(true),
     tiebreaker_order: z.array(z.enum(TIEBREAKER_OPTIONS)).min(1).default([
         "goal_diff",
         "goals_scored",

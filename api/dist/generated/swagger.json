@@ -600,6 +600,9 @@
                         },
                         "type": "array"
                     },
+                    "is_active": {
+                        "type": "boolean"
+                    },
                     "format": {
                         "type": "string",
                         "enum": [
@@ -696,6 +699,9 @@
                             ]
                         },
                         "type": "array"
+                    },
+                    "is_active": {
+                        "type": "boolean"
                     },
                     "format": {
                         "type": "string",
