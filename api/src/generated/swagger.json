@@ -5027,6 +5027,14 @@
 						"type": "number",
 						"format": "double",
 						"nullable": true
+					},
+					"matchStatus": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MatchStatus"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -5038,7 +5046,8 @@
 					"seededHomeTeamId",
 					"seededAwayTeamId",
 					"sourceASlotId",
-					"sourceBSlotId"
+					"sourceBSlotId",
+					"matchStatus"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5113,6 +5122,42 @@
 			},
 			"AutoSeedKnockoutRequestDto": {
 				"$ref": "#/components/schemas/infer_typeofautoSeedKnockoutRequestSchema_"
+			},
+			"infer_typeofswapSeedsRequestSchema_": {
+				"properties": {
+					"sideB": {
+						"type": "string",
+						"enum": [
+							"home",
+							"away"
+						]
+					},
+					"slotIdB": {
+						"type": "number",
+						"format": "double"
+					},
+					"sideA": {
+						"type": "string",
+						"enum": [
+							"home",
+							"away"
+						]
+					},
+					"slotIdA": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"sideB",
+					"slotIdB",
+					"sideA",
+					"slotIdA"
+				],
+				"type": "object"
+			},
+			"SwapSeedsRequestDto": {
+				"$ref": "#/components/schemas/infer_typeofswapSeedsRequestSchema_"
 			},
 			"JerseyType": {
 				"type": "string",
@@ -12963,6 +13008,98 @@
 						}
 					}
 				}
+			}
+		},
+		"/seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds": {
+			"post": {
+				"operationId": "SwapSeeds",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"description": "Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa\r\ncó trận liên quan kết thúc (chặn ở service).",
+				"tags": [
+					"Knockout"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SwapSeedsRequestDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/{seasonId}/phases/{phaseId}/knockout/confirm": {
+			"post": {
+				"operationId": "ConfirmBracket",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"description": "Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.",
+				"tags": [
+					"Knockout"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
 			}
 		},
 		"/jerseys/season-teams/{seasonTeamId}": {

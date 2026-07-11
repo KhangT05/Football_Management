@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Trophy, AlertTriangle, Loader2, X, Plus, CalendarClock, Zap, Info } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { knockoutApi, seasonApi, seasonTeamApi } from '../../api';
@@ -17,6 +17,23 @@ const SELECT_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500';
 
+// Nhận diện message tiếng Việt (có dấu) — dùng để lọc message backend trước
+// khi đẩy ra toast. Các AppError nghiệp vụ của BE thường viết tiếng Việt có
+// dấu, nhưng lỗi validate framework-level (Zod/Joi kiểu "is not allowed",
+// "is required") hoặc lỗi network (err.message dạng "Network Error") là
+// tiếng Anh thuần — không nên hiện thẳng ra cho người dùng.
+const VIETNAMESE_DIACRITICS_REGEX = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
+const isLikelyVietnameseMessage = (msg) => typeof msg === 'string' && VIETNAMESE_DIACRITICS_REGEX.test(msg);
+
+// Helper dùng chung cho mọi catch-block hiển thị lỗi API ra toast: ưu tiên
+// message tiếng Việt cụ thể từ backend, nếu message là tiếng Anh (lỗi
+// validate framework-level, lỗi network, v.v.) thì luôn dùng fallback tiếng
+// Việt — không bao giờ để lộ text tiếng Anh thô ra UI.
+const getFriendlyErrorMessage = (err, fallback) => {
+  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
+  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
+};
+
 // Khớp helper.match.helper.ts::nextPowerOf2 phía BE — dùng để PREVIEW
 // bracket size / số bye cho user trước khi submit, KHÔNG dùng để chặn submit
 // (validation thật nằm ở BE, xem generateKnockoutBracket()._buildBracketInPhase).
@@ -25,14 +42,41 @@ function nextPowerOf2(n) {
   return Math.pow(2, Math.ceil(Math.log2(n)));
 }
 
-function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
+// Rút gọn Date|ISO string về "YYYY-MM-DD" cho <input type="date"> — dùng để
+// clamp khoảng ngày xếp lịch knockout trong khung season, cùng logic với
+// GenerateScheduleModal bên ScheduleTab (tránh gửi ngày ngoài season.end_date
+// khiến BE trả lỗi "dateRangeEnd vượt quá season.end_date").
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const iso = value instanceof Date ? value.toISOString() : String(value);
+  return iso.slice(0, 10);
+};
+
+const PHASE_STORAGE_KEY = (seasonId) => `knockout:lastPhase:${seasonId}`;
+
+function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled }) {
   const toast = useToastStore();
+  const seasonStartStr = toDateInputValue(season?.start_date);
+  const seasonEndStr = toDateInputValue(season?.end_date);
+  const seasonHasDateRange = Boolean(seasonStartStr && seasonEndStr);
+
   const [venueIds, setVenueIds] = useState([]);
   const [matchTimes, setMatchTimes] = useState([]);
   const [timeInput, setTimeInput] = useState('');
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // FIX: prefill + kẹp dateRangeStart/End trong đúng khung season ngay khi
+  // mở modal — trước đây để trống, cho phép chọn ngày ngoài season, BE mới
+  // trả lỗi (`dateRangeEnd vượt quá season.end_date` / `dateRangeStart
+  // trước season.start_date`) khiến người dùng chỉ biết sau khi submit.
+  useEffect(() => {
+    if (!seasonHasDateRange) return;
+    setDateRangeStart(prev => (!prev || prev < seasonStartStr || prev > seasonEndStr) ? seasonStartStr : prev);
+    setDateRangeEnd(prev => (!prev || prev > seasonEndStr || prev < seasonStartStr) ? seasonEndStr : prev);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonStartStr, seasonEndStr, seasonHasDateRange]);
 
   const addTimeSlot = () => {
     if (!timeInput) return;
@@ -50,6 +94,10 @@ function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
     if (dateRangeStart && dateRangeEnd && dateRangeStart > dateRangeEnd) {
       return toast.error('Ngày bắt đầu phải trước ngày kết thúc');
     }
+    // FIX: chặn ngay ở FE thay vì để BE trả lỗi rồi mới biết.
+    if (seasonHasDateRange && ((dateRangeStart && dateRangeStart < seasonStartStr) || (dateRangeEnd && dateRangeEnd > seasonEndStr))) {
+      return toast.error(`Khoảng ngày phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr})`);
+    }
 
     setSubmitting(true);
     try {
@@ -62,7 +110,7 @@ function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
       toast.success(`Đã xếp lịch ${result?.scheduledCount ?? ''} trận`.trim());
       onScheduled();
     } catch (err) {
-      toast.error(err?.response?.data?.message || err.message || 'Lỗi xếp lịch knockout');
+      toast.error(getFriendlyErrorMessage(err, 'Lỗi xếp lịch knockout, vui lòng kiểm tra lại thông tin và thử lại.'));
     } finally {
       setSubmitting(false);
     }
@@ -84,6 +132,13 @@ function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
           <p className="text-xs text-gray-500">
             Trận đã xếp lịch trước đó sẽ giữ nguyên, không bị ghi đè — có thể bấm xếp lịch nhiều lần an toàn.
           </p>
+
+          {!seasonHasDateRange && (
+            <p className="text-xs text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+              Mùa giải chưa có ngày bắt đầu/kết thúc — không thể giới hạn khoảng ngày xếp lịch. Vui lòng cập
+              nhật thông tin mùa giải trước.
+            </p>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1">Giờ thi đấu</label>
@@ -140,24 +195,30 @@ function ScheduleBracketModal({ phaseId, venues, onClose, onScheduled }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-400 mb-1">
-                Từ ngày <span className="text-gray-600">(mặc định = season)</span>
+                Từ ngày {seasonHasDateRange && <span className="text-gray-600">({seasonStartStr} → {seasonEndStr})</span>}
               </label>
               <input
                 type="date"
                 value={dateRangeStart}
+                min={seasonStartStr || undefined}
+                max={dateRangeEnd || seasonEndStr || undefined}
+                disabled={!seasonHasDateRange}
                 onChange={e => setDateRangeStart(e.target.value)}
-                className={`${SELECT_INPUT_CLASS} w-full scheme-dark`}
+                className={`${SELECT_INPUT_CLASS} w-full scheme-dark disabled:opacity-50`}
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-400 mb-1">
-                Đến ngày <span className="text-gray-600">(mặc định = season)</span>
+                Đến ngày {seasonHasDateRange && <span className="text-gray-600">({seasonStartStr} → {seasonEndStr})</span>}
               </label>
               <input
                 type="date"
                 value={dateRangeEnd}
+                min={dateRangeStart || seasonStartStr || undefined}
+                max={seasonEndStr || undefined}
+                disabled={!seasonHasDateRange}
                 onChange={e => setDateRangeEnd(e.target.value)}
-                className={`${SELECT_INPUT_CLASS} w-full scheme-dark`}
+                className={`${SELECT_INPUT_CLASS} w-full scheme-dark disabled:opacity-50`}
               />
             </div>
           </div>
@@ -200,38 +261,52 @@ export default function KnockoutUI({ seasonId }) {
 
   const [availablePhases, setAvailablePhases] = useState([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
+  const [season, setSeason] = useState(null);
   const [bracketData, setBracketData] = useState(null);
   const [loadingBracket, setLoadingBracket] = useState(false);
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     fetchVenues();
   }, [fetchVenues]);
 
-  // Chỉ còn trách nhiệm knockout phases. Groups derive từ seasonTeams
-  // (xem fetchData bên dưới) — season.getById không nested groups per phase.
+  // FIX (mất bracket sau F5): bản cũ chỉ auto-select phase khi
+  // `knockoutPhases.length === 1` — season có từ 2 phase knockout trở lên
+  // (rất dễ xảy ra sau vài lần test/tạo) thì sau khi F5 không phase nào
+  // được chọn -> bracketData = null -> "Chưa có dữ liệu sơ đồ", dù dữ liệu
+  // vẫn còn nguyên trên server. Giờ ưu tiên khôi phục lựa chọn gần nhất từ
+  // sessionStorage (theo seasonId); nếu không có / phase đó không còn tồn
+  // tại nữa, fallback chọn phase MỚI NHẤT (id lớn nhất) thay vì bỏ trống.
   const refreshPhases = async () => {
     const res = await seasonApi.getById(seasonId);
     const seasonRes = typeof res?.status === 'boolean' ? res.data : res;
+    setSeason(seasonRes);
     const phases = seasonRes?.phases ?? [];
     const knockoutPhases = phases.filter(p => p.format === 'knockout');
     setAvailablePhases(knockoutPhases);
+
+    if (knockoutPhases.length > 0) {
+      const savedId = Number(sessionStorage.getItem(PHASE_STORAGE_KEY(seasonId)));
+      const savedStillExists = knockoutPhases.some(p => p.id === savedId);
+      if (savedStillExists) {
+        setSelectedPhaseId(savedId);
+      } else {
+        const latest = [...knockoutPhases].sort((a, b) => b.id - a.id)[0];
+        setSelectedPhaseId(latest.id);
+      }
+    }
     return knockoutPhases;
   };
 
   // FIX: SeasonTeam.group_id trỏ thẳng Group (schema), nên groups derive
   // trực tiếp từ seasonTeams đã fetch, không cần call thêm endpoint nào.
-  // Trước đó group data hoặc không được đọc (season.getById không có nested
-  // groups), hoặc phải đi qua getStandings/groupApi (N+1, sai domain).
   const deriveGroupsFromSeasonTeams = (seasonTeams) => {
     const groupMap = new Map();
     seasonTeams.forEach(st => {
-      if (st.group_id == null) return; // team chưa gán bảng -> không phải seed candidate cho standing mode
+      if (st.group_id == null) return;
       if (!groupMap.has(st.group_id)) {
-        // ASSUMPTION: seasonTeamApi.getAll include st.group (name). Nếu
-        // withRelations không include group, fallback "Bảng {id}" vẫn chạy
-        // được, chỉ mất label đẹp — verify bằng console.log(seasonTeams[0]).
         groupMap.set(st.group_id, {
           id: st.group_id,
           name: st.group?.name ?? `Bảng ${st.group_id}`,
@@ -241,38 +316,55 @@ export default function KnockoutUI({ seasonId }) {
     return Array.from(groupMap.values());
   };
 
+  // FIX (root cause 409 CONFLICT "2 seed trỏ cùng 1 team"): season_team có
+  // thể chứa nhiều dòng cùng team_id (đội bị đăng ký trùng — data issue,
+  // hoặc do doi-transfer giữa group). Bản cũ hiển thị thẳng từng dòng
+  // season_team làm checkbox riêng, key={st.team_id} bị TRÙNG giữa các dòng
+  // trùng team, khiến React xử lý state không nhất quán và có thể đẩy cùng
+  // 1 teamId vào seededTeamIds nhiều lần — BE nhận seeds trùng teamId,
+  // resolveSeeds() ném CONFLICT ngay cả khi người dùng chỉ tick "8 đội
+  // khác nhau" theo mắt thường. Dedupe NGAY tại nguồn — theo team_id, giữ
+  // dòng season_team đầu tiên — để danh sách hiển thị và state luôn nhất
+  // quán 1-đội-1-checkbox.
+  const dedupeByTeamId = (seasonTeams) => {
+    const seen = new Set();
+    const result = [];
+    for (const st of seasonTeams) {
+      if (seen.has(st.team_id)) continue;
+      seen.add(st.team_id);
+      result.push(st);
+    }
+    return result;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const knockoutPhases = await refreshPhases();
-        if (knockoutPhases.length === 1) setSelectedPhaseId(knockoutPhases[0].id);
+        await refreshPhases();
 
         const teamRes = await seasonTeamApi.getAll({ season_id: seasonId, per_page: 500 });
         const allTeams = typeof teamRes?.status === 'boolean' ? teamRes.data : teamRes;
         const seasonTeams = (Array.isArray(allTeams?.data) ? allTeams.data : [])
           .filter(st => String(st.season_id) === String(seasonId) && st.status === 'approved');
 
-        setAvailableTeams(seasonTeams);
-        setAvailableGroups(deriveGroupsFromSeasonTeams(seasonTeams));
+        const dedupedTeams = dedupeByTeamId(seasonTeams);
+        if (dedupedTeams.length !== seasonTeams.length) {
+          console.warn(
+            `[KnockoutUI] Phát hiện ${seasonTeams.length - dedupedTeams.length} season_team trùng team_id ` +
+            `— đã lọc bớt để tránh lỗi CONFLICT khi tạo bracket. Nên kiểm tra lại dữ liệu đăng ký đội.`,
+          );
+        }
+
+        setAvailableTeams(dedupedTeams);
+        setAvailableGroups(deriveGroupsFromSeasonTeams(dedupedTeams));
       } catch (err) {
         console.error('Error fetching knockout data:', err);
       }
     };
     if (seasonId) fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonId]);
 
-  // FIX: KnockoutService.getBracket() trả THẲNG một mảng BracketSlotNode[]
-  // (slotId, round, slotNumber, matchId, isBye, seededHomeTeamId,
-  // seededAwayTeamId, sourceASlotId, sourceBSlotId) — KHÔNG có field
-  // `.matches`, và mỗi node cũng KHÔNG có `scheduled_at`. Trước đây code
-  // set bracketData = payload (mảng) rồi lại đọc bracketData?.matches ở
-  // chỗ khác -> luôn undefined -> unscheduledCount luôn = 0 -> nút "Xếp
-  // lịch" không bao giờ hiện dù bracket vừa tạo chưa có sân/giờ.
-  // Không có scheduled_at trong response nên KHÔNG thể tính chính xác số
-  // trận "chưa xếp lịch" ở client. Giải pháp đúng: đếm số slot round 1
-  // không phải bye (đây là các trận thực sự cần xếp lịch khi vừa generate),
-  // và luôn cho phép mở modal xếp lịch — backend tự bỏ qua trận đã có lịch
-  // (xem comment "không bị ghi đè" trong modal).
   const fetchBracket = async (phaseId) => {
     if (!phaseId) return;
     setLoadingBracket(true);
@@ -289,8 +381,11 @@ export default function KnockoutUI({ seasonId }) {
   };
 
   useEffect(() => {
-    if (selectedPhaseId) fetchBracket(selectedPhaseId);
-  }, [selectedPhaseId]);
+    if (selectedPhaseId) {
+      fetchBracket(selectedPhaseId);
+      sessionStorage.setItem(PHASE_STORAGE_KEY(seasonId), String(selectedPhaseId));
+    }
+  }, [selectedPhaseId, seasonId]);
 
   const buildStandingSeeds = (configs) => {
     const maxTopN = Math.max(0, ...configs.map(c => c.topN));
@@ -315,17 +410,12 @@ export default function KnockoutUI({ seasonId }) {
   };
 
   const handleGenerate = async () => {
+    // FIX: dedupe seed teamId trước khi build payload — lưới an toàn cuối
+    // cùng, kể cả nếu availableTeams vẫn còn sót trùng vì lý do nào khác.
     const seeds = seedMode === 'manual'
-      ? seededTeamIds.map(teamId => ({ kind: 'manual', teamId }))
+      ? [...new Set(seededTeamIds)].map(teamId => ({ kind: 'manual', teamId }))
       : buildStandingSeeds(groupConfigs);
 
-    // FIX: bỏ chặn "seeds.length phải nằm trong [2,4,8,16]". Service thật
-    // (generateKnockoutBracket -> _buildBracketInPhase) tự tính
-    // nextPowerOf2(seeds.length) và tự tạo bye slot cho phần dư — nghĩa là
-    // 3, 5, 6, 7, 9..15 đội... đều hợp lệ, không cần đúng luỹ thừa 2. Chặn
-    // cứng như cũ chặn nhầm rất nhiều trường hợp hợp lệ. Chỉ cần seeds >= 2;
-    // nếu size sau khi làm tròn không map được PhaseType (vd quá lớn), BE
-    // sẽ trả VALIDATION_ERROR rõ ràng và mình hiện toast.error như cũ.
     if (seeds.length < 2) return toast.error('Cần ít nhất 2 seed');
 
     setGenerating(true);
@@ -340,8 +430,9 @@ export default function KnockoutUI({ seasonId }) {
 
       if (result?.warnings?.length) {
         result.warnings.forEach(w => {
-          if (toast.info) toast.info(w);
-          else if (toast.warning) toast.warning(w);
+          const friendlyWarning = isLikelyVietnameseMessage(w) ? w : 'Có cảnh báo khi tạo bracket, vui lòng kiểm tra lại sơ đồ.';
+          if (toast.info) toast.info(friendlyWarning);
+          else if (toast.warning) toast.warning(friendlyWarning);
           else console.warn('[Knockout warning]', w);
         });
       }
@@ -352,26 +443,54 @@ export default function KnockoutUI({ seasonId }) {
         fetchBracket(newPhaseId);
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || err.message || 'Lỗi tạo knockout');
+      // FIX: nếu backend trả đúng lỗi "2 seed trỏ cùng 1 team", diễn giải
+      // rõ ràng hơn cho admin thay vì hiện nguyên message kỹ thuật — kèm
+      // gợi ý hành động cụ thể thay vì chỉ báo lỗi suông. Mọi trường hợp
+      // khác đều đi qua getFriendlyErrorMessage để không lộ text tiếng Anh.
+      const rawMessage = err?.response?.data?.body?.message || err?.response?.data?.message || err.message || '';
+      if (rawMessage.includes('trỏ cùng 1 team')) {
+        toast.error('Có 2 đội trùng nhau trong danh sách seed (khả năng do dữ liệu đăng ký đội bị trùng) — bỏ chọn rồi chọn lại, hoặc liên hệ kỹ thuật kiểm tra season_team.');
+      } else {
+        toast.error(getFriendlyErrorMessage(err, 'Lỗi tạo sơ đồ knockout, vui lòng kiểm tra lại thông tin và thử lại.'));
+      }
     } finally {
       setGenerating(false);
     }
   };
 
+  const handleSwapSeeds = async (source, target) => {
+    try {
+      await knockoutApi.swapSeeds(selectedPhaseId, {
+        slotIdA: source.slotId, sideA: source.side,
+        slotIdB: target.slotId, sideB: target.side,
+      });
+      toast.success('Đã đổi nhánh đấu');
+      fetchBracket(selectedPhaseId);
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi đổi nhánh — có thể trận đã diễn ra hoặc bracket đã xác nhận.'));
+    }
+  };
+
+  const handleConfirmBracket = async () => {
+    setConfirming(true);
+    try {
+      await knockoutApi.confirmBracket(selectedPhaseId);
+      toast.success('Đã xác nhận sơ đồ knockout');
+      fetchBracket(selectedPhaseId);
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xác nhận sơ đồ, vui lòng thử lại.'));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   const currentSeedCount = seedMode === 'manual'
-    ? seededTeamIds.length
+    ? new Set(seededTeamIds).size
     : buildStandingSeeds(groupConfigs).length;
 
-  // Preview thuần client-side để user thấy trước bracket sẽ to cỡ nào /
-  // có bao nhiêu bye — KHÔNG dùng để chặn submit (xem comment handleGenerate).
   const previewBracketSize = currentSeedCount >= 2 ? nextPowerOf2(currentSeedCount) : null;
   const previewByeCount = previewBracketSize ? previewBracketSize - currentSeedCount : 0;
 
-  // FIX: bracketData giờ là mảng slot thô (đúng shape getBracket() trả về).
-  // Không có scheduled_at nên đếm "trận thật sự tồn tại trong round 1, không
-  // phải bye" làm số hiển thị trên nút — không khẳng định là "chưa xếp lịch"
-  // 100% chính xác (vì có thể đã xếp ở lần trước), chỉ để user biết có trận
-  // cần kiểm tra lịch. Modal xếp lịch tự bỏ qua trận đã có sân/giờ.
   const round1MatchCount = Array.isArray(bracketData)
     ? bracketData.filter(s => s.round === 1 && !s.isBye && s.matchId).length
     : 0;
@@ -427,8 +546,16 @@ export default function KnockoutUI({ seasonId }) {
                         className="accent-amber-500 w-4 h-4 rounded border-gray-600 bg-gray-700"
                         checked={seededTeamIds.includes(st.team_id)}
                         onChange={(e) => {
-                          if (e.target.checked) setSeededTeamIds(prev => [...prev, st.team_id]);
-                          else setSeededTeamIds(prev => prev.filter(id => id !== st.team_id));
+                          if (e.target.checked) {
+                            // FIX: chặn add trùng ngay tại nguồn thay vì chỉ
+                            // dựa vào checked={.includes(...)} để tránh hiện
+                            // trạng thái "checked" nhưng thực chất đã có sẵn
+                            // trong mảng từ trước (double add do event bắn 2
+                            // lần / key trùng — nguyên nhân gốc gây CONFLICT).
+                            setSeededTeamIds(prev => prev.includes(st.team_id) ? prev : [...prev, st.team_id]);
+                          } else {
+                            setSeededTeamIds(prev => prev.filter(id => id !== st.team_id));
+                          }
                         }}
                       />
                       <span className="text-sm text-gray-300">{team?.name || `Team ID: ${st.team_id}`}</span>
@@ -464,12 +591,6 @@ export default function KnockoutUI({ seasonId }) {
                         <>
                           <button type="button" onClick={() => moveGroupConfig(g.id, -1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển lên">↑</button>
                           <button type="button" onClick={() => moveGroupConfig(g.id, 1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển xuống">↓</button>
-                          {/* FIX: trước đây khoá cứng chỉ Top 1 / Top 2 dù
-                              buildStandingSeeds không có giới hạn topN nào —
-                              chỉ cần group có đủ standing. Mở rộng lên Top 6,
-                              đủ dùng cho hầu hết giải; số thật vẫn bị giới
-                              hạn tự nhiên bởi số đội trong bảng (BE sẽ báo
-                              lỗi CONFLICT nếu topN vượt số đội thật). */}
                           <select
                             value={cfg.topN}
                             onChange={(e) => setGroupConfigs(prev => prev.map(c => c.groupId === g.id ? { ...c, topN: Number(e.target.value) } : c))}
@@ -554,7 +675,15 @@ export default function KnockoutUI({ seasonId }) {
               </span>
             </div>
           )}
-          <BracketView slots={bracketData} teams={teams} />
+          <BracketView
+            slots={bracketData}
+            teams={teams}
+            editable
+            confirmed={false /* TODO: đọc từ phase.is_confirmed khi BE có field này, xem ghi chú swap/confirm */}
+            onSwapSeeds={handleSwapSeeds}
+            onConfirm={handleConfirmBracket}
+            confirming={confirming}
+          />
         </div>
       ) : (
         <div className="text-center py-12 bg-navy border border-navy-light rounded-xl border-dashed">
@@ -567,6 +696,7 @@ export default function KnockoutUI({ seasonId }) {
       {scheduleModalOpen && (
         <ScheduleBracketModal
           phaseId={selectedPhaseId}
+          season={season}
           venues={venues}
           onClose={() => setScheduleModalOpen(false)}
           onScheduled={() => {

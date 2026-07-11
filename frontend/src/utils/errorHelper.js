@@ -1,22 +1,22 @@
 /**
- * Helper to parse API errors, especially validation errors, and translate them to Vietnamese.
+ * Helper để parse lỗi API (đặc biệt lỗi validation) và dịch sang tiếng Việt.
  */
 export const parseApiError = (err, defaultMsg = 'Có lỗi xảy ra') => {
   if (!err?.response?.data) return defaultMsg;
 
   const data = err.response.data;
   const errors = data?.details || data?.errors || data?.data?.body || data?.data;
-  
-  // If we have detailed validation errors (e.g., from Laravel, tsoa or NestJS formatted)
+
+  // Nếu có validation errors chi tiết (VD: từ Laravel, tsoa hoặc NestJS)
   if (errors && typeof errors === 'object') {
     const errorMessages = [];
     for (const key in errors) {
       let messages = errors[key];
-      // some NestJS structures have { message: "error string" } for each field
+      // Một số cấu trúc NestJS có { message: "error string" } cho mỗi field
       if (messages && typeof messages === 'object' && messages.message) {
         messages = messages.message;
       }
-      
+
       if (Array.isArray(messages)) {
         errorMessages.push(...messages.map(msg => translateValidationError(key, msg)));
       } else if (typeof messages === 'string') {
@@ -28,24 +28,29 @@ export const parseApiError = (err, defaultMsg = 'Có lỗi xảy ra') => {
     }
   }
 
-  // If message is an array (e.g., NestJS default ValidationPipe)
+  // Nếu message là array (VD: NestJS default ValidationPipe)
   if (Array.isArray(data.message)) {
     return data.message.map(msg => translateValidationError('', msg)).join(' • ');
   }
 
-  // If the message is exactly "Validation failed" but no detailed errors were found
+  // Nếu message đúng bằng "Validation failed" nhưng không tìm thấy chi tiết
   if (data.message === 'Validation failed') {
     return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
   }
 
-  return data.message || defaultMsg;
+  // FIX: trước đây return thẳng data.message — leak raw message tiếng Anh
+  // (framework/network error) ra UI nếu message không rơi vào các nhánh
+  // trên. Áp cùng chuẩn với getFriendlyErrorMessage bên dưới: chỉ tin
+  // message có dấu tiếng Việt (AppError nghiệp vụ từ BE), còn lại luôn
+  // fallback về defaultMsg.
+  return isLikelyVietnameseMessage(data.message) ? data.message : defaultMsg;
 };
 
-// Simple dictionary to translate common validation messages to Vietnamese
+// Dictionary đơn giản để dịch các validation message phổ biến sang tiếng Việt
 function translateValidationError(field, msg) {
   let translated = msg;
-  
-  // Convert field names to Vietnamese if possible
+
+  // Convert field name sang tiếng Việt nếu có thể
   const fieldNames = {
     name: 'Tên',
     email: 'Email',
@@ -71,7 +76,7 @@ function translateValidationError(field, msg) {
   let cleanField = field.replace('body.', '');
   const fName = fieldNames[cleanField.toLowerCase()] || cleanField;
 
-  // Common english validation rules to Vietnamese
+  // Common English validation rules sang tiếng Việt
   if (msg.includes('is required') || msg.includes('should not be empty')) {
     translated = `${fName} không được để trống`;
   } else if (msg.includes('must be an email')) {
@@ -96,6 +101,35 @@ function translateValidationError(field, msg) {
     translated = 'Dữ liệu không hợp lệ';
   }
 
-  // Capitalize first letter
+  // Viết hoa chữ cái đầu
   return translated.charAt(0).toUpperCase() + translated.slice(1);
 }
+// ─── Nhận diện & chuẩn hoá thông báo lỗi hiển thị cho người dùng ───────────
+// Dùng chung cho MỌI nơi hiển thị lỗi API ra toast trong toàn bộ FE admin.
+// Không định nghĩa lại 3 hằng số/hàm này ở từng component nữa — luôn import
+// từ đây.
+//
+// Lý do: AppError nghiệp vụ từ BE (schedule.service.ts, matchresult.service.ts,
+// v.v.) luôn viết tiếng Việt có dấu ("Season phải ở...", "Không đủ slot...").
+// Nhưng lỗi validate framework-level (Zod/Joi, kiểu "\"status\" is an excess
+// property and therefore is not allowed") hoặc lỗi network ("Network Error")
+// là tiếng Anh thuần — không được hiện thẳng những lỗi này ra UI.
+export const VIETNAMESE_DIACRITICS_REGEX = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
+
+export const isLikelyVietnameseMessage = (msg) =>
+  typeof msg === 'string' && VIETNAMESE_DIACRITICS_REGEX.test(msg);
+
+/**
+ * Helper dùng chung cho MỌI catch-block hiển thị lỗi API ra toast: ưu tiên
+ * message tiếng Việt cụ thể từ backend (AppError), nếu message là tiếng Anh
+ * (lỗi validate framework-level, lỗi network, v.v.) thì luôn dùng fallback
+ * tiếng Việt — không bao giờ để lộ text tiếng Anh thô ra UI.
+ *
+ * @param {*} err - error object từ axios catch
+ * @param {string} fallback - message tiếng Việt mặc định khi backend message
+ *                             không đáng tin (không có dấu / không tồn tại)
+ */
+export const getFriendlyErrorMessage = (err, fallback) => {
+  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
+  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
+};

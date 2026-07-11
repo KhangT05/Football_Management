@@ -140,6 +140,20 @@ const todayStr = () => {
   return `${y}-${m}-${day}`;
 };
 
+// Cộng/trừ N ngày vào 1 chuỗi ISO date (YYYY-MM-DD), trả về cũng dạng string.
+// Dùng để tính mốc "trước ngày bắt đầu 1 ngày" cho hạn đăng ký — cùng nguyên tắc
+// tránh Date/timezone drift như todayStr().
+const addDaysStr = (dateStr, delta) => {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, (m || 1) - 1, d || 1);
+  dt.setDate(dt.getDate() + delta);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+};
+
 const initialWizardState = {
   step: 1,
   isSubmitting: false,
@@ -229,7 +243,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
     if (tournamentMode === 'existing' && step === 1 && tournaments.length === 0) {
       tournamentApi.getAll({ per_page: 100, is_active: true })
         .then(res => setTournaments(res.data?.data || res.data || []))
-        .catch(() => toast.error('Lỗi khi tải danh sách giải đấu'));
+        .catch(() => toast.error('Không tải được danh sách giải đấu, vui lòng thử lại.'));
     }
   }, [tournamentMode, step, tournaments.length, toast, setTournaments]);
 
@@ -238,7 +252,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       setIsLoadingRuleTemplates(true);
       tournamentRuleApi.getByTournament(effectiveTournamentId)
         .then(res => setRuleTemplates(res.data?.data || res.data || []))
-        .catch(() => toast.error('Lỗi khi tải danh sách rule template'))
+        .catch(() => toast.error('Không tải được danh sách rule template, vui lòng thử lại.'))
         .finally(() => setIsLoadingRuleTemplates(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,6 +281,11 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   const nextStepAfterRule = () => (hasGroupPhase ? 3 : 4);
   const prevStepBeforeSeason = () => (hasGroupPhase ? 3 : 2);
 
+  // Mốc hạn đăng ký muộn nhất được phép chọn = 1 ngày trước ngày bắt đầu.
+  // Không dùng seasonForm.start_date trực tiếp làm max vì input date "max" là bao gồm (inclusive),
+  // nếu để nguyên start_date thì user vẫn chọn trùng ngày được -> phải trừ đi 1 ngày.
+  const maxRegistrationDate = seasonForm.start_date ? addDaysStr(seasonForm.start_date, -1) : undefined;
+
   const validateStep = () => {
     if (step === 1) {
       if (tournamentMode === 'new' && !tournamentForm.logo) return 'Vui lòng tải logo cho giải đấu';
@@ -278,6 +297,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (ruleMode === 'template' && !selectedRuleId) return 'Vui lòng chọn một rule template làm baseline';
 
       const r = ruleForm;
+      if (willCreateNewRule && !r.name.trim()) return 'Vui lòng nhập tên rule';
       if (r.points_per_win < 0 || r.points_per_draw < 0 || r.points_per_loss < 0) return 'Điểm trận không được âm';
       if (r.min_players_per_team < 1) return 'Số người tối thiểu phải >= 1';
       if (r.max_players_per_team < r.min_players_per_team) return 'Số người tối đa phải >= tối thiểu';
@@ -307,7 +327,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (seasonForm.start_date < todayStr()) return 'Ngày bắt đầu không được ở quá khứ';
       if (seasonForm.registration_deadline < todayStr()) return 'Hạn đăng ký không được ở quá khứ';
 
-      if (seasonForm.registration_deadline > seasonForm.start_date) return 'Hạn đăng ký phải trước hoặc bằng ngày bắt đầu';
+      // Hạn đăng ký phải TRƯỚC ngày bắt đầu, không được trùng ngày (so sánh strict, không dùng >=).
+      if (seasonForm.registration_deadline >= seasonForm.start_date) {
+        return 'Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày với ngày bắt đầu';
+      }
       if (seasonForm.end_date < seasonForm.start_date) return 'Ngày kết thúc phải sau ngày bắt đầu';
       if (!seasonForm.max_teams || Number(seasonForm.max_teams) < 2) return 'Số đội tối đa ít nhất là 2';
     }
@@ -382,6 +405,36 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
     setRuleForm(defaultRuleForm);
   };
 
+  // Đổi ngày bắt đầu -> tự dọn các ngày phụ thuộc nếu chúng không còn hợp lệ,
+  // tránh việc user next qua step 4 rồi mới bị BE/step-validate chặn lại.
+  const handleStartDateChange = (value) => {
+    setSeasonForm(f => {
+      const next = { ...f, start_date: value };
+      if (value && f.end_date && f.end_date < value) {
+        next.end_date = '';
+        toast.warning('Ngày kết thúc đã bị xóa vì trước ngày bắt đầu mới, vui lòng chọn lại.');
+      }
+      if (value && f.registration_deadline && f.registration_deadline >= value) {
+        next.registration_deadline = '';
+        toast.warning('Hạn đăng ký đã bị xóa vì trùng hoặc sau ngày bắt đầu mới, vui lòng chọn lại.');
+      }
+      return next;
+    });
+  };
+
+  // Validate ngay khi chọn hạn đăng ký, không đợi tới lúc bấm "Tiếp tục"/"Hoàn tất".
+  const handleRegistrationDeadlineChange = (value) => {
+    if (value && seasonForm.start_date && value >= seasonForm.start_date) {
+      toast.warning('Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày.');
+      return;
+    }
+    if (value && value < todayStr()) {
+      toast.warning('Hạn đăng ký không được ở quá khứ.');
+      return;
+    }
+    setSeasonForm(f => ({ ...f, registration_deadline: value }));
+  };
+
   const handleSubmit = async () => {
     const err = validateStep();
     if (err) { toast.warning(err); return; }
@@ -404,6 +457,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (willCreateNewRule) {
         const rRes = await tournamentRuleApi.create({
           ...ruleForm,
+          name: ruleForm.name.trim(),
           tournament_id: finalTournamentId,
         });
         finalRuleId = rRes.data?.id || rRes.id;
@@ -432,22 +486,49 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       });
       const finalSeasonId = sRes.data?.id || sRes.id;
 
-      // 4. Generate groups nếu thể thức có vòng bảng
+      // 4. Generate groups nếu thể thức có vòng bảng.
+      // LƯU Ý: season vừa tạo mặc định ở status 'upcoming', trong khi BE chỉ cho phép
+      // tạo/sửa group khi season ở 'registration_open' hoặc 'ongoing' (CONFLICT nếu không).
+      // Nếu user chọn "Mở đăng ký ngay" thì tự động chuyển status trước khi tạo group.
+      // Các bước này không throw ra ngoài để không rollback tournament/rule/season đã tạo thành công.
+      let groupCreationWarning = null;
       if (finalHasGroupPhase && groupCount > 0) {
-        await groupApi.createGroupsBulk(finalSeasonId, groupCount);
+        if (seasonForm.is_registration_open) {
+          try {
+            await seasonApi.updateStatus(finalSeasonId, { status: 'registration_open' });
+          } catch (statusErr) {
+            groupCreationWarning = 'Mùa giải đã được tạo nhưng chưa thể tự động mở đăng ký. Vui lòng vào mùa giải để mở đăng ký và tạo bảng đấu thủ công.';
+          }
+        }
+        if (!groupCreationWarning) {
+          try {
+            await groupApi.createGroupsBulk(finalSeasonId, groupCount);
+          } catch (groupErr) {
+            groupCreationWarning = 'Mùa giải đã được tạo nhưng chưa thể tự động tạo bảng đấu (season chưa ở trạng thái phù hợp). Vui lòng vào mùa giải để tạo bảng đấu thủ công.';
+          }
+        }
       }
 
-      toast.success('Khởi tạo Giải đấu và Mùa giải thành công!');
+      if (groupCreationWarning) {
+        toast.warning(groupCreationWarning);
+      } else {
+        toast.success('Khởi tạo Giải đấu và Mùa giải thành công!');
+      }
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      const isDuplicateName = err?.response?.data?.body?.message?.includes('Unique constraint');
-      toast.apiError(
-        err,
-        isDuplicateName
-          ? 'Tên giải đấu đã tồn tại, vui lòng chọn tên khác.'
-          : 'Đã xảy ra lỗi trong quá trình khởi tạo.'
-      );
+      const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
+      const backendCode = err?.response?.data?.body?.code || err?.response?.data?.code || '';
+      const isDuplicateName = backendMessage.includes('Unique constraint');
+      const isValidationError = backendCode === 'VALIDATION_ERROR' || /validation/i.test(backendMessage);
+
+      let friendlyMessage = 'Đã xảy ra lỗi trong quá trình khởi tạo, vui lòng thử lại.';
+      if (isDuplicateName) {
+        friendlyMessage = 'Tên giải đấu đã tồn tại, vui lòng chọn tên khác.';
+      } else if (isValidationError) {
+        friendlyMessage = 'Dữ liệu nhập chưa hợp lệ, vui lòng kiểm tra lại các trường bắt buộc rồi thử lại.';
+      }
+      toast.apiError(err, friendlyMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -750,7 +831,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
             {showRuleForm && (
               <div className="lg:col-span-3 bg-navy-dark/50 p-5 rounded-2xl border border-navy-light space-y-5 lg:max-h-[560px] lg:overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField label="Tên rule">
+                  <FormField label="Tên rule" required>
                     <input className={INPUT} value={ruleForm.name} onChange={e => setRuleForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Luật chuẩn 2026" />
                   </FormField>
 
@@ -909,7 +990,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                   <input
                     type="date" min={todayMin} className={INPUT}
                     value={seasonForm.start_date}
-                    onChange={e => setSeasonForm(f => ({ ...f, start_date: e.target.value }))}
+                    onChange={e => handleStartDateChange(e.target.value)}
                   />
                 </FormField>
                 <FormField label="Ngày kết thúc" required>
@@ -926,12 +1007,18 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                 </FormField>
                 <FormField label="Hạn chót đăng ký" required>
                   <input
-                    type="date" min={todayMin} max={seasonForm.start_date || undefined} className={INPUT}
+                    type="date" min={todayMin} max={maxRegistrationDate} className={INPUT}
                     value={seasonForm.registration_deadline}
-                    onChange={e => setSeasonForm(f => ({ ...f, registration_deadline: e.target.value }))}
+                    onChange={e => handleRegistrationDeadlineChange(e.target.value)}
                   />
                 </FormField>
               </div>
+              {seasonForm.start_date && (
+                <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  Hạn chót đăng ký phải trước ngày bắt đầu (chậm nhất là {maxRegistrationDate}), không được trùng ngày.
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">

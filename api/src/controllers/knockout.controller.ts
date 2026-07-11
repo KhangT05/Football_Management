@@ -70,4 +70,32 @@ export class KnockoutController extends Controller {
         this.setStatus(201);
         return this.service.generateKnockoutFromStandings({ ...parsed, seasonId });
     }
+    /**
+ * Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa
+ * có trận liên quan kết thúc (chặn ở service).
+ */
+    @Security('jwt', ['admin'])
+    @Post('seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds')
+    @SuccessResponse(204, 'No Content')
+    async swapSeeds(
+        @Path() seasonId: number,
+        @Path() phaseId: number,
+        @Body() body: knockoutSchema.SwapSeedsRequestDto,
+    ): Promise<void> {
+        const parsed = knockoutSchema.swapSeedsRequestSchema.parse(body);
+        return this.service.swapSeeds(phaseId, parsed);
+    }
+
+    /**
+     * Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.
+     */
+    @Security('jwt', ['admin'])
+    @Post('seasons/{seasonId}/phases/{phaseId}/knockout/confirm')
+    @SuccessResponse(204, 'No Content')
+    async confirmBracket(
+        @Path() seasonId: number,
+        @Path() phaseId: number,
+    ): Promise<void> {
+        return this.service.confirmBracket(phaseId);
+    }
 }

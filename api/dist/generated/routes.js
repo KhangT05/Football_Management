@@ -1529,6 +1529,7 @@ const models = {
             "seededAwayTeamId": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "sourceASlotId": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "sourceBSlotId": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "matchStatus": { "dataType": "union", "subSchemas": [{ "ref": "MatchStatus" }, { "dataType": "enum", "enums": [null] }], "required": true },
         },
         "additionalProperties": false,
     },
@@ -1541,6 +1542,16 @@ const models = {
     "AutoSeedKnockoutRequestDto": {
         "dataType": "refAlias",
         "type": { "ref": "infer_typeofautoSeedKnockoutRequestSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofswapSeedsRequestSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "sideB": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["home"] }, { "dataType": "enum", "enums": ["away"] }], "required": true }, "slotIdB": { "dataType": "double", "required": true }, "sideA": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["home"] }, { "dataType": "enum", "enums": ["away"] }], "required": true }, "slotIdA": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SwapSeedsRequestDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofswapSeedsRequestSchema_", "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "JerseyType": {
@@ -5792,6 +5803,63 @@ export function RegisterRoutes(app, opts) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsKnockoutController_swapSeeds = {
+        seasonId: { "in": "path", "name": "seasonId", "required": true, "dataType": "double" },
+        phaseId: { "in": "path", "name": "phaseId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "SwapSeedsRequestDto" },
+    };
+    app.post('/seasons/:seasonId/phases/:phaseId/knockout/swap-seeds', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(KnockoutController)), ...(fetchMiddlewares(KnockoutController.prototype.swapSeeds)), async function KnockoutController_swapSeeds(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsKnockoutController_swapSeeds, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(KnockoutController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'swapSeeds',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsKnockoutController_confirmBracket = {
+        seasonId: { "in": "path", "name": "seasonId", "required": true, "dataType": "double" },
+        phaseId: { "in": "path", "name": "phaseId", "required": true, "dataType": "double" },
+    };
+    app.post('/seasons/:seasonId/phases/:phaseId/knockout/confirm', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(KnockoutController)), ...(fetchMiddlewares(KnockoutController.prototype.confirmBracket)), async function KnockoutController_confirmBracket(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsKnockoutController_confirmBracket, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(KnockoutController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'confirmBracket',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
             });
         }
         catch (err) {

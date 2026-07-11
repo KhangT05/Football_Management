@@ -23,6 +23,23 @@ import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminSt
 import Pagination from '../../components/ui/Pagination';
 import { parseApiError } from '../../utils/errorHelper';
 
+// Nhận diện message tiếng Việt (có dấu) — dùng để lọc message backend trước
+// khi đẩy ra toast. Các AppError nghiệp vụ của BE thường viết tiếng Việt có
+// dấu, nhưng lỗi validate framework-level (Zod/Joi kiểu "is not allowed",
+// "is required") hoặc lỗi network (err.message dạng "Network Error") là
+// tiếng Anh thuần — không nên hiện thẳng ra cho người dùng.
+const VIETNAMESE_DIACRITICS_REGEX = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
+const isLikelyVietnameseMessage = (msg) => typeof msg === 'string' && VIETNAMESE_DIACRITICS_REGEX.test(msg);
+
+// Helper dùng chung cho mọi catch-block hiển thị lỗi API ra toast: ưu tiên
+// message tiếng Việt cụ thể từ backend, nếu message là tiếng Anh (lỗi
+// validate framework-level, lỗi network, v.v.) thì luôn dùng fallback tiếng
+// Việt — không bao giờ để lộ text tiếng Anh thô ra UI.
+const getFriendlyErrorMessage = (err, fallback) => {
+  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
+  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
+};
+
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: 'pending', label: '⏳ Chờ duyệt' },
@@ -206,7 +223,7 @@ export default function ManageSeasonTeams() {
 
       toast.success(`Đã cập nhật trạng thái thành "${newStatus}"!`);
       reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
+    }).catch(err => toast.error(getFriendlyErrorMessage(err, 'Lỗi khi cập nhật trạng thái, vui lòng thử lại.')));
   };
 
   const deleteMutation = useApiMutation();
@@ -218,7 +235,7 @@ export default function ManageSeasonTeams() {
       toast.success('Đã xóa đội khỏi mùa giải.');
       setDeletingId(null);
       reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi xóa.'));
+    }).catch(err => toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xóa, vui lòng thử lại.')));
   };
 
   const [allTeams, setAllTeams] = useState([]);
@@ -245,7 +262,7 @@ export default function ManageSeasonTeams() {
       });
       toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
-    }).catch(err => addTeamModal.setFormError(parseApiError(err, 'Lỗi khi thêm đội.')));
+    }).catch(err => addTeamModal.setFormError(getFriendlyErrorMessage(err, parseApiError(err, 'Lỗi khi thêm đội.'))));
   };
 
   const assignModal = useCrudModal({ emptyForm: { group_id: '' } });
@@ -256,7 +273,7 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.assignGroup(assignModal.editing.id, { group_id: Number(assignModal.form.group_id) });
       toast.success('Đã xếp đội vào bảng thủ công!');
       reloadTeams();
-    }).catch(err => assignModal.setFormError(parseApiError(err, 'Lỗi khi xếp bảng.')));
+    }).catch(err => assignModal.setFormError(getFriendlyErrorMessage(err, parseApiError(err, 'Lỗi khi xếp bảng.'))));
   };
 
   const transferModal = useCrudModal({ emptyForm: { target_season_id: '' } });
@@ -269,7 +286,7 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
       toast.success('Đã chuyển đội sang mùa giải mới!');
       reloadTeams();
-    }).catch(err => transferModal.setFormError(parseApiError(err, 'Lỗi khi chuyển đội.')));
+    }).catch(err => transferModal.setFormError(getFriendlyErrorMessage(err, parseApiError(err, 'Lỗi khi chuyển đội.'))));
   };
 
   const selectedSeasonObj = seasons.find(s => String(s.id) === String(selectedSeason));
@@ -337,21 +354,22 @@ export default function ManageSeasonTeams() {
             {STATS_CARDS.map(({ label, statusKey, color, icon }) => {
               const CardIcon = icon;
               return (
-              <div
-                key={label}
-                onClick={() => {
-                  if (statusKey === null) { setFilterStatus(''); return; }
-                  setFilterStatus(prev => prev === statusKey ? '' : statusKey);
-                }}
-                className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group ${filterStatus === statusKey ? `border-${color}-500/60 ring-1 ring-${color}-500/30` : ''}`}
-              >
-                <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
-                <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
-                  <CardIcon className={`w-3 h-3 text-${color}-400`} />
-                  {label}
+                <div
+                  key={label}
+                  onClick={() => {
+                    if (statusKey === null) { setFilterStatus(''); return; }
+                    setFilterStatus(prev => prev === statusKey ? '' : statusKey);
+                  }}
+                  className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group ${filterStatus === statusKey ? `border-${color}-500/60 ring-1 ring-${color}-500/30` : ''}`}
+                >
+                  <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
+                  <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
+                    <CardIcon className={`w-3 h-3 text-${color}-400`} />
+                    {label}
+                  </div>
                 </div>
-              </div>
-            )})}
+              )
+            })}
           </div>
 
           <div className="flex items-center gap-2 border-b border-navy-light">

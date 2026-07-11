@@ -240,7 +240,7 @@ export class StandingsService {
     }
     async _recomputeGroupStandingsLocked(groupId, tx) {
         // Row lock — xem giải thích ở recomputeGroupStandings phía trên.
-        await tx.$queryRaw `SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`;
+        await tx.$queryRaw `SELECT id FROM \`groups\` WHERE id = ${groupId} FOR UPDATE`;
         const group = await tx.group.findUniqueOrThrow({
             where: { id: groupId },
             select: {

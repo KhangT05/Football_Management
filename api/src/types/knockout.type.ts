@@ -1,4 +1,4 @@
-import { PhaseType, Prisma } from "../generated/prisma/client.js";
+import { MatchStatus, PhaseType, Prisma } from "../generated/prisma/client.js";
 import { KNOCKOUT_PHASE_TYPES } from "../dtos/knockout.schema.js";
 
 // ─── SEED RESOLUTION ────────────────────────────────────────────────────────
@@ -46,7 +46,13 @@ export interface AdvanceWinnerInput {
     matchId: number;
     winnerTeamId: number;
 }
-
+export type BracketSlotSide = 'home' | 'away';
+export interface SwapSeedsInput {
+    slotIdA: number;
+    sideA: BracketSlotSide;
+    slotIdB: number;
+    sideB: BracketSlotSide;
+}
 export interface BracketSlotNode {
     slotId: number;
     round: number;
@@ -57,6 +63,7 @@ export interface BracketSlotNode {
     seededAwayTeamId: number | null;
     sourceASlotId: number | null;
     sourceBSlotId: number | null;
+    matchStatus: MatchStatus | null;
 }
 
 export const KNOCKOUT_PHASE_TYPE_SET = new Set<PhaseType>(KNOCKOUT_PHASE_TYPES);
@@ -91,6 +98,7 @@ export const bracketSlotNodeSelect = {
     is_bye: true,
     ...seededTeamsSelect,
     ...slotLinksSelect,
+    match: { select: { status: true } },
 } satisfies Prisma.BracketSlotSelect;
 
 export const slotWithParentLinksSelect = {
