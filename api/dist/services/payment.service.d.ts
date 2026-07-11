@@ -1,7 +1,6 @@
 import { PaymentStatus, PrismaClient } from '../generated/prisma/client.js';
 import { VNPay, type QueryDrResponse, type RefundResponse } from 'vnpay';
 import { InitiatePaymentInput, InitiatePaymentOutput, IpnQuery, IpnResponse, PaymentRow } from '../types/payment.type.js';
-export declare function createVNPayInstance(): VNPay;
 export interface RefundPaymentInput {
     amount: number;
     reason: string;

@@ -12,6 +12,7 @@ import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
 import { MatchReportBinaryController } from "./controllers/matchReportBinary.controller.js";
 import { matchResultService } from "./libs/ioc.js";
+import { seedDatabase } from "./seeders/index.js";
 const app = express();
 app.use(cors({
     origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
@@ -31,6 +32,7 @@ const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await connectRedis();
     await prisma.$connect();
+    await seedDatabase();
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });
