@@ -2,24 +2,17 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Users, Trophy, Target, Shield, Activity,
-  WifiOff, Crown, UserCheck, UserX, Hash, CalendarDays
+  WifiOff, UserCheck, UserX, CalendarDays
 } from 'lucide-react';
 
-import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
+import { getInitials } from '../utils/constants';
 import TeamHeaderSkeleton from '../components/skeletons/TeamHeaderSkeleton';
-import PlayerCardSkeleton from '../components/skeletons/PlayerCardSkeleton';
-import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import useTeamStore from '../store/teamStore';
 import PlayerStatsModal from '../components/modals/PlayerStatsModal';
 
 // ── Helpers ───────────────────────────────────────────────────
-const POSITION_COLORS = {
-  GK: 'bg-amber-400/10 text-amber-400 border-amber-400/30',
-  DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30',
-  MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
-  FW: 'bg-red-400/10 text-red-400 border-red-400/30',
-};
+
 
 const normalizePosition = (posStr) => {
   if (!posStr) return 'OTHER';
@@ -62,7 +55,6 @@ function StatBox({ label, value, icon: Icon, colorClass = 'text-neon' }) {
   );
 }
 
-// FIX (blank pill) + bỏ border
 function FormationDot({ tp, kit, onClick }) {
   const player = tp.player ?? tp;
   const rawName = player?.user?.name || player?.name || tp.name || '';
@@ -70,33 +62,45 @@ function FormationDot({ tp, kit, onClick }) {
   const jersey = tp.jersey_number ?? '?';
   const isCap = tp.role === 'captain';
   const isVice = tp.role === 'vice_captain';
+  const avatarUrl = player?.avatar ?? player?.user?.avatar;
 
   return (
-    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1 w-20 sm:w-24 shrink-0 group">
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${name} — bấm để xem/sửa`}
+      className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group cursor-pointer"
+    >
       <div className="relative">
-        <div
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center font-black text-[11px] sm:text-xs shadow-md shadow-black/40 transition-transform group-hover:scale-110"
-          style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
-        >
-          {jersey}
-        </div>
+        {avatarUrl ? (
+          <img 
+            src={avatarUrl} 
+            alt={name} 
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border-2 shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40" 
+            style={{ borderColor: kit.border }} 
+          />
+        ) : (
+          <div
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center font-black text-[10px] sm:text-sm shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40"
+            style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
+          >
+            {jersey}
+          </div>
+        )}
         {isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">C</span>
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center bg-amber-500 text-white text-[8px] sm:text-[10px] font-black rounded-full border-2 border-black/20 shadow-sm">
+            C
+          </span>
         )}
         {isVice && !isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">P</span>
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center bg-blue-500 text-white text-[8px] sm:text-[10px] font-black rounded-full border-2 border-black/20 shadow-sm">
+            P
+          </span>
         )}
       </div>
-      {/* FIX (không đọc được tên): trước đây "truncate" trên khung cố định
-          max-w-[70px] cắt gần hết tên tiếng Việt có dấu. Giờ bỏ truncate,
-          cho chữ wrap tự nhiên (không giới hạn số dòng) — KHÔNG dùng
-          line-clamp vì từng gây mất chữ hoàn toàn khi lỡ kết hợp với
-          "block"/"inline-block" khác thứ tự CSS. title vẫn giữ để xem full
-          tên khi hover trên desktop. */}
       <span
-        className="mt-1 max-w-full inline-block break-words text-[10px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80"
-        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
-        title={name}
+        className="text-[9px] sm:text-[10px] font-bold text-white! text-center leading-tight px-1 sm:px-1.5 py-1 rounded-md bg-black/30 backdrop-blur-md border border-white/10 shadow-sm w-full wrap-break-words group-hover:bg-black/50 transition-all"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
       >
         {name}
       </span>
@@ -104,113 +108,143 @@ function FormationDot({ tp, kit, onClick }) {
   );
 }
 
-// Vị trí thật trên sân theo % chiều cao — thay cho việc chia đều 4 hàng
-// bằng flex justify-between (bản cũ), vì cách đó khiến hàng rỗng vẫn chiếm
-// chỗ và tạo khoảng trắng lớn khi đội chưa đủ 4 tuyến (vd chỉ có GK+DEF).
-// FIX (đội hình dính liền): giãn lại khoảng cách hàng — tên giờ có thể
-// wrap 2 dòng nên mỗi hàng cao hơn trước, cần nhiều chỗ hơn để không đè
-// lên hàng kế tiếp.
-const PITCH_ROW_TOP = { FW: '10%', MID: '37%', DEF: '64%', GK: '92%' };
-
 // ── Formation pitch (sơ đồ đội hình, FW trên cùng, GK dưới cùng) ─
-// Chỉ render hàng có cầu thủ; height co theo số hàng thực có, không cố định
-// min-h lớn như trước.
 function FormationPitch({ byPosition, kit, badge, onSelectPlayer }) {
-  const rows = ['FW', 'MID', 'DEF', 'GK'].filter(pos => byPosition[pos]?.length);
-  if (rows.length === 0) return null;
+  const [pitchSize, setPitchSize] = useState('7'); // '7' or '5'
 
-  const minHeight = rows.length <= 2 ? 240 : 360;
+  const gks = byPosition['GK'] || [];
+  const defs = byPosition['DEF'] || [];
+  const mids = byPosition['MID'] || [];
+  const fws = byPosition['FW'] || [];
+
+  let layout = [];
+  if (pitchSize === '11') {
+    layout = [
+      { pos: 'FW', count: 3 },
+      { pos: 'MID', count: 3 },
+      { pos: 'DEF', count: 4 },
+      { pos: 'GK', count: 1 },
+    ];
+  } else if (pitchSize === '7') {
+    layout = [
+      { pos: 'FW', count: 1 },
+      { pos: 'MID', count: 2 },
+      { pos: 'DEF', count: 3 },
+      { pos: 'GK', count: 1 },
+    ];
+  } else {
+    layout = [
+      { pos: 'FW', count: 1 },
+      { pos: 'MID', count: 1 },
+      { pos: 'DEF', count: 2 },
+      { pos: 'GK', count: 1 },
+    ];
+  }
+
+  const usedIds = new Set();
+  const getPlayersForSlot = (posType, count) => {
+    let pool = [];
+    if (posType === 'FW') pool = [...fws, ...mids, ...defs, ...gks];
+    else if (posType === 'MID') pool = [...mids, ...fws, ...defs, ...gks];
+    else if (posType === 'DEF') pool = [...defs, ...mids, ...fws, ...gks];
+    else if (posType === 'GK') pool = [...gks, ...defs, ...mids, ...fws];
+
+    const selected = [];
+    for (const tp of pool) {
+      if (!usedIds.has(tp.id) && selected.length < count) {
+        selected.push(tp);
+        usedIds.add(tp.id);
+      }
+    }
+    while (selected.length < count) selected.push(null);
+    return selected;
+  };
+
+  const rowsData = layout.map(row => ({
+    ...row,
+    players: getPlayersForSlot(row.pos, row.count)
+  }));
+
+  const allPlayers = [...fws, ...mids, ...defs, ...gks];
+  const subs = allPlayers.filter(tp => !usedIds.has(tp.id));
 
   return (
-    <div
-      className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20"
-      style={{ minHeight }}
-    >
-      {/* Nền sân: gradient xanh lá + vạch giữa sân mờ, chỉ mang tính trang trí */}
-      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/50 via-emerald-950/60 to-emerald-900/50" />
-      <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
-      <div className="absolute inset-3 border border-white/10 rounded-lg pointer-events-none" />
+    <div className="space-y-4">
+      <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20" style={{ minHeight: 560 }}>
+        {/* Toggle Sân 5/7/11 */}
+        <div className="absolute top-2 right-2 z-20 flex bg-black/40 backdrop-blur-md p-1 rounded-lg border border-white/10">
+          <button
+            onClick={() => setPitchSize('5')}
+            className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '5' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
+          >
+            Sân 5
+          </button>
+          <button
+            onClick={() => setPitchSize('7')}
+            className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '7' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
+          >
+            Sân 7
+          </button>
+          <button
+            onClick={() => setPitchSize('11')}
+            className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '11' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
+          >
+            Sân 11
+          </button>
+        </div>
 
-      {/* Badge màu áo + số lượng cầu thủ, góc trên trái — nhận diện nhanh đội nào */}
-      {badge && <div className="absolute top-3 left-3 z-20">{badge}</div>}
+        {/* Badge */}
+        {badge && <div className="absolute top-3 left-3 z-20">{badge}</div>}
 
-      {rows.map(pos => (
-        <div
-          key={pos}
-          className="absolute left-0 right-0 flex flex-wrap justify-center gap-2 sm:gap-4 px-3"
-          style={{ top: PITCH_ROW_TOP[pos], transform: 'translateY(-50%)' }}
-        >
-          {byPosition[pos].map((tp, idx) => (
-            <FormationDot
-              key={tp.id ?? `${pos}-${idx}`}
-              tp={tp}
-              kit={kit}
-              onClick={() => onSelectPlayer(tp)}
-            />
+        {/* Beautiful Pitch Background */}
+        <div className="absolute inset-0 bg-[#1e5e1e]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#1a521a_50%,transparent_50%)] bg-size-[100%_20%] opacity-50" />
+        <div className="absolute inset-4 border-2 border-white/40 pointer-events-none" />
+        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 w-48 h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 w-24 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-48 h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-24 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+
+        {/* Players */}
+        <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10 mt-6 sm:mt-0">
+          {rowsData.map((row, i) => (
+            <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
+              {row.players.map((tp, j) => (
+                tp ? (
+                  <FormationDot key={tp.id} tp={tp} kit={kit} onClick={() => onSelectPlayer?.(tp)} />
+                ) : (
+                  <div key={`empty-${j}`} className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 opacity-40">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-white/30 bg-black/20 flex items-center justify-center text-white text-xs">
+                      +
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
           ))}
         </div>
-      ))}
-    </div>
-  );
-}
+      </div>
 
-// ── Player Card (giữ nguyên cho danh sách chi tiết bên dưới) ───
-function PlayerCard({ tp, idx, onClick }) {
-  const player = tp.player ?? tp;
-  const name = player?.user?.name ?? player?.name ?? tp.name ?? `#${tp.player_id || tp.id}`;
-  const initial = getInitials(name);
-  const colorIdx = (tp.player_id ?? idx) % AVATAR_COLORS.length;
-  const rawPos = tp.position ?? player.position;
-  const pos = normalizePosition(rawPos);
-  const jerseyNum = tp.jersey_number ?? '?';
-  const isCaptain = tp.role === 'captain';
-  const isVice = tp.role === 'vice_captain';
-  const avatarUrl = player?.avatar ?? player?.user?.avatar;
-
-  return (
-    <div
-      onClick={onClick}
-      className="bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/20 hover:border-blue-500/40 hover:shadow-blue-900/10 transition-all duration-300 animate-slide-up cursor-pointer group"
-      style={{ animationDelay: `${idx * 40}ms` }}
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-12 h-12 rounded-full bg-linear-to-br ${AVATAR_COLORS[colorIdx]} flex items-center justify-center font-black text-white text-sm shadow-md shrink-0 relative overflow-hidden`}>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-          ) : (
-            initial
-          )}
-          {isCaptain && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow">
-              <Crown className="w-2.5 h-2.5 text-yellow-900" />
-            </span>
-          )}
-          {isVice && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full flex items-center justify-center shadow">
-              <Shield className="w-2.5 h-2.5 text-blue-900" />
-            </span>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-white text-sm truncate">{name}</div>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {pos && (
-              <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${POSITION_COLORS[pos] ?? 'bg-gray-400/10 text-gray-400 border-gray-400/30'}`}>
-                {POSITION_LABELS[pos] ?? pos}
-              </span>
-            )}
-            {isCaptain && <span className="text-xs text-yellow-400 font-bold">Đội trưởng</span>}
+      {/* Danh sách dự bị */}
+      {subs.length > 0 && (
+        <div className="bg-navy/30 border border-navy-light rounded-2xl p-5 shadow-lg">
+          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+            Danh sách dự bị ({subs.length})
+          </h3>
+          <div className="flex flex-wrap gap-2 sm:gap-4 justify-start">
+            {subs.map(tp => (
+              <FormationDot key={tp.id} tp={tp} kit={kit} onClick={() => onSelectPlayer?.(tp)} />
+            ))}
           </div>
         </div>
-
-        <div className="shrink-0 text-right">
-          <div className="text-lg font-black text-neon leading-none">#{jerseyNum}</div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
+
 
 // ── Page ──────────────────────────────────────────────────────
 export default function TeamDetail() {
@@ -237,18 +271,7 @@ export default function TeamDetail() {
   const team = detailData?.team || null;
   const players = detailData?.players || [];
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-
-  const handleItemsPerPageChange = (newLimit) => {
-    setItemsPerPage(newLimit);
-    setCurrentPage(1);
-  };
-
-  const totalPages = Math.ceil(players.length / itemsPerPage) || 1;
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedPlayers = players.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const totalByPosition = players.reduce((acc, tp) => {
     const player = tp.player ?? tp;
@@ -259,14 +282,7 @@ export default function TeamDetail() {
     return acc;
   }, {});
 
-  const byPosition = paginatedPlayers.reduce((acc, tp) => {
-    const player = tp.player ?? tp;
-    const rawPos = tp.position ?? player.position;
-    const pos = normalizePosition(rawPos);
-    if (!acc[pos]) acc[pos] = [];
-    acc[pos].push(tp);
-    return acc;
-  }, {});
+
 
   // Formation dùng TOÀN BỘ roster (không phân trang) — pitch nhỏ, chỉ mang
   // tính overview; danh sách chi tiết bên dưới vẫn giữ pagination.
@@ -279,11 +295,8 @@ export default function TeamDetail() {
     return acc;
   }, {});
 
-  const positionOrder = ['GK', 'DEF', 'MID', 'FW', 'OTHER'];
-
   const homeName = team?.name ?? '—';
   const initial = getInitials(homeName);
-  const colorIdx = (teamId ?? 0) % AVATAR_COLORS.length;
 
   const kit = team?.jersey_color
     ? { bg: team.jersey_color, text: textColorFor(team.jersey_color), border: 'rgba(255,255,255,0)' }
@@ -422,58 +435,7 @@ export default function TeamDetail() {
           </section>
         )}
 
-        {/* Player Roster */}
-        <section>
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-navy-light animate-slide-up flex-wrap gap-3">
-            <h2 className="text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3">
-              <Users className="w-6 h-6 text-neon" /> Danh Sách Cầu Thủ
-            </h2>
-            {!isLoading && players.length > 0 && (
-              <span className="text-neon font-bold bg-neon/10 border border-neon/20 px-4 py-1.5 rounded-lg text-sm">
-                Sĩ số: {players.length}
-              </span>
-            )}
-          </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(9)].map((_, i) => <PlayerCardSkeleton key={i} />)}
-            </div>
-          ) : players.length === 0 ? (
-            <div className="py-16 flex flex-col items-center gap-3 text-gray-400">
-              <Users className="w-12 h-12 text-gray-600" />
-              <p className="font-semibold">Đội bóng chưa có cầu thủ nào.</p>
-            </div>
-          ) : (
-            <>
-              {positionOrder.filter(pos => byPosition[pos]?.length).map(pos => (
-                <div key={pos} className="mb-8">
-                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" />
-                    {POSITION_LABELS[pos] ?? 'Khác'} ({byPosition[pos].length})
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {byPosition[pos].map((tp, idx) => (
-                      <PlayerCard key={tp.id} tp={tp} idx={idx} onClick={() => setSelectedPlayer(tp)} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <Pagination
-                    currentPage={safePage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    itemsPerPage={itemsPerPage}
-                    onItemsPerPageChange={handleItemsPerPageChange}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </section>
 
       </div>
 

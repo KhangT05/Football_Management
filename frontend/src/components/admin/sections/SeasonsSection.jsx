@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar, Plus, Edit, Trash2, Save, Loader2, AlertTriangle,
   RefreshCw, ArrowRight, Lock, CheckCircle2, XCircle,
@@ -497,7 +498,7 @@ export default function SeasonsSection() {
       )}
 
       {/* ── Status Change Modal ───────────────────────────── */}
-      {statusModal && (
+      {statusModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !statusChanging && setStatusModal(null)} />
           <div className="relative bg-navy border border-navy-light rounded-2xl shadow-2xl w-full max-w-sm animate-slide-up overflow-hidden">
@@ -566,7 +567,8 @@ export default function SeasonsSection() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Delete Confirm ─────────────────────────────────── */}

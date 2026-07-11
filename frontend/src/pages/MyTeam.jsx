@@ -96,42 +96,42 @@ function RosterPitchDot({ player, kit, onClick }) {
   const isCap = player.role === 'captain';
   const isVice = player.role === 'vice_captain';
   return (
-    <button
+      <button
       type="button"
       onClick={onClick}
       title={`${player.name} — bấm để xem/sửa`}
-      className="flex flex-col items-center gap-1 w-20 sm:w-24 shrink-0 group cursor-pointer"
+      className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group cursor-pointer"
     >
       <div className="relative">
-        <div
-          className="w-9 h-9 rounded-full border-2 flex items-center justify-center font-black text-xs shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40"
-          style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
-        >
-          {player.number || '?'}
-        </div>
+        {player.avatar ? (
+          <img 
+            src={player.avatar} 
+            alt={player.name} 
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border-2 shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40" 
+            style={{ borderColor: kit.border }} 
+          />
+        ) : (
+          <div
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center font-black text-[10px] sm:text-sm shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40"
+            style={{ backgroundColor: kit.bg, color: kit.text, borderColor: kit.border }}
+          >
+            {player.number || '?'}
+          </div>
+        )}
         {isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center bg-amber-500 text-white text-[8px] sm:text-[10px] font-black rounded-full border-2 border-black/20 shadow-sm">
             C
           </span>
         )}
         {isVice && !isCap && (
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-blue-400 text-navy text-[8px] font-black rounded-full border border-navy">
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center bg-blue-500 text-white text-[8px] sm:text-[10px] font-black rounded-full border-2 border-black/20 shadow-sm">
             P
           </span>
         )}
       </div>
-      {/* FIX (không đọc được tên — lần 2): bản trước dùng chung "line-clamp-2"
-          với "block" trên cùng 1 span. line-clamp cần display:-webkit-box để
-          hoạt động, còn "block" ép display:block — 2 class này đè lẫn nhau
-          tùy thứ tự Tailwind sinh CSS, và trong trường hợp này chữ bị ẩn mất
-          hoàn toàn (chỉ còn thanh nền đen trống, đúng như ảnh chụp lỗi).
-          Giờ bỏ hẳn line-clamp, chỉ cho chữ xuống dòng tự nhiên (không giới
-          hạn số dòng) — đảm bảo luôn hiện được chữ, đổi lại pill có thể cao
-          hơn 1 chút với tên dài (đã giãn khoảng cách hàng ở PITCH_ROW_TOP để
-          bù lại). title vẫn giữ để xem full tên khi hover trên desktop. */}
       <span
-        className="text-[9px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80 inline-block max-w-full wrap-break-words group-hover:bg-black/95 transition-colors"
-        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+        className="text-[9px] sm:text-[10px] font-bold text-white! text-center leading-tight px-1 sm:px-1.5 py-1 rounded-md bg-black/30 backdrop-blur-md border border-white/10 shadow-sm w-full wrap-break-word group-hover:bg-black/50 transition-all"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
       >
         {player.name}
       </span>
@@ -140,41 +140,121 @@ function RosterPitchDot({ player, kit, onClick }) {
 }
 
 function RosterPitch({ players, kit, onSelectPlayer }) {
-  const grouped = players.reduce((acc, p) => {
-    const pos = normalizePosition(p.position);
-    const key = ['GK', 'DEF', 'MID', 'FW'].includes(pos) ? pos : 'MID';
-    (acc[key] ||= []).push(p);
-    return acc;
-  }, {});
-  const rows = ['FW', 'MID', 'DEF', 'GK'].filter(pos => grouped[pos]?.length);
+  const [pitchSize, setPitchSize] = useState('7'); // '7' or '5'
 
-  if (rows.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 rounded-2xl border border-dashed border-navy-light text-gray-500 text-sm font-medium text-center px-4">
-        Chưa có cầu thủ để hiển thị sơ đồ
-      </div>
-    );
+  const gks = players.filter(p => normalizePosition(p.position) === 'GK');
+  const defs = players.filter(p => normalizePosition(p.position) === 'DEF');
+  const mids = players.filter(p => normalizePosition(p.position) === 'MID');
+  const fws = players.filter(p => normalizePosition(p.position) === 'FW');
+
+  let layout = [];
+  if (pitchSize === '11') {
+    layout = [
+      { pos: 'FW', count: 3 },
+      { pos: 'MID', count: 3 },
+      { pos: 'DEF', count: 4 },
+      { pos: 'GK', count: 1 },
+    ];
+  } else if (pitchSize === '7') {
+    layout = [
+      { pos: 'FW', count: 1 },
+      { pos: 'MID', count: 2 },
+      { pos: 'DEF', count: 3 },
+      { pos: 'GK', count: 1 },
+    ];
+  } else {
+    layout = [
+      { pos: 'FW', count: 1 },
+      { pos: 'MID', count: 1 },
+      { pos: 'DEF', count: 2 },
+      { pos: 'GK', count: 1 },
+    ];
   }
 
+  const usedIds = new Set();
+
+  const getPlayersForSlot = (posType, count) => {
+    let pool = [];
+    if (posType === 'FW') pool = [...fws, ...mids, ...defs, ...gks];
+    else if (posType === 'MID') pool = [...mids, ...fws, ...defs, ...gks];
+    else if (posType === 'DEF') pool = [...defs, ...mids, ...fws, ...gks];
+    else if (posType === 'GK') pool = [...gks, ...defs, ...mids, ...fws];
+
+    const selected = [];
+    for (const p of pool) {
+      if (!usedIds.has(p.id) && selected.length < count) {
+        selected.push(p);
+        usedIds.add(p.id);
+      }
+    }
+    while (selected.length < count) selected.push(null);
+    return selected;
+  };
+
+  const rowsData = layout.map(row => ({
+    ...row,
+    players: getPlayersForSlot(row.pos, row.count)
+  }));
+
   return (
-    <div
-      className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20"
-      style={{ minHeight: rows.length <= 2 ? 280 : 420 }}
-    >
-      <div className="absolute inset-0 bg-linear-to-b from-emerald-900/50 via-emerald-950/60 to-emerald-900/50" />
-      <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
-      <div className="absolute inset-3 border border-white/10 rounded-lg pointer-events-none" />
-      {rows.map(pos => (
-        <div
-          key={pos}
-          className="absolute left-0 right-0 flex flex-wrap justify-center gap-4 px-3"
-          style={{ top: PITCH_ROW_TOP[pos], transform: 'translateY(-50%)' }}
+    <div className="space-y-3 relative">
+      <div className="absolute top-2 right-2 z-20 flex bg-black/40 backdrop-blur-md p-1 rounded-lg border border-white/10">
+        <button
+          onClick={() => setPitchSize('5')}
+          className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '5' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
         >
-          {grouped[pos].map(p => (
-            <RosterPitchDot key={p.id} player={p} kit={kit} onClick={() => onSelectPlayer?.(p)} />
+          Sân 5
+        </button>
+        <button
+          onClick={() => setPitchSize('7')}
+          className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '7' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
+        >
+          Sân 7
+        </button>
+        <button
+          onClick={() => setPitchSize('11')}
+          className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${pitchSize === '11' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-300 hover:text-white'}`}
+        >
+          Sân 11
+        </button>
+      </div>
+
+      <div
+        className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20"
+        style={{ minHeight: 560 }}
+      >
+        {/* Beautiful Pitch Background */}
+        <div className="absolute inset-0 bg-[#1e5e1e]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#1a521a_50%,transparent_50%)] bg-size-[100%_20%] opacity-50" />
+        <div className="absolute inset-4 border-2 border-white/40 pointer-events-none" />
+        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* Penalty Areas */}
+        <div className="absolute bottom-4 left-1/2 w-48 h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 w-24 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-48 h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-24 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+
+        {/* Players */}
+        <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10">
+          {rowsData.map((row, i) => (
+            <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
+              {row.players.map((p, j) => (
+                p ? (
+                  <RosterPitchDot key={p.id} player={p} kit={kit} onClick={() => onSelectPlayer?.(p)} />
+                ) : (
+                  <div key={`empty-${j}`} className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 opacity-40">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-white/30 bg-black/20 flex items-center justify-center text-white text-xs">
+                      +
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
           ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }

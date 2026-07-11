@@ -166,3 +166,10 @@ export const MATCH_STATUS_CLASS = {
   cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
   postponed: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
 };
+
+export const POSITION_COLORS = {
+  GK: 'bg-amber-400/10 text-amber-400 border-amber-400/30',
+  DEF: 'bg-blue-400/10 text-blue-400 border-blue-400/30',
+  MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
+  FW: 'bg-red-400/10 text-red-400 border-red-400/30',
+};
