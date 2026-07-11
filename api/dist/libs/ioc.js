@@ -7,6 +7,7 @@ import { MatchController } from "../controllers/match.controller.js";
 import { MatchLineupController } from "../controllers/matchlineup.controller.js";
 import { MatchReportController } from "../controllers/matchReport.controller.js";
 import { MatchResultController } from "../controllers/matchResult.controller.js";
+import { PaymentController } from "../controllers/payment.controller.js";
 import { PlayerController } from "../controllers/player.controller.js";
 import { RoleController } from "../controllers/role.controller.js";
 import { ScheduleController } from "../controllers/schedule.controller.js";
@@ -26,6 +27,7 @@ import { KnockoutService } from "../services/knockout.service.js";
 import { MatchLifecycleService } from "../services/match.service.js";
 import { MatchLineupService } from "../services/matchlineup.service.js";
 import { MatchResultService } from "../services/matchresult.service.js";
+import { PaymentService } from "../services/payment.service.js";
 import { PlayerService } from "../services/player.service.js";
 import { RoleService } from "../services/role.service.js";
 import { ScheduleService } from "../services/schedule.service.js";
@@ -40,6 +42,7 @@ import { UserService } from "../services/user.service.js";
 import { VenueService } from "../services/venue.service.js";
 // import { WorkflowService } from "../services/workflow.service.js";
 import prisma from "./prisma.js";
+import { vnpay } from "./vnpay.js";
 const standingsService = new StandingsService(prisma);
 const knockoutService = new KnockoutService(prisma, standingsService);
 export const matchResultService = new MatchResultService(prisma, knockoutService, standingsService);
@@ -67,6 +70,7 @@ const controllerFactory = new Map([
     [JerseyController, () => new JerseyController(new JerseyService(prisma))],
     [ArticleController, () => new ArticleController(new ArticleService(prisma))],
     [MatchReportController, () => new MatchReportController(matchResultService)],
+    [PaymentController, () => new PaymentController(new PaymentService(prisma, vnpay))],
 ]);
 export const iocContainer = {
     get(controller) {
