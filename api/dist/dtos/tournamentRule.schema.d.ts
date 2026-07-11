@@ -60,6 +60,7 @@ export declare const createTournamentRuleSchema: z.ZodObject<{
         round_robin_knockout: "round_robin_knockout";
         multi_round_robin_knockout: "multi_round_robin_knockout";
     }>>;
+    is_active: z.ZodDefault<z.ZodBoolean>;
     tiebreaker_order: z.ZodDefault<z.ZodArray<z.ZodEnum<{
         goal_diff: "goal_diff";
         goals_scored: "goals_scored";
@@ -92,6 +93,7 @@ export declare const updateTournamentRuleSchema: z.ZodObject<{
         round_robin_knockout: "round_robin_knockout";
         multi_round_robin_knockout: "multi_round_robin_knockout";
     }>>>;
+    is_active: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     tiebreaker_order: z.ZodOptional<z.ZodDefault<z.ZodArray<z.ZodEnum<{
         goal_diff: "goal_diff";
         goals_scored: "goals_scored";

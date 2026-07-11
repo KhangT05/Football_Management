@@ -3,14 +3,6 @@ import { Star } from 'lucide-react';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 import { matchApi, jerseyApi } from '../api';
 
-/**
- * ============================================================
- * matchShared — logic & UI dùng chung giữa MatchDetail (trang chi tiết)
- * và MatchModal (popup nhanh từ lịch thi đấu).
- * ============================================================
- */
-
-// ── Vị trí thi đấu ────────────────────────────────────────────
 const POSITION_ALIAS = {
     GK: 'GK', goalkeeper: 'GK',
     DEF: 'DEF', defender: 'DEF',
@@ -31,7 +23,6 @@ export const POSITION_COLORS = {
     FW: 'bg-red-400/10 text-red-400',
 };
 
-// ── Trạng thái trận đấu ───────────────────────────────────────
 export const STATUS_LABEL = {
     scheduled: 'Sắp diễn ra',
     ongoing: 'Đang diễn ra',
@@ -55,29 +46,17 @@ export const STATUS_BADGE_COLOR = {
     cancelled: 'bg-gray-500/10 border-gray-500/20 text-gray-400',
 };
 
-// Status chắc chắn chưa có event thật — khỏi gọi API events.
 export const NO_EVENT_STATUSES = new Set(['scheduled', 'cancelled', 'postponed', 'bye']);
-
-// Status có thể đã có MatchResult confirm (pen / hiệp phụ).
 export const RESULT_AVAILABLE_STATUSES = new Set(['finished', 'forfeited']);
-
-// Status "chưa đá" — hiển thị TBD thay vì "- vs -" hoặc "VS".
 export const NOT_STARTED_STATUSES = new Set(['scheduled', 'postponed', 'bye']);
-
-// Status đang diễn ra nhưng chưa có tỉ số final — hiển thị "- vs -".
 export const ONGOING_STATUSES = new Set(['ongoing']);
 
-/**
- * Trả về text hiển thị ở giữa header khi CHƯA có score
- * (có score thì component tự render số, không gọi hàm này).
- */
 export function getVsLabel(status) {
     if (ONGOING_STATUSES.has(status)) return '- vs -';
     if (NOT_STARTED_STATUSES.has(status)) return 'TBD';
     return 'VS';
 }
 
-// ── Màu áo ─────────────────────────────────────────────────────
 export const DEFAULT_KIT = {
     home: { bg: '#1d4ed8', text: '#ffffff', border: 'rgba(255,255,255,0.5)' },
     away: { bg: '#c2410c', text: '#ffffff', border: 'rgba(255,255,255,0.5)' },
@@ -146,10 +125,6 @@ export function useMatchExtras(match) {
     return { matchResult, jerseys, kitFor, isPenaltyResult, isExtraTimeResult };
 }
 
-// ── Team avatar (header) ──────────────────────────────────────
-// jersey chỉ nên truyền vào khi trận đã có kết quả xác nhận (hasScore) —
-// caller (MatchDetail/MatchModal) chịu trách nhiệm gate, component này chỉ
-// hiển thị bất cứ gì được đưa vào.
 const AVATAR_PRESET = {
     lg: {
         box: 'w-20 h-20 md:w-32 md:h-32', text: 'text-3xl md:text-5xl',
@@ -195,9 +170,6 @@ export function TeamAvatar({ name, side, logo, jersey, size = 'md' }) {
     );
 }
 
-// ── Badge nhỏ (logo hoặc initials theo màu áo) — dùng ở góc sơ đồ đội hình
-// và ở header khối "Dự bị" để người xem nhận ra ngay đây là đội nào, không
-// cần đọc chữ.
 export function TeamBadge({ name, logo, kit, size = 20 }) {
     const dim = `${size}px`;
     if (logo) {
@@ -220,9 +192,9 @@ export function TeamBadge({ name, logo, kit, size = 20 }) {
     );
 }
 
-// ── Danh sách cầu thủ (dự bị / unregistered) ──────────────────
 export function PlayerItem({ tp, isCap }) {
-    const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
+    const rawName = tp.player?.name || tp.player?.player?.name || tp.name || '';
+    const name = rawName.trim() || `#${tp.player_id ?? '?'}`;
     const jersey = tp.jersey_number ?? '?';
     const captain = isCap ?? !!tp.is_captain;
     const pos = tp.position ? normalizePosition(tp.position) : null;
@@ -249,21 +221,28 @@ export function PlayerItem({ tp, isCap }) {
     );
 }
 
-// ── Chấm cầu thủ trên sơ đồ đội hình ───────────────────────────
-// size mặc định "sm" — sơ đồ chỉ cần đủ nhận diện số áo/tên, không cần to.
 const DOT_PRESET = {
     md: 'w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-base',
     sm: 'w-7 h-7 sm:w-9 sm:h-9 text-[10px] sm:text-xs',
 };
 
+// FIX (blank pill): tp.player?.name có thể là "" (không phải null/undefined)
+// → dùng || thay vì ?? để bắt cả rỗng, rồi .trim() phòng chuỗi toàn khoảng trắng.
+// FIX (border): bỏ border-white/10 theo yêu cầu — chỉ giữ nền đen mờ + text-shadow.
+// FIX (không đọc được tên): trước đây "truncate" trên khung w-12/w-14 (rất hẹp)
+// cắt gần hết tên tiếng Việt có dấu — nhiều trường hợp gần như không còn ký
+// tự nào hiển thị. Giờ nới rộng khung + bỏ truncate, cho chữ wrap tự nhiên
+// (không dùng line-clamp — từng gây mất chữ hoàn toàn khi kết hợp sai với
+// block/inline-block ở nơi khác). title vẫn giữ để xem full tên khi hover.
 export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
-    const name = tp.player?.name ?? tp.player?.player?.name ?? tp.name ?? `#${tp.player_id}`;
+    const rawName = tp.player?.name || tp.player?.player?.name || tp.name || '';
+    const name = rawName.trim() || `#${tp.player_id ?? tp.id ?? '?'}`;
     const jersey = tp.jersey_number ?? '?';
     const isCap = !!tp.is_captain;
     const dotCls = DOT_PRESET[size] ?? DOT_PRESET.sm;
 
     return (
-        <div className="flex flex-col items-center gap-1 w-12 sm:w-14 shrink-0">
+        <div className="flex flex-col items-center gap-1 w-16 sm:w-20 shrink-0">
             <div className="relative">
                 <div
                     className={`${dotCls} rounded-full border-2 flex items-center justify-center font-black shadow-md shadow-black/30`}
@@ -281,10 +260,8 @@ export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
                     </span>
                 )}
             </div>
-            {/* Nền pill đen mờ + text-shadow: chữ đọc được trên mọi màu sân
-                (cỏ sáng lẫn tối), thay vì chỉ dựa vào text-shadow như trước. */}
             <span
-                className="text-[8px] sm:text-[9px] font-black text-white text-center leading-tight line-clamp-2 px-1 py-0.5 rounded bg-black/50 max-w-full truncate"
+                className="text-[8px] sm:text-[9px] font-black text-white text-center leading-snug px-1 py-0.5 rounded bg-black/80 inline-block max-w-full break-words"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                 title={name}
             >
