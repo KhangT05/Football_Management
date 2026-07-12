@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle2, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search, Info, CalendarCheck } from 'lucide-react';
 import { tournamentApi, tournamentRuleApi, seasonApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
-import { parseApiError } from '../../../utils/errorHelper';
+import { getFriendlyErrorMessage } from '../../../utils/errorHelper';
 import useToastStore from '../../../store/toastStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
@@ -148,7 +148,9 @@ export default function TournamentRulesSection() {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       setTournaments(Array.isArray(payload?.data) ? payload.data : []);
-    }).catch(() => { });
+    }).catch(err => {
+      toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách giải đấu.'));
+    });
   }, []);
 
   const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
@@ -317,13 +319,26 @@ export default function TournamentRulesSection() {
     const toAssign = [...selectedSeasonIds].filter(
       id => editableIds.has(id) && !previouslyAssignedIds.has(id)
     );
-    if (toAssign.length === 0) return { okCount: 0, failCount: 0 };
+    if (toAssign.length === 0) return { okCount: 0, failCount: 0, failMessages: [] };
 
     const results = await Promise.allSettled(
       toAssign.map(id => seasonApi.update(id, { tournament_rule_id: ruleId }))
     );
-    const failCount = results.filter(r => r.status === 'rejected').length;
-    return { okCount: toAssign.length - failCount, failCount };
+    const failed = results
+      .map((r, i) => ({ r, seasonId: toAssign[i] }))
+      .filter(({ r }) => r.status === 'rejected');
+
+    // Gom message lỗi thực tế từ từng season fail thay vì chỉ đếm số lượng —
+    // "3 mùa giải áp rule thất bại" không nói lên được LÝ DO, admin phải mò
+    // lại từng cái. Lấy tối đa 1 season name gắn kèm lỗi đầu tiên để không
+    // spam toast quá dài khi fail hàng loạt.
+    const failMessages = failed.map(({ r, seasonId }) => {
+      const seasonName = seasonsForTournament.find(s => s.id === seasonId)?.name ?? `#${seasonId}`;
+      const msg = getFriendlyErrorMessage(r.reason, 'lỗi không xác định');
+      return `${seasonName}: ${msg}`;
+    });
+
+    return { okCount: toAssign.length - failed.length, failCount: failed.length, failMessages };
   };
 
   // ASSUMPTION cần verify với api/tournamentRuleApi.js thật:
@@ -351,9 +366,13 @@ export default function TournamentRulesSection() {
       }
 
       if (ruleId && selectedSeasonIds.size > 0) {
-        const { okCount, failCount } = await applySeasonAssignments(ruleId, previouslyAssignedIds);
+        const { okCount, failCount, failMessages } = await applySeasonAssignments(ruleId, previouslyAssignedIds);
         if (okCount > 0) toast.success(`Đã áp rule cho ${okCount} mùa giải.`);
-        if (failCount > 0) toast.warning(`${failCount} mùa giải áp rule thất bại — có thể season vừa đổi trạng thái, vui lòng kiểm tra lại.`);
+        if (failCount > 0) {
+          toast.error(
+            `${failCount} mùa giải áp rule thất bại:\n${failMessages.join('\n')}`
+          );
+        }
       }
 
       setConflict(null);
@@ -364,11 +383,23 @@ export default function TournamentRulesSection() {
     } catch (err) {
       const status = err?.response?.status;
       const code = err?.response?.data?.code;
-      const message = parseApiError(err, 'Đã có lỗi xảy ra, vui lòng thử lại.');
+      // BE trả lỗi nghiệp vụ (AppError: CONFLICT, RULE_LOCKED...) kèm message
+      // tiếng Việt cụ thể, NHƯNG không nhất quán về HTTP status — log thực tế
+      // cho thấy RULE_LOCKED trả 500 thay vì 409/423 đúng ngữ nghĩa. Vì vậy
+      // KHÔNG được chọn message theo status code (bug cũ dùng parseApiError
+      // sai làm message generic "Đã có lỗi xảy ra" che mất message gốc rõ
+      // ràng từ BE). getFriendlyErrorMessage lấy message thật từ response
+      // bất kể status, chỉ fallback khi message đó không phải tiếng Việt hợp
+      // lệ (VD lỗi network, lỗi framework-level tiếng Anh).
+      const message = getFriendlyErrorMessage(
+        err,
+        'Không thể lưu luật giải — lỗi không xác định từ server, vui lòng thử lại hoặc liên hệ kỹ thuật kèm requestId trong log.'
+      );
       if (status === 409 || code === 'CONFLICT') {
         setConflict({ message, payload });
       } else {
         crud.setFormError(message);
+        toast.error(message);
       }
     } finally {
       setIsSaving(false);
@@ -378,7 +409,7 @@ export default function TournamentRulesSection() {
   const handleSave = () => {
     const payload = buildPayload();
     const err = validateClientSide(payload);
-    if (err) { crud.setFormError(err); return; }
+    if (err) { crud.setFormError(err); toast.error(err); return; }
     setConflict(null);
     runSave(payload, false);
   };
@@ -394,7 +425,7 @@ export default function TournamentRulesSection() {
       await tournamentRuleApi.delete(item.id);
       toast.success('Xóa luật giải thành công.');
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa luật giải.');
+      toast.error(getFriendlyErrorMessage(err, 'Không thể xóa luật giải — có thể luật này đang được gán cho mùa giải đang diễn ra.'));
     });
   };
 

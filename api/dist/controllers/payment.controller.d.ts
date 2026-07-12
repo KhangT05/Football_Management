@@ -8,6 +8,13 @@ export declare class PaymentController extends Controller {
     private readonly paymentService;
     constructor(paymentService: PaymentService);
     initiatePayment(body: InitiatePaymentDto, req: ExpressRequest): Promise<InitiatePaymentOutput>;
+    initiateManualPayment(body: {
+        season_team_id: number;
+    }, req: ExpressRequest): Promise<{
+        payment_id: number;
+        amount: number;
+        status: PaymentStatus;
+    }>;
     getPaymentStatus(season_team_id: number, req: ExpressRequest): Promise<PaymentRow | null>;
     handleReturn(req: ExpressRequest): Promise<{
         is_verified: boolean;

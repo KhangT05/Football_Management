@@ -4820,6 +4820,34 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsPaymentController_initiateManualPayment = {
+        body: { "in": "body", "name": "body", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "season_team_id": { "dataType": "double", "required": true } } },
+        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+    };
+    app.post('/payments/manual', authenticateMiddleware([{ "jwt": ["leader", "user", "admin", "player"] }]), ...(fetchMiddlewares(PaymentController)), ...(fetchMiddlewares(PaymentController.prototype.initiateManualPayment)), async function PaymentController_initiateManualPayment(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsPaymentController_initiateManualPayment, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(PaymentController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'initiateManualPayment',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsPaymentController_getPaymentStatus = {
         season_team_id: { "in": "query", "name": "season_team_id", "required": true, "dataType": "double" },
         req: { "in": "request", "name": "req", "required": true, "dataType": "object" },

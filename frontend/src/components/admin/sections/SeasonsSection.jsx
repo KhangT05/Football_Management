@@ -129,9 +129,18 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
 
   const [tournaments, setTournaments] = useState([]);
   useEffect(() => {
+    // Unwrap thống nhất theo pattern chung của toàn app (ManageSeasonTeams,
+    // TournamentRulesSection cùng dùng): response có thể là {status, data}
+    // (custom wrapper) hoặc raw axios response — check status là boolean để
+    // phân biệt. Không dùng `res?.data?.data || res?.data || []` vì chain
+    // "||" đó nuốt luôn trường hợp data thật là [] hoặc field sai tên, khiến
+    // lỗi shape mismatch bị che giấu thay vì lộ ra khi debug.
     tournamentApi.getAll({ per_page: 100 }).then(res => {
-      setTournaments(res?.data?.data || res?.data || []);
-    }).catch(() => { });
+      const payload = (typeof res?.status === 'boolean') ? res.data : res;
+      setTournaments(Array.isArray(payload?.data) ? payload.data : []);
+    }).catch(err => {
+      toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách giải đấu, một số chức năng có thể bị hạn chế.'));
+    });
   }, []);
 
   const { invalidate: invalidateSeasonStore } = useSeasonStore();
@@ -167,7 +176,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       invalidateSeasonStore();
       onOpenWizard?.();
     } catch (err) {
-      toast.error(getFriendlyErrorMessage(err, 'Không thể hủy mùa giải để tạo lại.'));
+      toast.error(getFriendlyErrorMessage(err, 'Không thể hủy mùa giải để tạo lại, vui lòng thử lại.'));
     } finally {
       setRecreating(false);
     }
@@ -251,7 +260,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       await seasonApi.update(crud.editing.id, updatePayload);
       toast.success(`Đã cập nhật "${crud.form.name.trim()}"!`);
     }).catch(err => {
-      const msg = getFriendlyErrorMessage(err, 'Lỗi khi cập nhật mùa giải.');
+      const msg = getFriendlyErrorMessage(err, 'Lỗi khi cập nhật mùa giải, vui lòng thử lại.');
       toast.error(msg);
       crud.setFormError(msg);
     });
@@ -263,7 +272,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       await seasonApi.delete(item.id);
       toast.success(`Đã xóa mùa giải "${item.name}".`);
     }).catch((err) => {
-      toast.error(getFriendlyErrorMessage(err, 'Không thể xóa mùa giải.'));
+      toast.error(getFriendlyErrorMessage(err, 'Không thể xóa mùa giải, vui lòng thử lại.'));
     });
   };
 
@@ -278,7 +287,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
         ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'deleted' ? { is_active: false } : {}),
       });
     } catch (err) {
-      toast.error(getFriendlyErrorMessage(err, 'Không thể khôi phục mùa giải.'));
+      toast.error(getFriendlyErrorMessage(err, 'Không thể khôi phục mùa giải, vui lòng thử lại.'));
     }
   };
 
@@ -301,13 +310,24 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       fetchSeasons();
       invalidateSeasonStore();
     } catch (err) {
+      // Các case business-rule cụ thể (deadline/start_date đã qua) được BE
+      // trả về đúng message tiếng Việt rồi — chỉ cần match theo raw string
+      // của BE (không phải diễn giải lại từ đầu) để tránh sai lệch khi BE
+      // đổi câu chữ. Mọi case khác (kể cả CONFLICT "không đủ team tối
+      // thiểu") đều rơi vào getFriendlyErrorMessage và hiển thị ĐÚNG message
+      // gốc từ BE thay vì generic message — đây chính là lỗi UX gây khó hiểu
+      // trong log bạn gửi (CONFLICT "0 approved team" bị nuốt mất, user chỉ
+      // thấy "Không thể thay đổi trạng thái").
       const raw = err?.response?.data?.body?.message || err?.response?.data?.message || '';
       if (raw.includes('registration_deadline has already passed')) {
         toast.error('Không thể mở đăng ký: Hạn đăng ký đã qua! Vui lòng cập nhật lại hạn đăng ký.');
       } else if (raw.includes('start_date has already passed')) {
         toast.error('Không thể mở đăng ký: Ngày bắt đầu mùa giải đã qua, không thể mở đăng ký cho season này nữa.');
       } else {
-        toast.error(getFriendlyErrorMessage(err, 'Không thể thay đổi trạng thái.'));
+        toast.error(getFriendlyErrorMessage(
+          err,
+          `Không thể chuyển trạng thái sang "${statusTransitionLabel[statusModal.target] || statusModal.target}" — vui lòng kiểm tra điều kiện của mùa giải (VD: đủ số đội tối thiểu) rồi thử lại.`
+        ));
       }
     } finally {
       setStatusChanging(false);
@@ -681,6 +701,12 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
               {statusModal.target === 'registration_open' && (
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-blue-300">
                   ℹ️ Mùa giải phải có đầy đủ ngày bắt đầu, kết thúc và hạn đăng ký còn hiệu lực mới có thể mở đăng ký.
+                </div>
+              )}
+
+              {statusModal.target === 'ongoing' && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-blue-300">
+                  ℹ️ Cần tối thiểu 2 đội đã được duyệt (approved) trong mùa giải để bắt đầu — nếu chưa đủ, hệ thống sẽ báo lỗi và không cho chuyển trạng thái.
                 </div>
               )}
 

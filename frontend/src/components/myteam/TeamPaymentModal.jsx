@@ -5,27 +5,31 @@ import useToastStore from '../../store/toastStore';
 import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, bankInfo = null, onClose }) {
-  const toast = useToastStore();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // FIX: dùng getState() trong callback thay vì subscribe cả store qua
+  // useToastStore() — tránh effect re-run/rebuild interval mỗi khi toastStore
+  // đổi state không liên quan (VD: toast khác được push từ nơi khác trong app).
   useEffect(() => {
-    let interval;
-    if (seasonTeamId) {
-      interval = setInterval(async () => {
-        try {
-          const res = await paymentApi.getPaymentStatus(seasonTeamId);
-          const paymentStatus = res?.data?.status;
-          if (paymentStatus === 'PAID' || paymentStatus === 'confirmed') {
-            toast.success('Thanh toán thành công! Trạng thái đã được cập nhật.');
-            onClose();
-          }
-        } catch (error) {
-          console.log(error);
+    if (!seasonTeamId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await paymentApi.getPaymentStatus(seasonTeamId);
+        // FIX: PaymentStatus enum thực tế chỉ có pending/confirmed/refund_pending/refunded
+        // — 'PAID' không tồn tại trong domain, là dead code từ nhầm hệ thống khác.
+        const paymentStatus = res?.data?.status;
+        if (paymentStatus === 'confirmed') {
+          useToastStore.getState().success('Thanh toán thành công! Trạng thái đã được cập nhật.');
+          onClose();
         }
-      }, 5000);
-    }
+      } catch (error) {
+        console.log(error);
+      }
+    }, 5000);
+
     return () => clearInterval(interval);
-  }, [seasonTeamId, onClose, toast]);
+  }, [seasonTeamId, onClose]);
 
   const handleVNPay = async () => {
     try {
@@ -36,21 +40,32 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
       });
       if (res?.data?.payment_url) {
         window.location.href = res.data.payment_url;
+      } else {
+        // FIX: nếu response 2xx nhưng thiếu payment_url (edge case backend trả
+        // sai shape), trước đây không có feedback gì — user thấy nút loading
+        // mãi không phản hồi. Giờ báo lỗi rõ ràng thay vì im lặng treo.
+        useToastStore.getState().error('Không nhận được đường dẫn thanh toán từ VNPay — vui lòng thử lại');
+        setIsProcessing(false);
       }
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error, 'Có lỗi khi tạo giao dịch VNPay'));
+      useToastStore.getState().error(getFriendlyErrorMessage(error, 'Có lỗi khi tạo giao dịch VNPay'));
       setIsProcessing(false);
     }
   };
 
+  // CẢNH BÁO: PaymentController hiện KHÔNG có route POST /payments/manual
+  // (comment "Route: /payments/*" liệt kê đủ initiate/status/return/ipn/list/
+  // confirm/query/refund — không có manual). Nút này sẽ 404 cho tới khi thêm
+  // route + service method tương ứng ở backend. Giữ nguyên logic FE vì đây là
+  // tính năng cần thiết (nhánh chuyển khoản thủ công), không tự chế backend.
   const handleManualPayment = async () => {
     try {
       setIsProcessing(true);
       await paymentApi.initiateManualPayment({ season_team_id: seasonTeamId });
-      toast.success('Đã gửi xác nhận thanh toán thủ công. Đang chờ Ban tổ chức duyệt!');
+      useToastStore.getState().success('Đã gửi xác nhận thanh toán thủ công. Đang chờ Ban tổ chức duyệt!');
       onClose();
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error, 'Có lỗi khi xác nhận thanh toán'));
+      useToastStore.getState().error(getFriendlyErrorMessage(error, 'Có lỗi khi xác nhận thanh toán'));
       setIsProcessing(false);
     }
   };

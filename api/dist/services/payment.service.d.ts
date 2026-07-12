@@ -13,6 +13,11 @@ export declare class PaymentService {
     constructor(prisma: PrismaClient, vnpay: VNPay);
     initiatePayment(leaderId: number, input: InitiatePaymentInput): Promise<InitiatePaymentOutput>;
     private _buildUrl;
+    initiateManualPayment(leaderId: number, seasonTeamId: number): Promise<{
+        payment_id: number;
+        amount: number;
+        status: PaymentStatus;
+    }>;
     handleIpn(query: IpnQuery): Promise<IpnResponse>;
     verifyReturn(query: Record<string, string>): Promise<{
         is_verified: boolean;

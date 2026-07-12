@@ -40,6 +40,11 @@ let PaymentController = class PaymentController extends Controller {
             return_url: body.return_url,
         });
     }
+    async initiateManualPayment(body, req) {
+        this.setStatus(201);
+        const user = req.user;
+        return this.paymentService.initiateManualPayment(user.id, body.season_team_id);
+    }
     async getPaymentStatus(season_team_id, req) {
         const user = req.user;
         return this.paymentService.getPaymentBySeasonTeam(season_team_id, user.id);
@@ -85,6 +90,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], PaymentController.prototype, "initiatePayment", null);
+__decorate([
+    Security('jwt', ['leader', 'user', 'admin', 'player']),
+    Post('manual'),
+    SuccessResponse(201, 'Manual payment initiated'),
+    __param(0, Body()),
+    __param(1, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], PaymentController.prototype, "initiateManualPayment", null);
 __decorate([
     Security('jwt', ['leader', 'user']),
     Get('status'),

@@ -11243,6 +11243,74 @@
 				}
 			}
 		},
+		"/payments/manual": {
+			"post": {
+				"operationId": "InitiateManualPayment",
+				"responses": {
+					"201": {
+						"description": "Manual payment initiated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"status": {
+											"$ref": "#/components/schemas/PaymentStatus"
+										},
+										"amount": {
+											"type": "number",
+											"format": "double"
+										},
+										"payment_id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"status",
+										"amount",
+										"payment_id"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"jwt": [
+							"leader",
+							"user",
+							"admin",
+							"player"
+						]
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"season_team_id": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"season_team_id"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/payments/status": {
 			"get": {
 				"operationId": "GetPaymentStatus",
