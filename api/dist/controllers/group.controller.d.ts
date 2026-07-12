@@ -10,6 +10,7 @@ export declare class GroupController extends Controller {
             name: string;
             format: import("../generated/prisma/enums.js").PhaseFormat;
             status: import("../generated/prisma/enums.js").PhaseStatus;
+            order: number;
             teams_per_group: number | null;
             season_id: number;
         };
@@ -22,9 +23,11 @@ export declare class GroupController extends Controller {
                 team_id: number;
             }[];
         }[];
+        eligibleTeamCount: number;
     } | {
         phase: null;
         groups: never[];
+        eligibleTeamCount: null;
     }>;
     findAllByPhase(phaseId: number): Promise<{
         phase: {
@@ -32,6 +35,7 @@ export declare class GroupController extends Controller {
             name: string;
             format: import("../generated/prisma/enums.js").PhaseFormat;
             status: import("../generated/prisma/enums.js").PhaseStatus;
+            order: number;
             teams_per_group: number | null;
             season_id: number;
         };
@@ -44,9 +48,11 @@ export declare class GroupController extends Controller {
                 team_id: number;
             }[];
         }[];
+        eligibleTeamCount: number;
     } | {
         phase: null;
         groups: never[];
+        eligibleTeamCount: null;
     }>;
     createGroup(seasonId: number, body: groupType.CreateGroupBody): Promise<{
         id: number;

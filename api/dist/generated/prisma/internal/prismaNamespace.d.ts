@@ -2269,6 +2269,9 @@ export declare const SeasonScalarFieldEnum: {
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly bank_id: "bank_id";
+    readonly bank_account_no: "bank_account_no";
+    readonly bank_account_name: "bank_account_name";
     readonly deleted_at: "deleted_at";
     readonly registration_fee: "registration_fee";
     readonly cancel_reason: "cancel_reason";
@@ -2633,6 +2636,9 @@ export type PhaseOrderByRelevanceFieldEnum = (typeof PhaseOrderByRelevanceFieldE
 export declare const SeasonOrderByRelevanceFieldEnum: {
     readonly name: "name";
     readonly description: "description";
+    readonly bank_id: "bank_id";
+    readonly bank_account_no: "bank_account_no";
+    readonly bank_account_name: "bank_account_name";
     readonly cancel_reason: "cancel_reason";
 };
 export type SeasonOrderByRelevanceFieldEnum = (typeof SeasonOrderByRelevanceFieldEnum)[keyof typeof SeasonOrderByRelevanceFieldEnum];

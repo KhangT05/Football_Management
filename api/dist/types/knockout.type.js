@@ -31,6 +31,7 @@ export const bracketSlotNodeSelect = {
     is_bye: true,
     ...seededTeamsSelect,
     ...slotLinksSelect,
+    match: { select: { status: true } },
 };
 export const slotWithParentLinksSelect = {
     id: true,

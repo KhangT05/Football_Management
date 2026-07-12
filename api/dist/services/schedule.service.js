@@ -35,6 +35,33 @@ export class ScheduleService extends ScheduleEngine {
     findAll(req = {}) {
         return this.query.run(req);
     }
+    // schedule.service.ts
+    async findMatchesBySeason(seasonId, req = {}) {
+        const page = Math.max(1, Number(req.page ?? 1));
+        const perPage = Math.max(1, Math.min(Number(req.per_page ?? 20), 300));
+        const sortCol = req.sort === 'scheduled_at' ? req.sort : 'scheduled_at';
+        const direction = (req.direction === 'asc' || req.direction === 'desc')
+            ? req.direction
+            : 'asc';
+        const where = {
+            phase: { season_id: seasonId },
+            is_active: true,
+        };
+        const [data, total] = await this.prisma.$transaction([
+            this.prisma.match.findMany({
+                where,
+                orderBy: { [sortCol]: direction },
+                skip: (page - 1) * perPage,
+                take: perPage,
+            }),
+            this.prisma.match.count({ where }),
+        ]);
+        const last_page = Math.max(1, Math.ceil(total / perPage));
+        return {
+            data,
+            meta: { total, page, per_page: perPage, last_page, has_next: page < last_page },
+        };
+    }
     async findMatchesByTeam(seasonId, teamId, req = {}) {
         const page = Math.max(1, Number(req.page ?? 1));
         const perPage = Math.max(1, Math.min(Number(req.per_page ?? 20), 300));

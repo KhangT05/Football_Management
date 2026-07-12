@@ -53,6 +53,20 @@ let KnockoutController = class KnockoutController extends Controller {
         this.setStatus(201);
         return this.service.generateKnockoutFromStandings({ ...parsed, seasonId });
     }
+    /**
+ * Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa
+ * có trận liên quan kết thúc (chặn ở service).
+ */
+    async swapSeeds(seasonId, phaseId, body) {
+        const parsed = knockoutSchema.swapSeedsRequestSchema.parse(body);
+        return this.service.swapSeeds(phaseId, parsed);
+    }
+    /**
+     * Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.
+     */
+    async confirmBracket(seasonId, phaseId) {
+        return this.service.confirmBracket(phaseId);
+    }
 };
 __decorate([
     Security('jwt', ['admin']),
@@ -92,6 +106,27 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "generateKnockoutFromStandings", null);
+__decorate([
+    Security('jwt', ['admin']),
+    Post('seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds'),
+    SuccessResponse(204, 'No Content'),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], KnockoutController.prototype, "swapSeeds", null);
+__decorate([
+    Security('jwt', ['admin']),
+    Post('seasons/{seasonId}/phases/{phaseId}/knockout/confirm'),
+    SuccessResponse(204, 'No Content'),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], KnockoutController.prototype, "confirmBracket", null);
 KnockoutController = __decorate([
     Route(''),
     Tags('Knockout'),

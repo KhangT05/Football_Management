@@ -65,7 +65,13 @@ export const knockoutGenerateOptionsSchema = z.object({
         )
         .optional(),
 });
-
+export const swapSeedsRequestSchema = z.object({
+    slotIdA: z.number().int().positive(),
+    sideA: z.enum(['home', 'away']),
+    slotIdB: z.number().int().positive(),
+    sideB: z.enum(['home', 'away']),
+});
+export type SwapSeedsRequestDto = z.infer<typeof swapSeedsRequestSchema>;
 export const advanceWinnerInputSchema = z.object({
     matchId: z.number().int().positive(),
     winnerTeamId: z.number().int().positive(),

@@ -25,8 +25,7 @@ import {
     IpnResponse,
     PaymentRow,
 } from '../types/payment.type.js';
-// Input cho refund — tạm định nghĩa local vì chưa thấy payment.type.ts đầy đủ.
-// Nên move vào payment.type.ts cho nhất quán với pattern hiện có.
+
 export interface RefundPaymentInput {
     amount: number;
     reason: string;
@@ -39,22 +38,34 @@ export interface RefundPaymentInput {
 //     → lấy registration_fee từ season (qua season_team)
 //     → tạo Payment record (pending) hoặc reuse pending còn hạn
 //     → buildPaymentUrl (có vnp_ExpireDate) → trả về payment_url
+//   Leader POST /payments/manual
+//     → tạo Payment record (pending) KHÔNG qua VNPay, KHÔNG transaction_ref
+//     → admin thấy trong listPayments, tự đối chiếu sao kê rồi confirmManual
 //   Leader redirect → VNPay gateway → quét QR / chuyển khoản
 //   VNPay IPN GET /payments/ipn
 //     → verifyIpnCall → match transaction_ref → verify amount → confirm (atomic)
 //   VNPay return URL → frontend poll hoặc lấy status từ IPN result
-//   Admin PATCH /payments/:id/confirm → manual confirm nếu IPN miss
+//   Admin PATCH /payments/:id/confirm → manual confirm nếu IPN miss HOẶC payment
+//     tạo từ nhánh manual (transaction_ref null → không thể queryDr/refund qua VNPay)
 //   Admin GET   /payments/:id/query   → queryDr đối soát khi nghi ngờ IPN miss
+//     (CHỈ áp dụng payment có transaction_ref — payment nhánh manual sẽ lỗi ở VNPay
+//     nếu gọi nhầm, xem guard trong method)
 //   Admin POST  /payments/:id/refund  → refund khi team rút lui / hoàn phí
+//     (CHỈ áp dụng payment qua VNPay — payment manual không có gateway để hoàn tự động,
+//     admin phải chuyển khoản tay và cập nhật DB riêng — ngoài scope method này)
 //
 // NOTE: model Payment không có deleted_at — hard-delete only theo schema hiện
 // tại. Mọi lookup theo field unique (id, transaction_ref) dùng findUnique;
 // lookup theo season_team_id (không unique, có thể nhiều attempt) dùng findFirst.
+//
+// NOTE (bank multi-tenant): VNPay instance (constructor) dùng 1 merchant
+// (vnp_TmnCode/vnp_HashSecret) DÙNG CHUNG cho toàn hệ thống — sandbox hiện tại
+// và production hiện tại đều như vậy. QR chuyển khoản thủ công thì multi theo
+// Season.bank_id/bank_account_no/bank_account_name — 2 cơ chế độc lập, không
+// trộn logic. Nếu sau này mỗi ban tổ chức cần merchant VNPay riêng, đó là thay
+// đổi ở tầng khác (multi VNPay instance theo season), KHÔNG sửa ở đây.
 
 export class PaymentService {
-    // Window tái sử dụng payment_url khi leader F5/back.
-    // Đây là heuristic ở app layer — KHÔNG phải vnp_ExpireDate thực tế VNPay set
-    // cho URL đó (URL đó cũng dùng cùng window này, xem _buildUrl).
     private static readonly PAYMENT_EXPIRE_MINUTES = 15;
 
     constructor(
@@ -62,13 +73,7 @@ export class PaymentService {
         private readonly vnpay: VNPay,
     ) { }
 
-    // ─── Initiate ─────────────────────────────────────────────────────────────
-    // Guards:
-    //   - season_team thuộc về leader (user_id = leaderId từ JWT)
-    //   - season còn open registration
-    //   - chưa có payment confirmed cho season_team này
-    //   - pending cũ CÒN HẠN → reuse transaction_ref (tránh duplicate khi F5)
-    //   - pending cũ HẾT HẠN → tạo payment mới, transaction_ref mới
+    // ─── Initiate (VNPay) ───────────────────────────────────────────────────────
 
     async initiatePayment(
         leaderId: number,
@@ -94,7 +99,7 @@ export class PaymentService {
                         status: true,
                         transaction_ref: true,
                         amount: true,
-                        created_at: true, // cần để check expiry window
+                        created_at: true,
                     },
                     orderBy: { created_at: 'desc' },
                     take: 1,
@@ -142,9 +147,6 @@ export class PaymentService {
             };
         }
 
-        // Tạo payment mới — pending cũ (nếu có) đã hết hạn, để nguyên trong DB
-        // (KHÔNG xoá/update nó — IPN trễ của lần trước vẫn cần match được ref cũ
-        // nếu lỡ tới muộn; guard idempotency ở handleIpn tự xử lý theo status).
         const transaction_ref = `PAY${Date.now()}${randomBytes(4).toString('hex')}`;
 
         const payment = await this.prisma.payment.create({
@@ -190,17 +192,108 @@ export class PaymentService {
             vnp_ReturnUrl: return_url,
             vnp_Locale: VnpLocale.VN,
             vnp_CurrCode: VnpCurrCode.VND,
-            // VNPay yêu cầu GMT+7 — thiếu convert này gây lệch giờ nếu server chạy UTC
             vnp_CreateDate: dateFormat(getDateInGMT7(now)),
             vnp_ExpireDate: dateFormat(getDateInGMT7(expire)),
         });
     }
 
+    // ─── Initiate manual (chuyển khoản tay, không qua VNPay) ───────────────────
+    // THÊM MỚI: nhánh này KHÔNG tạo transaction_ref, KHÔNG gọi VNPay — vì
+    // queryTransaction/refundPayment bên dưới đều bắt buộc transaction_ref để
+    // gọi vnpay.queryDr/vnpay.refund, payment tạo từ đây phải luôn transition
+    // qua confirmManual (admin đối chiếu sao kê thủ công), KHÔNG BAO GIỜ qua
+    // queryTransaction/refundPayment tự động — 2 method đó phải guard riêng
+    // (xem dưới) để tránh admin bấm nhầm gây lỗi non-null assertion runtime.
+    //
+    // Cùng validate rule với initiatePayment (season mở đăng ký, chưa confirmed,
+    // fee > 0) để tránh tạo payment rác hoặc double-payment qua đường vòng.
+
+    async initiateManualPayment(
+        leaderId: number,
+        seasonTeamId: number,
+    ): Promise<{ payment_id: number; amount: number; status: PaymentStatus }> {
+        const seasonTeam = await this.prisma.seasonTeam.findUnique({
+            where: { id: seasonTeamId },
+            select: {
+                id: true,
+                user_id: true,
+                season: {
+                    select: {
+                        registration_fee: true,
+                        is_registration_open: true,
+                        bank_id: true,
+                        bank_account_no: true,
+                        bank_account_name: true,
+                    },
+                },
+                payments: {
+                    select: { id: true, status: true, created_at: true },
+                    orderBy: { created_at: 'desc' },
+                    take: 1,
+                },
+            },
+        });
+
+        if (!seasonTeam)
+            throw createAppError('NOT_FOUND', `SeasonTeam ${seasonTeamId} không tồn tại`);
+
+        if (seasonTeam.user_id !== leaderId)
+            throw createAppError('FORBIDDEN', 'Không có quyền thanh toán cho team này');
+
+        if (!seasonTeam.season.is_registration_open)
+            throw createAppError('CONFLICT', 'Mùa giải đã đóng đăng ký');
+
+        const hasBankInfo = !!(
+            seasonTeam.season.bank_id &&
+            seasonTeam.season.bank_account_no &&
+            seasonTeam.season.bank_account_name
+        );
+        if (!hasBankInfo)
+            throw createAppError('CONFLICT', 'Ban tổ chức chưa cấu hình chuyển khoản thủ công');
+
+        const registrationFee = Number(seasonTeam.season.registration_fee);
+        if (registrationFee <= 0)
+            throw createAppError('CONFLICT', 'Mùa giải này không có phí đăng ký');
+
+        const latestPayment = seasonTeam.payments[0];
+        if (latestPayment?.status === PaymentStatus.confirmed)
+            throw createAppError('CONFLICT', 'Team đã hoàn tất thanh toán lệ phí');
+
+        // Có pending gần đây (VNPay hoặc manual trước đó) → không tạo trùng,
+        // trả lại chính record đó cho leader biết đang chờ xử lý.
+        const isPendingRecent =
+            latestPayment?.status === PaymentStatus.pending &&
+            Date.now() - latestPayment.created_at.getTime() <=
+            PaymentService.PAYMENT_EXPIRE_MINUTES * 60_000;
+
+        if (isPendingRecent) {
+            return {
+                payment_id: latestPayment.id,
+                amount: registrationFee,
+                status: PaymentStatus.pending,
+            };
+        }
+
+        const payment = await this.prisma.payment.create({
+            data: {
+                season_team_id: seasonTeamId,
+                amount: registrationFee,
+                status: PaymentStatus.pending,
+                transaction_ref: null,
+            },
+            select: { id: true },
+        });
+
+        console.log(`[Payment] Manual payment created paymentId=${payment.id} seasonTeamId=${seasonTeamId}`);
+
+        return {
+            payment_id: payment.id,
+            amount: registrationFee,
+            status: PaymentStatus.pending,
+        };
+    }
+
     // ─── IPN handler ──────────────────────────────────────────────────────────
-    // Đây là nơi DUY NHẤT update status → confirmed (source of truth).
-    // Atomic update (status điều kiện nằm trong WHERE) — chống race khi VNPay
-    // retry IPN gần như đồng thời, thứ mà read-then-write tách rời sẽ miss.
-    // KHÔNG throw — luôn return IpnResponse để controller trả HTTP 200.
 
     async handleIpn(query: IpnQuery): Promise<IpnResponse> {
         const verify = this.vnpay.verifyIpnCall(query as unknown as ReturnQueryFromVNPay);
@@ -225,7 +318,7 @@ export class PaymentService {
         }
 
         const expectedAmount = Number(payment.amount);
-        const receivedAmount = verify.vnp_Amount; // package đã /100
+        const receivedAmount = verify.vnp_Amount;
 
         if (expectedAmount !== receivedAmount) {
             console.error(
@@ -243,12 +336,11 @@ export class PaymentService {
                 paid_at: now,
                 confirmed_at: now,
                 confirmed_by: null,
-                vnp_transaction_no: verify.vnp_TransactionNo != null ? String(verify.vnp_TransactionNo) : null,// cần cho queryDr/refund sau này
+                vnp_transaction_no: verify.vnp_TransactionNo != null ? String(verify.vnp_TransactionNo) : null,
             },
         });
 
         if (result.count === 0) {
-            // Lost race — request IPN khác đã confirm trước, vẫn báo VNPay dừng retry
             return { RspCode: '02', Message: 'Order already confirmed' };
         }
 
@@ -257,7 +349,6 @@ export class PaymentService {
     }
 
     // ─── Return URL verify ────────────────────────────────────────────────────
-    // Chỉ show UI result — KHÔNG update DB. Source of truth = IPN.
 
     async verifyReturn(
         query: Record<string, string>,
@@ -281,7 +372,11 @@ export class PaymentService {
     }
 
     // ─── Manual confirm (admin) ───────────────────────────────────────────────
-    // Atomic update — chống 2 admin confirm cùng lúc (TOCTOU).
+    // FIX: khoá cứng chỉ transition từ `pending` → `confirmed`. Bản cũ dùng
+    // where: { status: payment.status } — match theo bất kỳ status hiện tại,
+    // nghĩa là admin có thể "confirm" cả payment đang refund_pending/refunded,
+    // đẩy ngược domain state sai. Giờ chỉ pending mới confirm được; các state
+    // khác → CONFLICT rõ ràng thay vì âm thầm update sai.
 
     async confirmManual(paymentId: number, adminId: number, note?: string): Promise<void> {
         const payment = await this.prisma.payment.findUnique({
@@ -292,12 +387,15 @@ export class PaymentService {
         if (!payment)
             throw createAppError('NOT_FOUND', `Payment ${paymentId} không tồn tại`);
 
-        if (payment.status === PaymentStatus.confirmed)
-            throw createAppError('CONFLICT', `Payment ${paymentId} đã confirmed`);
+        if (payment.status !== PaymentStatus.pending)
+            throw createAppError(
+                'CONFLICT',
+                `Chỉ confirm được payment đang pending (hiện tại: ${payment.status})`,
+            );
 
         const now = new Date();
         const result = await this.prisma.payment.updateMany({
-            where: { id: paymentId, status: payment.status },
+            where: { id: paymentId, status: PaymentStatus.pending },
             data: {
                 status: PaymentStatus.confirmed,
                 paid_at: now,
@@ -313,9 +411,10 @@ export class PaymentService {
     }
 
     // ─── Query transaction (admin) ────────────────────────────────────────────
-    // Đối soát khi nghi ngờ IPN miss, trước khi confirm tay.
-    // KHÔNG phải nguồn confirm chính — nếu VNPay báo success mà DB còn pending,
-    // tự reconcile bằng atomic update giống handleIpn.
+    // FIX: thêm guard transaction_ref null — payment tạo từ initiateManualPayment
+    // không có transaction_ref, gọi vnpay.queryDr sẽ crash ở `payment.transaction_ref!`
+    // (non-null assertion sai thực tế). Trước đây không có nhánh manual nên
+    // không lộ bug; giờ phải chặn tường minh, báo lỗi nghiệp vụ rõ ràng.
 
     async queryTransaction(paymentId: number): Promise<QueryDrResponse> {
         const payment = await this.prisma.payment.findUnique({
@@ -326,11 +425,17 @@ export class PaymentService {
         if (!payment)
             throw createAppError('NOT_FOUND', `Payment ${paymentId} không tồn tại`);
 
+        if (!payment.transaction_ref)
+            throw createAppError(
+                'CONFLICT',
+                'Payment này tạo qua chuyển khoản thủ công, không có giao dịch VNPay để đối soát',
+            );
+
         const now = new Date();
         const result = await this.vnpay.queryDr({
-            vnp_RequestId: randomBytes(8).toString('hex'), // unique mỗi call — KHÔNG dùng transaction_ref
-            vnp_IpAddr: process.env.SERVER_IP ?? '127.0.0.1', // IP server gọi API, không phải IP leader
-            vnp_TxnRef: payment.transaction_ref!,
+            vnp_RequestId: randomBytes(8).toString('hex'),
+            vnp_IpAddr: process.env.SERVER_IP ?? '127.0.0.1',
+            vnp_TxnRef: payment.transaction_ref,
             vnp_OrderInfo: `Query ${payment.transaction_ref}`,
             vnp_TransactionDate: dateFormat(getDateInGMT7(payment.created_at)),
             vnp_CreateDate: dateFormat(getDateInGMT7(now)),
@@ -354,9 +459,12 @@ export class PaymentService {
     }
 
     // ─── Refund (admin) ───────────────────────────────────────────────────────
-    // Lock trước khi gọi API ngoài (chống double-call irreversible).
-    // Network/timeout giữa lúc gọi VNPay → KHÔNG biết kết quả thật, giữ
-    // refund_pending để admin tự verify qua merchant portal/queryDr trước retry.
+    // FIX: thêm guard transaction_ref null — cùng lý do như queryTransaction.
+    // Payment manual đã confirmed không thể refund qua VNPay gateway (không có
+    // giao dịch gốc ở đó) — admin phải hoàn tiền tay qua ngân hàng và tự update
+    // trạng thái qua đường khác (ngoài scope method này, tránh giả vờ tự động
+    // hoàn tiền cho giao dịch chưa từng qua VNPay).
+
     async refundPayment(
         paymentId: number,
         adminId: number,
@@ -376,6 +484,11 @@ export class PaymentService {
 
         if (!payment)
             throw createAppError('NOT_FOUND', `Payment ${paymentId} không tồn tại`);
+        if (!payment.transaction_ref)
+            throw createAppError(
+                'CONFLICT',
+                'Payment này xác nhận qua chuyển khoản thủ công, không thể refund tự động qua VNPay',
+            );
         if (payment.status !== PaymentStatus.confirmed)
             throw createAppError('CONFLICT', 'Chỉ refund được payment đã confirmed');
         if (!payment.paid_at)
@@ -383,7 +496,6 @@ export class PaymentService {
         if (input.amount <= 0 || input.amount > Number(payment.amount))
             throw createAppError('CONFLICT', 'Số tiền refund không hợp lệ');
 
-        // Optimistic lock: chỉ transition từ confirmed → refund_pending
         const lock = await this.prisma.payment.updateMany({
             where: { id: paymentId, status: PaymentStatus.confirmed },
             data: { status: PaymentStatus.refund_pending },
@@ -397,7 +509,7 @@ export class PaymentService {
         try {
             result = await this.vnpay.refund({
                 vnp_RequestId: randomBytes(8).toString('hex'),
-                vnp_TxnRef: payment.transaction_ref!,
+                vnp_TxnRef: payment.transaction_ref,
                 vnp_Amount: input.amount,
                 vnp_OrderInfo: input.reason,
                 vnp_TransactionType:
@@ -413,8 +525,6 @@ export class PaymentService {
                     : undefined,
             } as Refund);
         } catch (err) {
-            // Network error / timeout — outcome không rõ, giữ refund_pending
-            // Admin cần check VNPay portal và resolve thủ công
             console.error(
                 `[Refund] Network/timeout paymentId=${paymentId} txn=${payment.transaction_ref}`,
                 err,
@@ -426,7 +536,6 @@ export class PaymentService {
         }
 
         if (result.vnp_ResponseCode !== '00') {
-            // VNPay reject rõ ràng → revert về confirmed
             await this.prisma.payment.update({
                 where: { id: paymentId },
                 data: { status: PaymentStatus.confirmed },
@@ -476,7 +585,15 @@ export class PaymentService {
                     select: {
                         user_id: true,
                         team: { select: { name: true } },
-                        season: { select: { name: true, registration_fee: true } },
+                        season: {
+                            select: {
+                                name: true,
+                                registration_fee: true,
+                                bank_id: true,
+                                bank_account_no: true,
+                                bank_account_name: true,
+                            },
+                        },
                     },
                 },
             },
@@ -486,6 +603,9 @@ export class PaymentService {
 
         if (payment.season_team.user_id !== leaderId)
             throw createAppError('FORBIDDEN', 'Không có quyền xem payment này');
+
+        const { season } = payment.season_team;
+        const hasBankInfo = !!(season.bank_id && season.bank_account_no && season.bank_account_name);
 
         return {
             id: payment.id,
@@ -498,12 +618,21 @@ export class PaymentService {
             confirmed_by: payment.confirmed_by,
             created_at: payment.created_at,
             team_name: payment.season_team.team.name,
-            season_name: payment.season_team.season.name,
-            registration_fee: Number(payment.season_team.season.registration_fee),
+            season_name: season.name,
+            registration_fee: Number(season.registration_fee),
+            bank_info: hasBankInfo
+                ? {
+                    bank_id: season.bank_id!,
+                    bank_account_no: season.bank_account_no!,
+                    bank_account_name: season.bank_account_name!,
+                }
+                : null,
         };
     }
 
-    // ─── List (admin) ─────────────────────────────────────────────────────────
+    // ─── List (admin) — pagination offset-based, đã dùng đúng chuẩn ────────────
+    // page/limit từ query, skip/take cho Prisma, total riêng biệt qua count()
+    // để FE tính totalPages mà không phải load hết data.
 
     async listPayments(filter: {
         season_id?: number;
@@ -540,7 +669,15 @@ export class PaymentService {
                         select: {
                             user_id: true,
                             team: { select: { name: true } },
-                            season: { select: { name: true, registration_fee: true } },
+                            season: {
+                                select: {
+                                    name: true,
+                                    registration_fee: true,
+                                    bank_id: true,
+                                    bank_account_no: true,
+                                    bank_account_name: true,
+                                },
+                            },
                         },
                     },
                 },
@@ -549,20 +686,31 @@ export class PaymentService {
         ]);
 
         return {
-            data: rows.map(p => ({
-                id: p.id,
-                season_team_id: p.season_team_id,
-                amount: Number(p.amount),
-                status: p.status,
-                transaction_ref: p.transaction_ref,
-                paid_at: p.paid_at,
-                confirmed_at: p.confirmed_at,
-                confirmed_by: p.confirmed_by,
-                created_at: p.created_at,
-                team_name: p.season_team.team.name,
-                season_name: p.season_team.season.name,
-                registration_fee: Number(p.season_team.season.registration_fee),
-            })),
+            data: rows.map(p => {
+                const { season } = p.season_team;
+                const hasBankInfo = !!(season.bank_id && season.bank_account_no && season.bank_account_name);
+                return {
+                    id: p.id,
+                    season_team_id: p.season_team_id,
+                    amount: Number(p.amount),
+                    status: p.status,
+                    transaction_ref: p.transaction_ref,
+                    paid_at: p.paid_at,
+                    confirmed_at: p.confirmed_at,
+                    confirmed_by: p.confirmed_by,
+                    created_at: p.created_at,
+                    team_name: p.season_team.team.name,
+                    season_name: season.name,
+                    registration_fee: Number(season.registration_fee),
+                    bank_info: hasBankInfo
+                        ? {
+                            bank_id: season.bank_id!,
+                            bank_account_no: season.bank_account_no!,
+                            bank_account_name: season.bank_account_name!,
+                        }
+                        : null,
+                };
+            }),
             total,
             page,
             limit,

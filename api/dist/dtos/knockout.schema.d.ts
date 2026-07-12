@@ -20,6 +20,19 @@ export declare const knockoutGenerateOptionsSchema: z.ZodObject<{
         readonly final: "final";
     }> & z.ZodType<"round_of_16" | "quarter_final" | "semi_final" | "final", "group_stage" | "round_of_16" | "quarter_final" | "semi_final" | "third_place" | "final", z.core.$ZodTypeInternals<"round_of_16" | "quarter_final" | "semi_final" | "final", "group_stage" | "round_of_16" | "quarter_final" | "semi_final" | "third_place" | "final">>>;
 }, z.core.$strip>;
+export declare const swapSeedsRequestSchema: z.ZodObject<{
+    slotIdA: z.ZodNumber;
+    sideA: z.ZodEnum<{
+        home: "home";
+        away: "away";
+    }>;
+    slotIdB: z.ZodNumber;
+    sideB: z.ZodEnum<{
+        home: "home";
+        away: "away";
+    }>;
+}, z.core.$strip>;
+export type SwapSeedsRequestDto = z.infer<typeof swapSeedsRequestSchema>;
 export declare const advanceWinnerInputSchema: z.ZodObject<{
     matchId: z.ZodNumber;
     winnerTeamId: z.ZodNumber;

@@ -21,7 +21,11 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import SeasonTeamRow from '../../components/admin/SeasonTeamRow';
 import { INPUT, BTN_PRIMARY, BTN_SECONDARY, BTN_ICON } from '../../utils/adminStyles';
 import Pagination from '../../components/ui/Pagination';
-import { parseApiError } from '../../utils/errorHelper';
+// Dùng CHUNG 1 nguồn duy nhất cho việc parse lỗi API ra message hiển thị —
+// KHÔNG tự viết lại isLikelyVietnameseMessage/getFriendlyErrorMessage ở đây
+// nữa (bản cũ bị duplicate logic với utils/errorHelper.js, dễ lệch nhau khi
+// 1 trong 2 chỗ được sửa mà chỗ kia quên sửa theo).
+import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -66,7 +70,9 @@ export default function ManageSeasonTeams() {
   const setFilterSeasonStatus = (val) => setSeasonTeamFilters({ filterSeasonStatus: val });
 
   useEffect(() => {
-    fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' });
+    fetchSeasons({ per_page: 100, sort: 'id', direction: 'desc' }).catch(err => {
+      toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách mùa giải.'));
+    });
   }, [fetchSeasons]);
 
   const filteredSeasons = useMemo(() => {
@@ -80,11 +86,12 @@ export default function ManageSeasonTeams() {
   );
 
   const reloadTeams = useCallback(() => {
-    if (selectedSeason) {
-      fetchSeasonTeams({ season_id: selectedSeason, per_page: 500, sort: 'id', direction: 'asc' });
-    } else {
-      fetchSeasonTeams({ per_page: 500, sort: 'id', direction: 'asc' });
-    }
+    const params = selectedSeason
+      ? { season_id: selectedSeason, per_page: 500, sort: 'id', direction: 'asc' }
+      : { per_page: 500, sort: 'id', direction: 'asc' };
+    fetchSeasonTeams(params).catch(err => {
+      toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách đội đăng ký.'));
+    });
   }, [selectedSeason, fetchSeasonTeams]);
 
   useEffect(() => { reloadTeams(); }, [reloadTeams, selectedSeason]);
@@ -179,6 +186,11 @@ export default function ManageSeasonTeams() {
         await seasonTeamApi.updateStatus(id, { status: newStatus });
       }
 
+      // Auto-cấp quyền Leader khi duyệt team — best-effort, KHÔNG được để
+      // fail bước này làm người dùng tưởng cả thao tác duyệt đội thất bại.
+      // Nhưng cũng không được nuốt lỗi hoàn toàn (console.error cũ) vì admin
+      // cần biết để cấp quyền thủ công — nếu không, leader sẽ không đăng
+      // nhập/thao tác được mà không ai biết tại sao.
       if (newStatus === 'approved' && st?.user_id) {
         try {
           const rolesRes = await roleApi.getRoles();
@@ -200,13 +212,16 @@ export default function ManageSeasonTeams() {
             }
           }
         } catch (e) {
-          console.error("Lỗi khi cấp quyền Leader", e);
+          toast.warning(getFriendlyErrorMessage(
+            e,
+            'Duyệt đội thành công, nhưng cấp quyền Đội trưởng tự động cho user thất bại — vui lòng vào Quản lý người dùng để cấp quyền thủ công.'
+          ));
         }
       }
 
       toast.success(`Đã cập nhật trạng thái thành "${newStatus}"!`);
       reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trạng thái.'));
+    }).catch(err => toast.error(getFriendlyErrorMessage(err, 'Lỗi khi cập nhật trạng thái đội, vui lòng thử lại.')));
   };
 
   const deleteMutation = useApiMutation();
@@ -218,7 +233,7 @@ export default function ManageSeasonTeams() {
       toast.success('Đã xóa đội khỏi mùa giải.');
       setDeletingId(null);
       reloadTeams();
-    }).catch(err => toast.error(err?.response?.data?.message || 'Lỗi khi xóa.'));
+    }).catch(err => toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xóa đội khỏi mùa giải, vui lòng thử lại.')));
   };
 
   const [allTeams, setAllTeams] = useState([]);
@@ -229,6 +244,8 @@ export default function ManageSeasonTeams() {
       teamApi.getTeams({ per_page: 200 }).then(res => {
         const payload = (typeof res?.status === 'boolean') ? res.data : res;
         setAllTeams(Array.isArray(payload?.data) ? payload.data : []);
+      }).catch(err => {
+        toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách đội bóng để thêm vào mùa giải.'));
       });
     }
     addTeamModal.openAdd({ team_id: '', season_id: selectedSeason || '' });
@@ -245,7 +262,11 @@ export default function ManageSeasonTeams() {
       });
       toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
-    }).catch(err => addTeamModal.setFormError(parseApiError(err, 'Lỗi khi thêm đội.')));
+    }).catch(err => {
+      const msg = getFriendlyErrorMessage(err, 'Lỗi khi thêm đội vào mùa giải — có thể đội đã tham gia mùa giải này hoặc mùa giải đã đóng đăng ký.');
+      addTeamModal.setFormError(msg);
+      toast.error(msg);
+    });
   };
 
   const assignModal = useCrudModal({ emptyForm: { group_id: '' } });
@@ -256,7 +277,11 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.assignGroup(assignModal.editing.id, { group_id: Number(assignModal.form.group_id) });
       toast.success('Đã xếp đội vào bảng thủ công!');
       reloadTeams();
-    }).catch(err => assignModal.setFormError(parseApiError(err, 'Lỗi khi xếp bảng.')));
+    }).catch(err => {
+      const msg = getFriendlyErrorMessage(err, 'Lỗi khi xếp đội vào bảng — kiểm tra lại ID bảng có tồn tại và thuộc đúng mùa giải không.');
+      assignModal.setFormError(msg);
+      toast.error(msg);
+    });
   };
 
   const transferModal = useCrudModal({ emptyForm: { target_season_id: '' } });
@@ -269,7 +294,11 @@ export default function ManageSeasonTeams() {
       await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
       toast.success('Đã chuyển đội sang mùa giải mới!');
       reloadTeams();
-    }).catch(err => transferModal.setFormError(parseApiError(err, 'Lỗi khi chuyển đội.')));
+    }).catch(err => {
+      const msg = getFriendlyErrorMessage(err, 'Lỗi khi chuyển đội sang mùa giải khác, vui lòng thử lại.');
+      transferModal.setFormError(msg);
+      toast.error(msg);
+    });
   };
 
   const selectedSeasonObj = seasons.find(s => String(s.id) === String(selectedSeason));
@@ -337,21 +366,22 @@ export default function ManageSeasonTeams() {
             {STATS_CARDS.map(({ label, statusKey, color, icon }) => {
               const CardIcon = icon;
               return (
-              <div
-                key={label}
-                onClick={() => {
-                  if (statusKey === null) { setFilterStatus(''); return; }
-                  setFilterStatus(prev => prev === statusKey ? '' : statusKey);
-                }}
-                className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group ${filterStatus === statusKey ? `border-${color}-500/60 ring-1 ring-${color}-500/30` : ''}`}
-              >
-                <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
-                <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
-                  <CardIcon className={`w-3 h-3 text-${color}-400`} />
-                  {label}
+                <div
+                  key={label}
+                  onClick={() => {
+                    if (statusKey === null) { setFilterStatus(''); return; }
+                    setFilterStatus(prev => prev === statusKey ? '' : statusKey);
+                  }}
+                  className={`bg-navy border border-navy-light rounded-xl p-4 shadow-lg shadow-black/15 hover:border-${color}-500/40 transition-all cursor-pointer group ${filterStatus === statusKey ? `border-${color}-500/60 ring-1 ring-${color}-500/30` : ''}`}
+                >
+                  <div className={`text-2xl font-black text-${color}-400 group-hover:scale-110 transition-transform`}>{statValueMap[label]}</div>
+                  <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1">
+                    <CardIcon className={`w-3 h-3 text-${color}-400`} />
+                    {label}
+                  </div>
                 </div>
-              </div>
-            )})}
+              )
+            })}
           </div>
 
           <div className="flex items-center gap-2 border-b border-navy-light">

@@ -1979,7 +1979,7 @@
                     "locked"
                 ]
             },
-            "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_": {
+            "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_": {
                 "properties": {
                     "name": {
                         "type": "string"
@@ -2010,6 +2010,15 @@
                     "is_registration_open": {
                         "type": "boolean"
                     },
+                    "bank_id": {
+                        "type": "string"
+                    },
+                    "bank_account_no": {
+                        "type": "string"
+                    },
+                    "bank_account_name": {
+                        "type": "string"
+                    },
                     "cancel_reason": {
                         "type": "string"
                     },
@@ -2027,6 +2036,9 @@
                     "registration_deadline",
                     "max_teams",
                     "is_registration_open",
+                    "bank_id",
+                    "bank_account_no",
+                    "bank_account_name",
                     "cancel_reason",
                     "group_count"
                 ],
@@ -2036,7 +2048,7 @@
             "SeasonListItem": {
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_"
+                        "$ref": "#/components/schemas/Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_"
                     },
                     {
                         "properties": {
@@ -2115,6 +2127,15 @@
                     "registration_fee": {
                         "$ref": "#/components/schemas/Decimal"
                     },
+                    "bank_account_name": {
+                        "type": "string"
+                    },
+                    "bank_account_no": {
+                        "type": "string"
+                    },
+                    "bank_id": {
+                        "type": "string"
+                    },
                     "is_registration_open": {
                         "type": "boolean"
                     },
@@ -2176,6 +2197,9 @@
                     "group_count",
                     "cancel_reason",
                     "registration_fee",
+                    "bank_account_name",
+                    "bank_account_no",
+                    "bank_id",
                     "is_registration_open",
                     "max_teams",
                     "registration_deadline",
@@ -2204,6 +2228,15 @@
             },
             "infer_typeofcreateSeasonSchema_": {
                 "properties": {
+                    "bank_account_name": {
+                        "type": "string"
+                    },
+                    "bank_account_no": {
+                        "type": "string"
+                    },
+                    "bank_id": {
+                        "type": "string"
+                    },
                     "registration_deadline": {
                         "type": "string",
                         "format": "date-time"
@@ -2269,6 +2302,15 @@
                         "type": "number",
                         "format": "double"
                     },
+                    "bank_account_name": {
+                        "type": "string"
+                    },
+                    "bank_account_no": {
+                        "type": "string"
+                    },
+                    "bank_id": {
+                        "type": "string"
+                    },
                     "is_registration_open": {
                         "type": "boolean"
                     },
@@ -2319,9 +2361,6 @@
             },
             "infer_typeofUpdateSeasonStatusSchema_": {
                 "properties": {
-                    "cancel_reason": {
-                        "type": "string"
-                    },
                     "status": {
                         "type": "string",
                         "enum": [
@@ -3776,6 +3815,26 @@
                     "registration_fee": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "bank_info": {
+                        "properties": {
+                            "bank_account_name": {
+                                "type": "string"
+                            },
+                            "bank_account_no": {
+                                "type": "string"
+                            },
+                            "bank_id": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "bank_account_name",
+                            "bank_account_no",
+                            "bank_id"
+                        ],
+                        "type": "object",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -3790,7 +3849,8 @@
                     "created_at",
                     "team_name",
                     "season_name",
-                    "registration_fee"
+                    "registration_fee",
+                    "bank_info"
                 ],
                 "type": "object",
                 "additionalProperties": false
@@ -5027,6 +5087,14 @@
                         "type": "number",
                         "format": "double",
                         "nullable": true
+                    },
+                    "matchStatus": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MatchStatus"
+                            }
+                        ],
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -5038,7 +5106,8 @@
                     "seededHomeTeamId",
                     "seededAwayTeamId",
                     "sourceASlotId",
-                    "sourceBSlotId"
+                    "sourceBSlotId",
+                    "matchStatus"
                 ],
                 "type": "object",
                 "additionalProperties": false
@@ -5113,6 +5182,42 @@
             },
             "AutoSeedKnockoutRequestDto": {
                 "$ref": "#/components/schemas/infer_typeofautoSeedKnockoutRequestSchema_"
+            },
+            "infer_typeofswapSeedsRequestSchema_": {
+                "properties": {
+                    "sideB": {
+                        "type": "string",
+                        "enum": [
+                            "home",
+                            "away"
+                        ]
+                    },
+                    "slotIdB": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "sideA": {
+                        "type": "string",
+                        "enum": [
+                            "home",
+                            "away"
+                        ]
+                    },
+                    "slotIdA": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "sideB",
+                    "slotIdB",
+                    "sideA",
+                    "slotIdA"
+                ],
+                "type": "object"
+            },
+            "SwapSeedsRequestDto": {
+                "$ref": "#/components/schemas/infer_typeofswapSeedsRequestSchema_"
             },
             "JerseyType": {
                 "type": "string",
@@ -9166,7 +9271,7 @@
                         }
                     }
                 },
-                "description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\n(theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.",
+                "description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\n(theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho\naudit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có\nđường tắt nào set 'cancelled' mà thiếu cancel_reason.",
                 "tags": [
                     "Seasons"
                 ],
@@ -9215,6 +9320,7 @@
                         }
                     }
                 },
+                "description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\n(id, status) — dùng cho registration_open/ongoing/finished, admin bấm\ntay song song với cron SeasonService.runAutoTransitions().",
                 "tags": [
                     "Seasons"
                 ],
@@ -9246,6 +9352,57 @@
                         }
                     }
                 }
+            }
+        },
+        "/seasons/auto-transition": {
+            "post": {
+                "operationId": "RunAutoTransitions",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "failed": {
+                                            "items": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "toFinished": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "toOngoing": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "failed",
+                                        "toFinished",
+                                        "toOngoing"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\ncho admin/ops, không phải cách vận hành chính.",
+                "tags": [
+                    "Seasons"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": []
             }
         },
         "/seasons/{id}/standings/{groupId}": {
@@ -11080,6 +11237,74 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/InitiatePaymentDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/manual": {
+            "post": {
+                "operationId": "InitiateManualPayment",
+                "responses": {
+                    "201": {
+                        "description": "Manual payment initiated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "$ref": "#/components/schemas/PaymentStatus"
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "payment_id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "amount",
+                                        "payment_id"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Payment"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "leader",
+                            "user",
+                            "admin",
+                            "player"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "season_team_id": {
+                                        "type": "number",
+                                        "format": "double"
+                                    }
+                                },
+                                "required": [
+                                    "season_team_id"
+                                ],
+                                "type": "object"
                             }
                         }
                     }
@@ -12965,6 +13190,98 @@
                 }
             }
         },
+        "/seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds": {
+            "post": {
+                "operationId": "SwapSeeds",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "description": "Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa\r\ncó trận liên quan kết thúc (chặn ở service).",
+                "tags": [
+                    "Knockout"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "phaseId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SwapSeedsRequestDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/seasons/{seasonId}/phases/{phaseId}/knockout/confirm": {
+            "post": {
+                "operationId": "ConfirmBracket",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "description": "Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.",
+                "tags": [
+                    "Knockout"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "phaseId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
         "/jerseys/season-teams/{seasonTeamId}": {
             "get": {
                 "operationId": "GetSeasonTeamJerseys",
@@ -13111,6 +13428,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "eligibleTeamCount": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
                                         "groups": {
                                             "items": {
                                                 "properties": {
@@ -13165,6 +13486,10 @@
                                                     "type": "number",
                                                     "format": "double"
                                                 },
+                                                "order": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
                                                 "status": {
                                                     "$ref": "#/components/schemas/PhaseStatus"
                                                 },
@@ -13182,6 +13507,7 @@
                                             "required": [
                                                 "season_id",
                                                 "teams_per_group",
+                                                "order",
                                                 "status",
                                                 "format",
                                                 "name",
@@ -13191,6 +13517,7 @@
                                         }
                                     },
                                     "required": [
+                                        "eligibleTeamCount",
                                         "groups",
                                         "phase"
                                     ],
@@ -13291,6 +13618,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "eligibleTeamCount": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
                                         "groups": {
                                             "items": {
                                                 "properties": {
@@ -13345,6 +13676,10 @@
                                                     "type": "number",
                                                     "format": "double"
                                                 },
+                                                "order": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
                                                 "status": {
                                                     "$ref": "#/components/schemas/PhaseStatus"
                                                 },
@@ -13362,6 +13697,7 @@
                                             "required": [
                                                 "season_id",
                                                 "teams_per_group",
+                                                "order",
                                                 "status",
                                                 "format",
                                                 "name",
@@ -13371,6 +13707,7 @@
                                         }
                                     },
                                     "required": [
+                                        "eligibleTeamCount",
                                         "groups",
                                         "phase"
                                     ],

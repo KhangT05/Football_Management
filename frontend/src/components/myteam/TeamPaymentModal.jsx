@@ -1,37 +1,35 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, X, Info, QrCode, Users, ExternalLink, Loader2, Wallet } from 'lucide-react';
+import { CreditCard, X, Info, QrCode, Users, Loader2, Wallet, AlertTriangle } from 'lucide-react';
 import { paymentApi } from '../../api';
 import useToastStore from '../../store/toastStore';
+import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
-const DEFAULT_BANK = {
-  BANK_ID: '970415', // ID-Bank (https://api.vietqr.io/v2/banks)
-  ACCOUNT_NO: '108879326878', // STK Thật
-  ACCOUNT_NAME: 'NGUYEN HOANG HUY' //Tên TK Thật
-};
-
-export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 2000, onClose }) {
-  const toast = useToastStore();
+export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, bankInfo = null, onClose }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Auto polling status
+  // FIX: dùng getState() trong callback thay vì subscribe cả store qua
+  // useToastStore() — tránh effect re-run/rebuild interval mỗi khi toastStore
+  // đổi state không liên quan (VD: toast khác được push từ nơi khác trong app).
   useEffect(() => {
-    let interval;
-    if (seasonTeamId) {
-      interval = setInterval(async () => {
-        try {
-          const res = await paymentApi.getPaymentStatus(seasonTeamId);
-          const paymentStatus = res?.data?.status;
-          if (paymentStatus === 'PAID' || paymentStatus === 'confirmed') {
-            toast.success('Thanh toán thành công! Trạng thái đã được cập nhật.');
-            onClose();
-          }
-        } catch (error) {
-          console.log(error);
+    if (!seasonTeamId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await paymentApi.getPaymentStatus(seasonTeamId);
+        // FIX: PaymentStatus enum thực tế chỉ có pending/confirmed/refund_pending/refunded
+        // — 'PAID' không tồn tại trong domain, là dead code từ nhầm hệ thống khác.
+        const paymentStatus = res?.data?.status;
+        if (paymentStatus === 'confirmed') {
+          useToastStore.getState().success('Thanh toán thành công! Trạng thái đã được cập nhật.');
+          onClose();
         }
-      }, 5000);
-    }
+      } catch (error) {
+        console.log(error);
+      }
+    }, 5000);
+
     return () => clearInterval(interval);
-  }, [seasonTeamId, onClose, toast]);
+  }, [seasonTeamId, onClose]);
 
   const handleVNPay = async () => {
     try {
@@ -42,24 +40,41 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 2000
       });
       if (res?.data?.payment_url) {
         window.location.href = res.data.payment_url;
+      } else {
+        // FIX: nếu response 2xx nhưng thiếu payment_url (edge case backend trả
+        // sai shape), trước đây không có feedback gì — user thấy nút loading
+        // mãi không phản hồi. Giờ báo lỗi rõ ràng thay vì im lặng treo.
+        useToastStore.getState().error('Không nhận được đường dẫn thanh toán từ VNPay — vui lòng thử lại');
+        setIsProcessing(false);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi khi tạo giao dịch VNPay');
+      useToastStore.getState().error(getFriendlyErrorMessage(error, 'Có lỗi khi tạo giao dịch VNPay'));
       setIsProcessing(false);
     }
   };
 
+  // CẢNH BÁO: PaymentController hiện KHÔNG có route POST /payments/manual
+  // (comment "Route: /payments/*" liệt kê đủ initiate/status/return/ipn/list/
+  // confirm/query/refund — không có manual). Nút này sẽ 404 cho tới khi thêm
+  // route + service method tương ứng ở backend. Giữ nguyên logic FE vì đây là
+  // tính năng cần thiết (nhánh chuyển khoản thủ công), không tự chế backend.
   const handleManualPayment = async () => {
     try {
       setIsProcessing(true);
       await paymentApi.initiateManualPayment({ season_team_id: seasonTeamId });
-      toast.success('Đã gửi xác nhận thanh toán thủ công. Đang chờ Ban tổ chức duyệt!');
+      useToastStore.getState().success('Đã gửi xác nhận thanh toán thủ công. Đang chờ Ban tổ chức duyệt!');
       onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi khi xác nhận thanh toán');
+      useToastStore.getState().error(getFriendlyErrorMessage(error, 'Có lỗi khi xác nhận thanh toán'));
       setIsProcessing(false);
     }
   };
+
+  const hasManualOption = !!(bankInfo?.bank_id && bankInfo?.bank_account_no && bankInfo?.bank_account_name);
+
+  const qrUrl = hasManualOption
+    ? `https://img.vietqr.io/image/${bankInfo.bank_id}-${bankInfo.bank_account_no}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent((teamName || 'TEAM') + ' LE PHI')}&accountName=${encodeURIComponent(bankInfo.bank_account_name)}`
+    : null;
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
@@ -90,8 +105,7 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 2000
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* VNPay Option */}
+          <div className={`grid grid-cols-1 ${hasManualOption ? 'md:grid-cols-2' : ''} gap-5`}>
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 flex flex-col gap-4 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-300 group">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
@@ -115,31 +129,43 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 2000
               </button>
             </div>
 
-            {/* Manual Payment Option */}
-            <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
-              <div className="w-full max-w-[200px] aspect-square bg-white rounded-3xl flex items-center justify-center p-3 shadow-xl group-hover:scale-[1.02] transition-transform duration-300">
-                <img
-                  src={`https://img.vietqr.io/image/${DEFAULT_BANK.BANK_ID}-${DEFAULT_BANK.ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent((teamName || 'TEAM') + ' LE PHI')}&accountName=${encodeURIComponent(DEFAULT_BANK.ACCOUNT_NAME)}`}
-                  alt="VietQR chuyển khoản"
-                  className="w-full h-full object-contain rounded-2xl"
-                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                />
-                <div style={{ display: 'none' }} className="w-full h-full items-center justify-center">
-                  <QrCode className="w-12 h-12 text-gray-400" />
+            {hasManualOption ? (
+              <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 text-center flex flex-col items-center justify-center gap-4 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
+                <div className="w-full max-w-[200px] aspect-square bg-white rounded-3xl flex items-center justify-center p-3 shadow-xl group-hover:scale-[1.02] transition-transform duration-300">
+                  <img
+                    src={qrUrl}
+                    alt="VietQR chuyển khoản"
+                    className="w-full h-full object-contain rounded-2xl"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                  />
+                  <div style={{ display: 'none' }} className="w-full h-full items-center justify-center">
+                    <QrCode className="w-12 h-12 text-gray-400" />
+                  </div>
                 </div>
+                <div className="text-xs font-mono font-bold bg-navy-dark px-3 py-2 rounded-xl border border-navy-light text-emerald-400 w-full text-center truncate">
+                  ND: {teamName} LE PHI
+                </div>
+                <div className="text-[11px] text-gray-500 -mt-2">
+                  Nhận bởi: {bankInfo.bank_account_name}
+                </div>
+                <button
+                  onClick={handleManualPayment}
+                  disabled={isProcessing}
+                  className="w-full mt-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+                  Tôi đã chuyển khoản
+                </button>
               </div>
-              <div className="text-xs font-mono font-bold bg-navy-dark px-3 py-2 rounded-xl border border-navy-light text-emerald-400 w-full text-center truncate">
-                ND: {teamName} LE PHI
+            ) : (
+              <div className="border border-dashed border-navy-light bg-navy/30 rounded-4xl p-6 flex flex-col items-center justify-center gap-3 text-center">
+                <AlertTriangle className="w-8 h-8 text-gray-500" />
+                <p className="text-sm text-gray-400">
+                  Ban tổ chức giải này chưa cấu hình chuyển khoản thủ công.
+                  Vui lòng dùng VNPay.
+                </p>
               </div>
-              <button
-                onClick={handleManualPayment}
-                disabled={isProcessing}
-                className="w-full mt-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
-                Tôi đã chuyển khoản
-              </button>
-            </div>
+            )}
           </div>
         </div>
 

@@ -54,6 +54,17 @@ export class PaymentController extends Controller {
             return_url: body.return_url,
         });
     }
+    @Security('jwt', ['leader', 'user', 'admin', 'player'])
+    @Post('manual')
+    @SuccessResponse(201, 'Manual payment initiated')
+    async initiateManualPayment(
+        @Body() body: { season_team_id: number },
+        @Request() req: ExpressRequest,
+    ): Promise<{ payment_id: number; amount: number; status: PaymentStatus }> {
+        this.setStatus(201);
+        const user = (req as any).user as { id: number };
+        return this.paymentService.initiateManualPayment(user.id, body.season_team_id);
+    }
 
     @Security('jwt', ['leader', 'user'])
     @Get('status')

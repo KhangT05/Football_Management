@@ -332,7 +332,7 @@ export class StandingsService {
         tx: Prisma.TransactionClient,
     ): Promise<void> {
         // Row lock — xem giải thích ở recomputeGroupStandings phía trên.
-        await tx.$queryRaw`SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM \`groups\` WHERE id = ${groupId} FOR UPDATE`;
 
         const group = await tx.group.findUniqueOrThrow({
             where: { id: groupId },
@@ -589,6 +589,9 @@ export class StandingsService {
                     cancel_reason: true,
                     is_registration_open: true,
                     group_count: true,
+                    bank_id: true,
+                    bank_account_no: true,
+                    bank_account_name: true,
                     tournament: {
                         select: { id: true, name: true },
                     },

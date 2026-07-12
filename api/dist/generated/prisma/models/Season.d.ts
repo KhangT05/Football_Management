@@ -44,6 +44,9 @@ export type SeasonMinAggregateOutputType = {
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
+    bank_id: string | null;
+    bank_account_no: string | null;
+    bank_account_name: string | null;
     deleted_at: Date | null;
     registration_fee: runtime.Decimal | null;
     cancel_reason: string | null;
@@ -65,6 +68,9 @@ export type SeasonMaxAggregateOutputType = {
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
+    bank_id: string | null;
+    bank_account_no: string | null;
+    bank_account_name: string | null;
     deleted_at: Date | null;
     registration_fee: runtime.Decimal | null;
     cancel_reason: string | null;
@@ -86,6 +92,9 @@ export type SeasonCountAggregateOutputType = {
     is_active: number;
     created_at: number;
     updated_at: number;
+    bank_id: number;
+    bank_account_no: number;
+    bank_account_name: number;
     deleted_at: number;
     registration_fee: number;
     cancel_reason: number;
@@ -126,6 +135,9 @@ export type SeasonMinAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    bank_id?: true;
+    bank_account_no?: true;
+    bank_account_name?: true;
     deleted_at?: true;
     registration_fee?: true;
     cancel_reason?: true;
@@ -147,6 +159,9 @@ export type SeasonMaxAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    bank_id?: true;
+    bank_account_no?: true;
+    bank_account_name?: true;
     deleted_at?: true;
     registration_fee?: true;
     cancel_reason?: true;
@@ -168,6 +183,9 @@ export type SeasonCountAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    bank_id?: true;
+    bank_account_no?: true;
+    bank_account_name?: true;
     deleted_at?: true;
     registration_fee?: true;
     cancel_reason?: true;
@@ -266,6 +284,9 @@ export type SeasonGroupByOutputType = {
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
+    bank_id: string | null;
+    bank_account_no: string | null;
+    bank_account_name: string | null;
     deleted_at: Date | null;
     registration_fee: runtime.Decimal;
     cancel_reason: string | null;
@@ -298,6 +319,9 @@ export type SeasonWhereInput = {
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
+    bank_id?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_no?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_name?: Prisma.StringNullableFilter<"Season"> | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
@@ -328,6 +352,9 @@ export type SeasonOrderByWithRelationInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_account_no?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     registration_fee?: Prisma.SortOrder;
     cancel_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -362,6 +389,9 @@ export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
+    bank_id?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_no?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_name?: Prisma.StringNullableFilter<"Season"> | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
@@ -392,6 +422,9 @@ export type SeasonOrderByWithAggregationInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_account_no?: Prisma.SortOrderInput | Prisma.SortOrder;
+    bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     registration_fee?: Prisma.SortOrder;
     cancel_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -421,6 +454,9 @@ export type SeasonScalarWhereWithAggregatesInput = {
     is_active?: Prisma.BoolWithAggregatesFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Season"> | Date | string | null;
+    bank_id?: Prisma.StringNullableWithAggregatesFilter<"Season"> | string | null;
+    bank_account_no?: Prisma.StringNullableWithAggregatesFilter<"Season"> | string | null;
+    bank_account_name?: Prisma.StringNullableWithAggregatesFilter<"Season"> | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Season"> | Date | string | null;
     registration_fee?: Prisma.DecimalWithAggregatesFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.StringNullableWithAggregatesFilter<"Season"> | string | null;
@@ -441,6 +477,9 @@ export type SeasonCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -468,6 +507,9 @@ export type SeasonUncheckedCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -494,6 +536,9 @@ export type SeasonUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -521,6 +566,9 @@ export type SeasonUncheckedUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -548,6 +596,9 @@ export type SeasonCreateManyInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -568,6 +619,9 @@ export type SeasonUpdateManyMutationInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -586,6 +640,9 @@ export type SeasonUncheckedUpdateManyInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -624,6 +681,9 @@ export type SeasonCountOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    bank_id?: Prisma.SortOrder;
+    bank_account_no?: Prisma.SortOrder;
+    bank_account_name?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     registration_fee?: Prisma.SortOrder;
     cancel_reason?: Prisma.SortOrder;
@@ -654,6 +714,9 @@ export type SeasonMaxOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    bank_id?: Prisma.SortOrder;
+    bank_account_no?: Prisma.SortOrder;
+    bank_account_name?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     registration_fee?: Prisma.SortOrder;
     cancel_reason?: Prisma.SortOrder;
@@ -675,6 +738,9 @@ export type SeasonMinOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    bank_id?: Prisma.SortOrder;
+    bank_account_no?: Prisma.SortOrder;
+    bank_account_name?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     registration_fee?: Prisma.SortOrder;
     cancel_reason?: Prisma.SortOrder;
@@ -903,6 +969,9 @@ export type SeasonCreateWithoutUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -929,6 +998,9 @@ export type SeasonUncheckedCreateWithoutUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -979,6 +1051,9 @@ export type SeasonScalarWhereInput = {
     is_active?: Prisma.BoolFilter<"Season"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Season"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
+    bank_id?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_no?: Prisma.StringNullableFilter<"Season"> | string | null;
+    bank_account_name?: Prisma.StringNullableFilter<"Season"> | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Season"> | Date | string | null;
     registration_fee?: Prisma.DecimalFilter<"Season"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
@@ -999,6 +1074,9 @@ export type SeasonCreateWithoutTournamentInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1025,6 +1103,9 @@ export type SeasonUncheckedCreateWithoutTournamentInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1071,6 +1152,9 @@ export type SeasonCreateWithoutTournamentRuleInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1097,6 +1181,9 @@ export type SeasonUncheckedCreateWithoutTournamentRuleInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1143,6 +1230,9 @@ export type SeasonCreateWithoutPhasesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1169,6 +1259,9 @@ export type SeasonUncheckedCreateWithoutPhasesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1207,6 +1300,9 @@ export type SeasonUpdateWithoutPhasesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1233,6 +1329,9 @@ export type SeasonUncheckedUpdateWithoutPhasesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1258,6 +1357,9 @@ export type SeasonCreateWithoutSeason_teamsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1284,6 +1386,9 @@ export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1322,6 +1427,9 @@ export type SeasonUpdateWithoutSeason_teamsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1348,6 +1456,9 @@ export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1373,6 +1484,9 @@ export type SeasonCreateWithoutTeamStandingsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1399,6 +1513,9 @@ export type SeasonUncheckedCreateWithoutTeamStandingsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1437,6 +1554,9 @@ export type SeasonUpdateWithoutTeamStandingsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1463,6 +1583,9 @@ export type SeasonUncheckedUpdateWithoutTeamStandingsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1488,6 +1611,9 @@ export type SeasonCreateWithoutPlayerStatisticsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1514,6 +1640,9 @@ export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1552,6 +1681,9 @@ export type SeasonUpdateWithoutPlayerStatisticsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1578,6 +1710,9 @@ export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1603,6 +1738,9 @@ export type SeasonCreateWithoutNotificationsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1629,6 +1767,9 @@ export type SeasonUncheckedCreateWithoutNotificationsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1667,6 +1808,9 @@ export type SeasonUpdateWithoutNotificationsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1693,6 +1837,9 @@ export type SeasonUncheckedUpdateWithoutNotificationsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1718,6 +1865,9 @@ export type SeasonCreateWithoutArticlesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1744,6 +1894,9 @@ export type SeasonUncheckedCreateWithoutArticlesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1782,6 +1935,9 @@ export type SeasonUpdateWithoutArticlesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1808,6 +1964,9 @@ export type SeasonUncheckedUpdateWithoutArticlesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1834,6 +1993,9 @@ export type SeasonCreateManyUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1853,6 +2015,9 @@ export type SeasonUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1879,6 +2044,9 @@ export type SeasonUncheckedUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1905,6 +2073,9 @@ export type SeasonUncheckedUpdateManyWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1925,6 +2096,9 @@ export type SeasonCreateManyTournamentInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -1944,6 +2118,9 @@ export type SeasonUpdateWithoutTournamentInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1970,6 +2147,9 @@ export type SeasonUncheckedUpdateWithoutTournamentInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1996,6 +2176,9 @@ export type SeasonUncheckedUpdateManyWithoutTournamentInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2016,6 +2199,9 @@ export type SeasonCreateManyTournamentRuleInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    bank_id?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
     deleted_at?: Date | string | null;
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
@@ -2035,6 +2221,9 @@ export type SeasonUpdateWithoutTournamentRuleInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2061,6 +2250,9 @@ export type SeasonUncheckedUpdateWithoutTournamentRuleInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2087,6 +2279,9 @@ export type SeasonUncheckedUpdateManyWithoutTournamentRuleInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    bank_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_no?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2171,6 +2366,9 @@ export type SeasonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    bank_id?: boolean;
+    bank_account_no?: boolean;
+    bank_account_name?: boolean;
     deleted_at?: boolean;
     registration_fee?: boolean;
     cancel_reason?: boolean;
@@ -2202,6 +2400,9 @@ export type SeasonSelectScalar = {
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    bank_id?: boolean;
+    bank_account_no?: boolean;
+    bank_account_name?: boolean;
     deleted_at?: boolean;
     registration_fee?: boolean;
     cancel_reason?: boolean;
@@ -2210,7 +2411,7 @@ export type SeasonSelectScalar = {
     user_id?: boolean;
     tournament_rule_id?: boolean;
 };
-export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "registration_fee" | "cancel_reason" | "tournament_id" | "group_count" | "user_id" | "tournament_rule_id", ExtArgs["result"]["season"]>;
+export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "bank_id" | "bank_account_no" | "bank_account_name" | "deleted_at" | "registration_fee" | "cancel_reason" | "tournament_id" | "group_count" | "user_id" | "tournament_rule_id", ExtArgs["result"]["season"]>;
 export type SeasonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
     phases?: boolean | Prisma.Season$phasesArgs<ExtArgs>;
@@ -2249,6 +2450,9 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
+        bank_id: string | null;
+        bank_account_no: string | null;
+        bank_account_name: string | null;
         deleted_at: Date | null;
         registration_fee: runtime.Decimal;
         cancel_reason: string | null;
@@ -2579,6 +2783,9 @@ export interface SeasonFieldRefs {
     readonly is_active: Prisma.FieldRef<"Season", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Season", 'DateTime'>;
+    readonly bank_id: Prisma.FieldRef<"Season", 'String'>;
+    readonly bank_account_no: Prisma.FieldRef<"Season", 'String'>;
+    readonly bank_account_name: Prisma.FieldRef<"Season", 'String'>;
     readonly deleted_at: Prisma.FieldRef<"Season", 'DateTime'>;
     readonly registration_fee: Prisma.FieldRef<"Season", 'Decimal'>;
     readonly cancel_reason: Prisma.FieldRef<"Season", 'String'>;

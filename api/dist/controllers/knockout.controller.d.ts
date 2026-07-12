@@ -26,5 +26,14 @@ export declare class KnockoutController extends Controller {
      * CONFLICT nếu phase (get-or-create theo bracket size) đã có sẵn bracket.
      */
     generateKnockoutFromStandings(seasonId: number, body: knockoutSchema.AutoSeedKnockoutRequestDto): Promise<KnockoutGenerateResult>;
+    /**
+ * Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa
+ * có trận liên quan kết thúc (chặn ở service).
+ */
+    swapSeeds(seasonId: number, phaseId: number, body: knockoutSchema.SwapSeedsRequestDto): Promise<void>;
+    /**
+     * Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.
+     */
+    confirmBracket(seasonId: number, phaseId: number): Promise<void>;
 }
 //# sourceMappingURL=knockout.controller.d.ts.map

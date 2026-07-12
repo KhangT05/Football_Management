@@ -31,11 +31,36 @@ export declare class SeasonController extends Controller {
     update(id: number, body: seasonSchema.UpdateSeasonDto): Promise<Season>;
     softDelete(id: number): Promise<void>;
     /**
-   * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
-   * (theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.
-   */
+     * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
+     * (theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho
+     * audit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có
+     * đường tắt nào set 'cancelled' mà thiếu cancel_reason.
+     */
     cancelSeason(id: number, body: seasonSchema.CancelSeasonDto): Promise<Season>;
+    /**
+     * FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —
+     * cancelled đã tách hẳn sang cancelSeason() ở trên, và
+     * UpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên
+     * body.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi
+     * `body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền
+     * (id, status) — dùng cho registration_open/ongoing/finished, admin bấm
+     * tay song song với cron SeasonService.runAutoTransitions().
+     */
     updateStatus(id: number, body: seasonSchema.UpdateSeasonStatusDto): Promise<Season>;
+    /**
+     * Trigger thủ công cron auto-transition (registration_open→ongoing khi
+     * start_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:
+     *   - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).
+     *   - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.
+     * KHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ
+     * `seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch
+     * cho admin/ops, không phải cách vận hành chính.
+     */
+    runAutoTransitions(): Promise<{
+        toOngoing: number;
+        toFinished: number;
+        failed: number[];
+    }>;
     getGroupStandings(id: number, groupId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<import("../types/standing.type.js").TeamStandingRow>>;
     getPlayerStats(id: number, teamId?: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<import("../types/standing.type.js").PlayerStatisticRow>>;
     getSuspendedPlayers(id: number): Promise<({

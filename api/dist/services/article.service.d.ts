@@ -31,8 +31,8 @@ export declare class ArticleService {
         created_at: Date;
         url: string;
         order: number;
-        caption: string | null;
         article_id: number;
+        caption: string | null;
     }[]>;
     addMedia(articleId: number, dto: AddArticleMediaDto): Promise<{
         type: import("../generated/prisma/enums.js").MediaType;
@@ -40,8 +40,8 @@ export declare class ArticleService {
         created_at: Date;
         url: string;
         order: number;
-        caption: string | null;
         article_id: number;
+        caption: string | null;
     }>;
     /** Upload file media (ảnh/video) → lưu vào ArticleMedia trong 1 flow */
     addMediaFile(articleId: number, file: Express.Multer.File, extra?: {
@@ -54,8 +54,8 @@ export declare class ArticleService {
         created_at: Date;
         url: string;
         order: number;
-        caption: string | null;
         article_id: number;
+        caption: string | null;
     }>;
     deleteMedia(articleId: number, mediaId: number): Promise<void>;
     bulkDeleteMedia(articleId: number, dto: BulkDeleteMediaDto): Promise<{

@@ -25,6 +25,20 @@ export declare class SeasonService {
      * default cột tự lo.
      */
     create(data: CreateSeasonDto, userId: number): Promise<Season>;
+    /**
+     * FIX (field-level authorization hole): trước đây validateStatusAllowsEdit
+     * là no-op — update() nhận và ghi mọi field trong UpdateSeasonDto ở BẤT KỲ
+     * status nào, kể cả 'finished'/'cancelled'. FE chỉ ẩn nút Edit (cosmetic),
+     * gọi thẳng API vẫn sửa được toàn bộ. Giờ dùng filterUpdatableFields để
+     * chặn ở tầng service — 'ongoing' chỉ cho sửa 3 field bank (fix sai sót
+     * nhập liệu, KHÔNG cho đổi thể lệ/ngày tháng giữa giải đang chạy);
+     * 'finished'/'cancelled' không match policy nào → reject toàn bộ.
+     *
+     * Nếu payload gửi lên toàn field KHÔNG được phép ở status hiện tại (VD FE
+     * cũ vẫn gửi full payload cho season 'ongoing'), throw ngay thay vì âm
+     * thầm no-op 200 — tránh admin tưởng đã lưu nhưng thực ra bị silently
+     * ignore (đây là kiểu lỗi UX y hệt bankAllOrNothing đang tránh ở schema).
+     */
     update(id: number, data: UpdateSeasonDto): Promise<Season>;
     cancel(id: number, data: CancelSeasonDto): Promise<Season>;
     /**
@@ -54,14 +68,46 @@ export declare class SeasonService {
      * nếu autoFinalizeGroups throw, season.update không chạy nên không có
      * state nửa vời (status vẫn giữ nguyên registration_open).
      */
-    updateStatus(id: number, newStatus: SeasonStatus, meta?: {
-        cancel_reason?: string;
-    }): Promise<Season>;
+    /**
+     * Manual — admin bấm tay ở bất kỳ transition hợp lệ nào trong
+     * STATUS_TRANSITIONS, kể cả ongoing/finished. Route/controller validate
+     * qua UpdateSeasonStatusSchema (loại 'cancelled' — đi qua cancel() riêng
+     * với cancel_reason bắt buộc).
+     *
+     * Idempotent với cron: nếu cron đã tự chuyển season sang 'ongoing' rồi,
+     * admin bấm lại 'ongoing' sẽ fail ở validateStatusTransition (vì
+     * STATUS_TRANSITIONS['ongoing'] không chứa 'ongoing') — không có race
+     * gây double-processing (autoFinalizeGroups chạy đúng 1 lần).
+     */
+    updateStatus(id: number, newStatus: SeasonStatus): Promise<Season>;
+    /**
+     * Cron entry point — bổ sung SONG SONG với updateStatus() manual ở trên,
+     * không thay thế. Wire vào scheduler (node-cron, BullMQ repeatable job,
+     * hoặc pg_cron) chạy mỗi vài phút:
+     *
+     *   cron.schedule('*\/5 * * * *', () => seasonService.runAutoTransitions());
+     *
+     * Mục đích: bấm HỘ nếu tới ngày mà chưa admin nào bấm tay. Nếu admin đã
+     * bấm tay trước đó rồi thì season không còn match điều kiện WHERE
+     * (status đã đổi) → cron bỏ qua, không double-process. Idempotent theo
+     * cách chạy trễ/lặp không gây lệch state.
+     */
+    runAutoTransitions(): Promise<{
+        toOngoing: number;
+        toFinished: number;
+        failed: number[];
+    }>;
     softDelete(id: number): Promise<void>;
+    /**
+     * Trả về subset của `data` mà status hiện tại được phép ghi. Đây là
+     * single source of truth cho field-level permission — FE chỉ dùng để
+     * render UI, còn enforcement thật nằm ở đây.
+     */
+    private filterUpdatableFields;
     private validateDateRelationships;
     private validateFutureIfProvided;
     private validateStatusTransition;
     private validateStatusPreConditions;
-    private validateStatusAllowsEdit;
+    private validateStatusAllowsDelete;
 }
 //# sourceMappingURL=season.service.d.ts.map

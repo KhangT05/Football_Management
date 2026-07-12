@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search, Info } from 'lucide-react';
-import { tournamentApi, tournamentRuleApi } from '../../../api';
+import { CheckCircle2, Plus, Edit, Trash2, Save, Loader2, AlertTriangle, RefreshCw, Search, Info, CalendarCheck } from 'lucide-react';
+import { tournamentApi, tournamentRuleApi, seasonApi } from '../../../api';
 import { useApiQuery, useCrudModal } from '../../../hooks';
-import { parseApiError } from '../../../utils/errorHelper';
+import { getFriendlyErrorMessage } from '../../../utils/errorHelper';
 import useToastStore from '../../../store/toastStore';
 import AdminModal from '../AdminModal';
 import ConfirmDeleteModal from '../ConfirmDeleteModal';
@@ -64,6 +64,21 @@ const validateFormatConsistency = (format, stages) => {
   return null;
 };
 
+// Mirror TournamentRuleService.EDITABLE_SEASON_STATUSES — season ở các
+// status này mới cho phép gán/đổi rule. ongoing/finished/cancelled bị khoá
+// cứng phía BE (RULE_LOCKED khi sửa field rule, và về mặt nghiệp vụ gán rule
+// khác cho season đã có match official cũng nguy hiểm tương tự retroactive
+// scoring change) — khoá luôn ở FE để tránh gọi API vô ích rồi nhận lỗi.
+const SEASON_ASSIGNABLE_STATUSES = ['upcoming', 'registration_open'];
+const SEASON_STATUS_META = {
+  upcoming: { label: 'Sắp diễn ra', cls: 'bg-slate-400/10 text-slate-300 border-slate-500/30' },
+  registration_open: { label: 'Mở đăng ký', cls: 'bg-blue-400/10 text-blue-400 border-blue-400/30' },
+  ongoing: { label: 'Đang diễn ra', cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' },
+  finished: { label: 'Kết thúc', cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30' },
+  cancelled: { label: 'Đã hủy', cls: 'bg-red-400/10 text-red-400 border-red-400/30' },
+};
+const isSeasonAssignable = (season) => SEASON_ASSIGNABLE_STATUSES.includes(season.status);
+
 const DEFAULT_RULE_FORM = {
   tournament_id: '',
   name: 'Default Rule',
@@ -108,6 +123,16 @@ export default function TournamentRulesSection() {
     }
   );
 
+  // Danh sách season toàn hệ thống — cần để build "chọn season áp rule" theo
+  // tournament_id đang chọn trong form. Queryable phía BE (SeasonService)
+  // chỉ filterable theo is_active, KHÔNG filterable theo tournament_id, nên
+  // lọc theo tournament ngay tại client (giống cách ManageSeasonTeams.jsx
+  // đang lọc allSeasonTeams theo season_id) thay vì trông chờ query param.
+  const { data: allSeasons, fetch: fetchSeasonsForAssign } = useApiQuery(
+    (params) => seasonApi.getAll(params),
+    { perPage: 200, params: { is_active: true }, errorMsg: 'Không tải được danh sách mùa giải.' }
+  );
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -123,7 +148,9 @@ export default function TournamentRulesSection() {
     tournamentApi.getAll({ per_page: 100 }).then(res => {
       const payload = (typeof res?.status === 'boolean') ? res.data : res;
       setTournaments(Array.isArray(payload?.data) ? payload.data : []);
-    }).catch(() => { });
+    }).catch(err => {
+      toast.error(getFriendlyErrorMessage(err, 'Không tải được danh sách giải đấu.'));
+    });
   }, []);
 
   const getTournamentName = (id) => tournaments.find(t => t.id === id)?.name ?? `#${id}`;
@@ -148,6 +175,24 @@ export default function TournamentRulesSection() {
     }
   });
 
+  // Season(s) được chọn để áp rule đang edit/tạo — độc lập với crud.form vì
+  // đây không phải field của TournamentRuleDto, mà là 1 batch-action riêng
+  // (nhiều lệnh seasonApi.update) chạy SAU khi rule save thành công.
+  const [selectedSeasonIds, setSelectedSeasonIds] = useState(() => new Set());
+
+  const seasonsForTournament = (allSeasons || []).filter(
+    s => String(s.tournament_id ?? s.tournament?.id ?? '') === String(crud.form?.tournament_id ?? '')
+  );
+
+  const toggleSeasonSelection = (seasonId) => {
+    setSelectedSeasonIds(prev => {
+      const next = new Set(prev);
+      if (next.has(seasonId)) next.delete(seasonId);
+      else next.add(seasonId);
+      return next;
+    });
+  };
+
   const resetSaveState = () => {
     setIsSaving(false);
     setConflict(null);
@@ -155,11 +200,17 @@ export default function TournamentRulesSection() {
 
   const openAdd = () => {
     resetSaveState();
+    setSelectedSeasonIds(new Set());
     crud.openAdd({ ...DEFAULT_RULE_FORM, tournament_id: tournaments[0]?.id ?? '' });
   };
 
   const openEdit = (item) => {
     resetSaveState();
+    // Prefill season đã gán rule này sẵn (item.seasons từ withRelations BE) —
+    // check cả season không còn assignable (ongoing/finished) để hiển thị
+    // đúng trạng thái đang dùng, nhưng checkbox tương ứng sẽ bị khoá (xem
+    // render bên dưới), nên không gửi lại request thừa cho các season đó.
+    setSelectedSeasonIds(new Set((item.seasons ?? []).map(s => s.id)));
     crud.openEdit(item, {
       tournament_id: item.tournament_id,
       name: item.name ?? DEFAULT_RULE_FORM.name,
@@ -203,6 +254,15 @@ export default function TournamentRulesSection() {
     });
   };
 
+  // Đổi giải đấu -> danh sách season khả dụng đổi hẳn, season đã chọn theo
+  // giải cũ không còn ý nghĩa gì -> xoá chọn để tránh gán nhầm sang season
+  // của giải khác (dù applySeasonAssignments có tự lọc lại theo editableIds
+  // nên về mặt an toàn không sao, nhưng để UI không gây hiểu lầm).
+  const handleTournamentChange = (tournamentId) => {
+    crud.setForm(f => ({ ...f, tournament_id: tournamentId }));
+    setSelectedSeasonIds(new Set());
+  };
+
   const currentFormatOpt = getFormatOption(crud.form?.format);
   const stagesLocked = currentFormatOpt?.stagesRule?.type === 'fixed';
 
@@ -241,6 +301,46 @@ export default function TournamentRulesSection() {
     return validateFormatConsistency(payload.format, payload.round_robin_stages);
   };
 
+  // Gán rule vừa create/update cho các season được chọn. CHỈ ASSIGN (không
+  // hỗ trợ gỡ rule khỏi season / set null) — updateSeasonSchema định nghĩa
+  // tournament_rule_id: z.number().int().positive() không nullable dù đã
+  // .partial(), nên gửi null sẽ bị Zod reject. Nếu cần bỏ gán, phải sửa
+  // schema BE trước.
+  //
+  // Chỉ gọi API cho season thực sự "mới chọn" (chưa từng gán rule này) VÀ
+  // đang ở status assignable — season đã gán sẵn thì bỏ qua (tránh PATCH dư
+  // thừa), season bị khoá thì checkbox đã disabled từ đầu nên về lý thuyết
+  // không lọt vào đây, nhưng vẫn double-check ở đây cho chắc (không tin
+  // tưởng tuyệt đối vào state UI).
+  const applySeasonAssignments = async (ruleId, previouslyAssignedIds) => {
+    const editableIds = new Set(
+      seasonsForTournament.filter(isSeasonAssignable).map(s => s.id)
+    );
+    const toAssign = [...selectedSeasonIds].filter(
+      id => editableIds.has(id) && !previouslyAssignedIds.has(id)
+    );
+    if (toAssign.length === 0) return { okCount: 0, failCount: 0, failMessages: [] };
+
+    const results = await Promise.allSettled(
+      toAssign.map(id => seasonApi.update(id, { tournament_rule_id: ruleId }))
+    );
+    const failed = results
+      .map((r, i) => ({ r, seasonId: toAssign[i] }))
+      .filter(({ r }) => r.status === 'rejected');
+
+    // Gom message lỗi thực tế từ từng season fail thay vì chỉ đếm số lượng —
+    // "3 mùa giải áp rule thất bại" không nói lên được LÝ DO, admin phải mò
+    // lại từng cái. Lấy tối đa 1 season name gắn kèm lỗi đầu tiên để không
+    // spam toast quá dài khi fail hàng loạt.
+    const failMessages = failed.map(({ r, seasonId }) => {
+      const seasonName = seasonsForTournament.find(s => s.id === seasonId)?.name ?? `#${seasonId}`;
+      const msg = getFriendlyErrorMessage(r.reason, 'lỗi không xác định');
+      return `${seasonName}: ${msg}`;
+    });
+
+    return { okCount: toAssign.length - failed.length, failCount: failed.length, failMessages };
+  };
+
   // ASSUMPTION cần verify với api/tournamentRuleApi.js thật:
   // update(id, payload, { force: true }) được kỳ vọng map sang query param
   // ?force=true để khớp TournamentRuleService.update(id, data, force=false).
@@ -249,25 +349,57 @@ export default function TournamentRulesSection() {
     setIsSaving(true);
     crud.setFormError('');
     try {
+      let ruleId;
+      const previouslyAssignedIds = new Set(
+        crud.modal === 'edit' ? (crud.editing?.seasons ?? []).map(s => s.id) : []
+      );
+
       if (crud.modal === 'add') {
-        await tournamentRuleApi.create(payload);
+        const res = await tournamentRuleApi.create(payload);
+        const resPayload = (typeof res?.status === 'boolean') ? res.data : res;
+        ruleId = resPayload?.id ?? resPayload?.data?.id;
         toast.success('Tạo luật giải thành công!');
       } else {
         await tournamentRuleApi.update(crud.editing.id, payload, force ? { force: true } : undefined);
+        ruleId = crud.editing.id;
         toast.success('Cập nhật luật giải thành công!');
       }
+
+      if (ruleId && selectedSeasonIds.size > 0) {
+        const { okCount, failCount, failMessages } = await applySeasonAssignments(ruleId, previouslyAssignedIds);
+        if (okCount > 0) toast.success(`Đã áp rule cho ${okCount} mùa giải.`);
+        if (failCount > 0) {
+          toast.error(
+            `${failCount} mùa giải áp rule thất bại:\n${failMessages.join('\n')}`
+          );
+        }
+      }
+
       setConflict(null);
       setCurrentPage(1);
       fetchRules();
+      fetchSeasonsForAssign();
       crud.closeModal();
     } catch (err) {
       const status = err?.response?.status;
       const code = err?.response?.data?.code;
-      const message = parseApiError(err, 'Đã có lỗi xảy ra, vui lòng thử lại.');
+      // BE trả lỗi nghiệp vụ (AppError: CONFLICT, RULE_LOCKED...) kèm message
+      // tiếng Việt cụ thể, NHƯNG không nhất quán về HTTP status — log thực tế
+      // cho thấy RULE_LOCKED trả 500 thay vì 409/423 đúng ngữ nghĩa. Vì vậy
+      // KHÔNG được chọn message theo status code (bug cũ dùng parseApiError
+      // sai làm message generic "Đã có lỗi xảy ra" che mất message gốc rõ
+      // ràng từ BE). getFriendlyErrorMessage lấy message thật từ response
+      // bất kể status, chỉ fallback khi message đó không phải tiếng Việt hợp
+      // lệ (VD lỗi network, lỗi framework-level tiếng Anh).
+      const message = getFriendlyErrorMessage(
+        err,
+        'Không thể lưu luật giải — lỗi không xác định từ server, vui lòng thử lại hoặc liên hệ kỹ thuật kèm requestId trong log.'
+      );
       if (status === 409 || code === 'CONFLICT') {
         setConflict({ message, payload });
       } else {
         crud.setFormError(message);
+        toast.error(message);
       }
     } finally {
       setIsSaving(false);
@@ -277,7 +409,7 @@ export default function TournamentRulesSection() {
   const handleSave = () => {
     const payload = buildPayload();
     const err = validateClientSide(payload);
-    if (err) { crud.setFormError(err); return; }
+    if (err) { crud.setFormError(err); toast.error(err); return; }
     setConflict(null);
     runSave(payload, false);
   };
@@ -293,7 +425,7 @@ export default function TournamentRulesSection() {
       await tournamentRuleApi.delete(item.id);
       toast.success('Xóa luật giải thành công.');
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa luật giải.');
+      toast.error(getFriendlyErrorMessage(err, 'Không thể xóa luật giải — có thể luật này đang được gán cho mùa giải đang diễn ra.'));
     });
   };
 
@@ -349,6 +481,11 @@ export default function TournamentRulesSection() {
                 </span>
                 {!item.is_active && (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-500/20 text-gray-400 border border-gray-500/30 uppercase">Tạm ẩn</span>
+                )}
+                {(item.seasons?.length ?? 0) > 0 && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase flex items-center gap-1">
+                    <CalendarCheck className="w-3 h-3" /> {item.seasons.length} season
+                  </span>
                 )}
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
@@ -427,7 +564,7 @@ export default function TournamentRulesSection() {
 
           <div className={SECTION_LABEL}>Thông tin chung</div>
           <FormField label="Giải đấu" required>
-            <select className={INPUT} value={crud.form.tournament_id} onChange={e => crud.setForm(f => ({ ...f, tournament_id: e.target.value }))}>
+            <select className={INPUT} value={crud.form.tournament_id} onChange={e => handleTournamentChange(e.target.value)}>
               <option value="">-- Chọn giải đấu --</option>
               {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
@@ -538,6 +675,48 @@ export default function TournamentRulesSection() {
                 Thứ tự ưu tiên: {crud.form.tiebreaker_order.map(v => TIEBREAKER_OPTIONS.find(o => o.value === v)?.label ?? v).join(' → ')}
               </p>
             )}
+          </FormField>
+
+          <div className={SECTION_LABEL}>Áp dụng cho mùa giải</div>
+          <FormField label={crud.form.tournament_id ? `Chọn season của "${getTournamentName(Number(crud.form.tournament_id))}" để áp rule này` : 'Chọn giải đấu trước'}>
+            {!crud.form.tournament_id ? (
+              <p className="text-xs text-gray-500 italic">Chưa chọn giải đấu.</p>
+            ) : seasonsForTournament.length === 0 ? (
+              <p className="text-xs text-gray-500 italic">Giải đấu này chưa có mùa giải nào.</p>
+            ) : (
+              <div className="space-y-1.5 max-h-52 overflow-y-auto border border-navy-light rounded-lg p-2 bg-navy-dark/40">
+                {seasonsForTournament.map(s => {
+                  const assignable = isSeasonAssignable(s);
+                  const checked = selectedSeasonIds.has(s.id);
+                  const sm = SEASON_STATUS_META[s.status] ?? SEASON_STATUS_META.upcoming;
+                  const alreadyThisRule = crud.modal === 'edit' && (crud.editing?.seasons ?? []).some(x => x.id === s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${assignable ? 'cursor-pointer hover:bg-navy-light/30' : 'opacity-50 cursor-not-allowed'}`}
+                      title={assignable ? undefined : `Không thể gán — season đang "${sm.label}"`}
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={!assignable}
+                        checked={checked}
+                        onChange={() => assignable && toggleSeasonSelection(s.id)}
+                        className="accent-orange-500 shrink-0"
+                      />
+                      <span className="text-white flex-1 truncate">{s.name}</span>
+                      {alreadyThisRule && (
+                        <span className="text-[10px] font-bold text-emerald-400 shrink-0">Đang dùng rule này</span>
+                      )}
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${sm.cls}`}>{sm.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1.5 flex items-start gap-1">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              Chỉ gán được cho season đang "Sắp diễn ra" / "Mở đăng ký". Season đã ongoing/finished/cancelled bị khoá cứng (đổi rule sẽ làm lệch standings/stats đã tính) — tạo TournamentRule mới cho season sau thay vì sửa/gán rule cũ vào đó.
+            </p>
           </FormField>
 
           <div className="flex items-center gap-3 py-2">
