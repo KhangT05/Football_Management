@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { DbClient } from "./dbTypes.js";
 import type { GroupLetter } from "./worldcup.js";
 interface MatchSummary {
     matchId: number;
@@ -7,7 +7,7 @@ interface MatchSummary {
     homeScore: number;
     awayScore: number;
 }
-export declare function seedKnockoutBracket(db: PrismaClient, seasonId: number, topTwoByGroup: Record<GroupLetter, [number, number]>, venueIds: number[]): Promise<{
+export declare function seedKnockoutBracket(db: DbClient, seasonId: number, topTwoByGroup: Record<GroupLetter, [number, number]>, venueIds: number[]): Promise<{
     championTeamId: number;
     allMatches: MatchSummary[];
 }>;

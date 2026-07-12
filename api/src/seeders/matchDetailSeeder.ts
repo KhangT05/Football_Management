@@ -1,6 +1,7 @@
 // prisma/seed/matchDetailSeeder.ts
-import { PrismaClient, MatchEventType, JerseyType, LineupType } from "../generated/prisma/client.js";
-import { randInt, pick, pickOrThrow } from "./helperSeeder.js";
+import { MatchEventType, JerseyType, LineupType } from "../generated/prisma/client.js";
+import { randInt, pickOrThrow } from "./helperSeeder.js";
+import type { DbClient } from "./dbTypes.js";
 
 interface TeamPlayerLite {
     player_id: number;
@@ -9,7 +10,7 @@ interface TeamPlayerLite {
     role: string;
 }
 
-async function getSquadOrdered(db: PrismaClient, teamId: number): Promise<TeamPlayerLite[]> {
+async function getSquadOrdered(db: DbClient, teamId: number): Promise<TeamPlayerLite[]> {
     const rows = await db.teamPlayer.findMany({
         where: { team_id: teamId },
         orderBy: { jersey_number: "asc" },
@@ -18,8 +19,6 @@ async function getSquadOrdered(db: PrismaClient, teamId: number): Promise<TeamPl
     return rows;
 }
 
-// Đội hình ra sân theo đúng thứ tự jersey đã sinh ở squadSeeder (1-3 GK, 4-11 DF, 12-19 MF, 20-23 FW):
-// lấy 1 GK + 4 DF + 4 MF + 2 FW = 11 người đá chính, còn lại là dự bị.
 function splitStartersSubs(squad: TeamPlayerLite[]): { starters: TeamPlayerLite[]; subs: TeamPlayerLite[] } {
     const gk = squad.filter((p) => p.jersey_number <= 3).slice(0, 1);
     const df = squad.filter((p) => p.jersey_number >= 4 && p.jersey_number <= 11).slice(0, 4);
@@ -33,7 +32,7 @@ function splitStartersSubs(squad: TeamPlayerLite[]): { starters: TeamPlayerLite[
 }
 
 async function seedLineupForTeam(
-    db: PrismaClient,
+    db: DbClient,
     matchId: number,
     teamId: number,
     starters: TeamPlayerLite[],
@@ -53,7 +52,6 @@ async function seedLineupForTeam(
             },
         });
     }
-    // đăng ký thêm vài dự bị vào danh sách trận (không nhất thiết vào sân)
     for (const p of subs.slice(0, 5)) {
         await db.matchLineup.upsert({
             where: { match_id_player_id: { match_id: matchId, player_id: p.player_id } },
@@ -70,7 +68,7 @@ async function seedLineupForTeam(
 }
 
 async function seedJerseyForTeam(
-    db: PrismaClient,
+    db: DbClient,
     matchId: number,
     teamId: number,
     seasonTeamId: number,
@@ -89,13 +87,12 @@ async function seedJerseyForTeam(
 }
 
 async function seedGoalEvents(
-    db: PrismaClient,
+    db: DbClient,
     matchId: number,
     teamId: number,
     starters: TeamPlayerLite[],
     goals: number
 ) {
-    // ưu tiên tiền đạo/tiền vệ ghi bàn cho hợp lý, vẫn cho phép hậu vệ ghi bàn (thực tế có)
     const scorers = starters.filter((p) => p.position === "forward" || p.position === "midfielder");
     const pool = scorers.length ? scorers : starters;
     if (pool.length === 0) return;
@@ -108,7 +105,7 @@ async function seedGoalEvents(
     }
 }
 
-async function seedCardEvents(db: PrismaClient, matchId: number, teamId: number, starters: TeamPlayerLite[]) {
+async function seedCardEvents(db: DbClient, matchId: number, teamId: number, starters: TeamPlayerLite[]) {
     const yellowCount = randInt(0, 3);
     for (let i = 0; i < yellowCount; i++) {
         const p = pickOrThrow(starters, `seedCardEvents yellow team=${teamId}`);
@@ -144,7 +141,7 @@ async function seedCardEvents(db: PrismaClient, matchId: number, teamId: number,
  * số bàn thắng event khớp đúng với home_score/away_score đã lưu ở Match.
  */
 export async function seedMatchDetails(
-    db: PrismaClient,
+    db: DbClient,
     params: {
         matchId: number;
         homeTeamId: number;
@@ -157,9 +154,28 @@ export async function seedMatchDetails(
 ) {
     const { matchId, homeTeamId, awayTeamId, homeScore, awayScore, homeSeasonTeamId, awaySeasonTeamId } = params;
 
+    // Guard chống duplicate: MatchLineup/MatchJerseyAssignment dùng upsert nên
+    // tự idempotent, nhưng MatchEvent (goal/card) dùng create thẳng — không có
+    // gì chặn bị gọi lại 2 lần cho cùng 1 match (vd. reseed) thì goal/card event
+    // bị nhân đôi. playerStatisticSeeder tính lại từ raw MatchEvent count mỗi
+    // lần chạy, nên bug này lan thành stats sai âm thầm, không có gì báo lỗi.
+    // Check tồn tại trước khi tạo, bỏ qua toàn bộ nếu match đã có event.
+    const existingEventCount = await db.matchEvent.count({ where: { match_id: matchId } });
+    if (existingEventCount > 0) {
+        console.log(`[MatchDetailSeeder] match #${matchId} đã có ${existingEventCount} event — bỏ qua (idempotent).`);
+        return;
+    }
+
     const homeSquad = await getSquadOrdered(db, homeTeamId);
     const awaySquad = await getSquadOrdered(db, awayTeamId);
-    if (homeSquad.length < 11 || awaySquad.length < 11) return; // squad chưa đủ thì bỏ qua an toàn
+    if (homeSquad.length < 11 || awaySquad.length < 11) {
+        console.warn(
+            `[MatchDetailSeeder] bỏ qua match #${matchId}: squad chưa đủ 11 ` +
+            `(home team #${homeTeamId}=${homeSquad.length}, away team #${awayTeamId}=${awaySquad.length}). ` +
+            `Kiểm tra lại thứ tự seed — squadSeeder phải chạy xong trước bước này.`
+        );
+        return;
+    }
 
     const homeSplit = splitStartersSubs(homeSquad);
     const awaySplit = splitStartersSubs(awaySquad);

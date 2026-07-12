@@ -219,6 +219,7 @@ export type GroupOrderByWithRelationInput = {
 };
 export type GroupWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
+    phase_id_name?: Prisma.GroupPhase_idNameCompoundUniqueInput;
     AND?: Prisma.GroupWhereInput | Prisma.GroupWhereInput[];
     OR?: Prisma.GroupWhereInput[];
     NOT?: Prisma.GroupWhereInput | Prisma.GroupWhereInput[];
@@ -233,7 +234,7 @@ export type GroupWhereUniqueInput = Prisma.AtLeast<{
     matches?: Prisma.MatchListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     teamStandings?: Prisma.TeamStandingListRelationFilter;
-}, "id">;
+}, "id" | "phase_id_name">;
 export type GroupOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     phase_id?: Prisma.SortOrder;
@@ -352,6 +353,10 @@ export type GroupOrderByRelevanceInput = {
     fields: Prisma.GroupOrderByRelevanceFieldEnum | Prisma.GroupOrderByRelevanceFieldEnum[];
     sort: Prisma.SortOrder;
     search: string;
+};
+export type GroupPhase_idNameCompoundUniqueInput = {
+    phase_id: number;
+    name: string;
 };
 export type GroupCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;

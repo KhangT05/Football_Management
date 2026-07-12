@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Save, Image as ImageIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import {
@@ -10,6 +11,7 @@ import {
 import 'ckeditor5/ckeditor5.css';
 import '../../assets/ckeditor-dark.css';
 import { MyCustomUploadAdapterPlugin } from '../../utils/UploadAdapter';
+import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 const EDITOR_CONFIG = {
   licenseKey: 'GPL',
@@ -30,6 +32,44 @@ const EDITOR_CONFIG = {
     ]
   }
 };
+
+// Override đúng CSS custom properties CKEditor5 v42+ dùng để tô theme —
+// override background-color thường không ăn vì bị var(--ck-color-*) đè lại.
+function CKEditorDarkThemeStyles() {
+  return (
+    <style>{`
+      .article-editor-wrapper .ck.ck-editor {
+        --ck-color-base-background: #0b1220;
+        --ck-color-base-foreground: #0b1220;
+        --ck-color-base-border: #2a3550;
+        --ck-color-focus-border: #3b82f6;
+        --ck-color-text: #e5e7eb;
+        --ck-color-toolbar-background: #0f1729;
+        --ck-color-toolbar-border: #2a3550;
+        --ck-color-button-default-background: transparent;
+        --ck-color-button-default-hover-background: rgba(255,255,255,0.08);
+        --ck-color-button-on-background: rgba(59,130,246,0.2);
+        --ck-color-button-on-color: #93c5fd;
+        --ck-color-panel-background: #111a2e;
+        --ck-color-panel-border: #2a3550;
+        --ck-color-list-background: #111a2e;
+        --ck-color-list-button-hover-background: rgba(255,255,255,0.08);
+        --ck-color-input-background: #0b1220;
+        --ck-color-input-border: #2a3550;
+        --ck-color-input-text: #e5e7eb;
+      }
+      .article-editor-wrapper .ck.ck-editor__editable {
+        background: var(--ck-color-base-background);
+        color: var(--ck-color-text);
+        min-height: 260px;
+      }
+      .article-editor-wrapper .ck.ck-toolbar {
+        background: var(--ck-color-toolbar-background);
+        border-color: var(--ck-color-toolbar-border);
+      }
+    `}</style>
+  );
+}
 
 export default function ArticleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState(initialData);
@@ -63,6 +103,7 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
 
     if (!file.type.startsWith('image/')) {
       setFormError('Vui lòng chọn file ảnh hợp lệ.');
+      toast.error('Vui lòng chọn file ảnh hợp lệ.');
       return;
     }
 
@@ -78,11 +119,15 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.title.trim()) {
-      setFormError('Vui lòng nhập tiêu đề bài viết.');
+      const msg = 'Vui lòng nhập tiêu đề bài viết.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
     if (!form.content.trim()) {
-      setFormError('Vui lòng nhập nội dung bài viết.');
+      const msg = 'Vui lòng nhập nội dung bài viết.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
     setFormError('');
@@ -219,11 +264,40 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Nội dung bài viết <span className="text-red-400">*</span>
               </label>
-              <div className="prose prose-invert max-w-none">
+              <div className="article-editor-wrapper prose prose-invert max-w-none">
+                <CKEditorDarkThemeStyles />
                 <CKEditor
                   editor={ClassicEditor}
                   config={EDITOR_CONFIG}
                   data={form.content}
+                  onReady={(editor) => {
+                    if (!editor.plugins.has('FileRepository')) {
+                      console.error('[CKEditor] FileRepository plugin không tồn tại — upload ảnh sẽ không hoạt động.');
+                      toast.error('Không thể khởi tạo chức năng upload ảnh trong trình soạn thảo.');
+                      return;
+                    }
+
+                    // Tắt banner lỗi nội bộ của CKEditor (Notification plugin) để tránh
+                    // hiện lỗi 2 lần — mọi lỗi upload đã được xử lý bằng toast trong
+                    // UploadAdapter.js rồi, dùng chung 1 kênh thông báo cho đồng bộ UI.
+                    const notification = editor.plugins.get('Notification');
+                    notification.on(
+                      'show:warning',
+                      (evt) => evt.stop(),
+                      { priority: 'high' }
+                    );
+                  }}
+                  onError={(error, { willEditorRestart }) => {
+                    console.error('[CKEditor] Lỗi runtime:', error);
+                    const message = getFriendlyErrorMessage(
+                      { response: null, message: error?.message },
+                      'Trình soạn thảo gặp sự cố. Vui lòng tải lại trang.'
+                    );
+                    toast.error(message);
+                    if (willEditorRestart) {
+                      console.warn('[CKEditor] Editor sẽ tự khởi động lại do lỗi context.');
+                    }
+                  }}
                   onChange={(event, editor) => {
                     const data = editor.getData();
                     setForm(prev => ({ ...prev, content: data }));

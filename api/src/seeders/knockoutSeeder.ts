@@ -5,8 +5,8 @@ import {
     MatchStatus,
     MatchResultType,
 } from "../generated/prisma/client.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
-import { pick, pickOrThrow, simulateKnockoutMatch } from "./helperSeeder.js";
+import type { DbClient } from "./dbTypes.js";
+import { pickOrThrow, simulateKnockoutMatch } from "./helperSeeder.js";
 import { ROUND_OF_16_TEMPLATE } from "./worldcup.js";
 import type { GroupLetter } from "./worldcup.js";
 
@@ -31,9 +31,6 @@ interface PlayedMatch {
     awayScore: number;
 }
 
-// Shape khớp với `createdMatches` mà seedGroupMatchesAndStandings trả về,
-// để index.ts có thể gộp allMatches = [...groupMatches, ...knockoutMatches]
-// rồi feed thẳng vào seedMatchDetails.
 interface MatchSummary {
     matchId: number;
     homeTeamId: number;
@@ -52,8 +49,12 @@ function toMatchSummary(p: PlayedMatch): MatchSummary {
     };
 }
 
+// simulateKnockoutMatch() (helperSeeder.ts) đã handle đúng: hoà 90p -> hiệp phụ ->
+// vẫn hoà -> luân lưu (loại trực tiếp không được hoà). Vấn đề trước đây KHÔNG nằm
+// ở logic này — nó đơn giản là chưa từng được thực thi vì pipeline crash trước
+// khi tới bước knockout (xem seed/index.ts). Giữ nguyên logic, chỉ đổi type.
 async function playAndRecordMatch(
-    db: PrismaClient,
+    db: DbClient,
     phaseId: number,
     homeTeamId: number,
     awayTeamId: number,
@@ -106,12 +107,8 @@ async function playAndRecordMatch(
     };
 }
 
-/**
- * Vòng 1/8 (Round of 16): trường hợp đặc biệt vì các slot được seed TRỰC TIẾP
- * từ kết quả vòng bảng (nhất/nhì bảng), không phải từ source_a/source_b.
- */
 async function seedRoundOf16(
-    db: PrismaClient,
+    db: DbClient,
     seasonId: number,
     topTwoByGroup: Record<GroupLetter, [number, number]>,
     venueIds: number[]
@@ -134,8 +131,8 @@ async function seedRoundOf16(
             throw new Error(`ROUND_OF_16_TEMPLATE thiếu cặp ở vị trí ${i}`);
         }
         const [winnerGroup, runnerUpGroup] = pairing;
-        const homeTeamId = topTwoByGroup[winnerGroup][0]; // nhất bảng winnerGroup
-        const awayTeamId = topTwoByGroup[runnerUpGroup][1]; // nhì bảng runnerUpGroup
+        const homeTeamId = topTwoByGroup[winnerGroup][0];
+        const awayTeamId = topTwoByGroup[runnerUpGroup][1];
 
         const slot = await db.bracketSlot.create({
             data: {
@@ -172,14 +169,8 @@ async function seedRoundOf16(
     return { phaseId: phase.id, results };
 }
 
-/**
- * Vòng knockout kế tiếp bất kỳ (QF, SF, Final): ghép cặp tuần tự các winner
- * của vòng trước (0v1, 2v3, ...), mỗi BracketSlot mới trỏ source_a/source_b
- * về đúng BracketSlot của vòng trước — đây chính là cơ chế "winner tiến vào
- * slot kế tiếp" mà schema mô tả.
- */
 async function advanceKnockoutRound(
-    db: PrismaClient,
+    db: DbClient,
     seasonId: number,
     previousRound: RoundResult[],
     opts: { name: string; type: PhaseType; order: number },
@@ -212,7 +203,6 @@ async function advanceKnockoutRound(
                 slot_number: slotNumber,
                 source_a_slot_id: a.slotId,
                 source_b_slot_id: b.slotId,
-                // seeded_home/away để null: đội tham gia được xác định qua source_a/source_b
             },
         });
 
@@ -241,15 +231,8 @@ async function advanceKnockoutRound(
     return { phaseId: phase.id, results };
 }
 
-/**
- * Trận tranh hạng 3: dùng 2 đội THUA ở bán kết. Lưu ý: schema BracketSlot chỉ
- * model "winner tiến vào slot kế" (source_a/source_b -> winner), KHÔNG có khái
- * niệm "loser advance". Vì vậy trận tranh 3 được tạo trực tiếp bằng Match,
- * không gắn qua BracketSlot. Nếu muốn model đầy đủ, có thể cân nhắc thêm field
- * kiểu `advance_loser: Boolean` vào BracketSlot ở lần thiết kế sau.
- */
 async function seedThirdPlaceMatch(
-    db: PrismaClient,
+    db: DbClient,
     seasonId: number,
     semiFinalResults: RoundResult[],
     order: number,
@@ -283,7 +266,7 @@ async function seedThirdPlaceMatch(
 }
 
 export async function seedKnockoutBracket(
-    db: PrismaClient,
+    db: DbClient,
     seasonId: number,
     topTwoByGroup: Record<GroupLetter, [number, number]>,
     venueIds: number[]
