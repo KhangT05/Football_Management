@@ -42,6 +42,17 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 //   - SeasonStatsController không có Security riêng → class-level jwt của SeasonController
 //     sẽ accidentally block các GET standings (public endpoints)
 //   - Một prefix = một controller là convention rõ ràng hơn
+//
+// Status lifecycle (xem SeasonService để biết chi tiết):
+//   upcoming → registration_open → ongoing → finished
+//                    ↘                ↘
+//                  cancelled        cancelled
+//   - registration_open, ongoing, finished: có thể set MANUAL qua
+//     PATCH {id}/status (admin bấm sớm/bấm bù), ĐỒNG THỜI cũng tự động qua
+//     cron SeasonService.runAutoTransitions() theo start_date/end_date — 2
+//     lối đi song song, không loại trừ nhau, đều idempotent.
+//   - cancelled: luôn đi qua route riêng PATCH {id}/cancel (cancel_reason
+//     bắt buộc), không nằm trong UpdateSeasonStatusDto.
 @Route("seasons")
 @Tags("Seasons")
 export class SeasonController extends Controller {
@@ -123,10 +134,13 @@ export class SeasonController extends Controller {
     this.setStatus(204);
     return this.service.softDelete(id);
   }
+
   /**
- * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
- * (theo STATUS_TRANSITIONS). cancel_reason bắt buộc — dùng cho audit/thông báo.
- */
+   * Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing
+   * (theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho
+   * audit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có
+   * đường tắt nào set 'cancelled' mà thiếu cancel_reason.
+   */
   @Security("jwt", ["admin"])
   @Patch("{id}/cancel")
   async cancelSeason(
@@ -136,13 +150,37 @@ export class SeasonController extends Controller {
     return this.service.cancel(id, body);
   }
 
+  /**
+   * FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —
+   * cancelled đã tách hẳn sang cancelSeason() ở trên, và
+   * UpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên
+   * body.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi
+   * `body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền
+   * (id, status) — dùng cho registration_open/ongoing/finished, admin bấm
+   * tay song song với cron SeasonService.runAutoTransitions().
+   */
   @Security("jwt", ["admin"])
   @Patch("{id}/status")
   async updateStatus(
     @Path() id: number,
     @Body() body: seasonSchema.UpdateSeasonStatusDto,
   ): Promise<Season> {
-    return this.service.updateStatus(id, body.status, { cancel_reason: body.cancel_reason });
+    return this.service.updateStatus(id, body.status);
+  }
+
+  /**
+   * Trigger thủ công cron auto-transition (registration_open→ongoing khi
+   * start_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:
+   *   - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).
+   *   - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.
+   * KHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ
+   * `seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch
+   * cho admin/ops, không phải cách vận hành chính.
+   */
+  @Security("jwt", ["admin"])
+  @Post("auto-transition")
+  async runAutoTransitions(): Promise<{ toOngoing: number; toFinished: number; failed: number[] }> {
+    return this.service.runAutoTransitions();
   }
 
   @Get("{id}/standings/{groupId}")

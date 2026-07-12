@@ -13,6 +13,18 @@ export interface InitiatePaymentOutput {
     amount: number;
     payment_url: string;
 }
+export interface IpnQuery {
+    vnp_TxnRef: string;
+    vnp_Amount: string;
+    vnp_TransactionNo: string;
+    vnp_ResponseCode: string;
+    [key: string]: string;
+}
+export type IpnResponseCode = '00' | '01' | '02' | '04' | '97' | '99';
+export interface IpnResponse {
+    RspCode: IpnResponseCode;
+    Message: string;
+}
 export interface PaymentRow {
     id: number;
     season_team_id: number;
@@ -26,17 +38,10 @@ export interface PaymentRow {
     team_name: string;
     season_name: string;
     registration_fee: number;
-}
-export interface IpnQuery {
-    vnp_TxnRef: string;
-    vnp_Amount: string;
-    vnp_TransactionNo: string;
-    vnp_ResponseCode: string;
-    [key: string]: string;
-}
-export type IpnResponseCode = '00' | '01' | '02' | '04' | '97' | '99';
-export interface IpnResponse {
-    RspCode: IpnResponseCode;
-    Message: string;
+    bank_info: {
+        bank_id: string;
+        bank_account_no: string;
+        bank_account_name: string;
+    } | null;
 }
 //# sourceMappingURL=payment.type.d.ts.map

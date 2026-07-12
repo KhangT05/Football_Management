@@ -589,6 +589,9 @@ export class StandingsService {
                     cancel_reason: true,
                     is_registration_open: true,
                     group_count: true,
+                    bank_id: true,
+                    bank_account_no: true,
+                    bank_account_name: true,
                     tournament: {
                         select: { id: true, name: true },
                     },

@@ -96,7 +96,7 @@ function RosterPitchDot({ player, kit, onClick }) {
   const isCap = player.role === 'captain';
   const isVice = player.role === 'vice_captain';
   return (
-      <button
+    <button
       type="button"
       onClick={onClick}
       title={`${player.name} — bấm để xem/sửa`}
@@ -104,11 +104,11 @@ function RosterPitchDot({ player, kit, onClick }) {
     >
       <div className="relative">
         {player.avatar ? (
-          <img 
-            src={player.avatar} 
-            alt={player.name} 
-            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border-2 shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40" 
-            style={{ borderColor: kit.border }} 
+          <img
+            src={player.avatar}
+            alt={player.name}
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border-2 shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40"
+            style={{ borderColor: kit.border }}
           />
         ) : (
           <div
@@ -1376,9 +1376,15 @@ export default function MyTeam() {
 
       {showPayment && (
         <TeamPaymentModal
-          teamName={activeTeam?.name}
-          seasonTeamId={activeTeam?.activeSeasonTeamId}
-          onClose={() => setShowPayment(false)}
+          teamName={team.name}
+          seasonTeamId={seasonTeam.id}
+          amount={payment.registration_fee}
+          bankInfo={
+            payment.season_bank_id
+              ? { bank_id: payment.season_bank_id, bank_account_no: payment.season_bank_account_no, bank_account_name: payment.season_bank_account_name }
+              : null
+          }
+          onClose={handleClose}
         />
       )}
 

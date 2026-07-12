@@ -21,13 +21,39 @@ const baseSeasonSchema = z.object({
     tournament_id: z.number().int().positive(),
     tournament_rule_id: z.number().int().positive(),
     group_count: z.number().int().min(1).default(1),
+    // FIX: thiếu 3 field này → FE không có cách nào set bank info, payment
+    // luôn hasBankInfo=false dù DB có cột. Nullable — season không bắt buộc
+    // nhận chuyển khoản thủ công (chỉ dùng VNPay).
+    bank_id: z.string().trim().min(1).max(20).optional().nullable(),
+    bank_account_no: z.string().trim().min(1).max(50).optional().nullable(),
+    bank_account_name: z.string().trim().min(1).max(255).optional().nullable(),
 });
-export const createSeasonSchema = baseSeasonSchema;
+// All-or-nothing: hasBankInfo bên PaymentService check `&&` cả 3 field, nên
+// điền thiếu 1-2 field sẽ bị PaymentService âm thầm coi như KHÔNG có bank
+// info (bank_info: null) — không có lỗi nào báo cho admin biết. Chặn ngay ở
+// validation layer thay vì để lộ ra runtime silently.
+const bankAllOrNothing = (data) => {
+    const filled = [data.bank_id, data.bank_account_no, data.bank_account_name]
+        .filter(v => v != null && v !== '');
+    return filled.length === 0 || filled.length === 3;
+};
+const bankRefineOpts = {
+    message: 'bank_id, bank_account_no, bank_account_name phải cùng có hoặc cùng để trống',
+    path: ['bank_id'],
+};
+export const createSeasonSchema = baseSeasonSchema.refine(bankAllOrNothing, bankRefineOpts);
 export const updateSeasonSchema = baseSeasonSchema
     .omit({ tournament_id: true })
-    .partial();
+    .partial()
+    .refine(bankAllOrNothing, bankRefineOpts);
+// Manual transition (admin bấm hoặc gọi API): upcoming→registration_open,
+// registration_open→ongoing, ongoing→finished. Đây là lối đi SONG SONG với
+// cron tự động (SeasonService.runAutoTransitions) — không loại trừ nhau:
+// admin có thể chủ động bấm sớm hơn ngày dự kiến (VD giải sẵn sàng sớm),
+// hoặc bấm bù nếu cron miss/chưa chạy; cron tự động bấm hộ nếu tới ngày mà
+// chưa ai bấm tay. cancelled không nằm trong enum này vì đi qua
+// CancelSeasonSchema/route riêng (cancel_reason bắt buộc).
 export const UpdateSeasonStatusSchema = z.object({
     status: SeasonStatusSchema.exclude(["cancelled"]),
-    cancel_reason: z.string().max(500).optional(),
 });
 //# sourceMappingURL=season.schema.js.map

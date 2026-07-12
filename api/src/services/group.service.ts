@@ -44,6 +44,61 @@ export class GroupService {
             throw createAppError("CONFLICT", `Phase đã được xác nhận (in_progress) — hủy xác nhận trước khi ${action}`);
     }
 
+    /**
+     * FIX (RR -> RR pool lệch): trước đây mọi nơi cần "danh sách approved
+     * team để draw/clear/auto-finalize" đều query season-wide
+     * (season_id + status=approved), không loại các đội đã BỊ LOẠI ở vòng
+     * bảng trước. Khi advanceToNextRoundRobin() tạo phase RR thứ 2, các đội
+     * bị loại vẫn giữ status=approved và vẫn giữ group_id trỏ về group của
+     * phase RR1 (đã locked). assertNoForeignGroupAssignment() thấy group_id
+     * đó thuộc phase khác -> ném CONFLICT ngay lập tức, chặn MỌI thao tác
+     * draw/clear/auto-finalize trên phase RR2 dù thao tác đó không hề đụng
+     * tới các đội đã bị loại.
+     *
+     * Fix tận gốc: pool "eligible" cho 1 phase chỉ gồm approved team nào
+     * đang KHÔNG thuộc group nào (group_id null — chưa từng được xếp ở bất
+     * kỳ phase nào, hoặc vừa clearDraw) HOẶC đang thuộc đúng group của
+     * CHÍNH phase này (để re-draw/swap trong cùng phase vẫn thấy đúng đội
+     * đang có). Đội đã bị "khoá" trong group của phase khác (RR1 locked)
+     * không bao giờ lọt vào pool của RR2 nữa.
+     */
+    private async getEligibleApprovedTeams(
+        tx: Prisma.TransactionClient,
+        seasonId: number,
+        phaseId: number,
+    ): Promise<{ id: number; team_id: number; group_id: number | null; seed: number | null }[]> {
+        return tx.seasonTeam.findMany({
+            where: {
+                season_id: seasonId,
+                status: SeasonTeamStatus.approved,
+                deleted_at: null,
+                OR: [
+                    { group_id: null },
+                    { group: { phase_id: phaseId } },
+                ],
+            },
+            select: { id: true, team_id: true, group_id: true, seed: true },
+        });
+    }
+
+    private async countEligibleApprovedTeams(
+        tx: Prisma.TransactionClient,
+        seasonId: number,
+        phaseId: number,
+    ): Promise<number> {
+        return tx.seasonTeam.count({
+            where: {
+                season_id: seasonId,
+                status: SeasonTeamStatus.approved,
+                deleted_at: null,
+                OR: [
+                    { group_id: null },
+                    { group: { phase_id: phaseId } },
+                ],
+            },
+        });
+    }
+
     private async getOrCreateRoundRobinPhase(tx: Prisma.TransactionClient, seasonId: number) {
         await lockSeason(tx, seasonId);
         await this.assertSeasonAcceptsGroupOps(tx, seasonId);
@@ -204,10 +259,10 @@ export class GroupService {
             if (existingCount > 0)
                 throw createAppError("CONFLICT", `Season đã có ${existingCount} group — clearDraw trước khi tạo lại`);
 
-            const approvedTeams = await tx.seasonTeam.findMany({
-                where: { season_id: seasonId, status: SeasonTeamStatus.approved, deleted_at: null },
-                select: { id: true, team_id: true },
-            });
+            // FIX: dùng pool đã scope theo phase thay vì season-wide, tránh
+            // vướng các đội đã bị loại từ vòng bảng trước (xem
+            // getEligibleApprovedTeams).
+            const approvedTeams = await this.getEligibleApprovedTeams(tx, seasonId, phase.id);
             if (approvedTeams.length < groupCount * 2)
                 throw createAppError(
                     "CONFLICT",
@@ -267,10 +322,10 @@ export class GroupService {
                     "Phase đã có match — không thể auto-finalize lại (xoá schedule trước nếu thực sự cần đổi số group)"
                 );
 
-            const approvedTeams = await tx.seasonTeam.findMany({
-                where: { season_id: seasonId, status: SeasonTeamStatus.approved, deleted_at: null },
-                select: { id: true, team_id: true },
-            });
+            // FIX: scope theo phase (xem getEligibleApprovedTeams) — trước
+            // đây season-wide khiến RR2 auto-finalize luôn đếm nhầm cả đội
+            // đã bị loại ở RR1.
+            const approvedTeams = await this.getEligibleApprovedTeams(tx, seasonId, phase.id);
 
             if (approvedTeams.length < minPerGroup)
                 throw createAppError(
@@ -388,6 +443,8 @@ export class GroupService {
                 orderBy: { name: "asc" },
             });
 
+            // Ở đây pool ĐÃ được scope đúng theo advancedTeamIds (chỉ đội
+            // qua vòng), không cần getEligibleApprovedTeams — giữ nguyên.
             const seasonTeams = await tx.seasonTeam.findMany({
                 where: { season_id: fromPhase.season_id, team_id: { in: advancedTeamIds }, status: SeasonTeamStatus.approved },
                 select: { id: true, team_id: true },
@@ -421,10 +478,15 @@ export class GroupService {
                 status: { not: PhaseStatus.locked },
             },
             orderBy: { order: 'desc' },
-            select: { id: true, name: true, format: true, status: true, teams_per_group: true, season_id: true },
+            // FIX: thêm `order` — FE cần biết đây là RR phase thứ mấy để
+            // quyết định có áp season='ongoing' làm khoá hay không (chỉ
+            // phase order=1 mới bị autoFinalizeGroups() tự chốt lúc season
+            // chuyển ongoing; RR2 trở đi được tạo TRONG LÚC season đã
+            // ongoing nên không thể dùng season status làm tín hiệu khoá).
+            select: { id: true, name: true, format: true, status: true, order: true, teams_per_group: true, season_id: true },
         });
 
-        if (!phase) return { phase: null, groups: [] };
+        if (!phase) return { phase: null, groups: [], eligibleTeamCount: null };
 
         return this.buildGroupsPayload(phase);
     }
@@ -432,16 +494,16 @@ export class GroupService {
     async findAllByPhase(phaseId: number) {
         const phase = await this.prisma.phase.findUnique({
             where: { id: phaseId },
-            select: { id: true, name: true, format: true, status: true, teams_per_group: true, season_id: true, is_active: true },
+            select: { id: true, name: true, format: true, status: true, order: true, teams_per_group: true, season_id: true, is_active: true },
         });
 
-        if (!phase || !phase.is_active) return { phase: null, groups: [] };
+        if (!phase || !phase.is_active) return { phase: null, groups: [], eligibleTeamCount: null };
 
         return this.buildGroupsPayload(phase);
     }
 
     private async buildGroupsPayload(phase: {
-        id: number; name: string; format: PhaseFormat; status: PhaseStatus; teams_per_group: number | null; season_id: number;
+        id: number; name: string; format: PhaseFormat; status: PhaseStatus; order: number; teams_per_group: number | null; season_id: number;
     }) {
         const groups = await this.prisma.group.findMany({
             where: { phase_id: phase.id, is_active: true },
@@ -458,7 +520,13 @@ export class GroupService {
             orderBy: { id: "asc" },
         });
 
-        return { phase, groups };
+        // FIX: trả sẵn eligibleTeamCount (đã scope theo phase, cùng logic
+        // với getEligibleApprovedTeams) để FE không phải tự đếm approved
+        // team season-wide nữa — đó chính là nguồn gây đếm sai / khoá sai
+        // cho RR2 ở GroupDrawUI.
+        const eligibleTeamCount = await this.countEligibleApprovedTeams(this.prisma, phase.season_id, phase.id);
+
+        return { phase, groups, eligibleTeamCount };
     }
 
     async deactivateGroup(groupId: number): Promise<void> {
@@ -525,10 +593,10 @@ export class GroupService {
             if (groups.length === 0)
                 throw createAppError("CONFLICT", "Phase chưa có group nào, tạo group trước khi draw");
 
-            const approvedTeams = await tx.seasonTeam.findMany({
-                where: { season_id: phase.season_id, status: SeasonTeamStatus.approved, deleted_at: null },
-                select: { id: true, team_id: true, group_id: true },
-            });
+            // FIX: scope theo phase — xem getEligibleApprovedTeams. Đây chính
+            // là chỗ RR2 trước đây luôn bị assertNoForeignGroupAssignment
+            // ném CONFLICT do lẫn đội đã bị loại ở RR1.
+            const approvedTeams = await this.getEligibleApprovedTeams(tx, phase.season_id, phase.id);
 
             const minRequired = groups.length * 2;
             if (approvedTeams.length < minRequired)
@@ -800,10 +868,8 @@ export class GroupService {
             if (groups.length === 0)
                 throw createAppError("CONFLICT", "Phase chưa có group");
 
-            const approvedTeams = await tx.seasonTeam.findMany({
-                where: { season_id: phase.season_id, status: SeasonTeamStatus.approved, deleted_at: null },
-                select: { id: true, team_id: true, group_id: true, seed: true },
-            });
+            // FIX: scope theo phase — xem getEligibleApprovedTeams.
+            const approvedTeams = await this.getEligibleApprovedTeams(tx, phase.season_id, phase.id);
 
             const minRequired = groups.length * 2;
             if (approvedTeams.length < minRequired)

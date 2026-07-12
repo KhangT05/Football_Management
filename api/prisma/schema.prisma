@@ -236,13 +236,15 @@ model Season {
   is_active             Boolean      @default(true)
   created_at            DateTime     @default(now())
   updated_at            DateTime?    @updatedAt
-
-  deleted_at       DateTime?
-  registration_fee Decimal    @default(0) @db.Decimal(10, 2)
-  cancel_reason    String?
-  tournament_id    Int
-  group_count      Int?
-  tournament       Tournament @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
+  bank_id               String?
+  bank_account_no       String?
+  bank_account_name     String?
+  deleted_at            DateTime?
+  registration_fee      Decimal      @default(0) @db.Decimal(10, 2)
+  cancel_reason         String?
+  tournament_id         Int
+  group_count           Int?
+  tournament            Tournament   @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
 
   phases             Phase[]
   season_teams       SeasonTeam[]

@@ -14,6 +14,26 @@ export declare class GroupService {
      *   sĩ số/cấu trúc) nên vẫn cho phép ngay cả khi đã confirm.
      */
     private assertPhaseIsDraft;
+    /**
+     * FIX (RR -> RR pool lệch): trước đây mọi nơi cần "danh sách approved
+     * team để draw/clear/auto-finalize" đều query season-wide
+     * (season_id + status=approved), không loại các đội đã BỊ LOẠI ở vòng
+     * bảng trước. Khi advanceToNextRoundRobin() tạo phase RR thứ 2, các đội
+     * bị loại vẫn giữ status=approved và vẫn giữ group_id trỏ về group của
+     * phase RR1 (đã locked). assertNoForeignGroupAssignment() thấy group_id
+     * đó thuộc phase khác -> ném CONFLICT ngay lập tức, chặn MỌI thao tác
+     * draw/clear/auto-finalize trên phase RR2 dù thao tác đó không hề đụng
+     * tới các đội đã bị loại.
+     *
+     * Fix tận gốc: pool "eligible" cho 1 phase chỉ gồm approved team nào
+     * đang KHÔNG thuộc group nào (group_id null — chưa từng được xếp ở bất
+     * kỳ phase nào, hoặc vừa clearDraw) HOẶC đang thuộc đúng group của
+     * CHÍNH phase này (để re-draw/swap trong cùng phase vẫn thấy đúng đội
+     * đang có). Đội đã bị "khoá" trong group của phase khác (RR1 locked)
+     * không bao giờ lọt vào pool của RR2 nữa.
+     */
+    private getEligibleApprovedTeams;
+    private countEligibleApprovedTeams;
     private getOrCreateRoundRobinPhase;
     private findRoundRobinPhase;
     createGroup(seasonId: number, name: string): Promise<{
@@ -50,6 +70,7 @@ export declare class GroupService {
             name: string;
             format: PhaseFormat;
             status: PhaseStatus;
+            order: number;
             teams_per_group: number | null;
             season_id: number;
         };
@@ -62,9 +83,11 @@ export declare class GroupService {
                 team_id: number;
             }[];
         }[];
+        eligibleTeamCount: number;
     } | {
         phase: null;
         groups: never[];
+        eligibleTeamCount: null;
     }>;
     findAllByPhase(phaseId: number): Promise<{
         phase: {
@@ -72,6 +95,7 @@ export declare class GroupService {
             name: string;
             format: PhaseFormat;
             status: PhaseStatus;
+            order: number;
             teams_per_group: number | null;
             season_id: number;
         };
@@ -84,9 +108,11 @@ export declare class GroupService {
                 team_id: number;
             }[];
         }[];
+        eligibleTeamCount: number;
     } | {
         phase: null;
         groups: never[];
+        eligibleTeamCount: null;
     }>;
     private buildGroupsPayload;
     deactivateGroup(groupId: number): Promise<void>;

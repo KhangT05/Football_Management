@@ -1,980 +1,538 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-  Save, Plus, Trash2, Activity,
-  Loader2, RefreshCw,
-  RotateCcw,
-  Flag, Zap, Target, Shield, Search
-} from 'lucide-react';
-import { teamApi, matchApi, matchLineupApi } from '../../api';
-import useScheduleStore from '../../store/scheduleStore';
-import useSeasonStore from '../../store/seasonStore';
-import useTeamStore from '../../store/teamStore';
-import useToastStore from '../../store/toastStore';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid } from 'lucide-react';
+import useScheduleStore from '../store/scheduleStore';
+import useSeasonStore from '../store/seasonStore';
+import useTeamStore from '../store/teamStore';
+import useVenueStore from '../store/venueStore';
+import MatchModal from '../components/MatchModal';
+import StatusBadge from '../components/ui/StatusBadge';
+import MatchRowSkeleton from '../components/skeletons/MatchRowSkeleton';
+import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
+import Pagination from '../components/ui/Pagination';
+import { useShallow } from 'zustand/react/shallow';
+import { groupApi } from '../api/groupApi';
+import { Link } from 'react-router-dom';
 
-import EventCard from '../../components/admin/EventCard';
-import StatusBadge from '../../components/ui/StatusBadge';
-import Pagination from '../../components/ui/Pagination';
-import MatchSelectorPanel from '../../components/admin/MatchSelectorPanel';
-
-import {
-  ForfeitMatchModal,
-  AbandonMatchModal,
-  DisputeModal,
-  ResolveAppealModal
-} from '../../components/admin/AdvancedMatchControlModals';
-
-// FIX: import getFriendlyErrorMessage để không hiện raw backend message
-// (Zod/network error tiếng Anh) ra toast — dùng chung chuẩn với
-// apiErrorHelper.js. CHỈNH LẠI ĐƯỜNG DẪN cho đúng vị trí thực tế của file
-// apiErrorHelper trong repo của bạn (ví dụ '../../utils/apiErrorHelper').
-import { getFriendlyErrorMessage } from '../../utils/apiErrorHelper';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const EVENT_TYPES = [
-  { key: 'goal', label: 'Bàn thắng', icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/40' },
-  { key: 'yellow', label: 'Thẻ Vàng', icon: '🟨', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
-  { key: 'red', label: 'Thẻ Đỏ', icon: '🟥', cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
-  { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
-];
-
-const MAX_MINUTE = 130;
-
-// Message do BE ném ra khi knockout hoà, xuất phát từ
-// MatchResultService._guardConfirm (matchresult.service.ts), được
-// adminRecordResult gọi qua confirmResultInTx. Message gốc dạng:
-//   "Match {id}: knockout draw ở {resultType} — cần extra_time hoặc penalty"
-// resultType được nhúng thẳng vào message ('full_time' hoặc 'extra_time'),
-// dùng chuỗi đó để phân biệt 2 bước (mở modal hiệp phụ hay mở thẳng modal pen).
-//
-// LƯU Ý QUAN TRỌNG: matchlifecycle.service.ts có export
-// KNOCKOUT_DRAW_MARKER ('KNOCKOUT_DRAW_NEEDS_EXTRA_TIME_OR_PENALTY') và
-// KNOCKOUT_ET_DRAW_MARKER ('KNOCKOUT_ET_DRAW_NEEDS_PENALTY'), nhưng 2 marker
-// đó CHỈ được throw ở finalizeMatch()/submitManualScore() (luồng
-// recordEvent trực tiếp) — KHÔNG áp dụng cho adminRecordResult(), vì hàm
-// này đi qua _guardConfirm ở matchresult.service.ts, hàm không dùng 2
-// marker trên (và KNOCKOUT_ET_DRAW_MARKER hiện không được throw ở bất kỳ
-// đâu cả). Dùng nhầm 2 marker đó ở màn hình này sẽ khiến check luôn fail —
-// modal hiệp phụ/pen sẽ không tự mở, chỉ hiện toast lỗi chung chung.
-const KNOCKOUT_DRAW_MESSAGE_MARKER = 'knockout draw ở';
-
-function getEffectiveYellowType(evt, sideEvents) {
-  if (evt.type !== 'yellow' || !evt.player) return 'yellow';
-  const earlierYellowSamePlayer = sideEvents.some(
-    e => e.type === 'yellow' && e.player === evt.player && e.id < evt.id
-  );
-  return earlierYellowSamePlayer ? 'second_yellow' : 'yellow';
-}
-
-function countYellowsByPlayer(sideEvents) {
-  const map = new Map();
-  for (const e of sideEvents) {
-    if (e.type !== 'yellow' || !e.player) continue;
-    map.set(e.player, (map.get(e.player) || 0) + 1);
-  }
-  return map;
-}
-
-function ExtraTimeModal({ isOpen, onClose, homeName, awayName, homeGoalCount, awayGoalCount, draft, setDraft, onConfirm, onSkip, isSubmitting }) {
-  if (!isOpen) return null;
-
-  const setField = (side, value) => {
-    const digits = String(value).replace(/\D/g, '');
-    setDraft(prev => ({ ...prev, [side]: digits }));
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl max-w-sm w-full p-5">
-        <div className="flex items-center gap-2 mb-1">
-          <Zap className="w-5 h-5 text-amber-400" />
-          <h3 className="font-black text-white text-sm uppercase tracking-wide">Hiệp phụ</h3>
-        </div>
-        <p className="text-xs text-gray-500 mb-4">
-          {homeName} {homeGoalCount} – {awayGoalCount} {awayName} sau 90 phút. Nhập tổng tỉ số sau hiệp phụ,
-          hoặc bỏ qua nếu giải không đá hiệp phụ.
-        </p>
-
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{homeName}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={draft.home}
-              onChange={e => setField('home', e.target.value)}
-              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-amber-500"
-            />
-          </div>
-          <span className="text-gray-600 font-black text-lg mt-4">–</span>
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{awayName}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={draft.away}
-              onChange={e => setField('away', e.target.value)}
-              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-amber-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={onConfirm}
-            disabled={isSubmitting}
-            className="flex items-center justify-center gap-1.5 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white rounded-lg text-xs font-black transition-colors"
-          >
-            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-            Xác nhận kết quả hiệp phụ
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
-            >
-              Huỷ
-            </button>
-            <button
-              onClick={onSkip}
-              disabled={isSubmitting}
-              className="flex-1 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
-            >
-              Không đá HP, vào Pen
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function buildEventPayload(evt, teamId, effectiveType) {
-  const base = { teamId, minute: Number(evt.minute) || 1 };
-  switch (effectiveType) {
-    case 'goal': return [{ ...base, type: 'goal', playerId: evt.player || undefined }];
-    case 'yellow': return [{ ...base, type: 'yellow_card', playerId: evt.player || undefined }];
-    case 'second_yellow': return [{ ...base, type: 'second_yellow', playerId: evt.player || undefined }];
-    case 'red': return [{ ...base, type: 'red_card', playerId: evt.player || undefined }];
-    case 'substitution': return [
-      { ...base, type: 'substitution_in', playerId: evt.playerIn || undefined },
-      { ...base, type: 'substitution_out', playerId: evt.playerOut || undefined },
-    ];
-    default: return [];
-  }
-}
-
-function countEvents(events) {
-  return {
-    goals: events.filter(e => e.type === 'goal').length,
-    yellow: events.filter(e => e.type === 'yellow').length,
-    red: events.filter(e => e.type === 'red').length,
-    subs: events.filter(e => e.type === 'substitution').length,
-  };
-}
-
-function unwrapListResponse(res, label) {
-  const candidates = [
-    res?.data?.data,
-    res?.data,
-    res,
-  ];
+function unwrapGroupsResponse(res) {
+  const candidates = [res?.data?.data, res?.data, res];
   for (const c of candidates) {
+    if (c && Array.isArray(c.groups)) return c.groups;
     if (Array.isArray(c)) return c;
   }
-  console.warn(`[LiveControlTab] Không parse được response cho ${label}. Shape thực tế:`, res);
+  console.warn('[ScheduleResults] Không parse được groups response. Shape thực tế:', res);
   return [];
 }
 
-// ─── Main Component: LiveControlTab ──────────────────────────────────────────
+// phase.format có thể trả về dạng object nested (match.phase.format) hoặc
+// flattened (match.phaseFormat) tuỳ endpoint (getSeasonSchedule đã flatten,
+// findMatchesByTeam giữ nested phase) — ScheduleStore cache có thể trộn cả
+// 2 nguồn. Đọc cả 2, ưu tiên nested.
+function getPhaseFormat(m) {
+  return m.phase?.format ?? m.phaseFormat ?? null;
+}
+function getPhaseName(m) {
+  return m.phase?.name ?? m.phaseName ?? null;
+}
+function getPhaseId(m) {
+  return m.phase?.id ?? m.phaseId ?? null;
+}
 
-export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setSelectedMatchId, onGoToSchedule }) {
-  const toast = useToastStore();
-  const { seasons } = useSeasonStore();
-  const { getMatchesFromCache, isSeasonLoading, fetchBySeason, scheduleCache } = useScheduleStore();
-  const { teams, fetchAll: fetchTeams } = useTeamStore();
+// ── Page ──────────────────────────────────────────────────────
+export default function ScheduleResults() {
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
-  useEffect(() => {
-    fetchTeams({ per_page: 500, force: true });
-  }, [fetchTeams]);
+  // Filter round CHỈ áp dụng cho match round-robin (group_stage) — trước đây
+  // filter này áp cho toàn bộ allMatches bao gồm cả knockout, nhưng knockout
+  // round là bracket round nội bộ (1 = vòng đầu CỦA PHASE ĐÓ, không phải
+  // matchday tuyệt đối) nên trộn chung filter numeric gây sai lệch: bấm
+  // "Vòng 1" sẽ ra cả trận vòng bảng lượt 1 LẪN trận knockout round-of-16.
+  const [filterRound, setFilterRound] = useState('');
 
-  const effectiveSeasonId = selectedSeasonId;
+  const [groups, setGroups] = useState([]);
+  const [isGroupsLoading, setIsGroupsLoading] = useState(false);
 
-  const allSeasonMatches = useMemo(
-    () => effectiveSeasonId
-      ? getMatchesFromCache(Number(effectiveSeasonId))
-      : [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [effectiveSeasonId, scheduleCache, getMatchesFromCache]
+  // ── Zustand stores ─────────────────────────────────────────
+  const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
+  const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({ teams: state.teams, fetchAll: state.fetchAll })));
+  const { venues, fetchAll: fetchVenues } = useVenueStore(useShallow(state => ({ venues: state.venues, fetchAll: state.fetchAll })));
+  const { getMatchesFromCache, isSeasonLoading,
+    fetchBySeason, error: scheduleError,
+    scheduleCache } = useScheduleStore(useShallow(state => ({ getMatchesFromCache: state.getMatchesFromCache, isSeasonLoading: state.isSeasonLoading, fetchBySeason: state.fetchBySeason, error: state.error, scheduleCache: state.scheduleCache })));
+
+  // ── Lookup maps từ stores ──────────────────────────────────
+  const teamMap = useMemo(() => Object.fromEntries((teams || []).map(t => [t.id, t])), [teams]);
+  const venueMap = useMemo(() => Object.fromEntries((venues || []).map(v => [v.id, v])), [venues]);
+
+  // ── Matches raw + enriched ─────────────────────────────────
+  const allMatches = useMemo(() => {
+    const rawMatches = selectedSeasonId
+      ? getMatchesFromCache(Number(selectedSeasonId))
+      : seasons.flatMap(s => scheduleCache[s.id]?.matches ?? []);
+    return rawMatches.map(m => ({
+      ...m,
+      home_team: teamMap[m.home_team_id] ?? null,
+      away_team: teamMap[m.away_team_id] ?? null,
+      venue: venueMap[m.venue_id] ?? null,
+    }));
+  }, [selectedSeasonId, seasons, scheduleCache, getMatchesFromCache, teamMap, venueMap]);
+
+  const isLoading = seasonsLoading || (selectedSeasonId
+    ? isSeasonLoading(Number(selectedSeasonId))
+    : seasons.some(s => isSeasonLoading(s.id)));
+
+  // ── Tách round-robin vs knockout — 2 khái niệm "round"/"stage" khác nhau ──
+  const roundRobinMatches = useMemo(
+    () => allMatches.filter(m => getPhaseFormat(m) !== 'knockout'),
+    [allMatches],
+  );
+  const knockoutMatches = useMemo(
+    () => allMatches.filter(m => getPhaseFormat(m) === 'knockout'),
+    [allMatches],
   );
 
-  const isLoadingMatches = effectiveSeasonId
-    ? isSeasonLoading(Number(effectiveSeasonId))
-    : false;
+  // Available rounds derived CHỈ từ round-robin matches
+  const availableRounds = useMemo(() => {
+    const rounds = [...new Set(roundRobinMatches.map(m => m.round).filter(Boolean))]
+      .sort((a, b) => Number(a) - Number(b));
+    return rounds;
+  }, [roundRobinMatches]);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const upcoming = useMemo(() => {
+    let list = roundRobinMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
+    if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
+    return list.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+  }, [roundRobinMatches, filterRound]);
 
-  const statusFilteredMatches = useMemo(
-    () => allSeasonMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing'),
-    [allSeasonMatches]
-  );
+  const results = useMemo(() => {
+    let list = roundRobinMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited');
+    if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
+    return list.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
+  }, [roundRobinMatches, filterRound]);
 
-  const matches = useMemo(() => {
-    if (!searchTerm) return statusFilteredMatches;
-    const lower = searchTerm.toLowerCase();
-    return statusFilteredMatches.filter(m => {
-      const hName = m.home_team?.name ?? teams.find(t => Number(t.id) === Number(m.home_team_id))?.name;
-      const aName = m.away_team?.name ?? teams.find(t => Number(t.id) === Number(m.away_team_id))?.name;
-      if (hName == null && aName == null) return true;
-      return (hName ?? '').toLowerCase().includes(lower) || (aName ?? '').toLowerCase().includes(lower);
-    });
-  }, [statusFilteredMatches, searchTerm, teams]);
+  // Knockout bracket: nhóm theo phase (round_of_16/quarter_final/semi_final/
+  // final...), mỗi phase sort theo bracket round asc rồi scheduled_at asc.
+  // Hiển thị độc lập với tab upcoming/results — 1 phase có thể có cả trận
+  // đã đá lẫn chưa đá (VD bán kết lượt đi xong, lượt về chưa đá).
+  const knockoutStages = useMemo(() => {
+    const byPhase = new Map();
+    for (const m of knockoutMatches) {
+      const phaseId = getPhaseId(m) ?? 'unknown';
+      const bucket = byPhase.get(phaseId) ?? { phaseId, phaseName: getPhaseName(m) ?? 'Knockout', matches: [] };
+      bucket.matches.push(m);
+      byPhase.set(phaseId, bucket);
+    }
+    const stages = [...byPhase.values()];
+    for (const stage of stages) {
+      stage.matches.sort((a, b) => {
+        const ra = Number(a.round ?? 0);
+        const rb = Number(b.round ?? 0);
+        if (ra !== rb) return ra - rb;
+        return new Date(a.scheduled_at ?? 0) - new Date(b.scheduled_at ?? 0);
+      });
+    }
+    // Sort các phase theo round nhỏ nhất trong phase đó — round_of_16 trước
+    // quarter_final trước semi_final trước final (bracket round tăng dần
+    // qua các phase, đúng thứ tự tiến triển giải).
+    stages.sort((a, b) => (a.matches[0]?.round ?? 0) - (b.matches[0]?.round ?? 0));
+    return stages;
+  }, [knockoutMatches]);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
-
-  const totalPages = Math.ceil(matches.length / itemsPerPage);
-  const displayedMatches = matches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const selectedMatch = useMemo(
-    () => matches.find(m => String(m.id) === String(selectedMatchId)) ?? null,
-    [matches, selectedMatchId],
-  );
-
-  // ── Players & Lineups ─────────────────────────────────────────────────────
-  const [homePlayers, setHomePlayers] = useState([]);
-  const [awayPlayers, setAwayPlayers] = useState([]);
-  const [loadingPlayers, setLoadingPlayers] = useState(false);
-  const [lineups, setLineups] = useState({ home: [], away: [] });
-
+  // ── Fetch on mount ─────────────────────────────────────────
   useEffect(() => {
-    if (!selectedMatch) return;
-    let cancelled = false;
+    fetchSeasons();
+    fetchTeams();
+    fetchVenues();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const load = async () => {
-      setLoadingPlayers(true);
-      try {
-        const [homeRes, awayRes, lineupRes] = await Promise.allSettled([
-          selectedMatch.home_team_id ? teamApi.getPlayers(selectedMatch.home_team_id, { per_page: 50 }) : Promise.resolve([]),
-          selectedMatch.away_team_id ? teamApi.getPlayers(selectedMatch.away_team_id, { per_page: 50 }) : Promise.resolve([]),
-          matchLineupApi.getMatchLineups(selectedMatch.id)
-        ]);
-        if (cancelled) return;
-
-        if (homeRes.status === 'rejected') {
-          console.error(`[LiveControlTab] getPlayers(home_team_id=${selectedMatch.home_team_id}) failed:`, homeRes.reason);
-          toast.error(`Không tải được danh sách cầu thủ đội nhà (team_id=${selectedMatch.home_team_id}).`);
-        }
-        if (awayRes.status === 'rejected') {
-          console.error(`[LiveControlTab] getPlayers(away_team_id=${selectedMatch.away_team_id}) failed:`, awayRes.reason);
-          toast.error(`Không tải được danh sách cầu thủ đội khách (team_id=${selectedMatch.away_team_id}).`);
-        }
-
-        const parsedHome = homeRes.status === 'fulfilled' ? unwrapListResponse(homeRes.value, 'homePlayers') : [];
-        const parsedAway = awayRes.status === 'fulfilled' ? unwrapListResponse(awayRes.value, 'awayPlayers') : [];
-
-        if (homeRes.status === 'fulfilled' && parsedHome.length === 0) {
-          console.warn(`[LiveControlTab] home_team_id=${selectedMatch.home_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
-        }
-        if (awayRes.status === 'fulfilled' && parsedAway.length === 0) {
-          console.warn(`[LiveControlTab] away_team_id=${selectedMatch.away_team_id} trả về 0 cầu thủ. Kiểm tra DB/API trực tiếp cho team này.`);
-        }
-
-        setHomePlayers(parsedHome);
-        setAwayPlayers(parsedAway);
-
-        const allLineups = lineupRes.status === 'fulfilled' ? unwrapListResponse(lineupRes.value, 'lineups') : [];
-
-        const homeTeamId = Number(selectedMatch.home_team_id);
-        const awayTeamId = Number(selectedMatch.away_team_id);
-        setLineups({
-          home: allLineups.filter(l => Number(l.team_id) === homeTeamId),
-          away: allLineups.filter(l => Number(l.team_id) === awayTeamId)
-        });
-      } finally {
-        if (!cancelled) setLoadingPlayers(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [selectedMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Events ──────────────────────────────────────────────────────────────────
-  const [homeEvents, setHomeEvents] = useState([]);
-  const [awayEvents, setAwayEvents] = useState([]);
-  const [isDirty, setIsDirty] = useState(false);
-
-  const homeGoalCount = useMemo(() => homeEvents.filter(e => e.type === 'goal').length, [homeEvents]);
-  const awayGoalCount = useMemo(() => awayEvents.filter(e => e.type === 'goal').length, [awayEvents]);
-
-  const [matchStatus, setMatchStatus] = useState('');
-
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [isFinishing, setIsFinishing] = useState(false);
-
-  const [activeModal, setActiveModal] = useState(null); // 'forfeit', 'abandon', 'appeal', 'protest', 'resolve'
-
-  // ── Knockout draw → extra time → penalty flow ────────────────────────────
-  // 3 bước: full_time draw -> mở ExtraTimeModal (nhập tổng bàn sau ET, hoặc
-  // bỏ qua ET) -> nếu vẫn hoà -> PenaltyModal.
-  // penaltyBaseScore = tỉ số nền hiển thị & gửi lên BE làm homeScore/
-  // awayScore cho bước pen — là tỉ số 90' nếu bỏ qua ET, hoặc tổng sau ET
-  // nếu đã qua bước hiệp phụ.
-  const isKnockout = selectedMatch?.phase?.format === 'knockout';
-  const isDrawNow = homeGoalCount === awayGoalCount;
-
-  const [etModalOpen, setEtModalOpen] = useState(false);
-  const [etDraft, setEtDraft] = useState({ home: '', away: '' });
-  const [isSubmittingEt, setIsSubmittingEt] = useState(false);
-
-  const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
-  const [penaltyDraft, setPenaltyDraft] = useState({ home: '', away: '' });
-  const [isSubmittingPenalty, setIsSubmittingPenalty] = useState(false);
-  const [penaltyBaseScore, setPenaltyBaseScore] = useState({ home: 0, away: 0 });
-
+  // Auto-select latest season on mount
   useEffect(() => {
-    if (!effectiveSeasonId) return;
-    fetchBySeason(Number(effectiveSeasonId), { force: true });
-  }, [effectiveSeasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!selectedSeasonId && seasons?.length > 0) {
+      const ongoing = seasons.find(s => s.status === 'ongoing');
+      const registering = seasons.find(s => s.status === 'registration_open');
+      setTimeout(() => {
+        if (ongoing) {
+          setSelectedSeasonId(String(ongoing.id));
+        } else if (registering) {
+          setSelectedSeasonId(String(registering.id));
+        } else {
+          const latest = [...seasons].sort((a, b) => b.id - a.id)[0];
+          setSelectedSeasonId(String(latest.id));
+        }
+      }, 0);
+    }
+  }, [seasons, selectedSeasonId]);
 
+  // Khi season thay đổi: fetch lịch mới + groups
   useEffect(() => {
-    if (selectedMatch) {
-      setMatchStatus(selectedMatch.status);
+    if (selectedSeasonId) {
+      fetchBySeason(Number(selectedSeasonId));
+
+      const fetchGroups = async () => {
+        setIsGroupsLoading(true);
+        try {
+          const res = await groupApi.listBySeason(selectedSeasonId);
+          setGroups(unwrapGroupsResponse(res));
+        } catch (error) {
+          console.error("Failed to fetch groups", error);
+          setGroups([]);
+        } finally {
+          setIsGroupsLoading(false);
+        }
+      };
+      fetchGroups();
     } else {
-      setMatchStatus('');
+      setGroups([]);
     }
-  }, [selectedMatch]);
-
-  useEffect(() => {
-    if (etModalOpen) {
-      setEtDraft({ home: String(homeGoalCount), away: String(awayGoalCount) });
-    }
-  }, [etModalOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-  const _resetForm = () => {
-    setSelectedMatchId('');
-    setHomeEvents([]); setAwayEvents([]);
-    setIsDirty(false);
-    setMatchStatus('');
-  };
-
-  const handleMatchSelect = (matchId) => {
-    setSelectedMatchId(matchId);
-    setHomeEvents([]); setAwayEvents([]);
-    setIsDirty(false);
-    setEtModalOpen(false); setEtDraft({ home: '', away: '' });
-    setPenaltyModalOpen(false); setPenaltyDraft({ home: '', away: '' });
-    setPenaltyBaseScore({ home: 0, away: 0 });
-  };
-
-  const addEvent = (side, type) => {
-    const base = { id: Date.now(), type, minute: '', player: '' };
-    const newEvt = type === 'substitution' ? { ...base, playerIn: '', playerOut: '' } : base;
-    if (side === 'home') setHomeEvents(prev => [...prev, newEvt]);
-    else setAwayEvents(prev => [...prev, newEvt]);
-    setIsDirty(true);
-  };
-
-  const removeEvent = (side, id) => {
-    if (side === 'home') setHomeEvents(prev => prev.filter(e => e.id !== id));
-    else setAwayEvents(prev => prev.filter(e => e.id !== id));
-    setIsDirty(true);
-  };
-
-  const updateEvent = (side, id, field, value) => {
-    let v = value;
-    if (field === 'minute') {
-      const digits = String(value).replace(/\D/g, '');
-      v = digits === '' ? '' : String(Math.min(MAX_MINUTE, Math.max(0, Number(digits))));
-    }
-    const updater = evts => evts.map(e => e.id === id ? { ...e, [field]: v } : e);
-    if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
-    setIsDirty(true);
-  };
-
-  const getHomeName = () => selectedMatch?.home_team?.name ?? teams.find(t => Number(t.id) === Number(selectedMatch?.home_team_id))?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
-  const getAwayName = () => selectedMatch?.away_team?.name ?? teams.find(t => Number(t.id) === Number(selectedMatch?.away_team_id))?.name ?? `Đội ${selectedMatch?.away_team_id ?? ''}`;
+  }, [selectedSeasonId, fetchBySeason]);
 
   const handleRefresh = () => {
-    if (effectiveSeasonId) {
-      fetchBySeason(Number(effectiveSeasonId), { force: true });
-    } else {
-      seasons.forEach(s => fetchBySeason(s.id, { force: true }));
-    }
+    if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });
   };
 
-  const validate = () => {
-    if (homeEvents.some(e => !e.minute) || awayEvents.some(e => !e.minute))
-      return 'Vui lòng điền phút cho tất cả sự kiện.';
+  const currentData = activeTab === 'upcoming' ? upcoming : results;
 
-    for (const [label, events] of [['Đội nhà', homeEvents], ['Đội khách', awayEvents]]) {
-      const yellowCounts = countYellowsByPlayer(events);
-      for (const [, count] of yellowCounts) {
-        if (count > 2) {
-          return `${label}: một cầu thủ đã có ${count} thẻ vàng — cầu thủ bị truất quyền sau thẻ vàng thứ 2, không thể nhận thêm thẻ.`;
-        }
-      }
-    }
-    return '';
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
   };
 
-  const syncUnsavedEvents = async () => {
-    const pushSide = async (events, teamId) => {
-      for (const evt of events) {
-        if (evt.isSaved) continue;
-        const effectiveType = evt.type === 'yellow' ? getEffectiveYellowType(evt, events) : evt.type;
-        const payloads = buildEventPayload(evt, teamId, effectiveType);
-        for (const payload of payloads) {
-          try { await matchApi.recordEvent(selectedMatch.id, payload); }
-          catch (err) { console.warn('[syncEvents] recordEvent failed:', payload, err); }
-        }
-        evt.isSaved = true;
-      }
-    };
-    await pushSide(homeEvents, selectedMatch.home_team_id);
-    await pushSide(awayEvents, selectedMatch.away_team_id);
-  };
+  const [prevFilterState, setPrevFilterState] = useState({ activeTab, selectedSeasonId, filterRound });
+  if (
+    prevFilterState.activeTab !== activeTab ||
+    prevFilterState.selectedSeasonId !== selectedSeasonId ||
+    prevFilterState.filterRound !== filterRound
+  ) {
+    setPrevFilterState({ activeTab, selectedSeasonId, filterRound });
+    setCurrentPage(1);
+  }
 
-  const handleSaveDraft = async () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
-    setIsSavingDraft(true);
-    try {
-      if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
-        await matchApi.startMatch(selectedMatch.id);
-        setMatchStatus('ongoing');
-      }
-      await syncUnsavedEvents();
-      toast.info('Đã đồng bộ sự kiện (chưa xác nhận kết quả).');
-      setIsDirty(false);
-    } catch {
-      toast.error('Lỗi khi đồng bộ sự kiện.');
-    } finally { setIsSavingDraft(false); }
-  };
+  const totalPages = Math.ceil(currentData.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedData = currentData.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
-  // Kiểm tra chuỗi lỗi trả về từ BE (message string) xem có phải case
-  // "knockout hoà ở full_time, cần nhập ET/pen" hay không — xem giải thích
-  // đầy đủ ở KNOCKOUT_DRAW_MESSAGE_MARKER phía trên file.
-  const isKnockoutDrawError = (err) => {
-    const msg = err?.response?.data?.message || err?.message || '';
-    return typeof msg === 'string'
-      && msg.includes(KNOCKOUT_DRAW_MESSAGE_MARKER)
-      && msg.includes('full_time');
-  };
-
-  // Case "vẫn hoà sau khi đã nhập extra_time" — cùng message format với
-  // trên nhưng resultType nhúng trong message là 'extra_time'.
-  const isKnockoutEtDrawError = (err) => {
-    const msg = err?.response?.data?.message || err?.message || '';
-    return typeof msg === 'string'
-      && msg.includes(KNOCKOUT_DRAW_MESSAGE_MARKER)
-      && msg.includes('extra_time');
-  };
-
-  const submitAdminResult = async (extra = {}) => {
-    return matchApi.adminRecordResult(selectedMatch.id, {
-      homeScore: homeGoalCount, awayScore: awayGoalCount,
-      resultType: 'full_time',
-      ...extra,
-    });
-  };
-
-  const handleFinishMatch = async () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
-    setIsFinishing(true);
-    try {
-      if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
-        await matchApi.startMatch(selectedMatch.id);
-      }
-
-      await syncUnsavedEvents();
-
-      // Knockout hoà ở 90' — không gọi API (chắc chắn fail), mở thẳng modal
-      // hiệp phụ. Events đã sync ở trên, chỉ còn thiếu quyết định ET/pen.
-      if (isKnockout && isDrawNow) {
-        setEtModalOpen(true);
-        return;
-      }
-
-      await submitAdminResult();
-
-      setMatchStatus('finished');
-      toast.success('Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉', 5000);
-      setIsDirty(false);
-      handleRefresh();
-    } catch (err) {
-      if (isKnockoutDrawError(err)) {
-        setEtModalOpen(true);
-        return;
-      }
-      // FIX: trước đây `'Lỗi khi xác nhận kết quả: ' + (err?.response?.data?.message || err.message)`
-      // — nối thẳng raw message (Zod/network error tiếng Anh) vào toast.
-      // Dùng getFriendlyErrorMessage: chỉ hiện message BE nếu là tiếng Việt
-      // (AppError nghiệp vụ), còn lại luôn fallback tiếng Việt.
-      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xác nhận kết quả. Vui lòng thử lại.'));
-    } finally { setIsFinishing(false); }
-  };
-
-  // Bước ET: admin nhập TỔNG bàn thắng sau hiệp phụ (không phải riêng bàn
-  // ghi trong ET) — khớp với semantics homeScore=tổng cuối cùng ở BE
-  // (adminRecordResult forward thẳng homeScore làm homeFinal khi không có
-  // homeExtraTimeScore riêng — xem _resolveWinner case extra_time).
-  const handleConfirmExtraTime = async () => {
-    const h = Number(etDraft.home);
-    const a = Number(etDraft.away);
-    if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
-      toast.error('Tỉ số sau hiệp phụ phải là số nguyên không âm.');
-      return;
-    }
-    if (h < homeGoalCount || a < awayGoalCount) {
-      toast.error('Tỉ số sau hiệp phụ không thể thấp hơn tỉ số 90 phút hiện tại.');
-      return;
-    }
-    setIsSubmittingEt(true);
-    try {
-      await matchApi.adminRecordResult(selectedMatch.id, {
-        homeScore: h, awayScore: a,
-        resultType: 'extra_time',
-      });
-      setMatchStatus('finished');
-      setEtModalOpen(false);
-      toast.success('Xác nhận kết quả (kèm hiệp phụ) thành công! 🎉', 5000);
-      setIsDirty(false);
-      handleRefresh();
-    } catch (err) {
-      if (isKnockoutEtDrawError(err)) {
-        // Vẫn hoà sau ET — chuyển sang pen, giữ nguyên tổng sau ET làm nền.
-        setPenaltyBaseScore({ home: h, away: a });
-        setEtModalOpen(false);
-        setPenaltyModalOpen(true);
-        return;
-      }
-      // FIX: xem giải thích ở handleFinishMatch.
-      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xác nhận kết quả hiệp phụ. Vui lòng thử lại.'));
-    } finally { setIsSubmittingEt(false); }
-  };
-
-  // Bỏ qua hiệp phụ — vào thẳng loạt sút luân lưu với tỉ số 90'.
-  const handleSkipExtraTime = () => {
-    setPenaltyBaseScore({ home: homeGoalCount, away: awayGoalCount });
-    setEtModalOpen(false);
-    setPenaltyModalOpen(true);
-  };
-
-  const handleConfirmPenalty = async () => {
-    const h = Number(penaltyDraft.home);
-    const a = Number(penaltyDraft.away);
-    if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
-      toast.error('Điểm loạt sút luân lưu phải là số nguyên không âm.');
-      return;
-    }
-    if (h === a) {
-      toast.error('Loạt sút luân lưu không thể hoà.');
-      return;
-    }
-    setIsSubmittingPenalty(true);
-    try {
-      await matchApi.adminRecordResult(selectedMatch.id, {
-        homeScore: penaltyBaseScore.home, awayScore: penaltyBaseScore.away,
-        resultType: 'penalty',
-        homePenaltyScore: h,
-        awayPenaltyScore: a,
-      });
-      setMatchStatus('finished');
-      setPenaltyModalOpen(false);
-      toast.success('Xác nhận kết quả (kèm loạt sút luân lưu) thành công! 🎉', 5000);
-      setIsDirty(false);
-      handleRefresh();
-    } catch (err) {
-      // FIX: xem giải thích ở handleFinishMatch.
-      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi xác nhận kết quả pen. Vui lòng thử lại.'));
-    } finally { setIsSubmittingPenalty(false); }
-  };
-
-  const handleReset = () => {
-    setHomeEvents([]); setAwayEvents([]);
-    setIsDirty(false);
-    toast.info('Đã đặt lại form.');
-  };
-
-  const isFinished = matchStatus === 'finished';
-  const isProtested = matchStatus === 'protested';
-  const isEditable = !isFinished && !isProtested;
-
-  const handleModalSuccess = (msg) => {
-    toast.success(msg);
-    setActiveModal(null);
-    handleRefresh();
-  };
-
-  const fmtMatchDate = (m) => m?.scheduled_at
-    ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
-    : 'TBD';
+  const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId));
 
   return (
-    <>
-      <div className="space-y-4 animate-fade-in">
-        <MatchSelectorPanel
-          matches={matches}
-          allSeasonMatchesCount={statusFilteredMatches.length}
-          teams={teams}
-          isLoading={isLoadingMatches}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          displayedMatches={displayedMatches}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          totalPages={totalPages}
-          selectedMatchId={selectedMatchId}
-          onMatchSelect={handleMatchSelect}
-          onRefresh={() => fetchBySeason(Number(effectiveSeasonId), { force: true })}
-          isRefreshing={isLoadingMatches}
-          onGoToSchedule={onGoToSchedule}
-        />
+    <div className="py-12 lg:py-16 bg-navy-dark min-h-screen relative">
+      {/* Background Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/3 -translate-x-1/4"></div>
+        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 translate-x-1/4"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+      </div>
 
-        {/* ── Main Workspace ── */}
-        {selectedMatch && (
-          <div className="space-y-4">
+      <div className="container mx-auto px-4 lg:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto">
 
-            {/* ── Compact Scoreboard ── */}
-            <div className="relative bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg shadow-black/30">
-              <div className={`h-1 w-full ${matchStatus === 'ongoing' ? 'bg-linear-to-r from-red-600 via-orange-500 to-red-600 animate-gradient' : 'bg-linear-to-r from-blue-600 via-indigo-500 to-blue-600'}`} />
+          {/* Title */}
+          <div className="text-center mb-10 md:mb-16 animate-slide-up">
+            <h1 className="text-4xl md:text-6xl font-black text-[#00529C] font-sans uppercase tracking-tight mb-4 drop-shadow-md">
+              LỊCH THI ĐẤU & KẾT QUẢ
+            </h1>
+            <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto font-medium">
+              Theo dõi lịch thi đấu, không bỏ lỡ trận cầu nào và cập nhật kết quả mới nhất của giải đấu.
+            </p>
+          </div>
 
-              <div className="p-3 sm:p-4">
-                <div className="flex items-center justify-center gap-2 mb-2.5 text-xs">
-                  <StatusBadge status={matchStatus || selectedMatch.status} />
-                  <span className="text-gray-600">•</span>
-                  <span className="text-gray-500">{fmtMatchDate(selectedMatch)}</span>
-                  {selectedMatch.venue?.name && (
-                    <>
-                      <span className="text-gray-600">•</span>
-                      <span className="text-gray-500 hidden sm:inline">{selectedMatch.venue.name}</span>
-                    </>
-                  )}
-                  {isKnockout && (
-                    <>
-                      <span className="text-gray-600">•</span>
-                      <span className="text-purple-400 font-semibold">Knockout</span>
-                    </>
-                  )}
+          {/* Controls Bar */}
+          <div className="flex flex-col gap-4 mb-10 animate-fade-in bg-navy/40 backdrop-blur-xl border border-navy-light rounded-4xl p-6 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+
+              {/* Season Selector */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <label className="text-xs font-black text-blue-400 uppercase tracking-widest shrink-0 flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                  <CalendarDays className="w-4 h-4" />
+                  Mùa giải
+                </label>
+                <div className="relative w-full sm:w-64">
+                  <select
+                    value={selectedSeasonId}
+                    onChange={e => setSelectedSeasonId(e.target.value)}
+                    disabled={seasonsLoading}
+                    className="w-full pl-5 pr-10 py-3 bg-navy-dark/80 border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm appearance-none disabled:opacity-60 transition-all cursor-pointer shadow-inner"
+                  >
+                    <option value="">-- Chọn mùa giải --</option>
+                    {seasons.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                        {s.status === 'ongoing' ? ' 🔴' : s.status === 'registration_open' ? ' 📋' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
+              </div>
 
-                <div className="flex items-center justify-center gap-3 sm:gap-6">
-                  <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                    <span className="font-black text-white text-sm truncate">{getHomeName()}</span>
-                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-black text-sm shrink-0">
-                      {getHomeName()[0]}
-                    </div>
-                  </div>
+              {/* Tab switcher */}
+              <div className="flex bg-navy-dark p-1.5 rounded-xl border border-navy-light w-full md:w-auto shadow-inner relative">
+                <div
+                  className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg transition-transform duration-300 ease-out shadow-md`}
+                  style={{
+                    transform: activeTab === 'upcoming' ? 'translateX(0)' : 'translateX(100%)',
+                    left: '6px'
+                  }}
+                ></div>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${activeTab === 'upcoming' ? 'text-white' : 'text-gray-500 hover:text-white'
+                    }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Sắp tới
+                  {!isLoading && upcoming.length > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'upcoming' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{upcoming.length}</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className={`flex-1 md:w-40 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition-colors duration-300 flex justify-center items-center gap-2 relative z-10 ${activeTab === 'results' ? 'text-white' : 'text-gray-500 hover:text-white'
+                    }`}
+                >
+                  <Trophy className="w-4 h-4" />
+                  Kết quả
+                  {!isLoading && results.length > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === 'results' ? 'bg-white/20 text-white' : 'bg-navy-light text-gray-400'}`}>{results.length}</span>
+                  )}
+                </button>
+              </div>
+            </div>{/* end flex row */}
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-2xl sm:text-3xl font-black text-white w-7 text-center">{homeGoalCount}</span>
-                    <span className="text-lg font-black text-gray-700">–</span>
-                    <span className="text-2xl sm:text-3xl font-black text-white w-7 text-center">{awayGoalCount}</span>
-                  </div>
+            {/* Round filter row — chỉ hiện khi có dữ liệu round-robin. KHÔNG
+                bao gồm knockout (xem section riêng bên dưới nội dung chính). */}
+            {availableRounds.length > 0 && (
+              <div className="flex items-center gap-3 flex-wrap border-t border-navy-light/50 pt-4">
+                <div className="flex items-center gap-1.5 text-xs font-black text-gray-400 uppercase tracking-wider shrink-0">
+                  <Filter className="w-3.5 h-3.5" /> Vòng đấu (Vòng bảng):
+                </div>
+                <button
+                  onClick={() => setFilterRound('')}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${!filterRound
+                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                    : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                    }`}
+                >
+                  Tất cả
+                </button>
+                {availableRounds.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setFilterRound(prev => String(prev) === String(r) ? '' : String(r))}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${String(filterRound) === String(r)
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/15'
+                      : 'bg-navy-dark border-navy-light text-gray-400 hover:text-white hover:border-gray-500'
+                      }`}
+                  >
+                    Vòng {r}
+                  </button>
+                ))}
+                {filterRound && (
+                  <button
+                    onClick={() => setFilterRound('')}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-black text-gray-500 border border-navy-light hover:text-white hover:border-gray-500 transition-all ml-auto"
+                  >
+                    <X className="w-3 h-3" /> Xóa filter
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-orange-600 to-amber-700 flex items-center justify-center text-white font-black text-sm shrink-0">
-                      {getAwayName()[0]}
-                    </div>
-                    <span className="font-black text-white text-sm truncate">{getAwayName()}</span>
+          {/* Stats bar */}
+          <div className="flex items-center justify-between mb-6 px-2 animate-fade-in">
+            {selectedSeason && (
+              <div className="flex items-center gap-3 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                <span className="flex items-center gap-1.5 text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20"><Users className="w-3.5 h-3.5" /> Max {selectedSeason.max_teams} đội</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-4 ml-auto">
+              {!isLoading && selectedSeasonId && roundRobinMatches.length > 0 && (
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden sm:block">
+                  Tổng <span className="text-white">{roundRobinMatches.length}</span> trận vòng bảng <span className="mx-1 text-gray-600">|</span>
+                  <span className="text-emerald-400 ml-1">{results.length} KQ</span> <span className="mx-1 text-gray-600">|</span>
+                  <span className="text-amber-400 ml-1">{upcoming.length} Tới</span>
+                </p>
+              )}
+
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading || !selectedSeasonId}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-400 hover:text-white hover:bg-blue-500/10 px-3 py-1.5 rounded-lg border border-transparent hover:border-blue-500/30 transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                Tải lại
+              </button>
+            </div>
+          </div>
+
+          {/* Content — Round robin (upcoming/results) */}
+          <div className="space-y-6">
+            {!selectedSeasonId && !seasonsLoading ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-500 animate-fade-in bg-navy/30 rounded-4xl border border-navy-light/50 border-dashed backdrop-blur-sm">
+                <div className="p-5 bg-navy border border-navy-light rounded-full shadow-lg">
+                  <CalendarDays className="w-12 h-12 text-blue-400" />
+                </div>
+                <p className="font-bold text-lg">Vui lòng chọn mùa giải để xem lịch thi đấu.</p>
+              </div>
+            ) : isLoading ? (
+              <>
+                <MatchRowSkeleton /><MatchRowSkeleton /><MatchRowSkeleton />
+              </>
+            ) : scheduleError ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-5 text-gray-400 animate-fade-in bg-navy/30 rounded-4xl border border-red-500/20 backdrop-blur-sm">
+                <div className="p-5 bg-red-500/10 border border-red-500/30 rounded-full shadow-lg">
+                  <WifiOff className="w-12 h-12 text-red-400" />
+                </div>
+                <p className="font-bold text-lg text-white">Không thể tải dữ liệu.</p>
+                <button onClick={handleRefresh} className="px-6 py-3 bg-linear-to-r from-red-500 to-rose-600 rounded-xl text-sm font-black text-white hover:from-red-400 hover:to-rose-500 transition-all shadow-lg hover:shadow-red-500/25">
+                  Thử lại ngay
+                </button>
+              </div>
+            ) : currentData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-5 text-gray-500 animate-fade-in bg-navy/30 rounded-4xl border border-navy-light/50 border-dashed backdrop-blur-sm">
+                <div className="p-5 bg-navy border border-navy-light rounded-full shadow-lg relative">
+                  {activeTab === 'upcoming' ? (
+                    <CalendarDays className="w-12 h-12 text-blue-400" />
+                  ) : (
+                    <Trophy className="w-12 h-12 text-yellow-400" />
+                  )}
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-navy-dark border border-navy-light rounded-full flex items-center justify-center">
+                    <span className="text-gray-600 text-xl leading-none block -mt-1">-</span>
                   </div>
                 </div>
-
-                {isEditable && isKnockout && isDrawNow && (
-                  <p className="mt-2 text-center text-xs text-amber-400/90 font-semibold">
-                    Đang hoà ở knockout — bấm "Xác nhận" sẽ mở form nhập hiệp phụ / loạt sút luân lưu.
+                <div className="text-center">
+                  <p className="font-black text-xl text-white mb-2 tracking-tight">
+                    {activeTab === 'upcoming' ? 'Lịch thi đấu chưa được cập nhật' : 'Chưa có kết quả vòng bảng'}
                   </p>
-                )}
+                  <p className="text-sm font-medium">
+                    {activeTab === 'upcoming' ? 'Các trận đấu sẽ được cập nhật sớm nhất.' : 'Giải đấu chưa có trận nào kết thúc.'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {paginatedData.map((match, idx) => (
+                  <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                ))}
+              </div>
+            )}
 
-                {isEditable && (
-                  <div className="mt-3 pt-3 border-t border-navy-light flex flex-wrap gap-2 justify-center">
-                    <button onClick={handleReset} className="flex items-center gap-1 py-1.5 px-3 bg-navy-dark hover:bg-navy-light text-gray-500 hover:text-gray-300 border border-navy-light rounded-lg text-xs font-bold transition-colors">
-                      <RotateCcw className="w-3 h-3" /> Đặt lại
-                    </button>
-                    <button onClick={() => setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
-                    <button onClick={() => setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
-                  </div>
-                )}
-                {(isFinished || isProtested) && (
-                  <div className="mt-3 pt-3 border-t border-navy-light flex flex-wrap gap-2 justify-center">
-                    <button onClick={() => setActiveModal('appeal')} className="px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-bold border border-purple-500/20 transition-colors">Kháng cáo</button>
-                    <button onClick={() => setActiveModal('protest')} className="px-3 py-1.5 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 rounded-lg text-xs font-bold border border-pink-500/20 transition-colors">Khiếu nại</button>
-                    {isProtested && (
-                      <button onClick={() => setActiveModal('resolve')} className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-xs font-bold border border-emerald-500/20 transition-colors">Giải quyết Khiếu nại</button>
-                    )}
-                  </div>
-                )}
+            {totalPages > 1 && currentData.length > 0 && !isLoading && !scheduleError && (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Knockout Bracket Section — độc lập với tab upcoming/results, luôn
+            hiển thị đủ tất cả trận (đã đá + chưa đá) theo từng phase, vì 1
+            phase có thể ở trạng thái hỗn hợp (VD bán kết lượt đi xong, lượt
+            về chưa đá) — ép vào 1 trong 2 tab sẽ mất ngữ cảnh. */}
+        {knockoutStages.length > 0 && (
+          <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
+            <div className="max-w-4xl mx-auto mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-yellow-200 uppercase tracking-wider">
+                  Vòng loại trực tiếp
+                </h2>
               </div>
             </div>
 
-            {/* ── Event Columns ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <EventColumn
-                title={getHomeName()}
-                teamColor="blue"
-                events={homeEvents}
-                players={homePlayers}
-                lineup={lineups.home}
-                loadingPlayers={loadingPlayers}
-                onAdd={type => addEvent('home', type)}
-                onUpdate={(id, f, v) => updateEvent('home', id, f, v)}
-                onRemove={id => removeEvent('home', id)}
-              />
-              <EventColumn
-                title={getAwayName()}
-                teamColor="orange"
-                events={awayEvents}
-                players={awayPlayers}
-                lineup={lineups.away}
-                loadingPlayers={loadingPlayers}
-                onAdd={type => addEvent('away', type)}
-                onUpdate={(id, f, v) => updateEvent('away', id, f, v)}
-                onRemove={id => removeEvent('away', id)}
-              />
+            <div className="max-w-4xl mx-auto space-y-10">
+              {knockoutStages.map(stage => (
+                <div key={stage.phaseId}>
+                  <h3 className="text-sm font-black text-amber-300 uppercase tracking-widest mb-4 px-1">
+                    {stage.phaseName}
+                    <span className="ml-2 text-gray-500 font-bold normal-case">({stage.matches.length} trận)</span>
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    {stage.matches.map((match, idx) => (
+                      <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-
           </div>
         )}
 
-        {/* ── Empty state ── */}
-        {!selectedMatch && effectiveSeasonId && !isLoadingMatches && matches.length > 0 && (
-          <div className="text-center py-16 border border-dashed border-navy-light rounded-3xl">
-            <div className="text-5xl mb-4">👆</div>
-            <p className="text-gray-500 font-medium">Chọn một trận đấu ở trên để bắt đầu quản lý</p>
+        {/* Groups Section (Wide Layout) */}
+        {!isGroupsLoading && groups.length > 0 && (
+          <div className="mt-12 pt-12 animate-fade-in border-t border-navy-light/50 w-full mb-10">
+            {/* Title aligned with max-w-4xl content */}
+            <div className="max-w-4xl mx-auto mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                  <LayoutGrid className="w-5 h-5 text-blue-400" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-[#00529C] font-sans uppercase tracking-wider">
+                  Các bảng đấu
+                </h2>
+              </div>
+            </div>
+
+            {/* Scrollable container taking full width of the main container */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 overflow-x-auto pb-8 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {groups.map(group => (
+                <div key={group.id} className="w-full bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl p-6 shadow-2xl hover:border-blue-500/30 transition-colors">
+                  <div className="flex items-center justify-between border-b border-navy-light/50 pb-4 mb-5">
+                    <h3 className="text-lg md:text-xl font-black text-blue-400 uppercase tracking-widest">{group.name}</h3>
+                    <span className="text-xs font-black text-gray-300 bg-navy-light/80 px-3 py-1.5 rounded-lg border border-white/5">{group.season_teams?.length || 0} Đội</span>
+                  </div>
+                  <div className="space-y-3">
+                    {(!group.season_teams || group.season_teams.length === 0) ? (
+                      <p className="text-sm text-gray-500 italic text-center py-6 bg-navy/30 rounded-2xl border border-navy-light/30">Chưa có đội nào</p>
+                    ) : (
+                      group.season_teams.map(st => {
+                        const team = teamMap[st.team_id];
+                        if (!team) return null;
+                        return (
+                          <Link key={st.id} to={`/doi-bong/${team.id}`} className="flex items-center gap-4 bg-navy/40 p-3 rounded-2xl border border-navy-light/30 hover:bg-navy-light/50 hover:border-blue-500/30 transition-all cursor-pointer group/team">
+                            <div className="w-10 h-10 rounded-xl shadow-sm group-hover/team:shadow-md transition-all relative overflow-hidden bg-linear-to-br from-gray-200 to-gray-300 border border-white/10 shrink-0">
+                              <span className="absolute inset-0 flex items-center justify-center font-black text-gray-600 text-lg">
+                                {team.name ? team.name.charAt(0).toUpperCase() : '?'}
+                              </span>
+                              {team.logo && (
+                                <div className="absolute inset-0 bg-white p-1.5 z-10 flex items-center justify-center">
+                                  <img
+                                    src={team.logo}
+                                    alt={team.name}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.target.onerror = null; e.target.parentElement.style.display = 'none'; }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-black group-hover/team:text-gray-600 transition-colors">{team.name}</span>
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-
       </div>
 
-      {/* ── Sticky Bottom Action Bar ── */}
-      {selectedMatch && !isFinished && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-light bg-navy/90 backdrop-blur-xl px-3 py-2 sm:px-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-              <span>⚽ {homeGoalCount + awayGoalCount}</span>
-              <span className="text-gray-700">·</span>
-              <span>🔄 {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length}</span>
-              {isDirty && <span className="ml-1 text-amber-400/80 font-semibold">• chưa lưu</span>}
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {isDirty && isEditable && (
-                <button
-                  onClick={handleSaveDraft}
-                  disabled={isSavingDraft}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light hover:border-gray-500 text-gray-300 hover:text-white font-bold rounded-lg transition-all disabled:opacity-40 text-xs"
-                >
-                  {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Lưu nháp
-                </button>
-              )}
-
-              {isEditable && (
-                <button
-                  onClick={handleFinishMatch}
-                  disabled={isFinishing}
-                  className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-black rounded-lg transition-all shadow-md shadow-blue-900/30 text-xs"
-                >
-                  {isFinishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}
-                  Xác nhận
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <ForfeitMatchModal isOpen={activeModal === 'forfeit'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
-      <AbandonMatchModal isOpen={activeModal === 'abandon'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
-      <DisputeModal isOpen={activeModal === 'appeal' || activeModal === 'protest'} onClose={() => setActiveModal(null)} match={selectedMatch} type={activeModal} onSuccess={handleModalSuccess} />
-      <ResolveAppealModal isOpen={activeModal === 'resolve'} onClose={() => setActiveModal(null)} match={selectedMatch} onSuccess={handleModalSuccess} />
-
-      <ExtraTimeModal
-        isOpen={etModalOpen}
-        onClose={() => { if (!isSubmittingEt) setEtModalOpen(false); }}
-        homeName={getHomeName()}
-        awayName={getAwayName()}
-        homeGoalCount={homeGoalCount}
-        awayGoalCount={awayGoalCount}
-        draft={etDraft}
-        setDraft={setEtDraft}
-        onConfirm={handleConfirmExtraTime}
-        onSkip={handleSkipExtraTime}
-        isSubmitting={isSubmittingEt}
-      />
-      <PenaltyShootoutModal
-        isOpen={penaltyModalOpen}
-        onClose={() => { if (!isSubmittingPenalty) setPenaltyModalOpen(false); }}
-        homeName={getHomeName()}
-        awayName={getAwayName()}
-        homeGoalCount={penaltyBaseScore.home}
-        awayGoalCount={penaltyBaseScore.away}
-        draft={penaltyDraft}
-        setDraft={setPenaltyDraft}
-        onConfirm={handleConfirmPenalty}
-        isSubmitting={isSubmittingPenalty}
-      />
-    </>
-  );
-}
-
-// ─── PenaltyShootoutModal ─────────────────────────────────────────────────────
-// Modal riêng cho bước nhập loạt sút luân lưu khi knockout hoà ở full_time.
-// Không dùng chung với AdvancedMatchControlModals vì use-case khác hẳn (chỉ
-// 2 input số, không cần fetch dữ liệu ngoài).
-
-function PenaltyShootoutModal({ isOpen, onClose, homeName, awayName, homeGoalCount, awayGoalCount, draft, setDraft, onConfirm, isSubmitting }) {
-  if (!isOpen) return null;
-
-  const setField = (side, value) => {
-    const digits = String(value).replace(/\D/g, '');
-    setDraft(prev => ({ ...prev, [side]: digits }));
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl max-w-sm w-full p-5">
-        <div className="flex items-center gap-2 mb-1">
-          <Target className="w-5 h-5 text-purple-400" />
-          <h3 className="font-black text-white text-sm uppercase tracking-wide">Loạt sút luân lưu</h3>
-        </div>
-        <p className="text-xs text-gray-500 mb-4">
-          {homeName} {homeGoalCount} – {awayGoalCount} {awayName} sau 90 phút. Nhập kết quả pen để xác định đội thắng.
-        </p>
-
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{homeName}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={draft.home}
-              onChange={e => setField('home', e.target.value)}
-              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-purple-500"
-              placeholder="0"
-            />
-          </div>
-          <span className="text-gray-600 font-black text-lg mt-4">–</span>
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <span className="text-xs font-bold text-gray-400 truncate max-w-[100px]">{awayName}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={draft.away}
-              onChange={e => setField('away', e.target.value)}
-              className="w-16 text-center text-xl font-black bg-navy-dark border border-navy-light rounded-lg py-1.5 text-white focus:outline-none focus:border-purple-500"
-              placeholder="0"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
-          >
-            Huỷ
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isSubmitting}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-lg text-xs font-black transition-colors"
-          >
-            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}
-            Xác nhận kết quả
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── EventColumn ──────────────────────────────────────────────────────────────
-
-function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers, onAdd, onUpdate, onRemove }) {
-  const c = countEvents(events);
-
-  const headerGradient = teamColor === 'blue'
-    ? 'from-blue-600/20 to-navy border-blue-500/20'
-    : 'from-orange-600/20 to-navy border-orange-500/20';
-
-  const avatarGradient = teamColor === 'blue'
-    ? 'from-blue-600 to-cyan-700'
-    : 'from-orange-600 to-amber-700';
-
-  return (
-    <div className="bg-navy border border-navy-light rounded-2xl overflow-hidden shadow-lg flex flex-col">
-      <div className={`bg-linear-to-r ${headerGradient} border-b px-4 py-3`}>
-        <div className="flex items-center gap-3 mb-2.5">
-          <div className={`w-8 h-8 rounded-xl bg-linear-to-br ${avatarGradient} flex items-center justify-center text-white font-black text-sm shadow-md shrink-0`}>
-            {title[0]}
-          </div>
-          <h3 className="font-black text-white text-sm uppercase tracking-wide line-clamp-1">
-            {title}
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-3 gap-1.5">
-          {[
-            { icon: '⚽', val: c.goals, label: 'Bàn', color: 'emerald' },
-            { icon: '🟥', val: c.red, label: 'Đỏ', color: 'red' },
-            { icon: '🔄', val: c.subs, label: 'Thay', color: 'blue' },
-          ].map(({ icon, val, label, color }) => (
-            <div key={label} className={`flex flex-col items-center py-1.5 rounded-lg bg-${color}-500/10 border border-${color}-500/20`}>
-              <span className="text-sm">{icon}</span>
-              <span className={`text-sm font-black text-${color}-400`}>{val}</span>
-              <span className={`text-[10px] text-${color}-500/70`}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-3 pt-3 pb-2.5 border-b border-navy-light">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-          {EVENT_TYPES.map(et => (
-            <button
-              key={et.key}
-              onClick={() => onAdd(et.key)}
-              className={`py-2 border rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${et.cls}`}
-            >
-              <span className="text-sm">{et.icon}</span>
-              <span className="hidden sm:inline">{et.label}</span>
-              <Plus className="w-3 h-3 sm:hidden" />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[380px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-navy-light [&::-webkit-scrollbar-thumb]:rounded-full">
-        {loadingPlayers ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />
-            <p className="text-xs text-gray-600">Đang tải cầu thủ...</p>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-2">
-            <Shield className="w-8 h-8 text-gray-700" />
-            <p className="text-xs text-gray-600 text-center">Chưa có sự kiện nào.<br />Nhấn nút bên trên để thêm.</p>
-          </div>
-        ) : (
-          events.map(evt => (
-            <EventCard
-              key={evt.id}
-              evt={evt}
-              players={players}
-              lineup={lineup}
-              allEvents={events}
-              onUpdate={(id, f, v) => onUpdate(id, f, v)}
-              onRemove={onRemove}
-            />
-          ))
-        )}
-      </div>
+      <MatchModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />
     </div>
   );
 }

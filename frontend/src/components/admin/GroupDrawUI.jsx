@@ -1,24 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Users, Shuffle, AlertTriangle, Loader2, Trash2, LayoutGrid, Hash, ListChecks, ShieldCheck, Lock, Unlock } from 'lucide-react';
-import { seasonTeamApi, groupApi } from '../../api';
+import { seasonTeamApi, groupApi, seasonApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 
 function unwrapResponse(res) {
   return typeof res?.status === 'boolean' ? res.data : res;
-}
-
-function extractTotalCount(payload) {
-  const meta = payload?.meta ?? payload?.pagination ?? null;
-  const candidates = [
-    meta?.total, meta?.total_items, meta?.totalItems,
-    meta?.total_count, meta?.totalCount, meta?.count, meta?.itemCount,
-    payload?.total,
-  ];
-  const found = candidates.find((v) => typeof v === 'number');
-  if (typeof found === 'number') return found;
-  return null;
 }
 
 // Nhận diện message tiếng Việt (có dấu) — dùng để lọc message backend trước
@@ -37,6 +25,28 @@ const getFriendlyErrorMessage = (err, fallback) => {
   const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
   return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
 };
+
+// FIX (khóa bảng đấu theo trạng thái mùa giải — bản sửa cho RR -> RR):
+// SeasonService.updateStatus() gọi autoFinalizeGroups() ngay TRƯỚC KHI
+// chuyển season sang 'ongoing' — nhưng đó chỉ là cấu trúc của phase
+// round_robin ĐẦU TIÊN (order = 1). Khi GroupService.advanceToNextRoundRobin()
+// tạo phase round_robin THỨ 2 trở đi, phase đó luôn được tạo TRONG LÚC
+// season đã 'ongoing' — nên với các phase order > 1, season.status ===
+// 'ongoing' không phải tín hiệu khoá, mà là điều kiện tiên quyết bình
+// thường để tồn tại.
+//
+// Bản cũ dùng isSeasonAtOrPastOngoing(status) để khoá CỨNG mọi phase khi
+// season 'ongoing' — đúng cho RR1 nhưng SAI cho RR2 trở đi: vừa tạo xong
+// phase RR2 (đang 'draft', chưa có group/match nào) là bị khoá ngay lập
+// tức, không tạo được group, không draw được, và UI còn hiện nhầm banner
+// "dữ liệu bất thường — liên hệ kỹ thuật" cho 1 tình huống hoàn toàn hợp lệ.
+//
+// Fix: chỉ áp season==='ongoing' làm khoá cho phase order===1 (hoặc chưa
+// biết order — coi như phase đầu, giữ hành vi an toàn cũ). Từ order>=2 trở
+// đi, nguồn khoá DUY NHẤT là phase.status (locked/in_progress), y hệt cách
+// KnockoutUI đang xử lý đúng với isSeasonClosedStatus.
+const isSeasonFinalized = (status) => status === 'finished' || status === 'cancelled';
+const isSeasonOngoing = (status) => status === 'ongoing';
 
 export default function GroupDrawUI({ seasonId }) {
   const toast = useToastStore();
@@ -78,7 +88,10 @@ export default function GroupDrawUI({ seasonId }) {
   const [originalGroups, setOriginalGroups] = useState([]);
   const [totalTeams, setTotalTeams] = useState(null);
   const [groupsLoadError, setGroupsLoadError] = useState(false);
-  const [teamsCountError, setTeamsCountError] = useState(false);
+
+  // FIX: season.status — nguồn khóa phụ, chỉ áp dụng cho phase order===1.
+  const [seasonStatus, setSeasonStatus] = useState(null);
+  const [seasonStatusError, setSeasonStatusError] = useState(false);
 
   const requestIdRef = useRef(0);
   const isMountedRef = useRef(true);
@@ -93,9 +106,9 @@ export default function GroupDrawUI({ seasonId }) {
     const reqId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const [groupsRes, teamsRes] = await Promise.allSettled([
+      const [groupsRes, seasonRes] = await Promise.allSettled([
         groupApi.listBySeason(seasonId),
-        seasonTeamApi.getAll({ season_id: seasonId, status: 'approved', per_page: 1 }),
+        seasonApi.getById(seasonId),
       ]);
 
       if (reqId !== requestIdRef.current || !isMountedRef.current) return;
@@ -107,30 +120,32 @@ export default function GroupDrawUI({ seasonId }) {
         const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
         setGroups(fetchedGroups);
         setOriginalGroups(JSON.parse(JSON.stringify(fetchedGroups)));
+        // FIX: dùng eligibleTeamCount trả sẵn từ BE (đã scope đúng theo
+        // phase hiện tại — xem GroupService.getEligibleApprovedTeams) thay
+        // vì tự đếm approved team season-wide bằng seasonTeamApi riêng.
+        // Đếm season-wide chính là nguyên nhân gốc khiến RR2 hiển thị nhầm
+        // "thiếu đội" (đếm luôn cả đội đã bị loại ở RR1).
+        setTotalTeams(typeof payload?.eligibleTeamCount === 'number' ? payload.eligibleTeamCount : null);
       } else {
         console.error('[GroupDrawUI] loadGroups failed:', groupsRes.reason);
         toast.error(getFriendlyErrorMessage(groupsRes.reason, 'Không thể tải danh sách bảng đấu, vui lòng thử lại.'));
         setGroups([]);
         setPhaseInfo(null);
         setGroupsLoadError(true);
+        setTotalTeams(null);
       }
 
-      if (teamsRes.status === 'fulfilled') {
-        const payload = unwrapResponse(teamsRes.value);
-        const total = extractTotalCount(payload);
-        if (total === null) {
-          console.warn('[GroupDrawUI] Không xác định được tổng số team approved. Raw payload:', payload);
-          setTeamsCountError(true);
-          setTotalTeams(null);
-        } else {
-          setTeamsCountError(false);
-          setTotalTeams(total);
-        }
+      // FIX: fail-safe — nếu không tải được season.status, KHÔNG coi như
+      // "chưa ongoing" một cách ngầm định (điều đó sẽ mở khóa nhầm), mà
+      // hiện cảnh báo riêng và giữ nguyên seasonStatus cũ (nếu có) để tránh
+      // đột ngột mở khóa 1 mùa giải thực ra đã 'ongoing'.
+      if (seasonRes.status === 'fulfilled') {
+        const payload = unwrapResponse(seasonRes.value);
+        setSeasonStatusError(false);
+        setSeasonStatus(payload?.status ?? null);
       } else {
-        console.error('[GroupDrawUI] loadTotalTeams failed:', teamsRes.reason);
-        toast.error(getFriendlyErrorMessage(teamsRes.reason, 'Không thể tải số lượng đội đã duyệt, vui lòng thử lại.'));
-        setTeamsCountError(true);
-        setTotalTeams(null);
+        console.error('[GroupDrawUI] loadSeasonStatus failed:', seasonRes.reason);
+        setSeasonStatusError(true);
       }
     } finally {
       if (reqId === requestIdRef.current && isMountedRef.current) setLoading(false);
@@ -140,10 +155,11 @@ export default function GroupDrawUI({ seasonId }) {
   useEffect(() => {
     setGroups([]);
     setGroupsLoadError(false);
-    setTeamsCountError(false);
     setTotalTeams(null);
     setOriginalGroups([]);
     setPhaseInfo(null);
+    setSeasonStatus(null);
+    setSeasonStatusError(false);
     if (seasonId) {
       loadData();
     } else {
@@ -152,7 +168,18 @@ export default function GroupDrawUI({ seasonId }) {
   }, [seasonId, loadData]);
 
   const isConfirmed = phaseInfo?.status === 'in_progress';
-  const isLocked = phaseInfo?.status === 'locked';
+  const isPhaseLocked = phaseInfo?.status === 'locked';
+
+  // FIX: chỉ phase round_robin ĐẦU TIÊN (order 1, hoặc chưa biết order —
+  // coi như phase đầu để giữ hành vi an toàn) mới bị autoFinalizeGroups()
+  // tự chốt ngay trước lúc season chuyển 'ongoing'. Từ order >= 2
+  // (advanceToNextRoundRobin) được tạo TRONG LÚC season đã 'ongoing', nên
+  // season 'ongoing' không phải tín hiệu khoá cho các phase này nữa.
+  const isFirstGroupPhase = !phaseInfo || phaseInfo.order == null || phaseInfo.order === 1;
+  const isSeasonPastDraw =
+    isSeasonFinalized(seasonStatus) || (isSeasonOngoing(seasonStatus) && isFirstGroupPhase);
+
+  const isLocked = isPhaseLocked || isSeasonPastDraw;
   const hasBeenDrawn = groups.some(g => (g.season_teams?.length || 0) > 0);
   const showDrawConfig = groups.length > 0 && !isConfirmed && !isLocked;
 
@@ -169,6 +196,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleCreateGroups = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
+    if (isSeasonPastDraw) return toast.error('Không thể tạo bảng mới ở thời điểm này.');
     if (groups.length > 0) return toast.error('Season đã có bảng — xoá hết trước khi tạo lại');
     const count = Number(groupCount);
     if (!Number.isInteger(count) || count < 1 || count > 26)
@@ -190,6 +218,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleDrawRandom = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
+    if (isSeasonPastDraw) return toast.error('Không thể bốc thăm lại ở thời điểm này.');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
     if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
     setIsDrawing(true);
@@ -207,6 +236,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleDrawSeeded = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
+    if (isSeasonPastDraw) return toast.error('Không thể bốc thăm lại ở thời điểm này.');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
     if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
 
@@ -238,6 +268,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleClearDraw = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
+    if (isSeasonPastDraw) return toast.error('Không thể xoá kết quả bốc thăm ở thời điểm này.');
     if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ kết quả bốc thăm của vòng này?')) return;
     setIsDrawing(true);
     try {
@@ -254,6 +285,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleDeleteGroup = async (group) => {
     if (anyBusy) return;
+    if (isSeasonPastDraw) return toast.error('Không thể xoá bảng ở thời điểm này.');
 
     const teamCount = group.season_teams?.length || 0;
     const confirmMsg = teamCount > 0
@@ -296,6 +328,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleUnconfirmGroups = async () => {
     if (!seasonId || !isConfirmed) return;
+    if (isSeasonPastDraw) return toast.error('Không thể hủy xác nhận bảng đấu ở thời điểm này.');
     if (!confirm('Hủy xác nhận để mở lại chỉnh sửa cấu trúc bảng?')) return;
     setIsConfirming(true);
     try {
@@ -311,13 +344,17 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   // ── Drag & Drop Handlers ──
+  // Mọi handler kéo-thả đều early-return khi isLocked — tránh cho phép
+  // kéo-thả trong state cục bộ dù BE chắc chắn sẽ từ chối lúc lưu.
   const handleDragStart = (e, stId, sourceGroupId) => {
+    if (isLocked) { e.preventDefault(); return; }
     e.dataTransfer.setData('stId', stId);
     e.dataTransfer.setData('sourceGroupId', sourceGroupId);
     setDraggedTeam(stId);
   };
 
   const handleDragOver = (e, groupId) => {
+    if (isLocked) return;
     e.preventDefault();
     if (dragOverGroup !== groupId) {
       setDragOverGroup(groupId);
@@ -332,6 +369,7 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   const handleDrop = (e, targetGroupId) => {
+    if (isLocked) return;
     e.preventDefault();
     setDragOverGroup(null);
     setDraggedTeam(null);
@@ -370,6 +408,7 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   const handleTeamDragOver = (e, stId) => {
+    if (isLocked) return;
     e.preventDefault();
     e.stopPropagation();
     if (dragOverTeamId !== stId) setDragOverTeamId(stId);
@@ -381,6 +420,7 @@ export default function GroupDrawUI({ seasonId }) {
   };
 
   const handleTeamDrop = (e, targetGroupId, targetStId) => {
+    if (isLocked) return;
     e.preventDefault();
     e.stopPropagation();
     setDragOverGroup(null);
@@ -413,6 +453,7 @@ export default function GroupDrawUI({ seasonId }) {
 
   const handleSaveChanges = async () => {
     if (isDrawing || isCreatingGroups) return;
+    if (isLocked) return toast.error('Bảng đấu đã bị khóa — không thể lưu thay đổi.');
 
     const originalGroupOf = new Map();
     originalGroups.forEach(g => g.season_teams.forEach(st => originalGroupOf.set(st.id, g.id)));
@@ -480,6 +521,17 @@ export default function GroupDrawUI({ seasonId }) {
     headerSubtitle = 'Đang tải vòng đấu...';
   } else if (groupsLoadError) {
     headerSubtitle = 'Không tải được thông tin vòng đấu — thử tải lại trang';
+  } else if (isSeasonFinalized(seasonStatus)) {
+    headerSubtitle = phaseInfo
+      ? `Vòng đấu: ${phaseInfo.name} · mùa giải đã kết thúc — bảng đấu đã khóa`
+      : 'Mùa giải đã kết thúc — bảng đấu đã khóa';
+  } else if (isSeasonPastDraw) {
+    // FIX: chỉ còn xảy ra cho phase order===1 — giải thích rõ nguyên nhân
+    // là hệ thống TỰ chốt lúc mùa giải bắt đầu, khác với "đã xác nhận" thủ
+    // công (isConfirmed) hay khoá do phase RR sau đã locked.
+    headerSubtitle = phaseInfo
+      ? `Vòng đấu: ${phaseInfo.name} · mùa giải đã bắt đầu — bảng đấu đã khóa`
+      : 'Mùa giải đã bắt đầu thi đấu — bảng đấu đã khóa';
   } else if (isConfirmed) {
     headerSubtitle = `Vòng đấu: ${phaseInfo.name} · đã xác nhận`;
   } else if (phaseInfo) {
@@ -504,9 +556,35 @@ export default function GroupDrawUI({ seasonId }) {
               <ShieldCheck className="w-3.5 h-3.5" /> Đã xác nhận
             </span>
           )}
+          {!isConfirmed && isSeasonPastDraw && (
+            <span className="ml-auto flex items-center gap-1.5 bg-gray-500/15 text-gray-400 text-xs font-bold px-2.5 py-1 rounded-full">
+              <Lock className="w-3.5 h-3.5" /> Đã khóa
+            </span>
+          )}
         </div>
 
         <div className="p-5 space-y-5">
+          {seasonStatusError && (
+            <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Không xác định được trạng thái mùa giải — để an toàn, một số thao tác có thể tạm bị hạn chế. Vui lòng tải lại trang.</span>
+            </div>
+          )}
+
+          {isSeasonPastDraw && (
+            <div className="flex items-start gap-2.5 text-gray-400 text-xs bg-navy-dark/60 border border-navy-light rounded-xl px-4 py-3">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                {isSeasonFinalized(seasonStatus) ? (
+                  <>Mùa giải đã ở trạng thái <strong className="text-gray-300">{seasonStatus}</strong> — bảng đấu được giữ nguyên làm dữ liệu lịch sử.</>
+                ) : (
+                  <>Mùa giải đã chuyển sang trạng thái <strong className="text-gray-300">{seasonStatus}</strong> — hệ
+                    thống đã tự chốt cấu trúc bảng vòng đầu ngay trước khi mùa giải bắt đầu.</>
+                )} Không thể tạo, xoá, bốc thăm lại, hoặc kéo-thả đội giữa các bảng nữa.
+              </span>
+            </div>
+          )}
+
           {/* Chỉ còn input số pot — dùng riêng cho bốc thăm hạt giống.
               Số đội/bảng không còn là input, tự tính ngầm. */}
           {showDrawConfig && (
@@ -531,9 +609,9 @@ export default function GroupDrawUI({ seasonId }) {
                 <Users className={`w-4 h-4 ${outOfRange ? 'text-amber-400' : 'text-emerald-400'}`} />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] text-gray-500 font-medium leading-none">Đội đã duyệt</p>
+                <p className="text-[11px] text-gray-500 font-medium leading-none">Đội đủ điều kiện cho vòng này</p>
                 <p className={`text-lg font-black leading-tight mt-0.5 ${outOfRange ? 'text-amber-400' : 'text-emerald-400'}`}>
-                  {hasTeamCount ? totalTeams : teamsCountError ? '—' : <Loader2 className="w-4 h-4 animate-spin inline" />}
+                  {hasTeamCount ? totalTeams : (groupsLoadError ? '—' : <Loader2 className="w-4 h-4 animate-spin inline" />)}
                 </p>
               </div>
             </div>
@@ -548,13 +626,6 @@ export default function GroupDrawUI({ seasonId }) {
             </div>
           </div>
 
-          {teamsCountError && (
-            <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Không xác định được số đội đã duyệt từ server. Xem console (F12) để biết chi tiết.</span>
-            </div>
-          )}
-
           {outOfRange && (
             <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -565,7 +636,7 @@ export default function GroupDrawUI({ seasonId }) {
             </div>
           )}
 
-          {groups.length === 0 && seasonId && !loading && (
+          {groups.length === 0 && seasonId && !loading && !isSeasonPastDraw && (
             <div className="flex flex-wrap items-end gap-3 bg-navy-dark/60 border border-dashed border-navy-light rounded-xl p-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 mb-1.5">Số bảng cần tạo</label>
@@ -586,6 +657,21 @@ export default function GroupDrawUI({ seasonId }) {
                 {isCreatingGroups ? <Loader2 className="w-4 h-4 animate-spin" /> : <LayoutGrid className="w-4 h-4" />}
                 Tạo bảng (Bảng A, B, C...)
               </button>
+            </div>
+          )}
+
+          {/* Trường hợp season đã khoá NHƯNG chưa từng có bảng nào cho phase
+              hiện tại — báo rõ thay vì im lặng ẩn form tạo bảng. Với RR2+
+              tình huống này hoàn toàn có thể là "phase vừa tạo, chưa kịp
+              tạo bảng" — không còn coi là bất thường tuyệt đối như trước. */}
+          {groups.length === 0 && seasonId && !loading && isSeasonPastDraw && (
+            <div className="flex items-start gap-2.5 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Chưa có bảng đấu nào ở vòng này, và việc tạo bảng đang bị khóa
+                ({isSeasonFinalized(seasonStatus) ? `mùa giải đã ${seasonStatus}` : 'vòng đầu tiên đã tự chốt khi mùa giải bắt đầu'}).
+                Nếu đây là vòng bảng kế tiếp (advance từ vòng trước), vui lòng kiểm tra lại quy trình tạo vòng mới.
+              </span>
             </div>
           )}
 
@@ -696,13 +782,14 @@ export default function GroupDrawUI({ seasonId }) {
                       {group.season_teams.map((st, idx) => (
                         <tr
                           key={st.id}
-                          draggable
+                          draggable={!isLocked}
                           onDragStart={(e) => handleDragStart(e, st.id, group.id)}
                           onDragEnd={() => { setDraggedTeam(null); setDragOverTeamId(null); }}
                           onDragOver={(e) => handleTeamDragOver(e, st.id)}
                           onDragLeave={handleTeamDragLeave}
                           onDrop={(e) => handleTeamDrop(e, group.id, st.id)}
-                          className={`border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors cursor-grab active:cursor-grabbing
+                          className={`border-b border-navy-light/30 last:border-0 hover:bg-navy-light/10 transition-colors
+                            ${isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}
                             ${draggedTeam === st.id ? 'opacity-50' : ''}
                             ${dragOverTeamId === st.id ? 'bg-blue-500/25 ring-1 ring-inset ring-blue-400' : ''}`}
                         >
@@ -728,7 +815,7 @@ export default function GroupDrawUI({ seasonId }) {
         </div>
       )}
 
-      {hasChanges && (
+      {hasChanges && !isLocked && (
         <div className="fixed bottom-4 right-4 z-20 flex items-center gap-3 bg-navy-dark/95 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-blue-500/30 shadow-xl shadow-black/40">
           <span className="text-xs font-bold text-amber-400 whitespace-nowrap">Chưa lưu thay đổi</span>
           <button

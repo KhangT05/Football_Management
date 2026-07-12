@@ -210,6 +210,9 @@ export const SeasonScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
+    bank_id: 'bank_id',
+    bank_account_no: 'bank_account_no',
+    bank_account_name: 'bank_account_name',
     deleted_at: 'deleted_at',
     registration_fee: 'registration_fee',
     cancel_reason: 'cancel_reason',
@@ -543,6 +546,9 @@ export const PhaseOrderByRelevanceFieldEnum = {
 export const SeasonOrderByRelevanceFieldEnum = {
     name: 'name',
     description: 'description',
+    bank_id: 'bank_id',
+    bank_account_no: 'bank_account_no',
+    bank_account_name: 'bank_account_name',
     cancel_reason: 'cancel_reason'
 };
 export const GroupOrderByRelevanceFieldEnum = {
