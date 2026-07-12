@@ -14,24 +14,7 @@ import {
   getVsLabel,
   RESULT_AVAILABLE_STATUSES
 } from './MatchShared';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const EVENT_ICON = {
-  goal: <span className="text-lg leading-none">⚽</span>,
-  own_goal: <span className="text-lg leading-none">⚽</span>,
-  penalty_scored: <span className="text-lg leading-none">🥅</span>,
-  yellow_card: <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" />,
-  second_yellow: (
-    <div className="relative w-4 h-4 shrink-0">
-      <div className="absolute inset-y-0 left-0 w-3 h-4 bg-yellow-400 rounded-sm" />
-      <div className="absolute inset-y-0 left-1 w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
-    </div>
-  ),
-  red_card: <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />,
-  substitution_in: <span className="text-lg leading-none">🔄</span>,
-  substitution_out: <span className="text-lg leading-none">🔄</span>,
-};
+import { EVENT_ICON } from '../data/data';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -48,7 +31,7 @@ function FormationPitchSingleTeam({ starters, kit }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-6 opacity-70">
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-6 opacity-70 border border-navy-light rounded-2xl bg-navy-dark/30">
         <Users className="w-8 h-8 mb-2 text-gray-600" />
         <p className="text-xs font-bold uppercase tracking-widest text-center">Chưa có đội hình ra sân</p>
       </div>
@@ -58,17 +41,28 @@ function FormationPitchSingleTeam({ starters, kit }) {
   const orderedRows = [...rows].reverse();
 
   return (
-    <div
-      className="relative flex flex-col justify-between h-full rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
-      style={{ background: 'repeating-linear-gradient(to bottom, #0f3d24 0px, #0f3d24 36px, #124a2c 36px, #124a2c 72px)' }}
-    >
-      <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-14 h-14 rounded-full border border-white/20 pointer-events-none" />
-      <div className="absolute left-2 right-2 bottom-2 h-10 border border-white/15 rounded-sm pointer-events-none" style={{ marginInline: '18%' }} />
-      {orderedRows.map((row, i) => (
-        <div key={i} className="flex items-start justify-center gap-2 sm:gap-3 flex-wrap px-2 relative z-10">
-          {row.map(p => <FormationPlayerDot key={p.id} tp={p} kit={kit} size="sm" />)}
-        </div>
-      ))}
+    <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20 h-full w-full">
+      {/* Beautiful Pitch Background */}
+      <div className="absolute inset-0 bg-[#1e5e1e]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#1a521a_50%,transparent_50%)] bg-size-[100%_20%] opacity-50" />
+      <div className="absolute inset-4 border-2 border-white/40 pointer-events-none" />
+      <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 w-16 sm:w-24 h-16 sm:h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* Penalty Areas */}
+      <div className="absolute bottom-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+      <div className="absolute top-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+      <div className="absolute top-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+
+      {/* Players */}
+      <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10 text-white">
+        {orderedRows.map((row, i) => (
+          <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
+            {row.map(p => <FormationPlayerDot key={p.id} tp={p} kit={kit} size="sm" />)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -114,7 +108,7 @@ function PlayerColumn({ title, side, players, loading, kit, viewMode, onToggleVi
           [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
         ) : showFormation ? (
           <div className="space-y-4 h-full flex flex-col">
-            <div className="h-[300px] sm:h-[340px] shrink-0">
+            <div className="h-[460px] sm:h-[560px] shrink-0">
               <FormationPitchSingleTeam starters={starters} kit={kit} />
             </div>
             {subs.length > 0 && (
