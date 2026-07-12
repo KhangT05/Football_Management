@@ -284,6 +284,7 @@ model Group {
   season_teams        SeasonTeam[]
   teamStandings       TeamStanding[]
 
+  @@unique([phase_id, name])
   @@map("groups")
 }
 

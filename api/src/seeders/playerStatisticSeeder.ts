@@ -1,5 +1,6 @@
 // prisma/seed/playerStatisticSeeder.ts
-import { PrismaClient, MatchEventType } from "../generated/prisma/client.js";
+import { MatchEventType } from "../generated/prisma/client.js";
+import type { DbClient } from "./dbTypes.js";
 
 interface Acc {
     playerId: number;
@@ -13,12 +14,13 @@ interface Acc {
 
 /**
  * Quét toàn bộ MatchLineup + MatchEvent của các trận thuộc season (qua Phase.season_id)
- * rồi cộng dồn thành PlayerStatistic theo player+team+season.
+ * rồi cộng dồn thành PlayerStatistic theo player+team+season. Recompute-from-scratch mỗi
+ * lần chạy nên bản thân hàm này idempotent — điều kiện tiên quyết là MatchEvent không bị
+ * nhân đôi ở bước trước (xem guard trong matchDetailSeeder.ts).
  *
- * Giới hạn: schema không có MatchEventType riêng cho "assist" nên assists giữ = 0
- * (có thể mở rộng thêm enum sau nếu cần track chính xác).
+ * Giới hạn: schema không có MatchEventType riêng cho "assist" nên assists giữ = 0.
  */
-export async function seedPlayerStatistics(db: PrismaClient, seasonId: number): Promise<void> {
+export async function seedPlayerStatistics(db: DbClient, seasonId: number): Promise<void> {
     const matches = await db.match.findMany({
         where: { phase: { season_id: seasonId } },
         select: { id: true },

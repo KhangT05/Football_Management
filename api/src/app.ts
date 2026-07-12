@@ -43,14 +43,27 @@ app.use(errorMiddleware);
 
 const PORT = process.env.PORT ?? 3000;
 
-
+// Seed KHÔNG được chạy tự động mỗi lần app khởi động — root cause của
+// tournaments=3 / groups=15 trong DB là app.ts trước đây gọi seedDatabase()
+// vô điều kiện trong bootstrap(), nên mỗi lần nodemon restart (dev) là
+// một lần chạy seed đè lên state cũ. Giờ tách hẳn ra: chỉ chạy khi
+// RUN_SEED_ON_BOOT=true được set tường minh (vd. lần deploy đầu tiên trên
+// môi trường mới), production mặc định KHÔNG bao giờ seed khi boot.
+//
+// Cách seed data đúng: `npm run seed` (script riêng, xem prisma/seed/index.ts),
+// chạy tay khi cần, không gắn vào app lifecycle.
 async function bootstrap() {
 
     await connectRedis();
 
     await prisma.$connect();
 
-    await seedDatabase();
+    if (process.env.RUN_SEED_ON_BOOT === "true") {
+        console.warn("[Seed] RUN_SEED_ON_BOOT=true — đang chạy seedDatabase() lúc boot. " +
+            "Chỉ nên bật cờ này cho lần setup môi trường đầu tiên, KHÔNG bật ở production thường trực.");
+        await seedDatabase();
+    }
+
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);
     });
@@ -63,4 +76,3 @@ bootstrap().catch((err) => {
 
 process.on("SIGINT", async () => { await prisma.$disconnect(); process.exit(0); });
 process.on("SIGTERM", async () => { await prisma.$disconnect(); process.exit(0); });
-

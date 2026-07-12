@@ -1,8 +1,7 @@
 // prisma/seed/groupPhaseSeeder.ts
-import { PrismaClient, PhaseType, PhaseFormat } from "../generated/prisma/client.js";
-// LƯU Ý: path này đang khác với groupMatchSeeder.ts (đang import từ "./worldcup.js").
-// Hãy thống nhất lại đúng 1 đường dẫn thật của module dữ liệu này.
+import { PhaseType, PhaseFormat } from "../generated/prisma/client.js";
 import { GROUP_LETTERS, WORLD_CUP_GROUPS, GroupLetter } from "./worldcup.js";
+import type { DbClient } from "./dbTypes.js";
 
 export interface GroupPhaseSeedResult {
   groupStagePhaseId: number;
@@ -10,7 +9,7 @@ export interface GroupPhaseSeedResult {
 }
 
 export async function seedGroupStage(
-  db: PrismaClient,
+  db: DbClient,
   seasonId: number,
   teamIdByName: Record<string, number>,
   seasonTeamIdByTeamId: Record<number, number>
@@ -42,7 +41,6 @@ export async function seedGroupStage(
     }
     groupIdByLetter[letter] = group.id;
 
-    // gán group_id ngược lại cho từng SeasonTeam thuộc bảng này
     for (const teamName of WORLD_CUP_GROUPS[letter]) {
       const teamId = teamIdByName[teamName];
       if (teamId === undefined) {

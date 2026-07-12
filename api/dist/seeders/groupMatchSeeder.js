@@ -1,6 +1,6 @@
 // prisma/seed/groupMatchSeeder.ts
 import { MatchStatus, MatchResultType } from "../generated/prisma/client.js";
-import { pick, simulateGroupMatch } from "./helperSeeder.js";
+import { pickOrThrow, simulateGroupMatch } from "./helperSeeder.js";
 import { GROUP_LETTERS, WORLD_CUP_GROUPS } from "./worldcup.js";
 // Round-robin 4 đội -> đúng 6 cặp đấu
 const ROUND_ROBIN_PAIRS = [
@@ -25,7 +25,6 @@ export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupI
             }
             return id;
         });
-        // Dùng Map thay vì Record<number, TeamTally> để tránh unchecked indexed access
         const tally = new Map();
         teamIds.forEach((id) => {
             tally.set(id, { teamId: id, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, points: 0 });
@@ -56,12 +55,13 @@ export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupI
                         group_id: groupId,
                         home_team_id: homeTeamId,
                         away_team_id: awayTeamId,
-                        venue_id: pick(venueIds),
+                        venue_id: pickOrThrow(venueIds, "groupMatchSeeder venueIds"),
                         scheduled_at: new Date(Date.now() + matchDayOffset * 86400000),
                         played_at: new Date(Date.now() + matchDayOffset * 86400000),
                         status: MatchStatus.finished,
                         home_score: homeScore,
                         away_score: awayScore,
+                        leg: 1,
                     },
                 });
                 await db.matchResult.create({
@@ -77,15 +77,24 @@ export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupI
                 matchDayOffset++;
             }
             else {
-                // seed lại: đọc kết quả cũ để tính lại standings cho nhất quán
+                // Reseed: đọc lại kết quả đã tạo trước đó để tính lại standings cho nhất quán.
+                // KHÔNG được default 0-0 khi không tìm thấy — đó là silent data corruption
+                // (đứng bảng sai mà không có bất kỳ log/error nào báo hiệu). Nếu existingCount
+                // đủ 6 nhưng không tìm thấy đúng cặp home/away này, nghĩa là dữ liệu đã bị
+                // seed lệch (vd. bị xoá một phần, hoặc pairing bị đổi giữa các lần chạy) —
+                // phải throw để dừng seed ngay, không được âm thầm tính sai.
                 const existing = await db.match.findFirst({
                     where: { phase_id: groupStagePhaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
                 });
-                homeScore = existing?.home_score ?? 0;
-                awayScore = existing?.away_score ?? 0;
-                if (existing) {
-                    createdMatches.push({ matchId: existing.id, homeTeamId, awayTeamId, homeScore, awayScore });
+                if (!existing || existing.home_score === null || existing.away_score === null) {
+                    throw new Error(`[GroupMatchSeeder] Bảng ${letter}: existingCount=${existingCount} (đủ ${ROUND_ROBIN_PAIRS.length}) ` +
+                        `nhưng không tìm thấy match hợp lệ cho ${homeTeamId} vs ${awayTeamId}. ` +
+                        `Dữ liệu đã seed có khả năng bị lệch/hỏng — cần kiểm tra tay hoặc reset DB (migrate reset) rồi seed lại từ đầu, ` +
+                        `không được để standings tính sai lặng lẽ.`);
                 }
+                homeScore = existing.home_score;
+                awayScore = existing.away_score;
+                createdMatches.push({ matchId: existing.id, homeTeamId, awayTeamId, homeScore, awayScore });
             }
             const homeTally = getTally(homeTeamId);
             const awayTally = getTally(awayTeamId);
@@ -112,7 +121,6 @@ export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupI
                 awayTally.points += 1;
             }
         }
-        // Sắp xếp bảng: điểm -> hiệu số -> bàn thắng ghi được (xấp xỉ tiebreaker_order)
         const sorted = Array.from(tally.values()).sort((a, b) => {
             if (b.points !== a.points)
                 return b.points - a.points;
