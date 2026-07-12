@@ -22,6 +22,9 @@ export declare const createSeasonSchema: z.ZodObject<{
     tournament_id: z.ZodNumber;
     tournament_rule_id: z.ZodNumber;
     group_count: z.ZodDefault<z.ZodNumber>;
+    bank_id: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    bank_account_no: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    bank_account_name: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, z.core.$strip>;
 export declare const updateSeasonSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -32,6 +35,9 @@ export declare const updateSeasonSchema: z.ZodObject<{
     registration_deadline: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     max_teams: z.ZodOptional<z.ZodNumber>;
     is_registration_open: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
+    bank_id: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
+    bank_account_no: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
+    bank_account_name: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     group_count: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     tournament_rule_id: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
@@ -42,9 +48,8 @@ export declare const UpdateSeasonStatusSchema: z.ZodObject<{
         ongoing: "ongoing";
         finished: "finished";
     }>;
-    cancel_reason: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
-export type SeasonListItem = Pick<Season, "id" | "name" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count'> & {
+export type SeasonListItem = Pick<Season, "id" | "name" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count' | 'bank_id' | 'bank_account_no' | 'bank_account_name'> & {
     tournament: {
         id: number;
         name: string;

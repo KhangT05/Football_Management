@@ -6,6 +6,7 @@ export declare class ScheduleService extends ScheduleEngine {
     private readonly query;
     constructor(prisma: PrismaClient);
     findAll(req?: QueryRequest): Promise<PaginatedResult<Match>>;
+    findMatchesBySeason(seasonId: number, req?: QueryRequest): Promise<PaginatedResult<Match>>;
     findMatchesByTeam(seasonId: number, teamId: number, req?: QueryRequest): Promise<PaginatedResult<MatchByTeamRow>>;
     generateGroupsAndSchedule(seasonId: number, options: GenerateOptions): Promise<GenerateResult>;
     /**

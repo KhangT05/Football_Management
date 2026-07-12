@@ -48,11 +48,9 @@ let ScheduleController = class ScheduleController extends Controller {
         await this.service.rescheduleMatch(matchId, parsed);
         this.setStatus(204);
     }
+    // schedule.controller.ts
     async getSchedule(seasonId, page = 1, per_page = 20, sort, direction) {
-        return this.service.findAll({
-            page, per_page, sort, direction,
-            season_id: seasonId,
-        });
+        return this.service.findMatchesBySeason(seasonId, { page, per_page, sort, direction });
     }
     async getTeamSchedule(seasonId, teamId, page = 1, per_page = 20, sort, direction) {
         const req = { page, per_page, sort, direction };

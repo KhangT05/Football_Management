@@ -20,21 +20,6 @@ export interface InitiatePaymentOutput {
     payment_url: string; // Redirect leader sang đây
 }
 
-export interface PaymentRow {
-    id: number;
-    season_team_id: number;
-    amount: number;
-    status: PaymentStatus;
-    transaction_ref: string | null;
-    paid_at: Date | null;
-    confirmed_at: Date | null;
-    confirmed_by: number | null; // null = IPN auto, số = admin manual
-    created_at: Date;
-    team_name: string;
-    season_name: string;
-    registration_fee: number;
-}
-
 // ─── IPN ─────────────────────────────────────────────────────────────────────
 
 export interface IpnQuery {
@@ -50,4 +35,24 @@ export type IpnResponseCode = '00' | '01' | '02' | '04' | '97' | '99';
 export interface IpnResponse {
     RspCode: IpnResponseCode;
     Message: string;
+}
+
+export interface PaymentRow {
+    id: number;
+    season_team_id: number;
+    amount: number;
+    status: PaymentStatus;
+    transaction_ref: string | null;
+    paid_at: Date | null;
+    confirmed_at: Date | null;
+    confirmed_by: number | null;
+    created_at: Date;
+    team_name: string;
+    season_name: string;
+    registration_fee: number;
+    bank_info: {
+        bank_id: string;
+        bank_account_no: string;
+        bank_account_name: string;
+    } | null; // null = ban tổ chức chưa cấu hình → frontend ẩn option chuyển khoản
 }

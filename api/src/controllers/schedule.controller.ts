@@ -70,7 +70,7 @@ export class ScheduleController extends Controller {
         await this.service.rescheduleMatch(matchId, parsed);
         this.setStatus(204);
     }
-
+    // schedule.controller.ts
     @Get('seasons/{seasonId}/schedule')
     async getSchedule(
         @Path() seasonId: number,
@@ -79,12 +79,8 @@ export class ScheduleController extends Controller {
         @Query() sort?: string,
         @Query() direction?: 'asc' | 'desc',
     ): Promise<PaginatedResult<Match>> {
-        return this.service.findAll({
-            page, per_page, sort, direction,
-            season_id: seasonId,
-        } as QueryRequest);
+        return this.service.findMatchesBySeason(seasonId, { page, per_page, sort, direction });
     }
-
     @Get('seasons/{seasonId}/teams/{teamId}/schedule')
     async getTeamSchedule(
         @Path() seasonId: number,

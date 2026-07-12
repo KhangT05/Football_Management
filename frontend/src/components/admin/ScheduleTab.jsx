@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   CalendarPlus, Zap, Edit3, X, Save,
   MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus,
-  FileText, ShieldCheck, AlertTriangle, Users, PenLine,
+  FileText, ShieldCheck, AlertTriangle, Users, PenLine, Lock,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
 import useVenueStore from '../../store/venueStore';
 import useTeamStore from '../../store/teamStore';
+import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
 import { groupApi, matchApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -15,6 +16,14 @@ import Pagination from '../../components/ui/Pagination';
 import {
   vnInputToUtcDate, utcToVnInput, getDatesInRangeUtc, formatDateChipUtc,
 } from '../../utils/vn-time';
+// FIX: dùng chung getFriendlyErrorMessage từ apiErrorHelper thay vì định
+// nghĩa lại VIETNAMESE_DIACRITICS_REGEX/isLikelyVietnameseMessage/
+// getFriendlyErrorMessage ở đây — bản local trước đó là bản copy y hệt
+// logic trong apiErrorHelper.js, vi phạm đúng nguyên tắc DRY mà comment
+// gốc trong apiErrorHelper.js đã nêu ("Không định nghĩa lại 3 hằng số/hàm
+// này ở từng component nữa"). CHỈNH LẠI ĐƯỜNG DẪN cho đúng vị trí thực tế
+// của file apiErrorHelper trong repo bạn.
+import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 // ─── Helpers: date range ───────────────────────────────────────────────────
 // FIX: dùng getDatesInRangeUtc/formatDateChipUtc — bản cũ dùng
@@ -31,6 +40,29 @@ const extractFilename = (contentDisposition, fallback) => {
   const m = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^;"]+)"?/i);
   return m ? decodeURIComponent(m[1]) : fallback;
 };
+
+// Rút gọn 1 giá trị date (Date | ISO string | null) về "YYYY-MM-DD" để đổ
+// vào <input type="date">. Chỉ cắt chuỗi ISO, KHÔNG round-trip qua
+// `new Date(...).toISOString()` với 1 chuỗi đã là local-time literal — cùng
+// nguyên tắc "so sánh theo string, tránh Date object" dùng xuyên suốt codebase
+// (xem TournamentWizardModal: todayStr/addDaysStr).
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const iso = value instanceof Date ? value.toISOString() : String(value);
+  return iso.slice(0, 10);
+};
+
+// FIX (khóa tạo lịch theo trạng thái mùa giải): thống nhất với
+// GroupDrawUI.jsx / KnockoutUI.jsx — chỉ khóa "tạo lịch thi đấu" hoàn toàn
+// khi season đã thực sự kết thúc (finished/cancelled). Riêng với "tạo bảng
+// mới ngầm định" (nhánh desiredGroupCount/minGroupSize/maxGroupSize) thì
+// còn phải chặn thêm khi season đã 'ongoing' — vì GroupDrawUI đã khóa cứng
+// việc tạo bảng mới từ 'ongoing' trở đi (autoFinalizeGroups() chạy ngay
+// trước khi chuyển ongoing), nên modal này không được phép âm thầm tạo
+// bảng mới trong tình huống đó nữa — sẽ phá vỡ đúng bất biến mà
+// GroupDrawUI đang bảo vệ.
+const isSeasonClosedStatus = (status) => status === 'finished' || status === 'cancelled';
+const isSeasonOngoingStatus = (status) => status === 'ongoing';
 
 // ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
 // native <input type="time"> render theo locale hệ điều hành của CLIENT
@@ -187,7 +219,15 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
-function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenerateFromGroups }) {
+// `season` (start_date/end_date/status của season đang chọn) được truyền từ
+// ScheduleTab để validate TRỰC TIẾP theo season: BE tự lấy khoảng ngày xếp
+// lịch từ season.start_date/end_date (xem autoScheduleMatches) — KHÔNG nhận
+// startDate/endDate/playableDates từ client (gửi lên sẽ bị BE trả 422
+// "excess property"). Modal giờ chỉ dùng startDate/endDate/playableDates để
+// tính "ngày nghỉ" hiển thị cho admin tham khảo, kẹp trong đúng khung ngày
+// của season — không còn gửi 3 field này lên API nữa.
+function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
+  const toast = useToastStore();
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
   const [groupCheckError, setGroupCheckError] = useState(false);
@@ -199,6 +239,24 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
     minRestDaysPerTeam: 2,
   });
 
+  const seasonStartStr = toDateInputValue(season?.start_date);
+  const seasonEndStr = toDateInputValue(season?.end_date);
+  const seasonHasDateRange = Boolean(seasonStartStr && seasonEndStr);
+
+  // FIX: 2 điều kiện khóa tách biệt —
+  // - isSeasonClosed: season đã kết thúc thật sự -> khóa TOÀN BỘ modal,
+  //   không được tạo/sửa lịch nữa.
+  // - blocksImplicitGroupCreation: season đã 'ongoing' NHƯNG chưa có bảng
+  //   nào được bốc thăm (hasDrawnGroups === false) -> đây là trạng thái dữ
+  //   liệu không nên xảy ra (GroupDrawUI đã khóa tạo bảng từ ongoing trở
+  //   đi), nên KHÔNG cho nhánh "tự tạo bảng mới" (desiredGroupCount) chạy
+  //   ngầm ở đây nữa — tránh tạo ra 1 bộ bảng mới trong khi lẽ ra bảng phải
+  //   được chốt từ trước khi season chuyển ongoing.
+  const isSeasonClosed = isSeasonClosedStatus(season?.status);
+  const isSeasonOngoing = isSeasonOngoingStatus(season?.status);
+  const blocksImplicitGroupCreation = isSeasonOngoing && !hasDrawnGroups && !checkingGroups;
+  const isModalDisabled = isSeasonClosed || blocksImplicitGroupCreation;
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [excludedDates, setExcludedDates] = useState([]);
@@ -208,6 +266,15 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
 
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Prefill + kẹp startDate/endDate theo đúng khung ngày của season mỗi khi
+  // season thay đổi (season có thể tải async sau khi modal đã mount).
+  useEffect(() => {
+    if (!seasonHasDateRange) return;
+    setStartDate(prev => (!prev || prev < seasonStartStr || prev > seasonEndStr) ? seasonStartStr : prev);
+    setEndDate(prev => (!prev || prev > seasonEndStr || prev < seasonStartStr) ? seasonEndStr : prev);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonStartStr, seasonEndStr, seasonHasDateRange]);
 
   const allDatesInRange = useMemo(() => getDatesInRange(startDate, endDate), [startDate, endDate]);
   const playableDates = useMemo(
@@ -274,49 +341,100 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
     );
   };
 
+  // Đổi ngày bắt đầu: tự kẹp lại trong khung season + dọn ngày kết thúc nếu
+  // không còn hợp lệ, validate trực tiếp thay vì đợi submit.
+  const handleStartDateChange = (value) => {
+    if (seasonHasDateRange && (value < seasonStartStr || value > seasonEndStr)) {
+      toast.warning(`Ngày bắt đầu phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr}).`);
+      return;
+    }
+    setStartDate(value);
+    if (endDate && value > endDate) {
+      setEndDate(value);
+    }
+  };
+
+  const handleEndDateChange = (value) => {
+    if (seasonHasDateRange && (value < seasonStartStr || value > seasonEndStr)) {
+      toast.warning(`Ngày kết thúc phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr}).`);
+      return;
+    }
+    if (startDate && value < startDate) {
+      toast.warning('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.');
+      return;
+    }
+    setEndDate(value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSeasonClosed) {
+      toast.warning('Mùa giải đã kết thúc — không thể tạo/sửa lịch thi đấu nữa.');
+      return;
+    }
+    if (blocksImplicitGroupCreation) {
+      toast.warning('Mùa giải đã bắt đầu nhưng chưa có bảng đấu nào được bốc thăm — không thể tự tạo bảng mới ở bước này. Vui lòng kiểm tra lại bước "Bốc thăm chia bảng".');
+      return;
+    }
+    if (!seasonHasDateRange) {
+      toast.warning('Mùa giải chưa có ngày bắt đầu/kết thúc — vui lòng cập nhật mùa giải trước khi tạo lịch.');
+      return;
+    }
     if (selectedVenues.length === 0) {
-      alert("Vui lòng chọn ít nhất một sân thi đấu.");
+      toast.warning('Vui lòng chọn ít nhất một sân thi đấu.');
       return;
     }
     if (!startDate || !endDate) {
-      alert("Vui lòng chọn khoảng ngày thi đấu.");
+      toast.warning('Vui lòng chọn khoảng ngày thi đấu.');
+      return;
+    }
+    if (startDate < seasonStartStr || endDate > seasonEndStr) {
+      toast.warning(`Khoảng ngày thi đấu phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr}).`);
       return;
     }
     if (playableDates.length === 0) {
-      alert("Không có ngày nào có thể đá trong khoảng đã chọn.");
+      toast.warning('Không có ngày nào có thể đá trong khoảng đã chọn.');
       return;
     }
     if (timeSlots.length === 0) {
-      alert("Vui lòng chọn ít nhất một khung giờ đá.");
+      toast.warning('Vui lòng chọn ít nhất một khung giờ đá.');
       return;
     }
 
     setIsGenerating(true);
 
-    const basePayload = {
+    // CHỈ gửi field mà BE thực sự chấp nhận (venueIds, matchTimes,
+    // minRestDaysPerTeam, + desiredGroupCount/minGroupSize/maxGroupSize cho
+    // nhánh tự chia bảng, doubleRound). startDate/endDate/playableDates ở
+    // trên CHỈ dùng để tính toán/hiển thị UI (ngày nghỉ) — BE tự lấy khoảng
+    // ngày xếp lịch từ season.start_date/end_date, gửi thêm 3 field này lên
+    // API sẽ bị 422 "excess property" (đúng lỗi bạn gặp).
+    const apiPayload = {
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
       matchTimes: timeSlots,
-      startDate,
-      endDate,
-      playableDates,
     };
 
-    if (hasDrawnGroups) {
-      await onGenerateFromGroups(seasonId, { ...basePayload, doubleRound: false });
-    } else {
-      await onGenerate(seasonId, {
-        ...basePayload,
-        desiredGroupCount: Number(formData.desiredGroupCount),
-        minGroupSize: Number(formData.minGroupSize),
-        maxGroupSize: Number(formData.maxGroupSize),
-        doubleRound: false,
-      });
+    try {
+      if (hasDrawnGroups) {
+        await onGenerateFromGroups(seasonId, { ...apiPayload, doubleRound: false });
+      } else {
+        // FIX: nhánh này tự tạo bảng mới (desiredGroupCount/minGroupSize/
+        // maxGroupSize) — chỉ còn có thể chạy tới đây khi hasDrawnGroups
+        // false VÀ blocksImplicitGroupCreation false, tức season CHƯA
+        // 'ongoing' (guard ở đầu handleSubmit đã chặn trường hợp ongoing).
+        await onGenerate(seasonId, {
+          ...apiPayload,
+          desiredGroupCount: Number(formData.desiredGroupCount),
+          minGroupSize: Number(formData.minGroupSize),
+          maxGroupSize: Number(formData.maxGroupSize),
+          doubleRound: false,
+        });
+      }
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(false);
   };
 
   return (
@@ -338,6 +456,37 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+            {/* FIX: banner khóa season đã kết thúc — ưu tiên hiện đầu tiên,
+                che lấp toàn bộ form phía dưới bằng fieldset disabled. */}
+            {isSeasonClosed && (
+              <p className="text-sm text-gray-300 bg-navy-dark/60 p-3 rounded-lg border border-navy-light flex items-start gap-2">
+                <Lock className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
+                <span>Mùa giải đã ở trạng thái <strong>{season?.status}</strong> — không thể tạo hoặc chỉnh sửa lịch thi đấu nữa.</span>
+              </p>
+            )}
+
+            {/* FIX: banner riêng cho case season đã ongoing nhưng chưa có
+                bảng nào — khác với isSeasonClosed, đây là dữ liệu bất
+                thường cần admin kiểm tra lại, không phải trạng thái bình
+                thường của 1 season đã xong mùa. */}
+            {!isSeasonClosed && blocksImplicitGroupCreation && (
+              <div className="flex items-start gap-2.5 text-amber-200 text-sm bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Mùa giải đã ở trạng thái <strong>ongoing</strong> nhưng chưa có bảng đấu nào được bốc thăm.
+                  Hệ thống không cho tự tạo bảng mới ở bước này nữa (bảng đấu phải được chốt trước khi mùa giải
+                  chuyển sang ongoing). Vui lòng kiểm tra lại tab "Bốc thăm chia bảng" trước khi tạo lịch.
+                </span>
+              </div>
+            )}
+
+            {!seasonHasDateRange && (
+              <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+                Mùa giải này chưa có ngày bắt đầu / ngày kết thúc — vui lòng cập nhật thông tin mùa giải
+                trước khi tạo lịch (hệ thống bắt buộc phải biết khung ngày để xếp trận).
+              </p>
+            )}
+
             {groupCheckError && (
               <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã bốc thăm
@@ -345,168 +494,183 @@ function GenerateScheduleModal({ seasonId, venues, onClose, onGenerate, onGenera
               </p>
             )}
 
-            {hasDrawnGroups ? (
-              <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
-                Season đã có bảng đấu và đã bốc thăm. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng
-                hiện có rồi xếp giờ/sân — không tạo lại bảng hay chia lại đội.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
-                  <input
-                    type="number" min="1" required
-                    name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
-                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                  />
+            <fieldset disabled={isModalDisabled} className="space-y-6 disabled:opacity-50">
+              {hasDrawnGroups ? (
+                <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
+                  Season đã có bảng đấu và đã bốc thăm. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng
+                  hiện có rồi xếp giờ/sân — không tạo lại bảng hay chia lại đội.
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
-                  <input
-                    type="number" min="2" required
-                    name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
-                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
-                  <input
-                    type="number" min="2" required
-                    name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
-                    className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
-              <input
-                type="number" min="0"
-                name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
-                className="w-full sm:w-64 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" /> Khoảng ngày thi đấu
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
-                  <input
-                    type="date" required
-                    value={startDate}
-                    max={endDate || undefined}
-                    onChange={e => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
-                  <input
-                    type="date" required
-                    value={endDate}
-                    min={startDate || undefined}
-                    onChange={e => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark"
-                  />
-                </div>
-              </div>
-
-              {allDatesInRange.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-gray-500 font-bold uppercase">
-                      Bỏ chọn ngày không thể đá ({playableDates.length}/{allDatesInRange.length} ngày được chọn)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setExcludedDates(excludedDates.length === allDatesInRange.length ? [] : allDatesInRange)}
-                      className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
-                    >
-                      {excludedDates.length === allDatesInRange.length ? 'Chọn tất cả' : 'Bỏ chọn tất cả'}
-                    </button>
+              ) : !isSeasonOngoing ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
+                    <input
+                      type="number" min="1" required
+                      name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
-                    {allDatesInRange.map(date => {
-                      const isPlayable = !excludedDates.includes(date);
-                      return (
-                        <button
-                          key={date}
-                          type="button"
-                          onClick={() => toggleDate(date)}
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${isPlayable
-                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
-                            : 'bg-navy border-navy-light text-gray-600 line-through'
-                            }`}
-                        >
-                          {formatDateChip(date)}
-                        </button>
-                      );
-                    })}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
+                    <input
+                      type="number" min="2" required
+                      name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
+                    <input
+                      type="number" min="2" required
+                      name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+              ) : null /* blocksImplicitGroupCreation banner ở trên đã giải thích, không hiện form tạo bảng nữa */}
 
-            {/* Khung giờ đá — TimeField custom, không phụ thuộc OS locale */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-400" /> Khung giờ đá (giờ VN, 24h)
-              </label>
-              <div className="flex items-center gap-2">
-                <TimeField value={newTime} onChange={setNewTime} />
-                <button
-                  type="button"
-                  onClick={addTimeSlot}
-                  disabled={!newTime || newTime.length < 5}
-                  className="px-4 py-2.5 rounded-xl bg-navy-dark border border-navy-light text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-40 flex items-center gap-1.5 font-bold text-sm"
-                >
-                  <Plus className="w-4 h-4" /> Thêm
-                </button>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
+                <input
+                  type="number" min="0"
+                  name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
+                  className="w-full sm:w-64 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                />
               </div>
-              <div className="flex flex-wrap gap-2">
-                {timeSlots.length === 0 ? (
-                  <span className="text-xs text-gray-500 italic">Chưa có khung giờ nào — thêm ít nhất một khung giờ.</span>
-                ) : (
-                  timeSlots.map(t => (
-                    <span key={t} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black bg-blue-500/10 border border-blue-500/30 text-blue-300">
-                      {t}
-                      <button type="button" onClick={() => removeTimeSlot(t)} className="text-blue-300/70 hover:text-white">
-                        <X className="w-3 h-3" />
+
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-400" /> Khoảng ngày thi đấu (tham khảo — chọn ngày nghỉ)
+                </label>
+                {seasonHasDateRange && (
+                  <p className="text-[11px] text-gray-500 italic flex items-center gap-1.5">
+                    Khung mùa giải: <span className="text-gray-300 font-bold">{seasonStartStr}</span> → <span className="text-gray-300 font-bold">{seasonEndStr}</span> — không thể chọn ngày ngoài khung này.
+                  </p>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
+                    <input
+                      type="date" required
+                      value={startDate}
+                      min={seasonStartStr || undefined}
+                      max={endDate || seasonEndStr || undefined}
+                      disabled={!seasonHasDateRange}
+                      onChange={e => handleStartDateChange(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
+                    <input
+                      type="date" required
+                      value={endDate}
+                      min={startDate || seasonStartStr || undefined}
+                      max={seasonEndStr || undefined}
+                      disabled={!seasonHasDateRange}
+                      onChange={e => handleEndDateChange(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                {allDatesInRange.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-gray-500 font-bold uppercase">
+                        Bỏ chọn ngày không thể đá ({playableDates.length}/{allDatesInRange.length} ngày được chọn)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setExcludedDates(excludedDates.length === allDatesInRange.length ? [] : allDatesInRange)}
+                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
+                      >
+                        {excludedDates.length === allDatesInRange.length ? 'Chọn tất cả' : 'Bỏ chọn tất cả'}
                       </button>
-                    </span>
-                  ))
+                    </div>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
+                      {allDatesInRange.map(date => {
+                        const isPlayable = !excludedDates.includes(date);
+                        return (
+                          <button
+                            key={date}
+                            type="button"
+                            onClick={() => toggleDate(date)}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${isPlayable
+                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                              : 'bg-navy border-navy-light text-gray-600 line-through'
+                              }`}
+                          >
+                            {formatDateChip(date)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
-              {venues.length === 0 ? (
-                <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước (trong phần cài đặt sân) để có thể tạo lịch!</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
-                  {venues.map(v => (
-                    <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
-                      <input
-                        type="checkbox"
-                        checked={selectedVenues.includes(String(v.id))}
-                        onChange={() => handleVenueToggle(String(v.id))}
-                        className="accent-neon w-4 h-4"
-                      />
-                      <span className="font-bold text-sm truncate">{v.name}</span>
-                    </label>
-                  ))}
+              {/* Khung giờ đá — TimeField custom, không phụ thuộc OS locale */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-400" /> Khung giờ đá (giờ VN, 24h)
+                </label>
+                <div className="flex items-center gap-2">
+                  <TimeField value={newTime} onChange={setNewTime} />
+                  <button
+                    type="button"
+                    onClick={addTimeSlot}
+                    disabled={!newTime || newTime.length < 5}
+                    className="px-4 py-2.5 rounded-xl bg-navy-dark border border-navy-light text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-40 flex items-center gap-1.5 font-bold text-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Thêm
+                  </button>
                 </div>
-              )}
-            </div>
+                <div className="flex flex-wrap gap-2">
+                  {timeSlots.length === 0 ? (
+                    <span className="text-xs text-gray-500 italic">Chưa có khung giờ nào — thêm ít nhất một khung giờ.</span>
+                  ) : (
+                    timeSlots.map(t => (
+                      <span key={t} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                        {t}
+                        <button type="button" onClick={() => removeTimeSlot(t)} className="text-blue-300/70 hover:text-white">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
+                {venues.length === 0 ? (
+                  <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước (trong phần cài đặt sân) để có thể tạo lịch!</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
+                    {venues.map(v => (
+                      <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedVenues.includes(String(v.id))}
+                          onChange={() => handleVenueToggle(String(v.id))}
+                          className="accent-neon w-4 h-4"
+                        />
+                        <span className="font-bold text-sm truncate">{v.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </fieldset>
 
             <div className="pt-4 flex justify-end gap-3 border-t border-navy-light">
               <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors">Đóng</button>
-              <button type="submit" disabled={isGenerating || venues.length === 0} className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={isGenerating || venues.length === 0 || !seasonHasDateRange || isModalDisabled}
+                className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50"
+              >
                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 Bắt đầu tạo
               </button>
@@ -843,9 +1007,11 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const {
     getMatchesFromCache, isSeasonLoading, fetchBySeason,
     generateSchedule, generateFromGroups, rescheduleMatch,
+    scheduleCache,
   } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
+  const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null);
@@ -862,13 +1028,35 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   useEffect(() => {
     fetchVenues();
     fetchTeams({ per_page: 500 });
-  }, [fetchVenues, fetchTeams]);
+    fetchSeasons();
+  }, [fetchVenues, fetchTeams, fetchSeasons]);
 
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId), { force: true });
     }
   }, [selectedSeasonId, fetchBySeason]);
+
+  // FIX: reset về trang 1 mỗi khi đổi season — trước đây không có, nên nếu
+  // đang ở trang 3 của season A rồi đổi sang season B (season B chỉ có 1
+  // trang), `displayedMatches.slice(...)` sẽ ra mảng rỗng dù matches.length
+  // > 0, nhìn giống y hệt bug "loạn data/mất trận" dù data đã đúng.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedSeasonId]);
+
+  // Season đang chọn — cần cho GenerateScheduleModal để validate TRỰC TIẾP
+  // theo khung ngày (start_date/end_date) VÀ trạng thái (status) của chính
+  // season này (xem isSeasonClosedStatus / isSeasonOngoingStatus).
+  const selectedSeason = useMemo(
+    () => (seasons || []).find(s => String(s.id) === String(selectedSeasonId)) ?? null,
+    [seasons, selectedSeasonId],
+  );
+
+  // FIX: dùng chung 1 điều kiện khóa "mùa giải đã kết thúc" cho toàn bộ tab
+  // lịch thi đấu — cả nút "Tạo lịch thi đấu" ở header lẫn nút "Đổi lịch/Sân"
+  // trên từng match card, để nhất quán với GenerateScheduleModal bên trong.
+  const isSelectedSeasonClosed = isSeasonClosedStatus(selectedSeason?.status);
 
   const effectiveSeasonId = selectedSeasonId;
   const matches = useMemo(() => {
@@ -884,7 +1072,21 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       });
     }
     return list;
-  }, [effectiveSeasonId, getMatchesFromCache, searchTerm, teams]);
+    // FIX (root cause "loạn data" + "Chưa có lịch thi đấu" sai khi đổi
+    // season): thiếu `scheduleCache` trong dependency array. getMatchesFromCache
+    // là 1 hàm đọc snapshot get().scheduleCache[seasonId] tại thời điểm gọi —
+    // reference của hàm KHÔNG đổi khi state scheduleCache đổi (Zustand action
+    // cố định). Component vẫn re-render khi scheduleCache đổi (vì
+    // useScheduleStore() không dùng selector, subscribe toàn bộ store), NHƯNG
+    // useMemo chỉ tính lại khi 1 trong các dep liệt kê thay đổi — nếu thiếu
+    // scheduleCache, memo giữ nguyên giá trị cũ (season trước) dù component đã
+    // re-render với data mới trong store. Kết quả quan sát được: đổi sang
+    // season B nhưng UI vẫn hiện y hệt data của season A (memo "đóng băng"),
+    // hoặc hiện rỗng nếu season B chưa từng có cache nào trước đó trong lần
+    // tính memo gần nhất. Thêm scheduleCache vào deps để memo tính lại đúng
+    // lúc cache của season đang chọn thực sự có/đổi data — đúng pattern đã
+    // làm chuẩn ở LiveControlTab.jsx (allSeasonMatches useMemo).
+  }, [effectiveSeasonId, getMatchesFromCache, scheduleCache, searchTerm, teams]);
 
   const isLoading = effectiveSeasonId
     ? isSeasonLoading(Number(effectiveSeasonId))
@@ -906,7 +1108,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       setGenerateModalOpen(false);
       handleRefresh();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
+      toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi tạo lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
     }
   };
 
@@ -917,17 +1119,21 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       setGenerateModalOpen(false);
       handleRefresh();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo lịch.');
+      toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi tạo lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
     }
   };
 
   const handleReschedule = async (matchId, payload) => {
+    if (isSelectedSeasonClosed) {
+      toast.error('Mùa giải đã kết thúc — không thể đổi lịch/sân của trận đấu.');
+      return;
+    }
     try {
       await rescheduleMatch(matchId, payload, Number(effectiveSeasonId));
       toast.success('Cập nhật lịch thành công!');
       setRescheduleMatchData(null);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật trận đấu.');
+      toast.error(getFriendlyErrorMessage(err, 'Lỗi khi cập nhật trận đấu, vui lòng kiểm tra lại thời gian/sân rồi thử lại.'));
     }
   };
 
@@ -986,7 +1192,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             </button>
             <button
               onClick={() => setGenerateModalOpen(true)}
-              disabled={!effectiveSeasonId}
+              disabled={!effectiveSeasonId || isSelectedSeasonClosed}
+              title={isSelectedSeasonClosed ? 'Mùa giải đã kết thúc — không thể tạo thêm lịch thi đấu' : undefined}
               className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
             >
               <Zap className="w-5 h-5" /> Tạo lịch thi đấu
@@ -1003,7 +1210,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
             <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
-            {effectiveSeasonId && (
+            {effectiveSeasonId && !isSelectedSeasonClosed && (
               <button
                 onClick={() => setGenerateModalOpen(true)}
                 className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
@@ -1029,13 +1236,15 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                   <div key={m.id} className="bg-navy border border-navy-light rounded-2xl p-4 hover:border-gray-500 transition-colors group relative">
                     <div className="flex justify-between items-start mb-3">
                       <StatusBadge status={m.status} />
-                      <button
-                        onClick={() => setRescheduleMatchData(m)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
-                        title="Đổi lịch / Sân"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
+                      {!isSelectedSeasonClosed && (
+                        <button
+                          onClick={() => setRescheduleMatchData(m)}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
+                          title="Đổi lịch / Sân"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 justify-between mb-4 mt-2">
@@ -1108,6 +1317,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       {generateModalOpen && createPortal(
         <GenerateScheduleModal
           seasonId={Number(selectedSeasonId)}
+          season={selectedSeason}
           venues={venues}
           onClose={() => setGenerateModalOpen(false)}
           onGenerate={handleGenerateSchedule}

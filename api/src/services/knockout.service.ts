@@ -21,6 +21,7 @@ import {
     SlotWithParentLinks,
     slotWithParentLinksSelect,
     AutoSeedKnockoutOptions,
+    SwapSeedsInput,
 } from '../types/knockout.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
 import { ScheduleEngine, ScheduleCandidateMatch } from '../libs/schedule.engine.js';
@@ -426,7 +427,14 @@ export class KnockoutService extends ScheduleEngine {
         warnings: string[];
     }> {
         const warnings: string[] = [];
-        const bracketSize = round1Pairings.length;
+        // FIX: round1Pairings.length = SỐ CẶP đấu round 1 (P = N/2, N = tổng
+        // số đội/slot của cả bracket). buildAllSlotCreateData cần bracketSize
+        // = N (slotsInRound = bracketSize / 2^round đúng khi bracketSize=N,
+        // round1 -> N/2 = P slot). Trước đây gán nhầm bracketSize = P khiến
+        // totalRounds bị tính thiếu 1 (log2(P) thay vì log2(N)=log2(P)+1) —
+        // luôn mất round cuối cùng (chung kết), và với N=2 (P=1) thì
+        // log2(1)=0 -> vòng lặp tạo slot không chạy lần nào -> 0 slot, 0 match.
+        const bracketSize = round1Pairings.length * 2;
         const totalRounds = Math.log2(bracketSize);
         if (!Number.isInteger(totalRounds))
             throw createAppError('VALIDATION_ERROR', `Số cặp round 1 (${bracketSize}) không phải lũy thừa của 2`);
@@ -784,7 +792,227 @@ export class KnockoutService extends ScheduleEngine {
             seededAwayTeamId: s.seeded_away_team_id,
             sourceASlotId: s.source_a_slot_id,
             sourceBSlotId: s.source_b_slot_id,
+            matchStatus: s.match?.status ?? null,
         }));
+    }
+
+    // ─── NEW: swapSeeds — đổi 2 đội giữa 2 vị trí (round 1) ────────────────────
+
+    /**
+     * Đổi chỗ 2 đội đang seed ở round 1 — dùng khi admin muốn tránh cùng
+     * bảng gặp lại nhau sớm, cân bằng nhánh mạnh/yếu, v.v.
+     *
+     * KHÔNG cho phép:
+     * - Swap khi phase đã "xác nhận" (PhaseStatus.locked — xem confirmBracket
+     *   bên dưới, tái dùng status có sẵn, không thêm cột mới).
+     * - Swap khi 1 trong 2 slot có match liên quan đã kết thúc/forfeit — coi
+     *   như bracket đã "tự chốt" một khi trận đầu tiên diễn ra.
+     * - Swap slot rỗng (chưa có đội / bye) — không có gì để đổi.
+     *
+     * Nếu slot đã có match (Match đã được tạo sẵn nhưng CHƯA đá), đồng bộ
+     * luôn home/away_team_id của match đó (và leg 2 nếu có) theo đội mới —
+     * an toàn vì chưa có MatchResult nào tham chiếu.
+     *
+     * Nếu slot là BYE và đã propagate winner lên slot round 2, đồng bộ luôn
+     * seeded_home/away của slot round 2 đó — nếu không, nhánh trên vẫn hiển
+     * thị đội cũ dù vòng 1 đã đổi.
+     */
+    async swapSeeds(phaseId: number, input: SwapSeedsInput): Promise<void> {
+        if (input.slotIdA === input.slotIdB && input.sideA === input.sideB)
+            throw createAppError('VALIDATION_ERROR', 'Không thể swap 1 vị trí với chính nó');
+
+        await this.prisma.$transaction(async (tx) => {
+            const phase = await tx.phase.findUnique({
+                where: { id: phaseId },
+                select: { id: true, status: true, format: true, legs: true },
+            });
+            if (!phase)
+                throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
+            if (phase.format !== PhaseFormat.knockout)
+                throw createAppError('VALIDATION_ERROR', `Phase ${phaseId} không phải phase knockout`);
+            if (phase.status === PhaseStatus.locked)
+                throw createAppError('CONFLICT', 'Sơ đồ đã được xác nhận — không thể đổi nhánh nữa');
+
+            const slots = await tx.bracketSlot.findMany({
+                where: { id: { in: [input.slotIdA, input.slotIdB] }, phase_id: phaseId, round: 1 },
+                select: {
+                    id: true, slot_number: true, match_id: true, is_bye: true,
+                    seeded_home_team_id: true, seeded_away_team_id: true,
+                },
+            });
+            if (slots.length !== 2)
+                throw createAppError('VALIDATION_ERROR', 'Chỉ swap được 2 slot vòng 1 hợp lệ, cùng phase');
+
+            const slotA = slots.find(s => s.id === input.slotIdA)!;
+            const slotB = slots.find(s => s.id === input.slotIdB)!;
+
+            const teamAt = (s: typeof slotA, side: 'home' | 'away') =>
+                side === 'home' ? s.seeded_home_team_id : s.seeded_away_team_id;
+
+            const teamA = teamAt(slotA, input.sideA);
+            const teamB = teamAt(slotB, input.sideB);
+            if (teamA === null || teamB === null)
+                throw createAppError('VALIDATION_ERROR', 'Một trong 2 vị trí chưa có đội (bye/chưa xếp) — không swap được');
+
+            // Chặn nếu match của 1 trong 2 slot ĐÃ KẾT THÚC. Ghi chú: hệ
+            // thống hiện tại (theo TERMINAL_MATCH_STATUSES) chỉ coi
+            // finished/forfeited là "đã đá" — nếu sau này có state
+            // 'live'/'in_progress' cho trận đang diễn ra, bổ sung vào mảng
+            // này để chặn sớm hơn (không chờ trận kết thúc mới khoá).
+            const matchIds = [slotA.match_id, slotB.match_id].filter((id): id is number => id !== null);
+            if (matchIds.length > 0) {
+                const playedCount = await tx.match.count({
+                    where: { id: { in: matchIds }, status: { in: TERMINAL_MATCH_STATUSES } },
+                });
+                if (playedCount > 0)
+                    throw createAppError('CONFLICT', 'Đã có trận liên quan kết thúc — không thể đổi nhánh');
+            }
+
+            // 1) Ghi đổi trên bracket_slots
+            const colA = input.sideA === 'home' ? 'seeded_home_team_id' : 'seeded_away_team_id';
+            const colB = input.sideB === 'home' ? 'seeded_home_team_id' : 'seeded_away_team_id';
+            await tx.bracketSlot.update({ where: { id: slotA.id }, data: { [colA]: teamB } });
+            await tx.bracketSlot.update({ where: { id: slotB.id }, data: { [colB]: teamA } });
+
+            // 2) Đồng bộ match đã tạo (chưa đá) theo đội mới
+            const legs = phase.legs as 1 | 2;
+            await this._syncMatchTeamAfterSwap(tx, slotA.match_id, input.sideA, teamB, legs);
+            await this._syncMatchTeamAfterSwap(tx, slotB.match_id, input.sideB, teamA, legs);
+
+            // 3) Nếu là slot BYE đã propagate winner lên round 2 — sửa luôn
+            // slot round 2 tương ứng.
+            await this._syncByeParentAfterSwap(tx, slotA, teamA, teamB, legs);
+            await this._syncByeParentAfterSwap(tx, slotB, teamB, teamA, legs);
+        }, { timeout: 10_000 });
+    }
+
+    /**
+     * Cập nhật home/away_team_id của match (leg 1 + leg 2 nếu có) sau khi
+     * swap seed — match CHƯA có MatchResult (đảm bảo ở tầng gọi bằng
+     * TERMINAL_MATCH_STATUSES check) nên ghi đè trực tiếp là an toàn.
+     */
+    private async _syncMatchTeamAfterSwap(
+        tx: Prisma.TransactionClient,
+        matchId: number | null,
+        side: 'home' | 'away',
+        newTeamId: number,
+        legs: 1 | 2,
+    ): Promise<void> {
+        if (matchId === null) return;
+
+        const leg1 = await tx.match.findUnique({
+            where: { id: matchId },
+            select: { id: true, phase_id: true, home_team_id: true, away_team_id: true },
+        });
+        if (!leg1) return;
+
+        if (legs === 2) {
+            // Tìm leg 2 (lượt về) TRƯỚC khi update leg 1 — leg 2 được tạo
+            // với home/away đảo ngược đúng leg 1 gốc (xem createRound1Matches).
+            const leg2 = await tx.match.findFirst({
+                where: {
+                    phase_id: leg1.phase_id,
+                    leg: 2,
+                    home_team_id: leg1.away_team_id,
+                    away_team_id: leg1.home_team_id,
+                    is_active: true,
+                    deleted_at: null,
+                },
+                select: { id: true },
+            });
+            if (leg2) {
+                await tx.match.update({
+                    where: { id: leg2.id },
+                    // Leg 2 đảo chiều leg 1: side='home' ở leg1 => team đó
+                    // là AWAY ở leg 2.
+                    data: side === 'home' ? { away_team_id: newTeamId } : { home_team_id: newTeamId },
+                });
+            }
+        }
+
+        await tx.match.update({
+            where: { id: leg1.id },
+            data: side === 'home' ? { home_team_id: newTeamId } : { away_team_id: newTeamId },
+        });
+    }
+
+    /**
+     * Nếu slot vừa swap là BYE, winner của nó đã được propagate 1 lần lên
+     * slot round 2 lúc generate (xem parentUpdates trong _buildBracketInPhase)
+     * — swap xong phải sửa luôn slot round 2 đó, và match của slot round 2
+     * đó nếu đã được tạo (double-bye stranded match).
+     */
+    private async _syncByeParentAfterSwap(
+        tx: Prisma.TransactionClient,
+        slot: { id: number; slot_number: number; is_bye: boolean },
+        oldTeamId: number,
+        newTeamId: number,
+        legs: 1 | 2,
+    ): Promise<void> {
+        if (!slot.is_bye) return;
+
+        const isSourceA = slot.slot_number % 2 === 1;
+        const parent = await tx.bracketSlot.findFirst({
+            where: isSourceA ? { source_a_slot_id: slot.id } : { source_b_slot_id: slot.id },
+            select: { id: true, seeded_home_team_id: true, seeded_away_team_id: true, match_id: true },
+        });
+        if (!parent) return;
+
+        if (isSourceA && parent.seeded_home_team_id === oldTeamId) {
+            await tx.bracketSlot.update({ where: { id: parent.id }, data: { seeded_home_team_id: newTeamId } });
+            await this._syncMatchTeamAfterSwap(tx, parent.match_id, 'home', newTeamId, legs);
+        } else if (!isSourceA && parent.seeded_away_team_id === oldTeamId) {
+            await tx.bracketSlot.update({ where: { id: parent.id }, data: { seeded_away_team_id: newTeamId } });
+            await this._syncMatchTeamAfterSwap(tx, parent.match_id, 'away', newTeamId, legs);
+        }
+        // Nếu parent không còn giữ đúng oldTeamId ở đúng vị trí (dữ liệu đã
+        // lệch vì lý do khác), không đụng vào — an toàn hơn là ghi đè nhầm.
+    }
+
+    // ─── NEW: confirmBracket — "chốt" sơ đồ, không cho swap nữa ────────────────
+
+    /**
+     * "Xác nhận" sơ đồ = chuyển phase sang PhaseStatus.locked — TÁI DÙNG
+     * status đã có sẵn trong schema (không thêm cột/migration mới).
+     * `_buildBracketInPhase` đã dùng `locked` để chặn generate lại bracket
+     * cho phase này, nên tái dùng cùng ngữ nghĩa "phase đã chốt cấu trúc,
+     * không sửa nữa" là nhất quán, không xung đột với chỗ khác.
+     *
+     * Chặn xác nhận nếu đã có trận vòng 1 kết thúc — không phải lỗi, chỉ vì
+     * lúc đó không còn gì để "xác nhận" nữa (coi như đã tự chốt khi trận
+     * đầu tiên diễn ra).
+     */
+    async confirmBracket(phaseId: number): Promise<void> {
+        await this.prisma.$transaction(async (tx) => {
+            const phase = await tx.phase.findUnique({
+                where: { id: phaseId },
+                select: { id: true, status: true, format: true },
+            });
+            if (!phase)
+                throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
+            if (phase.format !== PhaseFormat.knockout)
+                throw createAppError('VALIDATION_ERROR', `Phase ${phaseId} không phải phase knockout`);
+            if (phase.status === PhaseStatus.locked)
+                throw createAppError('CONFLICT', 'Sơ đồ đã được xác nhận trước đó');
+
+            const round1Slots = await tx.bracketSlot.findMany({
+                where: { phase_id: phaseId, round: 1 },
+                select: { match_id: true },
+            });
+            const matchIds = round1Slots.map(s => s.match_id).filter((id): id is number => id !== null);
+            if (matchIds.length > 0) {
+                const playedCount = await tx.match.count({
+                    where: { id: { in: matchIds }, status: { in: TERMINAL_MATCH_STATUSES } },
+                });
+                if (playedCount > 0)
+                    throw createAppError(
+                        'CONFLICT',
+                        'Đã có trận vòng 1 kết thúc — sơ đồ coi như đã tự chốt, không cần xác nhận thêm',
+                    );
+            }
+
+            await tx.phase.update({ where: { id: phaseId }, data: { status: PhaseStatus.locked } });
+        });
     }
 
     // ─── PRIVATE — BRACKET LOGIC ──────────────────────────────────────────────

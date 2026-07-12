@@ -650,14 +650,14 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["in_progress"]},{"dataType":"enum","enums":["locked"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_": {
+    "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true},"status":{"ref":"SeasonStatus","required":true},"start_date":{"dataType":"datetime","required":true},"end_date":{"dataType":"datetime","required":true},"registration_deadline":{"dataType":"datetime","required":true},"max_teams":{"dataType":"double","required":true},"is_registration_open":{"dataType":"boolean","required":true},"cancel_reason":{"dataType":"string","required":true},"group_count":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true},"status":{"ref":"SeasonStatus","required":true},"start_date":{"dataType":"datetime","required":true},"end_date":{"dataType":"datetime","required":true},"registration_deadline":{"dataType":"datetime","required":true},"max_teams":{"dataType":"double","required":true},"is_registration_open":{"dataType":"boolean","required":true},"bank_id":{"dataType":"string","required":true},"bank_account_no":{"dataType":"string","required":true},"bank_account_name":{"dataType":"string","required":true},"cancel_reason":{"dataType":"string","required":true},"group_count":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonListItem": {
         "dataType": "refAlias",
-        "type": {"dataType":"intersection","subSchemas":[{"ref":"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count_"},{"dataType":"nestedObjectLiteral","nestedProperties":{"_count":{"dataType":"nestedObjectLiteral","nestedProperties":{"phases":{"dataType":"double","required":true}},"required":true},"tournament":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true}}}],"validators":{}},
+        "type": {"dataType":"intersection","subSchemas":[{"ref":"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_"},{"dataType":"nestedObjectLiteral","nestedProperties":{"_count":{"dataType":"nestedObjectLiteral","nestedProperties":{"phases":{"dataType":"double","required":true}},"required":true},"tournament":{"dataType":"nestedObjectLiteral","nestedProperties":{"name":{"dataType":"string","required":true},"id":{"dataType":"double","required":true}},"required":true}}}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PaginatedResult_SeasonListItem_": {
@@ -676,7 +676,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_SeasonPayload_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double","required":true},"group_count":{"dataType":"double","required":true},"cancel_reason":{"dataType":"string","required":true},"registration_fee":{"ref":"Decimal","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"registration_deadline":{"dataType":"datetime","required":true},"end_date":{"dataType":"datetime","required":true},"start_date":{"dataType":"datetime","required":true},"status":{"ref":"SeasonStatus","required":true},"user_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"description":{"dataType":"string","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double","required":true},"group_count":{"dataType":"double","required":true},"cancel_reason":{"dataType":"string","required":true},"registration_fee":{"ref":"Decimal","required":true},"bank_account_name":{"dataType":"string","required":true},"bank_account_no":{"dataType":"string","required":true},"bank_id":{"dataType":"string","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"registration_deadline":{"dataType":"datetime","required":true},"end_date":{"dataType":"datetime","required":true},"start_date":{"dataType":"datetime","required":true},"status":{"ref":"SeasonStatus","required":true},"user_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"description":{"dataType":"string","required":true},"deleted_at":{"dataType":"datetime","required":true},"updated_at":{"dataType":"datetime","required":true},"created_at":{"dataType":"datetime","required":true},"is_active":{"dataType":"boolean","required":true},"id":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonModel": {
@@ -691,7 +691,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofcreateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"group_count":{"dataType":"double","required":true},"tournament_rule_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"bank_account_name":{"dataType":"string"},"bank_account_no":{"dataType":"string"},"bank_id":{"dataType":"string"},"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"group_count":{"dataType":"double","required":true},"tournament_rule_id":{"dataType":"double","required":true},"tournament_id":{"dataType":"double","required":true},"is_active":{"dataType":"boolean","required":true},"is_registration_open":{"dataType":"boolean","required":true},"max_teams":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateSeasonDto": {
@@ -701,7 +701,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double"},"group_count":{"dataType":"double"},"is_registration_open":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"is_active":{"dataType":"boolean"},"name":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"tournament_rule_id":{"dataType":"double"},"group_count":{"dataType":"double"},"bank_account_name":{"dataType":"string"},"bank_account_no":{"dataType":"string"},"bank_id":{"dataType":"string"},"is_registration_open":{"dataType":"boolean"},"max_teams":{"dataType":"double"},"registration_deadline":{"dataType":"datetime"},"end_date":{"dataType":"datetime"},"start_date":{"dataType":"datetime"},"description":{"dataType":"string"},"is_active":{"dataType":"boolean"},"name":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateSeasonDto": {
@@ -721,7 +721,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofUpdateSeasonStatusSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"cancel_reason":{"dataType":"string"},"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]}],"required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["upcoming"]},{"dataType":"enum","enums":["registration_open"]},{"dataType":"enum","enums":["ongoing"]},{"dataType":"enum","enums":["finished"]}],"required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateSeasonStatusDto": {
@@ -1123,6 +1123,7 @@ const models: TsoaRoute.Models = {
             "team_name": {"dataType":"string","required":true},
             "season_name": {"dataType":"string","required":true},
             "registration_fee": {"dataType":"double","required":true},
+            "bank_info": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"bank_account_name":{"dataType":"string","required":true},"bank_account_no":{"dataType":"string","required":true},"bank_id":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -1540,6 +1541,7 @@ const models: TsoaRoute.Models = {
             "seededAwayTeamId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "sourceASlotId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "sourceBSlotId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "matchStatus": {"dataType":"union","subSchemas":[{"ref":"MatchStatus"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -1552,6 +1554,16 @@ const models: TsoaRoute.Models = {
     "AutoSeedKnockoutRequestDto": {
         "dataType": "refAlias",
         "type": {"ref":"infer_typeofautoSeedKnockoutRequestSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofswapSeedsRequestSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"sideB":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["home"]},{"dataType":"enum","enums":["away"]}],"required":true},"slotIdB":{"dataType":"double","required":true},"sideA":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["home"]},{"dataType":"enum","enums":["away"]}],"required":true},"slotIdA":{"dataType":"double","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SwapSeedsRequestDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofswapSeedsRequestSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "JerseyType": {
@@ -4404,6 +4416,41 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonController_runAutoTransitions: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.post('/seasons/auto-transition',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(SeasonController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonController.prototype.runAutoTransitions)),
+
+            async function SeasonController_runAutoTransitions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonController_runAutoTransitions, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonController>(SeasonController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'runAutoTransitions',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSeasonController_getGroupStandings: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
                 groupId: {"in":"path","name":"groupId","required":true,"dataType":"double"},
@@ -7001,6 +7048,81 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsKnockoutController_swapSeeds: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"SwapSeedsRequestDto"},
+        };
+        app.post('/seasons/:seasonId/phases/:phaseId/knockout/swap-seeds',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController)),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController.prototype.swapSeeds)),
+
+            async function KnockoutController_swapSeeds(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsKnockoutController_swapSeeds, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<KnockoutController>(KnockoutController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'swapSeeds',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsKnockoutController_confirmBracket: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
+        };
+        app.post('/seasons/:seasonId/phases/:phaseId/knockout/confirm',
+            authenticateMiddleware([{"jwt":["admin"]}]),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController)),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController.prototype.confirmBracket)),
+
+            async function KnockoutController_confirmBracket(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsKnockoutController_confirmBracket, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<KnockoutController>(KnockoutController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'confirmBracket',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);

@@ -54,6 +54,12 @@ export const knockoutGenerateOptionsSchema = z.object({
         .refine((t) => KNOCKOUT_PHASE_TYPES.includes(t), 'phaseTypeOverride phải là 1 trong các round knockout hợp lệ (không gồm third_place)')
         .optional(),
 });
+export const swapSeedsRequestSchema = z.object({
+    slotIdA: z.number().int().positive(),
+    sideA: z.enum(['home', 'away']),
+    slotIdB: z.number().int().positive(),
+    sideB: z.enum(['home', 'away']),
+});
 export const advanceWinnerInputSchema = z.object({
     matchId: z.number().int().positive(),
     winnerTeamId: z.number().int().positive(),
