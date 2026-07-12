@@ -2861,6 +2861,14 @@
 						"type": "number",
 						"format": "double"
 					},
+					"finalize_away_extra_time": {
+						"type": "number",
+						"format": "double"
+					},
+					"finalize_home_extra_time": {
+						"type": "number",
+						"format": "double"
+					},
 					"manual_away_score": {
 						"type": "number",
 						"format": "double"
@@ -2983,6 +2991,8 @@
 					"referee",
 					"is_published",
 					"venue_id",
+					"finalize_away_extra_time",
+					"finalize_home_extra_time",
 					"manual_away_score",
 					"manual_home_score",
 					"finalize_away_penalty",
@@ -4718,14 +4728,6 @@
 					"resultType": {
 						"$ref": "#/components/schemas/MatchResultType"
 					},
-					"awayHalfTime": {
-						"type": "number",
-						"format": "double"
-					},
-					"homeHalfTime": {
-						"type": "number",
-						"format": "double"
-					},
 					"awayExtraTime": {
 						"type": "number",
 						"format": "double"
@@ -4774,9 +4776,14 @@
 						"type": "number",
 						"format": "double"
 					},
+					"playerId": {
+						"type": "number",
+						"format": "double",
+						"description": "FIX: playerId thật (liên kết Player) — khi có, MatchEvent.player_id sẽ\r\nđược set đúng, giúp:\r\n  1. PlayerStatistic.goals_scored tính đúng (buildStatDeltas group theo\r\n     player_id — trước đây scorers luôn tạo player_id=null nên bàn\r\n     thắng \"vô hình\" với thống kê cầu thủ).\r\n  2. buildGoalsTimeline() (match.helper.ts) resolve được tên cầu thủ\r\n     thật từ lineup thay vì phải dựa vào `note` (free-text, có thể\r\n     sai chính tả / không khớp Player nào).\r\nOptional để tương thích ngược — nếu không có playerId (VD chưa nhập\r\nđội hình chi tiết), fallback dùng playerName ghi vào note như cũ."
+					},
 					"playerName": {
 						"type": "string",
-						"description": "Free-text, stored vào MatchEvent.note\r\nSchema không có varchar player_name riêng"
+						"description": "Free-text fallback khi không có playerId, stored vào MatchEvent.note.\r\nSchema không có varchar player_name riêng."
 					},
 					"period": {
 						"$ref": "#/components/schemas/MatchPeriod",

@@ -130,9 +130,23 @@ export function toMatchResultCreateInput(
     };
 }
 
+// FIX (half-time score bị mất vĩnh viễn sau confirm): trước đây hàm này
+// LUÔN null hoá finalize_home_half_time/finalize_away_half_time khi confirm
+// — nhưng MatchResult KHÔNG có cột nào lưu half-time score cả (xem
+// MATCH_RESULT_SELECT phía trên, và matchResultSelect ở match.queries.ts —
+// không nơi nào có field này). Match.finalize_home_half_time/away_half_time
+// vì vậy là NƠI DUY NHẤT có thể lưu half-time score sau khi trận kết thúc.
+// getMatchReport() (matchresult.service.ts) đọc đúng 2 field này làm nguồn
+// hiển thị (score.homeHalfTime/awayHalfTime) — null hoá cứng ở đây khiến
+// half-time LUÔN biến mất ngay khi confirm, bất kể referee đã nhập gì ở
+// finalizeMatch(). Giờ nhận thêm 2 tham số optional, forward giá trị vào
+// thay vì null cứng — chỉ null khi thực sự không có data (VD manual score
+// hoặc admin nhập nhanh không kèm half-time).
 export function toMatchUpdateOnConfirm(
     resolution: WinnerResolution,
     targetMatchStatus: MatchStatus,
+    homeHalfTimeScore?: number | null,
+    awayHalfTimeScore?: number | null,
 ): Prisma.MatchUpdateInput {
     return {
         status: targetMatchStatus,
@@ -143,10 +157,12 @@ export function toMatchUpdateOnConfirm(
         manual_home_score: null,
         manual_away_score: null,
         finalize_result_type: null,
-        finalize_home_half_time: null,
-        finalize_away_half_time: null,
+        finalize_home_half_time: homeHalfTimeScore ?? null,
+        finalize_away_half_time: awayHalfTimeScore ?? null,
         finalize_home_penalty: null,
         finalize_away_penalty: null,
+        finalize_home_extra_time: null,  // NEW — dọn staging field sau confirm
+        finalize_away_extra_time: null,  // NEW
     };
 }
 

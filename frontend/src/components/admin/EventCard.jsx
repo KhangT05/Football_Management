@@ -5,8 +5,19 @@ import { Clock, Trash2, AlertTriangle } from 'lucide-react';
  *
  * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — root cause ở
  * LiveControlTab (unwrap response). Xem LiveControlTab.jsx.
+ *
+ * FIX (trần phút cứng 130 sai cho mọi loại trận): input phút trước đây có
+ * min="0" max="130" hardcode — sai cho cả 2 chiều: round-robin không có
+ * hiệp phụ nên trần thật chỉ 90+bù giờ=105 (130 cho phép nhập bậy tới
+ * phút 130 cho trận không thể có hiệp phụ); knockout có ET thì trần thật
+ * 120+bù giờ=135 (130 lại thấp hơn mức hợp lệ thật). Giờ nhận `maxMinute`
+ * từ cha (LiveControlTab#getMinuteBounds) — nơi biết rõ trận có phải
+ * knockout hay không để tính đúng trần. `max` trên input chỉ mang tính
+ * UI hint (chặn nút tăng/giảm của input number) — validation/confirm thật
+ * sự vẫn nằm ở updateEvent()/validate() phía LiveControlTab, KHÔNG lặp lại
+ * logic đó ở đây để tránh 2 nơi có 2 trần khác nhau (đúng bug đang sửa).
  */
-export default function EventCard({ evt, players, lineup, allEvents, onUpdate, onRemove }) {
+export default function EventCard({ evt, players, lineup, allEvents, maxMinute = 105, onUpdate, onRemove }) {
   const getEventStyle = (type) => {
     switch (type) {
       case 'goal': return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
@@ -197,7 +208,8 @@ export default function EventCard({ evt, players, lineup, allEvents, onUpdate, o
         <Clock className="w-4 h-4 opacity-70 shrink-0" />
         <input
           type="number"
-          min="0" max="130"
+          min="0"
+          max={maxMinute}
           placeholder="Phút"
           value={evt.minute}
           onChange={e => onUpdate(evt.id, 'minute', e.target.value)}

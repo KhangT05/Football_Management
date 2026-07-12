@@ -1,4 +1,21 @@
 import { Prisma } from '../generated/prisma/client.js';
+export declare const matchResultSelect: {
+    select: {
+        id: true;
+        match_id: true;
+        winner_team_id: true;
+        home_extra_time_score: true;
+        away_extra_time_score: true;
+        home_penalty_score: true;
+        away_penalty_score: true;
+        home_final_score: true;
+        away_final_score: true;
+        result_type: true;
+        status: true;
+        notes: true;
+        created_at: true;
+    };
+};
 declare const phaseWithRuleSelect: {
     select: {
         id: true;
@@ -76,6 +93,7 @@ export declare const matchDetailSelect: {
     matchResult: {
         select: {
             id: true;
+            match_id: true;
             winner_team_id: true;
             home_extra_time_score: true;
             away_extra_time_score: true;
@@ -86,6 +104,7 @@ export declare const matchDetailSelect: {
             result_type: true;
             status: true;
             notes: true;
+            created_at: true;
         };
     };
     events: {
@@ -253,6 +272,7 @@ export declare const Select: {
             created_at: true;
             updated_at: true;
             id: true;
+            match_id: true;
             winner_team_id: true;
             home_extra_time_score: true;
             away_extra_time_score: true;

@@ -32,7 +32,22 @@ const EVENT_TYPES = [
   { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
 ];
 
-const MAX_MINUTE = 130;
+// FIX (trần phút cứng 130 cho mọi loại trận): trước đây MAX_MINUTE=130 áp
+// dụng chung — sai cả 2 chiều. Round-robin không có hiệp phụ, trần thật chỉ
+// 90+bù giờ; knockout có thể vào ET, trần thật 120+bù giờ. Đồng bộ với BE
+// (types/match.type.ts#MINUTE_BOUNDS/MAX_ADDED_MINUTE) — FE không import
+// trực tiếp từ BE nên hardcode ở đây, NOTE: nếu BE đổi MAX_ADDED_MINUTE,
+// phải sửa tay STOPPAGE_TIME_CAP dưới đây theo, có rủi ro drift.
+const STOPPAGE_TIME_CAP = 15;   // BE: MAX_ADDED_MINUTE
+const REGULAR_TIME_END = 90;    // BE: MINUTE_BOUNDS.second_half[1]
+const EXTRA_TIME_END = 120;     // BE: MINUTE_BOUNDS.extra_time_second[1]
+
+function getMinuteBounds(match) {
+  const isKnockout = match?.phase?.format === 'knockout';
+  const normalMax = REGULAR_TIME_END + STOPPAGE_TIME_CAP; // 105 — trần round-robin
+  const hardMax = isKnockout ? EXTRA_TIME_END + STOPPAGE_TIME_CAP : normalMax; // 135 (knockout) hoặc 105
+  return { normalMax, hardMax, isKnockout };
+}
 
 // Message do BE ném ra khi knockout hoà, xuất phát từ
 // MatchResultService._guardConfirm (matchresult.service.ts), được
@@ -138,6 +153,43 @@ function ExtraTimeModal({ isOpen, onClose, homeName, awayName, homeGoalCount, aw
               Không đá HP, vào Pen
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ConfirmExtraTimeMinuteModal ──────────────────────────────────────────────
+// NEW: xác nhận rõ ràng khi admin gõ phút vượt 90' cho trận knockout (có thể
+// hợp lệ — hiệp phụ) — tránh im lặng clamp hoặc im lặng chấp nhận số gõ nhầm
+// (VD gõ "100" thay vì "10"). Round-robin thì chặn hẳn, không cần modal này
+// (xem updateEvent bên dưới) vì round-robin không có khái niệm hiệp phụ.
+function ConfirmExtraTimeMinuteModal({ pending, onConfirm, onCancel }) {
+  if (!pending) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-navy border border-navy-light rounded-2xl shadow-2xl max-w-xs w-full p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="w-5 h-5 text-amber-400" />
+          <h3 className="font-black text-white text-sm uppercase tracking-wide">Xác nhận phút hiệp phụ</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          Phút <span className="text-white font-bold">{pending.value}</span> nằm ngoài 90 phút chính thức —
+          xác nhận đây là sự kiện diễn ra trong hiệp phụ?
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors"
+          >
+            Huỷ, sửa lại
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-black transition-colors"
+          >
+            Đúng, xác nhận
+          </button>
         </div>
       </div>
     </div>
@@ -299,6 +351,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const [awayEvents, setAwayEvents] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
 
+  // NEW: modal xác nhận khi gõ phút thuộc vùng hiệp phụ (chỉ dùng cho knockout —
+  // round-robin bị chặn cứng ngay trong updateEvent, không cần confirm).
+  const [pendingMinuteConfirm, setPendingMinuteConfirm] = useState(null); // { side, id, value }
+
   const homeGoalCount = useMemo(() => homeEvents.filter(e => e.type === 'goal').length, [homeEvents]);
   const awayGoalCount = useMemo(() => awayEvents.filter(e => e.type === 'goal').length, [awayEvents]);
 
@@ -326,6 +382,15 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const [penaltyDraft, setPenaltyDraft] = useState({ home: '', away: '' });
   const [isSubmittingPenalty, setIsSubmittingPenalty] = useState(false);
   const [penaltyBaseScore, setPenaltyBaseScore] = useState({ home: 0, away: 0 });
+
+  // FIX (ET score không được forward lên BE): trước đây handleConfirmExtraTime
+  // /handleConfirmPenalty không gửi homeExtraTimeScore/awayExtraTimeScore lên
+  // adminRecordResult -> MatchResult.home_extra_time_score/away_extra_time_score
+  // luôn null dù trận có đá hiệp phụ thật (winner/final score vẫn đúng nhờ BE
+  // fallback qua homeScore, nhưng report/UI hiệp phụ sẽ trống). etWasPlayed
+  // phân biệt "đã đá ET thật" (gửi kèm ET score ở bước pen) vs "pen thẳng từ
+  // 90', bỏ qua ET" (không gửi, giữ đúng ý nghĩa null = không có ET).
+  const [etWasPlayed, setEtWasPlayed] = useState(false);
 
   useEffect(() => {
     if (!effectiveSeasonId) return;
@@ -361,6 +426,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setEtModalOpen(false); setEtDraft({ home: '', away: '' });
     setPenaltyModalOpen(false); setPenaltyDraft({ home: '', away: '' });
     setPenaltyBaseScore({ home: 0, away: 0 });
+    setEtWasPlayed(false); // NEW — reset khi đổi trận
+    setPendingMinuteConfirm(null); // NEW
   };
 
   const addEvent = (side, type) => {
@@ -377,15 +444,51 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     setIsDirty(true);
   };
 
+  // FIX (trần phút cứng 130 cho mọi loại trận): tách riêng nhánh 'minute' —
+  // round-robin chặn hẳn khi vượt 90'+bù giờ (không có khái niệm hiệp phụ, gõ
+  // vượt gần như chắc chắn nhầm số); knockout cho phép nhưng bắt xác nhận rõ
+  // ràng qua ConfirmExtraTimeMinuteModal (tránh tự động chấp nhận số gõ nhầm,
+  // VD "100" thay vì "10"), thay vì âm thầm clamp như bản cũ.
   const updateEvent = (side, id, field, value) => {
-    let v = value;
     if (field === 'minute') {
       const digits = String(value).replace(/\D/g, '');
-      v = digits === '' ? '' : String(Math.min(MAX_MINUTE, Math.max(0, Number(digits))));
+      if (digits === '') {
+        const updater = evts => evts.map(e => e.id === id ? { ...e, minute: '' } : e);
+        if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
+        setIsDirty(true);
+        return;
+      }
+      const { normalMax, hardMax, isKnockout: knockoutBound } = getMinuteBounds(selectedMatch);
+      const num = Math.min(hardMax, Math.max(0, Number(digits)));
+
+      if (num > normalMax) {
+        if (!knockoutBound) {
+          toast.error(`Vòng bảng không có hiệp phụ — phút tối đa hợp lệ là ${normalMax} (90' + bù giờ).`);
+          return;
+        }
+        setPendingMinuteConfirm({ side, id, value: String(num) });
+        return;
+      }
+
+      const updater = evts => evts.map(e => e.id === id ? { ...e, minute: String(num) } : e);
+      if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
+      setIsDirty(true);
+      return;
     }
-    const updater = evts => evts.map(e => e.id === id ? { ...e, [field]: v } : e);
+
+    const updater = evts => evts.map(e => e.id === id ? { ...e, [field]: value } : e);
     if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
     setIsDirty(true);
+  };
+
+  // NEW: admin bấm "Đúng, xác nhận" trong ConfirmExtraTimeMinuteModal.
+  const confirmPendingMinute = () => {
+    if (!pendingMinuteConfirm) return;
+    const { side, id, value } = pendingMinuteConfirm;
+    const updater = evts => evts.map(e => e.id === id ? { ...e, minute: value } : e);
+    if (side === 'home') setHomeEvents(updater); else setAwayEvents(updater);
+    setIsDirty(true);
+    setPendingMinuteConfirm(null);
   };
 
   const getHomeName = () => selectedMatch?.home_team?.name ?? teams.find(t => Number(t.id) === Number(selectedMatch?.home_team_id))?.name ?? `Đội ${selectedMatch?.home_team_id ?? ''}`;
@@ -399,9 +502,24 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     }
   };
 
+  // FIX: thêm check trần phút theo dynamic bound (phòng data cũ/edge-case
+  // không đi qua updateEvent, VD nếu sau này có import event hàng loạt).
   const validate = () => {
     if (homeEvents.some(e => !e.minute) || awayEvents.some(e => !e.minute))
       return 'Vui lòng điền phút cho tất cả sự kiện.';
+
+    const { normalMax, hardMax, isKnockout: knockoutBound } = getMinuteBounds(selectedMatch);
+    const allEventsFlat = [...homeEvents, ...awayEvents];
+
+    const overHardLimit = allEventsFlat.some(e => Number(e.minute) > hardMax);
+    if (overHardLimit)
+      return `Có sự kiện vượt quá phút tối đa hợp lệ (${hardMax}').`;
+
+    if (!knockoutBound) {
+      const overNormal = allEventsFlat.some(e => Number(e.minute) > normalMax);
+      if (overNormal)
+        return `Vòng bảng không có hiệp phụ — phút tối đa hợp lệ là ${normalMax}'.`;
+    }
 
     for (const [label, events] of [['Đội nhà', homeEvents], ['Đội khách', awayEvents]]) {
       const yellowCounts = countYellowsByPlayer(events);
@@ -512,6 +630,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   // ghi trong ET) — khớp với semantics homeScore=tổng cuối cùng ở BE
   // (adminRecordResult forward thẳng homeScore làm homeFinal khi không có
   // homeExtraTimeScore riêng — xem _resolveWinner case extra_time).
+  //
+  // FIX: gửi kèm homeExtraTimeScore/awayExtraTimeScore = tổng sau ET (chính
+  // là h/a) — trước đây thiếu 2 field này khiến MatchResult.home_extra_time_
+  // score luôn null dù trận có đá hiệp phụ thật.
   const handleConfirmExtraTime = async () => {
     const h = Number(etDraft.home);
     const a = Number(etDraft.away);
@@ -528,6 +650,8 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       await matchApi.adminRecordResult(selectedMatch.id, {
         homeScore: h, awayScore: a,
         resultType: 'extra_time',
+        homeExtraTimeScore: h,   // FIX — forward đúng ET score
+        awayExtraTimeScore: a,   // FIX
       });
       setMatchStatus('finished');
       setEtModalOpen(false);
@@ -538,6 +662,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       if (isKnockoutEtDrawError(err)) {
         // Vẫn hoà sau ET — chuyển sang pen, giữ nguyên tổng sau ET làm nền.
         setPenaltyBaseScore({ home: h, away: a });
+        setEtWasPlayed(true); // FIX — đánh dấu đã đá ET thật, forward tiếp ở bước pen
         setEtModalOpen(false);
         setPenaltyModalOpen(true);
         return;
@@ -549,6 +674,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   // Bỏ qua hiệp phụ — vào thẳng loạt sút luân lưu với tỉ số 90'.
   const handleSkipExtraTime = () => {
     setPenaltyBaseScore({ home: homeGoalCount, away: awayGoalCount });
+    setEtWasPlayed(false); // FIX — không đá ET, không forward ET score ở bước pen
     setEtModalOpen(false);
     setPenaltyModalOpen(true);
   };
@@ -569,6 +695,13 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       await matchApi.adminRecordResult(selectedMatch.id, {
         homeScore: penaltyBaseScore.home, awayScore: penaltyBaseScore.away,
         resultType: 'penalty',
+        // FIX: chỉ gửi ET score nếu ET thực sự được đá — phân biệt với case
+        // pen thẳng từ 90' (giữ home_extra_time_score=null đúng ý nghĩa,
+        // không giả vờ có hiệp phụ khi thực tế bỏ qua).
+        ...(etWasPlayed && {
+          homeExtraTimeScore: penaltyBaseScore.home,
+          awayExtraTimeScore: penaltyBaseScore.away,
+        }),
         homePenaltyScore: h,
         awayPenaltyScore: a,
       });
@@ -601,6 +734,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
   const fmtMatchDate = (m) => m?.scheduled_at
     ? new Date(m.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
     : 'TBD';
+
+  // NEW: trần phút hiện tại cho trận đang chọn — dùng để hiển thị hint và
+  // forward xuống EventCard (input's `max` attribute).
+  const currentMinuteBounds = getMinuteBounds(selectedMatch);
 
   return (
     <>
@@ -672,6 +809,13 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                   </div>
                 </div>
 
+                {/* NEW: hint trần phút — cho admin biết rõ giới hạn thay vì
+                    chỉ phát hiện khi bị chặn/hỏi xác nhận. */}
+                <p className="mt-1.5 text-center text-[10px] text-gray-500">
+                  Phút hợp lệ: 0–{currentMinuteBounds.normalMax}'
+                  {currentMinuteBounds.isKnockout && ` (có thể vào hiệp phụ tới ${currentMinuteBounds.hardMax}')`}
+                </p>
+
                 {isEditable && isKnockout && isDrawNow && (
                   <p className="mt-2 text-center text-xs text-amber-400/90 font-semibold">
                     Đang hoà ở knockout — bấm "Xác nhận" sẽ mở form nhập hiệp phụ / loạt sút luân lưu.
@@ -708,6 +852,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                 players={homePlayers}
                 lineup={lineups.home}
                 loadingPlayers={loadingPlayers}
+                maxMinute={currentMinuteBounds.hardMax}
                 onAdd={type => addEvent('home', type)}
                 onUpdate={(id, f, v) => updateEvent('home', id, f, v)}
                 onRemove={id => removeEvent('home', id)}
@@ -719,6 +864,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
                 players={awayPlayers}
                 lineup={lineups.away}
                 loadingPlayers={loadingPlayers}
+                maxMinute={currentMinuteBounds.hardMax}
                 onAdd={type => addEvent('away', type)}
                 onUpdate={(id, f, v) => updateEvent('away', id, f, v)}
                 onRemove={id => removeEvent('away', id)}
@@ -806,6 +952,13 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         onConfirm={handleConfirmPenalty}
         isSubmitting={isSubmittingPenalty}
       />
+
+      {/* NEW */}
+      <ConfirmExtraTimeMinuteModal
+        pending={pendingMinuteConfirm}
+        onConfirm={confirmPendingMinute}
+        onCancel={() => setPendingMinuteConfirm(null)}
+      />
     </>
   );
 }
@@ -884,7 +1037,7 @@ function PenaltyShootoutModal({ isOpen, onClose, homeName, awayName, homeGoalCou
 
 // ─── EventColumn ──────────────────────────────────────────────────────────────
 
-function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers, onAdd, onUpdate, onRemove }) {
+function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers, maxMinute, onAdd, onUpdate, onRemove }) {
   const c = countEvents(events);
 
   const headerGradient = teamColor === 'blue'
@@ -957,6 +1110,7 @@ function EventColumn({ title, teamColor, events, players, lineup, loadingPlayers
               players={players}
               lineup={lineup}
               allEvents={events}
+              maxMinute={maxMinute}
               onUpdate={(id, f, v) => onUpdate(id, f, v)}
               onRemove={onRemove}
             />

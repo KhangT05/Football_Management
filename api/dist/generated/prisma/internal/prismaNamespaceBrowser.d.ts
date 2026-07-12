@@ -336,6 +336,8 @@ export declare const MatchScalarFieldEnum: {
     readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly finalize_home_extra_time: "finalize_home_extra_time";
+    readonly finalize_away_extra_time: "finalize_away_extra_time";
     readonly deleted_at: "deleted_at";
     readonly user_id: "user_id";
     readonly venue_id: "venue_id";

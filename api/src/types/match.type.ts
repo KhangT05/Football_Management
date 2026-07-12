@@ -46,6 +46,12 @@ export interface ManualScoreInput {
     // Penalty tiebreaker — bắt buộc nếu resultType = penalty
     homePenalty?: number;
     awayPenalty?: number;
+    // NEW: bắt buộc nếu resultType=extra_time (tổng bàn sau hiệp phụ, không
+    // phải chỉ bàn ghi trong ET). Optional cho penalty vì có giải đá thẳng
+    // luân lưu không qua hiệp phụ — khi đó fallback về homeScore ở
+    // confirmOfficial(), đúng hành vi nhánh event-driven đang có.
+    homeExtraTime?: number;
+    awayExtraTime?: number;
 
     // Half-time không collect ở manual path (referee chỉ nhớ tỉ số cuối)
     // → finalize_home_half_time / finalize_away_half_time sẽ để null
@@ -102,6 +108,13 @@ export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export type EditEventInput = Partial<RecordEventInput>;
 
+// FIX: bỏ homeHalfTime/awayHalfTime khỏi EditScoreInput — không có cột lưu
+// trữ nào cho half-time score trên MatchResult (không migrate schema theo
+// yêu cầu). Match.finalize_home_half_time/finalize_away_half_time chỉ là
+// staging field trước confirm, bị null hoá ngay khi confirm
+// (toMatchUpdateOnConfirm) nên không dùng để ghi đè sau đó được. Nếu cần
+// sửa half-time sau khi match đã finished, phải bổ sung cột riêng trên
+// MatchResult trước — hiện tại field này KHÔNG được service nào ghi/đọc.
 export type EditScoreInput = {
     homeScore: number;
     awayScore: number;
@@ -109,8 +122,6 @@ export type EditScoreInput = {
     awayPenalty?: number;
     homeExtraTime?: number;
     awayExtraTime?: number;
-    homeHalfTime?: number;
-    awayHalfTime?: number;
     resultType?: MatchResultType;
     notes?: string;
 };
@@ -120,8 +131,21 @@ export interface AdminScorerInput {
     type: "goal" | "own_goal";
     minute: number;
     /**
-     * Free-text, stored vào MatchEvent.note
-     * Schema không có varchar player_name riêng
+     * FIX: playerId thật (liên kết Player) — khi có, MatchEvent.player_id sẽ
+     * được set đúng, giúp:
+     *   1. PlayerStatistic.goals_scored tính đúng (buildStatDeltas group theo
+     *      player_id — trước đây scorers luôn tạo player_id=null nên bàn
+     *      thắng "vô hình" với thống kê cầu thủ).
+     *   2. buildGoalsTimeline() (match.helper.ts) resolve được tên cầu thủ
+     *      thật từ lineup thay vì phải dựa vào `note` (free-text, có thể
+     *      sai chính tả / không khớp Player nào).
+     * Optional để tương thích ngược — nếu không có playerId (VD chưa nhập
+     * đội hình chi tiết), fallback dùng playerName ghi vào note như cũ.
+     */
+    playerId?: number;
+    /**
+     * Free-text fallback khi không có playerId, stored vào MatchEvent.note.
+     * Schema không có varchar player_name riêng.
      */
     playerName?: string;
     /**

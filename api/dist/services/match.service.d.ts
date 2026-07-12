@@ -50,8 +50,7 @@ export declare class MatchLifecycleService {
      *   Giờ forward đúng field.
      * - REQUIRES: AdminRecordResultInput cần có 2 field optional
      *   `homePenaltyScore?: number` và `awayPenaltyScore?: number` trong
-     *   types/match.type.ts — chưa xác nhận được field này đã tồn tại chưa
-     *   vì không có file đó trong context, cần bổ sung nếu thiếu.
+     *   types/match.type.ts — đã có sẵn.
      */
     /**
      * FIX (knockout draw + extra_time + penalty flow):
@@ -74,29 +73,30 @@ export declare class MatchLifecycleService {
      * awayScore LUÔN được hiểu là "tỉ số cuối cùng tại thời điểm gọi" (có thể
      * đã bao gồm ET), và được dùng làm cả homeScore lẫn homeExtraTime khi
      * resultType cần ET — ĐÂY LÀ GIẢ ĐỊNH CHƯA VERIFY được với
-     * matchresult.service.ts (không có trong context). Cần xác nhận
-     * confirmResultInTx có nhận & xử lý đúng homeExtraTime/awayExtraTime
-     * giống confirmResult (dùng ở confirmOfficial) hay không — nếu
-     * confirmResultInTx bỏ qua field này, home_extra_time_score sẽ bị null
-     * sai lệch dù winner vẫn đúng (vì final score dùng luôn homeScore).
-     */
-    /**
-     * FIX (bug report kép — bản fix trước tự viết guard riêng, SAI 2 chỗ):
-     * 1. Không cần tự check draw ở đây nữa — confirmResultInTx đã gọi
-     *    _guardConfirm, tự throw VALIDATION_ERROR đúng cho cả full_time và
-     *    extra_time (kiểm tra qua homeExtraTime, không phải homeScore).
-     *    Viết lại guard riêng ở lifecycle service tạo 2 nguồn sự thật có thể
-     *    lệch nhau (bản trước: so sai field cho case extra_time).
-     * 2. homeExtraTimeScore/awayExtraTimeScore là field RIÊNG với homeScore/
-     *    awayScore — theo _resolveWinner: case extra_time dùng
-     *    `homeExtraTime ?? homeScore` làm homeFinal TRỰC TIẾP, không cộng dồn.
-     *    Bản fix trước gán homeExtraTime = homeScore (dùng lại chung 1 giá
-     *    trị) là sai model — phải tách 2 input riêng ở FE.
+     * matchresult.service.ts. Cần xác nhận confirmResultInTx có nhận & xử lý
+     * đúng homeExtraTime/awayExtraTime giống confirmResult (dùng ở
+     * confirmOfficial) hay không — nếu confirmResultInTx bỏ qua field này,
+     * home_extra_time_score sẽ bị null sai lệch dù winner vẫn đúng (vì final
+     * score dùng luôn homeScore).
      *
-     * Luồng FE dự kiến không đổi (full_time draw -> modal ET -> vẫn draw ->
-     * modal pen), chỉ khác: modal ET giờ gửi homeExtraTimeScore/
-     * awayExtraTimeScore là TỔNG SAU HIỆP PHỤ, còn homeScore/awayScore vẫn
-     * giữ nguyên tỉ số 90' đã đóng băng lúc mở modal (không đổi theo ET input).
+     * FIX (scorers không gắn player_id thật — bug report mới nhất):
+     * - Trước đây `input.scorers` LUÔN tạo MatchEvent với player_id=null,
+     *   tên cầu thủ chỉ nằm ở `note` (free-text). Hệ quả:
+     *     1. PlayerStatistic.goals_scored KHÔNG tăng cho các bàn này —
+     *        buildStatDeltas/_updatePlayerStatistics group theo player_id,
+     *        player_id=null bị bỏ qua hoàn toàn khỏi thống kê.
+     *     2. buildGoalsTimeline() (dùng ở getMatchReport, chính là nguồn
+     *        data cho UI kiểu "Alexis Mac Allister 10'") resolve tên qua
+     *        `playerNameLookup` (map từ Player thật trong lineup) chứ KHÔNG
+     *        đọc `note` — nên trước đây các bàn nhập qua scorers luôn hiện
+     *        "Unknown" trên UI report, dù `note` có lưu đúng tên.
+     * - Giờ: nếu `AdminScorerInput.playerId` được truyền, dùng nó làm
+     *   player_id thật (validate giống hệt pattern đang áp dụng cho
+     *   `cards`: teamId phải thuộc match, player phải tồn tại, chưa bị
+     *   truất quyền thi đấu). Nếu không có playerId (case chưa có đội hình
+     *   chi tiết), giữ hành vi cũ — player_id=null, name chỉ nằm ở note,
+     *   goalsTimeline sẽ fallback "Unknown" (không thể tránh khi không có
+     *   Player thật để liên kết).
      */
     adminRecordResult(matchId: number, input: AdminRecordResultInput, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutput>;
 }

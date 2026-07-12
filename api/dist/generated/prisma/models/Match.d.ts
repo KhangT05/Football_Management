@@ -30,6 +30,8 @@ export type MatchAvgAggregateOutputType = {
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
     manual_away_score: number | null;
+    finalize_home_extra_time: number | null;
+    finalize_away_extra_time: number | null;
     user_id: number | null;
     venue_id: number | null;
 };
@@ -50,6 +52,8 @@ export type MatchSumAggregateOutputType = {
     finalize_away_penalty: number | null;
     manual_home_score: number | null;
     manual_away_score: number | null;
+    finalize_home_extra_time: number | null;
+    finalize_away_extra_time: number | null;
     user_id: number | null;
     venue_id: number | null;
 };
@@ -83,6 +87,8 @@ export type MatchMinAggregateOutputType = {
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
+    finalize_home_extra_time: number | null;
+    finalize_away_extra_time: number | null;
     deleted_at: Date | null;
     user_id: number | null;
     venue_id: number | null;
@@ -119,6 +125,8 @@ export type MatchMaxAggregateOutputType = {
     is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
+    finalize_home_extra_time: number | null;
+    finalize_away_extra_time: number | null;
     deleted_at: Date | null;
     user_id: number | null;
     venue_id: number | null;
@@ -155,6 +163,8 @@ export type MatchCountAggregateOutputType = {
     is_active: number;
     created_at: number;
     updated_at: number;
+    finalize_home_extra_time: number;
+    finalize_away_extra_time: number;
     deleted_at: number;
     user_id: number;
     venue_id: number;
@@ -179,6 +189,8 @@ export type MatchAvgAggregateInputType = {
     finalize_away_penalty?: true;
     manual_home_score?: true;
     manual_away_score?: true;
+    finalize_home_extra_time?: true;
+    finalize_away_extra_time?: true;
     user_id?: true;
     venue_id?: true;
 };
@@ -199,6 +211,8 @@ export type MatchSumAggregateInputType = {
     finalize_away_penalty?: true;
     manual_home_score?: true;
     manual_away_score?: true;
+    finalize_home_extra_time?: true;
+    finalize_away_extra_time?: true;
     user_id?: true;
     venue_id?: true;
 };
@@ -232,6 +246,8 @@ export type MatchMinAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    finalize_home_extra_time?: true;
+    finalize_away_extra_time?: true;
     deleted_at?: true;
     user_id?: true;
     venue_id?: true;
@@ -268,6 +284,8 @@ export type MatchMaxAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    finalize_home_extra_time?: true;
+    finalize_away_extra_time?: true;
     deleted_at?: true;
     user_id?: true;
     venue_id?: true;
@@ -304,6 +322,8 @@ export type MatchCountAggregateInputType = {
     is_active?: true;
     created_at?: true;
     updated_at?: true;
+    finalize_home_extra_time?: true;
+    finalize_away_extra_time?: true;
     deleted_at?: true;
     user_id?: true;
     venue_id?: true;
@@ -417,6 +437,8 @@ export type MatchGroupByOutputType = {
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
+    finalize_home_extra_time: number | null;
+    finalize_away_extra_time: number | null;
     deleted_at: Date | null;
     user_id: number | null;
     venue_id: number | null;
@@ -464,6 +486,8 @@ export type MatchWhereInput = {
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_home_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -512,6 +536,8 @@ export type MatchOrderByWithRelationInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     venue_id?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -565,6 +591,8 @@ export type MatchWhereUniqueInput = Prisma.AtLeast<{
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_home_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -613,6 +641,8 @@ export type MatchOrderByWithAggregationInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrderInput | Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     venue_id?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -657,6 +687,8 @@ export type MatchScalarWhereWithAggregatesInput = {
     is_active?: Prisma.BoolWithAggregatesFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
+    finalize_home_extra_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
+    finalize_away_extra_time?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Match"> | Date | string | null;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
     venue_id?: Prisma.IntNullableWithAggregatesFilter<"Match"> | number | null;
@@ -688,6 +720,8 @@ export type MatchCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -734,6 +768,8 @@ export type MatchUncheckedCreateInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -771,6 +807,8 @@ export type MatchUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -817,6 +855,8 @@ export type MatchUncheckedUpdateInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -859,6 +899,8 @@ export type MatchCreateManyInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -890,6 +932,8 @@ export type MatchUpdateManyMutationInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -924,6 +968,8 @@ export type MatchUncheckedUpdateManyInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -988,6 +1034,8 @@ export type MatchCountOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
@@ -1011,6 +1059,8 @@ export type MatchAvgOrderByAggregateInput = {
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
     manual_away_score?: Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
 };
@@ -1044,6 +1094,8 @@ export type MatchMaxOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
@@ -1080,6 +1132,8 @@ export type MatchMinOrderByAggregateInput = {
     is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
@@ -1103,6 +1157,8 @@ export type MatchSumOrderByAggregateInput = {
     finalize_away_penalty?: Prisma.SortOrder;
     manual_home_score?: Prisma.SortOrder;
     manual_away_score?: Prisma.SortOrder;
+    finalize_home_extra_time?: Prisma.SortOrder;
+    finalize_away_extra_time?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     venue_id?: Prisma.SortOrder;
 };
@@ -1444,6 +1500,8 @@ export type MatchCreateWithoutUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -1489,6 +1547,8 @@ export type MatchUncheckedCreateWithoutUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     venue_id?: number | null;
     is_published?: boolean;
@@ -1554,6 +1614,8 @@ export type MatchScalarWhereInput = {
     is_active?: Prisma.BoolFilter<"Match"> | boolean;
     created_at?: Prisma.DateTimeFilter<"Match"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
+    finalize_home_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
+    finalize_away_extra_time?: Prisma.IntNullableFilter<"Match"> | number | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Match"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Match"> | number | null;
     venue_id?: Prisma.IntNullableFilter<"Match"> | number | null;
@@ -1585,6 +1647,8 @@ export type MatchCreateWithoutPhaseInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -1629,6 +1693,8 @@ export type MatchUncheckedCreateWithoutPhaseInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -1687,6 +1753,8 @@ export type MatchCreateWithoutBracketSlotInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -1732,6 +1800,8 @@ export type MatchUncheckedCreateWithoutBracketSlotInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -1781,6 +1851,8 @@ export type MatchUpdateWithoutBracketSlotInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1826,6 +1898,8 @@ export type MatchUncheckedUpdateWithoutBracketSlotInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1862,6 +1936,8 @@ export type MatchCreateWithoutGroupInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -1906,6 +1982,8 @@ export type MatchUncheckedCreateWithoutGroupInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -1964,6 +2042,8 @@ export type MatchCreateWithoutHome_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2008,6 +2088,8 @@ export type MatchUncheckedCreateWithoutHome_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2053,6 +2135,8 @@ export type MatchCreateWithoutAway_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2097,6 +2181,8 @@ export type MatchUncheckedCreateWithoutAway_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2168,6 +2254,8 @@ export type MatchCreateWithoutMatchJerseyAssignmentInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2213,6 +2301,8 @@ export type MatchUncheckedCreateWithoutMatchJerseyAssignmentInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2262,6 +2352,8 @@ export type MatchUpdateWithoutMatchJerseyAssignmentInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2307,6 +2399,8 @@ export type MatchUncheckedUpdateWithoutMatchJerseyAssignmentInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2343,6 +2437,8 @@ export type MatchCreateWithoutVenueInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2388,6 +2484,8 @@ export type MatchUncheckedCreateWithoutVenueInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     is_published?: boolean;
@@ -2445,6 +2543,8 @@ export type MatchCreateWithoutMatchLineupsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2490,6 +2590,8 @@ export type MatchUncheckedCreateWithoutMatchLineupsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2539,6 +2641,8 @@ export type MatchUpdateWithoutMatchLineupsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2584,6 +2688,8 @@ export type MatchUncheckedUpdateWithoutMatchLineupsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2620,6 +2726,8 @@ export type MatchCreateWithoutEventsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2665,6 +2773,8 @@ export type MatchUncheckedCreateWithoutEventsInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2714,6 +2824,8 @@ export type MatchUpdateWithoutEventsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2759,6 +2871,8 @@ export type MatchUncheckedUpdateWithoutEventsInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2795,6 +2909,8 @@ export type MatchCreateWithoutMatchResultInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -2840,6 +2956,8 @@ export type MatchUncheckedCreateWithoutMatchResultInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -2889,6 +3007,8 @@ export type MatchUpdateWithoutMatchResultInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2934,6 +3054,8 @@ export type MatchUncheckedUpdateWithoutMatchResultInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -2970,6 +3092,8 @@ export type MatchCreateWithoutArticlesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     is_published?: boolean;
     referee?: string | null;
@@ -3015,6 +3139,8 @@ export type MatchUncheckedCreateWithoutArticlesInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -3064,6 +3190,8 @@ export type MatchUpdateWithoutArticlesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3109,6 +3237,8 @@ export type MatchUncheckedUpdateWithoutArticlesInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3150,6 +3280,8 @@ export type MatchCreateManyUserInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     venue_id?: number | null;
     is_published?: boolean;
@@ -3180,6 +3312,8 @@ export type MatchUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3225,6 +3359,8 @@ export type MatchUncheckedUpdateWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -3266,6 +3402,8 @@ export type MatchUncheckedUpdateManyWithoutUserInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -3300,6 +3438,8 @@ export type MatchCreateManyPhaseInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -3331,6 +3471,8 @@ export type MatchUpdateWithoutPhaseInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3375,6 +3517,8 @@ export type MatchUncheckedUpdateWithoutPhaseInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3416,6 +3560,8 @@ export type MatchUncheckedUpdateManyWithoutPhaseInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3451,6 +3597,8 @@ export type MatchCreateManyGroupInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -3482,6 +3630,8 @@ export type MatchUpdateWithoutGroupInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3526,6 +3676,8 @@ export type MatchUncheckedUpdateWithoutGroupInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3567,6 +3719,8 @@ export type MatchUncheckedUpdateManyWithoutGroupInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3602,6 +3756,8 @@ export type MatchCreateManyHome_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -3637,6 +3793,8 @@ export type MatchCreateManyAway_teamInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     venue_id?: number | null;
@@ -3668,6 +3826,8 @@ export type MatchUpdateWithoutHome_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3712,6 +3872,8 @@ export type MatchUncheckedUpdateWithoutHome_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3753,6 +3915,8 @@ export type MatchUncheckedUpdateManyWithoutHome_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3784,6 +3948,8 @@ export type MatchUpdateWithoutAway_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3828,6 +3994,8 @@ export type MatchUncheckedUpdateWithoutAway_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3869,6 +4037,8 @@ export type MatchUncheckedUpdateManyWithoutAway_teamInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     venue_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -3905,6 +4075,8 @@ export type MatchCreateManyVenueInput = {
     is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    finalize_home_extra_time?: number | null;
+    finalize_away_extra_time?: number | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
     is_published?: boolean;
@@ -3935,6 +4107,8 @@ export type MatchUpdateWithoutVenueInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     referee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3980,6 +4154,8 @@ export type MatchUncheckedUpdateWithoutVenueInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -4021,6 +4197,8 @@ export type MatchUncheckedUpdateManyWithoutVenueInput = {
     is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finalize_home_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    finalize_away_extra_time?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     is_published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
@@ -4104,6 +4282,8 @@ export type MatchSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    finalize_home_extra_time?: boolean;
+    finalize_away_extra_time?: boolean;
     deleted_at?: boolean;
     user_id?: boolean;
     venue_id?: boolean;
@@ -4153,13 +4333,15 @@ export type MatchSelectScalar = {
     is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    finalize_home_extra_time?: boolean;
+    finalize_away_extra_time?: boolean;
     deleted_at?: boolean;
     user_id?: boolean;
     venue_id?: boolean;
     is_published?: boolean;
     referee?: boolean;
 };
-export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "abandoned_minute" | "pending_official_at" | "finalize_result_type" | "finalize_home_half_time" | "finalize_away_half_time" | "abandoned_reason" | "grace_period_retry_count" | "finalize_home_penalty" | "finalize_away_penalty" | "manual_home_score" | "manual_away_score" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee", ExtArgs["result"]["match"]>;
+export type MatchOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phase_id" | "group_id" | "home_team_id" | "away_team_id" | "scheduled_at" | "played_at" | "home_score" | "away_score" | "status" | "round" | "leg" | "current_period" | "postponed_from" | "postponed_reason" | "abandoned_minute" | "pending_official_at" | "finalize_result_type" | "finalize_home_half_time" | "finalize_away_half_time" | "abandoned_reason" | "grace_period_retry_count" | "finalize_home_penalty" | "finalize_away_penalty" | "manual_home_score" | "manual_away_score" | "is_active" | "created_at" | "updated_at" | "finalize_home_extra_time" | "finalize_away_extra_time" | "deleted_at" | "user_id" | "venue_id" | "is_published" | "referee", ExtArgs["result"]["match"]>;
 export type MatchInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     phase?: boolean | Prisma.PhaseDefaultArgs<ExtArgs>;
     group?: boolean | Prisma.Match$groupArgs<ExtArgs>;
@@ -4221,6 +4403,8 @@ export type $MatchPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
         is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
+        finalize_home_extra_time: number | null;
+        finalize_away_extra_time: number | null;
         deleted_at: Date | null;
         user_id: number | null;
         venue_id: number | null;
@@ -4569,6 +4753,8 @@ export interface MatchFieldRefs {
     readonly is_active: Prisma.FieldRef<"Match", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"Match", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"Match", 'DateTime'>;
+    readonly finalize_home_extra_time: Prisma.FieldRef<"Match", 'Int'>;
+    readonly finalize_away_extra_time: Prisma.FieldRef<"Match", 'Int'>;
     readonly deleted_at: Prisma.FieldRef<"Match", 'DateTime'>;
     readonly user_id: Prisma.FieldRef<"Match", 'Int'>;
     readonly venue_id: Prisma.FieldRef<"Match", 'Int'>;
