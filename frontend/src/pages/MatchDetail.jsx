@@ -12,7 +12,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import { teamApi, matchLineupApi } from '../api';
 import useTeamStore from '../store/teamStore';
 import {
-  useMatchExtras, TeamAvatar, TeamBadge, PlayerItem, FormationPlayerDot,
+  useMatchExtras, TeamAvatar, TeamBadge, PlayerItem,
   normalizePosition, POSITION_ORDER, STATUS_LABEL, STATUS_BADGE_COLOR,
   NO_EVENT_STATUSES, getVsLabel,
 } from '../components/MatchShared';
@@ -28,50 +28,191 @@ function ApiBanner({ message }) {
 }
 
 // ── Formation pitch (sơ đồ đội hình) ────────────────────────────
-function FormationRow({ players, kit }) {
+// FIX: bỏ FormationPlayerDot cũ (chỉ hiện chấm tròn + tên), thay bằng
+// PitchFormation-style: số áo theo ĐÚNG màu áo trận đấu (kit), badge sự
+// kiện (bàn thắng ⚽ / phản lưới OG / thẻ vàng 🟨 / thẻ đỏ 🟥) tính thẳng từ
+// mảng `events` đã fetch sẵn ở trang này (không gọi thêm API nào khác), và
+// header card có logo đội + tỉ số + sơ đồ chiến thuật (vd "4-1-3-2") — cùng
+// tinh thần với LineupColumn trong ScheduleTab.jsx (admin) nhưng dùng dữ
+// liệu match-detail công khai thay vì report preview.
+//
+// LƯU Ý: field màu áo đọc từ `kit` (kit?.primaryColor / kit?.shirt_color /
+// kit?.color) — mình đoán theo cách TeamAvatar/TeamBadge trong
+// MatchShared.jsx đang dùng `kit`. Nếu shape thực tế của kitFor() khác,
+// chỉnh lại đúng 2 dòng `shirtColor` / `numberColor` bên dưới cho khớp.
+
+function resolvePlayerName(tp) {
+  const name = tp.player?.user?.name ?? tp.player?.player?.name ?? tp.player?.name ?? tp.name;
+  return (name || '').trim() || `#${tp.player_id ?? tp.id ?? '?'}`;
+}
+
+// FIX: khớp ĐÚNG giá trị enum MatchEventType thật của BE (xem
+// match.lifecycle.service.ts / matchresult.service.ts) — trước đây so
+// type === 'goal'/'yellow'/'red' (sai hoàn toàn với enum thật), nên badge
+// gần như không bao giờ hiện. Enum thật: 'goal', 'own_goal', 'yellow_card',
+// 'second_yellow', 'red_card', 'penalty_scored', 'substitution_in',
+// 'substitution_out'.
+//   - goals: 'goal' VÀ 'penalty_scored' đều tính là bàn thắng (giống cách
+//     _recomputeStatsForPlayers ở BE gộp 2 type này vào goals_scored).
+//   - ownGoals: type riêng 'own_goal' — KHÔNG phải cờ is_own_goal trên type 'goal'.
+//   - yellows: chỉ đếm 'yellow_card' (thẻ vàng đầu, chưa bị đuổi).
+//   - reds: 'red_card' VÀ 'second_yellow' (thẻ vàng thứ 2 = bị đuổi thực
+//     chất là đỏ) đều tính vào reds — khớp _deriveCardColor/is_suspended ở BE.
+const GOAL_EVENT_TYPES = new Set(['goal', 'penalty_scored']);
+
+const EVENT_TYPE_LABEL = {
+  goal: 'Bàn thắng',
+  penalty_scored: 'Bàn thắng (phạt đền)',
+  own_goal: 'Phản lưới nhà',
+  yellow_card: 'Thẻ vàng',
+  second_yellow: 'Thẻ vàng thứ 2 (Đuổi)',
+  red_card: 'Thẻ đỏ',
+  substitution_in: 'Vào sân',
+  substitution_out: 'Ra sân',
+};
+
+// Hiện phút kèm bù giờ đúng field `added_minute` (BE trả field này, không
+// phải addedMinute — đó là field đã transform riêng ở report preview).
+function formatMinuteLabel(evt) {
+  const added = evt.added_minute ?? evt.addedMinute;
+  return `${evt.minute}${added ? `+${added}` : ''}'`;
+}
+
+// Gom bàn thắng/phản lưới/thẻ của 1 cầu thủ từ mảng events của trận —
+// events đã có sẵn ở component cha (detailData?.events), không cần thêm
+// request nào.
+function getPlayerEventBadges(playerId, events) {
+  if (!playerId) return { goals: 0, ownGoals: 0, yellows: 0, reds: 0 };
+  const playerEvents = events.filter(e => e.player_id === playerId);
+  return {
+    goals: playerEvents.filter(e => GOAL_EVENT_TYPES.has(e.type)).length,
+    ownGoals: playerEvents.filter(e => e.type === 'own_goal').length,
+    yellows: playerEvents.filter(e => e.type === 'yellow_card').length,
+    reds: playerEvents.filter(e => e.type === 'red_card' || e.type === 'second_yellow').length,
+  };
+}
+
+function FormationPlayerCell({ tp, kit, events }) {
+  const displayName = resolvePlayerName(tp);
+  const badges = getPlayerEventBadges(tp.player_id, events);
+  const hasBadge = badges.goals > 0 || badges.ownGoals > 0 || badges.yellows > 0 || badges.reds > 0;
+
+  // Màu áo thật của đội trong trận này (có thể khác logo CLB nếu đổi áo).
+  const shirtColor = kit?.primaryColor ?? kit?.shirt_color ?? kit?.color ?? '#1d4ed8';
+  const numberColor = kit?.numberColor ?? kit?.text_color ?? '#ffffff';
+  const borderColor = kit?.secondaryColor ?? kit?.border_color ?? 'rgba(255,255,255,0.75)';
+
+  return (
+    <div className="flex flex-col items-center w-16 sm:w-[4.5rem] shrink-0">
+      <div className="relative">
+        <div
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 shadow-lg shadow-black/30"
+          style={{ backgroundColor: shirtColor, color: numberColor, borderColor }}
+        >
+          {tp.jersey_number ?? '-'}
+        </div>
+
+        {tp.is_captain && (
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 border border-amber-200 rounded-full flex items-center justify-center text-[8px] font-black text-black shadow">
+            C
+          </span>
+        )}
+
+        {hasBadge && (
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-[1px] whitespace-nowrap">
+            {badges.goals > 0 && (
+              <span className="text-[9px] leading-none">⚽{badges.goals > 1 ? badges.goals : ''}</span>
+            )}
+            {badges.ownGoals > 0 && (
+              <span className="text-[8px] leading-none font-black text-red-400">OG{badges.ownGoals > 1 ? badges.ownGoals : ''}</span>
+            )}
+            {badges.yellows > 0 && <span className="text-[9px] leading-none">🟨</span>}
+            {badges.reds > 0 && <span className="text-[9px] leading-none">🟥</span>}
+          </div>
+        )}
+      </div>
+
+      <span
+        className="mt-2 w-full text-center text-[10px] sm:text-[11px] font-bold text-white leading-snug px-1 py-0.5 rounded bg-black/70 break-words"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+        title={displayName}
+      >
+        {displayName}
+      </span>
+    </div>
+  );
+}
+
+function FormationRow({ players, kit, events }) {
   if (!players.length) return null;
   return (
     <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
       {players.map(tp => (
-        <FormationPlayerDot key={tp.id} tp={tp} kit={kit} size="sm" />
+        <FormationPlayerCell key={tp.id ?? tp.player_id} tp={tp} kit={kit} events={events} />
       ))}
     </div>
   );
 }
 
-// FIX: trước đây so `p.position === pos` trực tiếp (chỉ khớp short-code
-// GK/DEF/MID/FW). Nếu BE trả long-form (goalkeeper/defender/...) ở endpoint
-// này, toàn bộ cầu thủ rơi ra ngoài group → sơ đồ trống dù data đủ. Dùng
-// normalizePosition (dùng chung với matchShared/MatchModal) để tránh phân kỳ.
-//
+// Suy ra sơ đồ chiến thuật (vd "4-1-3-2") từ đội hình đá chính, bỏ thủ môn,
+// theo đúng thứ tự POSITION_ORDER (DEF → MID → FWD).
+function computeFormationLabel(starters) {
+  const counts = {};
+  starters.forEach(p => {
+    const pos = normalizePosition(p.position);
+    if (pos === 'GK') return;
+    counts[pos] = (counts[pos] || 0) + 1;
+  });
+  const parts = POSITION_ORDER.filter(pos => pos !== 'GK' && counts[pos]).map(pos => counts[pos]);
+  return parts.length ? parts.join('-') : null;
+}
+
 // team: { name, logo } — hiển thị badge (logo thật hoặc initials theo màu
-// áo) ở góc sân, để phân biệt "sơ đồ này là của đội nào" mà không cần đọc
-// tiêu đề card bên ngoài. Nhỏ gọn, không chiếm chỗ của sơ đồ.
-function FormationPitch({ starters = [], kit, team }) {
+// áo) ở header cùng tỉ số + sơ đồ, để phân biệt "sơ đồ này là của đội nào"
+// mà không cần đọc tiêu đề card bên ngoài.
+function FormationPitch({ starters = [], kit, team, score, events = [], isWinner = false }) {
   const rows = POSITION_ORDER
     .map(pos => ({ pos, players: starters.filter(p => normalizePosition(p.position) === pos) }))
     .filter(r => r.players.length > 0);
 
   if (starters.length === 0) return null;
 
-  return (
-    <div className="relative rounded-2xl overflow-hidden border border-navy-light shadow-lg shadow-black/20 bg-linear-to-b from-emerald-700 to-emerald-800">
-      {/* Đường kẻ sân */}
-      <div className="absolute inset-3 border-2 border-white/25 rounded-md pointer-events-none" />
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-1/2 h-14 border-2 border-t-0 border-white/25 pointer-events-none" />
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-t-0 border-white/25 pointer-events-none" />
-      <div className="absolute left-1/2 -translate-x-1/2 top-1/2 w-24 h-24 border-2 border-white/25 rounded-full -translate-y-1/2 pointer-events-none" />
+  const formationLabel = computeFormationLabel(starters);
 
-      {team && (
-        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/45 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 border border-white/15 max-w-[65%]">
-          <TeamBadge name={team.name} logo={team.logo} kit={kit} size={18} />
-          <span className="text-[10px] font-bold text-white uppercase tracking-wide truncate">{team.name}</span>
+  return (
+    <div className={`relative rounded-2xl overflow-hidden border shadow-lg shadow-black/20 bg-linear-to-b from-emerald-700 to-emerald-800 ${isWinner ? 'border-amber-400/70 ring-1 ring-amber-400/40' : 'border-navy-light'}`}>
+      {/* Header: logo + tên đội + tỉ số + sơ đồ chiến thuật + badge thắng */}
+      <div className="relative z-20 flex items-center justify-between gap-2 px-3 py-2 bg-black/40 backdrop-blur-sm border-b border-white/10">
+        <div className="flex items-center gap-2 min-w-0">
+          <TeamBadge name={team?.name} logo={team?.logo} kit={kit} size={22} />
+          <span className="text-xs font-black text-white uppercase tracking-wide truncate">{team?.name}</span>
+          {isWinner && (
+            <span className="shrink-0 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
+              🏆 Thắng
+            </span>
+          )}
         </div>
-      )}
+        <div className="flex items-center gap-2 shrink-0">
+          {score != null && (
+            <span className="text-sm font-black text-white tabular-nums">{score}</span>
+          )}
+          {formationLabel && (
+            <span className="text-[10px] font-bold text-emerald-200 bg-emerald-900/60 border border-emerald-500/30 rounded-full px-2 py-0.5">
+              {formationLabel}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Đường kẻ sân */}
+      <div className="absolute inset-3 top-14 border-2 border-white/25 rounded-md pointer-events-none" />
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 w-1/2 h-14 border-2 border-t-0 border-white/25 pointer-events-none" />
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-t-0 border-white/25 pointer-events-none" />
+      <div className="absolute left-1/2 -translate-x-1/2 top-[58%] w-24 h-24 border-2 border-white/25 rounded-full -translate-y-1/2 pointer-events-none" />
 
       <div className="relative z-10 py-6 sm:py-8 flex flex-col gap-6 sm:gap-10">
         {rows.map(row => (
-          <FormationRow key={row.pos} players={row.players} kit={kit} />
+          <FormationRow key={row.pos} players={row.players} kit={kit} events={events} />
         ))}
       </div>
     </div>
@@ -169,6 +310,12 @@ export default function MatchDetail() {
 
   const homeKit = kitFor('home');
   const awayKit = kitFor('away');
+
+  // "Thắng" chỉ xác định khi đã có tỉ số CHÍNH THỨC (hasScore) và không hoà
+  // — không tự suy diễn winner_team_id vì matchResult chưa chắc có trong
+  // payload `match` (tuỳ getMatchById có include hay không).
+  const homeIsWinner = hasScore && match.home_score > match.away_score;
+  const awayIsWinner = hasScore && match.away_score > match.home_score;
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-20">
@@ -276,7 +423,17 @@ export default function MatchDetail() {
                 <div className="space-y-6 relative z-10">
                   {events.map((evt) => {
                     const isHome = evt.team_id === match.home_team_id;
-                    const icon = evt.type === 'goal' ? '⚽' : evt.type === 'yellow' ? '🟨' : evt.type === 'red' ? '🟥' : '🔄';
+                    // FIX: khớp đúng enum thật ('goal'/'own_goal'/'yellow_card'/
+                    // 'second_yellow'/'red_card'/'penalty_scored'/'substitution_*')
+                    // thay vì 'goal'/'yellow'/'red' cũ (không khớp gì cả, luôn rơi
+                    // vào nhánh 🔄 mặc định).
+                    const icon = GOAL_EVENT_TYPES.has(evt.type) ? '⚽'
+                      : evt.type === 'own_goal' ? '⚽'
+                        : evt.type === 'yellow_card' ? '🟨'
+                          : evt.type === 'second_yellow' ? '🟨🟥'
+                            : evt.type === 'red_card' ? '🟥'
+                              : '🔄';
+                    const eventLabel = EVENT_TYPE_LABEL[evt.type] ?? evt.type;
                     const allLineups = [...lineups.home, ...lineups.away];
                     const allPlayers = [...(detailData?.homePlayers || []), ...(detailData?.awayPlayers || [])];
                     const lineupPlayer = allLineups.find(l => l.player_id === evt.player_id);
@@ -286,8 +443,8 @@ export default function MatchDetail() {
 
                     return (
                       <div key={evt.id} className="flex items-center gap-4 sm:gap-6 group">
-                        <div className="w-12 h-12 rounded-full border-4 border-navy bg-navy-dark flex items-center justify-center shrink-0 shadow-md shadow-black/20 z-10 text-neon font-mono font-black text-sm group-hover:border-neon/30 transition-colors">
-                          {evt.minute}'
+                        <div className="w-12 h-12 rounded-full border-4 border-navy bg-navy-dark flex items-center justify-center shrink-0 shadow-md shadow-black/20 z-10 text-neon font-mono font-black text-xs group-hover:border-neon/30 transition-colors">
+                          {formatMinuteLabel(evt)}
                         </div>
                         <div className={`flex-1 bg-navy-dark/50 border border-navy-light rounded-xl p-3 sm:p-4 flex items-center gap-4 shadow-sm hover:bg-navy-dark transition-colors ${isHome ? 'border-l-blue-500/50 border-l-4' : 'border-l-amber-500/50 border-l-4'}`}>
                           <span className="text-2xl shrink-0 drop-shadow-md">{icon}</span>
@@ -298,7 +455,7 @@ export default function MatchDetail() {
                                 {isHome ? 'Sân nhà' : 'Sân khách'}
                               </span>
                             </div>
-                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{evt.type}</span>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{eventLabel}</span>
                           </div>
                         </div>
                       </div>
@@ -332,13 +489,16 @@ export default function MatchDetail() {
             <div className="space-y-6">
               {/* Home */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <TeamBadge name={homeName} logo={homeTeamInfo?.logo} kit={homeKit} size={20} />
-                  <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
-                </div>
                 {homeStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={homeStarters} kit={homeKit} team={{ name: homeName, logo: homeTeamInfo?.logo }} />
+                    <FormationPitch
+                      starters={homeStarters}
+                      kit={homeKit}
+                      team={{ name: homeName, logo: homeTeamInfo?.logo }}
+                      score={hasScore ? match.home_score : null}
+                      events={events}
+                      isWinner={homeIsWinner}
+                    />
                     {homeSubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
@@ -351,22 +511,31 @@ export default function MatchDetail() {
                     )}
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
-                    <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
-                    <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
+                      <TeamBadge name={homeName} logo={homeTeamInfo?.logo} kit={homeKit} size={20} />
+                      <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{homeName}</h4>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
+                      <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
+                      <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
+                    </div>
+                  </>
                 )}
               </div>
 
               {/* Away */}
               <div className="bg-navy border border-navy-light rounded-2xl p-4 shadow-lg shadow-black/20">
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
-                  <TeamBadge name={awayName} logo={awayTeamInfo?.logo} kit={awayKit} size={20} />
-                  <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>
-                </div>
                 {awayStarters.length > 0 ? (
                   <>
-                    <FormationPitch starters={awayStarters} kit={awayKit} team={{ name: awayName, logo: awayTeamInfo?.logo }} />
+                    <FormationPitch
+                      starters={awayStarters}
+                      kit={awayKit}
+                      team={{ name: awayName, logo: awayTeamInfo?.logo }}
+                      score={hasScore ? match.away_score : null}
+                      events={events}
+                      isWinner={awayIsWinner}
+                    />
                     {awaySubs.length > 0 && (
                       <>
                         <h5 className="text-xs font-bold text-gray-400 uppercase mt-4 mb-2">Dự bị</h5>
@@ -379,10 +548,16 @@ export default function MatchDetail() {
                     )}
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
-                    <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
-                    <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2 mb-3 pb-3 border-b border-navy-light">
+                      <TeamBadge name={awayName} logo={awayTeamInfo?.logo} kit={awayKit} size={20} />
+                      <h4 className="font-bold text-white text-sm uppercase tracking-wider truncate">{awayName}</h4>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 opacity-80">
+                      <Clock className="w-10 h-10 mb-3 text-neon/50 animate-pulse" />
+                      <p className="text-sm font-medium tracking-wide">Hiện đang chờ đội hình</p>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

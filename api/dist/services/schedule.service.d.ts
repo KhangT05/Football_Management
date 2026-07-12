@@ -6,7 +6,36 @@ export declare class ScheduleService extends ScheduleEngine {
     private readonly query;
     constructor(prisma: PrismaClient);
     findAll(req?: QueryRequest): Promise<PaginatedResult<Match>>;
+    /**
+     * FIX (thiếu tên đội/venue/kết quả hiệp phụ-luân lưu/thẻ đỏ-vàng trên
+     * card lịch thi đấu công khai): trước đây chỉ findMany() cột thô của
+     * Match — không include quan hệ nào, không đếm thẻ. ScheduleMatchCard.jsx
+     * (FE) đã code sẵn đầy đủ UI cho các field này (home_team.logo,
+     * matchResult.home_penalty_score, home_red_cards...) nhưng luôn nhận
+     * undefined vì BE chưa từng trả — bug hoàn toàn ở tầng BE, không phải FE.
+     *
+     * Giờ:
+     *   1. include home_team/away_team/venue/matchResult (đủ cho tên đội,
+     *      logo, sân, nhãn "Sau hiệp phụ"/"Luân lưu").
+     *   2. Đếm thẻ vàng/đỏ theo từng match bằng 1 groupBy DUY NHẤT trên
+     *      matchEvent (không loop query theo từng match — tránh N+1), rồi
+     *      gắn phẳng vào từng match dưới dạng home_yellow_cards/
+     *      away_yellow_cards/home_red_cards/away_red_cards — đúng shape mà
+     *      hasRedCard()/getYellowCount() ở ScheduleMatchCard.jsx đã ưu tiên
+     *      đọc (countField trước, fallback events sau).
+     */
     findMatchesBySeason(seasonId: number, req?: QueryRequest): Promise<PaginatedResult<Match>>;
+    /**
+     * Đếm thẻ vàng/đỏ cho 1 batch match bằng 1 groupBy duy nhất trên
+     * matchEvent (match_id IN [...]), rồi gắn phẳng field
+     * home_yellow_cards/away_yellow_cards/home_red_cards/away_red_cards vào
+     * từng match — khớp đúng field name ScheduleMatchCard.jsx (FE) đang ưu
+     * tiên đọc trong hasRedCard()/getYellowCount().
+     *
+     * Không dùng include matchEvent trực tiếp trên match (sẽ kéo theo toàn
+     * bộ event list, nặng và không cần thiết chỉ để đếm thẻ).
+     */
+    private _attachCardCounts;
     findMatchesByTeam(seasonId: number, teamId: number, req?: QueryRequest): Promise<PaginatedResult<MatchByTeamRow>>;
     generateGroupsAndSchedule(seasonId: number, options: GenerateOptions): Promise<GenerateResult>;
     /**

@@ -1,6 +1,7 @@
 import { createAppError } from '../common/app.error.js';
 import {
     Match,
+    MatchEventType,
     MatchStatus,
     PhaseFormat,
     PhaseStatus,
@@ -35,6 +36,32 @@ const MATCH_WITH_PHASE_SELECT = {
     phase: { select: { id: true, name: true, type: true, format: true } },
 } as const;
 
+// FIX: select dùng cho danh sách match card công khai (ScheduleResults) —
+// trước đây findMatchesBySeason chỉ trả cột thô của Match (không có tên
+// đội, không có venue, không có kết quả hiệp phụ/luân lưu) khiến
+// ScheduleMatchCard.jsx luôn rơi vào fallback "Đội #?" và không bao giờ
+// hiện được nhãn "Sau hiệp phụ"/"Luân lưu" hay chấm thẻ đỏ — dù UI đã code
+// sẵn đầy đủ, chỉ là dữ liệu chưa bao giờ được BE trả về.
+const MATCH_CARD_INCLUDE = {
+    home_team: { select: { id: true, name: true, logo: true } },
+    away_team: { select: { id: true, name: true, logo: true } },
+    venue: { select: { id: true, name: true } },
+    matchResult: {
+        select: {
+            result_type: true,
+            home_penalty_score: true,
+            away_penalty_score: true,
+            home_extra_time_score: true,
+            away_extra_time_score: true,
+        },
+    },
+} as const;
+
+// Type thẻ vàng/đỏ tính vào "reds" — second_yellow (thẻ vàng thứ 2) thực
+// chất là bị đuổi, nên gộp vào red_cards giống cách BE tự tính
+// is_suspended ở matchresult.service.ts (_updatePlayerStatistics).
+const RED_CARD_EVENT_TYPES: MatchEventType[] = [MatchEventType.red_card, MatchEventType.second_yellow];
+
 // Status không tính vào conflict check (trận đã huỷ/xử thua không còn giữ
 // chỗ lịch của team/player nữa).
 const NON_BLOCKING_STATUSES: MatchStatus[] = [MatchStatus.cancelled, MatchStatus.forfeited];
@@ -62,7 +89,25 @@ export class ScheduleService extends ScheduleEngine {
     findAll(req: QueryRequest = {}): Promise<PaginatedResult<Match>> {
         return this.query.run(req);
     }
-    // schedule.service.ts
+
+    /**
+     * FIX (thiếu tên đội/venue/kết quả hiệp phụ-luân lưu/thẻ đỏ-vàng trên
+     * card lịch thi đấu công khai): trước đây chỉ findMany() cột thô của
+     * Match — không include quan hệ nào, không đếm thẻ. ScheduleMatchCard.jsx
+     * (FE) đã code sẵn đầy đủ UI cho các field này (home_team.logo,
+     * matchResult.home_penalty_score, home_red_cards...) nhưng luôn nhận
+     * undefined vì BE chưa từng trả — bug hoàn toàn ở tầng BE, không phải FE.
+     *
+     * Giờ:
+     *   1. include home_team/away_team/venue/matchResult (đủ cho tên đội,
+     *      logo, sân, nhãn "Sau hiệp phụ"/"Luân lưu").
+     *   2. Đếm thẻ vàng/đỏ theo từng match bằng 1 groupBy DUY NHẤT trên
+     *      matchEvent (không loop query theo từng match — tránh N+1), rồi
+     *      gắn phẳng vào từng match dưới dạng home_yellow_cards/
+     *      away_yellow_cards/home_red_cards/away_red_cards — đúng shape mà
+     *      hasRedCard()/getYellowCount() ở ScheduleMatchCard.jsx đã ưu tiên
+     *      đọc (countField trước, fallback events sau).
+     */
     async findMatchesBySeason(seasonId: number, req: QueryRequest = {}): Promise<PaginatedResult<Match>> {
         const page = Math.max(1, Number(req.page ?? 1));
         const perPage = Math.max(1, Math.min(Number(req.per_page ?? 20), 300));
@@ -82,15 +127,63 @@ export class ScheduleService extends ScheduleEngine {
                 orderBy: { [sortCol]: direction },
                 skip: (page - 1) * perPage,
                 take: perPage,
+                include: MATCH_CARD_INCLUDE,
             }),
             this.prisma.match.count({ where }),
         ]);
 
+        const withCardMeta = await this._attachCardCounts(data);
+
         const last_page = Math.max(1, Math.ceil(total / perPage));
         return {
-            data,
+            data: withCardMeta,
             meta: { total, page, per_page: perPage, last_page, has_next: page < last_page },
         };
+    }
+
+    /**
+     * Đếm thẻ vàng/đỏ cho 1 batch match bằng 1 groupBy duy nhất trên
+     * matchEvent (match_id IN [...]), rồi gắn phẳng field
+     * home_yellow_cards/away_yellow_cards/home_red_cards/away_red_cards vào
+     * từng match — khớp đúng field name ScheduleMatchCard.jsx (FE) đang ưu
+     * tiên đọc trong hasRedCard()/getYellowCount().
+     *
+     * Không dùng include matchEvent trực tiếp trên match (sẽ kéo theo toàn
+     * bộ event list, nặng và không cần thiết chỉ để đếm thẻ).
+     */
+    private async _attachCardCounts<T extends { id: number; home_team_id: number; away_team_id: number }>(
+        matches: T[],
+    ): Promise<(T & {
+        home_yellow_cards: number; away_yellow_cards: number;
+        home_red_cards: number; away_red_cards: number;
+    })[]> {
+        if (matches.length === 0) return [];
+
+        const matchIds = matches.map(m => m.id);
+        const cardEvents = await this.prisma.matchEvent.groupBy({
+            by: ['match_id', 'team_id', 'type'],
+            where: {
+                match_id: { in: matchIds },
+                type: { in: [MatchEventType.yellow_card, ...RED_CARD_EVENT_TYPES] },
+            },
+            _count: { _all: true },
+        });
+
+        return matches.map(m => {
+            const forThisMatch = cardEvents.filter(c => c.match_id === m.id);
+            const countFor = (teamId: number, types: MatchEventType[]) =>
+                forThisMatch
+                    .filter(c => c.team_id === teamId && types.includes(c.type as MatchEventType))
+                    .reduce((sum, c) => sum + c._count._all, 0);
+
+            return {
+                ...m,
+                home_yellow_cards: countFor(m.home_team_id, [MatchEventType.yellow_card]),
+                away_yellow_cards: countFor(m.away_team_id, [MatchEventType.yellow_card]),
+                home_red_cards: countFor(m.home_team_id, RED_CARD_EVENT_TYPES),
+                away_red_cards: countFor(m.away_team_id, RED_CARD_EVENT_TYPES),
+            };
+        });
     }
     async findMatchesByTeam(
         seasonId: number,
