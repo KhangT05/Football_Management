@@ -12,19 +12,13 @@ const phaseSelect = {
     select: { id: true, name: true, format: true },
 } satisfies Prisma.PhaseDefaultArgs;
 
-const matchResultSelect = {
+export const matchResultSelect = {
     select: {
-        id: true,
-        winner_team_id: true,
-        home_extra_time_score: true,
-        away_extra_time_score: true,
-        home_penalty_score: true,
-        away_penalty_score: true,
-        home_final_score: true,
-        away_final_score: true,
-        result_type: true,
-        status: true,
-        notes: true,
+        id: true, match_id: true, winner_team_id: true,
+        home_extra_time_score: true, away_extra_time_score: true,
+        home_penalty_score: true, away_penalty_score: true,
+        home_final_score: true, away_final_score: true,
+        result_type: true, status: true, notes: true, created_at: true,
     },
 } satisfies Prisma.MatchResultDefaultArgs;
 

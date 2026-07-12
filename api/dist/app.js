@@ -41,7 +41,7 @@ const PORT = process.env.PORT ?? 3000;
 async function bootstrap() {
     await connectRedis();
     await prisma.$connect();
-    if (process.env.RUN_SEED_ON_BOOT === "true") {
+    if (process.env.RUN_SEED_ON_BOOT === "false") {
         console.warn("[Seed] RUN_SEED_ON_BOOT=true — đang chạy seedDatabase() lúc boot. " +
             "Chỉ nên bật cờ này cho lần setup môi trường đầu tiên, KHÔNG bật ở production thường trực.");
         await seedDatabase();

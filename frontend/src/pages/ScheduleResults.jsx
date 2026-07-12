@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid } from 'lucide-react';
+import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid, Rows3 } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
 import useTeamStore from '../store/teamStore';
@@ -37,11 +37,30 @@ function getPhaseId(m) {
   return m.phase?.id ?? m.phaseId ?? null;
 }
 
+// Local storage key cho preference view — người dùng chọn 1 lần, giữ nguyên
+// giữa các lần ghé trang thay vì luôn reset về mặc định.
+const VIEW_STORAGE_KEY = 'schedule_card_view';
+
 // ── Page ──────────────────────────────────────────────────────
 export default function ScheduleResults() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
+
+  // Chế độ hiển thị card: 'detailed' (card lớn, logo 2 bên) hoặc 'compact'
+  // (row gọn kiểu livescore). Đọc từ localStorage nếu người dùng đã chọn
+  // trước đó, mặc định 'detailed'.
+  const [cardView, setCardView] = useState(() => {
+    try {
+      return localStorage.getItem(VIEW_STORAGE_KEY) === 'compact' ? 'compact' : 'detailed';
+    } catch {
+      return 'detailed';
+    }
+  });
+  const handleSetCardView = (v) => {
+    setCardView(v);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, v); } catch { /* ignore */ }
+  };
 
   // Filter round CHỈ áp dụng cho match round-robin (group_stage) — trước đây
   // filter này áp cho toàn bộ allMatches bao gồm cả knockout, nhưng knockout
@@ -99,14 +118,26 @@ export default function ScheduleResults() {
     return rounds;
   }, [roundRobinMatches]);
 
+  // scheduled/ongoing/postponed: trận CHƯA CÓ kết quả cuối cùng, còn chờ đá
+  // (hoặc chờ đá lại sau hoãn). Đưa postponed vào đây thay vì để rơi mất, vì
+  // người dùng vẫn cần thấy nó để biết lịch bị dời chứ không phải đã xong.
   const upcoming = useMemo(() => {
-    let list = roundRobinMatches.filter(m => m.status === 'scheduled' || m.status === 'ongoing');
+    let list = roundRobinMatches.filter(m =>
+      m.status === 'scheduled' || m.status === 'ongoing' || m.status === 'postponed'
+    );
     if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
     return list.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
   }, [roundRobinMatches, filterRound]);
 
+  // finished/cancelled/forfeited/abandoned/bye: đã có kết cục xác định.
+  // pending_official/needs_review: đã đá xong, đang chờ xác nhận/khiếu nại —
+  // vẫn thuộc "kết quả" về mặt UX (trận đã diễn ra), badge sẽ tự hiện rõ
+  // trạng thái "Chờ xác nhận KQ" / "Cần xem xét" nên không gây hiểu nhầm.
   const results = useMemo(() => {
-    let list = roundRobinMatches.filter(m => m.status === 'finished' || m.status === 'cancelled' || m.status === 'forfeited');
+    let list = roundRobinMatches.filter(m =>
+      ['finished', 'cancelled', 'forfeited', 'abandoned', 'bye', 'pending_official', 'needs_review']
+        .includes(m.status)
+    );
     if (filterRound) list = list.filter(m => String(m.round) === String(filterRound));
     return list.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
   }, [roundRobinMatches, filterRound]);
@@ -216,6 +247,9 @@ export default function ScheduleResults() {
   const paginatedData = currentData.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const selectedSeason = seasons.find(s => String(s.id) === String(selectedSeasonId));
+
+  // Gap giữa các card tuỳ view — compact cần gọn hơn detailed
+  const cardListGapClass = cardView === 'compact' ? 'gap-3' : 'gap-6';
 
   return (
     <div className="py-12 lg:py-16 bg-navy-dark min-h-screen relative">
@@ -343,7 +377,7 @@ export default function ScheduleResults() {
           </div>
 
           {/* Stats bar */}
-          <div className="flex items-center justify-between mb-6 px-2 animate-fade-in">
+          <div className="flex items-center justify-between mb-6 px-2 animate-fade-in flex-wrap gap-3">
             {selectedSeason && (
               <div className="flex items-center gap-3 text-xs font-bold text-gray-500 uppercase tracking-widest">
                 <span className="flex items-center gap-1.5 text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20"><Users className="w-3.5 h-3.5" /> Max {selectedSeason.max_teams} đội</span>
@@ -358,6 +392,24 @@ export default function ScheduleResults() {
                   <span className="text-amber-400 ml-1">{upcoming.length} Tới</span>
                 </p>
               )}
+
+              {/* View switcher — detailed (card lớn) / compact (row gọn) */}
+              <div className="flex items-center bg-navy-dark border border-navy-light rounded-lg p-1 shadow-inner">
+                <button
+                  onClick={() => handleSetCardView('detailed')}
+                  title="Xem dạng card"
+                  className={`p-1.5 rounded-md transition-all ${cardView === 'detailed' ? 'bg-blue-500/20 text-blue-300' : 'text-gray-500 hover:text-white'}`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleSetCardView('compact')}
+                  title="Xem dạng danh sách gọn"
+                  className={`p-1.5 rounded-md transition-all ${cardView === 'compact' ? 'bg-blue-500/20 text-blue-300' : 'text-gray-500 hover:text-white'}`}
+                >
+                  <Rows3 className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
               <button
                 onClick={handleRefresh}
@@ -415,9 +467,9 @@ export default function ScheduleResults() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div className={`grid grid-cols-1 ${cardListGapClass}`}>
                 {paginatedData.map((match, idx) => (
-                  <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                  <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} view={cardView} />
                 ))}
               </div>
             )}
@@ -461,9 +513,9 @@ export default function ScheduleResults() {
                     {stage.phaseName}
                     <span className="ml-2 text-gray-500 font-bold normal-case">({stage.matches.length} trận)</span>
                   </h3>
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className={`grid grid-cols-1 ${cardListGapClass}`}>
                     {stage.matches.map((match, idx) => (
-                      <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} />
+                      <ScheduleMatchCard key={match.id} match={match} idx={idx} onSelectMatch={setSelectedMatch} view={cardView} />
                     ))}
                   </div>
                 </div>

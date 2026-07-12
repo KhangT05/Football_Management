@@ -268,12 +268,29 @@ export class MatchLifecycleService {
         const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
         if (eventCount > 0)
             throw createAppError('CONFLICT', `Match ${matchId} đã có ${eventCount} events — dùng finalizeMatch() thay vì manual score`);
+
         const resultType = input.resultType ?? MatchResultType.full_time;
+
         if (match.phase.format === PhaseFormat.knockout && resultType === MatchResultType.full_time) {
             const isTwoLegged = (match.phase.legs as 1 | 2) === 2 && match.leg != null;
             if (!isTwoLegged && input.homeScore === input.awayScore)
                 throw createAppError('CONFLICT', `${KNOCKOUT_DRAW_MARKER}: Match ${matchId} đang hoà ${input.homeScore}-${input.awayScore} ở knockout — cần extra_time/penalty`);
         }
+
+        // NEW: resultType=extra_time bắt buộc phải có tổng bàn sau ET, nếu
+        // không confirmOfficial() sẽ fallback sai (homeExtraTime=homeScore,
+        // tức coi như KHÔNG có ET nào được đá — sai lệch dữ liệu report).
+        if (resultType === MatchResultType.extra_time &&
+            (input.homeExtraTime === undefined || input.awayExtraTime === undefined)) {
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `submitManualScore: resultType=extra_time cần homeExtraTime + awayExtraTime (tổng bàn sau hiệp phụ, không phải chỉ bàn ghi trong ET)`,
+            );
+        }
+        if (resultType === MatchResultType.extra_time && input.homeExtraTime === input.awayExtraTime) {
+            throw createAppError('CONFLICT', `${KNOCKOUT_ET_DRAW_MARKER}: Match ${matchId} vẫn hoà ${input.homeExtraTime}-${input.awayExtraTime} sau hiệp phụ — cần penalty`);
+        }
+
         await this.prisma.match.update({
             where: { id: matchId },
             data: {
@@ -282,6 +299,8 @@ export class MatchLifecycleService {
                 manual_home_score: input.homeScore,
                 manual_away_score: input.awayScore,
                 finalize_result_type: input.resultType,
+                finalize_home_extra_time: input.homeExtraTime ?? null,  // NEW
+                finalize_away_extra_time: input.awayExtraTime ?? null,  // NEW
                 finalize_home_penalty: input.homePenalty ?? null,
                 finalize_away_penalty: input.awayPenalty ?? null,
                 finalize_home_half_time: null,
@@ -306,38 +325,43 @@ export class MatchLifecycleService {
                 finalize_away_half_time: true,
                 finalize_home_penalty: true,
                 finalize_away_penalty: true,
+                finalize_home_extra_time: true,  // NEW
+                finalize_away_extra_time: true,  // NEW
                 phase: { select: { format: true } },
             },
         });
         if (!match) throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
-        if (
-            match.status !== MatchStatus.pending_official &&
-            match.status !== MatchStatus.needs_review
-        )
+        if (match.status !== MatchStatus.pending_official && match.status !== MatchStatus.needs_review)
             throw createAppError('CONFLICT', `Match ${matchId} không ở pending_official/needs_review`);
+
         const resultType = match.finalize_result_type ?? MatchResultType.full_time;
         const isManual = match.manual_home_score !== null && match.manual_away_score !== null;
-        let homeScore: number;
-        let awayScore: number;
-        let homeExtraTime: number | undefined;
-        let awayExtraTime: number | undefined;
+        let homeScore: number, awayScore: number;
+        let homeExtraTime: number | undefined, awayExtraTime: number | undefined;
+
         if (isManual) {
             homeScore = match.manual_home_score!;
             awayScore = match.manual_away_score!;
+            const hasExtraTime = resultType === MatchResultType.extra_time || resultType === MatchResultType.penalty;
+            if (hasExtraTime) {
+                // Fallback về homeScore khi không có finalize_home_extra_time
+                // (case penalty đá thẳng không qua ET) — khớp hành vi nhánh
+                // event-driven bên dưới, nơi hasExtraTime luôn ghi
+                // home_extra_time_score kể cả khi homeET=0.
+                homeExtraTime = match.finalize_home_extra_time ?? homeScore;
+                awayExtraTime = match.finalize_away_extra_time ?? awayScore;
+            }
         } else {
-            const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(
-                matchId, match.home_team_id,
-            );
+            const { home90, away90, homeET, awayET } = await this._computeScoreFromEvents(matchId, match.home_team_id);
             homeScore = home90;
             awayScore = away90;
-            const hasExtraTime =
-                resultType === MatchResultType.extra_time ||
-                resultType === MatchResultType.penalty;
+            const hasExtraTime = resultType === MatchResultType.extra_time || resultType === MatchResultType.penalty;
             if (hasExtraTime) {
                 homeExtraTime = home90 + homeET;
                 awayExtraTime = away90 + awayET;
             }
         }
+
         return this.matchResultService.confirmResult(
             matchId,
             {
@@ -926,8 +950,7 @@ export class MatchLifecycleService {
      *   Giờ forward đúng field.
      * - REQUIRES: AdminRecordResultInput cần có 2 field optional
      *   `homePenaltyScore?: number` và `awayPenaltyScore?: number` trong
-     *   types/match.type.ts — chưa xác nhận được field này đã tồn tại chưa
-     *   vì không có file đó trong context, cần bổ sung nếu thiếu.
+     *   types/match.type.ts — đã có sẵn.
      */
     /**
      * FIX (knockout draw + extra_time + penalty flow):
@@ -950,34 +973,30 @@ export class MatchLifecycleService {
      * awayScore LUÔN được hiểu là "tỉ số cuối cùng tại thời điểm gọi" (có thể
      * đã bao gồm ET), và được dùng làm cả homeScore lẫn homeExtraTime khi
      * resultType cần ET — ĐÂY LÀ GIẢ ĐỊNH CHƯA VERIFY được với
-     * matchresult.service.ts (không có trong context). Cần xác nhận
-     * confirmResultInTx có nhận & xử lý đúng homeExtraTime/awayExtraTime
-     * giống confirmResult (dùng ở confirmOfficial) hay không — nếu
-     * confirmResultInTx bỏ qua field này, home_extra_time_score sẽ bị null
-     * sai lệch dù winner vẫn đúng (vì final score dùng luôn homeScore).
-     */
-    // Marker để FE detect lỗi "knockout draw" ném từ MatchResultService._guardConfirm
-    // — message gốc: `Match ${id}: knockout draw ở ${resultType} — cần extra_time
-    // hoặc penalty`. Export marker này thay vì để FE tự đoán string, tránh 2 nơi
-    // hard-code cùng 1 chuỗi khác nhau (bug đã xảy ra ở bản fix trước).
-
-    /**
-     * FIX (bug report kép — bản fix trước tự viết guard riêng, SAI 2 chỗ):
-     * 1. Không cần tự check draw ở đây nữa — confirmResultInTx đã gọi
-     *    _guardConfirm, tự throw VALIDATION_ERROR đúng cho cả full_time và
-     *    extra_time (kiểm tra qua homeExtraTime, không phải homeScore).
-     *    Viết lại guard riêng ở lifecycle service tạo 2 nguồn sự thật có thể
-     *    lệch nhau (bản trước: so sai field cho case extra_time).
-     * 2. homeExtraTimeScore/awayExtraTimeScore là field RIÊNG với homeScore/
-     *    awayScore — theo _resolveWinner: case extra_time dùng
-     *    `homeExtraTime ?? homeScore` làm homeFinal TRỰC TIẾP, không cộng dồn.
-     *    Bản fix trước gán homeExtraTime = homeScore (dùng lại chung 1 giá
-     *    trị) là sai model — phải tách 2 input riêng ở FE.
+     * matchresult.service.ts. Cần xác nhận confirmResultInTx có nhận & xử lý
+     * đúng homeExtraTime/awayExtraTime giống confirmResult (dùng ở
+     * confirmOfficial) hay không — nếu confirmResultInTx bỏ qua field này,
+     * home_extra_time_score sẽ bị null sai lệch dù winner vẫn đúng (vì final
+     * score dùng luôn homeScore).
      *
-     * Luồng FE dự kiến không đổi (full_time draw -> modal ET -> vẫn draw ->
-     * modal pen), chỉ khác: modal ET giờ gửi homeExtraTimeScore/
-     * awayExtraTimeScore là TỔNG SAU HIỆP PHỤ, còn homeScore/awayScore vẫn
-     * giữ nguyên tỉ số 90' đã đóng băng lúc mở modal (không đổi theo ET input).
+     * FIX (scorers không gắn player_id thật — bug report mới nhất):
+     * - Trước đây `input.scorers` LUÔN tạo MatchEvent với player_id=null,
+     *   tên cầu thủ chỉ nằm ở `note` (free-text). Hệ quả:
+     *     1. PlayerStatistic.goals_scored KHÔNG tăng cho các bàn này —
+     *        buildStatDeltas/_updatePlayerStatistics group theo player_id,
+     *        player_id=null bị bỏ qua hoàn toàn khỏi thống kê.
+     *     2. buildGoalsTimeline() (dùng ở getMatchReport, chính là nguồn
+     *        data cho UI kiểu "Alexis Mac Allister 10'") resolve tên qua
+     *        `playerNameLookup` (map từ Player thật trong lineup) chứ KHÔNG
+     *        đọc `note` — nên trước đây các bàn nhập qua scorers luôn hiện
+     *        "Unknown" trên UI report, dù `note` có lưu đúng tên.
+     * - Giờ: nếu `AdminScorerInput.playerId` được truyền, dùng nó làm
+     *   player_id thật (validate giống hệt pattern đang áp dụng cho
+     *   `cards`: teamId phải thuộc match, player phải tồn tại, chưa bị
+     *   truất quyền thi đấu). Nếu không có playerId (case chưa có đội hình
+     *   chi tiết), giữ hành vi cũ — player_id=null, name chỉ nằm ở note,
+     *   goalsTimeline sẽ fallback "Unknown" (không thể tránh khi không có
+     *   Player thật để liên kết).
      */
     async adminRecordResult(
         matchId: number,
@@ -1056,11 +1075,47 @@ export class MatchLifecycleService {
                     );
             }
             if (input.scorers?.length) {
+                // teamId phải thuộc match — cùng chuẩn với validate của cards.
+                const validTeamIds = new Set([match.home_team_id, match.away_team_id]);
+                const badScorerTeam = input.scorers.find(s => !validTeamIds.has(s.teamId));
+                if (badScorerTeam)
+                    throw createAppError(
+                        'VALIDATION_ERROR',
+                        `Team ${badScorerTeam.teamId} không thuộc match ${matchId}`,
+                    );
+
+                // playerId (nếu có) phải là Player có thật và chưa bị truất
+                // quyền thi đấu ở trận này — cùng guard đang áp dụng cho cards,
+                // để tránh ghi bàn cho cầu thủ đã nhận thẻ đỏ trước đó.
+                const scorerPlayerIds = [...new Set(
+                    input.scorers.filter(s => s.playerId != null).map(s => s.playerId as number),
+                )];
+                if (scorerPlayerIds.length > 0) {
+                    for (const s of input.scorers) {
+                        if (s.playerId != null) {
+                            await assertPlayerNotSentOff(tx, matchId, s.playerId);
+                        }
+                    }
+                    const existingPlayers = await tx.player.findMany({
+                        where: { id: { in: scorerPlayerIds } },
+                        select: { id: true },
+                    });
+                    const foundIds = new Set(existingPlayers.map(p => p.id));
+                    const missing = scorerPlayerIds.filter(id => !foundIds.has(id));
+                    if (missing.length > 0)
+                        throw createAppError(
+                            'VALIDATION_ERROR',
+                            `Player(s) không tồn tại: ${missing.join(', ')}`,
+                        );
+                }
+
                 await tx.matchEvent.createMany({
                     data: input.scorers.map((s) => ({
                         match_id: matchId,
                         team_id: s.teamId,
-                        player_id: null,
+                        // FIX: dùng playerId thật khi có, thay vì luôn null —
+                        // giữ note làm fallback hiển thị / metadata bổ sung.
+                        player_id: s.playerId ?? null,
                         type:
                             s.type === "own_goal"
                                 ? MatchEventType.own_goal

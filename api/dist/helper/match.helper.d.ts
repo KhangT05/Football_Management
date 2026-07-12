@@ -51,7 +51,7 @@ export declare function buildStatDeltas(events: {
     deltas: Map<string, StatDelta>;
 };
 export declare function toMatchResultCreateInput(matchId: number, input: ConfirmResultInput, resolution: WinnerResolution): Prisma.MatchResultCreateInput;
-export declare function toMatchUpdateOnConfirm(resolution: WinnerResolution, targetMatchStatus: MatchStatus): Prisma.MatchUpdateInput;
+export declare function toMatchUpdateOnConfirm(resolution: WinnerResolution, targetMatchStatus: MatchStatus, homeHalfTimeScore?: number | null, awayHalfTimeScore?: number | null): Prisma.MatchUpdateInput;
 export declare function buildMatchEventsQueryRequest(query: Record<string, any>): QueryRequest;
 export declare function buildStandingsQueryRequest(query: Record<string, any>): QueryRequest;
 export declare function buildPlayerStatsQueryRequest(query: Record<string, any>): QueryRequest;

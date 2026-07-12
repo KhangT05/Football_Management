@@ -26,6 +26,8 @@ export interface ManualScoreInput {
     resultType: MatchResultType;
     homePenalty?: number;
     awayPenalty?: number;
+    homeExtraTime?: number;
+    awayExtraTime?: number;
 }
 export interface ResolveAppealInput {
     resolution: 'uphold' | 'overturn';
@@ -48,8 +50,6 @@ export type EditScoreInput = {
     awayPenalty?: number;
     homeExtraTime?: number;
     awayExtraTime?: number;
-    homeHalfTime?: number;
-    awayHalfTime?: number;
     resultType?: MatchResultType;
     notes?: string;
 };
@@ -58,8 +58,21 @@ export interface AdminScorerInput {
     type: "goal" | "own_goal";
     minute: number;
     /**
-     * Free-text, stored vào MatchEvent.note
-     * Schema không có varchar player_name riêng
+     * FIX: playerId thật (liên kết Player) — khi có, MatchEvent.player_id sẽ
+     * được set đúng, giúp:
+     *   1. PlayerStatistic.goals_scored tính đúng (buildStatDeltas group theo
+     *      player_id — trước đây scorers luôn tạo player_id=null nên bàn
+     *      thắng "vô hình" với thống kê cầu thủ).
+     *   2. buildGoalsTimeline() (match.helper.ts) resolve được tên cầu thủ
+     *      thật từ lineup thay vì phải dựa vào `note` (free-text, có thể
+     *      sai chính tả / không khớp Player nào).
+     * Optional để tương thích ngược — nếu không có playerId (VD chưa nhập
+     * đội hình chi tiết), fallback dùng playerName ghi vào note như cũ.
+     */
+    playerId?: number;
+    /**
+     * Free-text fallback khi không có playerId, stored vào MatchEvent.note.
+     * Schema không có varchar player_name riêng.
      */
     playerName?: string;
     /**

@@ -360,6 +360,8 @@ export const MatchScalarFieldEnum = {
     is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
+    finalize_home_extra_time: 'finalize_home_extra_time',
+    finalize_away_extra_time: 'finalize_away_extra_time',
     deleted_at: 'deleted_at',
     user_id: 'user_id',
     venue_id: 'venue_id',

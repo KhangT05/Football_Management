@@ -1,5 +1,5 @@
-import { MatchEventType, MatchResultType, MatchStatus, PhaseFormat, Prisma, } from '../generated/prisma/client.js';
 import { createAppError } from '../common/app.error.js';
+import { MatchEventType, MatchResultType, MatchStatus, PhaseFormat, Prisma, } from '../generated/prisma/client.js';
 import { STATUS_BY_RESULT_TYPE, } from '../types/matchResult.type.js';
 import { Queryable } from '../libs/queryable.js';
 import { buildGoalsTimeline, buildMatchReportPlayerRows, buildStatDeltas, MATCH_EVENT_SELECT, statKey, toMatchResultCreateInput, toMatchUpdateOnConfirm, findAdvancedChildMatchId, isKnockoutBracketSeeded, } from '../helper/match.helper.js';
@@ -89,7 +89,7 @@ export class MatchResultService {
         });
         await tx.match.update({
             where: { id: matchId },
-            data: toMatchUpdateOnConfirm(resolution, targetMatchStatus),
+            data: toMatchUpdateOnConfirm(resolution, targetMatchStatus, input.homeHalfTimeScore, input.awayHalfTimeScore),
         });
         await this._updatePlayerStatistics(tx, matchId, seasonId, yellowSuspension);
         return {
@@ -158,6 +158,18 @@ export class MatchResultService {
      * thay vì tự viết select inline — trước đây select tay ở đây trỏ nhầm
      * `season.tournament.tournamentRule` (mảng, sai rule) và field này
      * còn không được dùng ở đâu trong hàm, chỉ tốn thêm 1 join thừa.
+     *
+     * FIX (half-time write — không có cột lưu trữ): trước đây hàm này ghi
+     * `home_half_time_score`/`away_half_time_score` vào MatchResult qua
+     * spread có điều kiện — 2 cột này KHÔNG tồn tại trên model MatchResult
+     * (xem schema.prisma, match.helper.ts#MATCH_RESULT_SELECT, và
+     * match.queries.ts#matchResultSelect — không nơi nào có field này).
+     * Bất kỳ request nào truyền homeHalfTime/awayHalfTime sẽ khiến Prisma
+     * throw lỗi "Unknown field" ngay khi update. Đã bỏ nhánh ghi này (và bỏ
+     * 2 field khỏi EditScoreInput ở match.type.ts) theo đúng yêu cầu KHÔNG
+     * đổi schema. Nếu sau này cần sửa half-time sau khi match đã finished,
+     * phải bổ sung cột trên MatchResult trước rồi mới thêm lại logic ghi ở
+     * đây.
      */
     async overrideResultInTx(tx, matchId, input) {
         const match = await tx.match.findUniqueOrThrow({
@@ -211,8 +223,6 @@ export class MatchResultService {
                 away_extra_time_score: input.awayExtraTime ?? null,
                 home_penalty_score: input.homePenalty ?? null,
                 away_penalty_score: input.awayPenalty ?? null,
-                ...(input.homeHalfTime !== undefined && { home_half_time_score: input.homeHalfTime }),
-                ...(input.awayHalfTime !== undefined && { away_half_time_score: input.awayHalfTime }),
                 winner_team_id: resolution.winnerTeamId,
                 result_type: resultType,
                 ...(input.notes !== undefined && { notes: input.notes }),
