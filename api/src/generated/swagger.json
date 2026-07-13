@@ -2111,11 +2111,22 @@
 			"Decimal": {
 				"type": "string"
 			},
+			"PitchType": {
+				"type": "string",
+				"enum": [
+					"san_5",
+					"san_7",
+					"san_11"
+				]
+			},
 			"DefaultSelection__36_SeasonPayload_": {
 				"properties": {
 					"tournament_rule_id": {
 						"type": "number",
 						"format": "double"
+					},
+					"pitch_type": {
+						"$ref": "#/components/schemas/PitchType"
 					},
 					"group_count": {
 						"type": "number",
@@ -2194,6 +2205,7 @@
 				},
 				"required": [
 					"tournament_rule_id",
+					"pitch_type",
 					"group_count",
 					"cancel_reason",
 					"registration_fee",

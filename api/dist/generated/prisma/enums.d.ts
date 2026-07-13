@@ -33,6 +33,12 @@ export declare const SeasonStatus: {
     readonly cancelled: "cancelled";
 };
 export type SeasonStatus = (typeof SeasonStatus)[keyof typeof SeasonStatus];
+export declare const PitchType: {
+    readonly san_5: "san_5";
+    readonly san_7: "san_7";
+    readonly san_11: "san_11";
+};
+export type PitchType = (typeof PitchType)[keyof typeof PitchType];
 export declare const GroupStatus: {
     readonly DRAFT: "DRAFT";
     readonly LOCKED: "LOCKED";

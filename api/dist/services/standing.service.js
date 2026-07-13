@@ -448,7 +448,7 @@ export class StandingsService {
         const sortDir = direction === 'asc' ? 'asc' : 'desc';
         const where = {
             status: { in: statusFilter },
-            is_active: true,
+            deleted_at: null,
             ...(tournamentId && { tournament_id: tournamentId }),
             ...(q && { name: { contains: q } }),
         };

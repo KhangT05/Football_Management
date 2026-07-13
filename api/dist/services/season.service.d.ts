@@ -109,5 +109,6 @@ export declare class SeasonService {
     private validateStatusTransition;
     private validateStatusPreConditions;
     private validateStatusAllowsDelete;
+    restore(id: number): Promise<Season>;
 }
 //# sourceMappingURL=season.service.d.ts.map

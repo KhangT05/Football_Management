@@ -183,6 +183,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly cancel_reason: "cancel_reason";
     readonly tournament_id: "tournament_id";
     readonly group_count: "group_count";
+    readonly pitch_type: "pitch_type";
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
 };
