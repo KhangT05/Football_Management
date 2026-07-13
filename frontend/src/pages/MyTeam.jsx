@@ -750,7 +750,7 @@ export default function MyTeam() {
       <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay z-0 pointer-events-none" />
 
-      <div className="container mx-auto px-4 max-w-6xl animate-fade-in relative z-10">
+      <div className="container mx-auto px-4 max-w-[1400px] animate-fade-in relative z-10">
 
         {/* ─── Team Switcher (multi-team) ───────────────── */}
         {!isLoading && teams.length > 1 && (
@@ -957,9 +957,8 @@ export default function MyTeam() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
+        <div className="flex flex-col gap-8">
+          <div className="space-y-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
 
             {/* ─── Matches Tab ──────────────────────────── */}
             {activeTab === 'matches' && (
@@ -1066,23 +1065,119 @@ export default function MyTeam() {
                 lg:col-span-2 của grid ngoài nên cần breakpoint rộng hơn để
                 tránh bóp méo 2 cột con). */}
             {activeTab === 'roster' && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                {/* Sơ đồ đội hình */}
-                <div className="space-y-3">
-                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                    <Trophy className="w-3.5 h-3.5" /> Sơ đồ đội hình
-                    <span className="normal-case font-medium text-gray-600">— bấm vào cầu thủ để xem/sửa</span>
-                  </p>
+              <div className="space-y-6">
+                
+                {/* Stats Card (Nằm ngang) */}
+                <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-500 pointer-events-none">
+                    <Trophy className="w-28 h-28 text-neon" />
+                  </div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2.5 mb-5 relative z-10 border-b border-navy-light/50 pb-4">
+                    <div className="p-2 bg-yellow-400/20 rounded-xl border border-yellow-400/30">
+                      <Trophy className="w-4 h-4 text-yellow-400" />
+                    </div>
+                    Thống kê đội
+                  </h3>
                   {isLoading ? (
-                    <div className="skeleton h-72 rounded-2xl" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                      {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton h-20 rounded-2xl" />)}
+                    </div>
                   ) : (
-                    <RosterPitch players={players} kit={teamKit} onSelectPlayer={openEditModal} />
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 relative z-10">
+                      {(() => {
+                        const byPos = players.reduce((acc, p) => {
+                          const pos = normalizePosition(p.position);
+                          acc[pos] = (acc[pos] || 0) + 1;
+                          return acc;
+                        }, {});
+                        const totalGoals = players.reduce((s, p) => s + (p.goals || 0), 0);
+                        return [
+                          { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
+                          { label: 'Bàn thắng', value: totalGoals, color: 'text-neon', bg: 'bg-neon/5 border-neon/20' },
+                          { label: 'Thủ môn', value: byPos['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
+                          { label: 'Hậu vệ', value: byPos['DEF'] || 0, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/30' },
+                          { label: 'Tiền vệ', value: byPos['MID'] || 0, color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
+                          { label: 'Tiền đạo', value: byPos['FW'] || 0, color: 'text-red-400', bg: 'bg-red-400/10 border-red-400/30' },
+                        ].map((stat, idx) => (
+                          <div
+                            key={stat.label}
+                            className={`${stat.bg} p-4 rounded-2xl border text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
+                            style={{ animationDelay: `${200 + idx * 50}ms` }}
+                          >
+                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1.5">{stat.label}</p>
+                            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+                          </div>
+                        ));
+                      })()}
+                    </div>
                   )}
                 </div>
 
-                {/* Danh sách cầu thủ */}
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+
+                  {/* Cột trái: Sơ đồ đội hình + Thông tin chung */}
+                  <div className="lg:col-span-4 xl:col-span-4 space-y-6">
+                    {/* Sơ đồ đội hình */}
+                    <div className="space-y-3">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                        <Trophy className="w-3.5 h-3.5" /> Sơ đồ đội hình
+                        <span className="normal-case font-medium text-gray-600">— bấm vào cầu thủ để xem/sửa</span>
+                      </p>
+                      {isLoading ? (
+                        <div className="skeleton h-72 rounded-2xl" />
+                      ) : (
+                        <RosterPitch players={players} kit={teamKit} onSelectPlayer={openEditModal} />
+                      )}
+                    </div>
+
+                    {/* Team Info Card */}
+                    <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-6 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-colors duration-500" />
+                      <h3 className="text-base font-black text-white flex items-center gap-2.5 mb-5 border-b border-navy-light/50 pb-4 relative z-10">
+                        <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
+                          <Info className="w-4 h-4 text-indigo-400" />
+                        </div>
+                        Thông tin chung
+                      </h3>
+                      {isLoading ? (
+                        <div className="space-y-4">
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex justify-between items-center">
+                              <div className="skeleton h-4 w-24 rounded" />
+                              <div className="skeleton h-5 w-28 rounded-lg" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-3 relative z-10">
+                          {[
+                            { label: 'Đội trưởng', value: activeTeam?.captain },
+                            { label: 'SĐT liên hệ', value: activeTeam?.phone },
+                            {
+                              label: 'Màu áo',
+                              value: (
+                                <div className="flex items-center gap-2 bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light">
+                                  <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0" style={{ backgroundColor: activeTeam?.colorHex }} />
+                                  <span className="font-bold text-white text-sm truncate max-w-[90px]">{activeTeam?.primaryColor}</span>
+                                </div>
+                              ),
+                            },
+                            { label: 'Ngày đăng ký', value: activeTeam?.registeredAt },
+                          ].map((item) => (
+                            <div key={item.label} className="flex justify-between items-center py-2 border-b border-navy-light/30 last:border-0 last:pb-0 gap-3">
+                              <span className="text-gray-400 text-sm font-medium shrink-0">{item.label}</span>
+                              {typeof item.value === 'string' ? (
+                                <span className="text-white font-bold text-sm bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light truncate max-w-[140px]">{item.value}</span>
+                              ) : item.value}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Danh sách cầu thủ */}
+                <div className="lg:col-span-6 xl:col-span-6 space-y-4">
                   {!isLoading && (
                     <div className="flex gap-2 items-center animate-fade-in bg-navy/40 backdrop-blur-md p-2 rounded-2xl border border-navy-light">
                       <div className="relative flex-1 min-w-0">
@@ -1250,103 +1345,11 @@ export default function MyTeam() {
                   )}
                 </div>
               </div>
+            </div>
             )}
           </div>
 
-          {/* ─── Sidebar ──────────────────────────────────── */}
-          <div className="lg:col-span-1 space-y-5 animate-slide-up" style={{ animationDelay: '150ms' }}>
 
-            {/* Team Info Card */}
-            <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-colors duration-500" />
-              <h3 className="text-base font-black text-white flex items-center gap-2.5 mb-5 border-b border-navy-light/50 pb-4 relative z-10">
-                <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
-                  <Info className="w-4 h-4 text-indigo-400" />
-                </div>
-                Thông tin chung
-              </h3>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="skeleton h-4 w-24 rounded" />
-                      <div className="skeleton h-5 w-28 rounded-lg" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3 relative z-10">
-                  {[
-                    { label: 'Đội trưởng', value: activeTeam?.captain },
-                    { label: 'SĐT liên hệ', value: activeTeam?.phone },
-                    {
-                      label: 'Màu áo',
-                      value: (
-                        <div className="flex items-center gap-2 bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light">
-                          <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0" style={{ backgroundColor: activeTeam?.colorHex }} />
-                          <span className="font-bold text-white text-sm truncate max-w-[90px]">{activeTeam?.primaryColor}</span>
-                        </div>
-                      ),
-                    },
-                    { label: 'Ngày đăng ký', value: activeTeam?.registeredAt },
-                  ].map((item) => (
-                    <div key={item.label} className="flex justify-between items-center py-2 border-b border-navy-light/30 last:border-0 last:pb-0 gap-3">
-                      <span className="text-gray-400 text-sm font-medium shrink-0">{item.label}</span>
-                      {typeof item.value === 'string' ? (
-                        <span className="text-white font-bold text-sm bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light truncate max-w-[140px]">{item.value}</span>
-                      ) : item.value}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Stats Card */}
-            <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl shadow-2xl shadow-black/40 p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-500 pointer-events-none">
-                <Trophy className="w-28 h-28 text-neon" />
-              </div>
-              <h3 className="text-base font-black text-white flex items-center gap-2.5 mb-5 relative z-10 border-b border-navy-light/50 pb-4">
-                <div className="p-2 bg-yellow-400/20 rounded-xl border border-yellow-400/30">
-                  <Trophy className="w-4 h-4 text-yellow-400" />
-                </div>
-                Thống kê đội
-              </h3>
-              {isLoading ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-20 rounded-2xl" />)}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 relative z-10">
-                  {(() => {
-                    const byPos = players.reduce((acc, p) => {
-                      const pos = normalizePosition(p.position);
-                      acc[pos] = (acc[pos] || 0) + 1;
-                      return acc;
-                    }, {});
-                    const totalGoals = players.reduce((s, p) => s + (p.goals || 0), 0);
-                    return [
-                      { label: 'Cầu thủ', value: players.length, color: 'text-white', bg: 'bg-navy-dark border-navy-light' },
-                      { label: 'Bàn thắng', value: totalGoals, color: 'text-neon', bg: 'bg-neon/5 border-neon/20' },
-                      { label: 'Thủ môn', value: byPos['GK'] || 0, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30' },
-                      { label: 'Hậu vệ', value: byPos['DEF'] || 0, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/30' },
-                      { label: 'Tiền vệ', value: byPos['MID'] || 0, color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/30' },
-                      { label: 'Tiền đạo', value: byPos['FW'] || 0, color: 'text-red-400', bg: 'bg-red-400/10 border-red-400/30' },
-                    ].map((stat, idx) => (
-                      <div
-                        key={stat.label}
-                        className={`${stat.bg} p-4 rounded-2xl border text-center animate-slide-up hover:-translate-y-1 transition-transform duration-300`}
-                        style={{ animationDelay: `${200 + idx * 50}ms` }}
-                      >
-                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1.5">{stat.label}</p>
-                        <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
