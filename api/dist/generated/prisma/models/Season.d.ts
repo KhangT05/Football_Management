@@ -52,6 +52,7 @@ export type SeasonMinAggregateOutputType = {
     cancel_reason: string | null;
     tournament_id: number | null;
     group_count: number | null;
+    pitch_type: $Enums.PitchType | null;
     user_id: number | null;
     tournament_rule_id: number | null;
 };
@@ -76,6 +77,7 @@ export type SeasonMaxAggregateOutputType = {
     cancel_reason: string | null;
     tournament_id: number | null;
     group_count: number | null;
+    pitch_type: $Enums.PitchType | null;
     user_id: number | null;
     tournament_rule_id: number | null;
 };
@@ -100,6 +102,7 @@ export type SeasonCountAggregateOutputType = {
     cancel_reason: number;
     tournament_id: number;
     group_count: number;
+    pitch_type: number;
     user_id: number;
     tournament_rule_id: number;
     _all: number;
@@ -143,6 +146,7 @@ export type SeasonMinAggregateInputType = {
     cancel_reason?: true;
     tournament_id?: true;
     group_count?: true;
+    pitch_type?: true;
     user_id?: true;
     tournament_rule_id?: true;
 };
@@ -167,6 +171,7 @@ export type SeasonMaxAggregateInputType = {
     cancel_reason?: true;
     tournament_id?: true;
     group_count?: true;
+    pitch_type?: true;
     user_id?: true;
     tournament_rule_id?: true;
 };
@@ -191,6 +196,7 @@ export type SeasonCountAggregateInputType = {
     cancel_reason?: true;
     tournament_id?: true;
     group_count?: true;
+    pitch_type?: true;
     user_id?: true;
     tournament_rule_id?: true;
     _all?: true;
@@ -292,6 +298,7 @@ export type SeasonGroupByOutputType = {
     cancel_reason: string | null;
     tournament_id: number;
     group_count: number | null;
+    pitch_type: $Enums.PitchType;
     user_id: number | null;
     tournament_rule_id: number | null;
     _count: SeasonCountAggregateOutputType | null;
@@ -327,6 +334,7 @@ export type SeasonWhereInput = {
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     group_count?: Prisma.IntNullableFilter<"Season"> | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFilter<"Season"> | $Enums.PitchType;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament_rule_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
@@ -360,6 +368,7 @@ export type SeasonOrderByWithRelationInput = {
     cancel_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     group_count?: Prisma.SortOrderInput | Prisma.SortOrder;
+    pitch_type?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament_rule_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament?: Prisma.TournamentOrderByWithRelationInput;
@@ -397,6 +406,7 @@ export type SeasonWhereUniqueInput = Prisma.AtLeast<{
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     group_count?: Prisma.IntNullableFilter<"Season"> | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFilter<"Season"> | $Enums.PitchType;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament_rule_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament?: Prisma.XOR<Prisma.TournamentScalarRelationFilter, Prisma.TournamentWhereInput>;
@@ -430,6 +440,7 @@ export type SeasonOrderByWithAggregationInput = {
     cancel_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     group_count?: Prisma.SortOrderInput | Prisma.SortOrder;
+    pitch_type?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     tournament_rule_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.SeasonCountOrderByAggregateInput;
@@ -462,6 +473,7 @@ export type SeasonScalarWhereWithAggregatesInput = {
     cancel_reason?: Prisma.StringNullableWithAggregatesFilter<"Season"> | string | null;
     tournament_id?: Prisma.IntWithAggregatesFilter<"Season"> | number;
     group_count?: Prisma.IntNullableWithAggregatesFilter<"Season"> | number | null;
+    pitch_type?: Prisma.EnumPitchTypeWithAggregatesFilter<"Season"> | $Enums.PitchType;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"Season"> | number | null;
     tournament_rule_id?: Prisma.IntNullableWithAggregatesFilter<"Season"> | number | null;
 };
@@ -484,6 +496,7 @@ export type SeasonCreateInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -515,6 +528,7 @@ export type SeasonUncheckedCreateInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -543,6 +557,7 @@ export type SeasonUpdateInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -574,6 +589,7 @@ export type SeasonUncheckedUpdateInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -604,6 +620,7 @@ export type SeasonCreateManyInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
 };
@@ -626,6 +643,7 @@ export type SeasonUpdateManyMutationInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
 };
 export type SeasonUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -648,6 +666,7 @@ export type SeasonUncheckedUpdateManyInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
@@ -689,6 +708,7 @@ export type SeasonCountOrderByAggregateInput = {
     cancel_reason?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     group_count?: Prisma.SortOrder;
+    pitch_type?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     tournament_rule_id?: Prisma.SortOrder;
 };
@@ -722,6 +742,7 @@ export type SeasonMaxOrderByAggregateInput = {
     cancel_reason?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     group_count?: Prisma.SortOrder;
+    pitch_type?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     tournament_rule_id?: Prisma.SortOrder;
 };
@@ -746,6 +767,7 @@ export type SeasonMinOrderByAggregateInput = {
     cancel_reason?: Prisma.SortOrder;
     tournament_id?: Prisma.SortOrder;
     group_count?: Prisma.SortOrder;
+    pitch_type?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
     tournament_rule_id?: Prisma.SortOrder;
 };
@@ -891,6 +913,9 @@ export type SeasonUpdateOneRequiredWithoutPhasesNestedInput = {
 export type EnumSeasonStatusFieldUpdateOperationsInput = {
     set?: $Enums.SeasonStatus;
 };
+export type EnumPitchTypeFieldUpdateOperationsInput = {
+    set?: $Enums.PitchType;
+};
 export type SeasonCreateNestedOneWithoutSeason_teamsInput = {
     create?: Prisma.XOR<Prisma.SeasonCreateWithoutSeason_teamsInput, Prisma.SeasonUncheckedCreateWithoutSeason_teamsInput>;
     connectOrCreate?: Prisma.SeasonCreateOrConnectWithoutSeason_teamsInput;
@@ -976,6 +1001,7 @@ export type SeasonCreateWithoutUserInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1006,6 +1032,7 @@ export type SeasonUncheckedCreateWithoutUserInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1059,6 +1086,7 @@ export type SeasonScalarWhereInput = {
     cancel_reason?: Prisma.StringNullableFilter<"Season"> | string | null;
     tournament_id?: Prisma.IntFilter<"Season"> | number;
     group_count?: Prisma.IntNullableFilter<"Season"> | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFilter<"Season"> | $Enums.PitchType;
     user_id?: Prisma.IntNullableFilter<"Season"> | number | null;
     tournament_rule_id?: Prisma.IntNullableFilter<"Season"> | number | null;
 };
@@ -1081,6 +1109,7 @@ export type SeasonCreateWithoutTournamentInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1110,6 +1139,7 @@ export type SeasonUncheckedCreateWithoutTournamentInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1159,6 +1189,7 @@ export type SeasonCreateWithoutTournamentRuleInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1189,6 +1220,7 @@ export type SeasonUncheckedCreateWithoutTournamentRuleInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1237,6 +1269,7 @@ export type SeasonCreateWithoutPhasesInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1267,6 +1300,7 @@ export type SeasonUncheckedCreateWithoutPhasesInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1307,6 +1341,7 @@ export type SeasonUpdateWithoutPhasesInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1337,6 +1372,7 @@ export type SeasonUncheckedUpdateWithoutPhasesInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1364,6 +1400,7 @@ export type SeasonCreateWithoutSeason_teamsInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     user?: Prisma.UserCreateNestedOneWithoutSeasonsInput;
@@ -1394,6 +1431,7 @@ export type SeasonUncheckedCreateWithoutSeason_teamsInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1434,6 +1472,7 @@ export type SeasonUpdateWithoutSeason_teamsInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -1464,6 +1503,7 @@ export type SeasonUncheckedUpdateWithoutSeason_teamsInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1491,6 +1531,7 @@ export type SeasonCreateWithoutTeamStandingsInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1521,6 +1562,7 @@ export type SeasonUncheckedCreateWithoutTeamStandingsInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1561,6 +1603,7 @@ export type SeasonUpdateWithoutTeamStandingsInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -1591,6 +1634,7 @@ export type SeasonUncheckedUpdateWithoutTeamStandingsInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1618,6 +1662,7 @@ export type SeasonCreateWithoutPlayerStatisticsInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1648,6 +1693,7 @@ export type SeasonUncheckedCreateWithoutPlayerStatisticsInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1688,6 +1734,7 @@ export type SeasonUpdateWithoutPlayerStatisticsInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -1718,6 +1765,7 @@ export type SeasonUncheckedUpdateWithoutPlayerStatisticsInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1745,6 +1793,7 @@ export type SeasonCreateWithoutNotificationsInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1775,6 +1824,7 @@ export type SeasonUncheckedCreateWithoutNotificationsInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1815,6 +1865,7 @@ export type SeasonUpdateWithoutNotificationsInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -1845,6 +1896,7 @@ export type SeasonUncheckedUpdateWithoutNotificationsInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -1872,6 +1924,7 @@ export type SeasonCreateWithoutArticlesInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament: Prisma.TournamentCreateNestedOneWithoutSeasonsInput;
     phases?: Prisma.PhaseCreateNestedManyWithoutSeasonInput;
     season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutSeasonInput;
@@ -1902,6 +1955,7 @@ export type SeasonUncheckedCreateWithoutArticlesInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
     phases?: Prisma.PhaseUncheckedCreateNestedManyWithoutSeasonInput;
@@ -1942,6 +1996,7 @@ export type SeasonUpdateWithoutArticlesInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -1972,6 +2027,7 @@ export type SeasonUncheckedUpdateWithoutArticlesInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -2001,6 +2057,7 @@ export type SeasonCreateManyUserInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     tournament_rule_id?: number | null;
 };
 export type SeasonUpdateWithoutUserInput = {
@@ -2022,6 +2079,7 @@ export type SeasonUpdateWithoutUserInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -2052,6 +2110,7 @@ export type SeasonUncheckedUpdateWithoutUserInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -2081,6 +2140,7 @@ export type SeasonUncheckedUpdateManyWithoutUserInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type SeasonCreateManyTournamentInput = {
@@ -2103,6 +2163,7 @@ export type SeasonCreateManyTournamentInput = {
     registration_fee?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: string | null;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
     tournament_rule_id?: number | null;
 };
@@ -2125,6 +2186,7 @@ export type SeasonUpdateWithoutTournamentInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
     user?: Prisma.UserUpdateOneWithoutSeasonsNestedInput;
@@ -2154,6 +2216,7 @@ export type SeasonUncheckedUpdateWithoutTournamentInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -2183,6 +2246,7 @@ export type SeasonUncheckedUpdateManyWithoutTournamentInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     tournament_rule_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
@@ -2207,6 +2271,7 @@ export type SeasonCreateManyTournamentRuleInput = {
     cancel_reason?: string | null;
     tournament_id: number;
     group_count?: number | null;
+    pitch_type?: $Enums.PitchType;
     user_id?: number | null;
 };
 export type SeasonUpdateWithoutTournamentRuleInput = {
@@ -2228,6 +2293,7 @@ export type SeasonUpdateWithoutTournamentRuleInput = {
     registration_fee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutSeasonsNestedInput;
     phases?: Prisma.PhaseUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUpdateManyWithoutSeasonNestedInput;
@@ -2258,6 +2324,7 @@ export type SeasonUncheckedUpdateWithoutTournamentRuleInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     phases?: Prisma.PhaseUncheckedUpdateManyWithoutSeasonNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutSeasonNestedInput;
@@ -2287,6 +2354,7 @@ export type SeasonUncheckedUpdateManyWithoutTournamentRuleInput = {
     cancel_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournament_id?: Prisma.IntFieldUpdateOperationsInput | number;
     group_count?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    pitch_type?: Prisma.EnumPitchTypeFieldUpdateOperationsInput | $Enums.PitchType;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 /**
@@ -2374,6 +2442,7 @@ export type SeasonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     cancel_reason?: boolean;
     tournament_id?: boolean;
     group_count?: boolean;
+    pitch_type?: boolean;
     user_id?: boolean;
     tournament_rule_id?: boolean;
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
@@ -2408,10 +2477,11 @@ export type SeasonSelectScalar = {
     cancel_reason?: boolean;
     tournament_id?: boolean;
     group_count?: boolean;
+    pitch_type?: boolean;
     user_id?: boolean;
     tournament_rule_id?: boolean;
 };
-export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "bank_id" | "bank_account_no" | "bank_account_name" | "deleted_at" | "registration_fee" | "cancel_reason" | "tournament_id" | "group_count" | "user_id" | "tournament_rule_id", ExtArgs["result"]["season"]>;
+export type SeasonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | "is_registration_open" | "is_active" | "created_at" | "updated_at" | "bank_id" | "bank_account_no" | "bank_account_name" | "deleted_at" | "registration_fee" | "cancel_reason" | "tournament_id" | "group_count" | "pitch_type" | "user_id" | "tournament_rule_id", ExtArgs["result"]["season"]>;
 export type SeasonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
     phases?: boolean | Prisma.Season$phasesArgs<ExtArgs>;
@@ -2458,6 +2528,7 @@ export type $SeasonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
         cancel_reason: string | null;
         tournament_id: number;
         group_count: number | null;
+        pitch_type: $Enums.PitchType;
         user_id: number | null;
         tournament_rule_id: number | null;
     }, ExtArgs["result"]["season"]>;
@@ -2791,6 +2862,7 @@ export interface SeasonFieldRefs {
     readonly cancel_reason: Prisma.FieldRef<"Season", 'String'>;
     readonly tournament_id: Prisma.FieldRef<"Season", 'Int'>;
     readonly group_count: Prisma.FieldRef<"Season", 'Int'>;
+    readonly pitch_type: Prisma.FieldRef<"Season", 'PitchType'>;
     readonly user_id: Prisma.FieldRef<"Season", 'Int'>;
     readonly tournament_rule_id: Prisma.FieldRef<"Season", 'Int'>;
 }

@@ -2277,6 +2277,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly cancel_reason: "cancel_reason";
     readonly tournament_id: "tournament_id";
     readonly group_count: "group_count";
+    readonly pitch_type: "pitch_type";
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
 };
@@ -2766,6 +2767,10 @@ export type EnumPhaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'SeasonStatus'
  */
 export type EnumSeasonStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SeasonStatus'>;
+/**
+ * Reference to a field of type 'PitchType'
+ */
+export type EnumPitchTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PitchType'>;
 /**
  * Reference to a field of type 'GroupStatus'
  */

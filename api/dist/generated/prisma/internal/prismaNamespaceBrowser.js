@@ -190,6 +190,7 @@ export const SeasonScalarFieldEnum = {
     cancel_reason: 'cancel_reason',
     tournament_id: 'tournament_id',
     group_count: 'group_count',
+    pitch_type: 'pitch_type',
     user_id: 'user_id',
     tournament_rule_id: 'tournament_rule_id'
 };

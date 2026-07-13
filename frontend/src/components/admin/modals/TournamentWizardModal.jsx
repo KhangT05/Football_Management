@@ -28,6 +28,7 @@ const FORMAT_META = [
     icon: LayoutGrid,
     color: 'emerald',
     hasGroupPhase: true,
+    hasKnockout: false,
     stagesMode: 'min1',
   },
   {
@@ -37,6 +38,7 @@ const FORMAT_META = [
     icon: Trophy,
     color: 'orange',
     hasGroupPhase: false,
+    hasKnockout: true,
     stagesMode: 'fixed0',
   },
   {
@@ -46,6 +48,7 @@ const FORMAT_META = [
     icon: Layers,
     color: 'blue',
     hasGroupPhase: true,
+    hasKnockout: true,
     stagesMode: 'fixed1',
   },
   {
@@ -55,10 +58,15 @@ const FORMAT_META = [
     icon: Repeat,
     color: 'indigo',
     hasGroupPhase: true,
+    hasKnockout: true,
     stagesMode: 'min2',
   },
 ];
-
+const PITCH_TYPE_META = [
+  { value: 'san_5', label: 'Sân 5' },
+  { value: 'san_7', label: 'Sân 7' },
+  { value: 'san_11', label: 'Sân 11' },
+];
 const getFormatMeta = (value) => FORMAT_META.find(f => f.value === value) || FORMAT_META[2];
 
 const clampStagesForFormat = (format, stages) => {
@@ -70,7 +78,11 @@ const clampStagesForFormat = (format, stages) => {
   return stages;
 };
 
-// Đúng theo TIEBREAKER_OPTIONS thực tế (tournamentRuleApi JSDoc) — KHÔNG phải bộ cũ.
+const KNOCKOUT_LEG_TYPE_META = [
+  { value: 'single_leg', label: '1 trận', desc: 'Đá 1 trận duy nhất (chung kết/sân trung lập).' },
+  { value: 'two_legged', label: 'Lượt đi - lượt về', desc: 'Đá 2 lượt, cộng dồn tỷ số.' },
+];
+
 const TIEBREAKER_LABELS = {
   goal_diff: 'Hiệu số bàn thắng-thua',
   goals_scored: 'Bàn thắng ghi được',
@@ -181,6 +193,8 @@ const initialWizardState = {
     registration_deadline: '',
     max_teams: 16,
     is_registration_open: true,
+    knockout_leg_type: 'single_leg', // NEW
+    pitch_type: 'san_5',
   },
 };
 
@@ -260,10 +274,25 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   // Khóa/clamp round_robin_stages mỗi khi đổi format — tránh gửi giá trị vi phạm
   // validateFormatConsistency() của BE (VALIDATION_ERROR ngay khi submit).
+  // Zero-out các field mất ý nghĩa theo format, tránh:
+  // (1) FE hiển thị giá trị mặc định gây hiểu lầm (VD: knockout mà vẫn thấy "Thắng 3 điểm")
+  // (2) submit lên BE bị validateScoringApplicability() reject vì giá trị != 0
+  // Trade-off: đổi qua lại format sẽ MẤT giá trị đã nhập (không auto-restore) —
+  // chấp nhận được vì step 2 còn ở đầu wizard, chưa có side-effect gì cần rollback.
   useEffect(() => {
     setRuleForm(f => {
-      const clamped = clampStagesForFormat(f.format, f.round_robin_stages);
-      return clamped === f.round_robin_stages ? f : { ...f, round_robin_stages: clamped };
+      const meta = getFormatMeta(f.format);
+      if (!meta.hasGroupPhase) {
+        if (f.points_per_win === 0 && f.points_per_draw === 0 && f.points_per_loss === 0 &&
+          f.teams_advance_per_group === 0 && f.tiebreaker_order.length === 0) {
+          return f; // đã ở trạng thái đúng, tránh set thừa gây re-render
+        }
+        return { ...f, points_per_win: 0, points_per_draw: 0, points_per_loss: 0, teams_advance_per_group: 0, tiebreaker_order: [] };
+      }
+      if (!meta.hasKnockout && f.teams_advance_per_group !== 0) {
+        return { ...f, teams_advance_per_group: 0 };
+      }
+      return f;
     });
   }, [ruleForm.format, setRuleForm]);
 
@@ -309,7 +338,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
       const meta = getFormatMeta(r.format);
       if (meta.hasGroupPhase) {
-        if (r.teams_advance_per_group < 1) return 'Số đội đi tiếp mỗi bảng phải >= 1';
+        if (meta.hasKnockout && r.teams_advance_per_group < 1) return 'Số đội đi tiếp mỗi bảng phải >= 1';
         if (!r.tiebreaker_order.length) return 'Vui lòng chọn ít nhất 1 tiêu chí xếp hạng phụ';
       }
     }
@@ -884,12 +913,56 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     </FormField>
                   </div>
                   {activeFormatMeta.hasGroupPhase && (
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      <FormField label="Số đội đi tiếp / bảng" required>
-                        <input type="number" min="1" className={INPUT} value={ruleForm.teams_advance_per_group} onChange={e => setRuleForm(f => ({ ...f, teams_advance_per_group: +e.target.value }))} />
-                      </FormField>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField label="Điểm Thắng" required>
+                          <input type="number" className={INPUT} value={ruleForm.points_per_win} onChange={e => setRuleForm(f => ({ ...f, points_per_win: +e.target.value }))} />
+                        </FormField>
+                        <FormField label="Điểm Hòa" required>
+                          <input type="number" className={INPUT} value={ruleForm.points_per_draw} onChange={e => setRuleForm(f => ({ ...f, points_per_draw: +e.target.value }))} />
+                        </FormField>
+                        <FormField label="Điểm Thua" required>
+                          <input type="number" className={INPUT} value={ruleForm.points_per_loss} onChange={e => setRuleForm(f => ({ ...f, points_per_loss: +e.target.value }))} />
+                        </FormField>
+                      </div>
                     </div>
                   )}
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
+                    <div className={`grid gap-4 ${activeFormatMeta.hasGroupPhase && activeFormatMeta.hasKnockout ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                      <FormField label="Số người tối đa / đội" required>
+                        <input type="number" className={INPUT} value={ruleForm.max_players_per_team} onChange={e => setRuleForm(f => ({ ...f, max_players_per_team: +e.target.value }))} />
+                      </FormField>
+                      <FormField label="Số người tối thiểu" required>
+                        <input type="number" className={INPUT} value={ruleForm.min_players_per_team} onChange={e => setRuleForm(f => ({ ...f, min_players_per_team: +e.target.value }))} />
+                      </FormField>
+                      <FormField label="Điểm xử thua" required>
+                        <input type="number" className={INPUT} value={ruleForm.forfeit_score} onChange={e => setRuleForm(f => ({ ...f, forfeit_score: +e.target.value }))} />
+                      </FormField>
+                    </div>
+                    {activeFormatMeta.hasGroupPhase && activeFormatMeta.hasKnockout && (
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <FormField label="Số đội đi tiếp / bảng" required>
+                          <input type="number" min="1" className={INPUT} value={ruleForm.teams_advance_per_group} onChange={e => setRuleForm(f => ({ ...f, teams_advance_per_group: +e.target.value }))} />
+                        </FormField>
+                      </div>
+                    )}
+                    {activeFormatMeta.hasKnockout && (
+                      <FormField label="Thể thức sân đấu (Knockout)" required>
+                        <select
+                          className={INPUT}
+                          value={seasonForm.knockout_leg_type}
+                          onChange={e => setSeasonForm(f => ({ ...f, knockout_leg_type: e.target.value }))}
+                        >
+                          {KNOCKOUT_LEG_TYPE_META.map(k => (
+                            <option key={k.value} value={k.value}>{k.label}</option>
+                          ))}
+                        </select>
+                      </FormField>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -984,6 +1057,17 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
             <div className="lg:col-span-2 bg-navy-dark/50 p-5 rounded-2xl border border-navy-light space-y-4">
               <FormField label="Tên mùa giải" required>
                 <input className={INPUT} value={seasonForm.name} onChange={e => setSeasonForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Season 2026 - Mùa Hè" />
+              </FormField>
+              <FormField label="Loại sân thi đấu" required>
+                <select
+                  className={INPUT}
+                  value={seasonForm.pitch_type}
+                  onChange={e => setSeasonForm(f => ({ ...f, pitch_type: e.target.value }))}
+                >
+                  {PITCH_TYPE_META.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
               </FormField>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Ngày bắt đầu" required>

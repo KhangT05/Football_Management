@@ -7,8 +7,8 @@ import PitchFormation from '../PitchFormation';
 // roster (prop): [{ player_id, name, number, position, avatar }]
 export default function LineupBuilderModal({ match, teamId, roster: rawRoster, onClose, onSave }) {
   const squadLimit = useMemo(() => getSquadLimit(match), [match]);
+  const { pitchType } = useMemo(() => getPitchFormation(match), [match]);
 
-  // Normalize field names khớp với hook + PitchFormation (jersey_number, không phải number).
   const roster = useMemo(() => rawRoster.map(p => ({
     player_id: p.player_id,
     name: p.name,
@@ -19,7 +19,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
 
   const {
     selections, isLoading, isSaving,
-    startersCount, maxStarters,
+    startersCount, maxStarters, formation,
     starters, substitutes,
     toggleLineupType, handleDropOnPitch, setCaptain, save,
   } = useLineupSelection({
@@ -41,6 +41,9 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
           <div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
               <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
+              <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-lg">
+                {PITCH_LABEL_VI[pitchType] ?? pitchType}
+              </span>
             </h3>
             <p className="text-sm text-gray-400 mt-1 font-medium">
               {match.home_team?.name || 'Đội nhà'} <span className="text-gray-600 mx-1">vs</span> {match.away_team?.name || 'Đội khách'}
@@ -74,6 +77,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
             ) : (
               <PitchFormation
                 starters={starters}
+                formation={formation}
                 onRemove={pid => toggleLineupType(pid, 'starter')}
                 onSetCaptain={setCaptain}
                 onDropPlayer={handleDropOnPitch}

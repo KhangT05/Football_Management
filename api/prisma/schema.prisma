@@ -223,39 +223,45 @@ enum SeasonStatus {
   cancelled
 }
 
+enum PitchType {
+  san_5 // sân 5 (futsal / 5 người)
+  san_7 // sân 7
+  san_11 // sân 11 (full-size)
+}
+
 model Season {
-  id                    Int          @id @default(autoincrement())
-  name                  String       @unique
+  id                    Int               @id @default(autoincrement())
+  name                  String            @unique
   description           String?
-  status                SeasonStatus @default(upcoming)
+  status                SeasonStatus      @default(upcoming)
   start_date            DateTime?
   end_date              DateTime?
   registration_deadline DateTime?
   max_teams             Int
-  is_registration_open  Boolean      @default(false)
-  is_active             Boolean      @default(true)
-  created_at            DateTime     @default(now())
-  updated_at            DateTime?    @updatedAt
+  is_registration_open  Boolean           @default(false)
+  is_active             Boolean           @default(true)
+  created_at            DateTime          @default(now())
+  updated_at            DateTime?         @updatedAt
   bank_id               String?
   bank_account_no       String?
   bank_account_name     String?
   deleted_at            DateTime?
-  registration_fee      Decimal      @default(0) @db.Decimal(10, 2)
+  registration_fee      Decimal           @default(0) @db.Decimal(10, 2)
   cancel_reason         String?
   tournament_id         Int
   group_count           Int?
-  tournament            Tournament   @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
-
-  phases             Phase[]
-  season_teams       SeasonTeam[]
-  user               User?             @relation(fields: [user_id], references: [id])
-  user_id            Int?
-  playerStatistics   PlayerStatistic[]
-  notifications      Notification[]
-  articles           Article[]
-  teamStandings      TeamStanding[]
-  tournament_rule_id Int?
-  tournamentRule     TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
+  tournament            Tournament        @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
+  pitch_type            PitchType         @default(san_5)
+  phases                Phase[]
+  season_teams          SeasonTeam[]
+  user                  User?             @relation(fields: [user_id], references: [id])
+  user_id               Int?
+  playerStatistics      PlayerStatistic[]
+  notifications         Notification[]
+  articles              Article[]
+  teamStandings         TeamStanding[]
+  tournament_rule_id    Int?
+  tournamentRule        TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
 
   @@map("seasons")
 }

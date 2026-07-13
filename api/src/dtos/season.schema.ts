@@ -7,7 +7,14 @@ export const SeasonStatusSchema = z.enum([
     "ongoing",
     "finished",
     "cancelled",
-])
+]);
+
+export const PitchType = z.enum([
+    "san_5",
+    "san_7",
+    "san_11"
+]);
+
 export const CancelSeasonSchema = z.object({
     cancel_reason: z.string().trim().min(1, "cancel_reason is required").max(500),
 });
@@ -24,9 +31,7 @@ const baseSeasonSchema = z.object({
     tournament_id: z.number().int().positive(),
     tournament_rule_id: z.number().int().positive(),
     group_count: z.number().int().min(1).default(1),
-    // FIX: thiếu 3 field này → FE không có cách nào set bank info, payment
-    // luôn hasBankInfo=false dù DB có cột. Nullable — season không bắt buộc
-    // nhận chuyển khoản thủ công (chỉ dùng VNPay).
+    pitch_type: PitchType.optional().default("san_5"), // <-- add this
     bank_id: z.string().trim().min(1).max(20).optional().nullable(),
     bank_account_no: z.string().trim().min(1).max(50).optional().nullable(),
     bank_account_name: z.string().trim().min(1).max(255).optional().nullable(),
@@ -75,7 +80,7 @@ export type SeasonListItem = Pick<
     | "start_date"
     | "end_date"
     | "registration_deadline"
-    | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count'
+    | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count' | 'pitch_type'
     | 'bank_id' | 'bank_account_no' | 'bank_account_name'
 > & {
     tournament: {

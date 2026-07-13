@@ -41,11 +41,11 @@ export class SeasonService {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
-            filterable: ["is_active"],
+            filterable: ["is_active", "status"],
             defaultPerPage: 20,
             maxPerPage: 100,
             beforeBuild: (where) => {
-                where.push({ is_active: true });
+                where.push({ deleted_at: null });
             },
         });
     }
@@ -353,6 +353,23 @@ export class SeasonService {
         if (status !== SeasonStatus.upcoming) {
             throw createAppError('VALIDATION_ERROR', `Chỉ có thể xóa season ở trạng thái 'upcoming', hiện tại đang '${status}'.`);
         }
+    }
+    async restore(id) {
+        const result = await this.prisma.season.updateMany({
+            where: { id, deleted_at: { not: null } },
+            data: { deleted_at: null },
+            // KHÔNG force is_active: true — nếu season bị soft-delete lúc đang
+            // 'cancelled' (đã is_active=false do cancel() trước đó), restore
+            // chỉ nên đưa record trở lại danh sách, không âm thầm "hồi sinh"
+            // trạng thái active của nó. Business status (status field) không
+            // đổi qua restore — nếu cần mở lại giải đã cancelled, đó là quyết
+            // định khác, đi qua updateStatus() với transition hợp lệ (hiện
+            // STATUS_TRANSITIONS không cho cancelled → bất kỳ đâu, đúng ý đồ).
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `Season ${id} not found or not deleted`);
+        }
+        return this.findByIdOrFail(id);
     }
 }
 //# sourceMappingURL=season.service.js.map

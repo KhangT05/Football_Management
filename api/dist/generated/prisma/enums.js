@@ -37,6 +37,11 @@ export const SeasonStatus = {
     finished: 'finished',
     cancelled: 'cancelled'
 };
+export const PitchType = {
+    san_5: 'san_5',
+    san_7: 'san_7',
+    san_11: 'san_11'
+};
 export const GroupStatus = {
     DRAFT: 'DRAFT',
     LOCKED: 'LOCKED',

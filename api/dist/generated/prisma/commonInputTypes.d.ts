@@ -302,6 +302,12 @@ export type EnumSeasonStatusFilter<$PrismaModel = never> = {
     notIn?: $Enums.SeasonStatus[];
     not?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel> | $Enums.SeasonStatus;
 };
+export type EnumPitchTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.PitchType | Prisma.EnumPitchTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.PitchType[];
+    notIn?: $Enums.PitchType[];
+    not?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel> | $Enums.PitchType;
+};
 export type EnumSeasonStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.SeasonStatus | Prisma.EnumSeasonStatusFieldRefInput<$PrismaModel>;
     in?: $Enums.SeasonStatus[];
@@ -310,6 +316,15 @@ export type EnumSeasonStatusWithAggregatesFilter<$PrismaModel = never> = {
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel>;
+};
+export type EnumPitchTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PitchType | Prisma.EnumPitchTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.PitchType[];
+    notIn?: $Enums.PitchType[];
+    not?: Prisma.NestedEnumPitchTypeWithAggregatesFilter<$PrismaModel> | $Enums.PitchType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel>;
 };
 export type EnumGroupStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.GroupStatus | Prisma.EnumGroupStatusFieldRefInput<$PrismaModel>;
@@ -948,6 +963,12 @@ export type NestedEnumSeasonStatusFilter<$PrismaModel = never> = {
     notIn?: $Enums.SeasonStatus[];
     not?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel> | $Enums.SeasonStatus;
 };
+export type NestedEnumPitchTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.PitchType | Prisma.EnumPitchTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.PitchType[];
+    notIn?: $Enums.PitchType[];
+    not?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel> | $Enums.PitchType;
+};
 export type NestedEnumSeasonStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.SeasonStatus | Prisma.EnumSeasonStatusFieldRefInput<$PrismaModel>;
     in?: $Enums.SeasonStatus[];
@@ -956,6 +977,15 @@ export type NestedEnumSeasonStatusWithAggregatesFilter<$PrismaModel = never> = {
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumSeasonStatusFilter<$PrismaModel>;
+};
+export type NestedEnumPitchTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PitchType | Prisma.EnumPitchTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.PitchType[];
+    notIn?: $Enums.PitchType[];
+    not?: Prisma.NestedEnumPitchTypeWithAggregatesFilter<$PrismaModel> | $Enums.PitchType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumPitchTypeFilter<$PrismaModel>;
 };
 export type NestedEnumGroupStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.GroupStatus | Prisma.EnumGroupStatusFieldRefInput<$PrismaModel>;
