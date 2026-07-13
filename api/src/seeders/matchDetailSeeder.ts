@@ -1,4 +1,3 @@
-// prisma/seed/matchDetailSeeder.ts
 import { MatchEventType, JerseyType, LineupType } from "../generated/prisma/client.js";
 import { randInt, pickOrThrow } from "./helperSeeder.js";
 import type { DbClient } from "./dbTypes.js";
@@ -154,15 +153,22 @@ export async function seedMatchDetails(
 ) {
     const { matchId, homeTeamId, awayTeamId, homeScore, awayScore, homeSeasonTeamId, awaySeasonTeamId } = params;
 
-    // Guard chống duplicate: MatchLineup/MatchJerseyAssignment dùng upsert nên
-    // tự idempotent, nhưng MatchEvent (goal/card) dùng create thẳng — không có
-    // gì chặn bị gọi lại 2 lần cho cùng 1 match (vd. reseed) thì goal/card event
-    // bị nhân đôi. playerStatisticSeeder tính lại từ raw MatchEvent count mỗi
-    // lần chạy, nên bug này lan thành stats sai âm thầm, không có gì báo lỗi.
-    // Check tồn tại trước khi tạo, bỏ qua toàn bộ nếu match đã có event.
-    const existingEventCount = await db.matchEvent.count({ where: { match_id: matchId } });
-    if (existingEventCount > 0) {
-        console.log(`[MatchDetailSeeder] match #${matchId} đã có ${existingEventCount} event — bỏ qua (idempotent).`);
+    // FIX: đổi tiêu chí idempotency từ MatchEvent sang MatchLineup.
+    // Trước đây check `matchEvent.count(...)` — lệch với tiêu chí mà
+    // index.ts (orchestrator) dùng để quyết định trận nào "cần xử lý"
+    // (index.ts filter theo MatchLineup, xem prisma/seed/index.ts bước
+    // 11-12). Hệ quả edge-case: nếu DB có dữ liệu rác từ 1 lần seed cũ bị
+    // ngắt giữa chừng mà MatchEvent đã commit nhưng MatchLineup thì chưa
+    // (không nên xảy ra trong flow hiện tại vì cả 2 nằm cùng 1 transaction
+    // batch, nhưng có thể xảy ra nếu import dữ liệu tay hoặc từng chạy 1
+    // phiên bản code cũ hơn tạo event trước lineup) — index.ts vẫn đưa
+    // match này vào matchesNeedingDetail (vì thiếu lineup), nhưng guard cũ ở
+    // đây lại thấy có event rồi nên return sớm — kết quả: match VẪN không
+    // có lineup dù đã "được xử lý". Check theo MatchLineup khớp đúng tiêu
+    // chí ngoài, đóng hoàn toàn edge-case này.
+    const existingLineupCount = await db.matchLineup.count({ where: { match_id: matchId } });
+    if (existingLineupCount > 0) {
+        console.log(`[MatchDetailSeeder] match #${matchId} đã có ${existingLineupCount} lineup — bỏ qua (idempotent).`);
         return;
     }
 

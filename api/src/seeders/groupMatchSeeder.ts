@@ -1,8 +1,7 @@
-// prisma/seed/groupMatchSeeder.ts
-import { MatchStatus, MatchResultType } from "../generated/prisma/client.js";
+import { MatchStatus, MatchResultType, MatchResultStatus } from "../generated/prisma/client.js";
 import { pickOrThrow, simulateGroupMatch } from "./helperSeeder.js";
-import { GROUP_LETTERS, WORLD_CUP_GROUPS, GroupLetter } from "./worldcup.js";
 import type { DbClient } from "./dbTypes.js";
+import type { GroupLetter } from "./teamGenerator.js";
 
 interface TeamTally {
   teamId: number;
@@ -44,15 +43,25 @@ export async function seedGroupMatchesAndStandings(
   groupIdByLetter: Record<GroupLetter, number>,
   teamIdByName: Record<string, number>,
   seasonId: number,
-  venueIds: number[]
+  venueIds: number[],
+  groups: Record<GroupLetter, string[]>,
+  // NEW — bị thiếu ở bản trước, gây ReferenceError
+  rulePoints: { win: number; draw: number; loss: number }
 ): Promise<GroupStandingsResult> {
   const topTwoByGroup = {} as Record<GroupLetter, [number, number]>;
   const createdMatches: CreatedMatchInfo[] = [];
   let matchDayOffset = 0;
 
-  for (const letter of GROUP_LETTERS) {
+  for (const letter of Object.keys(groups) as GroupLetter[]) {
     const groupId = groupIdByLetter[letter];
-    const teamNames = WORLD_CUP_GROUPS[letter];
+    if (groupId === undefined) {
+      throw new Error(`groupMatchSeeder: groupIdByLetter thiếu bảng "${letter}" — seedGroupStage chưa tạo group này`);
+    }
+
+    const teamNames = groups[letter];
+    if (!teamNames) {
+      throw new Error(`groupMatchSeeder: groups thiếu bảng "${letter}"`);
+    }
 
     const teamIds = teamNames.map((n) => {
       const id = teamIdByName[n];
@@ -106,6 +115,18 @@ export async function seedGroupMatchesAndStandings(
             home_score: homeScore,
             away_score: awayScore,
             leg: 1,
+            // FIX: THIẾU is_active — ScheduleService lọc is_active: true ở
+            // gần như mọi read-path (Queryable.beforeBuild cho findAll,
+            // findMatchesBySeason, getSeasonSchedule). Match seed ra thiếu
+            // field này vẫn đá được, vẫn tính standings đúng (TeamStanding
+            // không lọc theo Match.is_active), nhưng biến mất khỏi mọi màn
+            // lịch thi đấu công khai (ScheduleResults).
+            is_active: true,
+            // FIX: gán round theo thứ tự cặp đấu (1-6) trong vòng bảng —
+            // trước đây không set, khiến getSeasonSchedule()/
+            // ScheduleMatchCard hiển thị "Vòng 0" cho mọi trận vòng bảng
+            // (round parse mặc định về '0' khi null).
+            round: String(matchDayOffset + 1),
           },
         });
 
@@ -116,6 +137,7 @@ export async function seedGroupMatchesAndStandings(
             home_final_score: homeScore,
             away_final_score: awayScore,
             result_type: MatchResultType.full_time,
+            status: MatchResultStatus.official,
           },
         });
 
@@ -123,11 +145,9 @@ export async function seedGroupMatchesAndStandings(
         matchDayOffset++;
       } else {
         // Reseed: đọc lại kết quả đã tạo trước đó để tính lại standings cho nhất quán.
-        // KHÔNG được default 0-0 khi không tìm thấy — đó là silent data corruption
-        // (đứng bảng sai mà không có bất kỳ log/error nào báo hiệu). Nếu existingCount
-        // đủ 6 nhưng không tìm thấy đúng cặp home/away này, nghĩa là dữ liệu đã bị
-        // seed lệch (vd. bị xoá một phần, hoặc pairing bị đổi giữa các lần chạy) —
-        // phải throw để dừng seed ngay, không được âm thầm tính sai.
+        // KHÔNG được default 0-0 khi không tìm thấy — đó là silent data corruption.
+        // Nếu existingCount đủ 6 nhưng không tìm thấy đúng cặp home/away này, nghĩa là
+        // dữ liệu đã bị seed lệch — phải throw để dừng seed ngay.
         const existing = await db.match.findFirst({
           where: { phase_id: groupStagePhaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
         });
@@ -136,7 +156,7 @@ export async function seedGroupMatchesAndStandings(
           throw new Error(
             `[GroupMatchSeeder] Bảng ${letter}: existingCount=${existingCount} (đủ ${ROUND_ROBIN_PAIRS.length}) ` +
             `nhưng không tìm thấy match hợp lệ cho ${homeTeamId} vs ${awayTeamId}. ` +
-            `Dữ liệu đã seed có khả năng bị lệch/hỏng — cần kiểm tra tay hoặc reset DB (migrate reset) rồi seed lại từ đầu, ` +
+            `Dữ liệu đã seed có khả năng bị lệch/hỏng — cần reset DB (migrate reset) rồi seed lại từ đầu, ` +
             `không được để standings tính sai lặng lẽ.`
           );
         }
@@ -155,20 +175,21 @@ export async function seedGroupMatchesAndStandings(
       homeTally.ga += awayScore;
       awayTally.gf += awayScore;
       awayTally.ga += homeScore;
-
       if (homeScore > awayScore) {
         homeTally.wins++;
-        homeTally.points += 3;
+        homeTally.points += rulePoints.win;      // thay vì += 3
         awayTally.losses++;
+        awayTally.points += rulePoints.loss;     // NEW — trước đây không cộng loss=0 tường minh, ok nếu loss luôn 0 nhưng nếu rule khác 0 thì sai
       } else if (homeScore < awayScore) {
         awayTally.wins++;
-        awayTally.points += 3;
+        awayTally.points += rulePoints.win;
         homeTally.losses++;
+        homeTally.points += rulePoints.loss;
       } else {
         homeTally.draws++;
         awayTally.draws++;
-        homeTally.points += 1;
-        awayTally.points += 1;
+        homeTally.points += rulePoints.draw;     // thay vì += 1
+        awayTally.points += rulePoints.draw;
       }
     }
 

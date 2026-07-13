@@ -15,9 +15,6 @@ const usePaymentStore = create((set, get) => ({
   fetchedAt: null,
   isProcessing: null,
 
-  // FIX: bỏ limit=5000 (backend clamp cứng ở 100, giả vờ lấy hết là ảo giác
-  // nguy hiểm). Giờ fetch đúng theo page/limit thật, đồng bộ với Pagination
-  // component — không còn silent data loss khi >100 record.
   fetchPayments: async ({ force = false, page, limit, filters = {} } = {}) => {
     const state = get();
     const targetPage = page ?? state.page;
@@ -67,6 +64,26 @@ const usePaymentStore = create((set, get) => ({
       console.error(err);
       set({ isProcessing: null });
       useToastStore.getState().error(getFriendlyErrorMessage(err, 'Không thể xác nhận thanh toán'));
+      return false;
+    }
+  },
+
+  // NEW: rejectPayment — cần backend route POST /payments/{id}/reject
+  // (paymentApi.rejectPayment đã khai báo sẵn trong doc bạn gửi, chưa từng
+  // được gọi từ store → đây là phần thiếu gây TypeError khi bấm "Từ chối").
+  rejectPayment: async (id, reason) => {
+    set({ isProcessing: id });
+    try {
+      await paymentApi.rejectPayment(id, { reason });
+      set(state => ({
+        payments: state.payments.map(p => p.id === id ? { ...p, status: 'rejected' } : p),
+        isProcessing: null
+      }));
+      return true;
+    } catch (err) {
+      console.error(err);
+      set({ isProcessing: null });
+      useToastStore.getState().error(getFriendlyErrorMessage(err, 'Không thể từ chối giao dịch'));
       return false;
     }
   },
