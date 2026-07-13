@@ -35,7 +35,7 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 //   GET /seasons/{id}/standings/{groupId} → public — standings chi tiết 1 group
 //   GET /seasons/{id}/player-stats        → public
 //   GET /seasons/{id}/suspended-players   → public
-//   POST / PATCH / DELETE                 → jwt [admin]
+//   POST / PATCH / DELETE                 → jwt [organizing]
 //
 // Lý do merge SeasonStatsController vào đây:
 //   - Cả hai đều dùng @Route("seasons") → 2 class cùng prefix gây nhầm lẫn + tsoa conflict
@@ -48,7 +48,7 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 //                    ↘                ↘
 //                  cancelled        cancelled
 //   - registration_open, ongoing, finished: có thể set MANUAL qua
-//     PATCH {id}/status (admin bấm sớm/bấm bù), ĐỒNG THỜI cũng tự động qua
+//     PATCH {id}/status (organizing bấm sớm/bấm bù), ĐỒNG THỜI cũng tự động qua
 //     cron SeasonService.runAutoTransitions() theo start_date/end_date — 2
 //     lối đi song song, không loại trừ nhau, đều idempotent.
 //   - cancelled: luôn đi qua route riêng PATCH {id}/cancel (cancel_reason
@@ -100,10 +100,10 @@ export class SeasonController extends Controller {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // POST — CREATE (admin only)
+  // POST — CREATE (organizing only)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Post()
   @SuccessResponse(201, "Created")
   async create(
@@ -115,10 +115,10 @@ export class SeasonController extends Controller {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PATCH — UPDATE (admin only)
+  // PATCH — UPDATE (organizing only)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -127,7 +127,7 @@ export class SeasonController extends Controller {
     return this.service.update(id, body);
   }
 
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -141,7 +141,7 @@ export class SeasonController extends Controller {
    * audit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có
    * đường tắt nào set 'cancelled' mà thiếu cancel_reason.
    */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/cancel")
   async cancelSeason(
     @Path() id: number,
@@ -156,10 +156,10 @@ export class SeasonController extends Controller {
    * UpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên
    * body.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi
    * `body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền
-   * (id, status) — dùng cho registration_open/ongoing/finished, admin bấm
+   * (id, status) — dùng cho registration_open/ongoing/finished, organizing bấm
    * tay song song với cron SeasonService.runAutoTransitions().
    */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/status")
   async updateStatus(
     @Path() id: number,
@@ -175,9 +175,9 @@ export class SeasonController extends Controller {
    *   - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.
    * KHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ
    * `seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch
-   * cho admin/ops, không phải cách vận hành chính.
+   * cho organizing/ops, không phải cách vận hành chính.
    */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Post("auto-transition")
   async runAutoTransitions(): Promise<{ toOngoing: number; toFinished: number; failed: number[] }> {
     return this.service.runAutoTransitions();

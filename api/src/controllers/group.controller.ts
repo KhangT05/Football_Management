@@ -19,7 +19,7 @@ export class GroupController extends Controller {
         return this.service.findAllByPhase(phaseId);
     }
 
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}")
     async createGroup(
         @Path() seasonId: number,
@@ -29,8 +29,8 @@ export class GroupController extends Controller {
         return this.service.createGroup(seasonId, body.name);
     }
 
-    /** Admin: tạo N group cùng lúc (Bảng A, B, C...) */
-    @Security("jwt", ["admin"])
+    /** organizing: tạo N group cùng lúc (Bảng A, B, C...) */
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}/bulk")
     async createGroupsBulk(
         @Path() seasonId: number,
@@ -40,8 +40,8 @@ export class GroupController extends Controller {
         return this.service.createGroupsBulk(seasonId, body.count);
     }
 
-    /** Admin: random draw toàn bộ approved team vào group của season */
-    @Security("jwt", ["admin"])
+    /** organizing: random draw toàn bộ approved team vào group của season */
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}/draw")
     async drawGroups(
         @Path() seasonId: number,
@@ -50,8 +50,8 @@ export class GroupController extends Controller {
         return this.service.drawGroups(seasonId, body);
     }
 
-    /** Admin: seeded draw theo pot (UEFA-style) */
-    @Security("jwt", ["admin"])
+    /** organizing: seeded draw theo pot (UEFA-style) */
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}/draw/seeded")
     async drawGroupsSeeded(
         @Path() seasonId: number,
@@ -60,8 +60,8 @@ export class GroupController extends Controller {
         return this.service.drawGroupsSeeded(seasonId, body);
     }
 
-    /** Admin: xoá toàn bộ kết quả draw của season (reset group_id về null) */
-    @Security("jwt", ["admin"])
+    /** organizing: xoá toàn bộ kết quả draw của season (reset group_id về null) */
+    @Security("jwt", ["organizing"])
     @Delete("season/{seasonId}/draw")
     async clearDraw(@Path() seasonId: number): Promise<void> {
         this.setStatus(204);
@@ -69,14 +69,14 @@ export class GroupController extends Controller {
     }
 
     /**
-     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * NEW: organizing có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
      * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
      * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
      * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
      * deadline, muốn chốt group ngay mà chưa muốn đổi season status).
      * minTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}/finalize")
     async autoFinalizeGroups(
         @Path() seasonId: number,
@@ -93,24 +93,24 @@ export class GroupController extends Controller {
         return this.service.findByIdWithTeams(id) as Promise<groupType.GroupWithTeams>;
     }
 
-    /** Admin: deactivate group (soft-delete, chặn nếu đã có match) */
-    @Security("jwt", ["admin"])
+    /** organizing: deactivate group (soft-delete, chặn nếu đã có match) */
+    @Security("jwt", ["organizing"])
     @Delete("{groupId}")
     async deactivateGroup(@Path() groupId: number): Promise<void> {
         this.setStatus(204);
         return this.service.deactivateGroup(groupId);
     }
 
-    /** Admin: assign thủ công 1 team vào 1 group */
-    @Security("jwt", ["admin"])
+    /** organizing: assign thủ công 1 team vào 1 group */
+    @Security("jwt", ["organizing"])
     @Put("assign")
     async assignTeamToGroup(@Body() body: groupType.AssignTeamToGroupBody): Promise<void> {
         this.setStatus(204);
         return this.service.assignTeamToGroup(body.season_team_id, body.group_id);
     }
 
-    /** Admin: swap group giữa 2 team trong cùng phase */
-    @Security("jwt", ["admin"])
+    /** organizing: swap group giữa 2 team trong cùng phase */
+    @Security("jwt", ["organizing"])
     @Put("swap")
     async swapTeams(@Body() body: groupType.SwapTeamsBody): Promise<void> {
         this.setStatus(204);
@@ -126,8 +126,8 @@ export class GroupController extends Controller {
         return this.service.previewGroupSplitBySeason(seasonId, groupCount);
     }
 
-    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
-    @Security("jwt", ["admin"])
+    /** organizing: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    @Security("jwt", ["organizing"])
     @Post("season/{seasonId}/create-and-draw")
     async createAndDrawGroups(
         @Path() seasonId: number,
@@ -137,8 +137,8 @@ export class GroupController extends Controller {
         return this.service.createAndDrawGroups(seasonId, body.group_count);
     }
 
-    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
-    @Security("jwt", ["admin"])
+    /** organizing: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    @Security("jwt", ["organizing"])
     @Post("phase/{fromPhaseId}/advance")
     async advanceToNextRoundRobin(
         @Path() fromPhaseId: number,

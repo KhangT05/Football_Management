@@ -4578,6 +4578,17 @@
             "ResolveAppealDto": {
                 "$ref": "#/components/schemas/infer_typeofResolveAppealSchema_"
             },
+            "CorrectionApiResult": {
+                "properties": {
+                    "postCommitWarnings": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
             "Pick_RecordEventInput.Exclude_keyofRecordEventInput.period__": {
                 "properties": {
                     "type": {
@@ -6378,7 +6389,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -6446,7 +6457,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -6485,7 +6496,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -6523,7 +6534,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -6538,6 +6549,37 @@
                         }
                     }
                 ]
+            }
+        },
+        "/venues/deleted": {
+            "get": {
+                "operationId": "FindDeleted",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/Venue"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Venues"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": []
             }
         },
         "/users": {
@@ -7372,7 +7414,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -7458,7 +7499,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -7510,7 +7550,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -7549,7 +7588,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -7657,7 +7695,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing",
                             "user",
                             "player",
@@ -7747,7 +7784,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing",
                             "leader"
                         ]
@@ -7803,7 +7839,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing",
                             "leader"
                         ]
@@ -7880,7 +7915,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing",
                             "leader"
                         ]
@@ -8472,7 +8506,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -8533,7 +8567,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -8611,7 +8645,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -8651,7 +8684,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -8701,7 +8733,6 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin",
                             "organizing"
                         ]
                     }
@@ -8751,7 +8782,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -8879,7 +8910,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9139,7 +9170,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9207,7 +9238,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9246,7 +9277,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9285,7 +9316,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9327,14 +9358,14 @@
                         }
                     }
                 },
-                "description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\n(id, status) — dùng cho registration_open/ongoing/finished, admin bấm\ntay song song với cron SeasonService.runAutoTransitions().",
+                "description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\n(id, status) — dùng cho registration_open/ongoing/finished, organizing bấm\ntay song song với cron SeasonService.runAutoTransitions().",
                 "tags": [
                     "Seasons"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9398,14 +9429,14 @@
                         }
                     }
                 },
-                "description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\ncho admin/ops, không phải cách vận hành chính.",
+                "description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\ncho organizing/ops, không phải cách vận hành chính.",
                 "tags": [
                     "Seasons"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9780,7 +9811,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9829,7 +9860,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -9894,7 +9925,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -10005,7 +10036,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -12019,7 +12050,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -12106,7 +12137,8 @@
                     {
                         "jwt": [
                             "admin",
-                            "leader"
+                            "leader",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12200,7 +12232,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -12251,14 +12283,14 @@
                         "description": "Removed"
                     }
                 },
-                "description": "Xóa 1 player khỏi lineup.\r\nChỉ được gọi trước giờ thi đấu ít nhất 10 phút.\r\nAdmin only.",
+                "description": "Xóa 1 player khỏi lineup.\r\nChỉ được gọi trước giờ thi đấu ít nhất 10 phút.\r\norganizing only.",
                 "tags": [
                     "Match Lineup"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -12455,7 +12487,7 @@
                 }
             }
         },
-        "/matches/{id}/confirm": {
+        "/matches/{id}/confirm-official": {
             "post": {
                 "operationId": "ConfirmOfficial",
                 "responses": {
@@ -12470,14 +12502,15 @@
                         }
                     }
                 },
-                "description": "Xác nhận kết quả chính thức sau grace period.\r\nEvent path: compute score từ toàn bộ events.\r\nManual path: dùng manual_home_score / manual_away_score.\r\nTạo MatchResult, update standings, advance knockout bracket nếu có.\r\nvenueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).",
+                "description": "Xác nhận kết quả chính thức sau grace period.\r\nEvent path: compute score từ toàn bộ events.\r\nManual path: dùng manual_home_score / manual_away_score.\r\nTạo MatchResult, update standings, advance knockout bracket nếu có.\r\nvenueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).\r\n\r\nFIX (route mismatch): matchApi.js FE (comment tự document rõ endpoint\r\ndự kiến) gọi `/matches/{id}/confirm-official`, nhưng route decorator ở\r\nđây trước đây là `{id}/confirm` — lệch nhau, mọi lần FE gọi\r\nconfirmOfficial() sẽ nhận 404. Đổi route để khớp matchApi.js (giữ\r\nnguyên FE, sửa BE) — nếu route `{id}/confirm` mới là chuẩn dự định,\r\ncần sửa ngược lại matchApi.js thay vì ở đây, xác nhận với người review.",
                 "tags": [
                     "Match"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12526,7 +12559,8 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12568,7 +12602,8 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12700,7 +12735,8 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12731,18 +12767,26 @@
             "post": {
                 "operationId": "AddEvent",
                 "responses": {
-                    "204": {
-                        "description": "Event added"
+                    "200": {
+                        "description": "Event added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CorrectionApiResult"
+                                }
+                            }
+                        }
                     }
                 },
-                "description": "Thêm event bị sót sau khi match finished.\r\nChỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).\r\nTự recompute MatchResult sau khi thêm.\r\nvenueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.",
+                "description": "Thêm event bị sót sau khi match finished.\r\nChỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).\r\nTự recompute MatchResult sau khi thêm.\r\nvenueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.\r\n\r\nFIX (204 nuốt body): trước đây",
                 "tags": [
                     "Match"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12780,18 +12824,26 @@
             "delete": {
                 "operationId": "DeleteEvent",
                 "responses": {
-                    "204": {
-                        "description": "Event deleted"
+                    "200": {
+                        "description": "Event deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CorrectionApiResult"
+                                }
+                            }
+                        }
                     }
                 },
-                "description": "Xóa event nhập sai sau khi match finished.\r\nChỉ trong 15p kể từ played_at.\r\nTự recompute MatchResult sau khi xóa.\r\nscheduleOptions truyền qua query params vì DELETE không nên có body.\r\nvenueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...",
+                "description": "Xóa event nhập sai sau khi match finished.\r\nChỉ trong 15p kể từ played_at.\r\nTự recompute MatchResult sau khi xóa.\r\nscheduleOptions truyền qua query params vì DELETE không nên có body.\r\nvenueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...\r\n\r\nFIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.",
                 "tags": [
                     "Match"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12842,18 +12894,26 @@
             "patch": {
                 "operationId": "EditEvent",
                 "responses": {
-                    "204": {
-                        "description": "Event edited"
+                    "200": {
+                        "description": "Event edited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CorrectionApiResult"
+                                }
+                            }
+                        }
                     }
                 },
-                "description": "Sửa event (minute, type, player, period, note) sau khi match finished.\r\nChỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.\r\nTự recompute MatchResult sau khi sửa.",
+                "description": "Sửa event (minute, type, player, period, note) sau khi match finished.\r\nChỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.\r\nTự recompute MatchResult sau khi sửa.\r\n\r\nFIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.",
                 "tags": [
                     "Match"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -12900,18 +12960,26 @@
             "patch": {
                 "operationId": "EditScore",
                 "responses": {
-                    "204": {
-                        "description": "Score corrected"
+                    "200": {
+                        "description": "Score corrected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CorrectionApiResult"
+                                }
+                            }
+                        }
                     }
                 },
-                "description": "Override score trực tiếp — chỉ dùng cho manual path (match không có events).\r\nChỉ trong 15p kể từ played_at.\r\nReject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.",
+                "description": "Override score trực tiếp — chỉ dùng cho manual path (match không có events).\r\nChỉ trong 15p kể từ played_at.\r\nReject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.\r\n\r\nFIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.",
                 "tags": [
                     "Match"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "admin",
+                            "organizing"
                         ]
                     }
                 ],
@@ -13017,7 +13085,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13077,7 +13145,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13170,7 +13238,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13212,7 +13280,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13263,7 +13331,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13311,16 +13379,7 @@
                 "tags": [
                     "Jerseys"
                 ],
-                "security": [
-                    {
-                        "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
-                        ]
-                    }
-                ],
+                "security": [],
                 "parameters": [
                     {
                         "in": "path",
@@ -13347,17 +13406,14 @@
                         }
                     }
                 },
-                "description": "PUT /jerseys/season-teams/:seasonTeamId — upsert by type",
                 "tags": [
                     "Jerseys"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "leader",
+                            "organizing"
                         ]
                     }
                 ],
@@ -13390,17 +13446,14 @@
                         "description": "Deleted"
                     }
                 },
-                "description": "DELETE /jerseys/season-teams/:seasonTeamId?type=home",
                 "tags": [
                     "Jerseys"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin",
-                            "user",
-                            "organizing",
-                            "guest"
+                            "leader",
+                            "organizing"
                         ]
                     }
                 ],
@@ -13588,7 +13641,7 @@
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13772,14 +13825,14 @@
                         }
                     }
                 },
-                "description": "Admin: tạo N group cùng lúc (Bảng A, B, C...)",
+                "description": "organizing: tạo N group cùng lúc (Bảng A, B, C...)",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13824,14 +13877,14 @@
                         }
                     }
                 },
-                "description": "Admin: random draw toàn bộ approved team vào group của season",
+                "description": "organizing: random draw toàn bộ approved team vào group của season",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13864,14 +13917,14 @@
                         "description": "No content"
                     }
                 },
-                "description": "Admin: xoá toàn bộ kết quả draw của season (reset group_id về null)",
+                "description": "organizing: xoá toàn bộ kết quả draw của season (reset group_id về null)",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13906,14 +13959,14 @@
                         }
                     }
                 },
-                "description": "Admin: seeded draw theo pot (UEFA-style)",
+                "description": "organizing: seeded draw theo pot (UEFA-style)",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -13974,14 +14027,14 @@
                         }
                     }
                 },
-                "description": "NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc\r\nupdateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw\r\nhoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn\r\n'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua\r\ndeadline, muốn chốt group ngay mà chưa muốn đổi season status).\r\nminTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.",
+                "description": "NEW: organizing có thể chủ động gọi finalize thay vì chờ tự động chạy lúc\r\nupdateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw\r\nhoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn\r\n'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua\r\ndeadline, muốn chốt group ngay mà chưa muốn đổi season status).\r\nminTeamsPerGroup/maxTeamsPerGroup optional, để FE tuỳ biến theo giải.",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -14048,14 +14101,14 @@
                         "description": "No content"
                     }
                 },
-                "description": "Admin: deactivate group (soft-delete, chặn nếu đã có match)",
+                "description": "organizing: deactivate group (soft-delete, chặn nếu đã có match)",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -14080,14 +14133,14 @@
                         "description": "No content"
                     }
                 },
-                "description": "Admin: assign thủ công 1 team vào 1 group",
+                "description": "organizing: assign thủ công 1 team vào 1 group",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -14112,14 +14165,14 @@
                         "description": "No content"
                     }
                 },
-                "description": "Admin: swap group giữa 2 team trong cùng phase",
+                "description": "organizing: swap group giữa 2 team trong cùng phase",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -14196,14 +14249,14 @@
                         }
                     }
                 },
-                "description": "Admin: tạo N group rỗng + draw approved team ngay trong 1 bước",
+                "description": "organizing: tạo N group rỗng + draw approved team ngay trong 1 bước",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],
@@ -14245,14 +14298,14 @@
                         }
                     }
                 },
-                "description": "Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season",
+                "description": "organizing: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season",
                 "tags": [
                     "Groups"
                 ],
                 "security": [
                     {
                         "jwt": [
-                            "admin"
+                            "organizing"
                         ]
                     }
                 ],

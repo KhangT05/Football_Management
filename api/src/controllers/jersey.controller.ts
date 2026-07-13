@@ -19,7 +19,6 @@ import * as jerseySchema from "../dtos/jersey.schema.js";
 
 type AuthRequest = ExRequest & { user: { user_id: number; is_admin: boolean } };
 
-@Security("jwt", ["admin", "user", "organizing", "guest"])
 @Route("jerseys")
 @Tags("Jerseys")
 export class JerseyController extends Controller {
@@ -36,7 +35,7 @@ export class JerseyController extends Controller {
     ): Promise<SeasonTeamJersey[]> {
         return this.service.getSeasonTeamJerseys(seasonTeamId);
     }
-
+    @Security("jwt", ["leader", "organizing"])
     /** PUT /jerseys/season-teams/:seasonTeamId — upsert by type */
     @Put("season-teams/{seasonTeamId}")
     async upsertSeasonTeamJersey(
@@ -46,7 +45,7 @@ export class JerseyController extends Controller {
     ): Promise<SeasonTeamJersey> {
         return this.service.upsertSeasonTeamJersey(seasonTeamId, body, req.user);
     }
-
+    @Security("jwt", ["leader", "organizing"])
     /** DELETE /jerseys/season-teams/:seasonTeamId?type=home */
     @Delete("season-teams/{seasonTeamId}")
     @SuccessResponse(204, "Deleted")

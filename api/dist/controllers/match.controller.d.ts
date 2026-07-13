@@ -3,6 +3,9 @@ import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
+type CorrectionApiResult = {
+    postCommitWarnings?: string[];
+};
 export declare class MatchController extends Controller {
     private readonly lifecycleService;
     constructor(lifecycleService: MatchLifecycleService);
@@ -38,6 +41,13 @@ export declare class MatchController extends Controller {
      * Manual path: dùng manual_home_score / manual_away_score.
      * Tạo MatchResult, update standings, advance knockout bracket nếu có.
      * venueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).
+     *
+     * FIX (route mismatch): matchApi.js FE (comment tự document rõ endpoint
+     * dự kiến) gọi `/matches/{id}/confirm-official`, nhưng route decorator ở
+     * đây trước đây là `{id}/confirm` — lệch nhau, mọi lần FE gọi
+     * confirmOfficial() sẽ nhận 404. Đổi route để khớp matchApi.js (giữ
+     * nguyên FE, sửa BE) — nếu route `{id}/confirm` mới là chuẩn dự định,
+     * cần sửa ngược lại matchApi.js thay vì ở đây, xác nhận với người review.
      */
     confirmOfficial(id: number, body: matchSchema.ConfirmOfficialDto): Promise<ConfirmResultOutput>;
     /**
@@ -75,28 +85,41 @@ export declare class MatchController extends Controller {
      * Chỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).
      * Tự recompute MatchResult sau khi thêm.
      * venueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.
+     *
+     * FIX (204 nuốt body): trước đây @SuccessResponse(204,...) + setStatus(204)
+     * + return type void — HTTP 204 không được phép có body, nên
+     * postCommitWarnings từ lifecycleService.addEvent() (xem
+     * matchlifecycle.service.ts) bị strip sạch trước khi tới FE, bất kể
+     * recompute standings/player stats thành công hay fail âm thầm. Đổi sang
+     * 200 + trả nguyên object.
      */
-    addEvent(id: number, body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    addEvent(id: number, body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
     /**
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
      * Tự recompute MatchResult sau khi xóa.
      * scheduleOptions truyền qua query params vì DELETE không nên có body.
      * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    deleteEvent(id: number, eventId: number, query: matchSchema.DeleteEventQueryDto): Promise<void>;
+    deleteEvent(id: number, eventId: number, query: matchSchema.DeleteEventQueryDto): Promise<CorrectionApiResult>;
     /**
      * Sửa event (minute, type, player, period, note) sau khi match finished.
      * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
      * Tự recompute MatchResult sau khi sửa.
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    editEvent(id: number, eventId: number, body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    editEvent(id: number, eventId: number, body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
     /**
      * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
      * Chỉ trong 15p kể từ played_at.
      * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    editScore(id: number, body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto): Promise<void>;
+    editScore(id: number, body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
     /**
  * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
  *
@@ -110,4 +133,5 @@ export declare class MatchController extends Controller {
  */
     adminRecordResult(id: number, body: matchType.AdminRecordResultInput): Promise<ConfirmResultOutput>;
 }
+export {};
 //# sourceMappingURL=match.controller.d.ts.map

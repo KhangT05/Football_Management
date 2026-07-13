@@ -1,12 +1,15 @@
 import { atOrThrow } from "./helperSeeder.js";
-import { ALL_TEAM_NAMES } from "./worldcup.js";
 /**
- * Tạo 32 Team (theo ALL_TEAM_NAMES). Nếu đã tồn tại (chạy seed lại) thì tái sử dụng.
+ * Tạo Team theo danh sách `teamNames` truyền vào (từ teamGenerator.generateTeamNames()).
+ * Nếu đã tồn tại (chạy seed lại) thì tái sử dụng — idempotent qua upsert theo `name`.
  * adminUserId dùng làm user sở hữu Team (Team.user_id).
  */
-export async function seedTeams(db, adminUserId) {
+export async function seedTeams(db, adminUserId, teamNames) {
+    if (teamNames.length === 0) {
+        throw new Error("seedTeams: teamNames rỗng — kiểm tra lại teamGenerator.generateTeamNames()");
+    }
     const teamIdByName = {};
-    for (const name of ALL_TEAM_NAMES) {
+    for (const name of teamNames) {
         const team = await db.team.upsert({
             where: { name },
             update: {},

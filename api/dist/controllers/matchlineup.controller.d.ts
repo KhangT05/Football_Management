@@ -29,7 +29,7 @@ export declare class MatchLineupController extends Controller {
     /**
      * Xóa 1 player khỏi lineup.
      * Chỉ được gọi trước giờ thi đấu ít nhất 10 phút.
-     * Admin only.
+     * organizing only.
      */
     removeLineupEntry(matchId: number, teamId: number, playerId: number): Promise<void>;
 }

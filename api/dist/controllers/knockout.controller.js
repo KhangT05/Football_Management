@@ -69,7 +69,7 @@ let KnockoutController = class KnockoutController extends Controller {
     }
 };
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/knockout/generate'),
     SuccessResponse(201, 'Created'),
     __param(0, Path()),
@@ -79,7 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "generateKnockoutBracket", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/phases/{phaseId}/knockout/advance'),
     SuccessResponse(200, 'OK'),
     __param(0, Path()),
@@ -97,7 +97,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "getBracket", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/knockout/generate-from-standings'),
     SuccessResponse(201, 'Created'),
     __param(0, Path()),
@@ -107,7 +107,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "generateKnockoutFromStandings", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds'),
     SuccessResponse(204, 'No Content'),
     __param(0, Path()),
@@ -118,7 +118,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "swapSeeds", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/phases/{phaseId}/knockout/confirm'),
     SuccessResponse(204, 'No Content'),
     __param(0, Path()),

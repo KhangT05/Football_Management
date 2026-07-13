@@ -59,21 +59,21 @@ export declare class GroupController extends Controller {
         name: string;
         phase_id: number;
     }>;
-    /** Admin: tạo N group cùng lúc (Bảng A, B, C...) */
+    /** organizing: tạo N group cùng lúc (Bảng A, B, C...) */
     createGroupsBulk(seasonId: number, body: groupType.CreateGroupsBulkBody): Promise<{
         id: number;
         name: string;
     }[]>;
-    /** Admin: random draw toàn bộ approved team vào group của season */
+    /** organizing: random draw toàn bộ approved team vào group của season */
     drawGroups(seasonId: number, body: groupType.DrawGroupsOptions): Promise<groupType.DrawAssignment[]>;
-    /** Admin: seeded draw theo pot (UEFA-style) */
+    /** organizing: seeded draw theo pot (UEFA-style) */
     drawGroupsSeeded(seasonId: number, body: groupType.DrawGroupsOptions & {
         num_pots: number;
     }): Promise<groupType.DrawAssignment[]>;
-    /** Admin: xoá toàn bộ kết quả draw của season (reset group_id về null) */
+    /** organizing: xoá toàn bộ kết quả draw của season (reset group_id về null) */
     clearDraw(seasonId: number): Promise<void>;
     /**
-     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * NEW: organizing có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
      * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
      * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
      * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
@@ -82,17 +82,17 @@ export declare class GroupController extends Controller {
      */
     autoFinalizeGroups(seasonId: number, body: groupType.AutoFinalizeGroupsBody): Promise<groupType.DrawAssignment[]>;
     findByIdWithTeams(id: number): Promise<groupType.GroupWithTeams>;
-    /** Admin: deactivate group (soft-delete, chặn nếu đã có match) */
+    /** organizing: deactivate group (soft-delete, chặn nếu đã có match) */
     deactivateGroup(groupId: number): Promise<void>;
-    /** Admin: assign thủ công 1 team vào 1 group */
+    /** organizing: assign thủ công 1 team vào 1 group */
     assignTeamToGroup(body: groupType.AssignTeamToGroupBody): Promise<void>;
-    /** Admin: swap group giữa 2 team trong cùng phase */
+    /** organizing: swap group giữa 2 team trong cùng phase */
     swapTeams(body: groupType.SwapTeamsBody): Promise<void>;
     /** Public: preview snake-draft distribution + warning trước khi confirm tạo group */
     previewGroupSplit(seasonId: number, groupCount: number): Promise<groupType.GroupSplitPreview>;
-    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    /** organizing: tạo N group rỗng + draw approved team ngay trong 1 bước */
     createAndDrawGroups(seasonId: number, body: groupType.CreateAndDrawGroupsBody): Promise<groupType.DrawAssignment[]>;
-    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    /** organizing: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
     advanceToNextRoundRobin(fromPhaseId: number, body: groupType.AdvanceRoundRobinBody): Promise<groupType.AdvanceRoundRobinResult>;
 }
 //# sourceMappingURL=group.controller.d.ts.map

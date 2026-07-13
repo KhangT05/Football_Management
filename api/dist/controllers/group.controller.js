@@ -29,26 +29,26 @@ let GroupController = class GroupController extends Controller {
         this.setStatus(201);
         return this.service.createGroup(seasonId, body.name);
     }
-    /** Admin: tạo N group cùng lúc (Bảng A, B, C...) */
+    /** organizing: tạo N group cùng lúc (Bảng A, B, C...) */
     async createGroupsBulk(seasonId, body) {
         this.setStatus(201);
         return this.service.createGroupsBulk(seasonId, body.count);
     }
-    /** Admin: random draw toàn bộ approved team vào group của season */
+    /** organizing: random draw toàn bộ approved team vào group của season */
     async drawGroups(seasonId, body) {
         return this.service.drawGroups(seasonId, body);
     }
-    /** Admin: seeded draw theo pot (UEFA-style) */
+    /** organizing: seeded draw theo pot (UEFA-style) */
     async drawGroupsSeeded(seasonId, body) {
         return this.service.drawGroupsSeeded(seasonId, body);
     }
-    /** Admin: xoá toàn bộ kết quả draw của season (reset group_id về null) */
+    /** organizing: xoá toàn bộ kết quả draw của season (reset group_id về null) */
     async clearDraw(seasonId) {
         this.setStatus(204);
         return this.service.clearDraw(seasonId);
     }
     /**
-     * NEW: Admin có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
+     * NEW: organizing có thể chủ động gọi finalize thay vì chờ tự động chạy lúc
      * updateStatus('ongoing') — hữu ích khi muốn xem trước kết quả re-draw
      * hoặc cần chạy lại finalize nhiều lần trong lúc season vẫn còn
      * 'registration_open' (VD: đóng đăng ký sớm bằng tay dù chưa qua
@@ -64,17 +64,17 @@ let GroupController = class GroupController extends Controller {
     async findByIdWithTeams(id) {
         return this.service.findByIdWithTeams(id);
     }
-    /** Admin: deactivate group (soft-delete, chặn nếu đã có match) */
+    /** organizing: deactivate group (soft-delete, chặn nếu đã có match) */
     async deactivateGroup(groupId) {
         this.setStatus(204);
         return this.service.deactivateGroup(groupId);
     }
-    /** Admin: assign thủ công 1 team vào 1 group */
+    /** organizing: assign thủ công 1 team vào 1 group */
     async assignTeamToGroup(body) {
         this.setStatus(204);
         return this.service.assignTeamToGroup(body.season_team_id, body.group_id);
     }
-    /** Admin: swap group giữa 2 team trong cùng phase */
+    /** organizing: swap group giữa 2 team trong cùng phase */
     async swapTeams(body) {
         this.setStatus(204);
         return this.service.swapTeams(body.season_team_id_a, body.season_team_id_b);
@@ -83,12 +83,12 @@ let GroupController = class GroupController extends Controller {
     async previewGroupSplit(seasonId, groupCount) {
         return this.service.previewGroupSplitBySeason(seasonId, groupCount);
     }
-    /** Admin: tạo N group rỗng + draw approved team ngay trong 1 bước */
+    /** organizing: tạo N group rỗng + draw approved team ngay trong 1 bước */
     async createAndDrawGroups(seasonId, body) {
         this.setStatus(201);
         return this.service.createAndDrawGroups(seasonId, body.group_count);
     }
-    /** Admin: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
+    /** organizing: advance top-N mỗi group của phase (đã locked) sang round_robin tiếp theo cùng season */
     async advanceToNextRoundRobin(fromPhaseId, body) {
         this.setStatus(201);
         return this.service.advanceToNextRoundRobin(fromPhaseId, body.new_group_count);
@@ -109,7 +109,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "findAllByPhase", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}"),
     __param(0, Path()),
     __param(1, Body()),
@@ -118,7 +118,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "createGroup", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/bulk"),
     __param(0, Path()),
     __param(1, Body()),
@@ -127,7 +127,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "createGroupsBulk", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/draw"),
     __param(0, Path()),
     __param(1, Body()),
@@ -136,7 +136,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "drawGroups", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/draw/seeded"),
     __param(0, Path()),
     __param(1, Body()),
@@ -145,7 +145,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "drawGroupsSeeded", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Delete("season/{seasonId}/draw"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -153,7 +153,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "clearDraw", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/finalize"),
     __param(0, Path()),
     __param(1, Body()),
@@ -169,7 +169,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "findByIdWithTeams", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Delete("{groupId}"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -177,7 +177,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "deactivateGroup", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Put("assign"),
     __param(0, Body()),
     __metadata("design:type", Function),
@@ -185,7 +185,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "assignTeamToGroup", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Put("swap"),
     __param(0, Body()),
     __metadata("design:type", Function),
@@ -201,7 +201,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "previewGroupSplit", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/create-and-draw"),
     __param(0, Path()),
     __param(1, Body()),
@@ -210,7 +210,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupController.prototype, "createAndDrawGroups", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("phase/{fromPhaseId}/advance"),
     __param(0, Path()),
     __param(1, Body()),

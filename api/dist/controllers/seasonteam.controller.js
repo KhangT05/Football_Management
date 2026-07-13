@@ -125,7 +125,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "selfRegister", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
@@ -135,7 +135,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "adminAdd", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/approve"),
     __param(0, Path()),
     __param(1, Request()),
@@ -144,7 +144,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "approve", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/transfer"),
     __param(0, Path()),
     __param(1, Body()),
@@ -154,7 +154,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "transferSeason", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/status"),
     __param(0, Path()),
     __param(1, Body()),
@@ -163,7 +163,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "updateStatus", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/group"),
     __param(0, Path()),
     __param(1, Body()),
@@ -172,7 +172,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "assignGroup", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -181,7 +181,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "softDelete", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("season/{seasonId}/group-phase"),
     __param(0, Path()),
     __metadata("design:type", Function),

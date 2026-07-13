@@ -12,5 +12,6 @@ export declare class VenueService {
     update(id: number, data: UpdateVenueDto): Promise<Venue>;
     softDelete(id: number): Promise<void>;
     restore(id: number): Promise<Venue>;
+    findDeleted(req?: QueryRequest): Promise<Venue[]>;
 }
 //# sourceMappingURL=venue.service.d.ts.map
