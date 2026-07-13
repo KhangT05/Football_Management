@@ -12,7 +12,7 @@ export default defineConfig({
       // Vite dev server forward server-side đến backend.
       // Vì proxy chạy phía Node.js (không phải browser) → không bị CORS block.
       '/api': {
-        target: 'http://149.28.133.66:3000/', // Backend API URL (port 3000)
+        target: 'http://localhost:3000/', // Backend API URL (port 3000)
         changeOrigin: true,              // Đổi Origin header thành target → backend nhận đúng origin
         secure: false,                   // Cho phép HTTP (không cần HTTPS ở local)
         // withCredentials được xử lý tự động khi dùng proxy

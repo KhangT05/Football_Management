@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, Shield, Activity, Users } from 'lucide-react';
+import { X, Clock, MapPin, Shield, Activity, Users } from 'lucide-react';
 import { teamApi, matchApi, matchLineupApi } from '../api';
 import {
   useMatchExtras,
   TeamAvatar,
+  TeamBadge,
   PlayerItem,
-  FormationPlayerDot,
+  FormationRow,
+  groupPlayersByPosition,
+  computeFormationLabel,
+  resolveEventPlayerName,
+  formatMinuteLabel,
+  GOAL_EVENT_TYPES,
+  EVENT_TYPE_LABEL,
   normalizePosition,
   POSITION_ORDER,
   STATUS_LABEL,
@@ -14,20 +21,27 @@ import {
   getVsLabel,
   RESULT_AVAILABLE_STATUSES
 } from './MatchShared';
-import { EVENT_ICON } from '../data/data';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+function eventIcon(type) {
+  if (GOAL_EVENT_TYPES.has(type)) return <span className="text-lg leading-none">⚽</span>;
+  if (type === 'own_goal') return <span className="text-lg leading-none">⚽</span>;
+  if (type === 'yellow_card') return <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" />;
+  if (type === 'second_yellow') return (
+    <div className="relative w-4 h-4 shrink-0">
+      <div className="absolute inset-y-0 left-0 w-3 h-4 bg-yellow-400 rounded-sm" />
+      <div className="absolute inset-y-0 left-1 w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+    </div>
+  );
+  if (type === 'red_card') return <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />;
+  return <span className="text-lg leading-none">🔄</span>; // substitution_in/out
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function groupStartersByRow(players) {
-  const map = { GK: [], DEF: [], MID: [], FW: [] };
-  players
-    .filter(p => p.lineup_type === 'starter')
-    .forEach(p => { map[normalizePosition(p.position)].push(p); });
-  return POSITION_ORDER.map(pos => map[pos]).filter(row => row.length > 0);
-}
-
-function FormationPitchSingleTeam({ starters, kit }) {
-  const rows = groupStartersByRow(starters);
+function FormationPitchSingleTeam({ starters, kit, events }) {
+  const rows = groupPlayersByPosition(starters, { reverse: true });
 
   if (rows.length === 0) {
     return (
@@ -38,36 +52,21 @@ function FormationPitchSingleTeam({ starters, kit }) {
     );
   }
 
-  const orderedRows = [...rows].reverse();
-
   return (
-    <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20 h-full w-full">
-      {/* Beautiful Pitch Background */}
-      <div className="absolute inset-0 bg-[#1e5e1e]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#1a521a_50%,transparent_50%)] bg-size-[100%_20%] opacity-50" />
-      <div className="absolute inset-4 border-2 border-white/40 pointer-events-none" />
-      <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 w-16 sm:w-24 h-16 sm:h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      {/* Penalty Areas */}
-      <div className="absolute bottom-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
-
-      {/* Players */}
-      <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10 text-white">
-        {orderedRows.map((row, i) => (
-          <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
-            {row.map(p => <FormationPlayerDot key={p.id} tp={p} kit={kit} size="sm" />)}
-          </div>
-        ))}
-      </div>
+    <div
+      className="relative flex flex-col justify-between h-full rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
+      style={{ background: 'repeating-linear-gradient(to bottom, #0f3d24 0px, #0f3d24 36px, #124a2c 36px, #124a2c 72px)' }}
+    >
+      <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-14 h-14 rounded-full border border-white/20 pointer-events-none" />
+      <div className="absolute left-2 right-2 bottom-2 h-10 border border-white/15 rounded-sm pointer-events-none" style={{ marginInline: '18%' }} />
+      {rows.map(row => (
+        <FormationRow key={row.pos} players={row.players} kit={kit} events={events} />
+      ))}
     </div>
   );
 }
 
-function PlayerColumn({ title, side, players, loading, kit, viewMode, onToggleView }) {
+function PlayerColumn({ title, side, players, loading, kit, events, viewMode, onToggleView }) {
   const color = side === 'home' ? 'blue' : 'rose';
   const borderCls = color === 'blue' ? 'text-blue-400' : 'text-rose-400';
   const badgeCls = color === 'blue' ? 'bg-blue-500/20 text-blue-400' : 'bg-rose-500/20 text-rose-400';
@@ -77,12 +76,18 @@ function PlayerColumn({ title, side, players, loading, kit, viewMode, onToggleVi
   const unregistered = players.filter(p => p.lineup_type === 'unregistered');
   const hasFormationData = starters.length > 0;
   const showFormation = viewMode === 'formation' && hasFormationData;
+  const formationLabel = hasFormationData ? computeFormationLabel(starters) : null;
 
   return (
     <div className="flex flex-col min-h-0 h-full bg-navy border border-navy-light rounded-2xl p-4 shadow-lg">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-navy-light/50 shrink-0">
         <Shield className={`w-5 h-5 ${borderCls}`} />
         <h3 className="font-black text-white uppercase tracking-wider text-sm truncate flex-1">{title}</h3>
+        {formationLabel && (
+          <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-500/30 rounded-full px-2 py-0.5 shrink-0">
+            {formationLabel}
+          </span>
+        )}
         {hasFormationData ? (
           <div className="flex items-center gap-1 bg-navy-dark/60 border border-navy-light rounded-lg p-0.5 shrink-0">
             <button
@@ -108,8 +113,8 @@ function PlayerColumn({ title, side, players, loading, kit, viewMode, onToggleVi
           [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
         ) : showFormation ? (
           <div className="space-y-4 h-full flex flex-col">
-            <div className="h-[460px] sm:h-[560px] shrink-0">
-              <FormationPitchSingleTeam starters={starters} kit={kit} />
+            <div className="h-[300px] sm:h-[340px] shrink-0">
+              <FormationPitchSingleTeam starters={starters} kit={kit} events={events} />
             </div>
             {subs.length > 0 && (
               <div>
@@ -175,20 +180,19 @@ function EventTimeline({ events, status, allPlayers = [] }) {
       <div className="absolute top-0 bottom-0 left-1/2 w-px bg-navy-light/50 -translate-x-1/2" />
       {events.map((ev, i) => {
         const isHome = ev.team === 'home';
-        // Ưu tiên resolve tên qua allPlayers (đã map từ roster/lineup), fallback
-        // sang ev.player (đã build sẵn ở effect fetch events bên dưới, không
-        // còn render literal "null" khi player_id thiếu).
-        const resolvedName = allPlayers.find(p => p.id === ev.player_id)?.name || ev.player;
+        const resolvedName = resolveEventPlayerName(ev, allPlayers);
+        const eventLabel = EVENT_TYPE_LABEL[ev.type] ?? ev.type;
         return (
           <div key={i} className={`flex items-center w-full relative z-10 ${isHome ? 'justify-start' : 'justify-end'}`}>
             <div className={`w-1/2 flex items-center ${isHome ? 'justify-end pr-4' : 'justify-start pl-4'}`}>
               <div className={`flex flex-col ${isHome ? 'items-end' : 'items-start'} bg-navy border border-navy-light p-2.5 rounded-xl shadow-lg w-full max-w-[180px]`}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  {isHome && EVENT_ICON[ev.type]}
-                  <span className="text-xs font-black text-gray-400">{ev.time}'</span>
-                  {!isHome && EVENT_ICON[ev.type]}
+                  {isHome && eventIcon(ev.type)}
+                  <span className="text-xs font-black text-gray-400">{formatMinuteLabel(ev)}</span>
+                  {!isHome && eventIcon(ev.type)}
                 </div>
                 <span className="text-sm font-bold text-white line-clamp-1">{resolvedName}</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{eventLabel}</span>
               </div>
             </div>
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-navy border-2 border-navy-light" />
@@ -209,7 +213,16 @@ export default function MatchModal({ match, onClose }) {
 
   const { home: homePlayers, away: awayPlayers, loading: loadingPlayers } = playerState;
 
-  const { matchResult, jerseys, kitFor, isPenaltyResult, isExtraTimeResult } = useMatchExtras(match);
+  // FIX: hasScore/finalHomeScore/finalAwayScore/homeIsWinner/awayIsWinner
+  // giờ đến từ useMatchExtras (đọc matchResult.home_final_score/
+  // away_final_score) — trước đây MatchModal tự tính hasScore từ
+  // match.home_score/match.away_score, field KHÔNG tồn tại trên match
+  // object (đã confirm ở MatchDetail), nên tỉ số thật gần như không bao
+  // giờ hiện được, luôn rơi về nhãn "VS"/"TBD".
+  const {
+    matchResult, jerseys, kitFor, isPenaltyResult, isExtraTimeResult,
+    finalHomeScore, finalAwayScore, hasScore, homeIsWinner, awayIsWinner,
+  } = useMatchExtras(match);
 
   useEffect(() => {
     if (!match) return;
@@ -233,9 +246,6 @@ export default function MatchModal({ match, onClose }) {
     ]).then(([h, a, l]) => {
       if (cancelled) return;
 
-      // DEBUG: log lý do rejected — nếu 1 bên roster luôn rỗng, check console
-      // trước khi nghi ngờ code. rejected = lỗi API thật (network/auth/500);
-      // fulfilled với data:[] = team thật sự chưa có player nào approved.
       if (h.status === 'rejected') console.warn('[MatchModal] getPlayers(home) failed:', match.home_team_id, h.reason);
       if (a.status === 'rejected') console.warn('[MatchModal] getPlayers(away) failed:', match.away_team_id, a.reason);
       if (l.status === 'rejected') console.warn('[MatchModal] getMatchLineups failed:', match.id, l.reason);
@@ -247,11 +257,19 @@ export default function MatchModal({ match, onClose }) {
       const homeLineup = lineups.filter(x => x.team_id === match.home_team_id);
       const awayLineup = lineups.filter(x => x.team_id === match.away_team_id);
 
+      // FIX: xuất canonical shape { id, player_id, name, jersey_number,
+      // position, lineup_type, is_captain } — trước đây field `player_id`
+      // không được set tường minh (unregistered case dùng id = team_player
+      // id, không phải player id), khiến FormationPlayerCell/getPlayerEventBadges
+      // (khớp theo player_id với events[].player_id) không map đúng cầu thủ,
+      // và resolveEventPlayerName phải tự đoán qua nhiều field. Giờ mọi nơi
+      // downstream chỉ cần đọc đúng `player_id` + `name`.
       const buildTeamPlayers = (roster, lineup) => {
         if (lineup.length === 0) {
           return roster.map(rPlayer => ({
             id: rPlayer.id,
-            name: rPlayer?.user?.name ?? rPlayer?.player?.user?.name ?? rPlayer?.player?.name ?? rPlayer?.name ?? `#${rPlayer.player_id}`,
+            player_id: rPlayer.player_id ?? rPlayer.id,
+            name: rPlayer?.player?.user?.name ?? rPlayer?.player?.name ?? rPlayer?.name ?? `#${rPlayer.player_id ?? rPlayer.id}`,
             jersey_number: rPlayer.jersey_number ?? rPlayer.number ?? '?',
             position: rPlayer.position,
             lineup_type: 'unregistered',
@@ -261,7 +279,8 @@ export default function MatchModal({ match, onClose }) {
         return lineup.map(entry => {
           const rPlayer = roster.find(p => p.player_id === entry.player_id || p.player?.id === entry.player_id);
           return {
-            id: entry.player_id,
+            id: entry.id ?? entry.player_id,
+            player_id: entry.player_id,
             name: rPlayer?.user?.name ?? rPlayer?.player?.user?.name ?? rPlayer?.player?.name ?? rPlayer?.name ?? entry.player?.name ?? `Cầu thủ #${entry.player_id}`,
             jersey_number: entry.jersey_number ?? rPlayer?.jersey_number ?? rPlayer?.number,
             position: entry.position,
@@ -298,15 +317,16 @@ export default function MatchModal({ match, onClose }) {
     matchApi.getMatchEvents(match.id, { per_page: 100 }).then(res => {
       if (cancelled) return;
       const evs = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      // FIX: giữ nguyên field `added_minute` từ BE — trước đây bị bỏ khi
+      // map, nên timeline không bao giờ hiện được bù giờ (vd 45+2').
+      // Fetch events useEffect
       const mappedEvents = evs.map(ev => ({
         time: ev.minute,
+        added_minute: ev.added_minute,
         team: ev.team_id === match.home_team_id ? 'home' : 'away',
         type: ev.type,
         player_id: ev.player_id,
-        // FIX: ev.player_id có thể null (vd event không gắn cầu thủ cụ thể) —
-        // trước đây template literal render literal "null". Giờ fallback
-        // sang nhãn rõ nghĩa, không đoán tên khi thiếu id.
-        player: ev.player?.user?.name ?? ev.player?.name ?? (ev.player_id ? `Cầu thủ #${ev.player_id}` : 'Không rõ cầu thủ'),
+        player: ev.player ?? null,   // giữ raw object/null, KHÔNG resolve tên ở đây
       }));
       setEvents(mappedEvents.sort((a, b) => a.time - b.time));
     }).catch(err => {
@@ -319,16 +339,19 @@ export default function MatchModal({ match, onClose }) {
 
   const homeName = match.home_team?.name ?? `Đội #${match.home_team_id}`;
   const awayName = match.away_team?.name ?? `Đội #${match.away_team_id}`;
-  const hasScore = RESULT_AVAILABLE_STATUSES.has(match.status)
-    && match.home_score != null && match.away_score != null;
   const statusLabel = STATUS_LABEL[match.status] ?? match.status;
   const badgeCls = STATUS_BADGE_COLOR[match.status] ?? 'bg-blue-500/10 border-blue-500/20 text-blue-400';
+  const dateStr = match.scheduled_at
+    ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
+    : null;
+
+  const allPlayers = [...homePlayers, ...awayPlayers];
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <div className="absolute inset-0 bg-navy-dark/80 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
 
-      <div className="relative w-full max-w-5xl h-[min(720px,90vh)] bg-navy border border-navy-light shadow-2xl rounded-3xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[min(760px,92vh)] bg-navy border border-navy-light shadow-2xl rounded-3xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
 
         {/* Header */}
         <div className="relative shrink-0 p-6 bg-linear-to-b from-blue-900/20 to-transparent border-b border-navy-light/50">
@@ -337,14 +360,21 @@ export default function MatchModal({ match, onClose }) {
           </button>
 
           <div className="flex items-center justify-center w-full gap-4 sm:gap-10 pt-2">
-            <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} jersey={hasScore ? jerseys.home : null} size="md" />
+            <div className="flex flex-col items-center flex-1 max-w-[200px]">
+              <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} jersey={hasScore ? jerseys.home : null} size="md" />
+              {homeIsWinner && (
+                <span className="mt-1.5 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
+                  🏆 Thắng
+                </span>
+              )}
+            </div>
 
             <div className="flex flex-col items-center shrink-0">
               {hasScore
                 ? <div className="px-5 py-3 sm:px-8 sm:py-4 bg-navy-dark border border-navy-light rounded-2xl shadow-inner flex items-center gap-3 sm:gap-5">
-                  <span className="text-3xl sm:text-5xl font-black text-white">{match.home_score}</span>
+                  <span className="text-3xl sm:text-5xl font-black text-white">{finalHomeScore}</span>
                   <span className="text-xl sm:text-2xl font-bold text-gray-500">–</span>
-                  <span className="text-3xl sm:text-5xl font-black text-white">{match.away_score}</span>
+                  <span className="text-3xl sm:text-5xl font-black text-white">{finalAwayScore}</span>
                 </div>
                 : <div className="px-5 py-3 sm:px-8 sm:py-4 bg-navy-dark border border-navy-light rounded-2xl shadow-inner flex items-center justify-center">
                   <span className="text-xl sm:text-3xl font-black text-gray-400 tracking-widest italic">{getVsLabel(match.status)}</span>
@@ -363,9 +393,29 @@ export default function MatchModal({ match, onClose }) {
               <div className={`mt-3 px-3 py-1 border rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${badgeCls}`}>
                 <Clock className="w-3 h-3" /> {statusLabel}
               </div>
+
+              {/* Giờ đá + sân — trước đây MatchModal không hiện gì, phải mở
+                  MatchDetail mới biết trận đá lúc nào/ở đâu. */}
+              {(dateStr || match.venue?.name) && (
+                <div className="mt-2 flex flex-col items-center gap-0.5 text-[11px] text-gray-400 font-medium">
+                  {dateStr && (
+                    <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-neon shrink-0" />{dateStr}</span>
+                  )}
+                  {match.venue?.name && (
+                    <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-red-400 shrink-0" />{match.venue.name}</span>
+                  )}
+                </div>
+              )}
             </div>
 
-            <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} jersey={hasScore ? jerseys.away : null} size="md" />
+            <div className="flex flex-col items-center flex-1 max-w-[200px]">
+              <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} jersey={hasScore ? jerseys.away : null} size="md" />
+              {awayIsWinner && (
+                <span className="mt-1.5 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
+                  🏆 Thắng
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -388,6 +438,7 @@ export default function MatchModal({ match, onClose }) {
                 players={homePlayers}
                 loading={loadingPlayers}
                 kit={kitFor('home')}
+                events={events}
                 viewMode={lineupView}
                 onToggleView={setLineupView}
               />
@@ -399,7 +450,7 @@ export default function MatchModal({ match, onClose }) {
                 <h3 className="font-black text-white uppercase tracking-wider text-sm">Diễn biến trận đấu</h3>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto px-2 custom-scrollbar">
-                <EventTimeline events={events} status={match.status} allPlayers={[...homePlayers, ...awayPlayers]} />
+                <EventTimeline events={events} status={match.status} allPlayers={allPlayers} />
               </div>
             </div>
 
@@ -410,6 +461,7 @@ export default function MatchModal({ match, onClose }) {
                 players={awayPlayers}
                 loading={loadingPlayers}
                 kit={kitFor('away')}
+                events={events}
                 viewMode={lineupView}
                 onToggleView={setLineupView}
               />

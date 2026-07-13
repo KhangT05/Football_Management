@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { matchApi } from '../api/matchApi';
 import { teamApi } from '../api/teamApi';
+import useSeasonStore from './seasonStore';
 
 /**
  * ============================================================
@@ -27,6 +28,58 @@ function parsePaginatedResponse(res) {
   const items = Array.isArray(payload?.data) ? payload.data : [];
   const meta = payload?.meta ?? {};
   return { items, total: meta.total ?? items.length, meta };
+}
+
+// FIX (bug nghiêm trọng hơn bản trước): matchApi.getMatchById() gọi
+// GET /matches/{id}/result → MatchResultService.getMatchResult() trả THẲNG
+// row bảng `match_results` (matchresult.service.ts), KHÔNG phải bảng
+// `matches`. 2 bảng này CÙNG có field tên `id`, `status`, `created_at`,
+// `updated_at` nhưng Ý NGHĨA HOÀN TOÀN KHÁC NHAU:
+//   - MatchResult.id     = PK riêng của bảng match_results (KHÁC match.id)
+//   - MatchResult.status = MatchResultStatus ('official'/'under_review'/
+//                          'protested') — enum hoàn toàn khác
+//   - Match.id           = PK thật của trận đấu (dùng cho route /tran-dau/:id)
+//   - Match.status       = MatchStatus ('scheduled'/'finished'/
+//                          'pending_official'/...) — cái RESULT_AVAILABLE_STATUSES
+//                          ở FE đang so sánh
+//
+// Spread ngây thơ `{ ...scheduleMatch, ...matchResultPayload }` sẽ để
+// matchResultPayload.status / .id ĐÈ LÊN status/id thật của Match — sau đó
+// `RESULT_AVAILABLE_STATUSES.has(match.status)` luôn false (vì so sánh với
+// "official" chứ không phải "finished") → hasScore luôn false ở FE dù
+// home_final_score/away_final_score đã đúng. Đây là nguyên nhân điểm số
+// "biến mất" dù data BE hoàn toàn đúng.
+//
+// Fix: merge có kiểm soát — matchResultPayload CHỈ được đóng góp field nó
+// sở hữu riêng (không có trên Match: home_final_score, away_final_score,
+// winner_team_id, winner_team, result_type, home_extra_time_score,
+// away_extra_time_score, home_penalty_score, away_penalty_score, notes,
+// appeal_reason, appeal_note). Field sở hữu bởi Match (id, status,
+// created_at, updated_at, home_team_id, away_team_id, scheduled_at, venue,
+// home_score, away_score...) LUÔN lấy từ scheduleMatch, không bao giờ bị đè.
+const MATCH_RESULT_OWNED_FIELDS = new Set([
+  'match_id', 'winner_team_id', 'winner_team',
+  'home_final_score', 'away_final_score',
+  'home_extra_time_score', 'away_extra_time_score',
+  'home_penalty_score', 'away_penalty_score',
+  'result_type', 'notes', 'appeal_reason', 'appeal_note',
+  'is_active', 'deleted_at',
+]);
+
+function mergeResultIntoMatch(matchResultPayload, scheduleMatch) {
+  const resultOnly = {};
+  for (const key of MATCH_RESULT_OWNED_FIELDS) {
+    if (matchResultPayload?.[key] !== undefined) resultOnly[key] = matchResultPayload[key];
+  }
+  // Giữ nguyên toàn bộ matchResultPayload dưới key `matchResult` (namespace
+  // riêng) để chỗ nào cần status thật của MatchResult (vd hiện "Đang khiếu
+  // nại") vẫn truy cập được qua match.matchResult.status, KHÔNG lẫn với
+  // match.status.
+  return {
+    ...scheduleMatch,
+    ...resultOnly,
+    matchResult: matchResultPayload,
+  };
 }
 
 const useScheduleStore = create((set, get) => ({
@@ -116,14 +169,65 @@ const useScheduleStore = create((set, get) => ({
       let match = payload?.data || payload;
       if (Array.isArray(match)) match = match[0];
 
-      // Fallback: Nếu API result bị thiếu thông tin team (do trả về dạng MatchResult), lấy bù từ scheduleCache
-      // Fallback: Nếu API result bị thiếu thông tin team (do trả về dạng MatchResult), lấy bù từ scheduleCache
+      // FIX (cold-cache / hard refresh): matchApi.getMatchById() CHỈ trả về
+      // MatchResult (id, match_id, winner_team_id, home_final_score,...) —
+      // KHÔNG có home_team_id/away_team_id/scheduled_at/venue. BE không có
+      // endpoint lấy 1 match kèm team info mà không cần seasonId (xem
+      // comment đầu file), nên nguồn team info DUY NHẤT là scheduleCache
+      // (populate qua fetchBySeason).
+      //
+      // Bản cũ chỉ merge từ scheduleCache SẴN CÓ trong bộ nhớ — hoạt động
+      // khi user vào từ trang Lịch thi đấu (cache còn ấm), nhưng THẤT BẠI
+      // khi:
+      //   - Hard refresh / mở thẳng URL /tran-dau/{id} (Zustand reset về rỗng)
+      //   - Deep link chia sẻ từ nơi khác
+      // → home_team_id undefined → hiện "Đội #?" như ảnh chụp.
+      //
+      // Patch: nếu merge từ cache sẵn có vẫn thiếu team info, brute-force
+      // tìm match trong TẤT CẢ season (song song, không tuần tự để giảm
+      // latency). Đây là workaround, KHÔNG phải fix triệt để — cost là
+      // O(số season) request mỗi lần cache-miss. Fix đúng là BE thêm
+      // GET /schedules/matches/:matchId trả thẳng match kèm team refs.
+      //
+      // QUAN TRỌNG: dùng mergeResultIntoMatch() (không spread tay) — xem
+      // giải thích ở khai báo hàm phía trên file. Spread ngây thơ từng làm
+      // status/id của MatchResult đè lên status/id thật của Match, khiến
+      // hasScore ở FE luôn false dù data BE đúng.
       if (match && (!match.home_team_id || !match.home_team)) {
+        // Bước 1: quét scheduleCache hiện có trong bộ nhớ (rẻ nhất, không gọi API)
         for (const seasonId in get().scheduleCache) {
           const scheduleMatch = get().scheduleCache[seasonId]?.matches?.find(m => String(m.id) === String(matchId));
           if (scheduleMatch) {
-            match = { ...scheduleMatch, ...match };
+            match = mergeResultIntoMatch(match, scheduleMatch);
             break;
+          }
+        }
+
+        // Bước 2: cache-miss hoàn toàn (cold start) → cần biết match thuộc
+        // season nào. Không có field season_id trên MatchResult payload để
+        // tra thẳng, nên phải load danh sách season rồi fetch schedule của
+        // TỪNG season song song, sau đó quét lại cache vừa được populate.
+        if (!match.home_team_id) {
+          let seasons = useSeasonStore.getState().seasons;
+          if (!seasons || seasons.length === 0) {
+            try {
+              await useSeasonStore.getState().fetchAll();
+              seasons = useSeasonStore.getState().seasons;
+            } catch {
+              seasons = [];
+            }
+          }
+
+          if (seasons?.length > 0) {
+            await Promise.allSettled(seasons.map(s => get().fetchBySeason(s.id)));
+
+            for (const seasonId in get().scheduleCache) {
+              const scheduleMatch = get().scheduleCache[seasonId]?.matches?.find(m => String(m.id) === String(matchId));
+              if (scheduleMatch) {
+                match = mergeResultIntoMatch(match, scheduleMatch);
+                break;
+              }
+            }
           }
         }
       }

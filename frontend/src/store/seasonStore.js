@@ -54,11 +54,11 @@ const useSeasonStore = create((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const res = await seasonApi.getAll({ 
-        per_page: 50, 
-        sort: 'id', 
+      const res = await seasonApi.getAll({
+        per_page: 50,
+        sort: 'id',
         direction: 'desc',
-        ...queryParams 
+        ...queryParams
       });
       const { items, meta } = parsePaginatedResponse(res);
       set({ seasons: items, meta, isLoading: false, fetchedAt: Date.now() });
@@ -70,9 +70,6 @@ const useSeasonStore = create((set, get) => ({
     }
   },
 
-  /**
-   * Lấy bảng xếp hạng
-   */
   fetchStandings: async (seasonId, options = {}) => {
     if (!seasonId) return;
 
@@ -91,8 +88,17 @@ const useSeasonStore = create((set, get) => ({
     try {
       const res = await seasonApi.getStandings(seasonId);
       const payload = typeof res?.status === 'boolean' ? res.data : res;
-      const groups = Array.isArray(payload) ? payload : [];
-      
+
+      // FIX: backend trả PhaseStandingsBlock = { phaseId, phaseName, groups: [...] }
+      // (single object), KHÔNG PHẢI array of groups trực tiếp như code cũ assume.
+      // Giữ fallback Array.isArray(payload) để không vỡ nếu sau này đổi sang
+      // endpoint listGroupStandingsHistory (trả về mảng nhiều PhaseStandingsBlock).
+      const groups = Array.isArray(payload?.groups)
+        ? payload.groups
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
       const formattedGroups = groups.map(group => ({
         ...group,
         standings: (group.standings || []).map(row => ({

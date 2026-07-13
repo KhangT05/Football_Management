@@ -1,6 +1,6 @@
 // prisma/seed/seasonSeeder.ts
 import { PrismaClient, JerseyType } from "../generated/prisma/client.js";
-import { VENUES } from "./worldcup.js";
+import type { VenueSeed } from "./teamGenerator.js";
 
 export interface SeasonSeedResult {
   seasonId: number;
@@ -8,9 +8,13 @@ export interface SeasonSeedResult {
   seasonTeamIdByTeamId: Record<number, number>;
 }
 
-export async function seedVenues(db: PrismaClient): Promise<number[]> {
+export async function seedVenues(db: PrismaClient, venues: VenueSeed[]): Promise<number[]> {
+  if (venues.length === 0) {
+    throw new Error("seedVenues: venues rỗng — kiểm tra lại teamGenerator.generateVenues()");
+  }
+
   const ids: number[] = [];
-  for (const v of VENUES) {
+  for (const v of venues) {
     const venue = await db.venue.upsert({
       where: { name: v.name },
       update: {},
@@ -27,13 +31,14 @@ export async function seedSeason(
   tournamentId: number,
   tournamentRuleId: number,
   organizerUserId: number,
-  teamIdByName: Record<string, number>
+  teamIdByName: Record<string, number>,
+  venues: VenueSeed[]
 ): Promise<SeasonSeedResult> {
   const season = await db.season.upsert({
-    where: { name: "World Cup Season (Seed Demo)" },
+    where: { name: "World Cup Season" },
     update: {},
     create: {
-      name: "World Cup Season (Seed Demo)",
+      name: "World Cup Season",
       tournament_id: tournamentId,
       tournament_rule_id: tournamentRuleId,
       user_id: organizerUserId,
@@ -76,7 +81,7 @@ export async function seedSeason(
     });
   }
 
-  const venueIds = await seedVenues(db);
+  const venueIds = await seedVenues(db, venues);
 
   console.log(`[SeasonSeeder] Season #${season.id} với ${Object.keys(seasonTeamIdByTeamId).length} SeasonTeam`);
   return { seasonId: season.id, venueIds, seasonTeamIdByTeamId };

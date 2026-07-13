@@ -17,6 +17,16 @@ import * as matchType from "../types/match.type.js";
 import { ConfirmResultOutput } from "../types/matchResult.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
 
+// NEW: shape trả về cho 4 endpoint correction (addEvent/deleteEvent/editEvent/
+// editScore) — khớp CorrectionResult bên matchlifecycle.service.ts. Trước đây
+// 4 endpoint này @SuccessResponse(204,...) — HTTP 204 KHÔNG được phép có
+// response body (RFC 7231 §6.3.5), nên dù service đã trả postCommitWarnings,
+// tsoa/Express strip sạch trước khi ra khỏi server. FE luôn nhận body rỗng
+// bất kể standings/player stats recompute thành công hay fail — chuỗi fix
+// ở service layer (matchlifecycle.service.ts) và FE (LiveControlTab.jsx) vô
+// tác dụng nếu thiếu bước này.
+type CorrectionApiResult = { postCommitWarnings?: string[] };
+
 // ─── Controller ───────────────────────────────────────────────────────────────
 // Route: /matches/:id/*
 //
@@ -124,9 +134,16 @@ export class MatchController extends Controller {
      * Manual path: dùng manual_home_score / manual_away_score.
      * Tạo MatchResult, update standings, advance knockout bracket nếu có.
      * venueIds/matchTimes bắt buộc khi knockout (validated tại matchResultService).
+     *
+     * FIX (route mismatch): matchApi.js FE (comment tự document rõ endpoint
+     * dự kiến) gọi `/matches/{id}/confirm-official`, nhưng route decorator ở
+     * đây trước đây là `{id}/confirm` — lệch nhau, mọi lần FE gọi
+     * confirmOfficial() sẽ nhận 404. Đổi route để khớp matchApi.js (giữ
+     * nguyên FE, sửa BE) — nếu route `{id}/confirm` mới là chuẩn dự định,
+     * cần sửa ngược lại matchApi.js thay vì ở đây, xác nhận với người review.
      */
     @Security("jwt", ["admin"])
-    @Post("{id}/confirm")
+    @Post("{id}/confirm-official")
     async confirmOfficial(
         @Path() id: number,
         @Body() body: matchSchema.ConfirmOfficialDto,
@@ -224,15 +241,21 @@ export class MatchController extends Controller {
      * Chỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).
      * Tự recompute MatchResult sau khi thêm.
      * venueIds/matchTimes optional — cần nếu correction thay đổi winner ở knockout.
+     *
+     * FIX (204 nuốt body): trước đây @SuccessResponse(204,...) + setStatus(204)
+     * + return type void — HTTP 204 không được phép có body, nên
+     * postCommitWarnings từ lifecycleService.addEvent() (xem
+     * matchlifecycle.service.ts) bị strip sạch trước khi tới FE, bất kể
+     * recompute standings/player stats thành công hay fail âm thầm. Đổi sang
+     * 200 + trả nguyên object.
      */
     @Security("jwt", ["admin"])
     @Post("{id}/correction/events")
-    @SuccessResponse(204, "Event added")
+    @SuccessResponse(200, "Event added")
     async addEvent(
         @Path() id: number,
         @Body() body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto,
-    ): Promise<void> {
-        this.setStatus(204);
+    ): Promise<CorrectionApiResult> {
         const { venueIds, matchTimes, ...eventInput } = body;
         return this.lifecycleService.addEvent(id, eventInput, { venueIds, matchTimes });
     }
@@ -243,13 +266,17 @@ export class MatchController extends Controller {
      * Tự recompute MatchResult sau khi xóa.
      * scheduleOptions truyền qua query params vì DELETE không nên có body.
      * venueIds/matchTimes dạng CSV: ?venueIds=1,2&matchTimes=2025-01-01T10:00:00Z,...
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
     @Security("jwt", ["admin"])
     @Delete("{id}/correction/events/{eventId}")
-    @SuccessResponse(204, "Event deleted")
-    async deleteEvent(@Path() id: number, @Path()
-    eventId: number, @Queries() query: matchSchema.DeleteEventQueryDto): Promise<void> {
-        this.setStatus(204);
+    @SuccessResponse(200, "Event deleted")
+    async deleteEvent(
+        @Path() id: number,
+        @Path() eventId: number,
+        @Queries() query: matchSchema.DeleteEventQueryDto,
+    ): Promise<CorrectionApiResult> {
         return this.lifecycleService.deleteEvent(id, eventId, query);
     }
 
@@ -257,16 +284,17 @@ export class MatchController extends Controller {
      * Sửa event (minute, type, player, period, note) sau khi match finished.
      * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
      * Tự recompute MatchResult sau khi sửa.
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
     @Security("jwt", ["admin"])
     @Patch("{id}/correction/events/{eventId}")
-    @SuccessResponse(204, "Event edited")
+    @SuccessResponse(200, "Event edited")
     async editEvent(
         @Path() id: number,
         @Path() eventId: number,
         @Body() body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto,
-    ): Promise<void> {
-        this.setStatus(204);
+    ): Promise<CorrectionApiResult> {
         const { venueIds, matchTimes, ...editInput } = body;
         return this.lifecycleService.editEvent(id, eventId, editInput, { venueIds, matchTimes });
     }
@@ -275,18 +303,20 @@ export class MatchController extends Controller {
      * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
      * Chỉ trong 15p kể từ played_at.
      * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
+     *
+     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
     @Security("jwt", ["admin"])
     @Patch("{id}/correction/score")
-    @SuccessResponse(204, "Score corrected")
+    @SuccessResponse(200, "Score corrected")
     async editScore(
         @Path() id: number,
         @Body() body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto,
-    ): Promise<void> {
-        this.setStatus(204);
+    ): Promise<CorrectionApiResult> {
         const { venueIds, matchTimes, ...scoreInput } = body;
         return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
     }
+
     /**
  * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
  *

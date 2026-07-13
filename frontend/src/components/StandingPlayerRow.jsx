@@ -1,24 +1,27 @@
 import { getInitials, AVATAR_COLORS } from '../utils/constants';
 
 export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
-  const { player, team, goals_scored, assists, yellow_cards, red_cards, rating, reason, status } = playerStat;
-  const playerName = player?.user?.name || player?.name || 'Cầu thủ không xác định';
-  const teamName = team?.name || 'Đội bóng không xác định';
-  
+  const {
+    player_id, player_name, team_id, team_name,
+    value, reason, status,
+  } = playerStat;
+
+  const playerName = player_name || 'Cầu thủ không xác định';
+  const teamName = team_name || 'Đội bóng không xác định';
+
   const initial = getInitials(playerName);
-  const colorIdx = (player?.id ?? rank) % AVATAR_COLORS.length;
+  const colorIdx = (player_id ?? rank) % AVATAR_COLORS.length;
 
   return (
     <tr className="hover:bg-white/5 transition-colors group border-b border-navy-light/50 last:border-0">
       {/* Hạng */}
       <td className="px-6 py-4 w-20">
         <div className="flex items-center justify-center">
-          <span className={`text-lg font-black ${
-            rank === 1 ? 'text-yellow-400' :
+          <span className={`text-lg font-black ${rank === 1 ? 'text-yellow-400' :
             rank === 2 ? 'text-gray-300' :
-            rank === 3 ? 'text-amber-600' :
-            'text-gray-500'
-          }`}>
+              rank === 3 ? 'text-amber-600' :
+                'text-gray-500'
+            }`}>
             {rank}
           </span>
         </div>
@@ -32,14 +35,6 @@ export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
               <span className="absolute inset-0 flex items-center justify-center select-none">
                 {initial}
               </span>
-              {player?.avatar && (
-                <img 
-                  src={player.avatar} 
-                  alt={playerName} 
-                  className="w-full h-full object-cover relative z-10"
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              )}
             </div>
           </div>
           <div>
@@ -47,32 +42,24 @@ export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
               {playerName}
             </div>
             <div className="flex items-center gap-1.5 mt-1">
-              {team?.logo ? (
-                <img src={team.logo} alt={teamName} className="w-3.5 h-3.5 rounded-full object-cover" />
-              ) : (
-                <div className="w-3.5 h-3.5 rounded-full bg-navy border border-navy-light flex items-center justify-center text-[8px] font-bold text-gray-400">
-                  {getInitials(teamName).substring(0, 1)}
-                </div>
-              )}
+              <div className="w-3.5 h-3.5 rounded-full bg-navy border border-navy-light flex items-center justify-center text-[8px] font-bold text-gray-400">
+                {getInitials(teamName).substring(0, 1)}
+              </div>
               <span className="text-xs text-gray-500 font-medium">{teamName}</span>
             </div>
           </div>
         </div>
       </td>
 
-      {/* Chỉ số chính được hiển thị theo tab (như UI yêu cầu) */}
+      {/* Chỉ số chính */}
       <td className="px-6 py-4 text-right">
         {activeStatTab === 'suspended' ? (
           <span className="text-sm font-bold text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
-            {reason || 'Bị treo giò'}
+            {reason || status || 'Bị treo giò'}
           </span>
         ) : (
           <span className="text-lg font-bold text-white">
-            {activeStatTab === 'goals' && (goals_scored || 0)}
-            {activeStatTab === 'assists' && (assists || 0)}
-            {activeStatTab === 'yellow' && (yellow_cards || 0)}
-            {activeStatTab === 'red' && (red_cards || 0)}
-            {activeStatTab === 'best' && (rating ? rating.toFixed(1) : ((goals_scored || 0) * 2 + (assists || 0)))}
+            {activeStatTab === 'best' ? (Number(value ?? 0)).toFixed(1) : (value ?? 0)}
           </span>
         )}
       </td>

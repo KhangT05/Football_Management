@@ -27,11 +27,10 @@ export default function StandingRow({ row, idx, teams }) {
 
   return (
     <tr
-      className={`group/row transition-all duration-300 animate-slide-up border-b border-navy-light/50 hover:bg-navy-light/20 ${
-        rank === 1 ? 'bg-yellow-500/5' :
+      className={`group/row transition-all duration-300 animate-slide-up border-b border-navy-light/50 hover:bg-navy-light/20 ${rank === 1 ? 'bg-yellow-500/5' :
         rank === 2 ? 'bg-gray-400/5' :
-        rank === 3 ? 'bg-amber-600/5' : ''
-      }`}
+          rank === 3 ? 'bg-amber-600/5' : ''
+        }`}
       style={{ animationDelay: `${idx * 40}ms` }}
     >
       <td className="py-4 px-6 text-center">
@@ -58,11 +57,11 @@ export default function StandingRow({ row, idx, teams }) {
               {initial}
             </span>
             {team?.logo && (
-              <img 
-                src={team.logo} 
-                alt={teamName} 
-                className="w-full h-full object-contain relative z-10" 
-                onError={(e) => { e.target.style.display = 'none'; }} 
+              <img
+                src={team.logo}
+                alt={teamName}
+                className="w-full h-full object-contain relative z-10"
+                onError={(e) => { e.target.style.display = 'none'; }}
               />
             )}
           </div>
@@ -86,9 +85,8 @@ export default function StandingRow({ row, idx, teams }) {
         {goalDifference > 0 ? `+${goalDifference}` : goalDifference}
       </td>
       <td className="py-4 px-6 text-center">
-        <span className={`px-3 py-1.5 rounded-lg font-black text-lg ${
-          rank <= 3 ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400' : 'text-white'
-        }`}>
+        <span className={`px-3 py-1.5 rounded-lg font-black text-lg ${rank <= 3 ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400' : 'text-white'
+          }`}>
           {points}
         </span>
       </td>

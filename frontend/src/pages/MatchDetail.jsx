@@ -14,6 +14,9 @@ import useTeamStore from '../store/teamStore';
 import {
   useMatchExtras, TeamAvatar, TeamBadge, PlayerItem,
   normalizePosition, POSITION_ORDER, STATUS_LABEL, STATUS_BADGE_COLOR,
+  FormationRow, FormationPlayerCell, groupPlayersByPosition, computeFormationLabel,
+  GOAL_EVENT_TYPES, EVENT_TYPE_LABEL, formatMinuteLabel, resolveEventPlayerName,
+  getPlayerEventBadges,
   NO_EVENT_STATUSES, getVsLabel,
 } from '../components/MatchShared';
 
@@ -26,150 +29,16 @@ function ApiBanner({ message }) {
     </div>
   );
 }
-
-// ── Formation pitch (sơ đồ đội hình) ────────────────────────────
-// FIX: bỏ FormationPlayerDot cũ (chỉ hiện chấm tròn + tên), thay bằng
-// PitchFormation-style: số áo theo ĐÚNG màu áo trận đấu (kit), badge sự
-// kiện (bàn thắng ⚽ / phản lưới OG / thẻ vàng 🟨 / thẻ đỏ 🟥) tính thẳng từ
-// mảng `events` đã fetch sẵn ở trang này (không gọi thêm API nào khác), và
-// header card có logo đội + tỉ số + sơ đồ chiến thuật (vd "4-1-3-2") — cùng
-// tinh thần với LineupColumn trong ScheduleTab.jsx (admin) nhưng dùng dữ
-// liệu match-detail công khai thay vì report preview.
-//
-// LƯU Ý: field màu áo đọc từ `kit` (kit?.primaryColor / kit?.shirt_color /
-// kit?.color) — mình đoán theo cách TeamAvatar/TeamBadge trong
-// MatchShared.jsx đang dùng `kit`. Nếu shape thực tế của kitFor() khác,
-// chỉnh lại đúng 2 dòng `shirtColor` / `numberColor` bên dưới cho khớp.
-
-function resolvePlayerName(tp) {
-  const name = tp.player?.user?.name ?? tp.player?.player?.name ?? tp.player?.name ?? tp.name;
-  return (name || '').trim() || `#${tp.player_id ?? tp.id ?? '?'}`;
-}
-
-// FIX: khớp ĐÚNG giá trị enum MatchEventType thật của BE (xem
-// match.lifecycle.service.ts / matchresult.service.ts) — trước đây so
-// type === 'goal'/'yellow'/'red' (sai hoàn toàn với enum thật), nên badge
-// gần như không bao giờ hiện. Enum thật: 'goal', 'own_goal', 'yellow_card',
-// 'second_yellow', 'red_card', 'penalty_scored', 'substitution_in',
-// 'substitution_out'.
-//   - goals: 'goal' VÀ 'penalty_scored' đều tính là bàn thắng (giống cách
-//     _recomputeStatsForPlayers ở BE gộp 2 type này vào goals_scored).
-//   - ownGoals: type riêng 'own_goal' — KHÔNG phải cờ is_own_goal trên type 'goal'.
-//   - yellows: chỉ đếm 'yellow_card' (thẻ vàng đầu, chưa bị đuổi).
-//   - reds: 'red_card' VÀ 'second_yellow' (thẻ vàng thứ 2 = bị đuổi thực
-//     chất là đỏ) đều tính vào reds — khớp _deriveCardColor/is_suspended ở BE.
-const GOAL_EVENT_TYPES = new Set(['goal', 'penalty_scored']);
-
-const EVENT_TYPE_LABEL = {
-  goal: 'Bàn thắng',
-  penalty_scored: 'Bàn thắng (phạt đền)',
-  own_goal: 'Phản lưới nhà',
-  yellow_card: 'Thẻ vàng',
-  second_yellow: 'Thẻ vàng thứ 2 (Đuổi)',
-  red_card: 'Thẻ đỏ',
-  substitution_in: 'Vào sân',
-  substitution_out: 'Ra sân',
-};
-
-// Hiện phút kèm bù giờ đúng field `added_minute` (BE trả field này, không
-// phải addedMinute — đó là field đã transform riêng ở report preview).
-function formatMinuteLabel(evt) {
-  const added = evt.added_minute ?? evt.addedMinute;
-  return `${evt.minute}${added ? `+${added}` : ''}'`;
-}
-
-// Gom bàn thắng/phản lưới/thẻ của 1 cầu thủ từ mảng events của trận —
-// events đã có sẵn ở component cha (detailData?.events), không cần thêm
-// request nào.
-function getPlayerEventBadges(playerId, events) {
-  if (!playerId) return { goals: 0, ownGoals: 0, yellows: 0, reds: 0 };
-  const playerEvents = events.filter(e => e.player_id === playerId);
-  return {
-    goals: playerEvents.filter(e => GOAL_EVENT_TYPES.has(e.type)).length,
-    ownGoals: playerEvents.filter(e => e.type === 'own_goal').length,
-    yellows: playerEvents.filter(e => e.type === 'yellow_card').length,
-    reds: playerEvents.filter(e => e.type === 'red_card' || e.type === 'second_yellow').length,
-  };
-}
-
-function FormationPlayerCell({ tp, kit, events }) {
-  const displayName = resolvePlayerName(tp);
-  const badges = getPlayerEventBadges(tp.player_id, events);
-  const hasBadge = badges.goals > 0 || badges.ownGoals > 0 || badges.yellows > 0 || badges.reds > 0;
-
-  // Màu áo thật của đội trong trận này (có thể khác logo CLB nếu đổi áo).
-  const shirtColor = kit?.primaryColor ?? kit?.shirt_color ?? kit?.color ?? '#1d4ed8';
-  const numberColor = kit?.numberColor ?? kit?.text_color ?? '#ffffff';
-  const borderColor = kit?.secondaryColor ?? kit?.border_color ?? 'rgba(255,255,255,0.75)';
-
-  return (
-    <div className="flex flex-col items-center w-16 sm:w-[4.5rem] shrink-0">
-      <div className="relative">
-        <div
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 shadow-lg shadow-black/30"
-          style={{ backgroundColor: shirtColor, color: numberColor, borderColor }}
-        >
-          {tp.jersey_number ?? '-'}
-        </div>
-
-        {tp.is_captain && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 border border-amber-200 rounded-full flex items-center justify-center text-[8px] font-black text-black shadow">
-            C
-          </span>
-        )}
-
-        {hasBadge && (
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-[1px] whitespace-nowrap">
-            {badges.goals > 0 && (
-              <span className="text-[9px] leading-none">⚽{badges.goals > 1 ? badges.goals : ''}</span>
-            )}
-            {badges.ownGoals > 0 && (
-              <span className="text-[8px] leading-none font-black text-red-400">OG{badges.ownGoals > 1 ? badges.ownGoals : ''}</span>
-            )}
-            {badges.yellows > 0 && <span className="text-[9px] leading-none">🟨</span>}
-            {badges.reds > 0 && <span className="text-[9px] leading-none">🟥</span>}
-          </div>
-        )}
-      </div>
-
-      <span
-        className="mt-2 w-full text-center text-[10px] sm:text-[11px] font-bold text-white leading-snug px-1 py-0.5 rounded bg-black/70 break-words"
-        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
-        title={displayName}
-      >
-        {displayName}
-      </span>
-    </div>
-  );
-}
-
-function FormationRow({ players, kit, events }) {
-  if (!players.length) return null;
-  return (
-    <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
-      {players.map(tp => (
-        <FormationPlayerCell key={tp.id ?? tp.player_id} tp={tp} kit={kit} events={events} />
-      ))}
-    </div>
-  );
-}
-
-// Suy ra sơ đồ chiến thuật (vd "4-1-3-2") từ đội hình đá chính, bỏ thủ môn,
-// theo đúng thứ tự POSITION_ORDER (DEF → MID → FWD).
-function computeFormationLabel(starters) {
-  const counts = {};
-  starters.forEach(p => {
-    const pos = normalizePosition(p.position);
-    if (pos === 'GK') return;
-    counts[pos] = (counts[pos] || 0) + 1;
-  });
-  const parts = POSITION_ORDER.filter(pos => pos !== 'GK' && counts[pos]).map(pos => counts[pos]);
-  return parts.length ? parts.join('-') : null;
-}
-
-// team: { name, logo } — hiển thị badge (logo thật hoặc initials theo màu
-// áo) ở header cùng tỉ số + sơ đồ, để phân biệt "sơ đồ này là của đội nào"
-// mà không cần đọc tiêu đề card bên ngoài.
+const buildLineupPlayers = (lineup) => lineup.map(entry => ({
+  id: entry.id,
+  player_id: entry.player_id,
+  name: entry.player?.user?.name ?? entry.player?.name ?? `#${entry.player_id}`,
+  jersey_number: entry.jersey_number,
+  position: entry.position,
+  lineup_type: entry.lineup_type,
+  is_captain: entry.is_captain,
+}));
+const homeStarters = useMemo(() => buildLineupPlayers(lineups.home.filter(l => l.lineup_type === 'starter')), [lineups.home]);
 function FormationPitch({ starters = [], kit, team, score, events = [], isWinner = false }) {
   const rows = POSITION_ORDER
     .map(pos => ({ pos, players: starters.filter(p => normalizePosition(p.position) === pos) }))
@@ -215,6 +84,62 @@ function FormationPitch({ starters = [], kit, team, score, events = [], isWinner
           <FormationRow key={row.pos} players={row.players} kit={kit} events={events} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// Icon cho 1 event trong header summary — tách riêng khỏi icon dùng ở
+// timeline chi tiết (icon timeline giữ nguyên 🟨🟥 kép cho second_yellow để
+// rõ "vàng rồi đỏ"; ở đây chỉ cần 1 icon đại diện gọn theo mẫu tham chiếu).
+function headerEventIcon(evt) {
+  if (GOAL_EVENT_TYPES.has(evt.type) || evt.type === 'own_goal') return '⚽';
+  if (evt.type === 'yellow_card') return '🟨';
+  return '🟥'; // red_card, second_yellow
+}
+function computeTeamEventStats(teamId, opponentId, events) {
+  const teamEvents = events.filter(e => e.team_id === teamId);
+  return {
+    goals: teamEvents.filter(e => GOAL_EVENT_TYPES.has(e.type)).length
+      + events.filter(e => e.team_id === opponentId && e.type === 'own_goal').length, // OG đối phương tính cho mình
+    yellows: teamEvents.filter(e => e.type === 'yellow_card').length,
+    reds: teamEvents.filter(e => e.type === 'red_card' || e.type === 'second_yellow').length,
+  };
+}
+// Danh sách ghi bàn/thẻ ở header, căn 2 cột theo đội (home text bên trái,
+// away text bên phải, icon ở giữa) — cùng bố cục với ô kết quả kiểu Google
+// (ảnh tham chiếu): mỗi dòng là 1 event, sort theo phút tăng dần, side nào
+// không có event ở dòng đó thì để trống (không đẩy lệch dòng).
+// CHỈ hiện các loại event có ý nghĩa với người xem nhanh: bàn thắng (kể cả
+// phạt đền), phản lưới, thẻ vàng, thẻ đỏ/2 vàng — bỏ substitution vì đã có
+// đủ chi tiết ở phần "Diễn Biến Trận Đấu" bên dưới, header chỉ cần tóm tắt.
+const HEADER_SUMMARY_TYPES = new Set(['goal', 'penalty_scored', 'own_goal', 'yellow_card', 'second_yellow', 'red_card']);
+
+function HeaderMatchEventsSummary({ homeTeamId, events, resolveName }) {
+  const timeline = events
+    .filter(e => HEADER_SUMMARY_TYPES.has(e.type))
+    .slice()
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0) || (a.added_minute ?? 0) - (b.added_minute ?? 0));
+
+  if (timeline.length === 0) return null;
+
+  return (
+    <div className="mt-6 w-full max-w-md mx-auto flex flex-col gap-1.5">
+      {timeline.map(evt => {
+        const isHome = evt.team_id === homeTeamId;
+        const name = resolveName(evt);
+        const label = evt.type === 'own_goal' ? `${name} (phản lưới)` : name;
+        return (
+          <div key={evt.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <span className={`truncate text-xs font-bold text-gray-300 text-right ${!isHome ? 'invisible' : ''}`}>
+              {isHome ? `${label} ${formatMinuteLabel(evt)}` : '·'}
+            </span>
+            <span className="text-sm shrink-0 leading-none">{headerEventIcon(evt)}</span>
+            <span className={`truncate text-xs font-bold text-gray-300 text-left ${isHome ? 'invisible' : ''}`}>
+              {!isHome ? `${label} ${formatMinuteLabel(evt)}` : '·'}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -297,8 +222,18 @@ export default function MatchDetail() {
 
   const homeName = homeTeamInfo?.name ?? `Đội #${match?.home_team_id ?? '?'}`;
   const awayName = awayTeamInfo?.name ?? `Đội #${match?.away_team_id ?? '?'}`;
+
+  // FIX: điểm số CHÍNH THỨC nằm trên matchResult (home_final_score /
+  // away_final_score) — match KHÔNG có field home_score/away_score, đó là
+  // lý do trước đây header không hiện gì dù trận đã có kết quả 2-2.
+  // matchResult tới từ useMatchExtras (gọi endpoint result riêng), không
+  // phải field trên `match`. Vẫn fallback match?.home_score/away_score
+  // phòng trường hợp API cũ/khác trả trực tiếp trên match (một số list
+  // endpoint có thể đã denormalize sẵn).
+  const finalHomeScore = matchResult?.home_final_score ?? match?.home_score ?? null;
+  const finalAwayScore = matchResult?.away_final_score ?? match?.away_score ?? null;
   const hasScore = RESULT_AVAILABLE_STATUSES.has(match?.status)
-    && match?.home_score != null && match?.away_score != null;
+    && finalHomeScore != null && finalAwayScore != null;
   const dateStr = match?.scheduled_at
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;
@@ -311,11 +246,59 @@ export default function MatchDetail() {
   const homeKit = kitFor('home');
   const awayKit = kitFor('away');
 
-  // "Thắng" chỉ xác định khi đã có tỉ số CHÍNH THỨC (hasScore) và không hoà
-  // — không tự suy diễn winner_team_id vì matchResult chưa chắc có trong
-  // payload `match` (tuỳ getMatchById có include hay không).
-  const homeIsWinner = hasScore && match.home_score > match.away_score;
-  const awayIsWinner = hasScore && match.away_score > match.home_score;
+  // "Thắng" ưu tiên matchResult.winner_team_id — bắt buộc dùng field này
+  // cho case hoà ở tỉ số chính (finalHomeScore === finalAwayScore) nhưng đã
+  // có người thắng qua đá luân lưu (matchResult.home_penalty_score >
+  // away_penalty_score). Chỉ fallback so sánh finalHomeScore/finalAwayScore
+  // khi matchResult chưa có winner_team_id (vd trận hoà thật, không đá pen).
+  const homeIsWinner = hasScore && (
+    matchResult?.winner_team_id != null
+      ? matchResult.winner_team_id === match.home_team_id
+      : finalHomeScore > finalAwayScore
+  );
+  const awayIsWinner = hasScore && (
+    matchResult?.winner_team_id != null
+      ? matchResult.winner_team_id === match.away_team_id
+      : finalAwayScore > finalHomeScore
+  );
+
+  // allLineups/allPlayers dùng chung cho cả timeline VÀ header summary —
+  // memo 1 lần thay vì spread lại trong mỗi lần .map() event (trước đây bị
+  // tạo mới mỗi event trong timeline .map(), tốn allocation không cần thiết
+  // khi trận có nhiều event).
+  const allLineups = useMemo(() => [...lineups.home, ...lineups.away], [lineups]);
+  const allPlayers = useMemo(
+    () => [...(detailData?.homePlayers || []), ...(detailData?.awayPlayers || [])],
+    [detailData]
+  );
+  const resolveEventName = (evt) => resolveEventPlayerName(evt, allPlayers);
+
+  // Tổng số bàn/OG/thẻ theo từng đội, tính riêng từ `events` — dùng để
+  // cross-check với finalHomeScore/finalAwayScore (matchResult vẫn là
+  // nguồn hiển thị chính, đây chỉ để phát hiện lệch dữ liệu giữa event log
+  // và matchresult cache).
+  const homeEventStats = useMemo(
+    () => computeTeamEventStats(match?.home_team_id, match?.away_team_id, events),
+    [match?.home_team_id, match?.away_team_id, events]
+  );
+  const awayEventStats = useMemo(
+    () => computeTeamEventStats(match?.away_team_id, match?.home_team_id, events),
+    [match?.away_team_id, match?.home_team_id, events]
+  );
+
+  useEffect(() => {
+    if (!hasScore || events.length === 0) return; // events rỗng: trận có thể nhập KQ tay, chưa log timeline — không phải bug
+    if (homeEventStats.goals !== finalHomeScore) {
+      console.warn(
+        `[MatchDetail] Score mismatch match #${matchId} (home): matchResult.home_final_score=${finalHomeScore} vs events-derived=${homeEventStats.goals}`
+      );
+    }
+    if (awayEventStats.goals !== finalAwayScore) {
+      console.warn(
+        `[MatchDetail] Score mismatch match #${matchId} (away): matchResult.away_final_score=${finalAwayScore} vs events-derived=${awayEventStats.goals}`
+      );
+    }
+  }, [hasScore, events.length, homeEventStats.goals, awayEventStats.goals, finalHomeScore, finalAwayScore, matchId]);
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-20">
@@ -360,9 +343,9 @@ export default function MatchDetail() {
                   <div className="px-6 py-4 md:px-10 md:py-6 bg-navy border-2 border-navy-light rounded-3xl shadow-lg shadow-black/30 flex items-center gap-4 md:gap-8">
                     {hasScore ? (
                       <>
-                        <span className="text-5xl md:text-7xl font-black text-white">{match.home_score}</span>
+                        <span className="text-5xl md:text-7xl font-black text-white">{finalHomeScore}</span>
                         <span className="text-2xl md:text-4xl font-bold text-gray-500">–</span>
-                        <span className="text-5xl md:text-7xl font-black text-white">{match.away_score}</span>
+                        <span className="text-5xl md:text-7xl font-black text-white">{finalAwayScore}</span>
                       </>
                     ) : (
                       <span className="text-3xl md:text-5xl font-black text-gray-500 tracking-widest px-2">
@@ -385,6 +368,16 @@ export default function MatchDetail() {
 
                 <TeamAvatar name={awayName} side="away" logo={awayTeamInfo?.logo} jersey={hasScore ? jerseys.away : null} size="lg" />
               </div>
+
+              {/* Danh sách ghi bàn/thẻ tóm tắt kiểu Google — thay cho chip
+                  đếm số cũ, hiện đủ tên + phút, căn 2 cột theo đội */}
+              {hasScore && (
+                <HeaderMatchEventsSummary
+                  homeTeamId={match.home_team_id}
+                  events={events}
+                  resolveName={resolveEventName}
+                />
+              )}
 
               {/* Match Meta */}
               <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 animate-fade-in">
@@ -434,12 +427,7 @@ export default function MatchDetail() {
                             : evt.type === 'red_card' ? '🟥'
                               : '🔄';
                     const eventLabel = EVENT_TYPE_LABEL[evt.type] ?? evt.type;
-                    const allLineups = [...lineups.home, ...lineups.away];
-                    const allPlayers = [...(detailData?.homePlayers || []), ...(detailData?.awayPlayers || [])];
-                    const lineupPlayer = allLineups.find(l => l.player_id === evt.player_id);
-                    const rosterPlayer = allPlayers.find(p => p.player_id === evt.player_id || p.id === evt.player_id);
-                    const resolvedName = lineupPlayer ? (lineupPlayer.player?.name ?? lineupPlayer.player?.player?.name ?? lineupPlayer.name) : (rosterPlayer?.user?.name ?? rosterPlayer?.player?.user?.name ?? rosterPlayer?.player?.name ?? rosterPlayer?.name);
-                    const playerName = resolvedName ?? evt.player?.user?.name ?? evt.player?.name ?? (evt.player_id ? `Cầu thủ #${evt.player_id}` : 'Không rõ cầu thủ');
+                    const playerName = resolveEventName(evt);
 
                     return (
                       <div key={evt.id} className="flex items-center gap-4 sm:gap-6 group">
@@ -495,7 +483,7 @@ export default function MatchDetail() {
                       starters={homeStarters}
                       kit={homeKit}
                       team={{ name: homeName, logo: homeTeamInfo?.logo }}
-                      score={hasScore ? match.home_score : null}
+                      score={hasScore ? finalHomeScore : null}
                       events={events}
                       isWinner={homeIsWinner}
                     />
@@ -532,7 +520,7 @@ export default function MatchDetail() {
                       starters={awayStarters}
                       kit={awayKit}
                       team={{ name: awayName, logo: awayTeamInfo?.logo }}
-                      score={hasScore ? match.away_score : null}
+                      score={hasScore ? finalAwayScore : null}
                       events={events}
                       isWinner={awayIsWinner}
                     />

@@ -48,6 +48,20 @@ function getMinuteBounds(match) {
   const hardMax = isKnockout ? EXTRA_TIME_END + STOPPAGE_TIME_CAP : normalMax; // 135 (knockout) hoặc 105
   return { normalMax, hardMax, isKnockout };
 }
+function extractWarnings(res) {
+  return res?.data?.postCommitWarnings ?? res?.postCommitWarnings ?? null;
+}
+
+function showResultToast(toast, warnings, successMsg) {
+  if (warnings?.length) {
+    toast.error(
+      `Kết quả đã lưu nhưng standings/thống kê CHƯA cập nhật: ${warnings.join('; ')} — vào lại trận này và bấm "Tính lại BXH" để thử lại.`,
+      8000,
+    );
+  } else {
+    toast.success(successMsg, 5000);
+  }
+}
 
 // Message do BE ném ra khi knockout hoà, xuất phát từ
 // MatchResultService._guardConfirm (matchresult.service.ts), được
@@ -611,12 +625,13 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         return;
       }
 
-      await submitAdminResult();
-
+      const handleFinishMatch_PATCHED_BODY = `
+      const res = await submitAdminResult();
       setMatchStatus('finished');
-      toast.success('Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉', 5000);
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉');
       setIsDirty(false);
       handleRefresh();
+`;
     } catch (err) {
       if (isKnockoutDrawError(err)) {
         setEtModalOpen(true);
@@ -647,17 +662,20 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     }
     setIsSubmittingEt(true);
     try {
-      await matchApi.adminRecordResult(selectedMatch.id, {
+      const handleConfirmExtraTime_PATCHED_BODY = `
+      const res = await matchApi.adminRecordResult(selectedMatch.id, {
         homeScore: h, awayScore: a,
         resultType: 'extra_time',
-        homeExtraTimeScore: h,   // FIX — forward đúng ET score
-        awayExtraTimeScore: a,   // FIX
+        homeExtraTimeScore: h,
+        awayExtraTimeScore: a,
       });
       setMatchStatus('finished');
       setEtModalOpen(false);
-      toast.success('Xác nhận kết quả (kèm hiệp phụ) thành công! 🎉', 5000);
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm hiệp phụ) thành công! 🎉');
       setIsDirty(false);
       handleRefresh();
+`;
+
     } catch (err) {
       if (isKnockoutEtDrawError(err)) {
         // Vẫn hoà sau ET — chuyển sang pen, giữ nguyên tổng sau ET làm nền.
@@ -692,12 +710,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     }
     setIsSubmittingPenalty(true);
     try {
-      await matchApi.adminRecordResult(selectedMatch.id, {
+      const handleConfirmPenalty_PATCHED_BODY = `
+      const res = await matchApi.adminRecordResult(selectedMatch.id, {
         homeScore: penaltyBaseScore.home, awayScore: penaltyBaseScore.away,
         resultType: 'penalty',
-        // FIX: chỉ gửi ET score nếu ET thực sự được đá — phân biệt với case
-        // pen thẳng từ 90' (giữ home_extra_time_score=null đúng ý nghĩa,
-        // không giả vờ có hiệp phụ khi thực tế bỏ qua).
         ...(etWasPlayed && {
           homeExtraTimeScore: penaltyBaseScore.home,
           awayExtraTimeScore: penaltyBaseScore.away,
@@ -707,9 +723,11 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       });
       setMatchStatus('finished');
       setPenaltyModalOpen(false);
-      toast.success('Xác nhận kết quả (kèm loạt sút luân lưu) thành công! 🎉', 5000);
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm loạt sút luân lưu) thành công! 🎉');
       setIsDirty(false);
       handleRefresh();
+`;
+
     } catch (err) {
       toast.error('Lỗi khi xác nhận kết quả pen: ' + (err?.response?.data?.message || err.message));
     } finally { setIsSubmittingPenalty(false); }
