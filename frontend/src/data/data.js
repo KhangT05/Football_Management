@@ -1,5 +1,5 @@
 import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-
+import React from 'react'
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
 
@@ -173,19 +173,16 @@ export const POSITION_COLORS = {
   MID: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
   FW: 'bg-red-400/10 text-red-400 border-red-400/30',
 };
-
-// export const EVENT_ICON = {
-//   // goal: <span className="text-lg leading-none">⚽</span>,
-//   own_goal: <span className="text-lg leading-none">⚽</span>,
-//   penalty_scored: <span className="text-lg leading-none">🥅</span>,
-//   yellow_card: <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" />,
-//   second_yellow: (
-//     <div className="relative w-4 h-4 shrink-0">
-//       <div className="absolute inset-y-0 left-0 w-3 h-4 bg-yellow-400 rounded-sm" />
-//       <div className="absolute inset-y-0 left-1 w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
-//     </div>
-//   ),
-//   red_card: <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />,
-//   substitution_in: <span className="text-lg leading-none">🔄</span>,
-//   substitution_out: <span className="text-lg leading-none">🔄</span>,
-// };
+export const EVENT_ICON = {
+  goal: React.createElement('span', { className: "text-lg leading-none" }, "⚽"),
+  own_goal: React.createElement('span', { className: "text-lg leading-none" }, "⚽"),
+  penalty_scored: React.createElement('span', { className: "text-lg leading-none" }, "🥅"),
+  yellow_card: React.createElement('div', { className: "w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" }),
+  second_yellow: React.createElement('div', { className: "relative w-4 h-4 shrink-0" },
+    React.createElement('div', { className: "absolute inset-y-0 left-0 w-3 h-4 bg-yellow-400 rounded-sm" }),
+    React.createElement('div', { className: "absolute inset-y-0 left-1 w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" })
+  ),
+  red_card: React.createElement('div', { className: "w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" }),
+  substitution_in: React.createElement('span', { className: "text-lg leading-none" }, "🔄"),
+  substitution_out: React.createElement('span', { className: "text-lg leading-none" }, "🔄"),
+};
