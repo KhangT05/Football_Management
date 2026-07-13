@@ -10,6 +10,10 @@
  *   4. VNPay redirect về return_url của Backend
  *   5. Backend xác nhận giao dịch và redirect về Frontend /thanh-toan/ket-qua?...
  *   6. Frontend gọi verifyPayment() để lấy kết quả chính thức từ Backend
+ *
+ * LƯU Ý: rejectPayment đã bị BỎ khỏi API layer này — backend PaymentService
+ * không có method/route reject tương ứng (chỉ có confirm/query/refund).
+ * PaymentStatus enum thực tế: pending | confirmed | refund_pending | refunded.
  */
 
 import axiosClient from './axiosClient';
@@ -90,13 +94,5 @@ export const paymentApi = {
    */
   initiateManualPayment: (data) => {
     return axiosClient.post('/payments/manual', data);
-  },
-
-  /**
-   * Admin: Từ chối thanh toán
-   * POST /payments/{id}/reject
-   */
-  rejectPayment: (id, data) => {
-    return axiosClient.post(`/payments/${id}/reject`, data);
   },
 };
