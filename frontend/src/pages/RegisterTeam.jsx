@@ -312,7 +312,7 @@ export default function RegisterTeam() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {/* Card: thêm CT vào team có sẵn */}
-              <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-[2rem] p-8 flex flex-col">
+              <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl p-8 flex flex-col">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
                     <UserPlus className="w-6 h-6 text-emerald-400" />
@@ -343,7 +343,7 @@ export default function RegisterTeam() {
               </div>
 
               {/* Card: tạo team mới */}
-              <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-[2rem] p-8 flex flex-col">
+              <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl p-8 flex flex-col">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-blue-500/20 rounded-xl border border-blue-500/30">
                     <ShieldCheck className="w-6 h-6 text-blue-400" />

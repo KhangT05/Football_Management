@@ -13,8 +13,8 @@ import LeaderboardTeamCard from '../components/LeaderboardTeamCard';
 import Pagination from '../components/ui/Pagination';
 import { groupApi } from '../api/groupApi';
 import { seasonApi } from '../api/seasonApi';
-import { statisticsApi } from '../api/statisticsApi';
 import { knockoutApi } from '../api/knockoutApi';
+import axiosClient from '../api/axiosClient';
 import StandingPlayerRow from '../components/StandingPlayerRow';
 import BracketView from '../components/admin/BracketView';
 
@@ -157,43 +157,43 @@ export default function LeaderboardTeams() {
         return;
       }
 
-      let res;
-      let arrayKey;
-      let valueKey;
+      // Instead of using statisticsApi which crashes due to `player.name` not existing in Prisma schema,
+      // and filters by `gt: 0` which doesn't work with seed data, we use the standing service's player-stats.
+      const res = await axiosClient.get(`/seasons/${seasonId}/player-stats`, { params: { per_page: 1000 } });
+      const payload = unwrap(res);
+      let rawItems = [];
+      if (Array.isArray(payload)) {
+        rawItems = payload;
+      } else if (payload && Array.isArray(payload.data)) {
+        rawItems = payload.data;
+      }
+      
+      let allPlayers = rawItems.map((r) => ({
+        player_id: r.player_id,
+        player_name: r.player?.user?.name || 'Unknown',
+        team_id: r.team_id,
+        team_name: r.team?.name || 'Unknown',
+        goals: r.goals_scored || 0,
+        assists: r.assists || 0,
+        yellow: r.yellow_cards || 0,
+        red: r.red_cards || 0,
+        score: ((r.goals_scored || 0) * 4) + ((r.assists || 0) * 3) + ((r.yellow_cards || 0) * -1) + ((r.red_cards || 0) * -3),
+        matches_played: r.matches_played || 0,
+      }));
 
       if (statTab === 'goals') {
-        res = await statisticsApi.getTopScorers(seasonId, 50);
-        arrayKey = 'scorers';
-        valueKey = 'goal_count';
+        allPlayers = allPlayers.sort((a, b) => b.goals - a.goals).map(p => ({ ...p, value: p.goals }));
       } else if (statTab === 'assists') {
-        res = await statisticsApi.getTopAssists(seasonId, 50);
-        arrayKey = 'players';
-        valueKey = 'value';
+        allPlayers = allPlayers.sort((a, b) => b.assists - a.assists).map(p => ({ ...p, value: p.assists }));
       } else if (statTab === 'yellow') {
-        res = await statisticsApi.getTopYellowCards(seasonId, 50);
-        arrayKey = 'players';
-        valueKey = 'value';
+        allPlayers = allPlayers.sort((a, b) => b.yellow - a.yellow).map(p => ({ ...p, value: p.yellow }));
       } else if (statTab === 'red') {
-        res = await statisticsApi.getTopRedCards(seasonId, 50);
-        arrayKey = 'players';
-        valueKey = 'value';
+        allPlayers = allPlayers.sort((a, b) => b.red - a.red).map(p => ({ ...p, value: p.red }));
       } else if (statTab === 'best') {
-        res = await statisticsApi.getBestPlayers(seasonId, 50);
-        arrayKey = 'players';
-        valueKey = 'score';
+        allPlayers = allPlayers.sort((a, b) => b.score - a.score || a.matches_played - b.matches_played).map(p => ({ ...p, value: p.score }));
       }
 
-      const payload = unwrap(res);
-      const rawItems = payload?.[arrayKey] ?? [];
-      const normalized = rawItems.map((r) => ({
-        player_id: r.player_id,
-        player_name: r.player_name,
-        team_id: r.team_id,
-        team_name: r.team_name,
-        value: r[valueKey],
-        matches_played: r.matches_played,
-      }));
-      setPlayerStats(normalized);
+      setPlayerStats(allPlayers);
     } catch (error) {
       console.error('Failed to fetch player stats', error);
       setPlayerStats([]);
@@ -346,14 +346,33 @@ export default function LeaderboardTeams() {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
   };
+
+  const [playerCurrentPage, setPlayerCurrentPage] = useState(1);
+  const [playerItemsPerPage, setPlayerItemsPerPage] = useState(10);
+  const handlePlayerItemsPerPageChange = (newLimit) => {
+    setPlayerItemsPerPage(newLimit);
+    setPlayerCurrentPage(1);
+  };
+
   const [prevSeasonId, setPrevSeasonId] = useState(selectedSeasonId);
   if (prevSeasonId !== selectedSeasonId) {
     setPrevSeasonId(selectedSeasonId);
     setCurrentPage(1);
+    setPlayerCurrentPage(1);
+  }
+
+  const [prevStatTab, setPrevStatTab] = useState(activeStatTab);
+  if (prevStatTab !== activeStatTab) {
+    setPrevStatTab(activeStatTab);
+    setPlayerCurrentPage(1);
   }
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage) || 1;
-  const safePage = Math.min(currentPage, totalPages);
+  const safePage = Math.min(currentPage, Math.max(1, totalPages));
   const paginatedTeams = filteredTeams.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
+  const playerTotalPages = Math.ceil(playerStats.length / playerItemsPerPage) || 1;
+  const safePlayerPage = Math.min(playerCurrentPage, Math.max(1, playerTotalPages));
+  const paginatedPlayerStats = playerStats.slice((safePlayerPage - 1) * playerItemsPerPage, safePlayerPage * playerItemsPerPage);
   const handleRefresh = () => {
     fetchTeams({ sort: 'name', direction: 'asc', force: true });
     fetchSeasons({ force: true });
@@ -422,7 +441,7 @@ export default function LeaderboardTeams() {
               className={`pb-4 text-base md:text-lg font-bold transition-all border-b-2 -mb-px ${activeMainTab === 'players' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
                 }`}
             >
-              Thống kê Cá nhân
+              Bảng xếp hạng cầu thủ
             </button>
           </div>
 
@@ -722,14 +741,26 @@ export default function LeaderboardTeams() {
                           <td colSpan={3} className="py-8 text-center text-gray-500 text-sm">Chưa có dữ liệu thống kê cầu thủ.</td>
                         </tr>
                       ) : (
-                        playerStats.map((row, idx) => (
-                          <StandingPlayerRow key={row.player_id ?? idx} playerStat={row} rank={idx + 1} activeStatTab={activeStatTab} />
-                        ))
+                        paginatedPlayerStats.map((row, idx) => {
+                          const actualRank = (safePlayerPage - 1) * playerItemsPerPage + idx + 1;
+                          return <StandingPlayerRow key={row.player_id ?? idx} playerStat={row} rank={actualRank} activeStatTab={activeStatTab} />
+                        })
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
+              {playerTotalPages > 1 && (
+                <div className="mt-8 mb-4 flex justify-center">
+                  <Pagination
+                    currentPage={safePlayerPage}
+                    totalPages={playerTotalPages}
+                    onPageChange={setPlayerCurrentPage}
+                    itemsPerPage={playerItemsPerPage}
+                    onItemsPerPageChange={handlePlayerItemsPerPageChange}
+                  />
+                </div>
+              )}
             </div>
           )}
         </section>
