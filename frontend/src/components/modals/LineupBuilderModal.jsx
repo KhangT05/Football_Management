@@ -119,7 +119,14 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData('app/player-id', String(player.player_id));
-                        e.dataTransfer.setData(`app/position-${mappedPos}`, '1');
+                        // FIX: PitchFormation nhóm + check drop-target bằng p.position
+                        // NGUYÊN BẢN ('forward'/'midfielder'/...), không phải short code
+                        // từ mapPosition() ('FW'/'MID'/...). Trước đây set bằng mappedPos
+                        // → key "app/position-FW" không bao giờ khớp "app/position-forward"
+                        // mà PitchFormation check → dataTransfer.types.includes() luôn false
+                        // → handleDragOver không preventDefault() → browser chặn drop toàn bộ.
+                        e.dataTransfer.setData(`app/position-${player.position}`, '1');
+                        e.dataTransfer.setData('text/plain', String(player.player_id)); // fallback cho Firefox
                         e.dataTransfer.effectAllowed = 'move';
                       }}
                       className={`flex items-center justify-between p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all ${isStarter ? 'bg-emerald-500/10 border-emerald-500/30'
@@ -129,7 +136,13 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-navy border border-navy-light flex items-center justify-center overflow-hidden font-black text-gray-300 text-sm">
-                          {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover" /> : player.jersey_number}
+                          {player.avatar ? (
+                            // FIX: <img> có draggable="true" mặc định của browser — nếu nhả
+                            // chuột đúng lúc con trỏ nằm trên ảnh, browser sẽ dùng chính <img>
+                            // làm drag source (kéo file ảnh) thay vì bubble lên onDragStart của
+                            // div cha → setData không chạy → mất data ngay từ nguồn kéo.
+                            <img src={player.avatar} alt="" draggable={false} className="w-full h-full object-cover" />
+                          ) : player.jersey_number}
                         </div>
                         <div>
                           <p className={`font-bold text-sm ${isStarter ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
