@@ -29,6 +29,12 @@ const PERIOD_OPTIONS = [
 export default function Dashboard() {
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
 
+  const userRoles = Array.isArray(user?.roles) 
+    ? user.roles.map(r => typeof r === 'string' ? r.toLowerCase() : r) 
+    : (user?.role ? [typeof user.role === 'string' ? user.role.toLowerCase() : user.role] : []);
+  const isAdmin = userRoles.includes('admin') || user?.is_admin === true;
+  const isOrganizing = userRoles.includes('organizing');
+
   // Filter States
   const [seasons, setSeasons] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
@@ -168,23 +174,25 @@ export default function Dashboard() {
 
         {/* Filters */}
         <div className="bg-navy-light/30 p-4 rounded-xl border border-navy-light flex flex-wrap gap-4 items-center">
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Mùa giải</label>
-            <select
-              className="bg-navy border border-navy-light text-white text-sm rounded-lg focus:ring-neon focus:border-neon block p-2 outline-none"
-              value={selectedSeasonId}
-              onChange={(e) => setSelectedSeasonId(e.target.value)}
-            >
-              <option value="">Tất cả mùa giải</option>
-              {seasons.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+          {isOrganizing && (
+            <div className="flex flex-col">
+              <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Mùa giải</label>
+              <select
+                className="bg-navy border border-navy-light text-white text-sm rounded-lg focus:ring-neon focus:border-neon block p-2 outline-none"
+                value={selectedSeasonId}
+                onChange={(e) => setSelectedSeasonId(e.target.value)}
+              >
+                <option value="">Tất cả mùa giải</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {!selectedSeasonId && (
             <div className="flex flex-col">
-              <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Thời gian (User)</label>
+              <label className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Thời gian (Thống kê)</label>
               <select
                 className="bg-navy border border-navy-light text-white text-sm rounded-lg focus:ring-neon focus:border-neon block p-2 outline-none"
                 value={selectedPeriod}
@@ -201,51 +209,57 @@ export default function Dashboard() {
         {/* C. SYSTEM OVERVIEW (Default) */}
         {!selectedSeasonId && (
           <div className="space-y-8 animate-fade-in">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-4">Vận hành Hệ thống</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Giải đấu" value={isLoading ? '—' : overviewStats.tournaments.toString()} icon={Trophy} colorClass="border-navy-light text-blue-400" />
-                <StatCard title="Mùa giải" value={isLoading ? '—' : overviewStats.seasons.toString()} icon={ListChecks} colorClass="border-navy-light text-purple-400" />
-                <StatCard title="Đội bóng" value={isLoading ? '—' : overviewStats.teams.toString()} icon={Shield} colorClass="border-navy-light text-emerald-400" />
-                <StatCard title="Người dùng" value={isLoading ? '—' : overviewStats.users.toString()} icon={Users} colorClass="border-navy-light text-neon" />
+            {(isOrganizing || isAdmin) && (
+              <div>
+                <h3 className="text-lg font-bold text-white mb-4">Vận hành Hệ thống</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {isOrganizing && <StatCard title="Giải đấu" value={isLoading ? '—' : overviewStats.tournaments.toString()} icon={Trophy} colorClass="border-navy-light text-blue-400" />}
+                  {isOrganizing && <StatCard title="Mùa giải" value={isLoading ? '—' : overviewStats.seasons.toString()} icon={ListChecks} colorClass="border-navy-light text-purple-400" />}
+                  {isOrganizing && <StatCard title="Đội bóng" value={isLoading ? '—' : overviewStats.teams.toString()} icon={Shield} colorClass="border-navy-light text-emerald-400" />}
+                  {isAdmin && <StatCard title="Người dùng" value={isLoading ? '—' : overviewStats.users.toString()} icon={Users} colorClass="border-navy-light text-neon" />}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <h3 className="text-lg font-bold text-white mb-4">Tài chính & Tăng trưởng</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <StatCard title="Doanh thu hệ thống" value={isLoading ? '—' : formatCurrency(overviewStats.revenue)} icon={DollarSign} colorClass="border-navy-light text-yellow-400" />
-                <StatCard title="Người dùng mới" value={isLoading ? '—' : `+${overviewStats.newUsers}`} icon={UserPlus} colorClass="border-navy-light text-pink-400" />
+            {(isOrganizing || isAdmin) && (
+              <div>
+                <h3 className="text-lg font-bold text-white mb-4">{isOrganizing ? "Tài chính & Tăng trưởng" : "Tăng trưởng"}</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {isOrganizing && <StatCard title="Doanh thu hệ thống" value={isLoading ? '—' : formatCurrency(overviewStats.revenue)} icon={DollarSign} colorClass="border-navy-light text-yellow-400" />}
+                  {isAdmin && <StatCard title="Người dùng mới" value={isLoading ? '—' : `+${overviewStats.newUsers}`} icon={UserPlus} colorClass="border-navy-light text-pink-400" />}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Line Chart for Users */}
-            <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-neon" /> Biểu đồ người dùng đăng ký ({periodLabel})
-              </h3>
-              <div className="h-[300px] w-full">
-                {isLoading ? (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>
-                ) : dailyRegistrations.length === 0 ? (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">Không có dữ liệu</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dailyRegistrations}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2A303C" vertical={false} />
-                      <XAxis dataKey="displayDate" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <RechartsTooltip
-                        contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
-                        itemStyle={{ color: '#00e5ff' }}
-                        labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-                      />
-                      <Line type="monotone" dataKey="count" name="Số đăng ký" stroke="#00e5ff" strokeWidth={3} dot={{ fill: '#00e5ff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
+            {isAdmin && (
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-neon" /> Biểu đồ người dùng đăng ký ({periodLabel})
+                </h3>
+                <div className="h-[300px] w-full">
+                  {isLoading ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>
+                  ) : dailyRegistrations.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">Không có dữ liệu</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dailyRegistrations}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2A303C" vertical={false} />
+                        <XAxis dataKey="displayDate" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <RechartsTooltip
+                          contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
+                          itemStyle={{ color: '#00e5ff' }}
+                          labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+                        />
+                        <Line type="monotone" dataKey="count" name="Số đăng ký" stroke="#00e5ff" strokeWidth={3} dot={{ fill: '#00e5ff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
