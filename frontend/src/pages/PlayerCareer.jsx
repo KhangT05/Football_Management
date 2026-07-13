@@ -13,7 +13,12 @@ export function PlayerCareerView({ data }) {
         data?.tournaments?.[0]?.tournament_id ?? null
     );
 
-    if (!data || data.tournaments.length === 0) {
+    // Sync khi data prop đổi (vd: reuse component không unmount khi chuyển player)
+    useEffect(() => {
+        setActiveTournamentId(data?.tournaments?.[0]?.tournament_id ?? null);
+    }, [data]);
+
+    if (!data || !data.tournaments || data.tournaments.length === 0) {
         return (
             <div className="bg-navy/40 backdrop-blur-md border border-navy-light rounded-3xl p-12 text-center">
                 <UserX className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -25,6 +30,8 @@ export function PlayerCareerView({ data }) {
 
     const activeTournament =
         data.tournaments.find(t => t.tournament_id === activeTournamentId) ?? data.tournaments[0];
+
+    const seasons = activeTournament.seasons ?? [];
 
     return (
         <div className="space-y-6">
@@ -60,7 +67,7 @@ export function PlayerCareerView({ data }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-navy-light/50">
-                            {activeTournament.seasons.map(s => (
+                            {seasons.map(s => (
                                 <tr key={s.season_id} className="hover:bg-navy-light/20 transition-colors">
                                     <td className="py-4 px-6 font-bold text-white">{s.season_name}</td>
                                     <td className="py-4 px-6 text-center text-gray-300">{s.matches_played}</td>
@@ -101,8 +108,10 @@ export default function PlayerCareer() {
             setError(null);
             try {
                 const res = await statisticsApi.getPlayerCareer(playerId);
-                const body = res?.data ?? res;
-                const payload = body?.data ?? body;
+                const payload = (res && typeof res === 'object' && 'data' in res &&
+                    ('status' in res || 'timestamp' in res || 'code' in res))
+                    ? res.data
+                    : res;
                 if (!cancelled) setData(payload ?? null);
             } catch (err) {
                 console.error('Lỗi khi tải career stats:', err);
