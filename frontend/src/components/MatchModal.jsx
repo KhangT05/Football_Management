@@ -80,7 +80,6 @@ function PlayerColumn({ title, side, players, loading, kit, events, viewMode, on
   const subs = players.filter(p => p.lineup_type === 'substitute');
   const unregistered = players.filter(p => p.lineup_type === 'unregistered');
   const hasFormationData = starters.length > 0;
-  const showFormation = viewMode === 'formation' && hasFormationData;
   const formationLabel = hasFormationData ? computeFormationLabel(starters) : null;
   return (
     <div className="flex flex-col min-h-0 h-full bg-navy border border-navy-light rounded-2xl p-4 shadow-lg">
@@ -92,29 +91,25 @@ function PlayerColumn({ title, side, players, loading, kit, events, viewMode, on
             {formationLabel}
           </span>
         )}
-        {hasFormationData ? (
-          <div className="flex items-center gap-1 bg-navy-dark/60 border border-navy-light rounded-lg p-0.5 shrink-0">
-            <button
-              onClick={() => onToggleView('formation')}
-              className={`px-2 py-1 rounded-md text-[10px] font-black uppercase transition-colors ${viewMode === 'formation' ? badgeCls : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              Sơ đồ
-            </button>
-            <button
-              onClick={() => onToggleView('list')}
-              className={`px-2 py-1 rounded-md text-[10px] font-black uppercase transition-colors ${viewMode === 'list' ? badgeCls : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              Danh sách
-            </button>
-          </div>
-        ) : (
-          <span className={`${badgeCls} text-[10px] font-black px-2 py-0.5 rounded uppercase shrink-0`}>Đội hình</span>
-        )}
+        <div className="flex items-center gap-1 bg-navy-dark/60 border border-navy-light rounded-lg p-0.5 shrink-0">
+          <button
+            onClick={() => onToggleView('formation')}
+            className={`px-2 py-1 rounded-md text-[10px] font-black uppercase transition-colors ${viewMode === 'formation' ? badgeCls : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            Sơ đồ
+          </button>
+          <button
+            onClick={() => onToggleView('list')}
+            className={`px-2 py-1 rounded-md text-[10px] font-black uppercase transition-colors ${viewMode === 'list' ? badgeCls : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            Danh sách
+          </button>
+        </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
         {loading ? (
           [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
-        ) : showFormation ? (
+        ) : viewMode === 'formation' ? (
           <div className="space-y-4 h-full flex flex-col">
             <div className="h-[300px] sm:h-[340px] shrink-0">
               <FormationPitchSingleTeam starters={starters} kit={kit} events={events} />
