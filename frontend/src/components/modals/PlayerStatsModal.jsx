@@ -22,13 +22,12 @@ export default function PlayerStatsModal({ player, onClose }) {
         setLoading(true);
         setError(null);
         const res = await statisticsApi.getPlayerCareer(playerId);
-        setStats(res.data);
+        const payload = (res && typeof res === 'object' && 'data' in res &&
+          ('status' in res || 'timestamp' in res || 'code' in res))
+          ? res.data
+          : res;
+        setStats(payload ?? null);
       } catch (err) {
-        // DEBUG: log đầy đủ để xác định nguyên nhân thật (404 route chưa
-        // regenerate / 500 lỗi Prisma / network). Xoá console.error này sau
-        // khi xác định xong nguyên nhân, giữ lại error message chi tiết cho
-        // môi trường dev để không phải mò DevTools mỗi lần.
-        console.error('Lỗi khi tải thống kê cầu thủ:', err);
         const status = err?.response?.status;
         const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
         if (status === 404) {
@@ -114,7 +113,7 @@ export default function PlayerStatsModal({ player, onClose }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {tournament.seasons.map((season) => (
+                        {(tournament.seasons ?? []).map((season) => (
                           <tr key={season.season_id} className="border-b border-navy-light/30 hover:bg-white/5 transition-colors">
                             <td className="py-4 px-4 font-bold text-white text-sm">
                               {season.season_name}
