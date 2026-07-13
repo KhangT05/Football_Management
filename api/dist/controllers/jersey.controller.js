@@ -24,11 +24,9 @@ let JerseyController = class JerseyController extends Controller {
     async getSeasonTeamJerseys(seasonTeamId) {
         return this.service.getSeasonTeamJerseys(seasonTeamId);
     }
-    /** PUT /jerseys/season-teams/:seasonTeamId — upsert by type */
     async upsertSeasonTeamJersey(seasonTeamId, body, req) {
         return this.service.upsertSeasonTeamJersey(seasonTeamId, body, req.user);
     }
-    /** DELETE /jerseys/season-teams/:seasonTeamId?type=home */
     async deleteSeasonTeamJersey(seasonTeamId, type, req) {
         this.setStatus(204);
         return this.service.deleteSeasonTeamJersey(seasonTeamId, type, req.user);
@@ -42,6 +40,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JerseyController.prototype, "getSeasonTeamJerseys", null);
 __decorate([
+    Security("jwt", ["leader", "organizing"])
+    /** PUT /jerseys/season-teams/:seasonTeamId — upsert by type */
+    ,
     Put("season-teams/{seasonTeamId}"),
     __param(0, Path()),
     __param(1, Body()),
@@ -51,6 +52,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JerseyController.prototype, "upsertSeasonTeamJersey", null);
 __decorate([
+    Security("jwt", ["leader", "organizing"])
+    /** DELETE /jerseys/season-teams/:seasonTeamId?type=home */
+    ,
     Delete("season-teams/{seasonTeamId}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -61,7 +65,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JerseyController.prototype, "deleteSeasonTeamJersey", null);
 JerseyController = __decorate([
-    Security("jwt", ["admin", "user", "organizing", "guest"]),
     Route("jerseys"),
     Tags("Jerseys"),
     __metadata("design:paramtypes", [JerseyService])

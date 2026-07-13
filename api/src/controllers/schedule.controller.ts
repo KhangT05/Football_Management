@@ -16,7 +16,7 @@ export class ScheduleController extends Controller {
         super();
     }
 
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/generate')
     @SuccessResponse(201, 'Created')
     async generateSchedule(
@@ -37,7 +37,7 @@ export class ScheduleController extends Controller {
      * Dùng endpoint này thay vì /generate khi season.phases.length > 0
      * (endpoint /generate sẽ throw CONFLICT trong trường hợp đó).
      */
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/generate-from-groups')
     @SuccessResponse(201, 'Created')
     async generateFromGroups(
@@ -49,7 +49,7 @@ export class ScheduleController extends Controller {
         return this.service.generateMatchesFromDrawnGroups(seasonId, parsed);
     }
 
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/schedule')
     async autoSchedule(
         @Path() seasonId: number,
@@ -59,7 +59,7 @@ export class ScheduleController extends Controller {
         return this.service.autoScheduleMatches(seasonId, parsed);
     }
 
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Patch('matches/{matchId}/reschedule')
     @SuccessResponse(204, 'No Content')
     async rescheduleMatch(

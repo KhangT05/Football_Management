@@ -25,7 +25,7 @@ import { buildPlayerStatsQueryRequest, buildStandingsQueryRequest } from "../hel
 //   GET /seasons/{id}/standings/{groupId} → public — standings chi tiết 1 group
 //   GET /seasons/{id}/player-stats        → public
 //   GET /seasons/{id}/suspended-players   → public
-//   POST / PATCH / DELETE                 → jwt [admin]
+//   POST / PATCH / DELETE                 → jwt [organizing]
 //
 // Lý do merge SeasonStatsController vào đây:
 //   - Cả hai đều dùng @Route("seasons") → 2 class cùng prefix gây nhầm lẫn + tsoa conflict
@@ -38,7 +38,7 @@ import { buildPlayerStatsQueryRequest, buildStandingsQueryRequest } from "../hel
 //                    ↘                ↘
 //                  cancelled        cancelled
 //   - registration_open, ongoing, finished: có thể set MANUAL qua
-//     PATCH {id}/status (admin bấm sớm/bấm bù), ĐỒNG THỜI cũng tự động qua
+//     PATCH {id}/status (organizing bấm sớm/bấm bù), ĐỒNG THỜI cũng tự động qua
 //     cron SeasonService.runAutoTransitions() theo start_date/end_date — 2
 //     lối đi song song, không loại trừ nhau, đều idempotent.
 //   - cancelled: luôn đi qua route riêng PATCH {id}/cancel (cancel_reason
@@ -74,14 +74,14 @@ let SeasonController = class SeasonController extends Controller {
         return this.service.findByIdOrFail(id);
     }
     // ═══════════════════════════════════════════════════════════════════════════
-    // POST — CREATE (admin only)
+    // POST — CREATE (organizing only)
     // ═══════════════════════════════════════════════════════════════════════════
     async create(body, req) {
         this.setStatus(201);
         return this.service.create(body, req.user.user_id);
     }
     // ═══════════════════════════════════════════════════════════════════════════
-    // PATCH — UPDATE (admin only)
+    // PATCH — UPDATE (organizing only)
     // ═══════════════════════════════════════════════════════════════════════════
     async update(id, body) {
         return this.service.update(id, body);
@@ -105,7 +105,7 @@ let SeasonController = class SeasonController extends Controller {
      * UpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên
      * body.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi
      * `body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền
-     * (id, status) — dùng cho registration_open/ongoing/finished, admin bấm
+     * (id, status) — dùng cho registration_open/ongoing/finished, organizing bấm
      * tay song song với cron SeasonService.runAutoTransitions().
      */
     async updateStatus(id, body) {
@@ -118,7 +118,7 @@ let SeasonController = class SeasonController extends Controller {
      *   - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.
      * KHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ
      * `seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch
-     * cho admin/ops, không phải cách vận hành chính.
+     * cho organizing/ops, không phải cách vận hành chính.
      */
     async runAutoTransitions() {
         return this.service.runAutoTransitions();
@@ -171,7 +171,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "findById", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post(),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
@@ -181,7 +181,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "create", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}"),
     __param(0, Path()),
     __param(1, Body()),
@@ -190,7 +190,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "update", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -199,7 +199,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "softDelete", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/cancel"),
     __param(0, Path()),
     __param(1, Body()),
@@ -208,7 +208,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "cancelSeason", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/status"),
     __param(0, Path()),
     __param(1, Body()),
@@ -217,7 +217,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonController.prototype, "updateStatus", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("auto-transition"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),

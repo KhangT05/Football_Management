@@ -73,7 +73,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "findById", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Post("/"),
     SuccessResponse(201, "Created"),
     __param(0, FormField()),
@@ -85,7 +85,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "create", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}"),
     __param(0, Path()),
     __param(1, FormField()),
@@ -96,7 +96,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "update", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Delete("{id}"),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
@@ -105,7 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TournamentController.prototype, "softDelete", null);
 __decorate([
-    Security("jwt", ["admin", "organizing"]),
+    Security("jwt", ["organizing"]),
     Patch("{id}/restore"),
     __param(0, Path()),
     __metadata("design:type", Function),

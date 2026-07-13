@@ -20,7 +20,7 @@ export class VenueService {
             defaultPerPage: 20,
             maxPerPage: 100,
             beforeBuild: (where) => {
-                where.push({ is_active: true });
+                where.push({ deleted_at: null });
             },
         });
     }
@@ -75,5 +75,11 @@ export class VenueService {
             throw createAppError("NOT_FOUND", `Venue ${id} not found or not deleted`);
         }
         return this.findByIdOrFail(id);
+    }
+    findDeleted(req: QueryRequest = {}): Promise<Venue[]> {
+        return this.prisma.venue.findMany({
+            where: { deleted_at: { not: null } },
+            orderBy: { deleted_at: "desc" },
+        });
     }
 }

@@ -85,7 +85,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchResultController.prototype, "getMatchPlayerStats", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Post("{id}/result/confirm"),
     __param(0, Path()),
     __param(1, Body()),

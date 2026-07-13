@@ -1,5 +1,5 @@
 import type { DbClient } from "./dbTypes.js";
-import type { GroupLetter } from "./worldcup.js";
+import type { GroupLetter } from "./teamGenerator.js";
 interface MatchSummary {
     matchId: number;
     homeTeamId: number;
@@ -7,7 +7,7 @@ interface MatchSummary {
     homeScore: number;
     awayScore: number;
 }
-export declare function seedKnockoutBracket(db: DbClient, seasonId: number, topTwoByGroup: Record<GroupLetter, [number, number]>, venueIds: number[]): Promise<{
+export declare function seedKnockoutBracket(db: DbClient, seasonId: number, topTwoByGroup: Record<GroupLetter, [number, number]>, venueIds: number[], roundOf16Template: [GroupLetter, GroupLetter][]): Promise<{
     championTeamId: number;
     allMatches: MatchSummary[];
 }>;

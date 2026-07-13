@@ -61,7 +61,7 @@ export class SeasonTeamController extends Controller {
     return this.service.selfRegister(body, req.user.user_id);
   }
   /** Admin add team trực tiếp */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async adminAdd(
@@ -72,13 +72,13 @@ export class SeasonTeamController extends Controller {
     return this.service.adminAdd(body, req.user.user_id);
   }
   /** Duyệt team pending -> approved. Ban tổ chức hoặc admin. */
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/approve")
   async approve(@Path() id: number, @Request() req: AuthRequest): Promise<SeasonTeamWithRelations> {
     return this.service.approve(id, req.user.user_id);
   }
   /** Chuyển team sang season khác. Ban tổ chức hoặc admin. */
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/transfer")
   async transferSeason(
     @Path() id: number,
@@ -88,7 +88,7 @@ export class SeasonTeamController extends Controller {
     return this.service.transferSeason(id, body.season_id, req.user.user_id);
   }
   /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/status")
   async updateStatus(
     @Path() id: number,
@@ -97,7 +97,7 @@ export class SeasonTeamController extends Controller {
     return this.service.updateStatus(id, body);
   }
   /** Assign team vào group sau draw */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/group")
   async assignGroup(
     @Path() id: number,
@@ -105,7 +105,7 @@ export class SeasonTeamController extends Controller {
   ): Promise<SeasonTeamWithRelations> {
     return this.service.assignGroup(id, body);
   }
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -114,7 +114,7 @@ export class SeasonTeamController extends Controller {
   }
   /** Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.
  *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
-  @Security("jwt", ["admin"])
+  @Security("jwt", ["organizing"])
   @Post("season/{seasonId}/group-phase")
   async getOrCreateGroupPhase(@Path() seasonId: number) {
     return this.service.getOrCreateGroupPhase(seasonId);

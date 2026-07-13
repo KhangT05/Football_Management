@@ -28,7 +28,7 @@ export class TournamentController extends Controller {
   async findById(@Path() id: number): Promise<Tournament> {
     return this.service.findByIdOrFail(id);
   }
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Post("/")
   @SuccessResponse(201, "Created")
   async create(
@@ -57,7 +57,7 @@ export class TournamentController extends Controller {
     }, req.user.user_id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}")
   async update(
     @Path() id: number,
@@ -68,7 +68,7 @@ export class TournamentController extends Controller {
     return this.service.updateWithLogo(id, { name, description }, logo);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Delete("{id}")
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
@@ -76,7 +76,7 @@ export class TournamentController extends Controller {
     return this.service.softDelete(id);
   }
 
-  @Security("jwt", ["admin", "organizing"])
+  @Security("jwt", ["organizing"])
   @Patch("{id}/restore")
   async restore(@Path() id: number): Promise<Tournament> {
     return this.service.restore(id);

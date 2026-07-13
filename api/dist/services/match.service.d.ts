@@ -3,6 +3,9 @@ import { ConfirmResultOutput } from '../types/matchResult.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
 import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput, EditEventInput, EditScoreInput, AdminRecordResultInput } from '../types/match.type.js';
 import { MatchResultService } from './matchresult.service.js';
+type CorrectionResult = {
+    postCommitWarnings?: string[];
+};
 export declare const KNOCKOUT_DRAW_MARKER = "KNOCKOUT_DRAW_NEEDS_EXTRA_TIME_OR_PENALTY";
 export declare const KNOCKOUT_ET_DRAW_MARKER = "KNOCKOUT_ET_DRAW_NEEDS_PENALTY";
 export declare const KNOCKOUT_DRAW_MESSAGE_MARKER = "knockout draw \u1EDF";
@@ -30,12 +33,12 @@ export declare class MatchLifecycleService {
     private _fileDispute;
     resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<void>;
     private _assertCorrectionWindow;
-    addEvent(matchId: number, input: AddEventInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
-    deleteEvent(matchId: number, eventId: number, scheduleOptions: OptionalScheduleOptions): Promise<void>;
-    editEvent(matchId: number, eventId: number, input: EditEventInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
-    editScore(matchId: number, input: EditScoreInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
-    private _recalculateResultTx;
     private _runPostCorrectionSteps;
+    addEvent(matchId: number, input: AddEventInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    deleteEvent(matchId: number, eventId: number, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    editEvent(matchId: number, eventId: number, input: EditEventInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    editScore(matchId: number, input: EditScoreInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    private _recalculateResultTx;
     /**
      * FIX (knockout draw guard + penalty forwarding):
      * - Trước đây không guard gì cho knockout hoà ở full_time → confirm được
@@ -100,4 +103,5 @@ export declare class MatchLifecycleService {
      */
     adminRecordResult(matchId: number, input: AdminRecordResultInput, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutput>;
 }
+export {};
 //# sourceMappingURL=match.service.d.ts.map

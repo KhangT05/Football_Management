@@ -22,7 +22,7 @@ export class KnockoutController extends Controller {
      * bracket_slots của phase vừa get-or-create) nếu gọi generate 2 lần
      * cho cùng season+phaseType.
      */
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/knockout/generate')
     @SuccessResponse(201, 'Created')
     async generateKnockoutBracket(
@@ -37,7 +37,7 @@ export class KnockoutController extends Controller {
         return this.service.generateKnockoutBracket(parsed);
     }
 
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/phases/{phaseId}/knockout/advance')
     @SuccessResponse(200, 'OK')
     async advanceWinner(
@@ -59,7 +59,7 @@ export class KnockoutController extends Controller {
      * nhập tay SeedSource[]. Cùng idempotency guard với generate thường:
      * CONFLICT nếu phase (get-or-create theo bracket size) đã có sẵn bracket.
      */
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/knockout/generate-from-standings')
     @SuccessResponse(201, 'Created')
     async generateKnockoutFromStandings(
@@ -74,7 +74,7 @@ export class KnockoutController extends Controller {
  * Đổi 2 đội giữa 2 vị trí round 1 — chỉ khi phase chưa locked và chưa
  * có trận liên quan kết thúc (chặn ở service).
  */
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/phases/{phaseId}/knockout/swap-seeds')
     @SuccessResponse(204, 'No Content')
     async swapSeeds(
@@ -89,7 +89,7 @@ export class KnockoutController extends Controller {
     /**
      * Chốt sơ đồ (phase -> locked), không cho swap-seeds nữa.
      */
-    @Security('jwt', ['admin'])
+    @Security('jwt', ['organizing'])
     @Post('seasons/{seasonId}/phases/{phaseId}/knockout/confirm')
     @SuccessResponse(204, 'No Content')
     async confirmBracket(

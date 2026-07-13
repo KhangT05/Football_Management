@@ -70,7 +70,7 @@ export class MatchResultController extends Controller {
      * đầy đủ use case; nếu không có consumer riêng (integration test, internal
      * tool), nên xoá hẳn thay vì giữ 1 entrypoint thứ 2 vào cùng service method.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["organizing"])
     @Post("{id}/result/confirm")
     async confirmResult(
         @Path() id: number,

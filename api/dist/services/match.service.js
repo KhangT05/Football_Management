@@ -519,6 +519,36 @@ export class MatchLifecycleService {
         if (elapsed > CORRECTION_WINDOW_MS)
             throw createAppError('FORBIDDEN', `Match ${matchId}: correction window đã đóng (${Math.floor(elapsed / 60000)}p sau khi kết thúc, giới hạn 15p)`);
     }
+    // FIX (silent recompute failure): trước đây trả Promise<void> — nếu addEvent
+    // sync sự kiện thành công nhưng recomputeGroupStandings sau đó fail
+    // (deadlock do FOR UPDATE trên groups, timeout transaction, v.v.), lỗi chỉ
+    // console.error, KHÔNG có cách nào caller/FE biết standings đang stale.
+    // Giờ trả về danh sách warnings — caller (addEvent/deleteEvent/editEvent)
+    // forward nguyên lên FE để hiện toast + cho phép admin bấm "Tính lại BXH"
+    // thủ công thay vì standings kẹt sai vô thời hạn cho tới khi có trận khác
+    // trong CÙNG group confirm thành công (recompute là full-scan lại cả group).
+    async _runPostCorrectionSteps(matchId, groupId, isKnockout, additionalPlayers = []) {
+        const warnings = [];
+        if (!isKnockout && groupId) {
+            try {
+                await this.matchResultService.recomputeStandingsFor(groupId);
+            }
+            catch (err) {
+                const msg = `Recompute standings thất bại cho group ${groupId}: ${err instanceof Error ? err.message : String(err)}`;
+                console.error(`[correction] ${msg}`);
+                warnings.push(msg);
+            }
+        }
+        try {
+            await this.matchResultService.recomputePlayerStats(matchId, additionalPlayers);
+        }
+        catch (err) {
+            const msg = `Recompute player stats thất bại cho match ${matchId}: ${err instanceof Error ? err.message : String(err)}`;
+            console.error(`[correction] ${msg}`);
+            warnings.push(msg);
+        }
+        return warnings;
+    }
     async addEvent(matchId, input, scheduleOptions) {
         const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -560,7 +590,8 @@ export class MatchLifecycleService {
             });
             return this._recalculateResultTx(tx, matchId, match.home_team_id);
         });
-        await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
+        const warnings = await this._runPostCorrectionSteps(matchId, groupId, isKnockout);
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
     async deleteEvent(matchId, eventId, scheduleOptions) {
         const { groupId, isKnockout, affectedPlayers } = await this.prisma.$transaction(async (tx) => {
@@ -585,7 +616,8 @@ export class MatchLifecycleService {
                 : [];
             return { ...recalc, affectedPlayers };
         });
-        await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
+        const warnings = await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
     async editEvent(matchId, eventId, input, scheduleOptions) {
         if (input.playerId != null) {
@@ -677,7 +709,8 @@ export class MatchLifecycleService {
                 : [];
             return { ...recalc, affectedPlayers };
         });
-        await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
+        const warnings = await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
     async editScore(matchId, input, scheduleOptions) {
         const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
@@ -688,20 +721,31 @@ export class MatchLifecycleService {
                 throw createAppError('CONFLICT', `Match ${matchId} có ${eventCount} events — dùng addEvent/deleteEvent/editEvent thay vì editScore`);
             return this.matchResultService.overrideResultInTx(tx, matchId, input);
         });
+        // FIX: cùng bug như addEvent/deleteEvent/editEvent — trước đây 2
+        // try/catch riêng lẻ ở đây chỉ console.error, không trả gì lên caller.
+        // editScore không có event nên KHÔNG có additionalPlayers để truyền
+        // (recomputePlayerStats tự đọc lại matchEvent hiện tại của match — 0
+        // event thì players rỗng, không có gì để recompute, không phải lỗi).
+        const warnings = [];
         if (!isKnockout && groupId) {
             try {
                 await this.matchResultService.recomputeStandingsFor(groupId);
             }
             catch (err) {
-                console.error(`[editScore] recompute standings failed for group ${groupId}:`, err);
+                const msg = `Recompute standings thất bại cho group ${groupId}: ${err instanceof Error ? err.message : String(err)}`;
+                console.error(`[editScore] ${msg}`);
+                warnings.push(msg);
             }
         }
         try {
             await this.matchResultService.recomputePlayerStats(matchId);
         }
         catch (err) {
-            console.error(`[editScore] recompute player stats failed for match ${matchId}:`, err);
+            const msg = `Recompute player stats thất bại cho match ${matchId}: ${err instanceof Error ? err.message : String(err)}`;
+            console.error(`[editScore] ${msg}`);
+            warnings.push(msg);
         }
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
     async _recalculateResultTx(tx, matchId, homeTeamId) {
         const match = await tx.match.findUniqueOrThrow({
@@ -780,22 +824,6 @@ export class MatchLifecycleService {
             },
         });
         return { groupId: match.group_id, isKnockout };
-    }
-    async _runPostCorrectionSteps(matchId, groupId, isKnockout, additionalPlayers = []) {
-        if (!isKnockout && groupId) {
-            try {
-                await this.matchResultService.recomputeStandingsFor(groupId);
-            }
-            catch (err) {
-                console.error(`[correction] recompute standings failed for group ${groupId}:`, err);
-            }
-        }
-        try {
-            await this.matchResultService.recomputePlayerStats(matchId, additionalPlayers);
-        }
-        catch (err) {
-            console.error(`[correction] recompute player stats failed for match ${matchId}:`, err);
-        }
     }
     /**
      * FIX (knockout draw guard + penalty forwarding):

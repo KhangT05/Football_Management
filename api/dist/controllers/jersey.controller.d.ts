@@ -14,9 +14,7 @@ export declare class JerseyController extends Controller {
     constructor(service: JerseyService);
     /** GET /jerseys/season-teams/:seasonTeamId */
     getSeasonTeamJerseys(seasonTeamId: number): Promise<SeasonTeamJersey[]>;
-    /** PUT /jerseys/season-teams/:seasonTeamId — upsert by type */
     upsertSeasonTeamJersey(seasonTeamId: number, body: jerseySchema.UpsertSeasonTeamJerseyDto, req: AuthRequest): Promise<SeasonTeamJersey>;
-    /** DELETE /jerseys/season-teams/:seasonTeamId?type=home */
     deleteSeasonTeamJersey(seasonTeamId: number, type: JerseyType, req: AuthRequest): Promise<void>;
 }
 export {};

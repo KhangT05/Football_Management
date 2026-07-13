@@ -46,7 +46,7 @@ export class MatchReportController extends tsoa.Controller {
      * Cùng nguồn dữ liệu với PDF export (/matches/{id}/report, mount thủ
      * công trong app.ts) — không tự tính lại field nào ở đây.
      */
-    @tsoa.Security('jwt', ['admin'])
+    @tsoa.Security('jwt', ['organizing'])
     @tsoa.Get('matches/{matchId}/report/data')
     async getMatchReportData(@tsoa.Path() matchId: number): Promise<MatchReportOutput> {
         return this.service.getMatchReport(matchId);
