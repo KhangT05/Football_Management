@@ -371,6 +371,9 @@ export default function MyTeam() {
         season: '—',
         description: myTeam.description,
         logo: myTeam.logo,
+        // NEW — cần cho TeamPaymentModal, mặc định rỗng cho tới khi có season active
+        registrationFee: 0,
+        bankInfo: null,
       };
 
       // ── FIX: load season info — CHỈ lấy season mà team ĐÃ đăng ký
@@ -421,6 +424,16 @@ export default function MyTeam() {
             registrationStatus: activeSt?.status ?? null,
             primaryColor: homeJersey?.secondary_color || enriched.primaryColor,
             colorHex: homeJersey?.primary_color || enriched.colorHex,
+            // NEW — lấy trực tiếp từ bảng seasons (registration_fee, bank_id,
+            // bank_account_no, bank_account_name) để truyền xuống TeamPaymentModal.
+            registrationFee: active.registration_fee != null ? Number(active.registration_fee) : 0,
+            bankInfo: active.bank_id
+              ? {
+                bank_id: active.bank_id,
+                bank_account_no: active.bank_account_no,
+                bank_account_name: active.bank_account_name,
+              }
+              : null,
           };
         } else {
           setAllSeasons([]);
@@ -732,6 +745,17 @@ export default function MyTeam() {
     } finally { setIsDeleting(false); }
   };
 
+  // NEW: guard trước khi mở modal thanh toán — báo lỗi rõ ràng nếu chưa có
+  // thông tin ngân hàng cấu hình cho mùa giải, thay vì mở modal rồi mới lỗi
+  // khi bấm nút bên trong (xem TeamPaymentModal.jsx).
+  const handleOpenPayment = () => {
+    if (!activeTeam?.activeSeasonTeamId) {
+      toast.error('Không xác định được đăng ký của đội trong mùa giải này. Vui lòng tải lại trang.');
+      return;
+    }
+    setShowPayment(true);
+  };
+
   if (!isLoading && teams.length === 0) {
     return (
       <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-16 relative overflow-hidden">
@@ -850,7 +874,7 @@ export default function MyTeam() {
               </div>
             </div>
             <button
-              onClick={() => setShowPayment(true)}
+              onClick={handleOpenPayment}
               className="px-6 py-3.5 shrink-0 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap"
             >
               <CreditCard className="w-5 h-5" /> Thanh toán
@@ -1374,17 +1398,13 @@ export default function MyTeam() {
         />
       )}
 
-      {showPayment && (
+      {showPayment && activeTeam && (
         <TeamPaymentModal
-          teamName={team.name}
-          seasonTeamId={seasonTeam.id}
-          amount={payment.registration_fee}
-          bankInfo={
-            payment.season_bank_id
-              ? { bank_id: payment.season_bank_id, bank_account_no: payment.season_bank_account_no, bank_account_name: payment.season_bank_account_name }
-              : null
-          }
-          onClose={handleClose}
+          teamName={activeTeam.name}
+          seasonTeamId={activeTeam.activeSeasonTeamId}
+          amount={activeTeam.registrationFee}
+          bankInfo={activeTeam.bankInfo}
+          onClose={() => setShowPayment(false)}
         />
       )}
 

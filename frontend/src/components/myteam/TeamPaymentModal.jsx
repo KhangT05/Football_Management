@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, X, Info, QrCode, Users, Loader2, Wallet, AlertTriangle } from 'lucide-react';
+import { CreditCard, X, Info, QrCode, Users, Loader2, Wallet, AlertTriangle, Copy } from 'lucide-react';
 import { paymentApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import { getFriendlyErrorMessage } from '../../utils/errorHelper';
+
+const formatCurrency = (num) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num || 0);
 
 export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, bankInfo = null, onClose }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,7 +34,17 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
     return () => clearInterval(interval);
   }, [seasonTeamId, onClose]);
 
+  // FIX: seasonTeamId có thể null nếu team chưa có season_team hợp lệ
+  // (VD: activeTeam.activeSeasonTeamId chưa được set từ MyTeam.jsx).
+  // Trước đây không guard → bấm nút vẫn gọi API với season_team_id: null,
+  // backend trả lỗi khó hiểu cho user. Giờ chặn từ FE + báo rõ nguyên nhân.
+  const missingSeasonTeam = !seasonTeamId;
+
   const handleVNPay = async () => {
+    if (missingSeasonTeam) {
+      useToastStore.getState().error('Không xác định được đội trong mùa giải này. Vui lòng tải lại trang.');
+      return;
+    }
     try {
       setIsProcessing(true);
       const res = await paymentApi.initiatePayment({
@@ -59,6 +72,10 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
   // route + service method tương ứng ở backend. Giữ nguyên logic FE vì đây là
   // tính năng cần thiết (nhánh chuyển khoản thủ công), không tự chế backend.
   const handleManualPayment = async () => {
+    if (missingSeasonTeam) {
+      useToastStore.getState().error('Không xác định được đội trong mùa giải này. Vui lòng tải lại trang.');
+      return;
+    }
     try {
       setIsProcessing(true);
       await paymentApi.initiateManualPayment({ season_team_id: seasonTeamId });
@@ -68,6 +85,13 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
       useToastStore.getState().error(getFriendlyErrorMessage(error, 'Có lỗi khi xác nhận thanh toán'));
       setIsProcessing(false);
     }
+  };
+
+  const handleCopy = (text, label) => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text)
+      .then(() => useToastStore.getState().success(`Đã sao chép ${label}`))
+      .catch(() => { });
   };
 
   const hasManualOption = !!(bankInfo?.bank_id && bankInfo?.bank_account_no && bankInfo?.bank_account_name);
@@ -99,11 +123,30 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
             <div className="p-2 bg-emerald-500/20 rounded-xl shrink-0 mt-0.5">
               <Info className="w-5 h-5 text-emerald-500" />
             </div>
-            <div className="text-sm">
+            <div className="text-sm flex-1">
               <p className="text-emerald-400 font-black mb-1.5 text-base tracking-tight">Đội bóng của bạn đã được duyệt!</p>
               <p className="text-gray-300 font-medium leading-relaxed">Vui lòng hoàn tất thanh toán lệ phí để chính thức có tên trong danh sách bốc thăm chia bảng.</p>
             </div>
           </div>
+
+          {/* NEW: hiển thị số tiền cần thanh toán — trước đây amount được
+              truyền vào nhưng không render ở đâu, user không biết phải trả
+              bao nhiêu trước khi bấm thanh toán. */}
+          <div className="bg-navy border border-emerald-500/30 p-5 rounded-2xl flex items-center justify-between">
+            <span className="text-gray-400 text-sm font-medium">Lệ phí cần thanh toán</span>
+            <span className="text-emerald-400 font-black text-2xl">{formatCurrency(amount)}</span>
+          </div>
+
+          {/* NEW: cảnh báo nếu thiếu seasonTeamId — chặn thanh toán sớm thay
+              vì để user bấm nút và nhận lỗi từ backend không rõ nguyên nhân. */}
+          {missingSeasonTeam && (
+            <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-red-400 text-sm font-medium">
+                Không xác định được đăng ký của đội trong mùa giải này. Vui lòng tải lại trang, nếu vẫn lỗi hãy liên hệ Ban tổ chức.
+              </p>
+            </div>
+          )}
 
           <div className={`grid grid-cols-1 ${hasManualOption ? 'md:grid-cols-2' : ''} gap-5`}>
             <div className="border border-navy-light bg-navy/50 rounded-4xl p-6 flex flex-col gap-4 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-300 group">
@@ -121,8 +164,8 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
               </p>
               <button
                 onClick={handleVNPay}
-                disabled={isProcessing}
-                className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                disabled={isProcessing || missingSeasonTeam}
+                className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
                 Thanh toán bằng VNPay
@@ -142,16 +185,37 @@ export default function TeamPaymentModal({ teamName, seasonTeamId, amount = 0, b
                     <QrCode className="w-12 h-12 text-gray-400" />
                   </div>
                 </div>
-                <div className="text-xs font-mono font-bold bg-navy-dark px-3 py-2 rounded-xl border border-navy-light text-emerald-400 w-full text-center truncate">
-                  ND: {teamName} LE PHI
-                </div>
+
+                {/* NEW: hiển thị số tài khoản dạng text kèm nút copy — quét
+                    QR không phải lúc nào cũng tiện (VD chuyển khoản trên PC),
+                    trước đây chỉ có tên người nhận, thiếu số tài khoản. */}
+                <button
+                  type="button"
+                  onClick={() => handleCopy(bankInfo.bank_account_no, 'số tài khoản')}
+                  className="w-full flex items-center justify-between gap-2 text-xs font-mono font-bold bg-navy-dark px-3 py-2 rounded-xl border border-navy-light text-white hover:border-blue-500/50 transition-colors"
+                  title="Bấm để sao chép số tài khoản"
+                >
+                  <span className="truncate">STK: {bankInfo.bank_account_no}</span>
+                  <Copy className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopy(`${teamName} LE PHI`, 'nội dung chuyển khoản')}
+                  className="w-full flex items-center justify-between gap-2 text-xs font-mono font-bold bg-navy-dark px-3 py-2 rounded-xl border border-navy-light text-emerald-400 hover:border-emerald-500/50 transition-colors"
+                  title="Bấm để sao chép nội dung chuyển khoản"
+                >
+                  <span className="truncate">ND: {teamName} LE PHI</span>
+                  <Copy className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                </button>
+
                 <div className="text-[11px] text-gray-500 -mt-2">
                   Nhận bởi: {bankInfo.bank_account_name}
                 </div>
                 <button
                   onClick={handleManualPayment}
-                  disabled={isProcessing}
-                  className="w-full mt-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={isProcessing || missingSeasonTeam}
+                  className="w-full mt-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
                   Tôi đã chuyển khoản
