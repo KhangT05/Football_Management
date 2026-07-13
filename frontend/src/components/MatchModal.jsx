@@ -37,6 +37,7 @@ function eventIcon(type) {
   if (type === 'red_card') return <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />;
   return <span className="text-lg leading-none">🔄</span>; // substitution_in/out
 }
+import { EVENT_ICON } from '../data/data';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -57,13 +58,28 @@ function FormationPitchSingleTeam({ starters, kit, events }) {
       className="relative flex flex-col justify-between h-full rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
       style={{ background: 'repeating-linear-gradient(to bottom, #0f3d24 0px, #0f3d24 36px, #124a2c 36px, #124a2c 72px)' }}
     >
-      <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-14 h-14 rounded-full border border-white/20 pointer-events-none" />
-      <div className="absolute left-2 right-2 bottom-2 h-10 border border-white/15 rounded-sm pointer-events-none" style={{ marginInline: '18%' }} />
-      {rows.map(row => (
-        <FormationRow key={row.pos} players={row.players} kit={kit} events={events} />
-      ))}
+      <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20 h-full w-full">
+        <div className="absolute inset-0 bg-[#1e5e1e]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#1a521a_50%,transparent_50%)] bg-size-[100%_20%] opacity-50" />
+        <div className="absolute inset-4 border-2 border-white/40 pointer-events-none" />
+        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-16 sm:w-24 h-16 sm:h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
+        <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-14 h-14 rounded-full border border-white/20 pointer-events-none" />
+        <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10 text-white">
+          {orderedRows.map((row, i) => (
+            <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
+              {row.map(p => <FormationPlayerDot key={p.id} tp={p} kit={kit} size="sm" />)}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  );
+  )
 }
 
 function PlayerColumn({ title, side, players, loading, kit, events, viewMode, onToggleView }) {
@@ -151,9 +167,10 @@ function PlayerColumn({ title, side, players, loading, kit, events, viewMode, on
           </div>
         ) : (
           <p className="text-gray-500 text-center py-6 text-sm">Chưa có danh sách</p>
-        )}
-      </div>
-    </div>
+        )
+        }
+      </div >
+    </div >
   );
 }
 
