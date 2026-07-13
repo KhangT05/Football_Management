@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { parseApiError } from '../utils/errorHelper';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Shield, Users, Loader2, Info } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -66,7 +68,7 @@ export default function ManageMatchLineup() {
         const players = Array.isArray(playersRes?.data) ? playersRes.data : [];
         setAllPlayers(players);
       } catch (err) {
-        toast.error(err?.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
+        toast.error(parseApiError(err, 'Lỗi tải dữ liệu'));
       } finally {
         setLoading(false);
       }

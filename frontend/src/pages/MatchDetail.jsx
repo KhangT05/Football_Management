@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings } from 'lucide-react';
 import { RESULT_AVAILABLE_STATUSES } from '../components/MatchShared'
 
-import { getInitials } from '../utils/constants';
 import { useShallow } from 'zustand/react/shallow';
 import useScheduleStore from '../store/scheduleStore';
 import useAuthStore from '../store/authStore';
@@ -14,9 +13,8 @@ import useTeamStore from '../store/teamStore';
 import {
   useMatchExtras, TeamAvatar, TeamBadge, PlayerItem,
   normalizePosition, POSITION_ORDER, STATUS_LABEL, STATUS_BADGE_COLOR,
-  FormationRow, FormationPlayerCell, groupPlayersByPosition, computeFormationLabel,
+  FormationRow, FormationPlayerCell, computeFormationLabel,
   GOAL_EVENT_TYPES, EVENT_TYPE_LABEL, formatMinuteLabel, resolveEventPlayerName,
-  getPlayerEventBadges,
   NO_EVENT_STATUSES, getVsLabel,
 } from '../components/MatchShared';
 

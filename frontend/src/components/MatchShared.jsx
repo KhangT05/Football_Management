@@ -400,7 +400,7 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
     const borderColor = kit?.border ?? 'rgba(255,255,255,0.75)';
 
     return (
-        <div className="flex flex-col items-center w-16 sm:w-[4.5rem] shrink-0">
+        <div className="flex flex-col items-center w-16 sm:w-18 shrink-0">
             <div className="relative">
                 <div
                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 shadow-lg shadow-black/30"
@@ -416,7 +416,7 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
                 )}
 
                 {hasBadge && (
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-[1px] whitespace-nowrap">
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-px whitespace-nowrap">
                         {badges.goals > 0 && (
                             <span className="text-[9px] leading-none">⚽{badges.goals > 1 ? badges.goals : ''}</span>
                         )}
@@ -430,7 +430,7 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
             </div>
 
             <span
-                className="mt-2 w-full text-center text-[10px] sm:text-[11px] font-bold text-white leading-snug px-1 py-0.5 rounded bg-black/70 break-words"
+                className="mt-2 w-full text-center text-[10px] sm:text-[11px] font-bold text-white! leading-snug px-1 py-0.5 rounded bg-black/30 wrap-break-words"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                 title={displayName}
             >

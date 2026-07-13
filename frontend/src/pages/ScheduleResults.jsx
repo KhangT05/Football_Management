@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { CalendarDays, Trophy, WifiOff, RefreshCw, ChevronDown, Users, Filter, X, LayoutGrid, Rows3 } from 'lucide-react';
 import useScheduleStore from '../store/scheduleStore';
 import useSeasonStore from '../store/seasonStore';
@@ -11,6 +11,7 @@ import ScheduleMatchCard from '../components/schedule/ScheduleMatchCard';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
+import { matchApi } from '../api/matchApi';
 import { Link } from 'react-router-dom';
 
 function unwrapGroupsResponse(res) {
@@ -71,6 +72,10 @@ export default function ScheduleResults() {
 
   const [groups, setGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+  // Cache tỷ số trận đã kết thúc: { [matchId]: { home_final_score, away_final_score, ... } }
+  // Do schedule API không trả home_score/away_score, phải fetch riêng
+  const [matchResultsMap, setMatchResultsMap] = useState({});
+  const fetchedResultsRef = useRef(new Set());
 
   // ── Zustand stores ─────────────────────────────────────────
   const { seasons, isLoading: seasonsLoading, fetchAll: fetchSeasons } = useSeasonStore(useShallow(state => ({ seasons: state.seasons, isLoading: state.isLoading, fetchAll: state.fetchAll })));
@@ -94,8 +99,10 @@ export default function ScheduleResults() {
       home_team: teamMap[m.home_team_id] ?? null,
       away_team: teamMap[m.away_team_id] ?? null,
       venue: venueMap[m.venue_id] ?? null,
+      // Merge điểm số từ matchResultsMap nếu có
+      ...(matchResultsMap[m.id] ?? {}),
     }));
-  }, [selectedSeasonId, seasons, scheduleCache, getMatchesFromCache, teamMap, venueMap]);
+  }, [selectedSeasonId, seasons, scheduleCache, getMatchesFromCache, teamMap, venueMap, matchResultsMap]);
 
   const isLoading = seasonsLoading || (selectedSeasonId
     ? isSeasonLoading(Number(selectedSeasonId))
@@ -199,6 +206,9 @@ export default function ScheduleResults() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchBySeason(Number(selectedSeasonId));
+      // Reset result cache khi đổi season
+      setMatchResultsMap({});
+      fetchedResultsRef.current = new Set();
 
       const fetchGroups = async () => {
         setIsGroupsLoading(true);
@@ -217,6 +227,52 @@ export default function ScheduleResults() {
       setGroups([]);
     }
   }, [selectedSeasonId, fetchBySeason]);
+
+  // Batch-fetch tỷ số cho các trận đã kết thúc — schedule API không trả
+  // home_score/away_score, chỉ có ở endpoint GET /matches/{id}/result.
+  // Batch song song, mỗi match chỉ fetch 1 lần (fetchedResultsRef guard),
+  // cập nhật dần vào matchResultsMap mà không block UI.
+  useEffect(() => {
+    const RESULT_STATUSES = new Set(['finished', 'forfeited', 'pending_official', 'needs_review']);
+    const toFetch = allMatches
+      .filter(m => RESULT_STATUSES.has(m.status) && !fetchedResultsRef.current.has(m.id));
+    if (!toFetch.length) return;
+
+    toFetch.forEach(m => fetchedResultsRef.current.add(m.id));
+
+    // Fetch theo batches 10 cái / lần để tránh overload
+    const BATCH = 10;
+    const fetchBatch = async (batch) => {
+      const settled = await Promise.allSettled(
+        batch.map(m => matchApi.getMatchResult(m.id))
+      );
+      const updates = {};
+      settled.forEach((res, i) => {
+        if (res.status === 'fulfilled') {
+          const r = res.value?.data?.data ?? res.value?.data ?? res.value;
+          if (r && r.home_final_score != null) {
+            updates[batch[i].id] = {
+              home_final_score: r.home_final_score,
+              away_final_score: r.away_final_score,
+              result_type: r.result_type,
+              home_penalty_score: r.home_penalty_score,
+              away_penalty_score: r.away_penalty_score,
+              home_extra_time_score: r.home_extra_time_score,
+              away_extra_time_score: r.away_extra_time_score,
+              winner_team_id: r.winner_team_id,
+            };
+          }
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        setMatchResultsMap(prev => ({ ...prev, ...updates }));
+      }
+    };
+
+    for (let i = 0; i < toFetch.length; i += BATCH) {
+      fetchBatch(toFetch.slice(i, i + BATCH));
+    }
+  }, [allMatches]);
 
   const handleRefresh = () => {
     if (selectedSeasonId) fetchBySeason(Number(selectedSeasonId), { force: true });

@@ -1,4 +1,6 @@
 import { User, Mail, Shield, Camera, Save, Phone, Loader2, CheckCircle2, Edit2, X, CalendarDays, Lock } from 'lucide-react';
+import { parseApiError } from '../utils/errorHelper';
+
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useProfileStore from '../store/profileStore';
@@ -54,7 +56,7 @@ export default function Profile() {
         setIsPasswordModalOpen(false);
       }, 2000);
     } catch (err) {
-      setPasswordError(err?.response?.data?.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.');
+      setPasswordError(parseApiError(err, 'Không thể đổi mật khẩu. Vui lòng thử lại.'));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -128,7 +130,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Failed to update profile", error);
-      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
+      toast.error(parseApiError(error, 'Có lỗi xảy ra khi cập nhật thông tin.'));
     } finally {
       setSaving(false);
     }
@@ -153,7 +155,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Avatar upload error:", error);
-      toast.error(error?.response?.data?.message || 'Lỗi khi tải lên ảnh đại diện.');
+      toast.error(parseApiError(error, 'Lỗi khi tải lên ảnh đại diện.'));
     } finally {
       setIsUploadingAvatar(false);
       // Reset input

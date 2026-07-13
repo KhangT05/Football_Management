@@ -1,5 +1,6 @@
 import { Clock, MapPin, Trophy } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
+import { RESULT_AVAILABLE_STATUSES } from '../MatchShared';
 
 /**
  * ScheduleMatchCard — Match card dùng cho trang ScheduleResults (public).
@@ -143,7 +144,12 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
   const awayName = match.away_team?.name ?? `Đội #${match.away_team_id}`;
   const homeInitial = homeName[0]?.toUpperCase() ?? '?';
   const awayInitial = awayName[0]?.toUpperCase() ?? '?';
-  const hasScore = match.home_score != null && match.away_score != null;
+  // FIX: BE trả điểm số trọn ở home_final_score/away_final_score (từ matchResult),
+  // không phải home_score/away_score (chỉ dùng cho live ongoing). Các trọn
+  // đã kết thúc dùng home_final_score.
+  const homeScore = match.home_final_score ?? match.home_score ?? null;
+  const awayScore = match.away_final_score ?? match.away_score ?? null;
+  const hasScore = RESULT_AVAILABLE_STATUSES.has(match.status) && homeScore != null && awayScore != null;
   const venueName = match.venue?.name ?? null;
 
   const dateLabel = match.scheduled_at
@@ -186,9 +192,9 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className={`text-base font-black ${hasScore
-                  ? (match.home_score > match.away_score ? 'text-neon' : match.home_score < match.away_score ? 'text-gray-500' : 'text-white')
+                  ? (homeScore > awayScore ? 'text-neon' : homeScore < awayScore ? 'text-gray-500' : 'text-white')
                   : 'text-gray-500'}`}>
-                  {hasScore ? match.home_score : '-'}
+                  {hasScore ? homeScore : '-'}
                 </span>
                 {penalty && <span className="text-xs font-bold text-gray-400">({penalty.home})</span>}
               </div>
@@ -201,9 +207,9 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className={`text-base font-black ${hasScore
-                  ? (match.away_score > match.home_score ? 'text-neon' : match.away_score < match.home_score ? 'text-gray-500' : 'text-white')
+                  ? (awayScore > homeScore ? 'text-neon' : awayScore < homeScore ? 'text-gray-500' : 'text-white')
                   : 'text-gray-500'}`}>
-                  {hasScore ? match.away_score : '-'}
+                  {hasScore ? awayScore : '-'}
                 </span>
                 {penalty && <span className="text-xs font-bold text-gray-400">({penalty.away})</span>}
               </div>
@@ -290,16 +296,16 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
               <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-navy-dark border border-navy-light px-2 py-0.5 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
                 {qualifierLabel ?? 'Kết quả'}
               </div>
-              <span className={`text-4xl font-black tracking-wider ${match.home_score > match.away_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.home_score < match.away_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+              <span className={`text-4xl font-black tracking-wider ${homeScore > awayScore ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
+                homeScore < awayScore ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
                 }`}>
-                {match.home_score}
+                {homeScore}
               </span>
               <span className="text-2xl font-black text-gray-600 mx-3">—</span>
-              <span className={`text-4xl font-black tracking-wider ${match.away_score > match.home_score ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
-                match.away_score < match.home_score ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
+              <span className={`text-4xl font-black tracking-wider ${awayScore > homeScore ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
+                awayScore < homeScore ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
                 }`}>
-                {match.away_score}
+                {awayScore}
               </span>
               {extraTime && (
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-bold text-gray-400">

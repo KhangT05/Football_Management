@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { parseApiError } from '../utils/errorHelper';
+
 import { Mail, ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -18,7 +20,7 @@ export default function ForgotPassword() {
       await authApi.forgotPassword({ email });
       setSuccess(true);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại sau.');
+      setError(parseApiError(err, 'Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại sau.'));
     } finally {
       setIsLoading(false);
     }

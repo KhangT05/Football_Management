@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { parseApiError } from '../utils/errorHelper';
+
 import { Lock, ShieldCheck, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -45,7 +47,7 @@ export default function ResetPassword() {
       toast.success('Đặt lại mật khẩu thành công!');
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại sau.');
+      setError(parseApiError(err, 'Không thể đặt lại mật khẩu. Vui lòng thử lại sau.'));
     } finally {
       setIsLoading(false);
     }

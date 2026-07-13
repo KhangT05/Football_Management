@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { parseApiError } from '../utils/errorHelper';
+
 import {
   UploadCloud, ShieldCheck, CheckCircle2, Trophy, Loader2, ArrowRight, ArrowLeft, X,
   Users, Plus, Trash2, Info, FileSpreadsheet, Upload, FileDown, Shield, UserPlus,
@@ -169,7 +171,7 @@ export default function RegisterTeam() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err?.response?.data?.message || err.message || 'Không thể tải file mẫu Excel.');
+      toast.error(parseApiError(err, 'Không thể tải file mẫu Excel.'));
     } finally {
       setIsDownloadingTemplate(false);
     }
@@ -208,7 +210,7 @@ export default function RegisterTeam() {
       toast.success('Tạo đội bóng thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
       setStep('roster');
     } catch (error) {
-      const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!';
+      const msg = parseApiError(error, 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!');
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -262,7 +264,7 @@ export default function RegisterTeam() {
       setIsSuccess(true);
       setTimeout(() => navigate('/doi-cua-toi'), 2000);
     } catch (error) {
-      const msg = error?.response?.data?.message || 'Có lỗi khi thêm cầu thủ. Vui lòng thử lại!';
+      const msg = parseApiError(error, 'Có lỗi khi thêm cầu thủ. Vui lòng thử lại!');
       toast.error(msg);
     } finally {
       setIsSubmitting(false);

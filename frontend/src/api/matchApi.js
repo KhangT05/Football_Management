@@ -126,6 +126,11 @@ export const matchApi = {
   getMatchById: (id) =>
     axiosClient.get(`/matches/${id}/result`),
 
+  // Alias — MatchShared.useMatchExtras gọi matchApi.getMatchResult(id) thay vì
+  // getMatchById; thêm alias để không phải sửa MatchShared (nhiều nơi dùng).
+  getMatchResult: (id) =>
+    axiosClient.get(`/matches/${id}/result`),
+
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
 

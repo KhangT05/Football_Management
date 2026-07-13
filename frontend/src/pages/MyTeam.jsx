@@ -429,7 +429,7 @@ export default function MyTeam() {
 
       setTeamDetail(enriched);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể tải dữ liệu đội bóng.');
+      toast.error(parseApiError(err, 'Không thể tải dữ liệu đội bóng.'));
     } finally {
       setIsLoading(false);
     }
@@ -462,7 +462,7 @@ export default function MyTeam() {
       const requestedExists = requestedTeamId && basicTeams.some(t => t.id === requestedTeamId);
       setActiveTeamId(requestedExists ? requestedTeamId : basicTeams[0].id); // triggers loadTeamDetail effect below
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể tải danh sách đội bóng.');
+      toast.error(parseApiError(err, 'Không thể tải danh sách đội bóng.'));
       setIsLoading(false);
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -611,7 +611,7 @@ export default function MyTeam() {
       setPlayerModal(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      setModalError(apiErr?.response?.data?.message || 'Lỗi khi thêm cầu thủ.');
+      setModalError(parseApiError(apiErr, 'Lỗi khi thêm cầu thủ.'));
     } finally { setIsSaving(false); }
   };
   const handleImportExcel = async (e) => {
@@ -625,7 +625,7 @@ export default function MyTeam() {
       toast.success('Nhập dữ liệu từ file Excel thành công!');
       await loadTeamDetail(activeTeamId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Có lỗi khi nhập dữ liệu Excel.');
+      toast.error(parseApiError(err, 'Có lỗi khi nhập dữ liệu Excel.'));
     } finally { setIsSaving(false); e.target.value = null; }
   };
 
@@ -642,7 +642,7 @@ export default function MyTeam() {
       document.body.appendChild(link); link.click(); link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err?.response?.data?.message || err.message || 'Không thể tải file mẫu Excel.');
+      toast.error(parseApiError(err, 'Không thể tải file mẫu Excel.'));
     } finally {
       setIsDownloadingTemplate(false);
     }
@@ -728,7 +728,7 @@ export default function MyTeam() {
       setDeletingPlayer(null);
       await loadTeamDetail(activeTeamId);
     } catch (apiErr) {
-      toast.error(apiErr?.response?.data?.message || 'Lỗi khi xóa cầu thủ.');
+      toast.error(parseApiError(apiErr, 'Lỗi khi xóa cầu thủ.'));
     } finally { setIsDeleting(false); }
   };
 
@@ -830,7 +830,7 @@ export default function MyTeam() {
                   toast.success('Đã gửi yêu cầu tham gia giải!');
                   await loadTeamDetail(activeTeamId);
                 } catch (err) {
-                  toast.error(err?.response?.data?.message || 'Không thể đăng ký tham gia giải.');
+                  toast.error(parseApiError(err, 'Không thể đăng ký tham gia giải.'));
                 } finally { setIsLoading(false); }
               }}
               className="px-6 py-3.5 shrink-0 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap"
