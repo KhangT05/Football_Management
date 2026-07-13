@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import React from 'react'
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
@@ -137,12 +137,17 @@ export const POSITIONS = [
 ];
 export const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
 export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
+
+// FIX: khớp đúng PaymentStatus enum thật (Prisma) — chỉ có 4 giá trị:
+//   pending | confirmed | refund_pending | refunded
+// Bản cũ có 'success'/'failed' không tồn tại trong domain (dead code, không
+// bao giờ match được payment nào) và THIẾU 'refund_pending' (payment đang
+// refund sẽ fallback nhầm về style của 'pending').
 export const STATUS_LABELS = {
   pending: { label: 'Chờ duyệt', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: AlertTriangle },
-  success: { label: 'Đã thanh toán', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: CheckCircle },
   confirmed: { label: 'Đã thanh toán', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: CheckCircle },
-  failed: { label: 'Thất bại', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/30', icon: XCircle },
-  refunded: { label: 'Hoàn tiền', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: XCircle },
+  refund_pending: { label: 'Đang hoàn tiền', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/30', icon: Loader2 },
+  refunded: { label: 'Đã hoàn tiền', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: XCircle },
 };
 
 export const MATCH_STATUS_LABEL = {

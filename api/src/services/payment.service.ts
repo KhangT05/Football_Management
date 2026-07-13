@@ -493,8 +493,34 @@ export class PaymentService {
             throw createAppError('CONFLICT', 'Chỉ refund được payment đã confirmed');
         if (!payment.paid_at)
             throw createAppError('CONFLICT', `Payment ${paymentId} thiếu paid_at — data không hợp lệ`);
-        if (input.amount <= 0 || input.amount > Number(payment.amount))
-            throw createAppError('CONFLICT', 'Số tiền refund không hợp lệ');
+
+        // FIX: validate tường minh bằng Number.isFinite thay vì so sánh trực
+        // tiếp — so sánh `undefined <= 0` / `undefined > x` trong JS luôn trả
+        // false, nên input rỗng/thiếu field lọt qua guard cũ, chạy thẳng tới
+        // VNPay SDK và nổ lỗi kỹ thuật khó hiểu thay vì lỗi nghiệp vụ rõ ràng.
+        if (!Number.isFinite(input.amount) || input.amount <= 0)
+            throw createAppError('CONFLICT', 'Số tiền refund không hợp lệ hoặc bị thiếu');
+        if (input.amount > Number(payment.amount))
+            throw createAppError(
+                'CONFLICT',
+                `Số tiền refund (${input.amount}) vượt quá số tiền đã thanh toán (${Number(payment.amount)})`,
+            );
+
+        // FIX: type phải là 'full' | 'partial' tường minh — không được để mặc
+        // định âm thầm về PARTIAL_REFUND khi FE quên gửi field này.
+        if (input.type !== 'full' && input.type !== 'partial')
+            throw createAppError('CONFLICT', 'Loại refund không hợp lệ — phải là "full" hoặc "partial"');
+
+        // FIX: reason bắt buộc — VNPay yêu cầu vnp_OrderInfo, để trống dễ bị
+        // gateway từ chối với lỗi khó hiểu, hoặc lưu log audit không có lý do.
+        if (!input.reason || !input.reason.trim())
+            throw createAppError('CONFLICT', 'Vui lòng nhập lý do hoàn tiền');
+
+        if (input.type === 'full' && input.amount !== Number(payment.amount))
+            throw createAppError(
+                'CONFLICT',
+                'Hoàn tiền toàn phần (full) phải bằng đúng số tiền đã thanh toán',
+            );
 
         const lock = await this.prisma.payment.updateMany({
             where: { id: paymentId, status: PaymentStatus.confirmed },

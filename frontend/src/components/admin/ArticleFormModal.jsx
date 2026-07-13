@@ -1,43 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Save, Image as ImageIcon } from 'lucide-react';
 
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import {
-  ClassicEditor, Bold, Italic, Essentials, Heading, Link, Paragraph, List,
-  Image, ImageUpload, ImageToolbar, ImageCaption, ImageStyle, ImageResize,
-  BlockQuote, Indent, IndentBlock
-} from 'ckeditor5';
-import 'ckeditor5/ckeditor5.css';
-import '../../assets/ckeditor-dark.css';
-import { MyCustomUploadAdapterPlugin } from '../../utils/UploadAdapter';
-
-const EDITOR_CONFIG = {
-  licenseKey: 'GPL',
-  plugins: [
-    Essentials, Bold, Italic, Heading, Link, Paragraph, List,
-    Image, ImageUpload, ImageToolbar, ImageCaption, ImageStyle, ImageResize,
-    BlockQuote, Indent, IndentBlock, MyCustomUploadAdapterPlugin
-  ],
-  toolbar: [
-    'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|',
-    'link', 'uploadImage', 'blockQuote', '|',
-    'bulletedList', 'numberedList', 'outdent', 'indent'
-  ],
-  image: {
-    toolbar: [
-      'imageTextAlternative', 'toggleImageCaption', 'imageStyle:inline',
-      'imageStyle:block', 'imageStyle:side'
-    ]
-  }
-};
-
 export default function ArticleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState(initialData);
   const [formError, setFormError] = useState('');
   const [coverPreview, setCoverPreview] = useState(initialData?.cover_image || '');
   const fileInputRef = useRef(null);
 
-  // Dọn object URL khi unmount / đổi ảnh để tránh leak bộ nhớ
   useEffect(() => {
     return () => {
       if (coverPreview?.startsWith('blob:')) {
@@ -86,7 +55,7 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
       return;
     }
     setFormError('');
-    onSave(form); // form.cover_image_file (nếu có) sẽ được articleApi build thành FormData
+    onSave(form);
   };
 
   return (
@@ -94,7 +63,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
 
       <div className="relative w-full max-w-4xl bg-navy border border-navy-light rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-navy-light flex items-center justify-between bg-navy-dark/50">
           <h3 className="text-xl font-black text-white uppercase tracking-tight">
             {mode === 'add' ? 'Viết bài mới' : 'Chỉnh sửa bài viết'}
@@ -107,7 +75,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
           </button>
         </div>
 
-        {/* Form Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           {formError && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium animate-slide-down">
@@ -117,7 +84,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
 
           <form id="article-form" onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Cover Image */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Ảnh bìa
@@ -154,7 +120,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               </p>
             </div>
 
-            {/* Title */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Tiêu đề bài viết <span className="text-red-400">*</span>
@@ -169,7 +134,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               />
             </div>
 
-            {/* Slug */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Slug (URL)
@@ -184,7 +148,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               />
             </div>
 
-            {/* Tags */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Thẻ (Tags) - Phân cách bằng dấu phẩy
@@ -198,7 +161,6 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               />
             </div>
 
-            {/* Status */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Trạng thái
@@ -214,27 +176,22 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
               </select>
             </div>
 
-            {/* Content (HTML) */}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
                 Nội dung bài viết <span className="text-red-400">*</span>
               </label>
-              <div className="prose prose-invert max-w-none">
-                <CKEditor
-                  editor={ClassicEditor}
-                  config={EDITOR_CONFIG}
-                  data={form.content}
-                  onChange={(event, editor) => {
-                    const data = editor.getData();
-                    setForm(prev => ({ ...prev, content: data }));
-                  }}
-                />
-              </div>
+              <textarea
+                name="content"
+                value={form.content}
+                onChange={handleChange}
+                rows={12}
+                placeholder="Nhập nội dung bài viết..."
+                className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm leading-relaxed resize-y"
+              />
             </div>
           </form>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-navy-light bg-navy-dark/50 flex items-center justify-end gap-3">
           <button
             type="button"
