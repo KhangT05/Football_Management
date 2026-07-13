@@ -14,9 +14,10 @@ import Pagination from '../components/ui/Pagination';
 import { groupApi } from '../api/groupApi';
 import { seasonApi } from '../api/seasonApi';
 import { knockoutApi } from '../api/knockoutApi';
+import { matchApi } from '../api/matchApi';
 import axiosClient from '../api/axiosClient';
 import StandingPlayerRow from '../components/StandingPlayerRow';
-import BracketView from '../components/admin/BracketView';
+import PublicBracketView from '../components/PublicBracketView';
 
 // axiosClient interceptor luôn unwrap 1 lớp axios envelope, trả về
 // ApiResponseShape { status, message, data, timestamp }. Payload thật
@@ -111,14 +112,28 @@ export default function LeaderboardTeams() {
     }
     const fetchKnockoutPhases = async () => {
       try {
-        const res = await seasonApi.getById(selectedSeasonId);
-        const seasonRes = typeof res?.status === 'boolean' ? res.data : res;
-        const phases = (seasonRes?.phases ?? []).filter(p => p.format === 'knockout');
-        setKnockoutPhases(phases);
-        if (phases.length > 0) {
+        const res = await matchApi.getScheduleBySeason(selectedSeasonId);
+        const scheduleRes = typeof res?.status === 'boolean' ? res.data : res;
+        const matches = Array.isArray(scheduleRes?.data) ? scheduleRes.data : [];
+        
+        const knockoutPhaseIds = new Set();
+        matches.forEach(m => {
+          if (m.phase_id && !m.group_id) {
+            knockoutPhaseIds.add(m.phase_id);
+          }
+        });
+
+        if (knockoutPhaseIds.size > 0) {
+          const phases = Array.from(knockoutPhaseIds).map(id => ({
+            id,
+            name: `Vòng loại trực tiếp`,
+            format: 'knockout'
+          }));
+          setKnockoutPhases(phases);
           const latest = [...phases].sort((a, b) => b.id - a.id)[0];
           setSelectedKnockoutPhaseId(latest.id);
         } else {
+          setKnockoutPhases([]);
           setSelectedKnockoutPhaseId('');
           setBracketData(null);
         }
@@ -487,7 +502,7 @@ export default function LeaderboardTeams() {
                         <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto" />
                       </div>
                     ) : Array.isArray(bracketData) && bracketData.length > 0 ? (
-                      <BracketView slots={bracketData} teams={teams} editable={false} />
+                      <PublicBracketView slots={bracketData} teams={teams} />
                     ) : (
                       <div className="text-center py-16">
                         <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -564,17 +579,17 @@ export default function LeaderboardTeams() {
                       {displayGroups.length > 0 && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8">
                           {displayGroups.map((group, groupIdx) => (
-                            <div key={group.groupId || groupIdx} className="bg-white rounded-3xl overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col transition-transform hover:-translate-y-1 duration-300">
-                              <div className="px-5 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                            <div key={group.groupId || groupIdx} className="bg-navy rounded-3xl overflow-hidden shadow-xl border border-navy-light flex flex-col transition-transform hover:-translate-y-1 duration-300">
+                              <div className="px-5 py-4 bg-navy-dark/80 border-b border-navy-light flex items-center justify-between">
                                 <div>
                                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{activeSeason?.name || 'Mùa giải'}</h3>
-                                  <h4 className="text-base font-black text-gray-900 mt-0.5">{group.groupName || 'Bảng đấu'}</h4>
+                                  <h4 className="text-base font-black text-white mt-0.5">{group.groupName || 'Bảng đấu'}</h4>
                                 </div>
-                                <Trophy className="w-5 h-5 text-gray-300" />
+                                <Trophy className="w-5 h-5 text-gray-400" />
                               </div>
                               <div className="flex-1 overflow-x-auto">
                                 <table className="w-full text-left whitespace-nowrap min-w-[320px]">
-                                  <thead className="bg-white text-gray-400 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+                                  <thead className="bg-navy-dark text-gray-400 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border-b border-navy-light">
                                     <tr>
                                       <th className="py-3 px-4">Đội</th>
                                       <th className="py-3 px-2 text-center" title="Số trận đã đấu">ĐĐ</th>
@@ -582,10 +597,10 @@ export default function LeaderboardTeams() {
                                       <th className="py-3 px-2 text-center" title="Hòa">H</th>
                                       <th className="py-3 px-2 text-center" title="Thua">B</th>
                                       <th className="py-3 px-2 text-center" title="Hiệu số">HS</th>
-                                      <th className="py-3 px-4 text-center text-gray-900 font-black">Đ</th>
+                                      <th className="py-3 px-4 text-center text-white font-black">Đ</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-gray-50">
+                                  <tbody className="divide-y divide-navy-light">
                                     {group.standings.length === 0 ? (
                                       <tr>
                                         <td colSpan={7} className="py-6 text-center text-gray-400 text-xs">Trống</td>
@@ -606,11 +621,11 @@ export default function LeaderboardTeams() {
                                         const points = row.points ?? 0;
 
                                         return (
-                                          <tr key={row.team_id ?? idx} className="hover:bg-gray-50/50 transition-colors">
+                                          <tr key={row.team_id ?? idx} className="hover:bg-navy-light/50 transition-colors">
                                             <td className="py-3 px-4">
                                               <Link to={`/doi-bong/${row.team_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                                 <span className="text-xs font-bold text-gray-400 w-3">{idx + 1}</span>
-                                                <div className="w-6 h-6 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-600 shrink-0 relative overflow-hidden">
+                                                <div className="w-6 h-6 rounded border border-navy-light bg-navy-dark flex items-center justify-center text-[10px] font-black text-gray-300 shrink-0 relative overflow-hidden">
                                                   <span className="absolute inset-0 flex items-center justify-center">
                                                     {initial}
                                                   </span>
@@ -623,17 +638,17 @@ export default function LeaderboardTeams() {
                                                     />
                                                   )}
                                                 </div>
-                                                <span className="text-sm font-bold text-blue-600 hover:underline truncate max-w-[120px]" title={teamName}>
+                                                <span className="text-sm font-bold text-white hover:text-blue-400 hover:underline truncate max-w-[120px]" title={teamName}>
                                                   {teamName}
                                                 </span>
                                               </Link>
                                             </td>
-                                            <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{played}</td>
-                                            <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{won}</td>
-                                            <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{drawn}</td>
-                                            <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{lost}</td>
-                                            <td className="py-3 px-2 text-center text-xs text-gray-600 font-medium">{goalDifference}</td>
-                                            <td className="py-3 px-4 text-center text-sm font-black text-gray-900 bg-gray-50/50">{points}</td>
+                                            <td className="py-3 px-2 text-center text-xs text-gray-300 font-medium">{played}</td>
+                                            <td className="py-3 px-2 text-center text-xs text-gray-300 font-medium">{won}</td>
+                                            <td className="py-3 px-2 text-center text-xs text-gray-300 font-medium">{drawn}</td>
+                                            <td className="py-3 px-2 text-center text-xs text-gray-300 font-medium">{lost}</td>
+                                            <td className="py-3 px-2 text-center text-xs text-gray-300 font-medium">{goalDifference}</td>
+                                            <td className="py-3 px-4 text-center text-sm font-black text-white bg-navy-dark/50">{points}</td>
                                           </tr>
                                         );
                                       })
