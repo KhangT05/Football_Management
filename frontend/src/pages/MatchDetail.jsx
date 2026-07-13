@@ -29,16 +29,25 @@ function ApiBanner({ message }) {
     </div>
   );
 }
-const buildLineupPlayers = (lineup) => lineup.map(entry => ({
-  id: entry.id,
-  player_id: entry.player_id,
-  name: entry.player?.user?.name ?? entry.player?.name ?? `#${entry.player_id}`,
-  jersey_number: entry.jersey_number,
-  position: entry.position,
-  lineup_type: entry.lineup_type,
-  is_captain: entry.is_captain,
-}));
-const homeStarters = useMemo(() => buildLineupPlayers(lineups.home.filter(l => l.lineup_type === 'starter')), [lineups.home]);
+
+// Lấy tên cầu thủ từ roster đã duyệt — GET /players/{teamId}/team-players
+// (teamApi.getPlayers, không phải /matches/{id}/lineups) mới có nested
+// player.user.name. Trả về mảng phẳng { player_id, name } để build map.
+// axiosClient interceptor đã unwrap response 1 lớp -> res = ApiResponseShape
+// { status, message, data, timestamp }. `data` có thể là mảng thẳng hoặc
+// object phân trang { data: [...], meta }, nên parse linh hoạt cả 2 dạng
+// (giống cách seasonTeamStore đang làm với seasonTeamApi.getAll).
+async function fetchApprovedRosterNames(teamId) {
+  if (!teamId) return [];
+  const res = await teamApi.getPlayers(teamId, { approval_status: 'approved', per_page: 100 });
+  const payload = res?.data ?? res;
+  const list = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  return list.map(tp => ({
+    player_id: tp.player_id,
+    name: tp.player?.user?.name ?? tp.player?.name ?? null,
+  })).filter(p => p.name);
+}
+
 function FormationPitch({ starters = [], kit, team, score, events = [], isWinner = false }) {
   const rows = POSITION_ORDER
     .map(pos => ({ pos, players: starters.filter(p => normalizePosition(p.position) === pos) }))
@@ -169,6 +178,10 @@ export default function MatchDetail() {
 
   const [isLeader, setIsLeader] = useState(false);
   const [rawLineups, setRawLineups] = useState([]);
+  // player_id -> name, gộp từ roster đã duyệt của cả 2 đội. Đây là NGUỒN
+  // DUY NHẤT cho tên cầu thủ trong toàn trang (lineup lẫn timeline/header
+  // summary) vì response của getMatchLineups() không có nested player.user.
+  const [playerNames, setPlayerNames] = useState({});
 
   const detailData = getMatchDetailFromCache(matchId);
   const match = detailData?.match || null;
@@ -192,6 +205,30 @@ export default function MatchDetail() {
     }).catch(err => console.warn('Could not fetch lineups', err));
     return () => { cancelled = true; };
   }, [matchId]);
+
+  // Fetch tên cầu thủ (roster đã duyệt) ngay khi biết home/away team_id —
+  // KHÔNG phụ thuộc lineup đã load xong hay chưa, vì đây là 2 nguồn dữ liệu
+  // độc lập (roster theo team_id vs lineup theo match_id).
+  useEffect(() => {
+    if (!match?.home_team_id && !match?.away_team_id) return;
+    let cancelled = false;
+
+    Promise.allSettled([
+      fetchApprovedRosterNames(match?.home_team_id),
+      fetchApprovedRosterNames(match?.away_team_id),
+    ]).then(([homeRes, awayRes]) => {
+      if (cancelled) return;
+      const merged = [
+        ...(homeRes.status === 'fulfilled' ? homeRes.value : []),
+        ...(awayRes.status === 'fulfilled' ? awayRes.value : []),
+      ];
+      const map = {};
+      merged.forEach(p => { map[p.player_id] = p.name; });
+      setPlayerNames(map);
+    });
+
+    return () => { cancelled = true; };
+  }, [match?.home_team_id, match?.away_team_id]);
 
   const lineups = useMemo(() => ({
     home: rawLineups.filter(l => l.team_id === match?.home_team_id),
@@ -238,10 +275,19 @@ export default function MatchDetail() {
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })
     : null;
 
-  const homeStarters = lineups.home.filter(l => l.lineup_type === 'starter');
-  const homeSubs = lineups.home.filter(l => l.lineup_type === 'substitute');
-  const awayStarters = lineups.away.filter(l => l.lineup_type === 'starter');
-  const awaySubs = lineups.away.filter(l => l.lineup_type === 'substitute');
+  // Gắn `name` cho từng lineup entry từ playerNames map — đây là bước
+  // enrich còn thiếu trước đây khiến FormationPlayerCell/PlayerItem không
+  // có gì để hiển thị ngoài "#player_id". Giữ nguyên mọi field gốc của
+  // lineup (jersey_number, position, is_captain, lineup_type...).
+  const enrichWithName = (l) => ({
+    ...l,
+    name: playerNames[l.player_id] ?? `Cầu thủ #${l.player_id}`,
+  });
+
+  const homeStarters = lineups.home.filter(l => l.lineup_type === 'starter').map(enrichWithName);
+  const homeSubs = lineups.home.filter(l => l.lineup_type === 'substitute').map(enrichWithName);
+  const awayStarters = lineups.away.filter(l => l.lineup_type === 'starter').map(enrichWithName);
+  const awaySubs = lineups.away.filter(l => l.lineup_type === 'substitute').map(enrichWithName);
 
   const homeKit = kitFor('home');
   const awayKit = kitFor('away');
@@ -262,14 +308,13 @@ export default function MatchDetail() {
       : finalAwayScore > finalHomeScore
   );
 
-  // allLineups/allPlayers dùng chung cho cả timeline VÀ header summary —
-  // memo 1 lần thay vì spread lại trong mỗi lần .map() event (trước đây bị
-  // tạo mới mỗi event trong timeline .map(), tốn allocation không cần thiết
-  // khi trận có nhiều event).
-  const allLineups = useMemo(() => [...lineups.home, ...lineups.away], [lineups]);
+  // allPlayers cho resolveEventPlayerName (timeline + header summary) —
+  // build trực tiếp từ playerNames map thay vì detailData?.homePlayers/
+  // awayPlayers (field đó không tồn tại trong response fetchMatchDetail,
+  // nên trước đây luôn rỗng -> event luôn hiện "Cầu thủ #id").
   const allPlayers = useMemo(
-    () => [...(detailData?.homePlayers || []), ...(detailData?.awayPlayers || [])],
-    [detailData]
+    () => Object.entries(playerNames).map(([player_id, name]) => ({ player_id, name })),
+    [playerNames]
   );
   const resolveEventName = (evt) => resolveEventPlayerName(evt, allPlayers);
 
