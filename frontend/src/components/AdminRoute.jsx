@@ -33,16 +33,20 @@ export default function AdminRoute({ children }) {
     );
   }
 
-  // Kiểm tra user có role admin không
-  // Hỗ trợ cả hai format: user.role = 'admin' hoặc user.roles = ['admin']
+  // Kiểm tra user có role admin hoặc organizing không
+  // Hỗ trợ cả hai format: user.role = 'admin'/'organizing' hoặc user.roles = ['admin', 'organizing']
   // HOẶC hardcode email admin@gmail.com do backend không trả về role
-  const isAdmin =
-    user?.role === 'admin' ||
-    (Array.isArray(user?.roles) && user.roles.includes('admin')) ||
-    user?.is_admin === true
+  const userRoles = Array.isArray(user?.roles) 
+    ? user.roles.map(r => typeof r === 'string' ? r.toLowerCase() : r) 
+    : (user?.role ? [typeof user.role === 'string' ? user.role.toLowerCase() : user.role] : []);
+    
+  const hasAccess =
+    userRoles.includes('admin') ||
+    userRoles.includes('organizing') ||
+    user?.is_admin === true;
 
-  // Đã đăng nhập nhưng không phải admin → trang Forbidden (403)
-  if (!isAdmin) {
+  // Đã đăng nhập nhưng không có quyền → trang Forbidden (403)
+  if (!hasAccess) {
     return <Navigate to="/forbidden" replace />;
   }
 

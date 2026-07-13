@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
 import { userApi } from '../api/userApi';
-import axiosClient, { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
+import { setAccessToken, clearAccessToken, getAccessToken, refreshTokens } from '../api/axiosClient';
 
 /**
  * Map HTTP error → user-facing message.
@@ -29,15 +29,24 @@ async function enrichUserProfile(baseProfile) {
     const res = await userApi.getUserById(fullProfile.id);
     const data = res.data ?? res;
     fullProfile = { ...fullProfile, ...data };
+    
+    // Convert role objects to string array if necessary for authStore
+    if (Array.isArray(fullProfile.roles)) {
+      fullProfile.roles = fullProfile.roles.map(r => typeof r === 'string' ? r : r?.name).filter(Boolean);
+    }
   } catch (err) {
     console.warn('[authStore] Không thể lấy full profile:', err);
   }
   
-  try {
-    await axiosClient.get('/roles', { params: { per_page: 1 } });
-    fullProfile.roles = ['admin'];
-  } catch {
-    fullProfile.roles = ['user'];
+  // Fallback if backend doesn't return roles
+  if (!fullProfile.roles || fullProfile.roles.length === 0) {
+    if (fullProfile.is_admin) {
+      fullProfile.roles = ['admin'];
+    } else if (fullProfile.role) {
+      fullProfile.roles = [fullProfile.role];
+    } else {
+      fullProfile.roles = ['user'];
+    }
   }
   
   return fullProfile;

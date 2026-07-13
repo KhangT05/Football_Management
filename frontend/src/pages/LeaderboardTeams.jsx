@@ -680,7 +680,7 @@ export default function LeaderboardTeams() {
             </>
           ) : (
             <div className="space-y-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
-              <div className="flex items-center gap-6 mb-8 border-b border-navy-light px-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              <div className="flex items-center gap-6 mb-8 border-b border-navy-light px-2 whitespace-nowrap scrollbar-hide">
                 <button
                   onClick={() => setActiveStatTab('goals')}
                   className={`pb-4 text-sm font-bold transition-all border-b-2 -mb-px ${activeStatTab === 'goals' ? 'text-blue-400 border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'

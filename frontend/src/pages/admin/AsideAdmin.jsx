@@ -1,8 +1,43 @@
 import { Information, MENU_GROUPS, navItems, VI_LABELS } from "../../data/data";
 import { LogOut, X } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
+import useAuthStore from '../../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function AsideAdmin({ onClose, isCollapsed }) {
+  const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
+  
+  const userRoles = Array.isArray(user?.roles) 
+    ? user.roles.map(r => typeof r === 'string' ? r.toLowerCase() : r) 
+    : (user?.role ? [typeof user.role === 'string' ? user.role.toLowerCase() : user.role] : []);
+    
+  const isAdmin = userRoles.includes('admin') || user?.is_admin === true;
+  const isOrganizing = userRoles.includes('organizing');
+
+  let allowedItems = new Set(['Tổng quan']);
+  
+  if (isAdmin) {
+    allowedItems.add('Tài khoản & Phân quyền');
+  } 
+  
+  if (isOrganizing) {
+    [
+      'Thiết lập giải đấu',
+      'Đội bóng & Duyệt đăng ký',
+      'Bốc thăm & Lên lịch',
+      'Thi đấu & Loại trực tiếp',
+      'Quản lý bài viết',
+      'Xác nhận thanh toán'
+    ].forEach(item => allowedItems.add(item));
+  }
+
+  const allowedItemsArray = Array.from(allowedItems);
+
+  const filteredMenuGroups = MENU_GROUPS.map(group => ({
+    ...group,
+    items: group.items.filter(item => allowedItemsArray.includes(item))
+  })).filter(group => group.items.length > 0);
+
   return (
     <aside className={`
       h-full bg-navy border-r border-navy-light text-white flex flex-col shadow-2xl z-20 shrink-0
@@ -40,7 +75,7 @@ export default function AsideAdmin({ onClose, isCollapsed }) {
 
       {/* Nav links */}
       <nav className={`flex-1 pb-4 space-y-4 overflow-y-auto custom-scrollbar px-3 ${isCollapsed ? 'md:px-2 mt-4' : 'mt-4'}`}>
-        {MENU_GROUPS.map((group, gIdx) => (
+        {filteredMenuGroups.map((group, gIdx) => (
           <div key={gIdx} className="space-y-1">
             <div className={`pt-2 pb-1 transition-all duration-300 px-3 ${isCollapsed ? 'md:px-0 md:text-center' : ''}`}>
               <p className={`text-[10px] font-black text-gray-500 uppercase tracking-widest truncate ${isCollapsed ? 'md:hidden' : ''}`}>
