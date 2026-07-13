@@ -47,7 +47,6 @@ export function useManagePayments() {
         isProcessing,
         fetchPayments,
         confirmManual,
-        rejectPayment,
         refundPayment,
     } = usePaymentStore(useShallow(state => ({
         payments: state.payments,
@@ -56,7 +55,6 @@ export function useManagePayments() {
         isProcessing: state.isProcessing,
         fetchPayments: state.fetchPayments,
         confirmManual: state.confirmManual,
-        rejectPayment: state.rejectPayment,
         refundPayment: state.refundPayment,
     })));
 
@@ -130,10 +128,14 @@ export function useManagePayments() {
         return () => clearTimeout(handler);
     }, [statusSearchQuery]);
 
+    // Chỉ 'confirmed' là trạng thái "đã thanh toán thành công" thật trong
+    // PaymentStatus enum (pending | confirmed | refund_pending | refunded).
+    // Bản cũ có check thêm p.status === 'confirmed' trùng lặp với chính nó
+    // qua alias 'success' không tồn tại — đã bỏ nhánh chết đó.
     const teamSuccessPaymentMap = useMemo(() => {
         const map = new Map();
         payments.forEach(p => {
-            if (p.status === 'success' || p.status === 'confirmed') {
+            if (p.status === 'confirmed') {
                 const key = String(p.season_team_id);
                 if (!map.has(key)) map.set(key, []);
                 map.get(key).push(p.id);
@@ -157,13 +159,7 @@ export function useManagePayments() {
         else toast.error('Có lỗi xảy ra khi xác nhận thanh toán');
     };
 
-    const handleReject = async (id) => {
-        const reason = window.prompt('Nhập lý do từ chối giao dịch:');
-        if (reason === null) return;
-        const success = await rejectPayment(id, reason || 'Admin từ chối');
-        if (success) toast.success('Đã từ chối giao dịch');
-        else toast.error('Có lỗi xảy ra khi từ chối');
-    };
+    // handleReject: ĐÃ BỎ — backend không có route/method reject tương ứng.
 
     const handleRefund = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn HOÀN TIỀN khoản thanh toán này?')) return;
@@ -211,7 +207,7 @@ export function useManagePayments() {
             const teamPayments = payments.filter(p => String(p.season_team_id) === String(st.id));
 
             let status = 'unpaid';
-            if (teamPayments.some(p => p.status === 'success' || p.status === 'confirmed')) {
+            if (teamPayments.some(p => p.status === 'confirmed')) {
                 status = 'paid';
             } else if (teamPayments.some(p => p.status === 'pending')) {
                 status = 'pending';
@@ -257,7 +253,6 @@ export function useManagePayments() {
 
         handleConfirm,
         handleRefund,
-        handleReject,
 
         searchQuery, setSearchQuery,
         statusFilter, setStatusFilter,
