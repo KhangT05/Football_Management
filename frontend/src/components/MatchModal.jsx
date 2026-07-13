@@ -45,7 +45,7 @@ function FormationPitchSingleTeam({ starters, kit, events }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-6 opacity-70">
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-6 opacity-70 border border-navy-light rounded-2xl bg-navy-dark/30">
         <Users className="w-8 h-8 mb-2 text-gray-600" />
         <p className="text-xs font-bold uppercase tracking-widest text-center">Chưa có đội hình ra sân</p>
       </div>

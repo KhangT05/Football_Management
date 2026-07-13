@@ -1,4 +1,3 @@
-// MatchShared.jsx
 import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
@@ -158,26 +157,30 @@ export function useMatchExtras(match) {
     const [jerseys, setJerseys] = useState({ home: null, away: null });
 
     useEffect(() => {
-        setMatchResult(null);
+        let cancelled = false;
+        setTimeout(() => { if (!cancelled) setMatchResult(null); }, 0);
+
         if (!match || !RESULT_AVAILABLE_STATUSES.has(match.status)) return;
         if (typeof matchApi.getMatchResult !== 'function') return;
-        let cancelled = false;
+
         matchApi.getMatchResult(match.id).then(res => {
             if (cancelled) return;
             const r = res?.data?.data ?? res?.data ?? res;
             setMatchResult(r ?? null);
         }).catch(err => console.warn('[useMatchExtras] getMatchResult failed:', err));
+
         return () => { cancelled = true; };
-    }, [match?.id, match?.status]);
+    }, [match]);
 
     useEffect(() => {
-        setJerseys({ home: null, away: null });
+        let cancelled = false;
+        setTimeout(() => { if (!cancelled) setJerseys({ home: null, away: null }); }, 0);
+
         if (!match) return;
         const homeSeasonTeamId = match.home_season_team_id ?? match.home_team?.season_team_id ?? null;
         const awaySeasonTeamId = match.away_season_team_id ?? match.away_team?.season_team_id ?? null;
         if (!homeSeasonTeamId && !awaySeasonTeamId) return;
 
-        let cancelled = false;
         Promise.allSettled([
             homeSeasonTeamId ? jerseyApi.getBySeasonTeam(homeSeasonTeamId) : Promise.resolve(null),
             awaySeasonTeamId ? jerseyApi.getBySeasonTeam(awaySeasonTeamId) : Promise.resolve(null),
@@ -185,8 +188,9 @@ export function useMatchExtras(match) {
             if (cancelled) return;
             setJerseys({ home: pickJersey(h), away: pickJersey(a) });
         });
+
         return () => { cancelled = true; };
-    }, [match?.id, match?.home_team_id, match?.away_team_id]);
+    }, [match]);
 
     const kitFor = (side) => {
         const jersey = jerseys[side];
@@ -335,8 +339,8 @@ export function PlayerItem({ tp, isCap }) {
 }
 
 const DOT_PRESET = {
-    md: 'w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-base',
-    sm: 'w-7 h-7 sm:w-9 sm:h-9 text-[10px] sm:text-xs',
+    md: 'w-11 h-11 sm:w-14 sm:h-14 text-sm sm:text-lg',
+    sm: 'w-9 h-9 sm:w-11 sm:h-11 text-[10px] sm:text-sm',
 };
 
 export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
@@ -347,10 +351,10 @@ export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
     const dotCls = DOT_PRESET[size] ?? DOT_PRESET.sm;
 
     return (
-        <div className="flex flex-col items-center gap-1 w-16 sm:w-20 shrink-0">
+        <div className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group">
             <div className="relative">
                 <div
-                    className={`${dotCls} rounded-full border-2 flex items-center justify-center font-black shadow-md shadow-black/30`}
+                    className={`${dotCls} rounded-full border-2 flex items-center justify-center font-black shadow-md shadow-black/40 transition-transform group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/40`}
                     style={{
                         backgroundColor: kit?.bg ?? '#0b1220',
                         color: kit?.text ?? '#ffffff',
@@ -360,13 +364,13 @@ export function FormationPlayerDot({ tp, kit, size = 'sm' }) {
                     {jersey}
                 </div>
                 {isCap && (
-                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-500 text-navy text-[8px] font-black rounded-full border border-navy">
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 sm:w-5 sm:h-5 flex items-center justify-center bg-amber-500 text-white text-[8px] sm:text-[10px] font-black rounded-full border-2 border-black/20 shadow-sm">
                         C
                     </span>
                 )}
             </div>
             <span
-                className="text-[8px] sm:text-[9px] font-black text-white text-center leading-snug px-1 py-0.5 rounded bg-black/80 inline-block max-w-full break-words"
+                className="text-[9px] sm:text-[10px] font-bold text-white text-center leading-tight px-1 sm:px-1.5 py-1 rounded-md bg-black/50 backdrop-blur-md border border-white/10 shadow-sm w-full wrap-break-words group-hover:bg-black/70 transition-all"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                 title={name}
             >
