@@ -58,7 +58,7 @@ let ScheduleController = class ScheduleController extends Controller {
     }
 };
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/generate'),
     SuccessResponse(201, 'Created'),
     __param(0, Path()),
@@ -68,7 +68,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "generateSchedule", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/generate-from-groups'),
     SuccessResponse(201, 'Created'),
     __param(0, Path()),
@@ -78,7 +78,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "generateFromGroups", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/schedule'),
     __param(0, Path()),
     __param(1, Body()),
@@ -87,7 +87,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "autoSchedule", null);
 __decorate([
-    Security('jwt', ['admin']),
+    Security('jwt', ['organizing']),
     Patch('matches/{matchId}/reschedule'),
     SuccessResponse(204, 'No Content'),
     __param(0, Path()),

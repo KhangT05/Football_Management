@@ -38,6 +38,9 @@ let VenueController = class VenueController extends Controller {
     async restore(id) {
         return this.service.restore(id);
     }
+    async findDeleted() {
+        return this.service.findDeleted();
+    }
 };
 __decorate([
     Get("/"),
@@ -59,7 +62,7 @@ __decorate([
 ], VenueController.prototype, "findById", null);
 __decorate([
     Post("/"),
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
     __metadata("design:type", Function),
@@ -68,7 +71,7 @@ __decorate([
 ], VenueController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),
@@ -77,7 +80,7 @@ __decorate([
 ], VenueController.prototype, "update", null);
 __decorate([
     Delete("{id}"),
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -86,12 +89,19 @@ __decorate([
 ], VenueController.prototype, "softDelete", null);
 __decorate([
     Patch("{id}/restore"),
-    Security("jwt", ["admin"]),
+    Security("jwt", ['organizing']),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], VenueController.prototype, "restore", null);
+__decorate([
+    Get("deleted"),
+    Security("jwt", ['organizing']),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], VenueController.prototype, "findDeleted", null);
 VenueController = __decorate([
     Route("venues"),
     Tags("Venues"),

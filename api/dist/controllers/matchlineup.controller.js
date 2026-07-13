@@ -72,7 +72,7 @@ let MatchLineupController = class MatchLineupController extends Controller {
     /**
      * Xóa 1 player khỏi lineup.
      * Chỉ được gọi trước giờ thi đấu ít nhất 10 phút.
-     * Admin only.
+     * organizing only.
      */
     async removeLineupEntry(matchId, teamId, playerId) {
         this.setStatus(204);
@@ -95,7 +95,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchLineupController.prototype, "getTeamLineup", null);
 __decorate([
-    Security("jwt", ["admin", "leader"]),
+    Security("jwt", ["admin", "leader", 'organizing']),
     Post("{matchId}/lineups"),
     __param(0, Path()),
     __param(1, Body()),
@@ -104,7 +104,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchLineupController.prototype, "registerLineup", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Patch("{matchId}/lineups/teams/{teamId}/players/{playerId}"),
     __param(0, Path()),
     __param(1, Path()),
@@ -115,7 +115,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchLineupController.prototype, "updateLineupEntry", null);
 __decorate([
-    Security("jwt", ["admin"]),
+    Security("jwt", ["organizing"]),
     Delete("{matchId}/lineups/teams/{teamId}/players/{playerId}"),
     SuccessResponse(204, "Removed"),
     __param(0, Path()),

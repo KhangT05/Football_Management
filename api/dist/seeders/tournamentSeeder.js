@@ -1,10 +1,10 @@
 import { SeasonFormat } from "../generated/prisma/client.js";
 export async function seedWorldCupTournament(db, organizerUserId) {
     const tournament = await db.tournament.upsert({
-        where: { name: "FIFA World Cup (Seed Demo)" },
+        where: { name: "FIFA World Cup" },
         update: {},
         create: {
-            name: "FIFA World Cup (Seed Demo)",
+            name: "FIFA World Cup",
             description: "Dữ liệu demo mô phỏng thể thức World Cup: 8 bảng x 4 đội -> knockout.",
             user_id: organizerUserId,
         },

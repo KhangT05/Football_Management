@@ -108,15 +108,24 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
   };
 
   const [filterStatus, setFilterStatus] = useState('');
-  const [activeFilter, setActiveFilter] = useState('active');
+  // FIX: đổi từ 'is_active' filter sang 'deleted_at' — is_active không còn
+  // là điều kiện tồn tại (nó bị set false cả khi cancel()/finished, không
+  // chỉ khi soft-delete). 'deleted' ở đây nghĩa đúng là "đã xóa mềm"
+  // (deleted_at != null), KHÔNG bao gồm season chỉ đơn thuần cancelled/finished.
+  const [existFilter, setExistFilter] = useState('existing'); // 'existing' | 'deleted' | 'all'
 
   useEffect(() => {
     fetchSeasons({
       sort: 'id',
       direction: 'desc',
-      ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'deleted' ? { is_active: false } : {}),
+      ...(existFilter === 'deleted' ? { deleted_at: { not: null } } : {}),
+      // 'existing': backend beforeBuild đã tự loại deleted_at != null rồi,
+      // không cần gửi filter gì thêm.
+      // 'all': cần backend hỗ trợ bypass filter deleted_at — nếu Queryable
+      // chưa hỗ trợ, endpoint riêng /seasons/deleted là lựa chọn an toàn hơn
+      // (xem ghi chú dưới hàm fetchDeletedSeparately).
     });
-  }, [activeFilter, fetchSeasons]);
+  }, [existFilter, fetchSeasons]);
 
   const filteredItems = (items || []).filter(item => {
     if (filterStatus && item.status !== filterStatus) return false;
@@ -284,9 +293,13 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       fetchSeasons({
         sort: 'id',
         direction: 'desc',
-        ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'deleted' ? { is_active: false } : {}),
+        ...(existFilter === 'deleted' ? { deleted_at: { not: null } } : {}),
       });
     } catch (err) {
+      // BE trả NOT_FOUND nếu record không thực sự deleted_at != null (VD
+      // bấm nhầm trên season chỉ đơn thuần cancelled/finished) — nhưng điều
+      // kiện render nút bên dưới đã chặn case này từ UI rồi nên đây chỉ còn
+      // là lưới an toàn thứ 2 (race: 2 tab cùng thao tác).
       toast.error(getFriendlyErrorMessage(err, 'Không thể khôi phục mùa giải, vui lòng thử lại.'));
     }
   };
@@ -353,13 +366,13 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
           </select>
 
           <select
-            value={activeFilter}
-            onChange={(e) => { setActiveFilter(e.target.value); setCurrentPage(1); }}
+            value={existFilter}
+            onChange={(e) => { setExistFilter(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 bg-navy border border-navy-light rounded-lg text-sm text-gray-300 focus:outline-none focus:border-purple-500"
+            title="Lọc theo việc record có bị xóa mềm (deleted_at) hay không — KHÔNG phải theo trạng thái cancelled/finished"
           >
-            <option value="all">Tất cả (Kích hoạt/Khóa)</option>
-            <option value="active">Đang kích hoạt</option>
-            <option value="deleted">Đã khóa/xóa</option>
+            <option value="existing">Chưa xóa</option>
+            <option value="deleted">Đã xóa (deleted_at)</option>
           </select>
 
           <button onClick={() => fetchSeasons()} disabled={isLoading} className="p-2 rounded-lg bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors ml-auto sm:ml-0 shrink-0">
@@ -382,6 +395,13 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
           const itemEditMode = getEditMode(item.status);
           const editable = itemEditMode !== 'none';
           const deletable = canDelete(item.status);
+          // FIX: is_active KHÔNG phải điều kiện tồn tại — cancel()/finished
+          // cũng set is_active=false nhưng deleted_at vẫn null. Chỉ record
+          // có deleted_at mới thực sự bị soft-delete và khôi phục được qua
+          // seasonApi.restore(). Trước đây dùng `!item.is_active` làm điều
+          // kiện hiện nút Restore khiến season cancelled/finished cũng hiện
+          // nút này, bấm vào BE trả NOT_FOUND vì deleted_at của chúng = null.
+          const isSoftDeleted = !!item.deleted_at;
 
           return (
             <div key={item.id} className="px-6 py-4 hover:bg-navy-light/10 transition-colors">
@@ -408,6 +428,11 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${sm.cls}`}>
                     {sm.label}
                   </span>
+                  {isSoftDeleted && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-red-400/10 text-red-400 border-red-400/30">
+                      Đã xóa
+                    </span>
+                  )}
                   {/* Nhắc admin: ongoing/finished còn có cron tự chuyển theo
                       ngày — nút bên dưới chỉ để bấm SỚM/bấm BÙ, không bắt
                       buộc phải bấm nếu không cần gấp. */}
@@ -422,7 +447,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
                     </span>
                   )}
 
-                  {nextStatuses.map(target => {
+                  {!isSoftDeleted && nextStatuses.map(target => {
                     const isDeadlinePassed = target === 'registration_open' && (!item.registration_deadline || new Date(item.registration_deadline) <= new Date());
                     return (
                       <button
@@ -442,7 +467,7 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
                     );
                   })}
 
-                  {editable ? (
+                  {!isSoftDeleted && (editable ? (
                     <button
                       onClick={() => openEdit(item)}
                       className={`p-1.5 rounded-lg border border-transparent transition-colors ${itemEditMode === 'bank'
@@ -460,26 +485,13 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
                     >
                       <Lock className="w-4 h-4" />
                     </span>
-                  )}
+                  ))}
 
-                  {item.is_active ? (
-                    deletable ? (
-                      <button
-                        onClick={() => crud.setDeleting(item)}
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <span
-                        className="p-1.5 rounded-lg text-gray-600 cursor-not-allowed"
-                        title={`Không thể xóa khi mùa giải đang "${sm.label}"`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </span>
-                    )
-                  ) : (
+                  {isSoftDeleted ? (
+                    // Chỉ record thực sự deleted_at != null mới cho khôi
+                    // phục. season cancelled/finished (is_active=false
+                    // nhưng deleted_at=null) KHÔNG rơi vào nhánh này —
+                    // chúng hiện icon khóa bên dưới thay vì nút Restore.
                     <button
                       onClick={() => handleRestore(item.id)}
                       className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/30 transition-colors"
@@ -487,6 +499,25 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
+                  ) : deletable ? (
+                    <button
+                      onClick={() => crud.setDeleting(item)}
+                      className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
+                      title="Xóa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <span
+                      className="p-1.5 rounded-lg text-gray-600 cursor-not-allowed"
+                      title={
+                        item.status === 'cancelled' || item.status === 'finished'
+                          ? `Season đã "${sm.label}" — không xóa được nữa (chỉ 'upcoming' mới xóa mềm được)`
+                          : `Không thể xóa khi mùa giải đang "${sm.label}"`
+                      }
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </span>
                   )}
                 </div>
               </div>

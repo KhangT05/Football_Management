@@ -6,11 +6,18 @@ import { MatchEventType } from "../generated/prisma/client.js";
  * lần chạy nên bản thân hàm này idempotent — điều kiện tiên quyết là MatchEvent không bị
  * nhân đôi ở bước trước (xem guard trong matchDetailSeeder.ts).
  *
+ * FIX: match query phải lọc is_active: true — cùng lý do với ScheduleService
+ * (xem comment trong groupMatchSeeder.ts/knockoutSeeder.ts). Match rác còn sót
+ * từ lần seed cũ bị crash giữa chừng (is_active mặc định false/không set) vẫn
+ * nằm trong DB và match phase_id -> season_id, nên nếu không lọc, lineup/event
+ * của match rác đó vẫn bị cộng vào matches_played/goals_scored — silent data
+ * corruption, không throw, không log warning.
+ *
  * Giới hạn: schema không có MatchEventType riêng cho "assist" nên assists giữ = 0.
  */
 export async function seedPlayerStatistics(db, seasonId) {
     const matches = await db.match.findMany({
-        where: { phase: { season_id: seasonId } },
+        where: { phase: { season_id: seasonId }, is_active: true },
         select: { id: true },
     });
     const matchIds = matches.map((m) => m.id);

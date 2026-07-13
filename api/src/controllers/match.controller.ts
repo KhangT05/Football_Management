@@ -142,7 +142,7 @@ export class MatchController extends Controller {
      * nguyên FE, sửa BE) — nếu route `{id}/confirm` mới là chuẩn dự định,
      * cần sửa ngược lại matchApi.js thay vì ở đây, xác nhận với người review.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/confirm-official")
     async confirmOfficial(
         @Path() id: number,
@@ -160,7 +160,7 @@ export class MatchController extends Controller {
      * forfeit  = ongoing/finished + team bỏ cuộc / vi phạm.
      * venueIds/matchTimes optional — bắt buộc nếu knockout (validated tại matchResultService).
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/forfeit")
     async forfeitMatch(
         @Path() id: number,
@@ -174,7 +174,7 @@ export class MatchController extends Controller {
      * Dừng trận giữa chừng (thời tiết, bạo lực...).
      * Match chuyển sang abandoned, không tạo MatchResult.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/abandon")
     @SuccessResponse(204, "Abandoned")
     async abandonMatch(
@@ -223,7 +223,7 @@ export class MatchController extends Controller {
      * overturn = đảo ngược kết quả → overturned + recompute standings.
      * Knockout overturn chưa hỗ trợ tự động (bracket đã advance).
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/resolve-appeal")
     @SuccessResponse(204, "Appeal resolved")
     async resolveAppeal(
@@ -249,7 +249,7 @@ export class MatchController extends Controller {
      * recompute standings/player stats thành công hay fail âm thầm. Đổi sang
      * 200 + trả nguyên object.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/correction/events")
     @SuccessResponse(200, "Event added")
     async addEvent(
@@ -269,7 +269,7 @@ export class MatchController extends Controller {
      *
      * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Delete("{id}/correction/events/{eventId}")
     @SuccessResponse(200, "Event deleted")
     async deleteEvent(
@@ -287,7 +287,7 @@ export class MatchController extends Controller {
      *
      * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Patch("{id}/correction/events/{eventId}")
     @SuccessResponse(200, "Event edited")
     async editEvent(
@@ -306,7 +306,7 @@ export class MatchController extends Controller {
      *
      * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", 'organizing'])
     @Patch("{id}/correction/score")
     @SuccessResponse(200, "Score corrected")
     async editScore(

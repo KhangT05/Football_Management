@@ -43,7 +43,7 @@ export declare class SeasonController extends Controller {
      * UpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên
      * body.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi
      * `body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền
-     * (id, status) — dùng cho registration_open/ongoing/finished, admin bấm
+     * (id, status) — dùng cho registration_open/ongoing/finished, organizing bấm
      * tay song song với cron SeasonService.runAutoTransitions().
      */
     updateStatus(id: number, body: seasonSchema.UpdateSeasonStatusDto): Promise<Season>;
@@ -54,7 +54,7 @@ export declare class SeasonController extends Controller {
      *   - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.
      * KHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ
      * `seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch
-     * cho admin/ops, không phải cách vận hành chính.
+     * cho organizing/ops, không phải cách vận hành chính.
      */
     runAutoTransitions(): Promise<{
         toOngoing: number;

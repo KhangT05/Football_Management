@@ -60,7 +60,7 @@ let MatchReportController = class MatchReportController extends tsoa.Controller 
     }
 };
 __decorate([
-    tsoa.Security('jwt', ['admin']),
+    tsoa.Security('jwt', ['organizing']),
     tsoa.Get('matches/{matchId}/report/data'),
     __param(0, tsoa.Path()),
     __metadata("design:type", Function),
