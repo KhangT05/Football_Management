@@ -41,4 +41,46 @@ export const statisticsApi = {
   getPlayerCareer: (playerId) => {
     return axiosClient.get(`/statistics/players/${playerId}/career`);
   },
+
+  getTeamOverview: (teamId) => {
+    return axiosClient.get(`/statistics/teams/${teamId}/overview`);
+  },
+  // granularity: 'day' | 'month' | 'year' (default 'month' ở BE nếu không truyền)
+  // period: dùng chung preset '7d'|'30d'|'90d'|'3m'|'6m'|'1y', optional — không
+  // truyền = lấy toàn bộ lịch sử
+  getTeamMatchTimeSeries: (teamId, { granularity, period } = {}) => {
+    return axiosClient.get(`/statistics/teams/${teamId}/matches/timeseries`, {
+      params: { granularity, period },
+    });
+  },
+  getPlayerOverview: (playerId) => {
+    return axiosClient.get(`/statistics/players/${playerId}/overview`);
+  },
+  // ─── Team stats hierarchy ───
+  getTeamTournamentStats: (teamId, tournamentId) => {
+    return axiosClient.get(`/statistics/teams/${teamId}/tournaments/${tournamentId}`);
+  },
+  getTeamSeasonStats: (teamId, seasonId) => {
+    return axiosClient.get(`/statistics/teams/${teamId}/seasons/${seasonId}`);
+  },
+  getTeamMatchStats: (teamId, matchId) => {
+    return axiosClient.get(`/statistics/teams/${teamId}/matches/${matchId}`);
+  },
+
+  // ─── Player stats hierarchy ───
+  getPlayerTournamentStats: (playerId, tournamentId) => {
+    return axiosClient.get(`/statistics/players/${playerId}/tournaments/${tournamentId}`);
+  },
+  getPlayerSeasonStats: (playerId, seasonId) => {
+    return axiosClient.get(`/statistics/players/${playerId}/seasons/${seasonId}`);
+  },
+  getPlayerMatchStats: (playerId, matchId) => {
+    return axiosClient.get(`/statistics/players/${playerId}/matches/${matchId}`);
+  },
+  getActiveStandings: (seasonId) => {
+    return axiosClient.get(`/seasons/${seasonId}/standings`);
+  },
+  getPlayerFinanceStats: (seasonId) => {
+    return axiosClient.get(`/statistics/seasons/${seasonId}/finance`);
+  },
 };

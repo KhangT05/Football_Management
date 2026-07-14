@@ -1,4 +1,4 @@
-import { Trophy } from 'lucide-react';
+import { Trophy, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getInitials, AVATAR_COLORS } from '../utils/constants';
 
@@ -7,8 +7,12 @@ import { getInitials, AVATAR_COLORS } from '../utils/constants';
  *
  * Backend trả về fields: matches_played, wins, draws, losses, goals_for, goals_against, points
  * Sau khi normalize ở fetchStandings: played, won, drawn, lost, goal_difference cũng available.
+ *
+ * onDrillDown (optional): callback mở panel thống kê nhanh (all-time overview
+ * + biểu đồ) cho team_id của hàng này, hiển thị ngay trong trang Leaderboard
+ * — khác với Link bên dưới (điều hướng sang trang chi tiết đội đầy đủ).
  */
-export default function StandingRow({ row, idx, teams }) {
+export default function StandingRow({ row, idx, teams, onDrillDown }) {
   const team = teams.find(t => t.id === row.team_id);
   const teamName = team?.name ?? row.team_name ?? `Đội ${row.team_id}`;
   const initial = getInitials(teamName);
@@ -65,13 +69,23 @@ export default function StandingRow({ row, idx, teams }) {
               />
             )}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex items-center gap-2">
             <Link
               to={`/doi-bong/${row.team_id}`}
               className="font-bold text-white text-base hover:text-blue-400 transition-colors truncate block"
             >
               {teamName}
             </Link>
+            {onDrillDown && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDrillDown(); }}
+                title="Xem thống kê nhanh (toàn thời gian)"
+                className="text-gray-500 hover:text-blue-400 transition-colors shrink-0"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </td>
@@ -93,4 +107,3 @@ export default function StandingRow({ row, idx, teams }) {
     </tr>
   );
 }
-

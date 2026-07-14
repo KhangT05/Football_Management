@@ -10,6 +10,13 @@ export declare const TEAM_STANDING_SELECT: {
     goals_for: true;
     goals_against: true;
     points: true;
+    team: {
+        select: {
+            id: true;
+            name: true;
+            logo: true;
+        };
+    };
 };
 export declare const PLAYER_STATISTIC_SELECT: {
     id: true;
@@ -54,6 +61,11 @@ export interface TeamStandingRow {
     goals_for: number;
     goals_against: number;
     points: number;
+    team: {
+        id: number;
+        name: string;
+        logo: string | null;
+    };
 }
 export interface PlayerStatisticRow {
     id: number;

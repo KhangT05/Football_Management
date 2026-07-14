@@ -54,6 +54,42 @@ let StatisticsController = class StatisticsController extends Controller {
     async getSystemOverviewStats(period) {
         return this.statisticsService.getSystemOverviewStats(period);
     }
+    async getTeamOverviewStats(teamId) {
+        return this.statisticsService.getTeamOverviewStats(teamId);
+    }
+    async getTeamMatchTimeSeries(teamId, granularity, period) {
+        return this.statisticsService.getTeamMatchTimeSeries(teamId, granularity ?? "month", period);
+    }
+    async getPlayerOverviewStats(playerId) {
+        return this.statisticsService.getPlayerOverviewStats(playerId);
+    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // TEAM STATS HIERARCHY (tournament / season / match level)
+    // ═══════════════════════════════════════════════════════════════════════
+    async getTeamTournamentStats(teamId, tournamentId) {
+        return this.statisticsService.getTeamTournamentStats(teamId, tournamentId);
+    }
+    async getTeamSeasonStats(teamId, seasonId) {
+        return this.statisticsService.getTeamSeasonStats(teamId, seasonId);
+    }
+    async getTeamMatchStats(teamId, matchId) {
+        return this.statisticsService.getTeamMatchStats(teamId, matchId);
+    }
+    async getPlayerTournamentStats(playerId, tournamentId) {
+        return this.statisticsService.getPlayerTournamentStats(playerId, tournamentId);
+    }
+    async getPlayerSeasonStats(playerId, seasonId) {
+        return this.statisticsService.getPlayerSeasonStats(playerId, seasonId);
+    }
+    async getPlayerMatchStats(playerId, matchId) {
+        return this.statisticsService.getPlayerMatchStats(playerId, matchId);
+    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAYER FINANCE (thưởng/phạt theo season)
+    // ═══════════════════════════════════════════════════════════════════════
+    async getPlayerFinanceStats(seasonId) {
+        return this.statisticsService.getPlayerFinanceStats(seasonId);
+    }
 };
 __decorate([
     Security("jwt", ["admin"]),
@@ -146,6 +182,85 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getSystemOverviewStats", null);
+__decorate([
+    Get("teams/{teamId}/overview"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamOverviewStats", null);
+__decorate([
+    Get("teams/{teamId}/matches/timeseries"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, String]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamMatchTimeSeries", null);
+__decorate([
+    Get("players/{playerId}/overview"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerOverviewStats", null);
+__decorate([
+    Get("teams/{teamId}/tournaments/{tournamentId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamTournamentStats", null);
+__decorate([
+    Get("teams/{teamId}/seasons/{seasonId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamSeasonStats", null);
+__decorate([
+    Get("teams/{teamId}/matches/{matchId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamMatchStats", null);
+__decorate([
+    Get("players/{playerId}/tournaments/{tournamentId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerTournamentStats", null);
+__decorate([
+    Get("players/{playerId}/seasons/{seasonId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerSeasonStats", null);
+__decorate([
+    Get("players/{playerId}/matches/{matchId}"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerMatchStats", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("seasons/{seasonId}/finance"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerFinanceStats", null);
 StatisticsController = __decorate([
     Route("statistics"),
     Tags("Statistics"),

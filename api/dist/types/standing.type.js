@@ -10,6 +10,7 @@ export const TEAM_STANDING_SELECT = {
     goals_for: true,
     goals_against: true,
     points: true,
+    team: { select: { id: true, name: true, logo: true } },
 };
 export const PLAYER_STATISTIC_SELECT = {
     id: true,

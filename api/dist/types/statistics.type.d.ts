@@ -123,4 +123,166 @@ export interface SystemOverviewStats {
     new_user_count: number;
     period_days: number;
 }
+export type TimeGranularity = "day" | "month" | "year";
+export type TeamMatchTimeSeriesPoint = {
+    bucket: string;
+    wins: number;
+    draws: number;
+    losses: number;
+    matches_played: number;
+};
+export type TeamMatchTimeSeriesStats = {
+    team_id: number;
+    granularity: TimeGranularity;
+    period: string | null;
+    points: TeamMatchTimeSeriesPoint[];
+};
+export type TeamParticipation = {
+    season_id: number;
+    season_name: string;
+    season_status: string;
+    tournament_id: number;
+    tournament_name: string;
+    registration_status: string;
+};
+export type TeamOverviewStats = {
+    team_id: number;
+    team_name: string;
+    tournament_count: number;
+    season_count: number;
+    participations: TeamParticipation[];
+    total_matches_played: number;
+    total_wins: number;
+    total_draws: number;
+    total_losses: number;
+    win_rate: number;
+    total_goals_for: number;
+    total_goals_against: number;
+    goal_difference: number;
+};
+export type TeamAggregateStatsBase = {
+    total_matches_played: number;
+    total_wins: number;
+    total_draws: number;
+    total_losses: number;
+    win_rate: number;
+    total_goals_for: number;
+    total_goals_against: number;
+    goal_difference: number;
+    total_points: number;
+};
+export type TeamTournamentStats = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    season_count: number;
+    seasons: {
+        season_id: number;
+        season_name: string;
+    }[];
+};
+export type TeamSeasonStats = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+    season_id: number;
+    season_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    group_name: string | null;
+};
+export type TeamMatchGoalEntry = {
+    minute: number | null;
+    player_id: number | null;
+    player_name: string | null;
+    type: string;
+};
+export type TeamMatchStats = {
+    team_id: number;
+    team_name: string;
+    match_id: number;
+    season_id: number;
+    season_name: string;
+    phase_id: number;
+    phase_name: string;
+    played_at: string | null;
+    opponent_team_id: number;
+    opponent_team_name: string;
+    is_home: boolean;
+    goals_for: number;
+    goals_against: number;
+    result: "win" | "draw" | "loss" | "pending";
+    goals: TeamMatchGoalEntry[];
+    yellow_cards: number;
+    red_cards: number;
+};
+export type PlayerOverviewStats = {
+    player_id: number;
+    player_name: string;
+    tournament_count: number;
+    team_count: number;
+    season_count: number;
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+export type PlayerTournamentStats = {
+    player_id: number;
+    player_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    season_count: number;
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+export type PlayerSeasonTeamBreakdown = {
+    team_id: number;
+    team_name: string;
+    matches_played: number;
+    goals: number;
+    assists: number;
+    yellow_cards: number;
+    red_cards: number;
+};
+export type PlayerSeasonStats = {
+    player_id: number;
+    player_name: string;
+    season_id: number;
+    season_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+    teams: PlayerSeasonTeamBreakdown[];
+};
+export type PlayerMatchEventEntry = {
+    minute: number | null;
+    type: string;
+};
+export type PlayerMatchStats = {
+    player_id: number;
+    player_name: string;
+    match_id: number;
+    team_id: number;
+    team_name: string;
+    opponent_team_id: number | null;
+    opponent_team_name: string | null;
+    played_at: string | null;
+    lineup_type: "starter" | "substitute";
+    minutes_played: number | null;
+    is_captain: boolean;
+    goals: number;
+    yellow_cards: number;
+    red_cards: number;
+    events: PlayerMatchEventEntry[];
+    note: string;
+};
 //# sourceMappingURL=statistics.type.d.ts.map

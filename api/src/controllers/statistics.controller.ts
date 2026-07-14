@@ -84,4 +84,65 @@ export class StatisticsController extends Controller {
     async getSystemOverviewStats(@Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y") {
         return this.statisticsService.getSystemOverviewStats(period);
     }
+
+    @Get("teams/{teamId}/overview")
+    async getTeamOverviewStats(@Path() teamId: number) {
+        return this.statisticsService.getTeamOverviewStats(teamId);
+    }
+
+    @Get("teams/{teamId}/matches/timeseries")
+    async getTeamMatchTimeSeries(
+        @Path() teamId: number,
+        @Query() granularity?: "day" | "month" | "year",
+        @Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y",
+    ) {
+        return this.statisticsService.getTeamMatchTimeSeries(teamId, granularity ?? "month", period);
+    }
+
+    @Get("players/{playerId}/overview")
+    async getPlayerOverviewStats(@Path() playerId: number) {
+        return this.statisticsService.getPlayerOverviewStats(playerId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TEAM STATS HIERARCHY (tournament / season / match level)
+    // ═══════════════════════════════════════════════════════════════════════
+    @Get("teams/{teamId}/tournaments/{tournamentId}")
+    async getTeamTournamentStats(@Path() teamId: number, @Path() tournamentId: number) {
+        return this.statisticsService.getTeamTournamentStats(teamId, tournamentId);
+    }
+
+    @Get("teams/{teamId}/seasons/{seasonId}")
+    async getTeamSeasonStats(@Path() teamId: number, @Path() seasonId: number) {
+        return this.statisticsService.getTeamSeasonStats(teamId, seasonId);
+    }
+
+    @Get("teams/{teamId}/matches/{matchId}")
+    async getTeamMatchStats(@Path() teamId: number, @Path() matchId: number) {
+        return this.statisticsService.getTeamMatchStats(teamId, matchId);
+    }
+
+    @Get("players/{playerId}/tournaments/{tournamentId}")
+    async getPlayerTournamentStats(@Path() playerId: number, @Path() tournamentId: number) {
+        return this.statisticsService.getPlayerTournamentStats(playerId, tournamentId);
+    }
+
+    @Get("players/{playerId}/seasons/{seasonId}")
+    async getPlayerSeasonStats(@Path() playerId: number, @Path() seasonId: number) {
+        return this.statisticsService.getPlayerSeasonStats(playerId, seasonId);
+    }
+
+    @Get("players/{playerId}/matches/{matchId}")
+    async getPlayerMatchStats(@Path() playerId: number, @Path() matchId: number) {
+        return this.statisticsService.getPlayerMatchStats(playerId, matchId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAYER FINANCE (thưởng/phạt theo season)
+    // ═══════════════════════════════════════════════════════════════════════
+    @Security("jwt", ["admin"])
+    @Get("seasons/{seasonId}/finance")
+    async getPlayerFinanceStats(@Path() seasonId: number) {
+        return this.statisticsService.getPlayerFinanceStats(seasonId);
+    }
 }

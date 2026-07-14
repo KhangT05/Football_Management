@@ -132,3 +132,203 @@ export interface SystemOverviewStats {
     new_user_count: number;  // người dùng mới trong `period`
     period_days: number;
 }
+
+export type TimeGranularity = "day" | "month" | "year";
+
+export type TeamMatchTimeSeriesPoint = {
+    bucket: string; // "2026-07-14" | "2026-07" | "2026" tuỳ granularity
+    wins: number;
+    draws: number;
+    losses: number;
+    matches_played: number;
+};
+
+export type TeamMatchTimeSeriesStats = {
+    team_id: number;
+    granularity: TimeGranularity;
+    period: string | null;
+    points: TeamMatchTimeSeriesPoint[];
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATS HIERARCHY
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Team
+// ├── Team Stats                  → TeamOverviewStats           (toàn bộ lịch sử)
+// ├── Tournament Team Stats       → TeamTournamentStats         (theo giải đấu — gộp mọi season của giải)
+// ├── Season Team Stats           → TeamSeasonStats             (theo 1 mùa giải cụ thể)
+// └── Match Team Stats            → TeamMatchStats              (theo 1 trận cụ thể)
+//
+// Player
+// ├── Player Stats                → PlayerOverviewStats         (toàn bộ sự nghiệp)
+// ├── Tournament Player Stats     → PlayerTournamentStats       (theo giải đấu)
+// ├── Season Player Stats         → PlayerSeasonStats           (theo mùa)
+// └── Match Player Stats          → PlayerMatchStats            (theo trận)
+//
+// LƯU Ý: MatchEventType không có "assist" — số liệu kiến tạo chỉ có ở mức
+// PlayerStatistic (theo season), KHÔNG track được theo từng trận đấu.
+// PlayerMatchStats vì vậy không có field `assists`.
+
+// ── Team: participations (dùng chung cho TeamOverviewStats) ────────────────
+export type TeamParticipation = {
+    season_id: number;
+    season_name: string;
+    season_status: string;
+    tournament_id: number;
+    tournament_name: string;
+    registration_status: string; // SeasonTeam.status: pending/approved/active/eliminated/withdrawn
+};
+
+export type TeamOverviewStats = {
+    team_id: number;
+    team_name: string;
+    tournament_count: number; // distinct tournament đã tham gia
+    season_count: number;     // tổng số season (registration) đã tham gia
+    participations: TeamParticipation[];
+    total_matches_played: number;
+    total_wins: number;
+    total_draws: number;
+    total_losses: number;
+    win_rate: number; // %, làm tròn 1 chữ số thập phân
+    total_goals_for: number;
+    total_goals_against: number;
+    goal_difference: number;
+};
+
+// Phần thống kê trận đấu dùng chung cho Tournament Team Stats & Season Team Stats
+export type TeamAggregateStatsBase = {
+    total_matches_played: number;
+    total_wins: number;
+    total_draws: number;
+    total_losses: number;
+    win_rate: number;
+    total_goals_for: number;
+    total_goals_against: number;
+    goal_difference: number;
+    total_points: number; // cộng dồn theo points_per_win/draw/loss của rule TỪNG season chứa trận đó
+};
+
+export type TeamTournamentStats = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    season_count: number; // số mùa của giải này mà đội đã tham gia
+    seasons: { season_id: number; season_name: string }[];
+};
+
+export type TeamSeasonStats = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+    season_id: number;
+    season_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    group_name: string | null; // null nếu chưa được chia bảng (SeasonTeam.group_id null)
+};
+
+export type TeamMatchGoalEntry = {
+    minute: number | null;
+    player_id: number | null;
+    player_name: string | null;
+    type: string; // "goal" | "penalty_scored"
+};
+
+export type TeamMatchStats = {
+    team_id: number;
+    team_name: string;
+    match_id: number;
+    season_id: number;
+    season_name: string;
+    phase_id: number;
+    phase_name: string;
+    played_at: string | null;
+    opponent_team_id: number;
+    opponent_team_name: string;
+    is_home: boolean;
+    goals_for: number;
+    goals_against: number;
+    result: "win" | "draw" | "loss" | "pending"; // pending = chưa có kết quả official
+    goals: TeamMatchGoalEntry[];
+    yellow_cards: number;
+    red_cards: number;
+};
+
+// ── Player ───────────────────────────────────────────────────────────────
+export type PlayerOverviewStats = {
+    player_id: number;
+    player_name: string;
+    tournament_count: number; // distinct giải đã tham gia
+    team_count: number;       // distinct đội đã khoác áo
+    season_count: number;     // distinct mùa đã thi đấu
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+
+export type PlayerTournamentStats = {
+    player_id: number;
+    player_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    season_count: number; // số mùa của giải này player đã thi đấu
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+
+export type PlayerSeasonTeamBreakdown = {
+    team_id: number;
+    team_name: string;
+    matches_played: number;
+    goals: number;
+    assists: number;
+    yellow_cards: number;
+    red_cards: number;
+};
+
+export type PlayerSeasonStats = {
+    player_id: number;
+    player_name: string;
+    season_id: number;
+    season_name: string;
+    tournament_id: number;
+    tournament_name: string;
+    total_matches_played: number;
+    total_goals: number;
+    total_assists: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+    // Bình thường 1 player chỉ có 1 team/season (unique [player_id, team_id,
+    // season_id] cho phép >1 row nếu đổi đội giữa mùa) — breakdown theo từng đội.
+    teams: PlayerSeasonTeamBreakdown[];
+};
+
+export type PlayerMatchEventEntry = {
+    minute: number | null;
+    type: string; // MatchEventType
+};
+
+export type PlayerMatchStats = {
+    player_id: number;
+    player_name: string;
+    match_id: number;
+    team_id: number;
+    team_name: string;
+    opponent_team_id: number | null;
+    opponent_team_name: string | null;
+    played_at: string | null;
+    lineup_type: "starter" | "substitute";
+    minutes_played: number | null; // null nếu không xác định được (thiếu minute_in/out)
+    is_captain: boolean;
+    goals: number;
+    yellow_cards: number;
+    red_cards: number;
+    events: PlayerMatchEventEntry[];
+    note: string; // giải thích giới hạn dữ liệu (vd không có assist theo trận)
+};

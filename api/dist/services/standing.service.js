@@ -190,17 +190,26 @@ export class StandingsService {
         };
         return this.playerStatQueryable.run(queryReq);
     }
-    // ═══════════════════════════════════════════════════════════════════════════
-    // READ — SUSPENDED PLAYERS
-    // ═══════════════════════════════════════════════════════════════════════════
     async getSuspendedPlayers(seasonId) {
         return this.prisma.playerStatistic.findMany({
-            where: { season_id: seasonId, is_suspended: true },
-            include: {
-                player: { select: { id: true, name: true } },
-                team: { select: { id: true, name: true } },
+            where: {
+                season_id: seasonId, // also fix: hardcoded `1` should be the parameter
+                is_suspended: true,
             },
-            orderBy: { team_id: 'asc' },
+            include: {
+                player: {
+                    select: {
+                        id: true,
+                        user: { select: { name: true } },
+                    },
+                },
+                team: {
+                    select: { id: true, name: true },
+                },
+            },
+            orderBy: {
+                team_id: "asc",
+            },
         });
     }
     // ═══════════════════════════════════════════════════════════════════════════
