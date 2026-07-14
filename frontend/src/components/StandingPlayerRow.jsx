@@ -1,6 +1,11 @@
+import { TrendingUp } from 'lucide-react';
 import { getInitials, AVATAR_COLORS } from '../utils/constants';
 
-export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
+/**
+ * onDrillDown (optional): callback mở panel overview cầu thủ (tổng quát qua
+ * các giải/mùa/đội, all-time) ngay trong trang Leaderboard.
+ */
+export default function StandingPlayerRow({ rank, playerStat, activeStatTab, onDrillDown }) {
   const {
     player_id, player_name, team_id, team_name,
     value, reason, status,
@@ -38,8 +43,20 @@ export default function StandingPlayerRow({ rank, playerStat, activeStatTab }) {
             </div>
           </div>
           <div>
-            <div className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">
-              {playerName}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white text-base group-hover:text-blue-400 transition-colors">
+                {playerName}
+              </span>
+              {onDrillDown && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDrillDown(); }}
+                  title="Xem thống kê nhanh (toàn thời gian)"
+                  className="text-gray-500 hover:text-blue-400 transition-colors shrink-0"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-1.5 mt-1">
               <div className="w-3.5 h-3.5 rounded-full bg-navy border border-navy-light flex items-center justify-center text-[8px] font-bold text-gray-400">

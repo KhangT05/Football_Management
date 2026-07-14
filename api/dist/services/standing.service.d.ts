@@ -66,8 +66,10 @@ export declare class StandingsService {
             id: number;
         };
         player: {
-            name: never;
             id: number;
+            user: {
+                name: string;
+            };
         };
     } & {
         id: number;

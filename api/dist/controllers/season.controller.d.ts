@@ -69,8 +69,10 @@ export declare class SeasonController extends Controller {
             id: number;
         };
         player: {
-            name: never;
             id: number;
+            user: {
+                name: string;
+            };
         };
     } & {
         id: number;
