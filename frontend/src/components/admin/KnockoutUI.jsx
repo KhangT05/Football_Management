@@ -60,6 +60,12 @@ const PHASE_STORAGE_KEY = (seasonId) => `knockout:lastPhase:${seasonId}`;
 // bracket coi như dữ liệu lịch sử, không còn ý nghĩa để sửa/tạo lại nữa.
 const isSeasonClosedStatus = (status) => status === 'finished' || status === 'cancelled';
 
+// FIX: dùng riêng để nhận biết season đang thi đấu — không dùng để khoá cứng
+// (bracket vẫn được TẠO LẦN ĐẦU lúc ongoing), chỉ dùng để ẩn form "Tạo Sơ Đồ
+// Bracket" khi phase hiện tại ĐÃ CÓ bracket data, tránh generate đè lên sơ đồ
+// đang dùng dở giữa mùa giải đang chạy.
+const isSeasonOngoingStatus = (status) => status === 'ongoing';
+
 // FIX: trạng thái "đã xác nhận" của bracket CHÍNH LÀ PhaseStatus.locked —
 // KnockoutService.confirmBracket() set thẳng phase.status = 'locked', và
 // swapSeeds()/generate lại đều bị chặn dựa trên field này. Field này đã
@@ -305,6 +311,18 @@ export default function KnockoutUI({ seasonId }) {
   );
   const isBracketConfirmed = isBracketConfirmedStatus(selectedPhase?.status);
 
+  // FIX (ẩn form tạo bracket khi đã có bracket + season đang thi đấu): season
+  // 'ongoing' không khoá cứng (bracket vẫn tạo lần đầu lúc ongoing bình
+  // thường), nhưng MỘT KHI phase đang chọn đã có bracket data thật (đã
+  // generate) và season đang ongoing, bấm "Tạo Sơ Đồ Bracket" lại rất dễ vô
+  // tình tạo/ghi đè cấu trúc bracket đang được dùng để thi đấu — kể cả khi
+  // phase chưa kịp confirm (chưa 'locked'). Guard này scope theo
+  // selectedPhaseId (không phải toàn season): đổi sang 1 phase knockout
+  // khác chưa có bracket thì form vẫn hiện bình thường, vì mỗi phase là 1
+  // bracket độc lập (BracketSlot.phase_id).
+  const hasBracketForPhase = Array.isArray(bracketData) && bracketData.length > 0;
+  const hideGenerateWhileOngoing = hasBracketForPhase && isSeasonOngoingStatus(season?.status);
+
   useEffect(() => {
     fetchVenues();
   }, [fetchVenues]);
@@ -448,6 +466,7 @@ export default function KnockoutUI({ seasonId }) {
 
   const handleGenerate = async () => {
     if (isSeasonClosed) return toast.error('Mùa giải đã kết thúc — không thể tạo sơ đồ knockout mới.');
+    if (hideGenerateWhileOngoing) return toast.error('Phase này đã có sơ đồ bracket và mùa giải đang thi đấu — không thể tạo lại.');
 
     // FIX: dedupe seed teamId trước khi build payload — lưới an toàn cuối
     // cùng, kể cả nếu availableTeams vẫn còn sót trùng vì lý do nào khác.
@@ -560,6 +579,11 @@ export default function KnockoutUI({ seasonId }) {
               <ShieldCheck className="w-3.5 h-3.5" /> Sơ đồ đã xác nhận
             </span>
           )}
+          {!isSeasonClosed && !isBracketConfirmed && hideGenerateWhileOngoing && (
+            <span className="ml-auto flex items-center gap-1.5 bg-gray-500/15 text-gray-400 text-xs font-bold px-2.5 py-1 rounded-full">
+              <Lock className="w-3.5 h-3.5" /> Đã có sơ đồ · đang thi đấu
+            </span>
+          )}
         </h3>
         <p className="text-xs text-gray-500 mb-4">
           Bước này chỉ sinh cấu trúc cặp đấu (seed → bracket). Xếp sân/giờ thi đấu là bước riêng, thực hiện
@@ -591,131 +615,147 @@ export default function KnockoutUI({ seasonId }) {
           </div>
         )}
 
-        <fieldset disabled={isSeasonClosed} className="disabled:opacity-60">
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setSeedMode('manual')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold ${seedMode === 'manual' ? 'bg-amber-600 text-white' : 'bg-navy-dark text-gray-400'}`}
-            >
-              Chọn thủ công
-            </button>
-            <button
-              type="button"
-              onClick={() => setSeedMode('standing')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold ${seedMode === 'standing' ? 'bg-amber-600 text-white' : 'bg-navy-dark text-gray-400'}`}
-            >
-              Seed theo bảng xếp hạng
-            </button>
-          </div>
-
-          <div className="mb-6 max-w-xs">
-            <label className="block text-xs font-bold text-gray-400 mb-1">Số lượt trận (Legs)</label>
-            <select value={legs} onChange={e => setLegs(e.target.value)} className={`${SELECT_INPUT_CLASS} w-full`}>
-              <option value={1}>1 lượt</option>
-              <option value={2}>2 lượt (Đi & về)</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 mb-6">
-            {seedMode === 'manual' ? (
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-2">Đội hạt giống (Seeded Teams)</label>
-                <div className="bg-navy-dark border border-navy-light rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
-                  {availableTeams.length === 0 && <p className="text-gray-500 text-xs">Không có đội nào hợp lệ.</p>}
-                  {availableTeams.map(st => {
-                    const team = teams.find(t => t.id === st.team_id);
-                    return (
-                      <label key={st.team_id} className="flex items-center gap-2 cursor-pointer hover:bg-navy p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="accent-amber-500 w-4 h-4 rounded border-gray-600 bg-gray-700"
-                          checked={seededTeamIds.includes(st.team_id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              // FIX: chặn add trùng ngay tại nguồn thay vì chỉ
-                              // dựa vào checked={.includes(...)} để tránh hiện
-                              // trạng thái "checked" nhưng thực chất đã có sẵn
-                              // trong mảng từ trước (double add do event bắn 2
-                              // lần / key trùng — nguyên nhân gốc gây CONFLICT).
-                              setSeededTeamIds(prev => prev.includes(st.team_id) ? prev : [...prev, st.team_id]);
-                            } else {
-                              setSeededTeamIds(prev => prev.filter(id => id !== st.team_id));
-                            }
-                          }}
-                        />
-                        <span className="text-sm text-gray-300">{team?.name || `Team ID: ${st.team_id}`}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-2">Seed theo bảng xếp hạng</label>
-                <p className="text-xs text-gray-500 mb-2">
-                  Thứ tự bảng bên dưới = thứ tự seed (không phải thứ tự đấu thật).
-                  Standings sẽ được recompute lại ngay trong transaction tạo bracket — không dùng snapshot cũ.
-                </p>
-                <div className="bg-navy-dark border border-navy-light rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
-                  {availableGroups.length === 0 && <p className="text-gray-500 text-xs">Chưa có bảng đấu nào trong season.</p>}
-                  {availableGroups.map(g => {
-                    const cfg = groupConfigs.find(c => c.groupId === g.id);
-                    return (
-                      <div key={g.id} className="flex items-center gap-2 bg-navy p-2 rounded">
-                        <input
-                          type="checkbox"
-                          className="accent-amber-500 w-4 h-4"
-                          checked={!!cfg}
-                          onChange={(e) => {
-                            if (e.target.checked) setGroupConfigs(prev => [...prev, { groupId: g.id, name: g.name, topN: 1 }]);
-                            else setGroupConfigs(prev => prev.filter(c => c.groupId !== g.id));
-                          }}
-                        />
-                        <span className="text-sm text-gray-300 flex-1">{g.name}</span>
-                        {cfg && (
-                          <>
-                            <button type="button" onClick={() => moveGroupConfig(g.id, -1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển lên">↑</button>
-                            <button type="button" onClick={() => moveGroupConfig(g.id, 1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển xuống">↓</button>
-                            <select
-                              value={cfg.topN}
-                              onChange={(e) => setGroupConfigs(prev => prev.map(c => c.groupId === g.id ? { ...c, topN: Number(e.target.value) } : c))}
-                              className="bg-navy-dark border border-navy-light rounded px-2 py-1 text-xs text-gray-300"
-                            >
-                              {[1, 2, 3, 4, 5, 6].map(n => (
-                                <option key={n} value={n}>Top {n}</option>
-                              ))}
-                            </select>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4 flex-wrap">
-            <button
-              onClick={handleGenerate}
-              disabled={generating || currentSeedCount < 2 || isSeasonClosed}
-              className={`${BTN_PRIMARY} bg-amber-600 hover:bg-amber-500`}
-            >
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
-              Tạo Sơ Đồ Bracket
-            </button>
-            <span className="text-xs text-gray-500">
-              {currentSeedCount} seed đã chọn
-              {previewBracketSize && (
-                <span className="text-gray-400">
-                  {' '}→ bracket {previewBracketSize} ô
-                  {previewByeCount > 0 && <span className="text-amber-400"> ({previewByeCount} bye)</span>}
-                </span>
-              )}
+        {/* FIX: banner riêng cho trường hợp phase hiện tại ĐÃ CÓ bracket
+            (nhưng chưa kịp confirm) và season đang ongoing — ẩn form tạo
+            mới để tránh generate đè lên bracket đang dùng để thi đấu. */}
+        {!isSeasonClosed && !isBracketConfirmed && hideGenerateWhileOngoing && (
+          <div className="flex items-start gap-2.5 text-gray-400 text-xs bg-navy-dark/60 border border-navy-light rounded-xl px-4 py-3 mb-4">
+            <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Phase này đã có sơ đồ bracket và mùa giải đang <strong className="text-gray-300">ongoing</strong> — ẩn
+              form tạo bracket để tránh tạo/ghi đè sơ đồ khi đang thi đấu. Chọn phase khác bên dưới nếu cần tạo
+              bracket mới cho vòng tiếp theo.
             </span>
           </div>
-        </fieldset>
+        )}
+
+        {hideGenerateWhileOngoing ? null : (
+          <fieldset disabled={isSeasonClosed} className="disabled:opacity-60">
+            <div className="flex gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setSeedMode('manual')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold ${seedMode === 'manual' ? 'bg-amber-600 text-white' : 'bg-navy-dark text-gray-400'}`}
+              >
+                Chọn thủ công
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeedMode('standing')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold ${seedMode === 'standing' ? 'bg-amber-600 text-white' : 'bg-navy-dark text-gray-400'}`}
+              >
+                Seed theo bảng xếp hạng
+              </button>
+            </div>
+
+            <div className="mb-6 max-w-xs">
+              <label className="block text-xs font-bold text-gray-400 mb-1">Số lượt trận (Legs)</label>
+              <select value={legs} onChange={e => setLegs(e.target.value)} className={`${SELECT_INPUT_CLASS} w-full`}>
+                <option value={1}>1 lượt</option>
+                <option value={2}>2 lượt (Đi & về)</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 mb-6">
+              {seedMode === 'manual' ? (
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 mb-2">Đội hạt giống (Seeded Teams)</label>
+                  <div className="bg-navy-dark border border-navy-light rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                    {availableTeams.length === 0 && <p className="text-gray-500 text-xs">Không có đội nào hợp lệ.</p>}
+                    {availableTeams.map(st => {
+                      const team = teams.find(t => t.id === st.team_id);
+                      return (
+                        <label key={st.team_id} className="flex items-center gap-2 cursor-pointer hover:bg-navy p-1 rounded">
+                          <input
+                            type="checkbox"
+                            className="accent-amber-500 w-4 h-4 rounded border-gray-600 bg-gray-700"
+                            checked={seededTeamIds.includes(st.team_id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // FIX: chặn add trùng ngay tại nguồn thay vì chỉ
+                                // dựa vào checked={.includes(...)} để tránh hiện
+                                // trạng thái "checked" nhưng thực chất đã có sẵn
+                                // trong mảng từ trước (double add do event bắn 2
+                                // lần / key trùng — nguyên nhân gốc gây CONFLICT).
+                                setSeededTeamIds(prev => prev.includes(st.team_id) ? prev : [...prev, st.team_id]);
+                              } else {
+                                setSeededTeamIds(prev => prev.filter(id => id !== st.team_id));
+                              }
+                            }}
+                          />
+                          <span className="text-sm text-gray-300">{team?.name || `Team ID: ${st.team_id}`}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 mb-2">Seed theo bảng xếp hạng</label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Thứ tự bảng bên dưới = thứ tự seed (không phải thứ tự đấu thật).
+                    Standings sẽ được recompute lại ngay trong transaction tạo bracket — không dùng snapshot cũ.
+                  </p>
+                  <div className="bg-navy-dark border border-navy-light rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                    {availableGroups.length === 0 && <p className="text-gray-500 text-xs">Chưa có bảng đấu nào trong season.</p>}
+                    {availableGroups.map(g => {
+                      const cfg = groupConfigs.find(c => c.groupId === g.id);
+                      return (
+                        <div key={g.id} className="flex items-center gap-2 bg-navy p-2 rounded">
+                          <input
+                            type="checkbox"
+                            className="accent-amber-500 w-4 h-4"
+                            checked={!!cfg}
+                            onChange={(e) => {
+                              if (e.target.checked) setGroupConfigs(prev => [...prev, { groupId: g.id, name: g.name, topN: 1 }]);
+                              else setGroupConfigs(prev => prev.filter(c => c.groupId !== g.id));
+                            }}
+                          />
+                          <span className="text-sm text-gray-300 flex-1">{g.name}</span>
+                          {cfg && (
+                            <>
+                              <button type="button" onClick={() => moveGroupConfig(g.id, -1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển lên">↑</button>
+                              <button type="button" onClick={() => moveGroupConfig(g.id, 1)} className="text-xs text-gray-400 px-1 hover:text-white" aria-label="Di chuyển xuống">↓</button>
+                              <select
+                                value={cfg.topN}
+                                onChange={(e) => setGroupConfigs(prev => prev.map(c => c.groupId === g.id ? { ...c, topN: Number(e.target.value) } : c))}
+                                className="bg-navy-dark border border-navy-light rounded px-2 py-1 text-xs text-gray-300"
+                              >
+                                {[1, 2, 3, 4, 5, 6].map(n => (
+                                  <option key={n} value={n}>Top {n}</option>
+                                ))}
+                              </select>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4 flex-wrap">
+              <button
+                onClick={handleGenerate}
+                disabled={generating || currentSeedCount < 2 || isSeasonClosed}
+                className={`${BTN_PRIMARY} bg-amber-600 hover:bg-amber-500`}
+              >
+                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+                Tạo Sơ Đồ Bracket
+              </button>
+              <span className="text-xs text-gray-500">
+                {currentSeedCount} seed đã chọn
+                {previewBracketSize && (
+                  <span className="text-gray-400">
+                    {' '}→ bracket {previewBracketSize} ô
+                    {previewByeCount > 0 && <span className="text-amber-400"> ({previewByeCount} bye)</span>}
+                  </span>
+                )}
+              </span>
+            </div>
+          </fieldset>
+        )}
       </div>
 
       {availablePhases.length > 1 && (

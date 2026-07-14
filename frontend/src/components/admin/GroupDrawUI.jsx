@@ -183,6 +183,16 @@ export default function GroupDrawUI({ seasonId }) {
   const hasBeenDrawn = groups.some(g => (g.season_teams?.length || 0) > 0);
   const showDrawConfig = groups.length > 0 && !isConfirmed && !isLocked;
 
+  // FIX (ẩn bốc thăm lại giữa chừng mùa giải): với phase order >= 2, season
+  // 'ongoing' không tự khoá isLocked (xem comment trên) — đúng, vì phase đó
+  // được TẠO trong lúc season đã ongoing. Nhưng một khi bảng ĐÃ có đội
+  // (hasBeenDrawn) và season đang ongoing, việc "Bốc thăm lại" hay "Xóa bốc
+  // thăm" hoàn toàn có thể xáo trộn lịch/kết quả trận đã hoặc đang diễn ra,
+  // dù phase.status chưa kịp chuyển 'locked' (confirmGroups() chưa được
+  // bấm). Guard này KHÔNG khoá toàn bộ block (canConfirm / Xác nhận bảng
+  // đấu vẫn phải dùng được), chỉ ẩn 2 hành động phá cấu trúc bảng.
+  const hideRedrawWhileOngoing = hasBeenDrawn && isSeasonOngoing(seasonStatus);
+
   // Capacity thật ra chỉ là upper-bound gửi cho BE để validate — không cần
   // user nhập tay, tự tính từ số đội / số bảng hiện có (làm tròn lên,
   // tối thiểu 2). Nếu chưa đủ dữ liệu (đang load totalTeams / chưa có group)
@@ -219,6 +229,7 @@ export default function GroupDrawUI({ seasonId }) {
   const handleDrawRandom = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
     if (isSeasonPastDraw) return toast.error('Không thể bốc thăm lại ở thời điểm này.');
+    if (hideRedrawWhileOngoing) return toast.error('Bảng đã được bốc thăm và mùa giải đang diễn ra — không thể bốc thăm lại.');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
     if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
     setIsDrawing(true);
@@ -237,6 +248,7 @@ export default function GroupDrawUI({ seasonId }) {
   const handleDrawSeeded = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
     if (isSeasonPastDraw) return toast.error('Không thể bốc thăm lại ở thời điểm này.');
+    if (hideRedrawWhileOngoing) return toast.error('Bảng đã được bốc thăm và mùa giải đang diễn ra — không thể bốc thăm lại.');
     if (groups.length === 0) return toast.error('Chưa có bảng — tạo bảng trước khi bốc thăm');
     if (!computedTeamsPerGroup) return toast.error('Chưa xác định được số đội đã duyệt');
 
@@ -269,6 +281,7 @@ export default function GroupDrawUI({ seasonId }) {
   const handleClearDraw = async () => {
     if (!seasonId) return toast.error('Chưa chọn season');
     if (isSeasonPastDraw) return toast.error('Không thể xoá kết quả bốc thăm ở thời điểm này.');
+    if (hideRedrawWhileOngoing) return toast.error('Bảng đã được bốc thăm và mùa giải đang diễn ra — không thể xoá kết quả bốc thăm.');
     if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ kết quả bốc thăm của vòng này?')) return;
     setIsDrawing(true);
     try {
@@ -561,6 +574,11 @@ export default function GroupDrawUI({ seasonId }) {
               <Lock className="w-3.5 h-3.5" /> Đã khóa
             </span>
           )}
+          {!isConfirmed && !isSeasonPastDraw && hideRedrawWhileOngoing && (
+            <span className="ml-auto flex items-center gap-1.5 bg-gray-500/15 text-gray-400 text-xs font-bold px-2.5 py-1 rounded-full">
+              <Lock className="w-3.5 h-3.5" /> Đã bốc thăm · đang thi đấu
+            </span>
+          )}
         </div>
 
         <div className="p-5 space-y-5">
@@ -585,9 +603,24 @@ export default function GroupDrawUI({ seasonId }) {
             </div>
           )}
 
+          {/* FIX: banner riêng cho trường hợp chưa bị "past draw" cứng (phase
+              order >= 2, chưa locked) nhưng bảng ĐÃ có đội và season đang
+              ongoing — vẫn phải ẩn nút bốc thăm lại/xóa bốc thăm dù phase
+              chưa chuyển 'locked'. */}
+          {!isSeasonPastDraw && hideRedrawWhileOngoing && (
+            <div className="flex items-start gap-2.5 text-gray-400 text-xs bg-navy-dark/60 border border-navy-light rounded-xl px-4 py-3">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Bảng đấu vòng này đã được bốc thăm và mùa giải đang <strong className="text-gray-300">ongoing</strong> —
+                không thể bốc thăm lại hoặc xóa kết quả để tránh xáo trộn trận đang diễn ra. Vẫn có thể xác nhận bảng đấu
+                hoặc kéo-thả đổi chỗ từng đội.
+              </span>
+            </div>
+          )}
+
           {/* Chỉ còn input số pot — dùng riêng cho bốc thăm hạt giống.
               Số đội/bảng không còn là input, tự tính ngầm. */}
-          {showDrawConfig && (
+          {showDrawConfig && !hideRedrawWhileOngoing && (
             <div className="max-w-xs">
               <label className="block text-xs font-bold text-gray-400 mb-1.5">Số pot (chỉ dùng cho bốc thăm hạt giống)</label>
               <input
@@ -675,11 +708,13 @@ export default function GroupDrawUI({ seasonId }) {
             </div>
           )}
 
-          {/* Action bar: draw/clear chỉ hiện khi CÒN sửa được cấu trúc.
-              Confirm/Unconfirm luôn hiện (miễn có group) để đổi trạng thái. */}
+          {/* Action bar: draw/clear chỉ hiện khi CÒN sửa được cấu trúc VÀ
+              chưa bị ẩn bởi hideRedrawWhileOngoing. Confirm/Unconfirm luôn
+              hiện (miễn có group, chưa locked) để đổi trạng thái — kể cả
+              khi hideRedrawWhileOngoing đang active. */}
           {groups.length > 0 && !isLocked && (
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              {!isConfirmed && (
+              {!isConfirmed && !hideRedrawWhileOngoing && (
                 <>
                   <button
                     onClick={handleDrawRandom}
@@ -705,13 +740,15 @@ export default function GroupDrawUI({ seasonId }) {
 
               {!isConfirmed ? (
                 <>
-                  <button
-                    onClick={handleClearDraw}
-                    disabled={anyBusy || groups.length === 0}
-                    className="flex items-center gap-2 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-4 h-4" /> Xóa bốc thăm
-                  </button>
+                  {!hideRedrawWhileOngoing && (
+                    <button
+                      onClick={handleClearDraw}
+                      disabled={anyBusy || groups.length === 0}
+                      className="flex items-center gap-2 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4" /> Xóa bốc thăm
+                    </button>
+                  )}
                   <button
                     onClick={handleConfirmGroups}
                     disabled={anyBusy || !canConfirm}

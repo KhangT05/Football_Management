@@ -4,9 +4,9 @@ import {
   Users, Calendar, Trophy, Plus, CheckCircle2, XCircle,
   Trash2, RefreshCw, AlertTriangle, Loader2, Save, Dices,
   Eraser, Edit, Filter, X, ChevronDown, TrendingUp, ChevronLeft, ChevronRight,
-  Search, Shirt
+  Search, Shirt, Info
 } from 'lucide-react';
-import { seasonTeamApi, teamApi, userApi, roleApi } from '../../api';
+import { seasonTeamApi, teamApi, userApi, roleApi, seasonApi } from '../../api';
 import { useApiQuery, useApiMutation, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -52,6 +52,39 @@ const SEASON_STATUS_COLORS = {
   upcoming: 'text-amber-400',
   cancelled: 'text-gray-500',
 };
+
+// FIX (ẩn tab Bốc thăm/Knockout theo thể thức thực sự của season): khớp
+// SeasonFormat enum (Prisma) + FORMAT_META trong TournamentWizardModal.
+//   round_robin                 -> chỉ có vòng bảng, KHÔNG có knockout
+//   knockout                    -> chỉ có knockout, KHÔNG có vòng bảng
+//   round_robin_knockout        -> có cả 2
+//   multi_round_robin_knockout  -> có cả 2
+// Trước đây 2 tab "Bốc thăm chia bảng" và "Vòng Knockout" LUÔN hiện bất kể
+// rule của season là gì — với season thuần round_robin, tab Knockout vẫn
+// cho vào, GroupDrawUI/KnockoutUI vẫn cho bấm "tạo" và chỉ bị BE từ chối ở
+// bước generate/tạo phase (validateFormatConsistency phía BE), khiến admin
+// tưởng bug UI. Ngược lại season thuần knockout thì tab "Bốc thăm chia bảng"
+// vĩnh viễn hiện "Chưa có vòng đấu" vì round_robin phase không bao giờ được
+// tạo cho thể thức này.
+const FORMAT_PHASE_META = {
+  round_robin: { hasGroupPhase: true, hasKnockout: false },
+  knockout: { hasGroupPhase: false, hasKnockout: true },
+  round_robin_knockout: { hasGroupPhase: true, hasKnockout: true },
+  multi_round_robin_knockout: { hasGroupPhase: true, hasKnockout: true },
+};
+
+const FORMAT_LABEL = {
+  round_robin: 'Vòng tròn',
+  knockout: 'Loại trực tiếp',
+  round_robin_knockout: 'Vòng bảng → Loại trực tiếp',
+  multi_round_robin_knockout: 'Nhiều vòng bảng → Loại trực tiếp',
+};
+
+// Đọc format từ nhiều khả năng tên field (tuỳ serialize của BE) — ưu tiên
+// camelCase đúng theo Prisma model (`tournamentRule`), fallback snake_case
+// để an toàn nếu response được map lại.
+const extractRuleFormat = (seasonLike) =>
+  seasonLike?.tournamentRule?.format ?? seasonLike?.tournament_rule?.format ?? null;
 
 export default function ManageSeasonTeams() {
   const toast = useToastStore();
@@ -303,6 +336,55 @@ export default function ManageSeasonTeams() {
 
   const selectedSeasonObj = seasons.find(s => String(s.id) === String(selectedSeason));
 
+  // FIX: format của rule quyết định season đó có vòng bảng / knockout hay
+  // không — xem giải thích ở FORMAT_PHASE_META phía trên.
+  //
+  // Nguồn ưu tiên 1: season object trong store `seasons` (nếu BE đã include
+  // sẵn tournamentRule khi list). Nếu chưa có (embeddedFormat null) thì
+  // fetch riêng seasonApi.getById(seasonId) một lần và cache theo seasonId
+  // — tránh gọi lại API mỗi lần re-render, và tránh phải sửa seasonStore
+  // hiện có (không biết chắc BE list API có include relation hay không).
+  const embeddedFormat = extractRuleFormat(selectedSeasonObj);
+  const [seasonFormatCache, setSeasonFormatCache] = useState({});
+
+  useEffect(() => {
+    if (!selectedSeason) return;
+    if (embeddedFormat) return; // đã có sẵn từ seasons store, khỏi fetch thêm
+    if (Object.prototype.hasOwnProperty.call(seasonFormatCache, selectedSeason)) return; // đã fetch (kể cả fail -> null)
+
+    let cancelled = false;
+    seasonApi.getById(selectedSeason)
+      .then(res => {
+        if (cancelled) return;
+        const payload = typeof res?.status === 'boolean' ? res.data : res;
+        setSeasonFormatCache(prev => ({ ...prev, [selectedSeason]: extractRuleFormat(payload) }));
+      })
+      .catch(err => {
+        console.error('[ManageSeasonTeams] Không tải được thể thức (rule.format) của season:', err);
+        if (!cancelled) setSeasonFormatCache(prev => ({ ...prev, [selectedSeason]: null }));
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeason, embeddedFormat]);
+
+  // seasonFormat === null/undefined (chưa xác định được, do lỗi tải hoặc
+  // chưa gán rule) -> KHÔNG ẩn tab nào cả (an toàn, giữ hành vi cũ) thay vì
+  // đoán sai và ẩn nhầm 1 tính năng hợp lệ.
+  const seasonFormat = embeddedFormat ?? seasonFormatCache[selectedSeason] ?? null;
+  const formatMeta = seasonFormat ? FORMAT_PHASE_META[seasonFormat] : null;
+  const showDrawTab = !selectedSeason || !formatMeta || formatMeta.hasGroupPhase;
+  const showKnockoutTab = !selectedSeason || !formatMeta || formatMeta.hasKnockout;
+
+  // Nếu đang đứng ở tab mà season vừa chọn không hỗ trợ (VD: đang ở tab
+  // Knockout rồi đổi sang 1 season thuần round_robin) -> tự động lùi về
+  // tab "Danh sách đội đăng ký" thay vì để trống nội dung hoặc giữ nguyên
+  // tab đã bị ẩn nút bấm nhưng nội dung vẫn render ngầm.
+  useEffect(() => {
+    if (activeTab === 'draw' && !showDrawTab) setActiveTab('teams');
+    else if (activeTab === 'knockout' && !showKnockoutTab) setActiveTab('teams');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDrawTab, showKnockoutTab]);
+
   return (
     <AdminLayout>
       <div className="w-full space-y-6 animate-fade-in pb-20">
@@ -358,6 +440,16 @@ export default function ManageSeasonTeams() {
                 {selectedSeasonObj.name} — {selectedSeasonObj.status}
               </div>
             )}
+
+            {/* FIX: hiện rõ thể thức của season đang chọn — giải thích lý do
+                1 trong 2 tab Bốc thăm/Knockout có thể không xuất hiện, thay
+                vì để admin tự hỏi "tab biến đâu mất". */}
+            {selectedSeason && seasonFormat && (
+              <div className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                <Info className="w-3 h-3 shrink-0" />
+                Thể thức: <span className="text-gray-300 font-semibold">{FORMAT_LABEL[seasonFormat] ?? seasonFormat}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -391,18 +483,28 @@ export default function ManageSeasonTeams() {
             >
               Danh sách đội đăng ký
             </button>
-            <button
-              className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'draw' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-              onClick={() => setActiveTab('draw')}
-            >
-              <Dices className="w-4 h-4" /> Bốc thăm chia bảng
-            </button>
-            <button
-              className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'knockout' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-              onClick={() => setActiveTab('knockout')}
-            >
-              <Trophy className="w-4 h-4" /> Vòng Knockout
-            </button>
+            {/* FIX: chỉ hiện khi season chưa chọn (chưa biết rule) hoặc rule
+                của season có vòng bảng (round_robin / *_knockout). Season
+                thuần 'knockout' sẽ không có nút này — round_robin phase
+                không bao giờ tồn tại cho thể thức đó. */}
+            {showDrawTab && (
+              <button
+                className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'draw' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+                onClick={() => setActiveTab('draw')}
+              >
+                <Dices className="w-4 h-4" /> Bốc thăm chia bảng
+              </button>
+            )}
+            {/* FIX: tương tự — ẩn khi season thuần 'round_robin' (không bao
+                giờ có knockout phase). */}
+            {showKnockoutTab && (
+              <button
+                className={`px-6 py-3 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'knockout' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+                onClick={() => setActiveTab('knockout')}
+              >
+                <Trophy className="w-4 h-4" /> Vòng Knockout
+              </button>
+            )}
           </div>
 
           {activeTab === 'teams' && (
@@ -520,10 +622,14 @@ export default function ManageSeasonTeams() {
             </div>
           )}
 
-          {activeTab === 'draw' && (
+          {/* FIX: guard thêm showDrawTab/showKnockoutTab phòng trường hợp
+              activeTab còn "kẹt" ở tab vừa bị ẩn trong đúng 1 khung render
+              trước khi useEffect kịp chạy setActiveTab('teams') — tránh
+              render nhầm 1 tab đáng lẽ không tồn tại với season hiện tại. */}
+          {activeTab === 'draw' && showDrawTab && (
             <GroupDrawUI seasonId={selectedSeason ? Number(selectedSeason) : null} />
           )}
-          {activeTab === 'knockout' && (
+          {activeTab === 'knockout' && showKnockoutTab && (
             <KnockoutUI seasonId={selectedSeason} />
           )}
 
