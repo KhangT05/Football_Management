@@ -592,6 +592,7 @@ export class StandingsService {
                     bank_id: true,
                     bank_account_no: true,
                     bank_account_name: true,
+                    pitch_type: true,
                     tournament: {
                         select: { id: true, name: true },
                     },

@@ -639,14 +639,19 @@ const models = {
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["draft"] }, { "dataType": "enum", "enums": ["in_progress"] }, { "dataType": "enum", "enums": ["locked"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_": {
+    "PitchType": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true }, "status": { "ref": "SeasonStatus", "required": true }, "start_date": { "dataType": "datetime", "required": true }, "end_date": { "dataType": "datetime", "required": true }, "registration_deadline": { "dataType": "datetime", "required": true }, "max_teams": { "dataType": "double", "required": true }, "is_registration_open": { "dataType": "boolean", "required": true }, "bank_id": { "dataType": "string", "required": true }, "bank_account_no": { "dataType": "string", "required": true }, "bank_account_name": { "dataType": "string", "required": true }, "cancel_reason": { "dataType": "string", "required": true }, "group_count": { "dataType": "double", "required": true } }, "validators": {} },
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["san_5"] }, { "dataType": "enum", "enums": ["san_7"] }, { "dataType": "enum", "enums": ["san_11"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-pitch_type-or-bank_id-or-bank_account_no-or-bank_account_name_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true }, "status": { "ref": "SeasonStatus", "required": true }, "start_date": { "dataType": "datetime", "required": true }, "end_date": { "dataType": "datetime", "required": true }, "registration_deadline": { "dataType": "datetime", "required": true }, "max_teams": { "dataType": "double", "required": true }, "is_registration_open": { "dataType": "boolean", "required": true }, "bank_id": { "dataType": "string", "required": true }, "bank_account_no": { "dataType": "string", "required": true }, "bank_account_name": { "dataType": "string", "required": true }, "cancel_reason": { "dataType": "string", "required": true }, "group_count": { "dataType": "double", "required": true }, "pitch_type": { "ref": "PitchType", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SeasonListItem": {
         "dataType": "refAlias",
-        "type": { "dataType": "intersection", "subSchemas": [{ "ref": "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "_count": { "dataType": "nestedObjectLiteral", "nestedProperties": { "phases": { "dataType": "double", "required": true } }, "required": true }, "tournament": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true } } }], "validators": {} },
+        "type": { "dataType": "intersection", "subSchemas": [{ "ref": "Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-pitch_type-or-bank_id-or-bank_account_no-or-bank_account_name_" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "_count": { "dataType": "nestedObjectLiteral", "nestedProperties": { "phases": { "dataType": "double", "required": true } }, "required": true }, "tournament": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } }, "required": true } } }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PaginatedResult_SeasonListItem_": {
@@ -661,11 +666,6 @@ const models = {
     "Decimal": {
         "dataType": "refAlias",
         "type": { "dataType": "string", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PitchType": {
-        "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["san_5"] }, { "dataType": "enum", "enums": ["san_7"] }, { "dataType": "enum", "enums": ["san_11"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DefaultSelection__36_SeasonPayload_": {
@@ -685,7 +685,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofcreateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "bank_account_name": { "dataType": "string" }, "bank_account_no": { "dataType": "string" }, "bank_id": { "dataType": "string" }, "registration_deadline": { "dataType": "datetime" }, "end_date": { "dataType": "datetime" }, "start_date": { "dataType": "datetime" }, "description": { "dataType": "string" }, "group_count": { "dataType": "double", "required": true }, "tournament_rule_id": { "dataType": "double", "required": true }, "tournament_id": { "dataType": "double", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "is_registration_open": { "dataType": "boolean", "required": true }, "max_teams": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "bank_account_name": { "dataType": "string" }, "bank_account_no": { "dataType": "string" }, "bank_id": { "dataType": "string" }, "registration_deadline": { "dataType": "datetime" }, "end_date": { "dataType": "datetime" }, "start_date": { "dataType": "datetime" }, "description": { "dataType": "string" }, "pitch_type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["san_5"] }, { "dataType": "enum", "enums": ["san_7"] }, { "dataType": "enum", "enums": ["san_11"] }], "required": true }, "group_count": { "dataType": "double", "required": true }, "tournament_rule_id": { "dataType": "double", "required": true }, "tournament_id": { "dataType": "double", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "is_registration_open": { "dataType": "boolean", "required": true }, "max_teams": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateSeasonDto": {
@@ -695,7 +695,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateSeasonSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "tournament_rule_id": { "dataType": "double" }, "group_count": { "dataType": "double" }, "bank_account_name": { "dataType": "string" }, "bank_account_no": { "dataType": "string" }, "bank_id": { "dataType": "string" }, "is_registration_open": { "dataType": "boolean" }, "max_teams": { "dataType": "double" }, "registration_deadline": { "dataType": "datetime" }, "end_date": { "dataType": "datetime" }, "start_date": { "dataType": "datetime" }, "description": { "dataType": "string" }, "is_active": { "dataType": "boolean" }, "name": { "dataType": "string" } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "tournament_rule_id": { "dataType": "double" }, "pitch_type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["san_5"] }, { "dataType": "enum", "enums": ["san_7"] }, { "dataType": "enum", "enums": ["san_11"] }] }, "group_count": { "dataType": "double" }, "bank_account_name": { "dataType": "string" }, "bank_account_no": { "dataType": "string" }, "bank_id": { "dataType": "string" }, "is_registration_open": { "dataType": "boolean" }, "max_teams": { "dataType": "double" }, "registration_deadline": { "dataType": "datetime" }, "end_date": { "dataType": "datetime" }, "start_date": { "dataType": "datetime" }, "description": { "dataType": "string" }, "is_active": { "dataType": "boolean" }, "name": { "dataType": "string" } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateSeasonDto": {

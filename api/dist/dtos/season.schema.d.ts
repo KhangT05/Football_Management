@@ -7,6 +7,11 @@ export declare const SeasonStatusSchema: z.ZodEnum<{
     finished: "finished";
     cancelled: "cancelled";
 }>;
+export declare const PitchType: z.ZodEnum<{
+    san_5: "san_5";
+    san_7: "san_7";
+    san_11: "san_11";
+}>;
 export declare const CancelSeasonSchema: z.ZodObject<{
     cancel_reason: z.ZodString;
 }, z.core.$strip>;
@@ -22,6 +27,11 @@ export declare const createSeasonSchema: z.ZodObject<{
     tournament_id: z.ZodNumber;
     tournament_rule_id: z.ZodNumber;
     group_count: z.ZodDefault<z.ZodNumber>;
+    pitch_type: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        san_5: "san_5";
+        san_7: "san_7";
+        san_11: "san_11";
+    }>>>;
     bank_id: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     bank_account_no: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     bank_account_name: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -39,6 +49,11 @@ export declare const updateSeasonSchema: z.ZodObject<{
     bank_account_no: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     bank_account_name: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     group_count: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
+    pitch_type: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        san_5: "san_5";
+        san_7: "san_7";
+        san_11: "san_11";
+    }>>>>;
     tournament_rule_id: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const UpdateSeasonStatusSchema: z.ZodObject<{
@@ -49,7 +64,7 @@ export declare const UpdateSeasonStatusSchema: z.ZodObject<{
         finished: "finished";
     }>;
 }, z.core.$strip>;
-export type SeasonListItem = Pick<Season, "id" | "name" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count' | 'bank_id' | 'bank_account_no' | 'bank_account_name'> & {
+export type SeasonListItem = Pick<Season, "id" | "name" | "status" | "start_date" | "end_date" | "registration_deadline" | "max_teams" | 'cancel_reason' | 'is_registration_open' | 'group_count' | 'pitch_type' | 'bank_id' | 'bank_account_no' | 'bank_account_name'> & {
     tournament: {
         id: number;
         name: string;

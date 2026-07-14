@@ -1,14 +1,17 @@
 import { useMemo } from 'react';
 import { X, Save, Loader2, Users, AlertCircle } from 'lucide-react';
 import useLineupSelection from '../../hooks/useLineupSelection';
-import { mapPosition, getSquadLimit, POS_LABEL_VI } from '../../utils/position';
+import { mapPosition, getSquadLimit, getPitchInfo, PITCH_LABEL_VI, POS_LABEL_VI } from '../../utils/position';
 import PitchFormation from '../PitchFormation';
 
 // roster (prop): [{ player_id, name, number, position, avatar }]
 export default function LineupBuilderModal({ match, teamId, roster: rawRoster, onClose, onSave }) {
   const squadLimit = useMemo(() => getSquadLimit(match), [match]);
-  const { pitchType } = useMemo(() => getPitchFormation(match), [match]);
+  // Chỉ dùng để hiện badge "Sân 5/7/11" trên header — giá trị thật sự chốt
+  // giới hạn nằm trong squadLimit (đã đọc pitch_type bên trong getSquadLimit).
+  const { pitchType } = useMemo(() => getPitchInfo(match), [match]);
 
+  // Normalize field names khớp với hook + PitchFormation (jersey_number, không phải number).
   const roster = useMemo(() => rawRoster.map(p => ({
     player_id: p.player_id,
     name: p.name,
@@ -19,7 +22,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
 
   const {
     selections, isLoading, isSaving,
-    startersCount, maxStarters, formation,
+    startersCount, maxStarters,
     starters, substitutes,
     toggleLineupType, handleDropOnPitch, setCaptain, save,
   } = useLineupSelection({
@@ -39,9 +42,12 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
 
         <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 shrink-0">
           <div>
-            <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3 flex-wrap">
               <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
-              <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-lg">
+              {/* NEW — loại sân lấy từ season của match, không cho chọn tay
+                  (đã cố định theo giải đấu). Chỉ mang tính hiển thị; giới hạn
+                  thật sự nằm trong squadLimit ở trên. */}
+              <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-lg align-middle">
                 {PITCH_LABEL_VI[pitchType] ?? pitchType}
               </span>
             </h3>
@@ -61,7 +67,9 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-6 bg-navy/20">
 
-          {/* Sơ đồ sân — kéo cầu thủ từ danh sách bên phải vào đúng hàng vị trí */}
+          {/* Sơ đồ sân — kéo cầu thủ từ danh sách bên phải vào đúng hàng vị trí.
+              Đội tự chọn sơ đồ chiến thuật (DEF/MID/FW không bị ép tỷ lệ cố
+              định), chỉ cần đủ tổng số theo luật sân + đúng 1 thủ môn. */}
           <div className="flex-1 min-w-[280px]">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Sơ đồ đội hình</h4>
@@ -77,7 +85,6 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
             ) : (
               <PitchFormation
                 starters={starters}
-                formation={formation}
                 onRemove={pid => toggleLineupType(pid, 'starter')}
                 onSetCaptain={setCaptain}
                 onDropPlayer={handleDropOnPitch}
