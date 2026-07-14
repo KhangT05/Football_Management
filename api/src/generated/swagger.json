@@ -1979,7 +1979,15 @@
 					"locked"
 				]
 			},
-			"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_": {
+			"PitchType": {
+				"type": "string",
+				"enum": [
+					"san_5",
+					"san_7",
+					"san_11"
+				]
+			},
+			"Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-pitch_type-or-bank_id-or-bank_account_no-or-bank_account_name_": {
 				"properties": {
 					"name": {
 						"type": "string"
@@ -2025,6 +2033,9 @@
 					"group_count": {
 						"type": "number",
 						"format": "double"
+					},
+					"pitch_type": {
+						"$ref": "#/components/schemas/PitchType"
 					}
 				},
 				"required": [
@@ -2040,7 +2051,8 @@
 					"bank_account_no",
 					"bank_account_name",
 					"cancel_reason",
-					"group_count"
+					"group_count",
+					"pitch_type"
 				],
 				"type": "object",
 				"description": "From T, pick a set of properties whose keys are in the union K"
@@ -2048,7 +2060,7 @@
 			"SeasonListItem": {
 				"allOf": [
 					{
-						"$ref": "#/components/schemas/Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-bank_id-or-bank_account_no-or-bank_account_name_"
+						"$ref": "#/components/schemas/Pick_Season.id-or-name-or-status-or-start_date-or-end_date-or-registration_deadline-or-max_teams-or-cancel_reason-or-is_registration_open-or-group_count-or-pitch_type-or-bank_id-or-bank_account_no-or-bank_account_name_"
 					},
 					{
 						"properties": {
@@ -2110,14 +2122,6 @@
 			},
 			"Decimal": {
 				"type": "string"
-			},
-			"PitchType": {
-				"type": "string",
-				"enum": [
-					"san_5",
-					"san_7",
-					"san_11"
-				]
 			},
 			"DefaultSelection__36_SeasonPayload_": {
 				"properties": {
@@ -2264,6 +2268,14 @@
 					"description": {
 						"type": "string"
 					},
+					"pitch_type": {
+						"type": "string",
+						"enum": [
+							"san_5",
+							"san_7",
+							"san_11"
+						]
+					},
 					"group_count": {
 						"type": "number",
 						"format": "double"
@@ -2291,6 +2303,7 @@
 					}
 				},
 				"required": [
+					"pitch_type",
 					"group_count",
 					"tournament_rule_id",
 					"tournament_id",
@@ -2309,6 +2322,14 @@
 					"tournament_rule_id": {
 						"type": "number",
 						"format": "double"
+					},
+					"pitch_type": {
+						"type": "string",
+						"enum": [
+							"san_5",
+							"san_7",
+							"san_11"
+						]
 					},
 					"group_count": {
 						"type": "number",

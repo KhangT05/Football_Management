@@ -1,4 +1,4 @@
-import { PrismaClient, MatchLineup } from '../generated/prisma/client.js';
+import { PrismaClient, MatchLineup, PitchType } from '../generated/prisma/client.js';
 import { RegisterLineupDto, UpdateLineupEntryDto } from '../dtos/matchlineup.schema.js';
 export declare class MatchLineupService {
     private readonly prisma;
@@ -12,8 +12,13 @@ export declare class MatchLineupService {
     private assertNoDuplicatePlayerId;
     private assertRule;
     private assertSquadSize;
+    private assertStartersFormation;
     getByMatch(matchId: number): Promise<MatchLineup[]>;
     getByTeam(matchId: number, teamId: number): Promise<MatchLineup[]>;
+    getFormationForMatch(matchId: number): Promise<{
+        pitchType: PitchType;
+        totalStarters: number;
+    }>;
     register(dto: RegisterLineupDto): Promise<MatchLineup[]>;
     updateEntry(dto: UpdateLineupEntryDto): Promise<MatchLineup>;
     removeEntry(matchId: number, teamId: number, playerId: number): Promise<void>;

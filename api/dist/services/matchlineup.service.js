@@ -1,8 +1,19 @@
 // services/match-lineup.service.ts
-import { Prisma, MatchStatus } from '../generated/prisma/client.js';
+import { Prisma, MatchStatus, PitchType } from '../generated/prisma/client.js';
 import { createAppError } from '../common/app.error.js';
 const REGISTER_CUTOFF_MS = 60 * 60 * 1000;
 const UPDATE_CUTOFF_MS = 10 * 60 * 1000;
+// Số lượng đá chính CỐ ĐỊNH theo loại sân (chỉ TỔNG SỐ, không ép cứng tỷ lệ
+// DEF/MID/FW — đội bóng tự chọn sơ đồ chiến thuật riêng, vd sân 5 có thể đá
+// 2-1-1 hoặc 1-2-1 tuỳ HLV, không phải lúc nào cũng 1-2-1-1). Đây KHÔNG phải
+// tournament_rule.min/max_players_per_team (cái đó giới hạn TỔNG quân số đăng
+// ký gồm cả dự bị) — đây là số người XUẤT PHÁT trên sân theo đúng luật sân
+// 5/7/11 người.
+const PITCH_TOTAL_STARTERS = {
+    san_5: 5,
+    san_7: 7,
+    san_11: 11,
+};
 const LINEUP_MUTABLE_STATUSES = [MatchStatus.scheduled];
 export class MatchLineupService {
     prisma;
@@ -21,6 +32,7 @@ export class MatchLineupService {
                     select: {
                         season: {
                             select: {
+                                pitch_type: true, // NEW — cần để tính sơ đồ đá chính theo sân
                                 tournamentRule: {
                                     select: { min_players_per_team: true, max_players_per_team: true },
                                 },
@@ -39,6 +51,9 @@ export class MatchLineupService {
             home_team_id: match.home_team_id,
             away_team_id: match.away_team_id,
             status: match.status,
+            // Season.pitch_type có default san_5 ở schema nên luôn có giá trị
+            // khi season tồn tại; fallback san_5 chỉ phòng match chưa gán phase/season.
+            pitch_type: match.phase?.season?.pitch_type ?? PitchType.san_5,
             tournament_rule: match.phase?.season?.tournamentRule ?? null,
         };
     }
@@ -62,9 +77,9 @@ export class MatchLineupService {
         if (players.filter(p => p.is_captain).length > 1)
             throw createAppError('BAD_REQUEST', 'Mỗi team chỉ được có 1 đội trưởng');
     }
-    // FIX: jersey_number không tồn tại trong MatchLineup — không có gì để check
-    // trùng ở đây. Thay vào đó check player_id trùng trong payload, vì đây mới
-    // là invariant thật sự được bảo vệ bởi @@unique([match_id, player_id]).
+    // jersey_number không tồn tại trong MatchLineup — không có gì để check
+    // trùng ở đây. Check player_id trùng trong payload, vì đây mới là
+    // invariant thật sự được bảo vệ bởi @@unique([match_id, player_id]).
     assertNoDuplicatePlayerId(players) {
         const ids = players.map(p => p.player_id);
         if (new Set(ids).size !== ids.length)
@@ -75,14 +90,34 @@ export class MatchLineupService {
             throw createAppError('BAD_REQUEST', 'Không tìm thấy rule cho giải đấu này (season chưa gán TournamentRule)');
         return { min: ctx.tournament_rule.min_players_per_team, max: ctx.tournament_rule.max_players_per_team };
     }
+    // Check TỔNG quân số đăng ký (đá chính + dự bị) nằm trong khoảng
+    // tournament_rule cho phép. KHÔNG liên quan tới số lượng đá chính theo
+    // từng vị trí — đó là việc của assertStartersFormation bên dưới.
     assertSquadSize(count, min, max) {
         if (count < min || count > max)
             throw createAppError('BAD_REQUEST', `Số lượng đăng ký phải từ ${min} đến ${max} cầu thủ (hiện tại: ${count})`);
     }
+    // NEW — validate đội hình đá chính đúng LUẬT sân (sân 5/7/11), nhưng để
+    // tự do chọn sơ đồ chiến thuật (DEF/MID/FW). Chỉ ép 2 điều duy nhất mà
+    // luật bóng đá thực sự bắt buộc:
+    //   1. Tổng số cầu thủ đá chính = đúng số người/sân (5, 7, hoặc 11)
+    //   2. Đúng 1 thủ môn (không được 0 hoặc 2+ GK cùng lúc đá chính)
+    // Tách biệt khỏi assertSquadSize: assertSquadSize check TỔNG đăng ký
+    // (chính + dự bị) nằm trong khoảng tournament_rule; hàm này chỉ check
+    // riêng đội hình XUẤT PHÁT. Validate lại ở BE là bắt buộc — payload có
+    // thể bị sửa tay trước khi gửi, FE chỉ chặn UX chứ không phải nguồn sự thật.
+    assertStartersFormation(pitchType, players) {
+        const needed = PITCH_TOTAL_STARTERS[pitchType];
+        const starters = players.filter(p => (p.lineup_type ?? 'starter') === 'starter');
+        if (starters.length !== needed)
+            throw createAppError('BAD_REQUEST', `Sân ${pitchType.replace('san_', '')} cần đúng ${needed} cầu thủ đá chính (hiện tại: ${starters.length})`);
+        const gkCount = starters.filter(p => p.position === 'goalkeeper').length;
+        if (gkCount !== 1)
+            throw createAppError('BAD_REQUEST', `Đội hình chính phải có đúng 1 thủ môn (hiện tại: ${gkCount})`);
+    }
     getByMatch(matchId) {
         return this.prisma.matchLineup.findMany({
             where: { match_id: matchId },
-            // FIX: bỏ jersey_number khỏi orderBy (field không tồn tại trên model này)
             orderBy: [{ team_id: 'asc' }, { lineup_type: 'asc' }, { player_id: 'asc' }],
         });
     }
@@ -90,6 +125,14 @@ export class MatchLineupService {
         return this.prisma.matchLineup.findMany({
             where: { match_id: matchId, team_id: teamId },
         });
+    }
+    // NEW — expose thông tin sân của 1 match cho FE preview trước khi mở modal
+    // xếp đội hình (vd hiển thị badge "Sân 7" + tổng số slot đá chính). FE tự
+    // quyết định phân bổ DEF/MID/FW theo sơ đồ chiến thuật, chỉ cần đủ tổng
+    // và đúng 1 thủ môn.
+    async getFormationForMatch(matchId) {
+        const ctx = await this.getMatchContextOrFail(matchId);
+        return { pitchType: ctx.pitch_type, totalStarters: PITCH_TOTAL_STARTERS[ctx.pitch_type] };
     }
     // ─── Register (bulk upsert) ────────────────────────────────────────────────
     //
@@ -108,8 +151,9 @@ export class MatchLineupService {
             this.assertCanRegister(ctx.scheduled_at);
             this.assertSingleCaptain(dto.players);
             this.assertNoDuplicatePlayerId(dto.players);
-            const { min, max } = await this.assertRule(ctx);
+            const { min, max } = this.assertRule(ctx);
             this.assertSquadSize(dto.players.length, min, max);
+            this.assertStartersFormation(ctx.pitch_type, dto.players); // NEW — chốt đúng sơ đồ sân
             const playerIds = dto.players.map(p => p.player_id);
             const validTeamPlayers = await tx.teamPlayer.findMany({
                 where: {
@@ -144,9 +188,8 @@ export class MatchLineupService {
                 });
             }
             catch (err) {
-                // FIX: P2002 ở đây CHỈ có thể là @@unique([match_id, player_id])
-                // — tức 1 player_id xuất hiện 2 lần trong batch insert. Không liên
-                // quan gì tới "số áo" (field không tồn tại trên model này).
+                // P2002 ở đây CHỈ có thể là @@unique([match_id, player_id])
+                // — tức 1 player_id xuất hiện 2 lần trong batch insert.
                 if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
                     throw createAppError('CONFLICT', 'Có player_id bị đăng ký trùng cho match này');
                 throw err;
@@ -155,6 +198,14 @@ export class MatchLineupService {
         });
     }
     // ─── Update single entry ──────────────────────────────────────────────────
+    //
+    // Patch 1 entry đơn lẻ (đổi vị trí, chuyển chính<->dự bị, đổi captain...).
+    // KHÔNG chạy assertStartersFormation ở đây — patch từng entry một có thể
+    // tạm thời phá vỡ sơ đồ sân (vd đang đổi 2 cầu thủ chỗ nhau qua 2 lần gọi
+    // liên tiếp), validate cứng ở mức "toàn đội hình phải đúng sơ đồ" chỉ áp
+    // dụng cho hành động CHỐT đội hình cuối (register bulk) — đúng với cách
+    // FE hiện tại hoạt động: LineupBuilderModal luôn gọi register() bulk qua
+    // nút "Lưu Đội Hình", không có update-entry rời rạc nào là điểm chốt.
     async updateEntry(dto) {
         const ctx = await this.getMatchContextOrFail(dto.match_id);
         this.assertMatchMutable(ctx);
