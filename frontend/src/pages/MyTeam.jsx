@@ -773,6 +773,7 @@ export default function MyTeam() {
       await playerApi.createForTeam(activeTeam.id, {
         name: values.name.trim(),
         user_email: values.email.trim(), // field trong form tên là "email", map sang key API "user_email"
+        student_code: values.student_code?.trim() || undefined,
         date_of_birth: values.date_of_birth,
         position: values.position,
         jersey_number: parseInt(values.number, 10),
@@ -840,6 +841,7 @@ export default function MyTeam() {
     setModalError('');
     setPlayerForm({
       name: player.player?.user?.name ?? player.player?.name ?? player.name ?? '',
+      student_code: player.player?.user?.student_code ?? '',
       number: player.number,
       position: player.position,
       role: player.role,

@@ -172,6 +172,26 @@ export default function PlayerFormModal({
                   : 'bg-navy-dark/50 border-navy-light/50 text-gray-400 cursor-not-allowed'
               }`}
               title={!isAdd ? 'Họ tên được quản lý ở phần tài khoản' : ''}
+              disabled={!isAdd}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+              Mã số sinh viên (MSSV)
+            </label>
+            <input
+              type="text"
+              placeholder="VD: B20DCCN123"
+              value={form.student_code ?? ''}
+              onChange={handleField('student_code')}
+              className={`w-full px-5 py-4 border rounded-2xl text-sm transition-all font-bold ${
+                isAdd
+                  ? 'bg-navy/50 border-navy-light text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                  : 'bg-navy-dark/50 border-navy-light/50 text-gray-400 cursor-not-allowed'
+              }`}
+              title={!isAdd ? 'MSSV được quản lý ở phần tài khoản' : ''}
+              disabled={!isAdd}
             />
           </div>
 
