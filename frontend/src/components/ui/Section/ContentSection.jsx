@@ -145,6 +145,23 @@ export default function ContentSection() {
                         .sort((a, b) => b.scheduled_at - a.scheduled_at)
                         .slice(0, 3);
 
+                    const matchesToFetchResult = [...live, ...finished].filter(m => RESULT_AVAILABLE_STATUSES.has(m.status));
+                    if (matchesToFetchResult.length > 0) {
+                        const settled = await Promise.allSettled(
+                            matchesToFetchResult.map(m => matchApi.getMatchResult(m.id))
+                        );
+                        settled.forEach((res, i) => {
+                            if (res.status === 'fulfilled') {
+                                const r = res.value?.data?.data ?? res.value?.data ?? res.value;
+                                if (r) {
+                                    const m = matchesToFetchResult[i];
+                                    m.scoreA = r.home_final_score ?? r.home_score ?? m.scoreA;
+                                    m.scoreB = r.away_final_score ?? r.away_score ?? m.scoreB;
+                                }
+                            }
+                        });
+                    }
+
                     setMatches({ live, upcoming, finished });
                 }
             } catch (err) {

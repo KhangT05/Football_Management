@@ -384,7 +384,7 @@ export default function MatchDetail() {
               <div className="flex justify-center items-center gap-4 md:gap-16">
                 {/* Jersey/kit chỉ hiện khi đã có tỉ số xác nhận — trước đó
                     kit có thể chưa chốt (đổi áo phút chót), tránh gây hiểu nhầm */}
-                <TeamAvatar name={homeName} side="home" logo={homeTeamInfo?.logo} jersey={hasScore ? jerseys.home : null} size="lg" />
+                <TeamAvatar name={homeName} side="home" logo={homeTeamInfo?.logo} jersey={hasScore ? jerseys.home : null} size="lg" isWinner={homeIsWinner} />
 
                 {/* Score / VS / TBD */}
                 <div className="flex flex-col items-center shrink-0 gap-3">
@@ -414,7 +414,7 @@ export default function MatchDetail() {
                   <StatusBadge status={match.status} size="fancy" />
                 </div>
 
-                <TeamAvatar name={awayName} side="away" logo={awayTeamInfo?.logo} jersey={hasScore ? jerseys.away : null} size="lg" />
+                <TeamAvatar name={awayName} side="away" logo={awayTeamInfo?.logo} jersey={hasScore ? jerseys.away : null} size="lg" isWinner={awayIsWinner} />
               </div>
 
               {/* Danh sách ghi bàn/thẻ tóm tắt kiểu Google — thay cho chip

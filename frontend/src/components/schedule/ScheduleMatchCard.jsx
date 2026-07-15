@@ -292,7 +292,7 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
         {/* Score / VS */}
         <div className="shrink-0 text-center px-2">
           {hasScore ? (
-            <div className={`bg-navy-dark border border-navy-light rounded-2xl px-6 py-3 shadow-[inset_0_2px_10px_rgba(0,0,0,0.4)] relative ${extraTime && penalty ? 'mb-10' : (extraTime || penalty) ? 'mb-6' : ''}`}>
+            <div className={`flex items-center justify-center bg-navy-dark border border-navy-light rounded-2xl px-6 py-3 shadow-[inset_0_2px_10px_rgba(0,0,0,0.4)] relative ${extraTime && penalty ? 'mb-10' : (extraTime || penalty) ? 'mb-6' : ''}`}>
               <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-navy-dark border border-navy-light px-2 py-0.5 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
                 {qualifierLabel ?? 'Kết quả'}
               </div>
@@ -301,7 +301,7 @@ export default function ScheduleMatchCard({ match, idx, onSelectMatch, view = 'd
                 }`}>
                 {homeScore}
               </span>
-              <span className="text-2xl font-black text-gray-600 mx-3">—</span>
+              <span className="text-2xl font-black text-gray-600 mx-3 flex items-center pb-1">-</span>
               <span className={`text-4xl font-black tracking-wider ${awayScore > homeScore ? 'text-neon drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]' :
                 awayScore < homeScore ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'text-white'
                 }`}>

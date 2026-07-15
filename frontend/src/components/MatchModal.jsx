@@ -331,12 +331,7 @@ export default function MatchModal({ match, onClose }) {
           </button>
           <div className="flex items-center justify-center w-full gap-4 sm:gap-10 pt-2">
             <div className="flex flex-col items-center flex-1 max-w-[200px]">
-              <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} jersey={hasScore ? jerseys.home : null} size="md" />
-              {homeIsWinner && (
-                <span className="mt-1.5 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
-                  🏆 Thắng
-                </span>
-              )}
+              <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} jersey={hasScore ? jerseys.home : null} size="md" isWinner={homeIsWinner} />
             </div>
             <div className="flex flex-col items-center shrink-0">
               {hasScore
@@ -378,12 +373,7 @@ export default function MatchModal({ match, onClose }) {
               )}
             </div>
             <div className="flex flex-col items-center flex-1 max-w-[200px]">
-              <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} jersey={hasScore ? jerseys.away : null} size="md" />
-              {awayIsWinner && (
-                <span className="mt-1.5 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
-                  🏆 Thắng
-                </span>
-              )}
+              <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} jersey={hasScore ? jerseys.away : null} size="md" isWinner={awayIsWinner} />
             </div>
           </div>
         </div>

@@ -509,9 +509,6 @@ export default function ScheduleResults() {
                   ) : (
                     <Trophy className="w-12 h-12 text-yellow-400" />
                   )}
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-navy-dark border border-navy-light rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 text-xl leading-none block -mt-1">-</span>
-                  </div>
                 </div>
                 <div className="text-center">
                   <p className="font-black text-xl text-white mb-2 tracking-tight">
