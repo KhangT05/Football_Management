@@ -205,7 +205,7 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
         }
 
         const payload = {
-            team_id: teamId,
+            team_id: Number(teamId),
             players: Object.entries(selections).map(([playerId, sel]) => {
                 const player = findPlayer(playerId);
                 const jNum = parseInt(player?.jersey_number || 1, 10);

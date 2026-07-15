@@ -59,27 +59,37 @@ export default function ContentSection() {
                 const seasons = extractItems(seasonRes);
                 let teams = extractItems(teamRes);
 
-                // Luôn chọn mùa giải mới nhất (nằm ở đầu mảng) cho bảng xếp hạng và lịch
-                const targetSeason = seasons[0];
+                // Lấy 5 mùa giải gần nhất để có đủ dữ liệu cho cả 3 cột (Sắp diễn ra, Đang diễn ra, Đã kết thúc)
+                const recentSeasons = seasons.slice(0, 5);
+                const fallbackSeason = seasons.find(s => s.status === 'ongoing') || seasons[0];
 
-                if (teams.length === 0 && targetSeason?.id) {
-                    await useTeamStore.getState().fetchPublicTeamsBySeason(targetSeason.id);
+                if (teams.length === 0 && fallbackSeason?.id) {
+                    await useTeamStore.getState().fetchPublicTeamsBySeason(fallbackSeason.id);
                     teams = useTeamStore.getState().teams;
                 }
 
                 const teamMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
 
-                if (targetSeason?.id) {
-                    // Fetch matches for the target season
-                    const matchRes = await matchApi.getScheduleBySeason(targetSeason.id, { per_page: 100 }).catch(() => null);
+                if (recentSeasons.length > 0) {
+                    // Fetch matches cho 5 mùa giải gần nhất cùng lúc
+                    const matchPromises = recentSeasons.map(s => 
+                        matchApi.getScheduleBySeason(s.id, { per_page: 100 }).catch(() => null)
+                    );
+                    const matchResponses = await Promise.all(matchPromises);
 
                     if (cancelled) return;
 
                     // -- Process Matches --
-                    const rawMatches = extractItems(matchRes);
+                    let rawMatches = [];
+                    matchResponses.forEach(res => {
+                        if (res) {
+                            rawMatches = rawMatches.concat(extractItems(res));
+                        }
+                    });
+                    
                     const nowMs = Date.now();
                     const mappedMatches = rawMatches.map(m => {
-                        const schedMs = new Date(m.scheduled_at || 0).getTime();
+                        const schedMs = m.scheduled_at ? new Date(m.scheduled_at).getTime() : 0;
                         let displayStatus;
                         let cardStatus = m.status; // mặc định LUÔN giữ status thật, không tự suy luận
 
@@ -137,7 +147,12 @@ export default function ContentSection() {
 
                     const upcoming = mappedMatches
                         .filter(m => m.columnCategory === 'UPCOMING')
-                        .sort((a, b) => a.scheduled_at - b.scheduled_at)
+                        .sort((a, b) => {
+                            // Đẩy những trận chưa có lịch cụ thể (scheduled_at === 0) xuống cuối
+                            if (a.scheduled_at === 0 && b.scheduled_at !== 0) return 1;
+                            if (b.scheduled_at === 0 && a.scheduled_at !== 0) return -1;
+                            return a.scheduled_at - b.scheduled_at;
+                        })
                         .slice(0, 3);
 
                     const finished = mappedMatches

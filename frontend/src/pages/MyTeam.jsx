@@ -3,7 +3,7 @@ import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   AlertTriangle, CheckCircle2, Loader2, X,
   Search, ArrowUpDown, CreditCard, Shield, Calendar,
-  DollarSign, Flame, Award, Ban, Activity,
+  DollarSign, Flame, Award, Ban, Activity, Save,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
@@ -115,7 +115,11 @@ function RosterPitchDot({ player, kit, onClick }) {
       type="button"
       onClick={onClick}
       title={`${player.name} — bấm để xem/sửa`}
-      className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group cursor-pointer"
+      className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group cursor-grab active:cursor-grabbing"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('app/player-id', String(player.id));
+      }}
     >
       <div className="relative">
         {player.avatar ? (
@@ -154,8 +158,38 @@ function RosterPitchDot({ player, kit, onClick }) {
   );
 }
 
-function RosterPitch({ players, kit, onSelectPlayer }) {
+function RosterPitch({ players, kit, onSelectPlayer, onDropPlayer }) {
   const [pitchSize, setPitchSize] = useState('7'); // '7' or '5'
+  const [dragOverRow, setDragOverRow] = useState(null);
+
+  const handleDragOver = (rowKey) => (e) => {
+    if (e.dataTransfer.types.includes('app/player-id')) {
+      e.preventDefault();
+      setDragOverRow(rowKey);
+    }
+  };
+
+  const handleDragLeave = (rowKey) => (e) => {
+    e.preventDefault();
+    if (dragOverRow === rowKey) {
+      setDragOverRow(null);
+    }
+  };
+
+  const handleDrop = (rowKey) => (e) => {
+    e.preventDefault();
+    setDragOverRow(null);
+    const playerId = e.dataTransfer.getData('app/player-id');
+    if (playerId && onDropPlayer) {
+      let mappedPos = rowKey;
+      if (rowKey === 'FW') mappedPos = 'forward';
+      else if (rowKey === 'MID') mappedPos = 'midfielder';
+      else if (rowKey === 'DEF') mappedPos = 'defender';
+      else if (rowKey === 'GK') mappedPos = 'goalkeeper';
+      
+      onDropPlayer(Number(playerId), mappedPos);
+    }
+  };
 
   const gks = players.filter(p => normalizePosition(p.position) === 'GK');
   const defs = players.filter(p => normalizePosition(p.position) === 'DEF');
@@ -254,7 +288,13 @@ function RosterPitch({ players, kit, onSelectPlayer }) {
         {/* Players */}
         <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10">
           {rowsData.map((row, i) => (
-            <div key={i} className="flex justify-center gap-2 sm:gap-6 px-2">
+            <div 
+              key={i} 
+              onDragOver={handleDragOver(row.pos)}
+              onDragLeave={handleDragLeave(row.pos)}
+              onDrop={handleDrop(row.pos)}
+              className={`flex justify-center flex-wrap gap-2 sm:gap-6 px-2 min-h-22 rounded-xl transition-colors ${dragOverRow === row.pos ? 'bg-emerald-500/20 ring-2 ring-emerald-500/60' : ''}`}
+            >
               {row.players.map((p, j) => (
                 p ? (
                   <RosterPitchDot key={p.id} player={p} kit={kit} onClick={() => onSelectPlayer?.(p)} />
@@ -297,6 +337,14 @@ export default function MyTeam() {
   const [activeTeamId, setActiveTeamId] = useState(null);
   const [teamDetail, setTeamDetail] = useState(null); // enriched active-team data
   const [players, setPlayers] = useState([]);
+  const handleDropOnPitch = useCallback(async (playerId, newPos) => {
+    setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, position: newPos } : p));
+    try {
+      await playerApi.updateTeamPlayer(Number(playerId), activeTeamId, { position: newPos });
+    } catch {
+      toast.error('Lỗi khi lưu vị trí cầu thủ');
+    }
+  }, [activeTeamId, toast]);
   const [matches, setMatches] = useState([]);
   const [allSeasons, setAllSeasons] = useState([]);
   const [activeMatchSeasonId, setActiveMatchSeasonId] = useState(null);
@@ -680,7 +728,7 @@ export default function MyTeam() {
   const openAddModal = () => {
     setEditingPlayer(null);
     setModalError('');
-    setPlayerForm({ name: '', email: '', date_of_birth: '', number: '', position: 'midfielder', role: 'player' });
+    setPlayerForm({ name: '', email: '', date_of_birth: '', number: '', position: 'midfielder', role: 'player', student_code: '', class_id: '' });
     setPlayerModal('add');
   };
 
@@ -728,6 +776,8 @@ export default function MyTeam() {
         date_of_birth: values.date_of_birth,
         position: values.position,
         jersey_number: parseInt(values.number, 10),
+        student_code: values.student_code?.trim() || undefined,
+        class_id: values.class_id ? parseInt(values.class_id) : undefined,
       });
       toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội...`);
       setPlayerModal(null);
@@ -795,6 +845,8 @@ export default function MyTeam() {
       number: player.number,
       position: player.position,
       role: player.role,
+      student_code: player.player?.user?.student_code ?? '',
+      class_id: player.player?.user?.class_id ?? '',
     });
     setPlayerModal('edit');
   };
@@ -1444,12 +1496,12 @@ export default function MyTeam() {
                     <div className="space-y-3">
                       <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
                         <Trophy className="w-3.5 h-3.5" /> Sơ đồ đội hình
-                        <span className="normal-case font-medium text-gray-600">— bấm vào cầu thủ để xem/sửa</span>
+                        <span className="normal-case font-medium text-gray-600 hidden sm:inline">— kéo thả cầu thủ để sửa</span>
                       </p>
                       {isLoading ? (
                         <div className="skeleton h-72 rounded-2xl" />
                       ) : (
-                        <RosterPitch players={players} kit={teamKit} onSelectPlayer={openEditModal} />
+                        <RosterPitch players={players} kit={teamKit} onSelectPlayer={openEditModal} onDropPlayer={handleDropOnPitch} />
                       )}
                     </div>
 
@@ -1589,7 +1641,11 @@ export default function MyTeam() {
                                 return (
                                   <tr
                                     key={player.id}
-                                    className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData('app/player-id', String(player.id));
+                                    }}
+                                    className="hover:bg-navy-light/20 transition-all duration-300 group animate-fade-in cursor-grab active:cursor-grabbing"
                                     style={{ animationDelay: `${idx * 40}ms` }}
                                   >
                                     <td className="py-5 px-4 text-center">

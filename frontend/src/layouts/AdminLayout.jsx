@@ -17,6 +17,7 @@ const PAGE_NAMES = {
   '/quan-ly-giai-dau/dang-ky-giai': { label: 'Quản lý Mùa giải',     sub: 'Đội bóng & Bốc thăm' },
   '/quan-ly-giai-dau/tran-dau':     { label: 'Quản lý Trận đấu',          sub: 'Lịch thi đấu & Kết quả' },
   '/quan-ly-giai-dau/bai-viet':     { label: 'Quản lý Bài viết', sub: 'Tin tức & Thông báo' },
+  '/quan-ly-giai-dau/lop-hoc':      { label: 'Quản lý Lớp học', sub: 'Danh sách Lớp Khoa' },
   '/quan-ly-giai-dau/giai-dau&mua-giai': { label: 'Giải đấu & Mùa giải',  sub: 'Quản lý giải và mùa' },
   '/quan-ly-giai-dau/san-bong-luat': { label: 'Sân bóng & Luật giải', sub: 'Địa điểm & Điều lệ' },
 };

@@ -131,6 +131,8 @@ export default function UsersTab() {
               <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                 <th className="py-4 px-6 w-16">ID</th>
                 <th className="py-4 px-6">Thông tin</th>
+                <th className="py-4 px-6">Lớp</th>
+                <th className="py-4 px-6">MSSV</th>
                 <th className="py-4 px-6">Vai trò (Roles)</th>
                 <th className="py-4 px-6">Trạng thái</th>
                 <th className="py-4 px-6 text-right">Thao tác</th>
@@ -147,7 +149,7 @@ export default function UsersTab() {
                 ))
               ) : fetchError ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-red-400">
+                  <td colSpan={7} className="py-16 text-center text-red-400">
                     <div className="flex flex-col items-center gap-3">
                       <AlertTriangle className="w-10 h-10 text-red-500/50" />
                       <p className="font-semibold">{fetchError}</p>
@@ -156,7 +158,7 @@ export default function UsersTab() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-gray-400">
+                  <td colSpan={7} className="py-16 text-center text-gray-400">
                     <div className="flex flex-col items-center gap-3">
                       <Users className="w-10 h-10 text-gray-600" />
                       <p className="font-semibold">Chưa có người dùng nào.</p>
@@ -177,6 +179,12 @@ export default function UsersTab() {
                           <p className="text-xs text-gray-400">{u.email}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="py-4 px-6 font-medium text-gray-300">
+                      {u.class?.name ?? '—'}
+                    </td>
+                    <td className="py-4 px-6 font-medium text-gray-300">
+                      {u.student_code ?? '—'}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex flex-wrap gap-2">

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { X, Save, Loader2, Users, AlertCircle } from 'lucide-react';
 import useLineupSelection from '../../hooks/useLineupSelection';
 import { mapPosition, getSquadLimit, getPitchInfo, PITCH_LABEL_VI, POS_LABEL_VI } from '../../utils/position';
@@ -10,6 +10,9 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
   // Chỉ dùng để hiện badge "Sân 5/7/11" trên header — giá trị thật sự chốt
   // giới hạn nằm trong squadLimit (đã đọc pitch_type bên trong getSquadLimit).
   const { pitchType } = useMemo(() => getPitchInfo(match), [match]);
+
+  // State cho màu áo sân nhà / sân khách
+  const [jerseyColor, setJerseyColor] = useState('#2563eb');
 
   // Normalize field names khớp với hook + PitchFormation (jersey_number, không phải number).
   const roster = useMemo(() => rawRoster.map(p => ({
@@ -40,7 +43,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
 
-        <div className="flex items-center justify-between px-8 py-6 border-b border-navy-light bg-navy/40 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-navy-light bg-navy/40 shrink-0">
           <div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3 flex-wrap">
               <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
@@ -70,21 +73,34 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
           {/* Sơ đồ sân — kéo cầu thủ từ danh sách bên phải vào đúng hàng vị trí.
               Đội tự chọn sơ đồ chiến thuật (DEF/MID/FW không bị ép tỷ lệ cố
               định), chỉ cần đủ tổng số theo luật sân + đúng 1 thủ môn. */}
-          <div className="flex-1 min-w-[280px]">
+          <div className="w-full md:w-2/5 min-w-[320px] max-w-[420px] flex flex-col shrink-0">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Sơ đồ đội hình</h4>
-              <span className={`text-xs font-black px-2 py-1 rounded-md ${startersCount === maxStarters ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                {startersCount}/{maxStarters}
-              </span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-navy border border-navy-light px-2 py-1 rounded-lg">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Màu áo:</span>
+                  <input 
+                    type="color" 
+                    value={jerseyColor} 
+                    onChange={(e) => setJerseyColor(e.target.value)}
+                    className="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent" 
+                    title="Chọn màu áo"
+                  />
+                </div>
+                <span className={`text-xs font-black px-2 py-1.5 rounded-md ${startersCount === maxStarters ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {startersCount}/{maxStarters}
+                </span>
+              </div>
             </div>
 
             {isLoading ? (
-              <div className="aspect-[3/4] flex items-center justify-center bg-emerald-800/20 rounded-3xl border border-emerald-500/20">
+              <div className="aspect-3/4 flex items-center justify-center bg-emerald-800/20 rounded-3xl border border-emerald-500/20">
                 <Loader2 className="w-8 h-8 text-neon animate-spin" />
               </div>
             ) : (
               <PitchFormation
                 starters={starters}
+                jerseyColor={jerseyColor}
                 onRemove={pid => toggleLineupType(pid, 'starter')}
                 onSetCaptain={setCaptain}
                 onDropPlayer={handleDropOnPitch}
@@ -118,7 +134,25 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
               </div>
             ) : (
               <div className="space-y-2">
-                {roster.map(player => {
+                {[...roster].sort((a, b) => {
+                  const selA = selections[a.player_id]?.lineup_type;
+                  const selB = selections[b.player_id]?.lineup_type;
+                  
+                  const getWeight = (type) => {
+                    if (type === 'starter') return 3;
+                    if (type === 'substitute') return 2;
+                    return 1;
+                  };
+                  
+                  const weightA = getWeight(selA);
+                  const weightB = getWeight(selB);
+                  
+                  // Đưa đá chính lên đầu, rồi dự bị, rồi chưa chọn
+                  if (weightA !== weightB) return weightB - weightA;
+                  
+                  // Nếu cùng loại, xếp theo số áo
+                  return (parseInt(a.jersey_number) || 999) - (parseInt(b.jersey_number) || 999);
+                }).map(player => {
                   const sel = selections[player.player_id];
                   const isStarter = sel?.lineup_type === 'starter';
                   const isSub = sel?.lineup_type === 'substitute';
@@ -130,13 +164,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData('app/player-id', String(player.player_id));
-                        // FIX: PitchFormation nhóm + check drop-target bằng p.position
-                        // NGUYÊN BẢN ('forward'/'midfielder'/...), không phải short code
-                        // từ mapPosition() ('FW'/'MID'/...). Trước đây set bằng mappedPos
-                        // → key "app/position-FW" không bao giờ khớp "app/position-forward"
-                        // mà PitchFormation check → dataTransfer.types.includes() luôn false
-                        // → handleDragOver không preventDefault() → browser chặn drop toàn bộ.
-                        e.dataTransfer.setData(`app/position-${player.position}`, '1');
+                        e.dataTransfer.setData(`app/position-${mappedPos}`, '1');
                         e.dataTransfer.setData('text/plain', String(player.player_id)); // fallback cho Firefox
                         e.dataTransfer.effectAllowed = 'move';
                       }}
@@ -158,7 +186,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
                         <div>
                           <p className={`font-bold text-sm ${isStarter ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
                           <p className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
-                            Số {player.jersey_number} · {POS_LABEL_VI[mappedPos]}
+                            Số {player.jersey_number || '?'} · {POS_LABEL_VI[mappedPos]}
                           </p>
                         </div>
                       </div>
@@ -184,7 +212,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
           </div>
         </div>
 
-        <div className="px-8 py-5 border-t border-navy-light bg-navy/40 shrink-0 flex justify-between items-center">
+        <div className="px-4 py-3.5 border-t border-navy-light bg-navy/40 shrink-0 flex justify-between items-center">
           <div className="flex items-center gap-2 text-yellow-500/80 text-xs font-medium">
             <AlertCircle className="w-4 h-4" /> Kéo cầu thủ vào sân hoặc dùng nút Chính/Dự bị. Bấm ★ trên sân để chọn đội trưởng.
           </div>

@@ -7,7 +7,7 @@ import { POSITION_ORDER, POS_LABEL_SHORT, PITCH_GOALKEEPER_COUNT } from '../util
 // vì đó là luật bóng đá bắt buộc. Các hàng DEF/MID/FW không có trần riêng —
 // đội tự chọn sơ đồ chiến thuật, giới hạn TỔNG số đá chính (theo luật sân
 // 5/7/11) được chặn ở tầng useLineupSelection (maxStarters), không phải ở đây.
-export default function PitchFormation({ starters, onRemove, onSetCaptain, onDropPlayer }) {
+export default function PitchFormation({ starters, jerseyColor = '#2563eb', onRemove, onSetCaptain, onDropPlayer }) {
     const [dragOverRow, setDragOverRow] = useState(null);
 
     const grouped = starters.reduce((acc, p) => {
@@ -44,7 +44,7 @@ export default function PitchFormation({ starters, onRemove, onSetCaptain, onDro
     };
 
     return (
-        <div className="relative w-full aspect-[3/4] bg-emerald-800/40 rounded-3xl border border-emerald-500/30 overflow-hidden">
+        <div className="relative w-full aspect-3/4 bg-emerald-800/40 rounded-3xl border border-emerald-500/30 overflow-hidden">
             <div className="absolute inset-4 border-2 border-white/20 rounded-xl" />
             <div className="absolute top-1/2 left-4 right-4 border-t-2 border-white/20" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/20" />
@@ -60,7 +60,7 @@ export default function PitchFormation({ starters, onRemove, onSetCaptain, onDro
                             onDragOver={handleDragOver(key)}
                             onDragLeave={handleDragLeave(key)}
                             onDrop={handleDrop(key)}
-                            className={`flex justify-center items-center gap-4 flex-wrap px-4 py-2 min-h-[5.5rem] rounded-xl transition-colors ${dragOverRow === key ? 'bg-blue-400/20 ring-2 ring-blue-400/60' : ''
+                            className={`flex justify-center items-center gap-4 flex-wrap px-4 py-2 min-h-22 rounded-xl transition-colors ${dragOverRow === key ? 'bg-blue-400/20 ring-2 ring-blue-400/60' : ''
                                 } ${rowFull ? 'bg-emerald-500/5' : ''}`}
                         >
                             {rowPlayers.length === 0 && (
@@ -76,8 +76,9 @@ export default function PitchFormation({ starters, onRemove, onSetCaptain, onDro
                                     <div key={p.player_id} className="flex flex-col items-center group relative w-20">
                                         <button
                                             onClick={() => onSetCaptain(p.player_id)}
-                                            className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm border-2 shadow-lg
-                      ${p.is_captain ? 'bg-amber-400 border-amber-200 text-black' : 'bg-blue-600 border-blue-300 text-white'}`}
+                                            className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm border-2 shadow-lg transition-colors
+                      ${p.is_captain ? 'bg-amber-400 border-amber-200 text-black' : 'border-white/50 text-white'}`}
+                                            style={!p.is_captain ? { backgroundColor: jerseyColor } : undefined}
                                         >
                                             {p.jersey_number ?? p.player_id}
                                         </button>
@@ -88,7 +89,7 @@ export default function PitchFormation({ starters, onRemove, onSetCaptain, onDro
                                             line-clamp — từng gây mất chữ hoàn toàn khi kết hợp sai với
                                             block/inline-block ở nơi khác). Vẫn giữ nền đen mờ + text-shadow. */}
                                         <span
-                                            className="mt-1 w-full max-w-full inline-block break-words text-[10px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80"
+                                            className="mt-1 w-full max-w-full inline-block wrap-break-words text-[10px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80"
                                             style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                                             title={displayName}
                                         >

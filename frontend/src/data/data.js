@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle, Loader2, GraduationCap } from 'lucide-react';
 import React from 'react'
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
@@ -69,7 +69,7 @@ export const initialWizardState = {
 export const MENU_GROUPS = [
   {
     groupLabel: 'Hệ thống',
-    items: ['Tổng quan']
+    items: ['Tổng quan', 'Quản lý Lớp học']
   },
   {
     groupLabel: 'Quy trình giải đấu',
@@ -92,6 +92,7 @@ export const MENU_GROUPS = [
 
 export const navItems = [
   { name: 'Tổng quan', path: '/quan-ly-giai-dau', icon: LayoutDashboard },
+  { name: 'Quản lý Lớp học', path: '/quan-ly-giai-dau/lop-hoc', icon: GraduationCap },
   { name: 'Thiết lập giải đấu', path: '/quan-ly-giai-dau/thiet-lap-giai-dau', icon: Settings },
   { name: 'Đội bóng & Duyệt đăng ký', path: '/quan-ly-giai-dau/doi-bong', icon: Users },
   { name: 'Bốc thăm & Lên lịch', path: '/quan-ly-giai-dau/boc-tham-len-lich', icon: CheckSquare },
@@ -136,7 +137,7 @@ export const POSITIONS = [
   { value: 'FW', label: 'FW – Tiền đạo' },
 ];
 export const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
-export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
+export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player', student_code: '', class_id: '' };
 
 // FIX: khớp đúng PaymentStatus enum thật (Prisma) — chỉ có 4 giá trị:
 //   pending | confirmed | refund_pending | refunded

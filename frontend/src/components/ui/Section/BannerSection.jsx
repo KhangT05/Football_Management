@@ -82,26 +82,28 @@ export default function BannerSection() {
                 const [tourRes, teamRes, seasonRes] = await Promise.all([
                     tournamentApi.getAll({ per_page: 1 }).catch(() => null),
                     teamApi.getTeams({ per_page: 1 }).catch(() => null),
-                    seasonApi.getAll({ per_page: 1 }).catch(() => null),
+                    seasonApi.getAll({ per_page: 1000 }).catch(() => null),
                 ]);
 
                 const tourTotal = extractTotal(tourRes);
                 const teamTotal = extractTotal(teamRes);
                 const seasonTotal = extractTotal(seasonRes);
 
-                // Try to get match count from the latest season
+                // Lấy tổng số trận đấu từ tất cả các mùa giải để hiển thị đầy đủ thông số
                 let matchTotal = 0;
                 if (seasonRes) {
                     const seasonPayload = typeof seasonRes?.status === 'boolean' ? seasonRes.data : seasonRes;
                     const seasons = Array.isArray(seasonPayload?.data) ? seasonPayload.data : [];
-                    // Find ongoing season first, fallback to latest
-                    const ongoingSeason = seasons.find(s => s.status === 'ongoing');
-                    const targetSeason = ongoingSeason || seasons[0];
-                    if (targetSeason?.id) {
-                        try {
-                            const matchRes = await matchApi.getScheduleBySeason(targetSeason.id, { per_page: 1 });
-                            matchTotal = extractTotal(matchRes);
-                        } catch { /* no matches available */ }
+                    
+                    try {
+                        const matchPromises = seasons.map(s => 
+                            matchApi.getScheduleBySeason(s.id, { per_page: 1 }).catch(() => null)
+                        );
+                        const matchResponses = await Promise.all(matchPromises);
+                        
+                        matchTotal = matchResponses.reduce((sum, res) => sum + extractTotal(res), 0);
+                    } catch (err) {
+                        console.warn('[BannerSection] Failed to fetch total matches:', err);
                     }
                 }
 

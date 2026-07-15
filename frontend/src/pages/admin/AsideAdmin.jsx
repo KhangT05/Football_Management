@@ -18,6 +18,7 @@ export default function AsideAdmin({ onClose, isCollapsed }) {
   
   if (isAdmin) {
     allowedItems.add('Tài khoản & Phân quyền');
+    allowedItems.add('Quản lý Lớp học');
   } 
   
   if (isOrganizing) {

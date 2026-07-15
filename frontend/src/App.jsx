@@ -39,6 +39,7 @@ const ManageSeasonTeams = lazy(() => import("./pages/admin/ManageSeasonTeams"));
 const ManageArticles = lazy(() => import("./pages/admin/ManageArticles"));
 const ManageAccounts = lazy(() => import("./pages/admin/ManageAccounts"));
 const ManagePayments = lazy(() => import("./pages/admin/ManagePayments"));
+const ManageClasses = lazy(() => import("./pages/admin/ManageClasses"));
 
 // News pages
 const News = lazy(() => import("./pages/News"));
@@ -158,6 +159,9 @@ function App() {
           } />
           <Route path="/quan-ly-giai-dau/tai-khoan" element={
             <AdminRoute><ManageAccounts /></AdminRoute>
+          } />
+          <Route path="/quan-ly-giai-dau/lop-hoc" element={
+            <AdminRoute><ManageClasses /></AdminRoute>
           } />
           <Route path="/quan-ly-giai-dau/boc-tham-len-lich" element={
             <AdminRoute><ManageSeasonTeams /></AdminRoute>
