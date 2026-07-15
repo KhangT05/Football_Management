@@ -447,13 +447,6 @@ export type TournamentUncheckedUpdateManyWithoutUserNestedInput = {
     updateMany?: Prisma.TournamentUpdateManyWithWhereWithoutUserInput | Prisma.TournamentUpdateManyWithWhereWithoutUserInput[];
     deleteMany?: Prisma.TournamentScalarWhereInput | Prisma.TournamentScalarWhereInput[];
 };
-export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null;
-    increment?: number;
-    decrement?: number;
-    multiply?: number;
-    divide?: number;
-};
 export type TournamentCreateNestedOneWithoutTournamentRuleInput = {
     create?: Prisma.XOR<Prisma.TournamentCreateWithoutTournamentRuleInput, Prisma.TournamentUncheckedCreateWithoutTournamentRuleInput>;
     connectOrCreate?: Prisma.TournamentCreateOrConnectWithoutTournamentRuleInput;

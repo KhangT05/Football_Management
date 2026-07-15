@@ -14,9 +14,11 @@ export type AggregateUser = {
 };
 export type UserAvgAggregateOutputType = {
     id: number | null;
+    class_id: number | null;
 };
 export type UserSumAggregateOutputType = {
     id: number | null;
+    class_id: number | null;
 };
 export type UserMinAggregateOutputType = {
     id: number | null;
@@ -30,6 +32,8 @@ export type UserMinAggregateOutputType = {
     email_verified_at: Date | null;
     created_at: Date | null;
     updated_at: Date | null;
+    class_id: number | null;
+    student_code: string | null;
 };
 export type UserMaxAggregateOutputType = {
     id: number | null;
@@ -43,6 +47,8 @@ export type UserMaxAggregateOutputType = {
     email_verified_at: Date | null;
     created_at: Date | null;
     updated_at: Date | null;
+    class_id: number | null;
+    student_code: string | null;
 };
 export type UserCountAggregateOutputType = {
     id: number;
@@ -56,13 +62,17 @@ export type UserCountAggregateOutputType = {
     email_verified_at: number;
     created_at: number;
     updated_at: number;
+    class_id: number;
+    student_code: number;
     _all: number;
 };
 export type UserAvgAggregateInputType = {
     id?: true;
+    class_id?: true;
 };
 export type UserSumAggregateInputType = {
     id?: true;
+    class_id?: true;
 };
 export type UserMinAggregateInputType = {
     id?: true;
@@ -76,6 +86,8 @@ export type UserMinAggregateInputType = {
     email_verified_at?: true;
     created_at?: true;
     updated_at?: true;
+    class_id?: true;
+    student_code?: true;
 };
 export type UserMaxAggregateInputType = {
     id?: true;
@@ -89,6 +101,8 @@ export type UserMaxAggregateInputType = {
     email_verified_at?: true;
     created_at?: true;
     updated_at?: true;
+    class_id?: true;
+    student_code?: true;
 };
 export type UserCountAggregateInputType = {
     id?: true;
@@ -102,6 +116,8 @@ export type UserCountAggregateInputType = {
     email_verified_at?: true;
     created_at?: true;
     updated_at?: true;
+    class_id?: true;
+    student_code?: true;
     _all?: true;
 };
 export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -192,6 +208,8 @@ export type UserGroupByOutputType = {
     email_verified_at: Date | null;
     created_at: Date;
     updated_at: Date | null;
+    class_id: number | null;
+    student_code: string | null;
     _count: UserCountAggregateOutputType | null;
     _avg: UserAvgAggregateOutputType | null;
     _sum: UserSumAggregateOutputType | null;
@@ -216,6 +234,8 @@ export type UserWhereInput = {
     email_verified_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
     created_at?: Prisma.DateTimeFilter<"User"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    class_id?: Prisma.IntNullableFilter<"User"> | number | null;
+    student_code?: Prisma.StringNullableFilter<"User"> | string | null;
     user_roles?: Prisma.User_RoleListRelationFilter;
     tournaments?: Prisma.TournamentListRelationFilter;
     seasons?: Prisma.SeasonListRelationFilter;
@@ -227,6 +247,7 @@ export type UserWhereInput = {
     matches?: Prisma.MatchListRelationFilter;
     teamLeaders?: Prisma.TeamLeaderListRelationFilter;
     articles?: Prisma.ArticleListRelationFilter;
+    class?: Prisma.XOR<Prisma.ClassNullableScalarRelationFilter, Prisma.ClassWhereInput> | null;
 };
 export type UserOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -240,6 +261,8 @@ export type UserOrderByWithRelationInput = {
     email_verified_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    class_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    student_code?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_roles?: Prisma.User_RoleOrderByRelationAggregateInput;
     tournaments?: Prisma.TournamentOrderByRelationAggregateInput;
     seasons?: Prisma.SeasonOrderByRelationAggregateInput;
@@ -251,11 +274,13 @@ export type UserOrderByWithRelationInput = {
     matches?: Prisma.MatchOrderByRelationAggregateInput;
     teamLeaders?: Prisma.TeamLeaderOrderByRelationAggregateInput;
     articles?: Prisma.ArticleOrderByRelationAggregateInput;
+    class?: Prisma.ClassOrderByWithRelationInput;
     _relevance?: Prisma.UserOrderByRelevanceInput;
 };
 export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
     email?: string;
+    student_code?: string;
     AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     OR?: Prisma.UserWhereInput[];
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
@@ -268,6 +293,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     email_verified_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
     created_at?: Prisma.DateTimeFilter<"User"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    class_id?: Prisma.IntNullableFilter<"User"> | number | null;
     user_roles?: Prisma.User_RoleListRelationFilter;
     tournaments?: Prisma.TournamentListRelationFilter;
     seasons?: Prisma.SeasonListRelationFilter;
@@ -279,7 +305,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     matches?: Prisma.MatchListRelationFilter;
     teamLeaders?: Prisma.TeamLeaderListRelationFilter;
     articles?: Prisma.ArticleListRelationFilter;
-}, "id" | "email">;
+    class?: Prisma.XOR<Prisma.ClassNullableScalarRelationFilter, Prisma.ClassWhereInput> | null;
+}, "id" | "email" | "student_code">;
 export type UserOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
@@ -292,6 +319,8 @@ export type UserOrderByWithAggregationInput = {
     email_verified_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    class_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    student_code?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.UserCountOrderByAggregateInput;
     _avg?: Prisma.UserAvgOrderByAggregateInput;
     _max?: Prisma.UserMaxOrderByAggregateInput;
@@ -313,6 +342,8 @@ export type UserScalarWhereWithAggregatesInput = {
     email_verified_at?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
+    class_id?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null;
+    student_code?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
 };
 export type UserCreateInput = {
     name: string;
@@ -325,6 +356,7 @@ export type UserCreateInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -336,6 +368,7 @@ export type UserCreateInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateInput = {
     id?: number;
@@ -349,6 +382,8 @@ export type UserUncheckedCreateInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -372,6 +407,7 @@ export type UserUpdateInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -383,6 +419,7 @@ export type UserUpdateInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -396,6 +433,8 @@ export type UserUncheckedUpdateInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -420,6 +459,8 @@ export type UserCreateManyInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
 };
 export type UserUpdateManyMutationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -432,6 +473,7 @@ export type UserUpdateManyMutationInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type UserUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -445,6 +487,8 @@ export type UserUncheckedUpdateManyInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type UserOrderByRelevanceInput = {
     fields: Prisma.UserOrderByRelevanceFieldEnum | Prisma.UserOrderByRelevanceFieldEnum[];
@@ -463,9 +507,12 @@ export type UserCountOrderByAggregateInput = {
     email_verified_at?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
+    student_code?: Prisma.SortOrder;
 };
 export type UserAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type UserMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -479,6 +526,8 @@ export type UserMaxOrderByAggregateInput = {
     email_verified_at?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
+    student_code?: Prisma.SortOrder;
 };
 export type UserMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -492,9 +541,12 @@ export type UserMinOrderByAggregateInput = {
     email_verified_at?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
+    student_code?: Prisma.SortOrder;
 };
 export type UserSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type UserScalarRelationFilter = {
     is?: Prisma.UserWhereInput;
@@ -503,6 +555,14 @@ export type UserScalarRelationFilter = {
 export type UserNullableScalarRelationFilter = {
     is?: Prisma.UserWhereInput | null;
     isNot?: Prisma.UserWhereInput | null;
+};
+export type UserListRelationFilter = {
+    every?: Prisma.UserWhereInput;
+    some?: Prisma.UserWhereInput;
+    none?: Prisma.UserWhereInput;
+};
+export type UserOrderByRelationAggregateInput = {
+    _count?: Prisma.SortOrder;
 };
 export type StringFieldUpdateOperationsInput = {
     set?: string;
@@ -521,6 +581,13 @@ export type DateTimeFieldUpdateOperationsInput = {
 };
 export type IntFieldUpdateOperationsInput = {
     set?: number;
+    increment?: number;
+    decrement?: number;
+    multiply?: number;
+    divide?: number;
+};
+export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null;
     increment?: number;
     decrement?: number;
     multiply?: number;
@@ -565,6 +632,44 @@ export type UserUpdateOneWithoutTournamentRulesNestedInput = {
     delete?: Prisma.UserWhereInput | boolean;
     connect?: Prisma.UserWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTournamentRulesInput, Prisma.UserUpdateWithoutTournamentRulesInput>, Prisma.UserUncheckedUpdateWithoutTournamentRulesInput>;
+};
+export type UserCreateNestedManyWithoutClassInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput> | Prisma.UserCreateWithoutClassInput[] | Prisma.UserUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutClassInput | Prisma.UserCreateOrConnectWithoutClassInput[];
+    createMany?: Prisma.UserCreateManyClassInputEnvelope;
+    connect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+};
+export type UserUncheckedCreateNestedManyWithoutClassInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput> | Prisma.UserCreateWithoutClassInput[] | Prisma.UserUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutClassInput | Prisma.UserCreateOrConnectWithoutClassInput[];
+    createMany?: Prisma.UserCreateManyClassInputEnvelope;
+    connect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+};
+export type UserUpdateManyWithoutClassNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput> | Prisma.UserCreateWithoutClassInput[] | Prisma.UserUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutClassInput | Prisma.UserCreateOrConnectWithoutClassInput[];
+    upsert?: Prisma.UserUpsertWithWhereUniqueWithoutClassInput | Prisma.UserUpsertWithWhereUniqueWithoutClassInput[];
+    createMany?: Prisma.UserCreateManyClassInputEnvelope;
+    set?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    disconnect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    delete?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    connect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    update?: Prisma.UserUpdateWithWhereUniqueWithoutClassInput | Prisma.UserUpdateWithWhereUniqueWithoutClassInput[];
+    updateMany?: Prisma.UserUpdateManyWithWhereWithoutClassInput | Prisma.UserUpdateManyWithWhereWithoutClassInput[];
+    deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[];
+};
+export type UserUncheckedUpdateManyWithoutClassNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput> | Prisma.UserCreateWithoutClassInput[] | Prisma.UserUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutClassInput | Prisma.UserCreateOrConnectWithoutClassInput[];
+    upsert?: Prisma.UserUpsertWithWhereUniqueWithoutClassInput | Prisma.UserUpsertWithWhereUniqueWithoutClassInput[];
+    createMany?: Prisma.UserCreateManyClassInputEnvelope;
+    set?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    disconnect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    delete?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    connect?: Prisma.UserWhereUniqueInput | Prisma.UserWhereUniqueInput[];
+    update?: Prisma.UserUpdateWithWhereUniqueWithoutClassInput | Prisma.UserUpdateWithWhereUniqueWithoutClassInput[];
+    updateMany?: Prisma.UserUpdateManyWithWhereWithoutClassInput | Prisma.UserUpdateManyWithWhereWithoutClassInput[];
+    deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[];
 };
 export type UserCreateNestedOneWithoutSeasonsInput = {
     create?: Prisma.XOR<Prisma.UserCreateWithoutSeasonsInput, Prisma.UserUncheckedCreateWithoutSeasonsInput>;
@@ -683,6 +788,7 @@ export type UserCreateWithoutUser_rolesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
@@ -693,6 +799,7 @@ export type UserCreateWithoutUser_rolesInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutUser_rolesInput = {
     id?: number;
@@ -706,6 +813,8 @@ export type UserUncheckedCreateWithoutUser_rolesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
@@ -741,6 +850,7 @@ export type UserUpdateWithoutUser_rolesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
@@ -751,6 +861,7 @@ export type UserUpdateWithoutUser_rolesInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutUser_rolesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -764,6 +875,8 @@ export type UserUncheckedUpdateWithoutUser_rolesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
@@ -786,6 +899,7 @@ export type UserCreateWithoutTournamentsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
@@ -796,6 +910,7 @@ export type UserCreateWithoutTournamentsInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutTournamentsInput = {
     id?: number;
@@ -809,6 +924,8 @@ export type UserUncheckedCreateWithoutTournamentsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
@@ -844,6 +961,7 @@ export type UserUpdateWithoutTournamentsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
@@ -854,6 +972,7 @@ export type UserUpdateWithoutTournamentsInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutTournamentsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -867,6 +986,8 @@ export type UserUncheckedUpdateWithoutTournamentsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
@@ -889,6 +1010,7 @@ export type UserCreateWithoutTournamentRulesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -899,6 +1021,7 @@ export type UserCreateWithoutTournamentRulesInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutTournamentRulesInput = {
     id?: number;
@@ -912,6 +1035,8 @@ export type UserUncheckedCreateWithoutTournamentRulesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -947,6 +1072,7 @@ export type UserUpdateWithoutTournamentRulesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -957,6 +1083,7 @@ export type UserUpdateWithoutTournamentRulesInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutTournamentRulesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -970,6 +1097,8 @@ export type UserUncheckedUpdateWithoutTournamentRulesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -980,6 +1109,94 @@ export type UserUncheckedUpdateWithoutTournamentRulesInput = {
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserCreateWithoutClassInput = {
+    name: string;
+    email: string;
+    password?: string | null;
+    phone?: string | null;
+    avatar?: string | null;
+    is_active?: boolean;
+    email_verified?: boolean;
+    email_verified_at?: Date | string | null;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    student_code?: string | null;
+    user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
+    tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
+    seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
+    teams?: Prisma.TeamCreateNestedManyWithoutUserInput;
+    player?: Prisma.PlayerCreateNestedOneWithoutUserInput;
+    teamPlayers?: Prisma.TeamPlayerCreateNestedManyWithoutUserInput;
+    seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
+    matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+};
+export type UserUncheckedCreateWithoutClassInput = {
+    id?: number;
+    name: string;
+    email: string;
+    password?: string | null;
+    phone?: string | null;
+    avatar?: string | null;
+    is_active?: boolean;
+    email_verified?: boolean;
+    email_verified_at?: Date | string | null;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    student_code?: string | null;
+    user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
+    tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
+    seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
+    teams?: Prisma.TeamUncheckedCreateNestedManyWithoutUserInput;
+    player?: Prisma.PlayerUncheckedCreateNestedOneWithoutUserInput;
+    teamPlayers?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutUserInput;
+    seasonTeams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutUserInput;
+    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutUserInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutUserInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutUserInput;
+};
+export type UserCreateOrConnectWithoutClassInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput>;
+};
+export type UserCreateManyClassInputEnvelope = {
+    data: Prisma.UserCreateManyClassInput | Prisma.UserCreateManyClassInput[];
+    skipDuplicates?: boolean;
+};
+export type UserUpsertWithWhereUniqueWithoutClassInput = {
+    where: Prisma.UserWhereUniqueInput;
+    update: Prisma.XOR<Prisma.UserUpdateWithoutClassInput, Prisma.UserUncheckedUpdateWithoutClassInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutClassInput, Prisma.UserUncheckedCreateWithoutClassInput>;
+};
+export type UserUpdateWithWhereUniqueWithoutClassInput = {
+    where: Prisma.UserWhereUniqueInput;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutClassInput, Prisma.UserUncheckedUpdateWithoutClassInput>;
+};
+export type UserUpdateManyWithWhereWithoutClassInput = {
+    where: Prisma.UserScalarWhereInput;
+    data: Prisma.XOR<Prisma.UserUpdateManyMutationInput, Prisma.UserUncheckedUpdateManyWithoutClassInput>;
+};
+export type UserScalarWhereInput = {
+    AND?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[];
+    OR?: Prisma.UserScalarWhereInput[];
+    NOT?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[];
+    id?: Prisma.IntFilter<"User"> | number;
+    name?: Prisma.StringFilter<"User"> | string;
+    email?: Prisma.StringFilter<"User"> | string;
+    password?: Prisma.StringNullableFilter<"User"> | string | null;
+    phone?: Prisma.StringNullableFilter<"User"> | string | null;
+    avatar?: Prisma.StringNullableFilter<"User"> | string | null;
+    is_active?: Prisma.BoolFilter<"User"> | boolean;
+    email_verified?: Prisma.BoolFilter<"User"> | boolean;
+    email_verified_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    created_at?: Prisma.DateTimeFilter<"User"> | Date | string;
+    updated_at?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    class_id?: Prisma.IntNullableFilter<"User"> | number | null;
+    student_code?: Prisma.StringNullableFilter<"User"> | string | null;
 };
 export type UserCreateWithoutSeasonsInput = {
     name: string;
@@ -992,6 +1209,7 @@ export type UserCreateWithoutSeasonsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleCreateNestedManyWithoutUserInput;
@@ -1002,6 +1220,7 @@ export type UserCreateWithoutSeasonsInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutSeasonsInput = {
     id?: number;
@@ -1015,6 +1234,8 @@ export type UserUncheckedCreateWithoutSeasonsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedCreateNestedManyWithoutUserInput;
@@ -1050,6 +1271,7 @@ export type UserUpdateWithoutSeasonsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
@@ -1060,6 +1282,7 @@ export type UserUpdateWithoutSeasonsInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutSeasonsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1073,6 +1296,8 @@ export type UserUncheckedUpdateWithoutSeasonsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
@@ -1095,6 +1320,7 @@ export type UserCreateWithoutTeamsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1105,6 +1331,7 @@ export type UserCreateWithoutTeamsInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutTeamsInput = {
     id?: number;
@@ -1118,6 +1345,8 @@ export type UserUncheckedCreateWithoutTeamsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1153,6 +1382,7 @@ export type UserUpdateWithoutTeamsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1163,6 +1393,7 @@ export type UserUpdateWithoutTeamsInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1176,6 +1407,8 @@ export type UserUncheckedUpdateWithoutTeamsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1198,6 +1431,7 @@ export type UserCreateWithoutPlayerInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1208,6 +1442,7 @@ export type UserCreateWithoutPlayerInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutPlayerInput = {
     id?: number;
@@ -1221,6 +1456,8 @@ export type UserUncheckedCreateWithoutPlayerInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1256,6 +1493,7 @@ export type UserUpdateWithoutPlayerInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1266,6 +1504,7 @@ export type UserUpdateWithoutPlayerInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutPlayerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1279,6 +1518,8 @@ export type UserUncheckedUpdateWithoutPlayerInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1301,6 +1542,7 @@ export type UserCreateWithoutTeamPlayersInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1311,6 +1553,7 @@ export type UserCreateWithoutTeamPlayersInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutTeamPlayersInput = {
     id?: number;
@@ -1324,6 +1567,8 @@ export type UserUncheckedCreateWithoutTeamPlayersInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1359,6 +1604,7 @@ export type UserUpdateWithoutTeamPlayersInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1369,6 +1615,7 @@ export type UserUpdateWithoutTeamPlayersInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamPlayersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1382,6 +1629,8 @@ export type UserUncheckedUpdateWithoutTeamPlayersInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1404,6 +1653,7 @@ export type UserCreateWithoutTeamLeadersInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1414,6 +1664,7 @@ export type UserCreateWithoutTeamLeadersInput = {
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutTeamLeadersInput = {
     id?: number;
@@ -1427,6 +1678,8 @@ export type UserUncheckedCreateWithoutTeamLeadersInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1462,6 +1715,7 @@ export type UserUpdateWithoutTeamLeadersInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1472,6 +1726,7 @@ export type UserUpdateWithoutTeamLeadersInput = {
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutTeamLeadersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1485,6 +1740,8 @@ export type UserUncheckedUpdateWithoutTeamLeadersInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1507,6 +1764,7 @@ export type UserCreateWithoutSeasonTeamsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1517,6 +1775,7 @@ export type UserCreateWithoutSeasonTeamsInput = {
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutSeasonTeamsInput = {
     id?: number;
@@ -1530,6 +1789,8 @@ export type UserUncheckedCreateWithoutSeasonTeamsInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1565,6 +1826,7 @@ export type UserUpdateWithoutSeasonTeamsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1575,6 +1837,7 @@ export type UserUpdateWithoutSeasonTeamsInput = {
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutSeasonTeamsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1588,6 +1851,8 @@ export type UserUncheckedUpdateWithoutSeasonTeamsInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1610,6 +1875,7 @@ export type UserCreateWithoutMatchesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1620,6 +1886,7 @@ export type UserCreateWithoutMatchesInput = {
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
     articles?: Prisma.ArticleCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutMatchesInput = {
     id?: number;
@@ -1633,6 +1900,8 @@ export type UserUncheckedCreateWithoutMatchesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1668,6 +1937,7 @@ export type UserUpdateWithoutMatchesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1678,6 +1948,7 @@ export type UserUpdateWithoutMatchesInput = {
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
     articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutMatchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1691,6 +1962,8 @@ export type UserUncheckedUpdateWithoutMatchesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1713,6 +1986,7 @@ export type UserCreateWithoutArticlesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonCreateNestedManyWithoutUserInput;
@@ -1723,6 +1997,7 @@ export type UserCreateWithoutArticlesInput = {
     seasonTeams?: Prisma.SeasonTeamCreateNestedManyWithoutUserInput;
     matches?: Prisma.MatchCreateNestedManyWithoutUserInput;
     teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutUserInput;
+    class?: Prisma.ClassCreateNestedOneWithoutUsersInput;
 };
 export type UserUncheckedCreateWithoutArticlesInput = {
     id?: number;
@@ -1736,6 +2011,8 @@ export type UserUncheckedCreateWithoutArticlesInput = {
     email_verified_at?: Date | string | null;
     created_at?: Date | string;
     updated_at?: Date | string | null;
+    class_id?: number | null;
+    student_code?: string | null;
     user_roles?: Prisma.User_RoleUncheckedCreateNestedManyWithoutUserInput;
     tournaments?: Prisma.TournamentUncheckedCreateNestedManyWithoutUserInput;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutUserInput;
@@ -1771,6 +2048,7 @@ export type UserUpdateWithoutArticlesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
@@ -1781,6 +2059,7 @@ export type UserUpdateWithoutArticlesInput = {
     seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutUsersNestedInput;
 };
 export type UserUncheckedUpdateWithoutArticlesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1794,6 +2073,8 @@ export type UserUncheckedUpdateWithoutArticlesInput = {
     email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
     tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1804,6 +2085,83 @@ export type UserUncheckedUpdateWithoutArticlesInput = {
     seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
     teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserCreateManyClassInput = {
+    id?: number;
+    name: string;
+    email: string;
+    password?: string | null;
+    phone?: string | null;
+    avatar?: string | null;
+    is_active?: boolean;
+    email_verified?: boolean;
+    email_verified_at?: Date | string | null;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    student_code?: string | null;
+};
+export type UserUpdateWithoutClassInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    user_roles?: Prisma.User_RoleUpdateManyWithoutUserNestedInput;
+    tournaments?: Prisma.TournamentUpdateManyWithoutUserNestedInput;
+    seasons?: Prisma.SeasonUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUpdateManyWithoutUserNestedInput;
+    teams?: Prisma.TeamUpdateManyWithoutUserNestedInput;
+    player?: Prisma.PlayerUpdateOneWithoutUserNestedInput;
+    teamPlayers?: Prisma.TeamPlayerUpdateManyWithoutUserNestedInput;
+    seasonTeams?: Prisma.SeasonTeamUpdateManyWithoutUserNestedInput;
+    matches?: Prisma.MatchUpdateManyWithoutUserNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutUserNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateWithoutClassInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    user_roles?: Prisma.User_RoleUncheckedUpdateManyWithoutUserNestedInput;
+    tournaments?: Prisma.TournamentUncheckedUpdateManyWithoutUserNestedInput;
+    seasons?: Prisma.SeasonUncheckedUpdateManyWithoutUserNestedInput;
+    tournamentRules?: Prisma.TournamentRuleUncheckedUpdateManyWithoutUserNestedInput;
+    teams?: Prisma.TeamUncheckedUpdateManyWithoutUserNestedInput;
+    player?: Prisma.PlayerUncheckedUpdateOneWithoutUserNestedInput;
+    teamPlayers?: Prisma.TeamPlayerUncheckedUpdateManyWithoutUserNestedInput;
+    seasonTeams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutUserNestedInput;
+    matches?: Prisma.MatchUncheckedUpdateManyWithoutUserNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutUserNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateManyWithoutClassInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    email_verified_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    student_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 /**
  * Count Type UserCountOutputType
@@ -1913,6 +2271,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     email_verified_at?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    class_id?: boolean;
+    student_code?: boolean;
     user_roles?: boolean | Prisma.User$user_rolesArgs<ExtArgs>;
     tournaments?: boolean | Prisma.User$tournamentsArgs<ExtArgs>;
     seasons?: boolean | Prisma.User$seasonsArgs<ExtArgs>;
@@ -1924,6 +2284,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     matches?: boolean | Prisma.User$matchesArgs<ExtArgs>;
     teamLeaders?: boolean | Prisma.User$teamLeadersArgs<ExtArgs>;
     articles?: boolean | Prisma.User$articlesArgs<ExtArgs>;
+    class?: boolean | Prisma.User$classArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["user"]>;
 export type UserSelectScalar = {
@@ -1938,8 +2299,10 @@ export type UserSelectScalar = {
     email_verified_at?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
+    class_id?: boolean;
+    student_code?: boolean;
 };
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "phone" | "avatar" | "is_active" | "email_verified" | "email_verified_at" | "created_at" | "updated_at", ExtArgs["result"]["user"]>;
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "phone" | "avatar" | "is_active" | "email_verified" | "email_verified_at" | "created_at" | "updated_at" | "class_id" | "student_code", ExtArgs["result"]["user"]>;
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     user_roles?: boolean | Prisma.User$user_rolesArgs<ExtArgs>;
     tournaments?: boolean | Prisma.User$tournamentsArgs<ExtArgs>;
@@ -1952,6 +2315,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     matches?: boolean | Prisma.User$matchesArgs<ExtArgs>;
     teamLeaders?: boolean | Prisma.User$teamLeadersArgs<ExtArgs>;
     articles?: boolean | Prisma.User$articlesArgs<ExtArgs>;
+    class?: boolean | Prisma.User$classArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1968,6 +2332,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         matches: Prisma.$MatchPayload<ExtArgs>[];
         teamLeaders: Prisma.$TeamLeaderPayload<ExtArgs>[];
         articles: Prisma.$ArticlePayload<ExtArgs>[];
+        class: Prisma.$ClassPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -1981,6 +2346,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         email_verified_at: Date | null;
         created_at: Date;
         updated_at: Date | null;
+        class_id: number | null;
+        student_code: string | null;
     }, ExtArgs["result"]["user"]>;
     composites: {};
 };
@@ -2269,6 +2636,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
     matches<T extends Prisma.User$matchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$matchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     teamLeaders<T extends Prisma.User$teamLeadersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teamLeadersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamLeaderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     articles<T extends Prisma.User$articlesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$articlesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArticlePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    class<T extends Prisma.User$classArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$classArgs<ExtArgs>>): Prisma.Prisma__ClassClient<runtime.Types.Result.GetResult<Prisma.$ClassPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2305,6 +2673,8 @@ export interface UserFieldRefs {
     readonly email_verified_at: Prisma.FieldRef<"User", 'DateTime'>;
     readonly created_at: Prisma.FieldRef<"User", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"User", 'DateTime'>;
+    readonly class_id: Prisma.FieldRef<"User", 'Int'>;
+    readonly student_code: Prisma.FieldRef<"User", 'String'>;
 }
 /**
  * User findUnique
@@ -2884,6 +3254,24 @@ export type User$articlesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
     take?: number;
     skip?: number;
     distinct?: Prisma.ArticleScalarFieldEnum | Prisma.ArticleScalarFieldEnum[];
+};
+/**
+ * User.class
+ */
+export type User$classArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Class
+     */
+    select?: Prisma.ClassSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Class
+     */
+    omit?: Prisma.ClassOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.ClassInclude<ExtArgs> | null;
+    where?: Prisma.ClassWhereInput;
 };
 /**
  * User without action

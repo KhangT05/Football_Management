@@ -9,6 +9,14 @@ export declare class TeamService {
     findByIdOrFail(id: number): Promise<Team>;
     /** Lightweight existence check — không join, chỉ lấy fields cần thiết */
     private assertExists;
+    /**
+     * FIX: mới thêm. class_id trên Team giờ là FK optional — Prisma không
+     * validate trước insert/update, chỉ throw P2003 raw ở DB nếu id không
+     * tồn tại. Check tường minh ở đây để trả CONFLICT/BAD_REQUEST rõ ràng
+     * thay vì lỗi FK constraint lộ ra ngoài. Bỏ qua nếu class_id undefined
+     * (không đổi) hoặc null (bỏ gán lớp — hợp lệ).
+     */
+    private assertClassExists;
     /** user_id = creator, không phải captain */
     create(data: CreateTeamDto, userId: number): Promise<Team>;
     update(id: number, data: UpdateTeamDto): Promise<Team>;

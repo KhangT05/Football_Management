@@ -153,6 +153,7 @@ export declare const bulkDeleteSchema: z.ZodObject<{
 export declare const importPlayerRowSchema: z.ZodObject<{
     name: z.ZodString;
     user_email: z.ZodString;
+    student_code: z.ZodString;
     date_of_birth: z.ZodCoercedDate<unknown>;
     position: z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";
@@ -168,6 +169,7 @@ export declare const importPlayerRowSchema: z.ZodObject<{
 export declare const createPlayerForTeamSchema: z.ZodObject<{
     name: z.ZodString;
     user_email: z.ZodString;
+    student_code: z.ZodString;
     date_of_birth: z.ZodCoercedDate<unknown>;
     position: z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";

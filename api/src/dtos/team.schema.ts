@@ -11,6 +11,7 @@ export interface TeamDto {
     updated_at: Date | null;
     user?: { id: number; name: string; email: string; phone: string | null } | null;
     user_id: number | null;
+    class_id: number | null;
 }
 
 export const createTeamSchema = z.object({
@@ -18,6 +19,7 @@ export const createTeamSchema = z.object({
     coach_name: z.string().trim().max(100).nullable().optional(),
     logo: z.string().nullable().optional(),  // match DB field
     description: z.string().max(2000).nullable().optional(),
+    class_id: z.number().int().positive().nullable().optional(),
 });
 
 export const updateTeamSchema = createTeamSchema.partial();

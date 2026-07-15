@@ -4,6 +4,7 @@ import { PrismaClient, Team, TeamLeader } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { CAPTAIN_WITH_USER, TEAM_WITH_OWNER, USER_SELECT } from "../types/team.type.js";
+
 export class TeamService {
     private readonly query: Queryable<Team>;
 
@@ -12,7 +13,7 @@ export class TeamService {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
-            filterable: ["is_active"],
+            filterable: ["is_active", "class_id"], // FIX: cho phép filter team theo lớp (danh sách đội của 1 lớp)
             defaultPerPage: 20,
             maxPerPage: 100,
             beforeBuild: (where) => { where.push({ is_active: true }); },
@@ -47,17 +48,37 @@ export class TeamService {
         return team;
     }
 
+    /**
+     * FIX: mới thêm. class_id trên Team giờ là FK optional — Prisma không
+     * validate trước insert/update, chỉ throw P2003 raw ở DB nếu id không
+     * tồn tại. Check tường minh ở đây để trả CONFLICT/BAD_REQUEST rõ ràng
+     * thay vì lỗi FK constraint lộ ra ngoài. Bỏ qua nếu class_id undefined
+     * (không đổi) hoặc null (bỏ gán lớp — hợp lệ).
+     */
+    private async assertClassExists(classId: number | null | undefined): Promise<void> {
+        if (classId == null) return;
+        const cls = await this.prisma.class.findUnique({
+            where: { id: classId, is_active: true },
+            select: { id: true },
+        });
+        if (!cls) throw createAppError("BAD_REQUEST", `Class ${classId} not found hoặc đã bị vô hiệu hoá`);
+    }
+
     // ─── Write ─────────────────────────────────────────────────────────────────
 
     /** user_id = creator, không phải captain */
     async create(data: CreateTeamDto, userId: number): Promise<Team> {
+        await this.assertClassExists(data.class_id);
+
         return this.prisma.team.create({
             data: { ...data, user_id: userId },
             ...TEAM_WITH_OWNER,
         });
     }
+
     async update(id: number, data: UpdateTeamDto): Promise<Team> {
         await this.assertExists(id);
+        await this.assertClassExists(data.class_id);
 
         const patch = Object.fromEntries(
             Object.entries(data).filter(([, v]) => v !== undefined)
@@ -76,8 +97,6 @@ export class TeamService {
 
         const activeSeasonCount = await this.prisma.season.count({
             where: {
-                team_id: id,
-                is_deleted: false,
                 status: { in: ["registration_open", "ongoing"] },
             },
         });
@@ -164,7 +183,6 @@ export class TeamService {
                 ...TEAM_WITH_OWNER,
             });
         } catch (err: any) {
-            // Failure mode: tên bị team khác chiếm trong lúc soft-deleted
             if (err.code === "P2002")
                 throw createAppError("CONFLICT", `Tên "${team.name}" đã bị đội khác sử dụng, không thể restore`);
             throw err;

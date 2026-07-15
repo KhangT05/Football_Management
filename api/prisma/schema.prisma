@@ -36,8 +36,11 @@ model User {
   seasonTeams     SeasonTeam[]
   matches         Match[]
 
-  teamLeaders TeamLeader[]
-  articles    Article[]
+  teamLeaders  TeamLeader[]
+  articles     Article[]
+  class_id     Int?
+  class        Class?       @relation(fields: [class_id], references: [id])
+  student_code String?      @unique
 
   @@map("users")
 }
@@ -130,6 +133,18 @@ enum SeasonFormat {
   round_robin_knockout // 1 vòng bảng (RR) -> loại trực tiếp
   multi_round_robin_knockout // nhiều vòng bảng RR liên tiếp -> loại trực tiếp
   custom
+}
+
+model Class {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique // "CNTT1", "K21-DTVT2"...
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  users User[]
+  teams Team[]
+
+  @@map("classes")
 }
 
 // ============================================================
@@ -264,6 +279,7 @@ model Season {
   teamStandings         TeamStanding[]
   tournament_rule_id    Int?
   tournamentRule        TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
+  max_teams_per_class   Int?
 
   @@map("seasons")
 }
@@ -327,6 +343,8 @@ model Team {
   matchLineups           MatchLineup[]
   matchEvents            MatchEvent[]
   matchJerseyAssignments MatchJerseyAssignment[]
+  class                  Class?                  @relation(fields: [class_id], references: [id])
+  class_id               Int?
 
   @@map("teams")
 }

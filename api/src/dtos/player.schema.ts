@@ -106,6 +106,7 @@ export const bulkDeleteSchema = z.object({
 export const importPlayerRowSchema = z.object({
     name: z.string().trim().min(1, "Họ tên không được để trống").max(150),
     user_email: z.string().trim().toLowerCase().email(),
+    student_code: z.string().trim().min(1, "MSSV bắt buộc").max(30),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,
     height: z.number().positive().max(999.99).nullable().optional(),
@@ -116,6 +117,7 @@ export const importPlayerRowSchema = z.object({
 export const createPlayerForTeamSchema = z.object({
     name: z.string().trim().min(1).max(150),
     user_email: z.string().trim().toLowerCase().email(),
+    student_code: z.string().trim().min(1, "MSSV bắt buộc").max(30),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,
     jersey_number: z.number().int().min(1).max(99),

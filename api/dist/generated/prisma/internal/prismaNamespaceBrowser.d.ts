@@ -31,6 +31,7 @@ export declare const ModelName: {
     readonly User_Role: "User_Role";
     readonly Tournament: "Tournament";
     readonly TournamentRule: "TournamentRule";
+    readonly Class: "Class";
     readonly Phase: "Phase";
     readonly BracketSlot: "BracketSlot";
     readonly Season: "Season";
@@ -75,6 +76,8 @@ export declare const UserScalarFieldEnum: {
     readonly email_verified_at: "email_verified_at";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly class_id: "class_id";
+    readonly student_code: "student_code";
 };
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
 export declare const RoleScalarFieldEnum: {
@@ -131,6 +134,13 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
+export declare const ClassScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+};
+export type ClassScalarFieldEnum = (typeof ClassScalarFieldEnum)[keyof typeof ClassScalarFieldEnum];
 export declare const PhaseScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
@@ -187,6 +197,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly pitch_type: "pitch_type";
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
+    readonly max_teams_per_class: "max_teams_per_class";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
 export declare const GroupScalarFieldEnum: {
@@ -211,6 +222,7 @@ export declare const TeamScalarFieldEnum: {
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
     readonly user_id: "user_id";
+    readonly class_id: "class_id";
 };
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
 export declare const MatchJerseyAssignmentScalarFieldEnum: {
@@ -517,6 +529,7 @@ export declare const UserOrderByRelevanceFieldEnum: {
     readonly password: "password";
     readonly phone: "phone";
     readonly avatar: "avatar";
+    readonly student_code: "student_code";
 };
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum];
 export declare const RoleOrderByRelevanceFieldEnum: {
@@ -545,6 +558,10 @@ export declare const TournamentRuleOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
 export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
+export declare const ClassOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+};
+export type ClassOrderByRelevanceFieldEnum = (typeof ClassOrderByRelevanceFieldEnum)[keyof typeof ClassOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };

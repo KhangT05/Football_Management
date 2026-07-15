@@ -72,6 +72,7 @@ export const ModelName = {
     User_Role: 'User_Role',
     Tournament: 'Tournament',
     TournamentRule: 'TournamentRule',
+    Class: 'Class',
     Phase: 'Phase',
     BracketSlot: 'BracketSlot',
     Season: 'Season',
@@ -116,7 +117,9 @@ export const UserScalarFieldEnum = {
     email_verified: 'email_verified',
     email_verified_at: 'email_verified_at',
     created_at: 'created_at',
-    updated_at: 'updated_at'
+    updated_at: 'updated_at',
+    class_id: 'class_id',
+    student_code: 'student_code'
 };
 export const RoleScalarFieldEnum = {
     id: 'id',
@@ -167,6 +170,12 @@ export const TournamentRuleScalarFieldEnum = {
     teams_advance_per_group: 'teams_advance_per_group',
     tiebreaker_order: 'tiebreaker_order',
     user_id: 'user_id'
+};
+export const ClassScalarFieldEnum = {
+    id: 'id',
+    name: 'name',
+    is_active: 'is_active',
+    created_at: 'created_at'
 };
 export const PhaseScalarFieldEnum = {
     id: 'id',
@@ -221,7 +230,8 @@ export const SeasonScalarFieldEnum = {
     group_count: 'group_count',
     pitch_type: 'pitch_type',
     user_id: 'user_id',
-    tournament_rule_id: 'tournament_rule_id'
+    tournament_rule_id: 'tournament_rule_id',
+    max_teams_per_class: 'max_teams_per_class'
 };
 export const GroupScalarFieldEnum = {
     id: 'id',
@@ -243,7 +253,8 @@ export const TeamScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
-    user_id: 'user_id'
+    user_id: 'user_id',
+    class_id: 'class_id'
 };
 export const MatchJerseyAssignmentScalarFieldEnum = {
     id: 'id',
@@ -526,7 +537,8 @@ export const UserOrderByRelevanceFieldEnum = {
     email: 'email',
     password: 'password',
     phone: 'phone',
-    avatar: 'avatar'
+    avatar: 'avatar',
+    student_code: 'student_code'
 };
 export const RoleOrderByRelevanceFieldEnum = {
     name: 'name',
@@ -547,6 +559,9 @@ export const QueryMode = {
     insensitive: 'insensitive'
 };
 export const TournamentRuleOrderByRelevanceFieldEnum = {
+    name: 'name'
+};
+export const ClassOrderByRelevanceFieldEnum = {
     name: 'name'
 };
 export const PhaseOrderByRelevanceFieldEnum = {

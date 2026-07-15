@@ -47,6 +47,11 @@ export type Tournament = Prisma.TournamentModel;
  */
 export type TournamentRule = Prisma.TournamentRuleModel;
 /**
+ * Model Class
+ *
+ */
+export type Class = Prisma.ClassModel;
+/**
  * Model Phase
  *
  */
