@@ -42,6 +42,7 @@ export declare class MatchResultService {
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
+        duration: number | null;
         status: import("../generated/prisma/enums.js").MatchResultStatus;
         match_id: number;
         winner_team_id: number | null;
@@ -52,7 +53,6 @@ export declare class MatchResultService {
         home_final_score: number;
         away_final_score: number;
         result_type: MatchResultType;
-        duration: number | null;
         notes: string | null;
         appeal_reason: string | null;
         appeal_note: string | null;

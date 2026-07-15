@@ -1,7 +1,7 @@
 import { createAppError } from "../common/app.error.js";
 import { parseJsonField } from "../common/prisma.utils.js";
-import { TIEBREAKER_OPTIONS } from "../dtos/tournamentRule.schema.js";
-import { MatchResultStatus, SeasonFormat, SeasonStatus } from "../generated/prisma/client.js";
+import { customStagesSchema, TIEBREAKER_OPTIONS } from "../dtos/tournamentRule.schema.js";
+import { MatchResultStatus, Prisma, SeasonFormat, SeasonStatus } from "../generated/prisma/client.js";
 const withRelations = {
     include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
@@ -13,15 +13,23 @@ const withRelations = {
 };
 const TIEBREAKER_SET = new Set(TIEBREAKER_OPTIONS);
 const isTiebreakerArray = (v) => Array.isArray(v) && v.every((x) => TIEBREAKER_SET.has(x));
+// Dùng lại customStagesSchema (đã có cross-stage superRefine ở schema layer) làm type guard
+// khi đọc ngược từ DB. Nếu safeParse fail (dữ liệu cũ/hỏng) -> fallback [], không throw khi read.
+const isStageConfigArray = (v) => customStagesSchema.safeParse(v).success;
 const RETROACTIVE_FIELDS = [
     "points_per_win",
     "points_per_draw",
     "points_per_loss",
     "yellow_cards_suspension",
 ];
+// custom_stages nằm trong STRUCTURAL_FIELDS: đổi cấu trúc bracket/group của format=custom
+// nguy hiểm tương đương đổi format/round_robin_stages — phải qua cùng CONFLICT check
+// (đã có phase sinh ra từ rule này thì không cho sửa nữa, trừ force nhưng vẫn bị chặn
+// bởi hasAnyPhase vì đây là thay đổi cấu trúc, không phải retroactive).
 const STRUCTURAL_FIELDS = [
     "format",
     "round_robin_stages",
+    "custom_stages",
 ];
 // Season ở các status này -> rule còn sửa được. Khác các status này (ongoing/finished/
 // cancelled...) -> khoá cứng, force cũng không qua được.
@@ -42,14 +50,67 @@ export class TournamentRuleService {
             bonus_per_goal: rule.bonus_per_goal.toNumber(),
             bonus_per_assist: rule.bonus_per_assist.toNumber(),
             tiebreaker_order: parseJsonField(rule.tiebreaker_order, isTiebreakerArray, ["goal_diff"]),
+            custom_stages: rule.custom_stages === null
+                ? null
+                : parseJsonField(rule.custom_stages, isStageConfigArray, null),
         };
     }
     /**
-     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages.
+     * Business rule cấu trúc bên trong custom_stages (thứ tự order liên tục,
+     * source_stage_order hợp lệ, stage đầu không phụ thuộc ai, loser_of_stage
+     * chỉ hợp lệ khi source là knockout, tên không trùng). Đây là validate
+     * mang tính "domain sequencing" mà Zod discriminatedUnion không tự làm được
+     * (cần nhìn toàn bộ mảng cùng lúc), nên đặt ở service layer thay vì schema.
+     */
+    validateCustomStages(stages) {
+        if (stages.length === 0)
+            throw createAppError("VALIDATION_ERROR", "custom_stages không được rỗng");
+        const orders = stages.map(s => s.order).sort((a, b) => a - b);
+        if (JSON.stringify(orders) !== JSON.stringify(orders.map((_, i) => i)))
+            throw createAppError("VALIDATION_ERROR", "custom_stages.order phải liên tục 0..n-1, không trùng");
+        const byOrder = new Map(stages.map(s => [s.order, s]));
+        const first = byOrder.get(0);
+        if (first.type !== 'round_robin' && first.type !== 'knockout')
+            throw createAppError("VALIDATION_ERROR", "Stage đầu tiên (order=0) phải là round_robin hoặc knockout — chưa có nguồn nào để lấy đội");
+        if (first.type === 'round_robin' && first.source_stage_order !== null)
+            throw createAppError("VALIDATION_ERROR", "Stage đầu tiên không được có source_stage_order");
+        for (const stage of stages) {
+            if (stage.order === 0)
+                continue;
+            const sourceOrder = stage.source_stage_order;
+            if (sourceOrder === null || sourceOrder === undefined) {
+                if (stage.type === 'round_robin')
+                    continue; // round_robin sau vẫn được phép lấy toàn bộ approved pool mới (multi-stage RR song song, hiếm nhưng hợp lệ)
+                throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order} (${stage.type}) bắt buộc có source_stage_order`);
+            }
+            if (sourceOrder >= stage.order)
+                throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_stage_order phải nhỏ hơn order của chính nó`);
+            if (!byOrder.has(sourceOrder))
+                throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_stage_order=${sourceOrder} không tồn tại`);
+        }
+        // classification.source_kind='loser_of_stage' chỉ hợp lệ nếu source là stage knockout
+        // (round_robin không có khái niệm "loser 1 trận cụ thể" — chỉ có standings)
+        for (const stage of stages) {
+            if (stage.type === 'classification' && stage.source_kind === 'loser_of_stage') {
+                const source = byOrder.get(stage.source_stage_order);
+                if (source?.type !== 'knockout')
+                    throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_kind='loser_of_stage' chỉ hợp lệ khi source là stage knockout`);
+            }
+        }
+        const names = stages.map(s => s.name.trim().toLowerCase());
+        if (new Set(names).size !== names.length)
+            throw createAppError("VALIDATION_ERROR", "Tên stage không được trùng — dùng để hiển thị/tham chiếu trên UI vận hành");
+    }
+    /**
+     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages / custom_stages.
      * Nhận full resolved state (không phải partial) — caller chịu trách nhiệm
      * merge payload với DB hiện tại trước khi gọi (xem update()).
      */
-    validateFormatConsistency(format, round_robin_stages) {
+    validateFormatConsistency(format, round_robin_stages, customStages) {
+        if (format === SeasonFormat.custom) {
+            this.validateCustomStages(customStages ?? []);
+            return;
+        }
         switch (format) {
             case SeasonFormat.knockout:
                 if (round_robin_stages !== 0) {
@@ -108,8 +169,9 @@ export class TournamentRuleService {
         return this.mapToDto(rule);
     }
     async create(data, userId) {
-        // create(): schema đã resolve default cho cả 2 field liên quan -> validate thẳng
-        this.validateFormatConsistency(data.format, data.round_robin_stages);
+        // create(): schema đã resolve default cho format/round_robin_stages, và đã enforce
+        // custom_stages required <-> format='custom' ở schema layer -> validate thẳng.
+        this.validateFormatConsistency(data.format, data.round_robin_stages, data.custom_stages);
         const rule = await this.prisma.$transaction(async (tx) => {
             if (data.is_active) {
                 // Lock trước, rồi mới deactivate + create — mọi request khác cùng
@@ -126,6 +188,9 @@ export class TournamentRuleService {
                     ...data,
                     user_id: userId,
                     tiebreaker_order: JSON.stringify(data.tiebreaker_order),
+                    custom_stages: data.custom_stages == null
+                        ? Prisma.JsonNull
+                        : JSON.stringify(data.custom_stages),
                 },
                 ...withRelations,
             });
@@ -134,10 +199,17 @@ export class TournamentRuleService {
     }
     async update(id, data, force = false) {
         // Luôn fetch current: cần tournament_id để lock đúng hàng, và
-        // format/round_robin_stages hiện tại để merge trước khi validate structural.
+        // format/round_robin_stages/custom_stages hiện tại để merge trước khi validate structural.
         const current = await this.prisma.tournamentRule.findUnique({
             where: { id },
-            select: { id: true, tournament_id: true, format: true, round_robin_stages: true, is_active: true },
+            select: {
+                id: true,
+                tournament_id: true,
+                format: true,
+                round_robin_stages: true,
+                custom_stages: true,
+                is_active: true,
+            },
         });
         if (!current)
             throw createAppError("NOT_FOUND", `TournamentRule ${id} not found`);
@@ -162,7 +234,12 @@ export class TournamentRuleService {
             // payload khiến field không gửi lên bị coi là "không cần check".
             const resolvedFormat = data.format ?? current.format;
             const resolvedStages = data.round_robin_stages ?? current.round_robin_stages;
-            this.validateFormatConsistency(resolvedFormat, resolvedStages);
+            const resolvedCustomStages = data.custom_stages !== undefined
+                ? data.custom_stages
+                : (current.custom_stages === null
+                    ? null
+                    : parseJsonField(current.custom_stages, isStageConfigArray, null));
+            this.validateFormatConsistency(resolvedFormat, resolvedStages, resolvedCustomStages);
         }
         if ((touchesRetroactive || touchesStructural) && !force) {
             if (touchesRetroactive) {
@@ -188,7 +265,7 @@ export class TournamentRuleService {
                 });
                 if (hasAnyPhase) {
                     throw createAppError("CONFLICT", `TournamentRule ${id}: đã có season dùng rule này để sinh phase — không thể ` +
-                        `đổi format/round_robin_stages vì sẽ làm lệch cấu trúc bracket/group đã tạo. ` +
+                        `đổi format/round_robin_stages/custom_stages vì sẽ làm lệch cấu trúc bracket/group đã tạo. ` +
                         `Tạo TournamentRule mới cho season sau thay vì sửa rule này.`);
                 }
             }
@@ -215,6 +292,9 @@ export class TournamentRuleService {
                     tiebreaker_order: data.tiebreaker_order
                         ? JSON.stringify(data.tiebreaker_order)
                         : undefined,
+                    custom_stages: data.custom_stages === undefined
+                        ? undefined
+                        : (data.custom_stages === null ? Prisma.JsonNull : JSON.stringify(data.custom_stages)),
                 },
                 ...withRelations,
             });

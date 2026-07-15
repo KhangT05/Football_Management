@@ -1,5 +1,5 @@
 import { createAppError } from '../common/app.error.js';
-import { CardColor, MatchEventType, MatchPeriod, MatchResultStatus, MatchResultType, MatchStatus, PhaseFormat, } from '../generated/prisma/client.js';
+import { CardColor, MatchEventTimeSource, MatchEventType, MatchPeriod, MatchResultStatus, MatchResultType, MatchStatus, PhaseFormat, } from '../generated/prisma/client.js';
 import { EXTRA_TIME_PERIODS, PERIOD_TRANSITIONS, SCORE_DELTA_BY_TYPE, CORRECTION_WINDOW_MS, } from '../types/match.type.js';
 import { matchForFinalizeSelect, matchForForfeitSelect } from '../types/match.queries.js';
 import { assertMinuteInBounds, assertPlayerNotSentOff, isCreditedToHomeTeam, isKnockoutFormat, toMatchResultUpdateOnOverturn, toMatchResultUpdateOnUphold, toMatchUpdateOnOverturn, findAdvancedChildMatchId, isKnockoutBracketSeeded, } from '../helper/match.helper.js';
@@ -975,8 +975,6 @@ export class MatchLifecycleService {
                     data: input.scorers.map((s) => ({
                         match_id: matchId,
                         team_id: s.teamId,
-                        // FIX: dùng playerId thật khi có, thay vì luôn null —
-                        // giữ note làm fallback hiển thị / metadata bổ sung.
                         player_id: s.playerId ?? null,
                         type: s.type === "own_goal"
                             ? MatchEventType.own_goal
@@ -984,6 +982,7 @@ export class MatchLifecycleService {
                         minute: s.minute,
                         period: s.period ?? null,
                         note: s.playerName ?? null,
+                        time_source: MatchEventTimeSource.estimated,
                     })),
                 });
             }
@@ -997,6 +996,7 @@ export class MatchLifecycleService {
                         minute: c.minute,
                         period: c.period ?? null,
                         card_color: this._deriveCardColor(c.type),
+                        time_source: MatchEventTimeSource.estimated,
                     })),
                 });
             }

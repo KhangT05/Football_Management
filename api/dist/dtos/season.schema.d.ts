@@ -40,6 +40,7 @@ export declare const updateSeasonSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     is_active: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodBoolean>>>;
     description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    group_count: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     start_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     end_date: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
     registration_deadline: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodCoercedDate<unknown>>>>;
@@ -48,7 +49,6 @@ export declare const updateSeasonSchema: z.ZodObject<{
     bank_id: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     bank_account_no: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     bank_account_name: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
-    group_count: z.ZodOptional<z.ZodDefault<z.ZodNumber>>;
     pitch_type: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         san_5: "san_5";
         san_7: "san_7";

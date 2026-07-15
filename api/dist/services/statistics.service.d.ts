@@ -1,5 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
-import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats, SystemOverviewStats, PlayerOverviewStats, TimeGranularity, TeamMatchTimeSeriesStats, TeamOverviewStats, TeamTournamentStats, TeamSeasonStats, TeamMatchStats, PlayerTournamentStats, PlayerSeasonStats, PlayerMatchStats } from "../types/statistics.type.js";
+import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats, SystemOverviewStats, PlayerOverviewStats, TimeGranularity, TeamMatchTimeSeriesStats, TeamOverviewStats, TeamTournamentStats, TeamSeasonStats, TeamMatchStats, PlayerTournamentStats, PlayerSeasonStats, PlayerMatchStats, TeamAggregateStatsExtended, PlayerParticipationStats, TeamSeasonStatsBatch, TeamParticipationStats, PlayerDisciplineStatus, PlayerTeamsInPeriodStats, TeamFinanceEntry, PlayerPerformanceBatchEntry } from "../types/statistics.type.js";
 export type PlayerFinanceEntry = {
     player_id: number;
     player_name: string;
@@ -51,12 +51,37 @@ export declare class StatisticsService {
     private _fetchTeamMatchesWithRule;
     private _aggregateTeamMatches;
     /**
+     * Bản mở rộng của _fetchTeamMatchesWithRule — thêm played_at, match_id,
+     * status, opponent_team_id/name để phục vụ home/away split, streak,
+     * biggest win/loss, clean sheet, forfeit — mà không phải query lại lần 2.
+     */
+    private _fetchTeamMatchesDetailed;
+    /**
+     * Aggregate mở rộng — dùng chung cho all-time / tournament / season / period.
+     * Input PHẢI đến từ _fetchTeamMatchesDetailed (đã sort played_at asc).
+     */
+    private _aggregateTeamMatchesExtended;
+    /**
      * TEAM STATS — toàn bộ lịch sử của đội, không filter season/tournament.
      * Mở rộng so với bản cũ: thêm participations (danh sách giải/mùa đã
      * tham gia, kể cả mùa CHƯA đá trận nào — lấy từ SeasonTeam, độc lập với
      * phần win/draw/loss vốn chỉ tính trên match đã có kết quả).
      */
     getTeamOverviewStats(teamId: number): Promise<TeamOverviewStats>;
+    getTeamOverviewStatsV2(teamId: number, period?: string): Promise<TeamOverviewStats & {
+        extended: TeamAggregateStatsExtended;
+    }>;
+    getTeamTournamentStatsV2(teamId: number, tournamentId: number): Promise<TeamTournamentStats & {
+        extended: TeamAggregateStatsExtended;
+    }>;
+    getTeamSeasonStatsV2(teamId: number, seasonId: number): Promise<TeamSeasonStats & {
+        extended: TeamAggregateStatsExtended;
+    }>;
+    getTeamParticipationStats(teamId: number): Promise<TeamParticipationStats>;
+    getTeamsSeasonStatsBatch(seasonId: number): Promise<TeamSeasonStatsBatch>;
+    getPlayerParticipationStats(playerId: number): Promise<PlayerParticipationStats>;
+    getPlayerDisciplineStatus(playerId: number, seasonId: number): Promise<PlayerDisciplineStatus>;
+    getPlayerTeamsInPeriod(playerId: number, from: Date, to: Date): Promise<PlayerTeamsInPeriodStats>;
     /**
      * TOURNAMENT TEAM STATS — thống kê đội gộp qua TẤT CẢ season của 1 giải
      * đấu (vd Arsenal ở "Ngoại hạng Anh" tính từ mùa 2023 tới 2026).
@@ -96,5 +121,23 @@ export declare class StatisticsService {
      * tránh hiểu nhầm là bug thiếu dữ liệu.
      */
     getPlayerMatchStats(playerId: number, matchId: number): Promise<PlayerMatchStats>;
+    /**
+     * BATCH — thay N+1 getTeamFinanceStats() gọi từng team bằng 2 query
+     * groupBy cho cả season, ghép theo team_id. Payment phải raw SQL vì
+     * team_id không nằm trực tiếp trên bảng payments (phải qua season_teams).
+     */
+    getTeamsFinanceStatsBatch(seasonId: number): Promise<{
+        season_id: number;
+        teams: TeamFinanceEntry[];
+    }>;
+    /**
+     * BATCH — thay N+1 getPlayerPerformanceStats() theo season. Lineup
+     * (starter/sub/captain) phải raw SQL vì cần conditional SUM qua join
+     * match→phase (Prisma groupBy không hỗ trợ CASE WHEN trong _count).
+     */
+    getPlayersPerformanceStatsBatch(seasonId: number): Promise<{
+        season_id: number;
+        players: PlayerPerformanceBatchEntry[];
+    }>;
 }
 //# sourceMappingURL=statistics.service.d.ts.map

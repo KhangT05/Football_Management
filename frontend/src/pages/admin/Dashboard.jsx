@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Users, Trophy, ListChecks, Shield, DollarSign, UserPlus,
-  TrendingUp, AlertTriangle, Target, Calendar, Ban
+  TrendingUp, AlertTriangle, Target, Calendar, Ban, Award, Flame, Activity
 } from 'lucide-react';
 import StatCard from '../../components/StatCard';
 import useAuthStore from '../../store/authStore';
@@ -36,6 +36,9 @@ const formatSuspendedDate = (dateStr) => {
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('vi-VN');
 };
 
+const formatCurrencyVN = (val) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+
 export default function Dashboard() {
   const { user } = useAuthStore(useShallow(state => ({ user: state.user })));
 
@@ -62,7 +65,12 @@ export default function Dashboard() {
     suspendedPlayers: []
   });
 
-  // NEW — Standings (PhaseStandingsBlock | null)
+  // NEW — batch tài chính & phong độ toàn season (admin only ở BE)
+  const [teamsFinanceBatch, setTeamsFinanceBatch] = useState([]);
+  const [playersPerfBatch, setPlayersPerfBatch] = useState([]);
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
+
+  // Standings (PhaseStandingsBlock | null)
   const [standingsBlock, setStandingsBlock] = useState(null);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
 
@@ -70,19 +78,25 @@ export default function Dashboard() {
 
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [teamOverview, setTeamOverview] = useState(null);
+  const [teamExtended, setTeamExtended] = useState(null);
+  const [teamParticipations, setTeamParticipations] = useState(null);
+  const [teamFinance, setTeamFinance] = useState(null);
   const [teamTimeSeries, setTeamTimeSeries] = useState([]);
   const [teamGranularity, setTeamGranularity] = useState('month');
   const [isTeamLoading, setIsTeamLoading] = useState(false);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [playerOverview, setPlayerOverview] = useState(null);
+  const [playerParticipations, setPlayerParticipations] = useState(null);
+  const [playerPerformance, setPlayerPerformance] = useState(null);
+  const [playerDiscipline, setPlayerDiscipline] = useState(null);
   const [isPlayerLoading, setIsPlayerLoading] = useState(false);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const seasonsRes = await seasonApi.getAll({ per_page: 100 });
-        setSeasons(seasonsRes.data?.data || []);
+        setSeasons(seasonsRes.data || seasonsRes || []);
       } catch (error) {
         console.error('Failed to fetch dropdown data:', error);
       }
@@ -126,7 +140,24 @@ export default function Dashboard() {
               suspendedPlayers: susList
             });
           }
+
+          // NEW — batch tài chính & phong độ, tách riêng vì nặng hơn (nhiều
+          // GROUP BY) — không nên chặn phần KPI/topScorer/discipline ở trên.
+          setIsBatchLoading(true);
+          Promise.allSettled([
+            statisticsApi.getTeamsFinanceBatch(selectedSeasonId),
+            statisticsApi.getPlayersPerformanceStatsBatch(selectedSeasonId),
+          ]).then(([financeRes, perfRes]) => {
+            if (!isMounted) return;
+            const financeData = financeRes.status === 'fulfilled' ? (financeRes.value?.data ?? financeRes.value) : null;
+            const perfData = perfRes.status === 'fulfilled' ? (perfRes.value?.data ?? perfRes.value) : null;
+            setTeamsFinanceBatch(financeData?.teams ?? []);
+            setPlayersPerfBatch(perfData?.players ?? []);
+          }).finally(() => { if (isMounted) setIsBatchLoading(false); });
         } else {
+          setTeamsFinanceBatch([]);
+          setPlayersPerfBatch([]);
+
           const [overviewRes, registrationsRes] = await Promise.allSettled([
             statisticsApi.getSystemOverview(selectedPeriod),
             statisticsApi.getUserRegistrations(selectedPeriod)
@@ -166,14 +197,20 @@ export default function Dashboard() {
   useEffect(() => {
     setSelectedTeamId(null);
     setTeamOverview(null);
+    setTeamExtended(null);
+    setTeamParticipations(null);
+    setTeamFinance(null);
     setTeamTimeSeries([]);
     setSelectedPlayerId(null);
     setPlayerOverview(null);
-    setStandingsBlock(null);   // NEW — reset tránh dính bảng xếp hạng season cũ
-    setSelectedGroupId(null);  // NEW
+    setPlayerParticipations(null);
+    setPlayerPerformance(null);
+    setPlayerDiscipline(null);
+    setStandingsBlock(null);
+    setSelectedGroupId(null);
   }, [selectedSeasonId]);
 
-  // NEW — auto-chọn group đầu tiên khi standingsBlock load xong / đổi season
+  // auto-chọn group đầu tiên khi standingsBlock load xong / đổi season
   useEffect(() => {
     if (standingsBlock?.groups?.length) {
       setSelectedGroupId(prev =>
@@ -191,30 +228,45 @@ export default function Dashboard() {
     Promise.allSettled([
       statisticsApi.getTeamOverview(selectedTeamId),
       statisticsApi.getTeamMatchTimeSeries(selectedTeamId, { granularity: teamGranularity }),
-    ]).then(([ovRes, tsRes]) => {
+      statisticsApi.getTeamOverviewExtended(selectedTeamId),
+      statisticsApi.getTeamParticipations(selectedTeamId),
+      statisticsApi.getTeamFinance(selectedTeamId, selectedSeasonId || undefined),
+    ]).then(([ovRes, tsRes, extRes, partRes, finRes]) => {
       if (!isMounted) return;
       const ovData = ovRes.status === 'fulfilled' ? (ovRes.value?.data || ovRes.value) : null;
       const tsData = tsRes.status === 'fulfilled' ? (tsRes.value?.data || tsRes.value) : null;
+      const extData = extRes.status === 'fulfilled' ? (extRes.value?.data || extRes.value) : null;
+      const partData = partRes.status === 'fulfilled' ? (partRes.value?.data || partRes.value) : null;
+      const finData = finRes.status === 'fulfilled' ? (finRes.value?.data || finRes.value) : null;
       setTeamOverview(ovData);
       setTeamTimeSeries(tsData?.points || []);
+      setTeamExtended(extData?.extended || null);
+      setTeamParticipations(partData);
+      setTeamFinance(finData);
     }).finally(() => { if (isMounted) setIsTeamLoading(false); });
     return () => { isMounted = false; };
-  }, [selectedTeamId, teamGranularity]);
+  }, [selectedTeamId, teamGranularity, selectedSeasonId]);
 
   useEffect(() => {
     if (!selectedPlayerId) return;
     let isMounted = true;
     setIsPlayerLoading(true);
-    statisticsApi.getPlayerOverview(selectedPlayerId)
-      .then((res) => { if (isMounted) setPlayerOverview(res?.data || res); })
-      .catch(() => { if (isMounted) setPlayerOverview(null); })
-      .finally(() => { if (isMounted) setIsPlayerLoading(false); });
+    Promise.allSettled([
+      statisticsApi.getPlayerOverview(selectedPlayerId),
+      statisticsApi.getPlayerParticipations(selectedPlayerId),
+      statisticsApi.getPlayerPerformance(selectedPlayerId, selectedSeasonId || undefined),
+      selectedSeasonId ? statisticsApi.getPlayerDisciplineStatus(selectedPlayerId, selectedSeasonId) : Promise.resolve(null),
+    ]).then(([ovRes, partRes, perfRes, discRes]) => {
+      if (!isMounted) return;
+      setPlayerOverview(ovRes.status === 'fulfilled' ? (ovRes.value?.data ?? ovRes.value) : null);
+      setPlayerParticipations(partRes.status === 'fulfilled' ? (partRes.value?.data ?? partRes.value) : null);
+      setPlayerPerformance(perfRes.status === 'fulfilled' ? (perfRes.value?.data ?? perfRes.value) : null);
+      setPlayerDiscipline(discRes?.status === 'fulfilled' ? (discRes.value?.data ?? discRes.value) : null);
+    }).finally(() => { if (isMounted) setIsPlayerLoading(false); });
     return () => { isMounted = false; };
-  }, [selectedPlayerId]);
+  }, [selectedPlayerId, selectedSeasonId]);
 
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
-  };
+  const formatCurrency = formatCurrencyVN;
 
   const pieData = useMemo(() => {
     if (!seasonStats.teamRegistrations) return [];
@@ -228,13 +280,22 @@ export default function Dashboard() {
     ].filter(item => item.value > 0);
   }, [seasonStats.teamRegistrations]);
 
-  // NEW — group đang chọn để render bảng
   const activeGroup = useMemo(() => {
     if (!standingsBlock?.groups?.length) return null;
     return standingsBlock.groups.find(g => g.groupId === selectedGroupId) || standingsBlock.groups[0];
   }, [standingsBlock, selectedGroupId]);
 
   const periodLabel = PERIOD_OPTIONS.find(p => p.value === selectedPeriod)?.label || '';
+
+  // Top 5 tài chính & phong độ (để không render bảng khổng lồ trên dashboard)
+  const topFinance = useMemo(
+    () => [...teamsFinanceBatch].sort((a, b) => (b.total_bonus_payable - b.total_fine_owed) - (a.total_bonus_payable - a.total_fine_owed)).slice(0, 8),
+    [teamsFinanceBatch]
+  );
+  const topPerformance = useMemo(
+    () => [...playersPerfBatch].sort((a, b) => b.total_goals - a.total_goals).slice(0, 8),
+    [playersPerfBatch]
+  );
 
   return (
     <AdminLayout>
@@ -368,9 +429,7 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* NEW — BẢNG XẾP HẠNG (group-aware). Tự thích ứng 1 group hay nhiều
-                group — không hardcode giả định. null = chưa vào vòng bảng
-                (trạng thái hợp lệ, không phải lỗi/loading). */}
+            {/* BẢNG XẾP HẠNG (group-aware) */}
             <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg">
               <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -607,6 +666,96 @@ export default function Dashboard() {
                   </table>
                 </div>
               </div>
+
+              {/* NEW — Top tài chính đội (batch) */}
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg lg:col-span-2">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" /> Tài chính đội bóng (thưởng/phạt)
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-gray-300">
+                    <thead className="bg-navy-light/50 text-xs uppercase text-gray-400">
+                      <tr>
+                        <th className="px-4 py-3 rounded-tl-lg">Đội bóng</th>
+                        <th className="px-4 py-3 text-center">Lệ phí đã đóng</th>
+                        <th className="px-4 py-3 text-center">Đã hoàn</th>
+                        <th className="px-4 py-3 text-center text-emerald-400">Thưởng</th>
+                        <th className="px-4 py-3 text-center text-red-400">Phạt</th>
+                        <th className="px-4 py-3 rounded-tr-lg text-center">Ròng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isBatchLoading ? (
+                        <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
+                      ) : topFinance.length === 0 ? (
+                        <tr><td colSpan={6} className="text-center py-4">Chưa có dữ liệu</td></tr>
+                      ) : (
+                        topFinance.map((t) => (
+                          <tr
+                            key={t.team_id}
+                            onClick={() => setSelectedTeamId(t.team_id)}
+                            className="border-b border-navy-light last:border-0 hover:bg-navy-light/30 cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3 font-medium text-white">{t.team_name}</td>
+                            <td className="px-4 py-3 text-center">{formatCurrency(t.total_registration_fee_paid)}</td>
+                            <td className="px-4 py-3 text-center">{formatCurrency(t.total_registration_fee_refunded)}</td>
+                            <td className="px-4 py-3 text-center text-emerald-400">{formatCurrency(t.total_bonus_payable)}</td>
+                            <td className="px-4 py-3 text-center text-red-400">{formatCurrency(t.total_fine_owed)}</td>
+                            <td className="px-4 py-3 text-center font-bold text-neon">
+                              {formatCurrency(t.total_bonus_payable - t.total_fine_owed)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* NEW — Top phong độ cầu thủ (batch) */}
+              <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg lg:col-span-2">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-cyan-400" /> Phong độ cầu thủ
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-gray-300">
+                    <thead className="bg-navy-light/50 text-xs uppercase text-gray-400">
+                      <tr>
+                        <th className="px-4 py-3 rounded-tl-lg">Cầu thủ</th>
+                        <th className="px-4 py-3 text-center">Trận</th>
+                        <th className="px-4 py-3 text-center">Đá chính</th>
+                        <th className="px-4 py-3 text-center">Dự bị</th>
+                        <th className="px-4 py-3 text-center">Đội trưởng</th>
+                        <th className="px-4 py-3 text-center">Phút TB/trận</th>
+                        <th className="px-4 py-3 rounded-tr-lg text-center">Bàn TB/trận</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isBatchLoading ? (
+                        <tr><td colSpan={7} className="text-center py-4">Đang tải...</td></tr>
+                      ) : topPerformance.length === 0 ? (
+                        <tr><td colSpan={7} className="text-center py-4">Chưa có dữ liệu</td></tr>
+                      ) : (
+                        topPerformance.map((p) => (
+                          <tr
+                            key={p.player_id}
+                            onClick={() => setSelectedPlayerId(p.player_id)}
+                            className="border-b border-navy-light last:border-0 hover:bg-navy-light/30 cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3 font-medium text-white">{p.player_name}</td>
+                            <td className="px-4 py-3 text-center">{p.total_matches_played}</td>
+                            <td className="px-4 py-3 text-center">{p.total_starter_count}</td>
+                            <td className="px-4 py-3 text-center">{p.total_substitute_count}</td>
+                            <td className="px-4 py-3 text-center">{p.total_captain_count}</td>
+                            <td className="px-4 py-3 text-center">{p.avg_minutes_per_match}</td>
+                            <td className="px-4 py-3 text-center text-neon font-bold">{p.avg_goals_per_match}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             {selectedTeamId && (
@@ -650,6 +799,85 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* NEW — Extended: home/away split, streak, biggest win/loss, clean sheets */}
+                {teamExtended && (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Sân nhà / Sân khách</p>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-400 mb-1">Sân nhà</p>
+                          <p className="text-white font-bold">{teamExtended.home.wins}T-{teamExtended.home.draws}H-{teamExtended.home.losses}B</p>
+                          <p className="text-gray-500 text-xs">{teamExtended.home.goals_for}-{teamExtended.home.goals_against} bàn</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 mb-1">Sân khách</p>
+                          <p className="text-white font-bold">{teamExtended.away.wins}T-{teamExtended.away.draws}H-{teamExtended.away.losses}B</p>
+                          <p className="text-gray-500 text-xs">{teamExtended.away.goals_for}-{teamExtended.away.goals_against} bàn</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 text-orange-400" /> Phong độ hiện tại
+                      </p>
+                      {teamExtended.current_streak ? (
+                        <p className="text-2xl font-black text-white">
+                          {teamExtended.current_streak.count}× <span className={
+                            teamExtended.current_streak.type === 'W' ? 'text-emerald-400'
+                              : teamExtended.current_streak.type === 'L' ? 'text-red-400' : 'text-yellow-400'
+                          }>{teamExtended.current_streak.type}</span>
+                        </p>
+                      ) : <p className="text-gray-500 text-sm">Chưa có dữ liệu</p>}
+                      <p className="text-gray-500 text-xs mt-2">Sạch lưới: {teamExtended.clean_sheets} trận</p>
+                    </div>
+                    <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Kết quả nổi bật</p>
+                      {teamExtended.biggest_win && (
+                        <p className="text-xs text-emerald-400">
+                          Thắng đậm nhất: {teamExtended.biggest_win.goals_for}-{teamExtended.biggest_win.goals_against} vs {teamExtended.biggest_win.opponent_team_name}
+                        </p>
+                      )}
+                      {teamExtended.biggest_loss && (
+                        <p className="text-xs text-red-400 mt-1">
+                          Thua đậm nhất: {teamExtended.biggest_loss.goals_for}-{teamExtended.biggest_loss.goals_against} vs {teamExtended.biggest_loss.opponent_team_name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* NEW — Tài chính + tham gia giải của team đang chọn */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                  {teamFinance && (
+                    <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Tài chính
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <p className="text-gray-400">Lệ phí đã đóng</p><p className="text-white font-bold text-right">{formatCurrency(teamFinance.total_registration_fee_paid)}</p>
+                        <p className="text-gray-400">Thưởng</p><p className="text-emerald-400 font-bold text-right">{formatCurrency(teamFinance.total_bonus_payable)}</p>
+                        <p className="text-gray-400">Phạt</p><p className="text-red-400 font-bold text-right">{formatCurrency(teamFinance.total_fine_owed)}</p>
+                      </div>
+                    </div>
+                  )}
+                  {teamParticipations && (
+                    <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1">
+                        <Award className="w-3.5 h-3.5 text-blue-400" /> Đã tham gia
+                      </p>
+                      <p className="text-sm text-white">{teamParticipations.tournament_count} giải đấu · {teamParticipations.season_count} mùa giải</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {(teamParticipations.participations || []).slice(0, 6).map((p, i) => (
+                          <span key={i} className="text-[10px] bg-navy border border-navy-light px-2 py-1 rounded-lg text-gray-300">
+                            {p.season_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="h-[280px] w-full">
                   {isTeamLoading ? (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>
@@ -690,18 +918,72 @@ export default function Dashboard() {
 
                 {isPlayerLoading ? (
                   <div className="text-gray-400 text-sm py-4">Đang tải...</div>
-                ) : playerOverview && (
+                ) : (
                   <>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <StatCard title="Giải đã tham gia" value={playerOverview.tournament_count} icon={Trophy} colorClass="border-navy-light text-blue-400" />
-                      <StatCard title="Đội đã khoác áo" value={playerOverview.team_count} icon={Shield} colorClass="border-navy-light text-emerald-400" />
-                      <StatCard title="Mùa giải đã đá" value={playerOverview.season_count} icon={Calendar} colorClass="border-navy-light text-purple-400" />
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <StatCard title="Tổng trận" value={playerOverview.total_matches_played} icon={ListChecks} colorClass="border-navy-light text-gray-300" />
-                      <StatCard title="Tổng bàn thắng" value={playerOverview.total_goals} icon={Target} colorClass="border-navy-light text-neon" />
-                      <StatCard title="Tổng kiến tạo" value={playerOverview.total_assists} icon={TrendingUp} colorClass="border-navy-light text-cyan-400" />
-                      <StatCard title="Thẻ (V/Đ)" value={`${playerOverview.total_yellow_cards}/${playerOverview.total_red_cards}`} icon={AlertTriangle} colorClass="border-navy-light text-yellow-400" />
+                    {playerOverview && (
+                      <>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <StatCard title="Giải đã tham gia" value={playerOverview.tournament_count} icon={Trophy} colorClass="border-navy-light text-blue-400" />
+                          <StatCard title="Đội đã khoác áo" value={playerOverview.team_count} icon={Shield} colorClass="border-navy-light text-emerald-400" />
+                          <StatCard title="Mùa giải đã đá" value={playerOverview.season_count} icon={Calendar} colorClass="border-navy-light text-purple-400" />
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                          <StatCard title="Tổng trận" value={playerOverview.total_matches_played} icon={ListChecks} colorClass="border-navy-light text-gray-300" />
+                          <StatCard title="Tổng bàn thắng" value={playerOverview.total_goals} icon={Target} colorClass="border-navy-light text-neon" />
+                          <StatCard title="Tổng kiến tạo" value={playerOverview.total_assists} icon={TrendingUp} colorClass="border-navy-light text-cyan-400" />
+                          <StatCard title="Thẻ (V/Đ)" value={`${playerOverview.total_yellow_cards}/${playerOverview.total_red_cards}`} icon={AlertTriangle} colorClass="border-navy-light text-yellow-400" />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* NEW — hiệu suất ra sân theo season đang chọn */}
+                      {playerPerformance && (
+                        <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Hiệu suất ra sân (mùa này)</p>
+                          <div className="space-y-1.5 text-sm">
+                            <div className="flex justify-between"><span className="text-gray-400">Đá chính</span><span className="text-white font-bold">{playerPerformance.total_starter_count}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-400">Dự bị</span><span className="text-white font-bold">{playerPerformance.total_substitute_count}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-400">Đội trưởng</span><span className="text-white font-bold">{playerPerformance.total_captain_count}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-400">Phút TB/trận</span><span className="text-white font-bold">{playerPerformance.avg_minutes_per_match}</span></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* NEW — trạng thái kỷ luật mùa này */}
+                      {playerDiscipline && (
+                        <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1">
+                            <Ban className="w-3.5 h-3.5 text-red-400" /> Kỷ luật (mùa này)
+                          </p>
+                          {playerDiscipline.is_suspended ? (
+                            <p className="text-red-400 font-bold text-sm">Đang treo giò — còn {playerDiscipline.suspension_matches_remaining} trận</p>
+                          ) : (
+                            <p className="text-emerald-400 font-bold text-sm">Không bị treo giò</p>
+                          )}
+                          <p className="text-gray-500 text-xs mt-2">Thẻ vàng tích lũy: {playerDiscipline.accumulated_yellow_cards}</p>
+                          <p className="text-gray-500 text-xs">Tiền phạt: {formatCurrency(playerDiscipline.total_fine_owed)}</p>
+                        </div>
+                      )}
+
+                      {/* NEW — lịch sử tham gia */}
+                      {playerParticipations && (
+                        <div className="bg-navy-dark/50 border border-navy-light rounded-xl p-4">
+                          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-blue-400" /> Đội đã khoác áo
+                          </p>
+                          {playerParticipations.current_team && (
+                            <p className="text-sm text-white font-bold mb-2">Hiện tại: {playerParticipations.current_team.team_name}</p>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {(playerParticipations.team_history || []).slice(0, 6).map((th, i) => (
+                              <span key={i} className="text-[10px] bg-navy border border-navy-light px-2 py-1 rounded-lg text-gray-300">
+                                {th.team_name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

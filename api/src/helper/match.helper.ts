@@ -19,6 +19,7 @@ export const MATCH_EVENT_SELECT = {
     type: true,
     period: true,
     minute: true,
+    time_source: true,
     added_minute: true,
     created_at: true,
 } satisfies Prisma.MatchEventSelect;
@@ -38,8 +39,61 @@ export const MATCH_RESULT_SELECT = {
     created_at: true,
 } satisfies Prisma.MatchResultSelect;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
+// Baseline lý thuyết (chưa tính bù giờ — bù giờ là hướng phát triển sau,
+// để field trống hiện tại nghĩa là dùng baseline chuẩn 45/90/105/120).
+export const PERIOD_BASELINE_MINUTE: Record<MatchPeriod, number> = {
+    first_half: 0,
+    second_half: 45,
+    extra_time_first: 90,
+    extra_time_second: 105,
+    penalty_shootout: 120,
+};
+
+export interface EventClockTime {
+    time: Date;
+    confidence: 'exact' | 'estimated';
+}
+
+/**
+ * Tính giờ hiển thị cho 1 event.
+ * - time_source='live': dùng created_at thẳng — admin đã bấm ngay lúc xảy ra,
+ *   sai số chỉ là độ trễ thao tác (vài giây), coi là chính xác.
+ * - time_source='estimated': suy từ scheduled_at + minute, baseline lý
+ *   thuyết theo period (KHÔNG bù giờ thực tế — xem PERIOD_BASELINE_MINUTE).
+ *   Đây là ước lượng thô, sai số có thể vài phút/hàng chục phút nếu hiệp
+ *   trước đó có bù giờ dài hoặc nghỉ giữa hiệp không chuẩn 15p. Hướng phát
+ *   triển sau: thêm Match.first_half_added_time/second_half_added_time để
+ *   bù chính xác hơn — hàm này đã tách baseline riêng để dễ nâng cấp, không
+ *   cần đổi chữ ký khi thêm bù giờ.
+ */
+export function computeEventClockTime(
+    match: { scheduled_at: Date | null },
+    evt: {
+        time_source: 'live' | 'estimated';
+        created_at: Date;
+        period: MatchPeriod | null;
+        minute: number | null;
+        added_minute: number | null;
+    },
+): EventClockTime | null {
+    if (evt.time_source === 'live') {
+        return { time: evt.created_at, confidence: 'exact' };
+    }
+
+    if (!match.scheduled_at || evt.minute == null || !evt.period) return null;
+    if (evt.period === MatchPeriod.penalty_shootout) return null; // pen không có "phút" thật
+
+    const baseline = PERIOD_BASELINE_MINUTE[evt.period];
+    // minute lưu theo chuẩn cumulative bóng đá (hiệp 2: 46-90...), nên
+    // KHÔNG cộng thêm baseline vào minute — minute tự nó đã là tổng phút.
+    const totalMinutes = evt.minute + (evt.added_minute ?? 0);
+
+    return {
+        time: new Date(match.scheduled_at.getTime() + totalMinutes * 60_000),
+        confidence: 'estimated',
+    };
+}
 export type MatchEventRow = Prisma.MatchEventGetPayload<{ select: typeof MATCH_EVENT_SELECT }>;
 export type MatchResultRow = Prisma.MatchResultGetPayload<{ select: typeof MATCH_RESULT_SELECT }>;
 
@@ -341,13 +395,21 @@ export interface MatchReportGoalEntry {
     minute: number | null;
     addedMinute: number | null;
     isOwnGoal: boolean;
+    clockTime: Date | null;         // NEW
+    clockConfidence: 'exact' | 'estimated' | null;
 }
 
 export function buildGoalsTimeline(
-    events: { player_id: number | null; team_id: number | null; type: MatchEventType; minute: number | null; added_minute: number | null }[],
+    events: {
+        player_id: number | null; team_id: number | null; type: MatchEventType; period: MatchPeriod | null;
+        minute: number | null; added_minute: number | null,
+        time_source: 'live' | 'estimated',
+        created_at: Date,
+    }[],
     homeTeamId: number,
     awayTeamId: number,
     playerNameLookup: Map<number, string>,
+    scheduledAt: Date | null
 ): { home: MatchReportGoalEntry[]; away: MatchReportGoalEntry[] } {
     const home: MatchReportGoalEntry[] = [];
     const away: MatchReportGoalEntry[] = [];
@@ -360,12 +422,15 @@ export function buildGoalsTimeline(
         if (!isGoalType && !isOwnGoal) continue;
 
         const creditedHome = isCreditedToHomeTeam(homeTeamId, ev.team_id, ev.type);
+        const clock = computeEventClockTime({ scheduled_at: scheduledAt }, ev);
 
         const entry: MatchReportGoalEntry = {
             playerName: playerNameLookup.get(ev.player_id) ?? 'Unknown',
             minute: ev.minute,
             addedMinute: ev.added_minute,
             isOwnGoal,
+            clockTime: clock?.time ?? null,       // NEW
+            clockConfidence: clock?.confidence ?? null, // NEW: 'exact' | 'estimated' | null
         };
 
         (creditedHome ? home : away).push(entry);
@@ -379,7 +444,13 @@ export function formatMinuteLabel(e: MatchReportGoalEntry): string {
     const base = e.addedMinute ? `${e.minute}+${e.addedMinute}'` : `${e.minute}'`;
     return e.isOwnGoal ? `${base} (OG)` : base;
 }
-
+export function formatClockLabel(e: MatchReportGoalEntry): string | null {
+    if (!e.clockTime) return null;
+    const hh = e.clockTime.getHours().toString().padStart(2, '0');
+    const mm = e.clockTime.getMinutes().toString().padStart(2, '0');
+    const prefix = e.clockConfidence === 'estimated' ? '~' : '';
+    return `${prefix}${hh}:${mm}`;
+}
 export function assertMinuteInBounds(
     period: MatchPeriod | null | undefined,
     minute: number | null | undefined,

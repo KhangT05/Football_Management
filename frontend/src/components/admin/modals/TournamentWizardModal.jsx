@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { create } from 'zustand';
 import {
   Trophy, LayoutGrid, Loader2, UploadCloud, Check, Settings,
-  CalendarDays, ChevronUp, ChevronDown, X, Layers, Repeat, Info, ArrowLeft, RefreshCcw
+  CalendarDays, ChevronUp, ChevronDown, X, Layers, Repeat, Info, ArrowLeft, RefreshCcw,
+  Puzzle, Plus, Trash2
 } from 'lucide-react';
 import AdminModal from '../AdminModal';
 import FormField from '../../ui/FormField';
@@ -17,8 +18,14 @@ import { INPUT } from '../../../data/data';
 //   round_robin_knockout        -> stages phải = 1
 //   multi_round_robin_knockout  -> stages phải >= 2
 //   round_robin                 -> stages phải >= 1
+//   custom                      -> round_robin_stages KHÔNG được đọc, cấu trúc do
+//                                  custom_stages[] quyết định hoàn toàn.
 // stagesMode 'fixed0'/'fixed1' -> field bị khóa, không cho sửa (tránh gửi sai lên BE).
 // stagesMode 'min1'/'min2'     -> field cho sửa, clamp theo min tương ứng.
+// stagesMode 'custom'          -> field bị ẩn hoàn toàn, thay bằng stage builder.
+// hasGroupPhase/hasKnockout = null cho 'custom' vì nó phụ thuộc từng stage, không cố định
+// theo format — mọi chỗ dùng 2 flag này phải tự xử lý riêng case custom, không được coi null
+// như falsy một cách vô thức (null !== false về mặt ý nghĩa ở đây).
 // ============================================================
 const FORMAT_META = [
   {
@@ -61,12 +68,37 @@ const FORMAT_META = [
     hasKnockout: true,
     stagesMode: 'min2',
   },
+  {
+    value: 'custom',
+    label: 'Tùy chỉnh (Hybrid)',
+    desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: có trận tranh hạng 3, seed tùy biến).',
+    icon: Puzzle,
+    color: 'fuchsia',
+    hasGroupPhase: null,
+    hasKnockout: null,
+    stagesMode: 'custom',
+  },
 ];
+
 const PITCH_TYPE_META = [
   { value: 'san_5', label: 'Sân 5' },
   { value: 'san_7', label: 'Sân 7' },
   { value: 'san_11', label: 'Sân 11' },
 ];
+
+const STAGE_TYPE_META = [
+  { value: 'round_robin', label: 'Vòng bảng' },
+  { value: 'knockout', label: 'Loại trực tiếp' },
+  { value: 'classification', label: 'Tranh hạng (phụ)' },
+];
+
+const SEED_MODE_META = [
+  { value: 'standing_straight', label: 'Xếp thẳng theo bảng xếp hạng' },
+  { value: 'standing_cross', label: 'Bắt cặp chéo (1A-2B, 1B-2A...)' },
+  { value: 'standing_random', label: 'Bốc thăm ngẫu nhiên' },
+  { value: 'manual', label: 'Xếp cặp thủ công' },
+];
+
 const getFormatMeta = (value) => FORMAT_META.find(f => f.value === value) || FORMAT_META[2];
 
 const clampStagesForFormat = (format, stages) => {
@@ -100,6 +132,117 @@ const STEP_META = [
   { id: 4, title: 'Mùa giải', subtitle: 'Thời gian, số đội, hạn đăng ký', icon: CalendarDays },
 ];
 
+// ============================================================
+// Numeric-only helpers — mọi input number trong file này phải đi qua đây.
+// Trước đây dùng thẳng `+e.target.value`: chuỗi rỗng -> 0 (im lặng sai), chuỗi không
+// phải số ("abc", hoặc paste text) -> NaN chảy thẳng vào state, render ra "NaN" trên UI
+// và làm hỏng mọi phép tính/validate phía sau (VD: NaN < 1 luôn false -> qua mặt validateStep).
+// ============================================================
+const safeInt = (raw, fallback = 0) => {
+  if (raw === '' || raw === null || raw === undefined) return fallback;
+  const n = Math.trunc(Number(raw));
+  return Number.isFinite(n) ? n : fallback;
+};
+const safeFloat = (raw, fallback = 0) => {
+  if (raw === '' || raw === null || raw === undefined) return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+};
+// Chặn ký tự browser <input type="number"> vẫn cho gõ được nhưng không hợp lệ với business
+// data ở đây (điểm số, số người, tiền phạt... không bao giờ âm hoặc dạng khoa học).
+const blockNonNumericKeys = (e) => {
+  if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+};
+
+// Input số dùng chung — đảm bảo mọi field số trong wizard có cùng hành vi (chặn ký tự rác,
+// không bao giờ set NaN vào state) và cùng cấu trúc DOM (FormField + input), tránh lệch
+// chiều cao/label như bản cũ khi mỗi chỗ tự viết input riêng.
+const NumField = ({ label, required, value, onChange, min, max, step, allowDecimal = false, placeholder }) => (
+  <FormField label={label} required={required}>
+    <input
+      type="number"
+      inputMode={allowDecimal ? 'decimal' : 'numeric'}
+      className={INPUT}
+      value={value}
+      min={min}
+      max={max}
+      step={step ?? (allowDecimal ? 0.01 : 1)}
+      placeholder={placeholder}
+      onKeyDown={blockNonNumericKeys}
+      onChange={(e) => onChange(allowDecimal ? safeFloat(e.target.value, 0) : safeInt(e.target.value, 0))}
+    />
+  </FormField>
+);
+
+// ============================================================
+// Custom stage builder helpers
+// Đơn giản hóa cố ý so với schema BE (cho phép graph tùy ý): builder này chỉ dựng được
+// pipeline TUYẾN TÍNH (stage sau luôn lấy nguồn từ đúng stage liền trước), và chỉ được
+// xóa stage CUỐI CÙNG. Lý do: nếu cho sửa/xóa stage giữa chừng + chọn source tùy ý, phải
+// tự replicate toàn bộ validateCustomStages() (order liên tục, không forward-reference,
+// không dangling source) ngay trên client — rủi ro lệch với BE cao hơn lợi ích. Pipeline
+// tuyến tính khớp với mọi ví dụ thực tế bạn đưa (vòng bảng -> knockout -> tranh hạng), và
+// vẫn map thẳng vào customStagesSchema vì source_stage_order tuyến tính vẫn hợp lệ với
+// mọi rule của BE (chỉ là tập con chặt hơn, không phải tập lớn hơn).
+// ============================================================
+const createDefaultStage = (order, type, prevStage) => {
+  if (type === 'round_robin') {
+    return {
+      order,
+      type: 'round_robin',
+      name: order === 0 ? 'Vòng bảng' : `Vòng bảng ${order + 1}`,
+      group_count: 4,
+      teams_advance_per_group: 2,
+      points_per_win: 3,
+      points_per_draw: 1,
+      points_per_loss: 0,
+      source_stage_order: null,
+    };
+  }
+  if (type === 'knockout') {
+    return {
+      order,
+      type: 'knockout',
+      name: 'Loại trực tiếp',
+      source_stage_order: prevStage ? prevStage.order : null,
+      seed_mode: 'standing_cross',
+      leg_type: 'single_leg',
+    };
+  }
+  return {
+    order,
+    type: 'classification',
+    name: 'Tranh hạng 3',
+    source_stage_order: prevStage ? prevStage.order : null,
+    source_kind: prevStage?.type === 'knockout' ? 'loser_of_stage' : 'standing',
+    leg_type: 'single_leg',
+  };
+};
+
+// Mirror phần validateCustomStages() bên BE ở mức đủ để chặn lỗi sớm trên FE.
+// Không thay thế validate BE — chỉ giảm số lần user bị reject sau khi submit.
+const validateCustomStagesLocal = (stages) => {
+  if (!stages || stages.length === 0) return 'Vui lòng thêm ít nhất 1 stage cho thể thức tùy chỉnh';
+
+  const names = stages.map(s => (s.name || '').trim().toLowerCase());
+  if (names.some(n => !n)) return 'Tên stage không được để trống';
+  if (new Set(names).size !== names.length) return 'Tên các stage không được trùng nhau';
+
+  if (stages[0].type !== 'round_robin') return 'Stage đầu tiên phải là "Vòng bảng"';
+
+  for (let i = 0; i < stages.length; i++) {
+    const s = stages[i];
+    if (s.type === 'round_robin') {
+      if (s.group_count < 1 || s.group_count > 32) return `Stage "${s.name}": số bảng phải từ 1 đến 32`;
+      if (s.teams_advance_per_group < 1) return `Stage "${s.name}": số đội đi tiếp mỗi bảng phải >= 1`;
+      if (s.points_per_win < 0 || s.points_per_draw < 0 || s.points_per_loss < 0) return `Stage "${s.name}": điểm trận không được âm`;
+    } else if (s.source_stage_order === null || s.source_stage_order === undefined) {
+      return `Stage "${s.name}": thiếu stage nguồn`;
+    }
+  }
+  return null;
+};
+
 const defaultRuleForm = {
   name: '',
   format: 'round_robin_knockout',
@@ -118,6 +261,7 @@ const defaultRuleForm = {
   bonus_per_assist: 0,
   teams_advance_per_group: 2,
   tiebreaker_order: ['goal_diff', 'goals_scored', 'head_to_head'],
+  custom_stages: [],
 };
 
 // Map 1 TournamentRuleDto (từ BE) -> shape ruleForm để prefill + so dirty-state.
@@ -139,6 +283,7 @@ const ruleDtoToFormShape = (rule) => ({
   bonus_per_assist: Number(rule.bonus_per_assist ?? 0),
   teams_advance_per_group: rule.teams_advance_per_group ?? 2,
   tiebreaker_order: Array.isArray(rule.tiebreaker_order) ? [...rule.tiebreaker_order] : [],
+  custom_stages: Array.isArray(rule.custom_stages) ? rule.custom_stages.map(s => ({ ...s })) : [],
 });
 
 // So sánh theo string ISO date (YYYY-MM-DD), KHÔNG qua Date object.
@@ -193,7 +338,7 @@ const initialWizardState = {
     registration_deadline: '',
     max_teams: 16,
     is_registration_open: true,
-    knockout_leg_type: 'single_leg', // NEW
+    knockout_leg_type: 'single_leg',
     pitch_type: 'san_5',
   },
 };
@@ -274,14 +419,20 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   // Khóa/clamp round_robin_stages mỗi khi đổi format — tránh gửi giá trị vi phạm
   // validateFormatConsistency() của BE (VALIDATION_ERROR ngay khi submit).
-  // Zero-out các field mất ý nghĩa theo format, tránh:
-  // (1) FE hiển thị giá trị mặc định gây hiểu lầm (VD: knockout mà vẫn thấy "Thắng 3 điểm")
-  // (2) submit lên BE bị validateScoringApplicability() reject vì giá trị != 0
+  // Zero-out các field mất ý nghĩa theo format (chỉ áp dụng cho 4 format "chuẩn").
+  // Với format='custom': không zero-out gì (BE bỏ qua toàn bộ các field này), chỉ đảm bảo
+  // custom_stages có ít nhất 1 stage khởi tạo sẵn để user không thấy màn hình trống trơn.
   // Trade-off: đổi qua lại format sẽ MẤT giá trị đã nhập (không auto-restore) —
   // chấp nhận được vì step 2 còn ở đầu wizard, chưa có side-effect gì cần rollback.
   useEffect(() => {
     setRuleForm(f => {
       const meta = getFormatMeta(f.format);
+
+      if (meta.value === 'custom') {
+        if (f.custom_stages && f.custom_stages.length > 0) return f;
+        return { ...f, custom_stages: [createDefaultStage(0, 'round_robin', null)] };
+      }
+
       if (!meta.hasGroupPhase) {
         if (f.points_per_win === 0 && f.points_per_draw === 0 && f.points_per_loss === 0 &&
           f.teams_advance_per_group === 0 && f.tiebreaker_order.length === 0) {
@@ -297,7 +448,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   }, [ruleForm.format, setRuleForm]);
 
   const activeFormatMeta = getFormatMeta(ruleForm.format);
-  const hasGroupPhase = activeFormatMeta.hasGroupPhase;
+  const isCustomFormat = activeFormatMeta.value === 'custom';
+  // Custom: group-count đã được nhập TRỰC TIẾP trong stage builder (stage round_robin đầu
+  // tiên có field group_count riêng) -> không cần step 3 riêng nữa, luôn skip.
+  const hasGroupPhase = isCustomFormat ? false : activeFormatMeta.hasGroupPhase;
 
   // Dirty-state: chỉ có ý nghĩa khi đang ở mode 'template' và đã chọn baseline.
   const isTemplateDirty = useMemo(() => {
@@ -315,6 +469,56 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   // nếu để nguyên start_date thì user vẫn chọn trùng ngày được -> phải trừ đi 1 ngày.
   const maxRegistrationDate = seasonForm.start_date ? addDaysStr(seasonForm.start_date, -1) : undefined;
 
+  // ---------- Custom stage builder mutators ----------
+
+  const addCustomStage = (type) => {
+    setRuleForm(f => {
+      const stages = f.custom_stages || [];
+      if (type !== 'round_robin' && stages.length === 0) {
+        toast.warning('Stage đầu tiên phải là "Vòng bảng" — knockout/tranh hạng cần có nguồn đội từ stage trước.');
+        return f;
+      }
+      const prevStage = stages[stages.length - 1] || null;
+      const newStage = createDefaultStage(stages.length, type, prevStage);
+      return { ...f, custom_stages: [...stages, newStage] };
+    });
+  };
+
+  const removeLastCustomStage = () => {
+    setRuleForm(f => {
+      const stages = f.custom_stages || [];
+      if (stages.length <= 1) {
+        toast.warning('Phải có ít nhất 1 stage.');
+        return f;
+      }
+      return { ...f, custom_stages: stages.slice(0, -1) };
+    });
+  };
+
+  const updateCustomStage = (index, patch) => {
+    setRuleForm(f => {
+      const stages = [...(f.custom_stages || [])];
+      stages[index] = { ...stages[index], ...patch };
+      return { ...f, custom_stages: stages };
+    });
+  };
+
+  // round_robin không phải stage đầu: cho phép chọn giữa "lấy đội từ stage trước" (thường không
+  // dùng — round_robin không nhận input từ 1 stage khác) hoặc "pool mới hoàn toàn" (source=null).
+  // Field này thực chất chỉ có ý nghĩa demo cho round_robin song song độc lập, mặc định luôn null.
+  const toggleFreshPool = (index) => {
+    setRuleForm(f => {
+      const stages = [...f.custom_stages];
+      const stage = stages[index];
+      const prevOrder = index > 0 ? stages[index - 1].order : null;
+      stages[index] = {
+        ...stage,
+        source_stage_order: stage.source_stage_order === null ? prevOrder : null,
+      };
+      return { ...f, custom_stages: stages };
+    });
+  };
+
   const validateStep = () => {
     if (step === 1) {
       if (tournamentMode === 'new' && !tournamentForm.logo) return 'Vui lòng tải logo cho giải đấu';
@@ -327,7 +531,6 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
       const r = ruleForm;
       if (willCreateNewRule && !r.name.trim()) return 'Vui lòng nhập tên rule';
-      if (r.points_per_win < 0 || r.points_per_draw < 0 || r.points_per_loss < 0) return 'Điểm trận không được âm';
       if (r.min_players_per_team < 1) return 'Số người tối thiểu phải >= 1';
       if (r.max_players_per_team < r.min_players_per_team) return 'Số người tối đa phải >= tối thiểu';
       if (r.suspension_match_count < 1) return 'Số trận treo giò phải >= 1';
@@ -337,9 +540,15 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (r.bonus_per_goal < 0 || r.bonus_per_assist < 0) return 'Mức thưởng không được âm';
 
       const meta = getFormatMeta(r.format);
-      if (meta.hasGroupPhase) {
-        if (meta.hasKnockout && r.teams_advance_per_group < 1) return 'Số đội đi tiếp mỗi bảng phải >= 1';
-        if (!r.tiebreaker_order.length) return 'Vui lòng chọn ít nhất 1 tiêu chí xếp hạng phụ';
+      if (meta.value === 'custom') {
+        const stageErr = validateCustomStagesLocal(r.custom_stages);
+        if (stageErr) return stageErr;
+      } else {
+        if (r.points_per_win < 0 || r.points_per_draw < 0 || r.points_per_loss < 0) return 'Điểm trận không được âm';
+        if (meta.hasGroupPhase) {
+          if (meta.hasKnockout && r.teams_advance_per_group < 1) return 'Số đội đi tiếp mỗi bảng phải >= 1';
+          if (!r.tiebreaker_order.length) return 'Vui lòng chọn ít nhất 1 tiêu chí xếp hạng phụ';
+        }
       }
     }
 
@@ -483,20 +692,40 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       // đang share rule đó — service tự chặn việc này bằng CONFLICT khi đã có phase/match official.
       let finalRuleId;
       let finalFormat;
+      let finalCustomStages = null;
       if (willCreateNewRule) {
-        const rRes = await tournamentRuleApi.create({
+        const rulePayload = {
           ...ruleForm,
           name: ruleForm.name.trim(),
           tournament_id: finalTournamentId,
-        });
+          // format != custom -> custom_stages phải null (schema cấm gửi kèm format khác custom).
+          // format == custom -> round_robin_stages không được BE đọc, gửi 0 cho rõ ràng thay vì
+          // giá trị default 1 gây hiểu lầm là "có 1 vòng bảng cố định".
+          custom_stages: ruleForm.format === 'custom' ? ruleForm.custom_stages : null,
+          round_robin_stages: ruleForm.format === 'custom' ? 0 : ruleForm.round_robin_stages,
+        };
+        const rRes = await tournamentRuleApi.create(rulePayload);
         finalRuleId = rRes.data?.id || rRes.id;
         finalFormat = ruleForm.format;
+        finalCustomStages = ruleForm.custom_stages;
       } else {
         finalRuleId = selectedRuleId;
         finalFormat = selectedRuleObj?.format;
+        finalCustomStages = selectedRuleObj?.custom_stages ?? null;
       }
 
-      const finalHasGroupPhase = getFormatMeta(finalFormat).hasGroupPhase;
+      const finalMeta = getFormatMeta(finalFormat);
+      const finalIsCustom = finalFormat === 'custom';
+      const firstCustomStage = finalIsCustom ? finalCustomStages?.[0] : null;
+
+      // Group phase ban đầu: format chuẩn dùng flag hasGroupPhase + groupCount (step 3);
+      // format custom lấy trực tiếp từ stage[0] (luôn là round_robin theo ràng buộc builder).
+      const shouldCreateInitialGroups = finalIsCustom
+        ? firstCustomStage?.type === 'round_robin'
+        : finalMeta.hasGroupPhase;
+      const initialGroupCount = finalIsCustom
+        ? Number(firstCustomStage?.group_count || 0)
+        : Number(groupCount);
 
       // 3. Season
       const formattedSeasonForm = {
@@ -509,19 +738,26 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       const sRes = await seasonApi.create({
         ...formattedSeasonForm,
         is_active: true,
-        group_count: finalHasGroupPhase ? Number(groupCount) : 0,
+        group_count: shouldCreateInitialGroups ? initialGroupCount : 0,
         tournament_id: finalTournamentId,
         tournament_rule_id: finalRuleId,
       });
       const finalSeasonId = sRes.data?.id || sRes.id;
 
-      // 4. Generate groups nếu thể thức có vòng bảng.
+      // 4. Generate groups nếu thể thức có vòng bảng ở stage đầu.
       // LƯU Ý: season vừa tạo mặc định ở status 'upcoming', trong khi BE chỉ cho phép
       // tạo/sửa group khi season ở 'registration_open' hoặc 'ongoing' (CONFLICT nếu không).
       // Nếu user chọn "Mở đăng ký ngay" thì tự động chuyển status trước khi tạo group.
       // Các bước này không throw ra ngoài để không rollback tournament/rule/season đã tạo thành công.
+      //
+      // Với format='custom': builder này CHỈ tự động tạo group cho stage đầu tiên. Các stage
+      // sau (knockout/classification) cần dữ liệu chỉ có được SAU KHI vòng bảng kết thúc
+      // (groupId, matchId thật của các trận bán kết...) — không thể generate trước tại thời
+      // điểm tạo season. Việc kích hoạt knockoutApi.generateKnockoutFromStandings(...) và
+      // knockoutApi.generateKnockoutBracket(...) cho các stage tiếp theo phải làm ở màn hình
+      // quản lý season (sau khi vòng bảng có kết quả), không thuộc phạm vi wizard này.
       let groupCreationWarning = null;
-      if (finalHasGroupPhase && groupCount > 0) {
+      if (shouldCreateInitialGroups && initialGroupCount > 0) {
         if (seasonForm.is_registration_open) {
           try {
             await seasonApi.updateStatus(finalSeasonId, { status: 'registration_open' });
@@ -531,7 +767,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
         }
         if (!groupCreationWarning) {
           try {
-            await groupApi.createGroupsBulk(finalSeasonId, groupCount);
+            await groupApi.createGroupsBulk(finalSeasonId, initialGroupCount);
           } catch (groupErr) {
             groupCreationWarning = 'Mùa giải đã được tạo nhưng chưa thể tự động tạo bảng đấu (season chưa ở trạng thái phù hợp). Vui lòng vào mùa giải để tạo bảng đấu thủ công.';
           }
@@ -540,6 +776,8 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
       if (groupCreationWarning) {
         toast.warning(groupCreationWarning);
+      } else if (finalIsCustom && finalCustomStages?.length > 1) {
+        toast.success('Khởi tạo Giải đấu và Mùa giải thành công! Đã tạo vòng bảng — các stage tiếp theo (knockout/tranh hạng) cần kích hoạt thủ công sau khi vòng bảng kết thúc.');
       } else {
         toast.success('Khởi tạo Giải đấu và Mùa giải thành công!');
       }
@@ -626,6 +864,150 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   const isLastStep = step === 4;
   const showRuleForm = ruleMode === 'blank' || (ruleMode === 'template' && selectedRuleId);
   const todayMin = todayStr();
+
+  // ---------- Custom stage card renderer ----------
+  const renderStageCard = (stage, index) => {
+    const isLast = index === ruleForm.custom_stages.length - 1;
+    const prevStage = index > 0 ? ruleForm.custom_stages[index - 1] : null;
+    const typeLabel = STAGE_TYPE_META.find(t => t.value === stage.type)?.label || stage.type;
+
+    return (
+      <div key={index} className="bg-navy border border-navy-light rounded-2xl p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-fuchsia-500/20 text-fuchsia-300 text-xs font-bold flex items-center justify-center shrink-0">
+              {index + 1}
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-fuchsia-300">{typeLabel}</span>
+          </div>
+          {isLast && ruleForm.custom_stages.length > 1 && (
+            <button
+              type="button"
+              onClick={removeLastCustomStage}
+              className="text-gray-500 hover:text-red-400 flex items-center gap-1 text-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Xóa
+            </button>
+          )}
+        </div>
+
+        <FormField label="Tên stage" required>
+          <input
+            className={INPUT}
+            value={stage.name}
+            placeholder="VD: Vòng bảng, Bán kết, Tranh hạng 3"
+            onChange={(e) => updateCustomStage(index, { name: e.target.value })}
+          />
+        </FormField>
+
+        {stage.type === 'round_robin' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <NumField
+                label="Số bảng" required min={1} max={32}
+                value={stage.group_count}
+                onChange={(v) => updateCustomStage(index, { group_count: v })}
+              />
+              <NumField
+                label="Số đội đi tiếp / bảng" required min={1}
+                value={stage.teams_advance_per_group}
+                onChange={(v) => updateCustomStage(index, { teams_advance_per_group: v })}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <NumField
+                label="Điểm Thắng" required min={0}
+                value={stage.points_per_win}
+                onChange={(v) => updateCustomStage(index, { points_per_win: v })}
+              />
+              <NumField
+                label="Điểm Hòa" required min={0}
+                value={stage.points_per_draw}
+                onChange={(v) => updateCustomStage(index, { points_per_draw: v })}
+              />
+              <NumField
+                label="Điểm Thua" required min={0}
+                value={stage.points_per_loss}
+                onChange={(v) => updateCustomStage(index, { points_per_loss: v })}
+              />
+            </div>
+            {index > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
+                <input
+                  type="checkbox"
+                  checked={stage.source_stage_order === null}
+                  onChange={() => toggleFreshPool(index)}
+                />
+                Lấy pool đội mới hoàn toàn (không phụ thuộc stage trước)
+              </label>
+            )}
+          </>
+        )}
+
+        {stage.type === 'knockout' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Cách bốc thăm" required>
+              <select
+                className={INPUT}
+                value={stage.seed_mode}
+                onChange={(e) => updateCustomStage(index, { seed_mode: e.target.value })}
+              >
+                {SEED_MODE_META.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Thể thức sân đấu" required>
+              <select
+                className={INPUT}
+                value={stage.leg_type}
+                onChange={(e) => updateCustomStage(index, { leg_type: e.target.value })}
+              >
+                {KNOCKOUT_LEG_TYPE_META.map(k => (
+                  <option key={k.value} value={k.value}>{k.label}</option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+        )}
+
+        {stage.type === 'classification' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Nguồn đội" required>
+              <select
+                className={INPUT}
+                value={stage.source_kind}
+                onChange={(e) => updateCustomStage(index, { source_kind: e.target.value })}
+                disabled={prevStage?.type !== 'knockout'}
+              >
+                <option value="standing">Theo bảng xếp hạng</option>
+                <option value="loser_of_stage" disabled={prevStage?.type !== 'knockout'}>
+                  Đội thua ở stage trước
+                </option>
+              </select>
+            </FormField>
+            <FormField label="Thể thức sân đấu" required>
+              <select
+                className={INPUT}
+                value={stage.leg_type}
+                onChange={(e) => updateCustomStage(index, { leg_type: e.target.value })}
+              >
+                {KNOCKOUT_LEG_TYPE_META.map(k => (
+                  <option key={k.value} value={k.value}>{k.label}</option>
+                ))}
+              </select>
+            </FormField>
+            {prevStage?.type !== 'knockout' && (
+              <p className="sm:col-span-2 text-[11px] text-gray-500 italic flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 shrink-0" />
+                "Đội thua ở stage trước" chỉ dùng được khi stage liền trước là Loại trực tiếp.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <AdminModal
@@ -800,7 +1182,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                           <Icon className="w-5 h-5 shrink-0 text-gray-500" />
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-sm truncate text-gray-300">{rule.name || `Rule #${rule.id}`}</p>
-                            <p className="text-xs text-gray-500">{meta.label} · {rule.points_per_win}-{rule.points_per_draw}-{rule.points_per_loss} điểm (T-H-T)</p>
+                            <p className="text-xs text-gray-500">
+                              {meta.label}
+                              {meta.value !== 'custom' && ` · ${rule.points_per_win}-${rule.points_per_draw}-${rule.points_per_loss} điểm (T-H-T)`}
+                            </p>
                           </div>
                         </button>
                       );
@@ -864,16 +1249,20 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     <input className={INPUT} value={ruleForm.name} onChange={e => setRuleForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Luật chuẩn 2026" />
                   </FormField>
 
-                  {(activeFormatMeta.stagesMode === 'min1' || activeFormatMeta.stagesMode === 'min2') ? (
-                    <FormField label="Số vòng bảng liên tiếp" required>
-                      <input
-                        type="number"
-                        min={activeFormatMeta.stagesMode === 'min2' ? 2 : 1}
-                        className={INPUT}
-                        value={ruleForm.round_robin_stages}
-                        onChange={e => setRuleForm(f => ({ ...f, round_robin_stages: clampStagesForFormat(f.format, +e.target.value) }))}
-                      />
-                    </FormField>
+                  {isCustomFormat ? (
+                    <div className="flex items-end pb-2.5">
+                      <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
+                        <Info className="w-3.5 h-3.5 shrink-0" />
+                        Cấu trúc vòng đấu do các stage bên dưới quyết định.
+                      </p>
+                    </div>
+                  ) : (activeFormatMeta.stagesMode === 'min1' || activeFormatMeta.stagesMode === 'min2') ? (
+                    <NumField
+                      label="Số vòng bảng liên tiếp" required
+                      min={activeFormatMeta.stagesMode === 'min2' ? 2 : 1}
+                      value={ruleForm.round_robin_stages}
+                      onChange={(v) => setRuleForm(f => ({ ...f, round_robin_stages: clampStagesForFormat(f.format, v) }))}
+                    />
                   ) : (
                     <div className="flex items-end pb-2.5">
                       <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
@@ -884,118 +1273,67 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                   )}
                 </div>
 
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField label="Điểm Thắng" required>
-                      <input type="number" className={INPUT} value={ruleForm.points_per_win} onChange={e => setRuleForm(f => ({ ...f, points_per_win: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Điểm Hòa" required>
-                      <input type="number" className={INPUT} value={ruleForm.points_per_draw} onChange={e => setRuleForm(f => ({ ...f, points_per_draw: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Điểm Thua" required>
-                      <input type="number" className={INPUT} value={ruleForm.points_per_loss} onChange={e => setRuleForm(f => ({ ...f, points_per_loss: +e.target.value }))} />
-                    </FormField>
+                {!isCustomFormat && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <NumField label="Điểm Thắng" required min={0} max={10} value={ruleForm.points_per_win} onChange={(v) => setRuleForm(f => ({ ...f, points_per_win: v }))} />
+                      <NumField label="Điểm Hòa" required min={0} max={10} value={ruleForm.points_per_draw} onChange={(v) => setRuleForm(f => ({ ...f, points_per_draw: v }))} />
+                      <NumField label="Điểm Thua" required min={0} max={10} value={ruleForm.points_per_loss} onChange={(v) => setRuleForm(f => ({ ...f, points_per_loss: v }))} />
+                    </div>
                   </div>
-                </div>
+                )}
 
+                {/* Đội hình & xử thua — 3 field CỐ ĐỊNH, luôn cùng 1 layout bất kể format, tránh
+                    lệch dòng như bản trước (trước đây điều kiện cột theo hasGroupPhase && hasKnockout
+                    dù 3 field này không phụ thuộc gì vào group phase). */}
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
-                  <div className={`grid gap-4 ${activeFormatMeta.hasGroupPhase ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                    <FormField label="Số người tối đa / đội" required>
-                      <input type="number" className={INPUT} value={ruleForm.max_players_per_team} onChange={e => setRuleForm(f => ({ ...f, max_players_per_team: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Số người tối thiểu" required>
-                      <input type="number" className={INPUT} value={ruleForm.min_players_per_team} onChange={e => setRuleForm(f => ({ ...f, min_players_per_team: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Điểm xử thua" required>
-                      <input type="number" className={INPUT} value={ruleForm.forfeit_score} onChange={e => setRuleForm(f => ({ ...f, forfeit_score: +e.target.value }))} />
-                    </FormField>
-                  </div>
-                  {activeFormatMeta.hasGroupPhase && (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
-                      <div className="grid grid-cols-3 gap-4">
-                        <FormField label="Điểm Thắng" required>
-                          <input type="number" className={INPUT} value={ruleForm.points_per_win} onChange={e => setRuleForm(f => ({ ...f, points_per_win: +e.target.value }))} />
-                        </FormField>
-                        <FormField label="Điểm Hòa" required>
-                          <input type="number" className={INPUT} value={ruleForm.points_per_draw} onChange={e => setRuleForm(f => ({ ...f, points_per_draw: +e.target.value }))} />
-                        </FormField>
-                        <FormField label="Điểm Thua" required>
-                          <input type="number" className={INPUT} value={ruleForm.points_per_loss} onChange={e => setRuleForm(f => ({ ...f, points_per_loss: +e.target.value }))} />
-                        </FormField>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
-                    <div className={`grid gap-4 ${activeFormatMeta.hasGroupPhase && activeFormatMeta.hasKnockout ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                      <FormField label="Số người tối đa / đội" required>
-                        <input type="number" className={INPUT} value={ruleForm.max_players_per_team} onChange={e => setRuleForm(f => ({ ...f, max_players_per_team: +e.target.value }))} />
-                      </FormField>
-                      <FormField label="Số người tối thiểu" required>
-                        <input type="number" className={INPUT} value={ruleForm.min_players_per_team} onChange={e => setRuleForm(f => ({ ...f, min_players_per_team: +e.target.value }))} />
-                      </FormField>
-                      <FormField label="Điểm xử thua" required>
-                        <input type="number" className={INPUT} value={ruleForm.forfeit_score} onChange={e => setRuleForm(f => ({ ...f, forfeit_score: +e.target.value }))} />
-                      </FormField>
-                    </div>
-                    {activeFormatMeta.hasGroupPhase && activeFormatMeta.hasKnockout && (
-                      <div className="grid grid-cols-3 gap-4 mt-4">
-                        <FormField label="Số đội đi tiếp / bảng" required>
-                          <input type="number" min="1" className={INPUT} value={ruleForm.teams_advance_per_group} onChange={e => setRuleForm(f => ({ ...f, teams_advance_per_group: +e.target.value }))} />
-                        </FormField>
-                      </div>
-                    )}
-                    {activeFormatMeta.hasKnockout && (
-                      <FormField label="Thể thức sân đấu (Knockout)" required>
-                        <select
-                          className={INPUT}
-                          value={seasonForm.knockout_leg_type}
-                          onChange={e => setSeasonForm(f => ({ ...f, knockout_leg_type: e.target.value }))}
-                        >
-                          {KNOCKOUT_LEG_TYPE_META.map(k => (
-                            <option key={k.value} value={k.value}>{k.label}</option>
-                          ))}
-                        </select>
-                      </FormField>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <NumField label="Số người tối đa / đội" required min={1} max={50} value={ruleForm.max_players_per_team} onChange={(v) => setRuleForm(f => ({ ...f, max_players_per_team: v }))} />
+                    <NumField label="Số người tối thiểu" required min={1} max={50} value={ruleForm.min_players_per_team} onChange={(v) => setRuleForm(f => ({ ...f, min_players_per_team: v }))} />
+                    <NumField label="Điểm xử thua" required min={0} max={20} value={ruleForm.forfeit_score} onChange={(v) => setRuleForm(f => ({ ...f, forfeit_score: v }))} />
                   </div>
                 </div>
+
+                {!isCustomFormat && activeFormatMeta.hasKnockout && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {activeFormatMeta.hasGroupPhase && (
+                      <NumField label="Số đội đi tiếp / bảng" required min={1} value={ruleForm.teams_advance_per_group} onChange={(v) => setRuleForm(f => ({ ...f, teams_advance_per_group: v }))} />
+                    )}
+                    <FormField label="Thể thức sân đấu (Knockout)" required>
+                      <select
+                        className={INPUT}
+                        value={seasonForm.knockout_leg_type}
+                        onChange={e => setSeasonForm(f => ({ ...f, knockout_leg_type: e.target.value }))}
+                      >
+                        {KNOCKOUT_LEG_TYPE_META.map(k => (
+                          <option key={k.value} value={k.value}>{k.label}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỷ luật</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Thẻ vàng tích lũy / treo giò" required>
-                      <input type="number" min="1" className={INPUT} value={ruleForm.yellow_cards_suspension} onChange={e => setRuleForm(f => ({ ...f, yellow_cards_suspension: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Số trận bị treo giò" required>
-                      <input type="number" min="1" className={INPUT} value={ruleForm.suspension_match_count} onChange={e => setRuleForm(f => ({ ...f, suspension_match_count: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Phạt tiền / thẻ vàng">
-                      <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.fine_per_yellow_card} onChange={e => setRuleForm(f => ({ ...f, fine_per_yellow_card: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Phạt tiền / thẻ đỏ">
-                      <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.fine_per_red_card} onChange={e => setRuleForm(f => ({ ...f, fine_per_red_card: +e.target.value }))} />
-                    </FormField>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <NumField label="Thẻ vàng tích lũy / treo giò" required min={1} value={ruleForm.yellow_cards_suspension} onChange={(v) => setRuleForm(f => ({ ...f, yellow_cards_suspension: v }))} />
+                    <NumField label="Số trận bị treo giò" required min={1} value={ruleForm.suspension_match_count} onChange={(v) => setRuleForm(f => ({ ...f, suspension_match_count: v }))} />
+                    <NumField label="Phạt tiền / thẻ vàng" min={0} allowDecimal value={ruleForm.fine_per_yellow_card} onChange={(v) => setRuleForm(f => ({ ...f, fine_per_yellow_card: v }))} />
+                    <NumField label="Phạt tiền / thẻ đỏ" min={0} allowDecimal value={ruleForm.fine_per_red_card} onChange={(v) => setRuleForm(f => ({ ...f, fine_per_red_card: v }))} />
                   </div>
                 </div>
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Thưởng</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Thưởng / bàn thắng">
-                      <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.bonus_per_goal} onChange={e => setRuleForm(f => ({ ...f, bonus_per_goal: +e.target.value }))} />
-                    </FormField>
-                    <FormField label="Thưởng / kiến tạo">
-                      <input type="number" min="0" step="0.01" className={INPUT} value={ruleForm.bonus_per_assist} onChange={e => setRuleForm(f => ({ ...f, bonus_per_assist: +e.target.value }))} />
-                    </FormField>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <NumField label="Thưởng / bàn thắng" min={0} allowDecimal value={ruleForm.bonus_per_goal} onChange={(v) => setRuleForm(f => ({ ...f, bonus_per_goal: v }))} />
+                    <NumField label="Thưởng / kiến tạo" min={0} allowDecimal value={ruleForm.bonus_per_assist} onChange={(v) => setRuleForm(f => ({ ...f, bonus_per_assist: v }))} />
                   </div>
                 </div>
 
-                {activeFormatMeta.hasGroupPhase && (
+                {!isCustomFormat && activeFormatMeta.hasGroupPhase && (
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
                       Tiêu chí xếp hạng phụ <span className="text-red-400">*</span>
@@ -1031,12 +1369,39 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     </div>
                   </div>
                 )}
+
+                {/* ============ CUSTOM STAGE BUILDER ============ */}
+                {isCustomFormat && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                      Pipeline vòng đấu <span className="text-red-400">*</span>
+                    </p>
+                    <p className="text-[11px] text-gray-500 italic mb-3 flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      Chỉ dựng được pipeline tuyến tính (stage sau lấy nguồn từ đúng stage liền trước) và chỉ xóa được stage cuối cùng.
+                    </p>
+                    <div className="space-y-3">
+                      {ruleForm.custom_stages.map((stage, idx) => renderStageCard(stage, idx))}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button type="button" onClick={() => addCustomStage('round_robin')} className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-navy-light text-gray-400 hover:text-white hover:border-blue-500 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5" /> Vòng bảng
+                      </button>
+                      <button type="button" onClick={() => addCustomStage('knockout')} className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-navy-light text-gray-400 hover:text-white hover:border-blue-500 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5" /> Loại trực tiếp
+                      </button>
+                      <button type="button" onClick={() => addCustomStage('classification')} className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-navy-light text-gray-400 hover:text-white hover:border-blue-500 flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5" /> Tranh hạng
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* ================= STEP 3: GROUP COUNT (auto-skip nếu format = knockout thuần) ================= */}
+        {/* ================= STEP 3: GROUP COUNT (auto-skip nếu format = knockout thuần hoặc custom) ================= */}
         {step === 3 && hasGroupPhase && (
           <div className="max-w-xl mx-auto bg-navy-dark/50 p-8 rounded-2xl border border-navy-light animate-fade-in text-center space-y-5">
             <LayoutGrid className="w-10 h-10 text-blue-400 mx-auto" />
@@ -1045,7 +1410,13 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
             </p>
             <div className="flex justify-center items-center gap-4">
               <label className="font-bold text-white">Số lượng Group:</label>
-              <input type="number" min="1" max="32" className={`${INPUT} w-28 text-center text-2xl font-black`} value={groupCount} onChange={e => setGroupCount(+e.target.value)} />
+              <input
+                type="number" min="1" max="32" inputMode="numeric"
+                className={`${INPUT} w-28 text-center text-2xl font-black`}
+                value={groupCount}
+                onKeyDown={blockNonNumericKeys}
+                onChange={e => setGroupCount(safeInt(e.target.value, 1))}
+              />
             </div>
             <p className="text-xs text-gray-500">Từ 1 đến 32 bảng.</p>
           </div>
@@ -1069,7 +1440,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                   ))}
                 </select>
               </FormField>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField label="Ngày bắt đầu" required>
                   <input
                     type="date" min={todayMin} className={INPUT}
@@ -1085,10 +1456,12 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                   />
                 </FormField>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField label="Số đội tối đa" required>
-                  <input type="number" min="2" className={INPUT} value={seasonForm.max_teams} onChange={e => setSeasonForm(f => ({ ...f, max_teams: +e.target.value }))} />
-                </FormField>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <NumField
+                  label="Số đội tối đa" required min={2}
+                  value={seasonForm.max_teams}
+                  onChange={(v) => setSeasonForm(f => ({ ...f, max_teams: v }))}
+                />
                 <FormField label="Hạn chót đăng ký" required>
                   <input
                     type="date" min={todayMin} max={maxRegistrationDate} className={INPUT}

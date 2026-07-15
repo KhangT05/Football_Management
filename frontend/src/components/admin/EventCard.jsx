@@ -6,18 +6,34 @@ import { Clock, Trash2, AlertTriangle } from 'lucide-react';
  * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — root cause ở
  * LiveControlTab (unwrap response). Xem LiveControlTab.jsx.
  *
- * FIX (trần phút cứng 130 sai cho mọi loại trận): input phút trước đây có
- * min="0" max="130" hardcode — sai cho cả 2 chiều: round-robin không có
- * hiệp phụ nên trần thật chỉ 90+bù giờ=105 (130 cho phép nhập bậy tới
- * phút 130 cho trận không thể có hiệp phụ); knockout có ET thì trần thật
- * 120+bù giờ=135 (130 lại thấp hơn mức hợp lệ thật). Giờ nhận `maxMinute`
- * từ cha (LiveControlTab#getMinuteBounds) — nơi biết rõ trận có phải
- * knockout hay không để tính đúng trần. `max` trên input chỉ mang tính
- * UI hint (chặn nút tăng/giảm của input number) — validation/confirm thật
- * sự vẫn nằm ở updateEvent()/validate() phía LiveControlTab, KHÔNG lặp lại
- * logic đó ở đây để tránh 2 nơi có 2 trần khác nhau (đúng bug đang sửa).
+ * FIX (input phút tự do → select): trước đây là <input type="number"> với
+ * min/max hint — vẫn cho phép gõ số lẻ tuỳ ý trong khoảng, dễ gõ nhầm số
+ * (VD "19" thay vì "9"), và trần chỉ là UI hint không chặn thật (nút
+ * tăng/giảm native của input number vẫn có thể vượt qua trên một số browser
+ * khi gõ tay + blur). Giờ nhận `minuteOptions` từ cha
+ * (LiveControlTab#buildMinuteOptions) — domain đã đóng kín ở UI level, không
+ * còn cách nào chọn giá trị ngoài khoảng hợp lệ, nên KHÔNG cần confirm-modal
+ * phụ trợ nữa (đã xoá ConfirmExtraTimeMinuteModal ở LiveControlTab).
+ * `minuteOptions = { regular: number[], extra: number[] }` — `extra` rỗng
+ * với trận round-robin (không hiệp phụ), có giá trị với knockout.
+ *
+ * NEW: thêm select giây (`secondOptions`, mặc định bước 5 giây). LƯU Ý: giây
+ * hiện KHÔNG được gửi lên BE — matchApi.recordEvent/adminRecordResult chỉ
+ * nhận `minute: number` (BE: assertMinuteInBounds yêu cầu Number.isInteger,
+ * schema MatchEvent không có cột giây). Giây ở đây chỉ phục vụ hiển thị/sắp
+ * xếp cục bộ tại FE, sẽ mất khi F5 nếu event chưa commit. Nếu cần persist
+ * giây thật, phải đổi schema + validate phía BE trước.
  */
-export default function EventCard({ evt, players, lineup, allEvents, maxMinute = 105, onUpdate, onRemove }) {
+export default function EventCard({
+  evt,
+  players,
+  lineup,
+  allEvents,
+  minuteOptions = { regular: [], extra: [] },
+  secondOptions = [],
+  onUpdate,
+  onRemove,
+}) {
   const getEventStyle = (type) => {
     switch (type) {
       case 'goal': return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
@@ -129,6 +145,9 @@ export default function EventCard({ evt, players, lineup, allEvents, maxMinute =
     });
   };
 
+  // FIX: format "0" -> "00" cho giây hiển thị đồng nhất 2 chữ số.
+  const fmtSecond = (s) => String(s).padStart(2, '0');
+
   return (
     <div className={`flex flex-col gap-2 p-3 rounded-xl border relative group transition-all ${getEventStyle(evt.type)}`}>
       <div className="flex items-center justify-between mb-1">
@@ -204,18 +223,45 @@ export default function EventCard({ evt, players, lineup, allEvents, maxMinute =
         </select>
       )}
 
+      {/* FIX: input phút tự do -> select phút (đóng kín domain) + select giây
+          (UI-only, xem docblock đầu file). */}
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 opacity-70 shrink-0" />
-        <input
-          type="number"
-          min="0"
-          max={maxMinute}
-          placeholder="Phút"
+
+        <select
           value={evt.minute}
           onChange={e => onUpdate(evt.id, 'minute', e.target.value)}
-          className="w-full text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
-        />
-        <span className="text-xs opacity-70 shrink-0">'</span>
+          className="flex-1 text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
+        >
+          <option value="">Phút</option>
+          {minuteOptions.regular.length > 0 && (
+            <optgroup label="Hiệp 1 &amp; 2">
+              {minuteOptions.regular.map(m => (
+                <option key={`r-${m}`} value={m}>{m}'</option>
+              ))}
+            </optgroup>
+          )}
+          {minuteOptions.extra.length > 0 && (
+            <optgroup label="Hiệp phụ">
+              {minuteOptions.extra.map(m => (
+                <option key={`e-${m}`} value={m}>{m}'</option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+
+        <span className="text-xs opacity-50 shrink-0">:</span>
+
+        <select
+          value={evt.second ?? 0}
+          onChange={e => onUpdate(evt.id, 'second', e.target.value)}
+          title="Giây (chỉ hiển thị, không lưu lên server)"
+          className="w-16 text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
+        >
+          {secondOptions.map(s => (
+            <option key={s} value={s}>{fmtSecond(s)}</option>
+          ))}
+        </select>
       </div>
     </div>
   );

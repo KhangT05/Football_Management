@@ -15,6 +15,7 @@ export declare class MatchResultController extends Controller {
         created_at: Date;
         updated_at: Date | null;
         deleted_at: Date | null;
+        duration: number | null;
         status: import("../generated/prisma/enums.js").MatchResultStatus;
         match_id: number;
         winner_team_id: number | null;
@@ -25,7 +26,6 @@ export declare class MatchResultController extends Controller {
         home_final_score: number;
         away_final_score: number;
         result_type: import("../generated/prisma/enums.js").MatchResultType;
-        duration: number | null;
         notes: string | null;
         appeal_reason: string | null;
         appeal_note: string | null;
@@ -40,6 +40,7 @@ export declare class MatchResultController extends Controller {
         player_id: number | null;
         minute: number | null;
         added_minute: number | null;
+        time_source: import("../generated/prisma/enums.js").MatchEventTimeSource;
     }>>;
     getMatchPlayerStats(id: number): Promise<(import("../generated/prisma/internal/prismaNamespace.js").PickEnumerable<import("../generated/prisma/models.js").MatchEventGroupByOutputType, ("type" | "team_id" | "player_id")[]> & {
         _count: {

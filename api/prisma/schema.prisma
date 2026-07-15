@@ -113,6 +113,7 @@ model TournamentRule {
   bonus_per_goal          Decimal      @default(0) @db.Decimal(10, 2) // NEW — thưởng/bàn thắng
   bonus_per_assist        Decimal      @default(0) @db.Decimal(10, 2)
   // Chỉ apply cho round_robin phase
+  custom_stages           Json?
   teams_advance_per_group Int          @default(2)
   tiebreaker_order        Json         @default("[\"goal_diff\",\"goals_scored\",\"head_to_head\"]")
 
@@ -128,6 +129,7 @@ enum SeasonFormat {
   knockout // chỉ đá loại trực tiếp toàn giải
   round_robin_knockout // 1 vòng bảng (RR) -> loại trực tiếp
   multi_round_robin_knockout // nhiều vòng bảng RR liên tiếp -> loại trực tiếp
+  custom
 }
 
 // ============================================================
@@ -649,8 +651,13 @@ enum MatchEventType {
   goal_disallowed
 }
 
+enum MatchEventTimeSource {
+  live // ghi API ngay lúc xảy ra — created_at đáng tin
+  estimated // nhập sau (correction window hoặc admin batch) — chỉ ước lượng theo minute
+}
+
 model MatchEvent {
-  id                Int            @id @default(autoincrement())
+  id                Int                  @id @default(autoincrement())
   match_id          Int
   player_id         Int?
   team_id           Int?
@@ -660,11 +667,12 @@ model MatchEvent {
   period            MatchPeriod?
   added_minute      Int?
   card_color        CardColor?
+  time_source       MatchEventTimeSource @default(estimated) // NEW
   sub_out_player_id Int?
-  player            Player?        @relation("EventPlayer", fields: [player_id], references: [id], onDelete: SetNull)
-  team              Team?          @relation(fields: [team_id], references: [id], onDelete: SetNull)
-  sub_out_player    Player?        @relation("EventSubOut", fields: [sub_out_player_id], references: [id], onDelete: SetNull)
-  created_at        DateTime       @default(now())
+  player            Player?              @relation("EventPlayer", fields: [player_id], references: [id], onDelete: SetNull)
+  team              Team?                @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  sub_out_player    Player?              @relation("EventSubOut", fields: [sub_out_player_id], references: [id], onDelete: SetNull)
+  created_at        DateTime             @default(now())
 
   match Match @relation(fields: [match_id], references: [id], onDelete: Cascade)
 

@@ -135,8 +135,13 @@ function HeaderMatchEventsSummary({ homeTeamId, events, resolveName }) {
         const isHome = evt.team_id === homeTeamId;
         const name = resolveName(evt);
         const label = evt.type === 'own_goal' ? `${name} (phản lưới)` : name;
+        const clockLabel = evt.clockTime
+          ? `${evt.clockConfidence === 'estimated' ? '~' : ''}${new Date(evt.clockTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+          : null;
         return (
           <div key={evt.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <span>{isHome ? `${label} ${formatMinuteLabel(evt)}` : '·'}</span>
+            {clockLabel && <span className="text-[10px] text-gray-500 ml-1">{clockLabel}</span>}
             <span className={`truncate text-xs font-bold text-gray-300 text-right ${!isHome ? 'invisible' : ''}`}>
               {isHome ? `${label} ${formatMinuteLabel(evt)}` : '·'}
             </span>

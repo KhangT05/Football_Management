@@ -5,7 +5,15 @@ export declare class TournamentRuleService {
     constructor(prisma: PrismaClient);
     private mapToDto;
     /**
-     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages.
+     * Business rule cấu trúc bên trong custom_stages (thứ tự order liên tục,
+     * source_stage_order hợp lệ, stage đầu không phụ thuộc ai, loser_of_stage
+     * chỉ hợp lệ khi source là knockout, tên không trùng). Đây là validate
+     * mang tính "domain sequencing" mà Zod discriminatedUnion không tự làm được
+     * (cần nhìn toàn bộ mảng cùng lúc), nên đặt ở service layer thay vì schema.
+     */
+    private validateCustomStages;
+    /**
+     * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages / custom_stages.
      * Nhận full resolved state (không phải partial) — caller chịu trách nhiệm
      * merge payload với DB hiện tại trước khi gọi (xem update()).
      */

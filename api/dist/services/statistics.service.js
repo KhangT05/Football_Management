@@ -573,6 +573,191 @@ export class StatisticsService {
         };
     }
     /**
+     * Bản mở rộng của _fetchTeamMatchesWithRule — thêm played_at, match_id,
+     * status, opponent_team_id/name để phục vụ home/away split, streak,
+     * biggest win/loss, clean sheet, forfeit — mà không phải query lại lần 2.
+     */
+    async _fetchTeamMatchesDetailed(teamId, filter = {}) {
+        let playedAtFilter = {};
+        if (filter.period) {
+            const days = PERIOD_DAYS[filter.period];
+            if (!days) {
+                throw createAppError("VALIDATION_ERROR", `_fetchTeamMatchesDetailed called with invalid period=${filter.period}`, "period không hợp lệ, dùng: 7d, 30d, 90d, 3m, 6m, 1y");
+            }
+            const from = new Date(businessNow);
+            from.setUTCDate(from.getUTCDate() - days);
+            playedAtFilter = { played_at: { gte: from } };
+        }
+        const matches = await this.prisma.match.findMany({
+            where: {
+                OR: [{ home_team_id: teamId }, { away_team_id: teamId }],
+                status: { in: [...FINISHED_MATCH_STATUSES] },
+                matchResult: { status: "official" },
+                ...playedAtFilter,
+                phase: {
+                    ...(filter.seasonId ? { season_id: filter.seasonId } : {}),
+                    ...(filter.tournamentId ? { season: { tournament_id: filter.tournamentId } } : {}),
+                },
+            },
+            select: {
+                id: true,
+                home_team_id: true,
+                away_team_id: true,
+                played_at: true,
+                status: true,
+                home_team: { select: { id: true, name: true } },
+                away_team: { select: { id: true, name: true } },
+                matchResult: { select: { home_final_score: true, away_final_score: true } },
+                phase: {
+                    select: {
+                        season: {
+                            select: {
+                                tournamentRule: {
+                                    select: {
+                                        points_per_win: true,
+                                        points_per_draw: true,
+                                        points_per_loss: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: { played_at: "asc" },
+        });
+        return matches
+            .filter((m) => m.matchResult !== null)
+            .map((m) => {
+            const isHome = m.home_team_id === teamId;
+            const opponent = isHome ? m.away_team : m.home_team;
+            return {
+                match_id: m.id,
+                home_team_id: m.home_team_id,
+                away_team_id: m.away_team_id,
+                opponent_team_id: opponent.id,
+                opponent_team_name: opponent.name,
+                home_final_score: m.matchResult.home_final_score,
+                away_final_score: m.matchResult.away_final_score,
+                points_per_win: m.phase.season.tournamentRule?.points_per_win ?? 3,
+                points_per_draw: m.phase.season.tournamentRule?.points_per_draw ?? 1,
+                points_per_loss: m.phase.season.tournamentRule?.points_per_loss ?? 0,
+                played_at: m.played_at,
+                status: m.status,
+            };
+        });
+    }
+    /**
+     * Aggregate mở rộng — dùng chung cho all-time / tournament / season / period.
+     * Input PHẢI đến từ _fetchTeamMatchesDetailed (đã sort played_at asc).
+     */
+    _aggregateTeamMatchesExtended(teamId, matches) {
+        let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0, points = 0;
+        let cleanSheets = 0, forfeitWins = 0, forfeitLosses = 0;
+        const home = { matches_played: 0, wins: 0, draws: 0, losses: 0, goals_for: 0, goals_against: 0 };
+        const away = { matches_played: 0, wins: 0, draws: 0, losses: 0, goals_for: 0, goals_against: 0 };
+        let biggestWin = null;
+        let biggestLoss = null;
+        for (const m of matches) {
+            const isHome = m.home_team_id === teamId;
+            const gf = isHome ? m.home_final_score : m.away_final_score;
+            const ga = isHome ? m.away_final_score : m.home_final_score;
+            const side = isHome ? home : away;
+            goalsFor += gf;
+            goalsAgainst += ga;
+            side.matches_played++;
+            side.goals_for += gf;
+            side.goals_against += ga;
+            if (ga === 0)
+                cleanSheets++;
+            if (m.status === "forfeited") {
+                if (gf > ga)
+                    forfeitWins++;
+                else if (gf < ga)
+                    forfeitLosses++;
+            }
+            if (gf > ga) {
+                wins++;
+                side.wins++;
+                points += m.points_per_win;
+                const margin = gf - ga;
+                if (!biggestWin || margin > (biggestWin.goals_for - biggestWin.goals_against)) {
+                    biggestWin = {
+                        match_id: m.match_id,
+                        opponent_team_id: m.opponent_team_id,
+                        opponent_team_name: m.opponent_team_name,
+                        goals_for: gf,
+                        goals_against: ga,
+                        played_at: m.played_at ? m.played_at.toISOString() : null,
+                    };
+                }
+            }
+            else if (gf < ga) {
+                losses++;
+                side.losses++;
+                points += m.points_per_loss;
+                const margin = ga - gf;
+                if (!biggestLoss || margin > (biggestLoss.goals_against - biggestLoss.goals_for)) {
+                    biggestLoss = {
+                        match_id: m.match_id,
+                        opponent_team_id: m.opponent_team_id,
+                        opponent_team_name: m.opponent_team_name,
+                        goals_for: gf,
+                        goals_against: ga,
+                        played_at: m.played_at ? m.played_at.toISOString() : null,
+                    };
+                }
+            }
+            else {
+                draws++;
+                side.draws++;
+                points += m.points_per_draw;
+            }
+        }
+        // Streak: đi ngược từ trận gần nhất (cuối mảng, vì đã sort asc)
+        let currentStreak = null;
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const m = matches[i];
+            if (!m)
+                continue;
+            const isHome = m.home_team_id === teamId;
+            const gf = isHome ? m.home_final_score : m.away_final_score;
+            const ga = isHome ? m.away_final_score : m.home_final_score;
+            const type = gf > ga ? "W" : gf < ga ? "L" : "D";
+            if (!currentStreak) {
+                currentStreak = { type, count: 1 };
+            }
+            else if (currentStreak.type === type) {
+                currentStreak.count++;
+            }
+            else {
+                break;
+            }
+        }
+        const matches_played = matches.length;
+        return {
+            total_matches_played: matches_played,
+            total_wins: wins,
+            total_draws: draws,
+            total_losses: losses,
+            win_rate: matches_played > 0 ? Number(((wins / matches_played) * 100).toFixed(1)) : 0,
+            total_goals_for: goalsFor,
+            total_goals_against: goalsAgainst,
+            goal_difference: goalsFor - goalsAgainst,
+            total_points: points,
+            home,
+            away,
+            clean_sheets: cleanSheets,
+            forfeit_wins: forfeitWins,
+            forfeit_losses: forfeitLosses,
+            biggest_win: biggestWin,
+            biggest_loss: biggestLoss,
+            current_streak: currentStreak,
+            avg_goals_for_per_match: matches_played > 0 ? Number((goalsFor / matches_played).toFixed(2)) : 0,
+            avg_goals_against_per_match: matches_played > 0 ? Number((goalsAgainst / matches_played).toFixed(2)) : 0,
+        };
+    }
+    /**
      * TEAM STATS — toàn bộ lịch sử của đội, không filter season/tournament.
      * Mở rộng so với bản cũ: thêm participations (danh sách giải/mùa đã
      * tham gia, kể cả mùa CHƯA đá trận nào — lấy từ SeasonTeam, độc lập với
@@ -644,6 +829,280 @@ export class StatisticsService {
             total_goals_for: goals_for,
             total_goals_against: goals_against,
             goal_difference: goals_for - goals_against,
+        };
+    }
+    async getTeamOverviewStatsV2(teamId, period) {
+        const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true } });
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team id=${teamId} not found`, "Không tìm thấy đội");
+        const seasonTeams = await this.prisma.seasonTeam.findMany({
+            where: { team_id: teamId },
+            select: {
+                status: true,
+                season: { select: { id: true, name: true, status: true, tournament: { select: { id: true, name: true } } } },
+            },
+            orderBy: { season: { created_at: "desc" } },
+        });
+        const tournamentIds = new Set(seasonTeams.map((st) => st.season.tournament.id));
+        const participations = seasonTeams.map((st) => ({
+            season_id: st.season.id,
+            season_name: st.season.name,
+            season_status: st.season.status,
+            tournament_id: st.season.tournament.id,
+            tournament_name: st.season.tournament.name,
+            registration_status: st.status,
+        }));
+        const matches = await this._fetchTeamMatchesDetailed(teamId, { period });
+        const extended = this._aggregateTeamMatchesExtended(teamId, matches);
+        return {
+            team_id: team.id,
+            team_name: team.name,
+            tournament_count: tournamentIds.size,
+            season_count: seasonTeams.length,
+            participations,
+            total_matches_played: extended.total_matches_played,
+            total_wins: extended.total_wins,
+            total_draws: extended.total_draws,
+            total_losses: extended.total_losses,
+            win_rate: extended.win_rate,
+            total_goals_for: extended.total_goals_for,
+            total_goals_against: extended.total_goals_against,
+            goal_difference: extended.goal_difference,
+            extended,
+        };
+    }
+    async getTeamTournamentStatsV2(teamId, tournamentId) {
+        const [team, tournament, seasonTeams] = await Promise.all([
+            this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true } }),
+            this.prisma.tournament.findUnique({ where: { id: tournamentId }, select: { id: true, name: true } }),
+            this.prisma.seasonTeam.findMany({
+                where: { team_id: teamId, season: { tournament_id: tournamentId } },
+                select: { season: { select: { id: true, name: true } } },
+                distinct: ["season_id"],
+            }),
+        ]);
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team id=${teamId} not found`, "Không tìm thấy đội");
+        if (!tournament)
+            throw createAppError("NOT_FOUND", `Tournament id=${tournamentId} not found`, "Không tìm thấy giải đấu");
+        const matches = await this._fetchTeamMatchesDetailed(teamId, { tournamentId });
+        const extended = this._aggregateTeamMatchesExtended(teamId, matches);
+        return {
+            team_id: team.id,
+            team_name: team.name,
+            tournament_id: tournament.id,
+            tournament_name: tournament.name,
+            season_count: seasonTeams.length,
+            seasons: seasonTeams.map((st) => ({ season_id: st.season.id, season_name: st.season.name })),
+            ...extended,
+            extended,
+        };
+    }
+    async getTeamSeasonStatsV2(teamId, seasonId) {
+        const [team, seasonTeam] = await Promise.all([
+            this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true } }),
+            this.prisma.seasonTeam.findUnique({
+                where: { season_id_team_id: { season_id: seasonId, team_id: teamId } },
+                select: {
+                    group: { select: { name: true } },
+                    season: { select: { id: true, name: true, tournament: { select: { id: true, name: true } } } },
+                },
+            }),
+        ]);
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team id=${teamId} not found`, "Không tìm thấy đội");
+        if (!seasonTeam)
+            throw createAppError("NOT_FOUND", `Team ${teamId} chưa tham gia season ${seasonId}`, "Đội chưa tham gia mùa giải này");
+        const matches = await this._fetchTeamMatchesDetailed(teamId, { seasonId });
+        const extended = this._aggregateTeamMatchesExtended(teamId, matches);
+        return {
+            team_id: team.id,
+            team_name: team.name,
+            season_id: seasonTeam.season.id,
+            season_name: seasonTeam.season.name,
+            tournament_id: seasonTeam.season.tournament.id,
+            tournament_name: seasonTeam.season.tournament.name,
+            group_name: seasonTeam.group?.name ?? null,
+            ...extended,
+            extended,
+        };
+    }
+    async getTeamParticipationStats(teamId) {
+        const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true } });
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team id=${teamId} not found`, "Không tìm thấy đội");
+        const seasonTeams = await this.prisma.seasonTeam.findMany({
+            where: { team_id: teamId },
+            select: {
+                status: true,
+                season: { select: { id: true, name: true, status: true, tournament: { select: { id: true, name: true } } } },
+            },
+            orderBy: { season: { created_at: "desc" } },
+        });
+        const status_breakdown = { pending: 0, approved: 0, active: 0, eliminated: 0, withdrawn: 0 };
+        for (const st of seasonTeams)
+            status_breakdown[st.status]++;
+        return {
+            team_id: team.id,
+            team_name: team.name,
+            tournament_count: new Set(seasonTeams.map((st) => st.season.tournament.id)).size,
+            season_count: seasonTeams.length,
+            status_breakdown,
+            participations: seasonTeams.map((st) => ({
+                season_id: st.season.id,
+                season_name: st.season.name,
+                season_status: st.season.status,
+                tournament_id: st.season.tournament.id,
+                tournament_name: st.season.tournament.name,
+                registration_status: st.status,
+            })),
+        };
+    }
+    async getTeamsSeasonStatsBatch(seasonId) {
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: { id: true, tournamentRule: { select: { points_per_win: true, points_per_draw: true, points_per_loss: true } } },
+        });
+        if (!season)
+            throw createAppError("NOT_FOUND", `Season id=${seasonId} not found`, "Không tìm thấy mùa giải");
+        const pWin = season.tournamentRule?.points_per_win ?? 3;
+        const pDraw = season.tournamentRule?.points_per_draw ?? 1;
+        const pLoss = season.tournamentRule?.points_per_loss ?? 0;
+        const rows = await this.prisma.$queryRaw `
+        SELECT
+            t.id AS team_id,
+            t.name AS team_name,
+            SUM(CASE WHEN mr.winner_team_id = t.id THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN mr.winner_team_id IS NULL THEN 1 ELSE 0 END) AS draws,
+            SUM(CASE WHEN mr.winner_team_id IS NOT NULL AND mr.winner_team_id != t.id THEN 1 ELSE 0 END) AS losses,
+            COUNT(*) AS matches_played,
+            COALESCE(SUM(CASE WHEN m.home_team_id = t.id THEN mr.home_final_score ELSE mr.away_final_score END), 0) AS goals_for,
+            COALESCE(SUM(CASE WHEN m.home_team_id = t.id THEN mr.away_final_score ELSE mr.home_final_score END), 0) AS goals_against
+        FROM season_teams st
+        JOIN teams t ON t.id = st.team_id
+        JOIN matches m ON (m.home_team_id = t.id OR m.away_team_id = t.id)
+        JOIN match_results mr ON mr.match_id = m.id AND mr.status = 'official'
+        JOIN phases ph ON ph.id = m.phase_id AND ph.season_id = ${seasonId}
+        WHERE st.season_id = ${seasonId}
+            AND m.status IN ('finished', 'forfeited')
+        GROUP BY t.id, t.name
+        ORDER BY (SUM(CASE WHEN mr.winner_team_id = t.id THEN ${pWin} WHEN mr.winner_team_id IS NULL THEN ${pDraw} ELSE ${pLoss} END)) DESC
+    `;
+        return {
+            season_id: seasonId,
+            teams: rows.map((r) => {
+                const matches_played = Number(r.matches_played);
+                const wins = Number(r.wins), draws = Number(r.draws), losses = Number(r.losses);
+                const gf = Number(r.goals_for), ga = Number(r.goals_against);
+                return {
+                    team_id: r.team_id,
+                    team_name: r.team_name,
+                    total_matches_played: matches_played,
+                    total_wins: wins,
+                    total_draws: draws,
+                    total_losses: losses,
+                    win_rate: matches_played > 0 ? Number(((wins / matches_played) * 100).toFixed(1)) : 0,
+                    total_goals_for: gf,
+                    total_goals_against: ga,
+                    goal_difference: gf - ga,
+                    total_points: wins * pWin + draws * pDraw + losses * pLoss,
+                };
+            }),
+        };
+    }
+    async getPlayerParticipationStats(playerId) {
+        const player = await this.prisma.player.findUnique({
+            where: { id: playerId },
+            select: { id: true, user: { select: { name: true } } },
+        });
+        if (!player)
+            throw createAppError("NOT_FOUND", `Player id=${playerId} not found`, "Không tìm thấy cầu thủ");
+        const [teamPlayers, statRows] = await Promise.all([
+            this.prisma.teamPlayer.findMany({
+                where: { player_id: playerId },
+                select: {
+                    team_id: true, jersey_number: true, role: true,
+                    created_at: true, deleted_at: true, is_active: true,
+                    team: { select: { id: true, name: true } },
+                },
+                orderBy: { created_at: "desc" },
+            }),
+            this.prisma.playerStatistic.findMany({
+                where: { player_id: playerId },
+                select: { season_id: true, season: { select: { tournament_id: true } } },
+            }),
+        ]);
+        const current = teamPlayers.find((tp) => tp.is_active && !tp.deleted_at) ?? null;
+        return {
+            player_id: player.id,
+            player_name: player.user.name,
+            tournament_count: new Set(statRows.map((r) => r.season.tournament_id)).size,
+            season_count: new Set(statRows.map((r) => r.season_id)).size,
+            team_count: new Set(teamPlayers.map((tp) => tp.team_id)).size,
+            current_team: current ? { team_id: current.team.id, team_name: current.team.name } : null,
+            team_history: teamPlayers.map((tp) => ({
+                team_id: tp.team.id,
+                team_name: tp.team.name,
+                joined_at: tp.created_at.toISOString(),
+                left_at: tp.deleted_at ? tp.deleted_at.toISOString() : null,
+                jersey_number: tp.jersey_number,
+                role: tp.role,
+            })),
+        };
+    }
+    async getPlayerDisciplineStatus(playerId, seasonId) {
+        const row = await this.prisma.playerStatistic.findFirst({
+            where: { player_id: playerId, season_id: seasonId },
+            select: {
+                is_suspended: true, suspension_matches_remaining: true,
+                yellow_cards_since_reset: true, accumulated_yellow_cards: true,
+                total_fine_owed: true,
+                player: { select: { user: { select: { name: true } } } },
+            },
+        });
+        if (!row) {
+            throw createAppError("NOT_FOUND", `PlayerStatistic không tồn tại cho player=${playerId} season=${seasonId}`, "Cầu thủ chưa có dữ liệu mùa giải này");
+        }
+        return {
+            player_id: playerId,
+            player_name: row.player.user.name,
+            season_id: seasonId,
+            is_suspended: row.is_suspended,
+            suspension_matches_remaining: row.suspension_matches_remaining,
+            yellow_cards_since_reset: row.yellow_cards_since_reset,
+            accumulated_yellow_cards: row.accumulated_yellow_cards,
+            total_fine_owed: Number(row.total_fine_owed),
+        };
+    }
+    async getPlayerTeamsInPeriod(playerId, from, to) {
+        // Overlap [from,to] với [Season.start_date, Season.end_date].
+        // Season thiếu start_date hoặc end_date bị loại — không suy đoán.
+        const rows = await this.prisma.playerStatistic.findMany({
+            where: {
+                player_id: playerId,
+                season: {
+                    start_date: { not: null, lte: to },
+                    end_date: { not: null, gte: from },
+                },
+            },
+            select: {
+                team: { select: { id: true, name: true } },
+                season: { select: { id: true, name: true } },
+            },
+        });
+        const entries = rows.map((r) => ({
+            team_id: r.team.id,
+            team_name: r.team.name,
+            season_id: r.season.id,
+            season_name: r.season.name,
+        }));
+        return {
+            player_id: playerId,
+            from: from.toISOString(),
+            to: to.toISOString(),
+            entries,
+            distinct_team_count: new Set(entries.map((e) => e.team_id)).size,
+            distinct_season_count: new Set(entries.map((e) => e.season_id)).size,
         };
     }
     /**
@@ -1073,6 +1532,130 @@ export class StatisticsService {
             red_cards: match.events.filter((e) => e.type === "red_card").length,
             events: match.events.map((e) => ({ minute: e.minute, type: e.type })),
             note: "Kiến tạo (assist) không được ghi nhận theo từng trận trong hệ thống hiện tại — chỉ có tổng theo mùa, xem Season Player Stats.",
+        };
+    }
+    /**
+     * BATCH — thay N+1 getTeamFinanceStats() gọi từng team bằng 2 query
+     * groupBy cho cả season, ghép theo team_id. Payment phải raw SQL vì
+     * team_id không nằm trực tiếp trên bảng payments (phải qua season_teams).
+     */
+    async getTeamsFinanceStatsBatch(seasonId) {
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: {
+                tournamentRule: { select: { bonus_per_goal: true, bonus_per_assist: true } },
+            },
+        });
+        if (!season) {
+            throw createAppError("NOT_FOUND", `Season id=${seasonId} not found`, "Không tìm thấy mùa giải");
+        }
+        const bonusGoal = Number(season.tournamentRule?.bonus_per_goal ?? 0);
+        const bonusAssist = Number(season.tournamentRule?.bonus_per_assist ?? 0);
+        const [paymentRows, statRows, teams] = await Promise.all([
+            this.prisma.$queryRaw `
+            SELECT
+                st.team_id AS team_id,
+                COALESCE(SUM(p.amount), 0) AS paid,
+                COALESCE(SUM(p.refund_amount), 0) AS refunded
+            FROM season_teams st
+            LEFT JOIN payments p ON p.season_team_id = st.id
+            WHERE st.season_id = ${seasonId}
+            GROUP BY st.team_id
+        `,
+            // total_fine_owed đã cộng dồn sẵn trên PlayerStatistic (giống logic
+            // single-entity) — không tự tính lại từ yellow/red để tránh lệch nếu
+            // có business rule khác (miễn giảm, cap phạt...) đã áp ở nơi ghi dữ liệu.
+            this.prisma.playerStatistic.groupBy({
+                by: ["team_id"],
+                where: { season_id: seasonId },
+                _sum: { goals_scored: true, assists: true, total_fine_owed: true },
+            }),
+            this.prisma.seasonTeam.findMany({
+                where: { season_id: seasonId },
+                select: { team: { select: { id: true, name: true } } },
+            }),
+        ]);
+        const paymentMap = new Map(paymentRows.map((r) => [r.team_id, r]));
+        const statMap = new Map(statRows.map((r) => [r.team_id, r]));
+        return {
+            season_id: seasonId,
+            teams: teams.map(({ team }) => {
+                const pay = paymentMap.get(team.id);
+                const stat = statMap.get(team.id);
+                const goals = stat?._sum.goals_scored ?? 0;
+                const assists = stat?._sum.assists ?? 0;
+                return {
+                    team_id: team.id,
+                    team_name: team.name,
+                    total_registration_fee_paid: Number(pay?.paid ?? 0),
+                    total_registration_fee_refunded: Number(pay?.refunded ?? 0),
+                    total_bonus_payable: goals * bonusGoal + assists * bonusAssist,
+                    total_fine_owed: Number(stat?._sum.total_fine_owed ?? 0),
+                };
+            }),
+        };
+    }
+    /**
+     * BATCH — thay N+1 getPlayerPerformanceStats() theo season. Lineup
+     * (starter/sub/captain) phải raw SQL vì cần conditional SUM qua join
+     * match→phase (Prisma groupBy không hỗ trợ CASE WHEN trong _count).
+     */
+    async getPlayersPerformanceStatsBatch(seasonId) {
+        const [statRows, lineupRows] = await Promise.all([
+            this.prisma.playerStatistic.groupBy({
+                by: ["player_id"],
+                where: { season_id: seasonId },
+                _sum: {
+                    matches_played: true,
+                    goals_scored: true,
+                    assists: true,
+                    yellow_cards: true,
+                    red_cards: true,
+                    minutes_played: true,
+                },
+            }),
+            this.prisma.$queryRaw `
+            SELECT
+                ml.player_id AS player_id,
+                SUM(CASE WHEN ml.lineup_type = 'starter' THEN 1 ELSE 0 END) AS starter_count,
+                SUM(CASE WHEN ml.lineup_type = 'substitute' THEN 1 ELSE 0 END) AS sub_count,
+                SUM(CASE WHEN ml.is_captain THEN 1 ELSE 0 END) AS captain_count
+            FROM match_lineups ml
+            JOIN matches m ON m.id = ml.match_id
+            JOIN phases ph ON ph.id = m.phase_id AND ph.season_id = ${seasonId}
+            GROUP BY ml.player_id
+        `,
+        ]);
+        const playerIds = statRows.map((r) => r.player_id);
+        const players = await this.prisma.player.findMany({
+            where: { id: { in: playerIds } },
+            select: { id: true, user: { select: { name: true } } },
+        });
+        const nameMap = new Map(players.map((p) => [p.id, p.user.name]));
+        const lineupMap = new Map(lineupRows.map((r) => [r.player_id, r]));
+        return {
+            season_id: seasonId,
+            players: statRows.map((r) => {
+                const lineup = lineupMap.get(r.player_id);
+                const matches = r._sum.matches_played ?? 0;
+                const minutes = r._sum.minutes_played ?? 0;
+                const goals = r._sum.goals_scored ?? 0;
+                return {
+                    player_id: r.player_id,
+                    player_name: nameMap.get(r.player_id) ?? "Unknown",
+                    total_matches_played: matches,
+                    total_starter_count: Number(lineup?.starter_count ?? 0),
+                    total_substitute_count: Number(lineup?.sub_count ?? 0),
+                    total_captain_count: Number(lineup?.captain_count ?? 0),
+                    total_minutes_played: minutes,
+                    avg_minutes_per_match: matches > 0 ? Number((minutes / matches).toFixed(1)) : 0,
+                    total_goals: goals,
+                    total_assists: r._sum.assists ?? 0,
+                    avg_goals_per_match: matches > 0 ? Number((goals / matches).toFixed(2)) : 0,
+                    total_yellow_cards: r._sum.yellow_cards ?? 0,
+                    total_red_cards: r._sum.red_cards ?? 0,
+                };
+            }),
         };
     }
 }
