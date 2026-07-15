@@ -393,6 +393,8 @@ export class ScheduleService extends ScheduleEngine {
                 if (!season)
                     throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
 
+                if (season.status === SeasonStatus.finished || season.status === SeasonStatus.cancelled)
+                    throw createAppError('CONFLICT', `Season đã ở trạng thái '${season.status}' — không thể tạo lịch`);
                 const phase = await tx.phase.findFirst({
                     where: {
                         season_id: seasonId,
@@ -554,7 +556,7 @@ export class ScheduleService extends ScheduleEngine {
             }),
             this.prisma.season.findUnique({
                 where: { id: seasonId },
-                select: { start_date: true, end_date: true },
+                select: { start_date: true, end_date: true, status: true },
             }),
         ]);
 
@@ -562,6 +564,8 @@ export class ScheduleService extends ScheduleEngine {
             throw createAppError('NOT_FOUND', `Không tìm thấy group_stage phase cho season ${seasonId}`);
         if (!season)
             throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (season.status === SeasonStatus.finished || season.status === SeasonStatus.cancelled)
+            throw createAppError('CONFLICT', `Season đã ở trạng thái '${season.status}' — không thể xếp lịch`);
         if (!season.start_date)
             throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date`);
         if (!season.end_date)
@@ -644,11 +648,30 @@ export class ScheduleService extends ScheduleEngine {
 
             const match = await tx.match.findUnique({
                 where: { id: matchId },
-                select: { id: true, status: true, home_team_id: true, away_team_id: true },
+                select: {
+                    id: true, status: true, home_team_id: true, away_team_id: true,
+                    phase: {
+                        select: {
+                            season:
+                                { select: { id: true, status: true, start_date: true, end_date: true } }
+                        }
+                    },
+                },
             });
+
 
             if (!match)
                 throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+
+            const seasonStatus = match.phase?.season?.status;
+            if (seasonStatus === SeasonStatus.finished || seasonStatus === SeasonStatus.cancelled)
+                throw createAppError('CONFLICT', `Season đã ở trạng thái '${seasonStatus}' — không thể đổi lịch`);
+
+            const season = match.phase!.season!;
+            if (season.start_date && input.scheduledAt < season.start_date)
+                throw createAppError('VALIDATION_ERROR', `Thời gian mới trước season.start_date`);
+            if (season.end_date && input.scheduledAt > season.end_date)
+                throw createAppError('VALIDATION_ERROR', `Thời gian mới sau season.end_date`);
 
             const RESCHEDULABLE: MatchStatus[] = [MatchStatus.scheduled, MatchStatus.postponed];
             if (!RESCHEDULABLE.includes(match.status))
@@ -688,9 +711,7 @@ export class ScheduleService extends ScheduleEngine {
             const venueConflict = venueCandidates.find(m => {
                 const s = m.scheduled_at!.getTime();
                 const e = s + ASSUMED_MATCH_DURATION_MS;
-                return s < newEnd + bufferMs && (e + bufferMs) > newStart - bufferMs === false
-                    ? false
-                    : s < newEnd + bufferMs && newStart - bufferMs < e;
+                return s < newEnd + bufferMs && newStart - bufferMs < e;
             });
             if (venueConflict)
                 throw createAppError(

@@ -115,17 +115,7 @@ export async function seedGroupMatchesAndStandings(
             home_score: homeScore,
             away_score: awayScore,
             leg: 1,
-            // FIX: THIẾU is_active — ScheduleService lọc is_active: true ở
-            // gần như mọi read-path (Queryable.beforeBuild cho findAll,
-            // findMatchesBySeason, getSeasonSchedule). Match seed ra thiếu
-            // field này vẫn đá được, vẫn tính standings đúng (TeamStanding
-            // không lọc theo Match.is_active), nhưng biến mất khỏi mọi màn
-            // lịch thi đấu công khai (ScheduleResults).
             is_active: true,
-            // FIX: gán round theo thứ tự cặp đấu (1-6) trong vòng bảng —
-            // trước đây không set, khiến getSeasonSchedule()/
-            // ScheduleMatchCard hiển thị "Vòng 0" cho mọi trận vòng bảng
-            // (round parse mặc định về '0' khi null).
             round: String(matchDayOffset + 1),
           },
         });
@@ -144,10 +134,6 @@ export async function seedGroupMatchesAndStandings(
         createdMatches.push({ matchId: match.id, homeTeamId, awayTeamId, homeScore, awayScore });
         matchDayOffset++;
       } else {
-        // Reseed: đọc lại kết quả đã tạo trước đó để tính lại standings cho nhất quán.
-        // KHÔNG được default 0-0 khi không tìm thấy — đó là silent data corruption.
-        // Nếu existingCount đủ 6 nhưng không tìm thấy đúng cặp home/away này, nghĩa là
-        // dữ liệu đã bị seed lệch — phải throw để dừng seed ngay.
         const existing = await db.match.findFirst({
           where: { phase_id: groupStagePhaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
         });
@@ -177,9 +163,9 @@ export async function seedGroupMatchesAndStandings(
       awayTally.ga += homeScore;
       if (homeScore > awayScore) {
         homeTally.wins++;
-        homeTally.points += rulePoints.win;      // thay vì += 3
+        homeTally.points += rulePoints.win;
         awayTally.losses++;
-        awayTally.points += rulePoints.loss;     // NEW — trước đây không cộng loss=0 tường minh, ok nếu loss luôn 0 nhưng nếu rule khác 0 thì sai
+        awayTally.points += rulePoints.loss;
       } else if (homeScore < awayScore) {
         awayTally.wins++;
         awayTally.points += rulePoints.win;
@@ -188,7 +174,7 @@ export async function seedGroupMatchesAndStandings(
       } else {
         homeTally.draws++;
         awayTally.draws++;
-        homeTally.points += rulePoints.draw;     // thay vì += 1
+        homeTally.points += rulePoints.draw;
         awayTally.points += rulePoints.draw;
       }
     }

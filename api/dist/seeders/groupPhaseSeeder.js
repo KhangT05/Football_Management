@@ -1,4 +1,3 @@
-// prisma/seed/groupPhaseSeeder.ts
 import { PhaseType, PhaseFormat, PhaseStatus, SeasonTeamStatus } from "../generated/prisma/client.js";
 export async function seedGroupStage(db, seasonId, teamIdByName, seasonTeamIdByTeamId, groups) {
     let phase = await db.phase.findFirst({

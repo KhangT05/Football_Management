@@ -86,7 +86,6 @@ async function seedCardEvents(db, matchId, teamId, starters) {
             },
         });
     }
-    // ~6% trận có thẻ đỏ trực tiếp cho 1 đội
     if (Math.random() < 0.06) {
         const p = pickOrThrow(starters, `seedCardEvents red team=${teamId}`);
         await db.matchEvent.create({
@@ -101,25 +100,8 @@ async function seedCardEvents(db, matchId, teamId, starters) {
         });
     }
 }
-/**
- * Sinh đầy đủ MatchLineup + MatchJerseyAssignment + MatchEvent cho 1 trận,
- * số bàn thắng event khớp đúng với home_score/away_score đã lưu ở Match.
- */
 export async function seedMatchDetails(db, params) {
     const { matchId, homeTeamId, awayTeamId, homeScore, awayScore, homeSeasonTeamId, awaySeasonTeamId } = params;
-    // FIX: đổi tiêu chí idempotency từ MatchEvent sang MatchLineup.
-    // Trước đây check `matchEvent.count(...)` — lệch với tiêu chí mà
-    // index.ts (orchestrator) dùng để quyết định trận nào "cần xử lý"
-    // (index.ts filter theo MatchLineup, xem prisma/seed/index.ts bước
-    // 11-12). Hệ quả edge-case: nếu DB có dữ liệu rác từ 1 lần seed cũ bị
-    // ngắt giữa chừng mà MatchEvent đã commit nhưng MatchLineup thì chưa
-    // (không nên xảy ra trong flow hiện tại vì cả 2 nằm cùng 1 transaction
-    // batch, nhưng có thể xảy ra nếu import dữ liệu tay hoặc từng chạy 1
-    // phiên bản code cũ hơn tạo event trước lineup) — index.ts vẫn đưa
-    // match này vào matchesNeedingDetail (vì thiếu lineup), nhưng guard cũ ở
-    // đây lại thấy có event rồi nên return sớm — kết quả: match VẪN không
-    // có lineup dù đã "được xử lý". Check theo MatchLineup khớp đúng tiêu
-    // chí ngoài, đóng hoàn toàn edge-case này.
     const existingLineupCount = await db.matchLineup.count({ where: { match_id: matchId } });
     if (existingLineupCount > 0) {
         console.log(`[MatchDetailSeeder] match #${matchId} đã có ${existingLineupCount} lineup — bỏ qua (idempotent).`);

@@ -29,10 +29,19 @@ import { buildRound1Pairings, nextPowerOf2 } from '../helper/match.helper.js';
 import { lockSeason } from '../helper/season-lock.helper.js';
 import { shuffle } from '../libs/array.utils.js';
 import { StandingsService } from './standing.service.js';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 const TERMINAL_MATCH_STATUSES: MatchStatus[] = [MatchStatus.finished, MatchStatus.forfeited];
 
-const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+function vnStartOfDay(d: Date): Date {
+    const vnDateStr = formatInTimeZone(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    return fromZonedTime(`${vnDateStr}T00:00:00`, 'Asia/Ho_Chi_Minh');
+}
+
+function vnEndOfDay(d: Date): Date {
+    const vnDateStr = formatInTimeZone(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    return fromZonedTime(`${vnDateStr}T23:59:59.999`, 'Asia/Ho_Chi_Minh');
+}
 // NEW: thứ tự tiền đề giữa các vòng knockout — dùng để chặn tạo phase sau
 // (vd 'final') khi phase trước ('semi_final') chưa tồn tại hoặc còn trận
 // chưa kết thúc. round_of_16 không có tiền đề trong bảng này (vòng đầu tiên).
@@ -42,13 +51,6 @@ const KNOCKOUT_STAGE_PREREQUISITE: Partial<Record<PhaseType, PhaseType>> = {
     [PhaseType.semi_final]: PhaseType.quarter_final,
     [PhaseType.quarter_final]: PhaseType.round_of_16,
 };
-function vnStartOfDay(d: Date): Date {
-    return new Date(d.getTime() - VN_OFFSET_MS);
-}
-
-function vnEndOfDay(d: Date): Date {
-    return new Date(d.getTime() - VN_OFFSET_MS + 24 * 60 * 60 * 1000 - 1);
-}
 
 type ScheduleBatchResult = {
     matchesScheduled: number;
