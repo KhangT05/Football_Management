@@ -296,7 +296,10 @@ export default function ManageSeasonTeams() {
       toast.success('Đã thêm đội vào mùa giải!');
       reloadTeams();
     }).catch(err => {
-      const msg = getFriendlyErrorMessage(err, 'Lỗi khi thêm đội vào mùa giải — có thể đội đã tham gia mùa giải này hoặc mùa giải đã đóng đăng ký.');
+      const msg = getFriendlyErrorMessage(
+        err,
+        'Không thể thêm đội — nguyên nhân có thể là: đội đã đăng ký mùa giải này, mùa giải đã đóng đăng ký/hết slot, hoặc đội có cầu thủ trùng với 1 đội khác đã đăng ký mùa giải này.'
+      );
       addTeamModal.setFormError(msg);
       toast.error(msg);
     });
@@ -328,7 +331,10 @@ export default function ManageSeasonTeams() {
       toast.success('Đã chuyển đội sang mùa giải mới!');
       reloadTeams();
     }).catch(err => {
-      const msg = getFriendlyErrorMessage(err, 'Lỗi khi chuyển đội sang mùa giải khác, vui lòng thử lại.');
+      const msg = getFriendlyErrorMessage(
+        err,
+        'Không thể chuyển đội — nguyên nhân có thể là: đội đã được xếp bảng (phải gỡ bảng trước), mùa giải đích đã đóng đăng ký/hết slot, hoặc đội có cầu thủ trùng với 1 đội khác đã ở mùa giải đích.'
+      );
       transferModal.setFormError(msg);
       toast.error(msg);
     });

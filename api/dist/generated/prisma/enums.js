@@ -11,7 +11,8 @@ export const SeasonFormat = {
     round_robin: 'round_robin',
     knockout: 'knockout',
     round_robin_knockout: 'round_robin_knockout',
-    multi_round_robin_knockout: 'multi_round_robin_knockout'
+    multi_round_robin_knockout: 'multi_round_robin_knockout',
+    custom: 'custom'
 };
 export const PhaseType = {
     group_stage: 'group_stage',
@@ -116,6 +117,10 @@ export const MatchEventType = {
     penalty_missed: 'penalty_missed',
     card_rescinded: 'card_rescinded',
     goal_disallowed: 'goal_disallowed'
+};
+export const MatchEventTimeSource = {
+    live: 'live',
+    estimated: 'estimated'
 };
 export const CardColor = {
     yellow: 'yellow',

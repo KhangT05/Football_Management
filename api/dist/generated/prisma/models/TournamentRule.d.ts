@@ -123,6 +123,7 @@ export type TournamentRuleCountAggregateOutputType = {
     min_players_per_team: number;
     bonus_per_goal: number;
     bonus_per_assist: number;
+    custom_stages: number;
     teams_advance_per_group: number;
     tiebreaker_order: number;
     user_id: number;
@@ -238,6 +239,7 @@ export type TournamentRuleCountAggregateInputType = {
     min_players_per_team?: true;
     bonus_per_goal?: true;
     bonus_per_assist?: true;
+    custom_stages?: true;
     teams_advance_per_group?: true;
     tiebreaker_order?: true;
     user_id?: true;
@@ -341,6 +343,7 @@ export type TournamentRuleGroupByOutputType = {
     min_players_per_team: number;
     bonus_per_goal: runtime.Decimal;
     bonus_per_assist: runtime.Decimal;
+    custom_stages: runtime.JsonValue | null;
     teams_advance_per_group: number;
     tiebreaker_order: runtime.JsonValue;
     user_id: number | null;
@@ -378,6 +381,7 @@ export type TournamentRuleWhereInput = {
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     bonus_per_goal?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.JsonNullableFilter<"TournamentRule">;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
@@ -407,6 +411,7 @@ export type TournamentRuleOrderByWithRelationInput = {
     min_players_per_team?: Prisma.SortOrder;
     bonus_per_goal?: Prisma.SortOrder;
     bonus_per_assist?: Prisma.SortOrder;
+    custom_stages?: Prisma.SortOrderInput | Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -440,6 +445,7 @@ export type TournamentRuleWhereUniqueInput = Prisma.AtLeast<{
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     bonus_per_goal?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.JsonNullableFilter<"TournamentRule">;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
@@ -469,6 +475,7 @@ export type TournamentRuleOrderByWithAggregationInput = {
     min_players_per_team?: Prisma.SortOrder;
     bonus_per_goal?: Prisma.SortOrder;
     bonus_per_assist?: Prisma.SortOrder;
+    custom_stages?: Prisma.SortOrderInput | Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -503,6 +510,7 @@ export type TournamentRuleScalarWhereWithAggregatesInput = {
     min_players_per_team?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     bonus_per_goal?: Prisma.DecimalWithAggregatesFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalWithAggregatesFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.JsonNullableWithAggregatesFilter<"TournamentRule">;
     teams_advance_per_group?: Prisma.IntWithAggregatesFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonWithAggregatesFilter<"TournamentRule">;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"TournamentRule"> | number | null;
@@ -527,6 +535,7 @@ export type TournamentRuleCreateInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentRuleInput;
@@ -555,6 +564,7 @@ export type TournamentRuleUncheckedCreateInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: number | null;
@@ -580,6 +590,7 @@ export type TournamentRuleUpdateInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonUpdateManyWithoutTournamentRuleNestedInput;
@@ -608,6 +619,7 @@ export type TournamentRuleUncheckedUpdateInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -635,6 +647,7 @@ export type TournamentRuleCreateManyInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: number | null;
@@ -659,6 +672,7 @@ export type TournamentRuleUpdateManyMutationInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
 };
@@ -684,6 +698,7 @@ export type TournamentRuleUncheckedUpdateManyInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -723,6 +738,7 @@ export type TournamentRuleCountOrderByAggregateInput = {
     min_players_per_team?: Prisma.SortOrder;
     bonus_per_goal?: Prisma.SortOrder;
     bonus_per_assist?: Prisma.SortOrder;
+    custom_stages?: Prisma.SortOrder;
     teams_advance_per_group?: Prisma.SortOrder;
     tiebreaker_order?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
@@ -939,6 +955,7 @@ export type TournamentRuleCreateWithoutUserInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentRuleInput;
@@ -966,6 +983,7 @@ export type TournamentRuleUncheckedCreateWithoutUserInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonUncheckedCreateNestedManyWithoutTournamentRuleInput;
@@ -1016,6 +1034,7 @@ export type TournamentRuleScalarWhereInput = {
     min_players_per_team?: Prisma.IntFilter<"TournamentRule"> | number;
     bonus_per_goal?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFilter<"TournamentRule"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.JsonNullableFilter<"TournamentRule">;
     teams_advance_per_group?: Prisma.IntFilter<"TournamentRule"> | number;
     tiebreaker_order?: Prisma.JsonFilter<"TournamentRule">;
     user_id?: Prisma.IntNullableFilter<"TournamentRule"> | number | null;
@@ -1040,6 +1059,7 @@ export type TournamentRuleCreateWithoutTournamentInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonCreateNestedManyWithoutTournamentRuleInput;
@@ -1066,6 +1086,7 @@ export type TournamentRuleUncheckedCreateWithoutTournamentInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: number | null;
@@ -1112,6 +1133,7 @@ export type TournamentRuleCreateWithoutSeasonsInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     tournament: Prisma.TournamentCreateNestedOneWithoutTournamentRuleInput;
@@ -1139,6 +1161,7 @@ export type TournamentRuleUncheckedCreateWithoutSeasonsInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: number | null;
@@ -1176,6 +1199,7 @@ export type TournamentRuleUpdateWithoutSeasonsInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     tournament?: Prisma.TournamentUpdateOneRequiredWithoutTournamentRuleNestedInput;
@@ -1203,6 +1227,7 @@ export type TournamentRuleUncheckedUpdateWithoutSeasonsInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1229,6 +1254,7 @@ export type TournamentRuleCreateManyUserInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
 };
@@ -1252,6 +1278,7 @@ export type TournamentRuleUpdateWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonUpdateManyWithoutTournamentRuleNestedInput;
@@ -1279,6 +1306,7 @@ export type TournamentRuleUncheckedUpdateWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonUncheckedUpdateManyWithoutTournamentRuleNestedInput;
@@ -1305,6 +1333,7 @@ export type TournamentRuleUncheckedUpdateManyWithoutUserInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
 };
@@ -1329,6 +1358,7 @@ export type TournamentRuleCreateManyTournamentInput = {
     min_players_per_team?: number;
     bonus_per_goal?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: number | null;
@@ -1353,6 +1383,7 @@ export type TournamentRuleUpdateWithoutTournamentInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     seasons?: Prisma.SeasonUpdateManyWithoutTournamentRuleNestedInput;
@@ -1379,6 +1410,7 @@ export type TournamentRuleUncheckedUpdateWithoutTournamentInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1405,6 +1437,7 @@ export type TournamentRuleUncheckedUpdateManyWithoutTournamentInput = {
     min_players_per_team?: Prisma.IntFieldUpdateOperationsInput | number;
     bonus_per_goal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     bonus_per_assist?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    custom_stages?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     teams_advance_per_group?: Prisma.IntFieldUpdateOperationsInput | number;
     tiebreaker_order?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -1455,6 +1488,7 @@ export type TournamentRuleSelect<ExtArgs extends runtime.Types.Extensions.Intern
     min_players_per_team?: boolean;
     bonus_per_goal?: boolean;
     bonus_per_assist?: boolean;
+    custom_stages?: boolean;
     teams_advance_per_group?: boolean;
     tiebreaker_order?: boolean;
     user_id?: boolean;
@@ -1485,11 +1519,12 @@ export type TournamentRuleSelectScalar = {
     min_players_per_team?: boolean;
     bonus_per_goal?: boolean;
     bonus_per_assist?: boolean;
+    custom_stages?: boolean;
     teams_advance_per_group?: boolean;
     tiebreaker_order?: boolean;
     user_id?: boolean;
 };
-export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "suspension_match_count" | "fine_per_yellow_card" | "fine_per_red_card" | "points_per_win" | "points_per_draw" | "points_per_loss" | "format" | "round_robin_stages" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "bonus_per_goal" | "bonus_per_assist" | "teams_advance_per_group" | "tiebreaker_order" | "user_id", ExtArgs["result"]["tournamentRule"]>;
+export type TournamentRuleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "tournament_id" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "suspension_match_count" | "fine_per_yellow_card" | "fine_per_red_card" | "points_per_win" | "points_per_draw" | "points_per_loss" | "format" | "round_robin_stages" | "forfeit_score" | "yellow_cards_suspension" | "max_players_per_team" | "min_players_per_team" | "bonus_per_goal" | "bonus_per_assist" | "custom_stages" | "teams_advance_per_group" | "tiebreaker_order" | "user_id", ExtArgs["result"]["tournamentRule"]>;
 export type TournamentRuleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     seasons?: boolean | Prisma.TournamentRule$seasonsArgs<ExtArgs>;
     tournament?: boolean | Prisma.TournamentDefaultArgs<ExtArgs>;
@@ -1525,6 +1560,7 @@ export type $TournamentRulePayload<ExtArgs extends runtime.Types.Extensions.Inte
         min_players_per_team: number;
         bonus_per_goal: runtime.Decimal;
         bonus_per_assist: runtime.Decimal;
+        custom_stages: runtime.JsonValue | null;
         teams_advance_per_group: number;
         tiebreaker_order: runtime.JsonValue;
         user_id: number | null;
@@ -1854,6 +1890,7 @@ export interface TournamentRuleFieldRefs {
     readonly min_players_per_team: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly bonus_per_goal: Prisma.FieldRef<"TournamentRule", 'Decimal'>;
     readonly bonus_per_assist: Prisma.FieldRef<"TournamentRule", 'Decimal'>;
+    readonly custom_stages: Prisma.FieldRef<"TournamentRule", 'Json'>;
     readonly teams_advance_per_group: Prisma.FieldRef<"TournamentRule", 'Int'>;
     readonly tiebreaker_order: Prisma.FieldRef<"TournamentRule", 'Json'>;
     readonly user_id: Prisma.FieldRef<"TournamentRule", 'Int'>;

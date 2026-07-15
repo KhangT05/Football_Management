@@ -285,4 +285,171 @@ export type PlayerMatchStats = {
     events: PlayerMatchEventEntry[];
     note: string;
 };
+export type TeamParticipationStats = {
+    team_id: number;
+    team_name: string;
+    tournament_count: number;
+    season_count: number;
+    status_breakdown: {
+        pending: number;
+        approved: number;
+        active: number;
+        eliminated: number;
+        withdrawn: number;
+    };
+    participations: TeamParticipation[];
+};
+export type TeamHomeAwaySplit = {
+    matches_played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals_for: number;
+    goals_against: number;
+};
+export type TeamBiggestResult = {
+    match_id: number;
+    opponent_team_id: number;
+    opponent_team_name: string;
+    goals_for: number;
+    goals_against: number;
+    played_at: string | null;
+} | null;
+export type TeamStreakEntry = {
+    type: "W" | "D" | "L";
+    count: number;
+} | null;
+export type TeamAggregateStatsExtended = TeamAggregateStatsBase & {
+    home: TeamHomeAwaySplit;
+    away: TeamHomeAwaySplit;
+    clean_sheets: number;
+    forfeit_wins: number;
+    forfeit_losses: number;
+    biggest_win: TeamBiggestResult;
+    biggest_loss: TeamBiggestResult;
+    current_streak: TeamStreakEntry;
+    avg_goals_for_per_match: number;
+    avg_goals_against_per_match: number;
+};
+export type TeamStatsFilter = {
+    seasonId?: number;
+    tournamentId?: number;
+    period?: string;
+};
+export type TeamSquadPositionBreakdown = {
+    goalkeeper: number;
+    defender: number;
+    midfielder: number;
+    forward: number;
+};
+export type TeamSquadStats = {
+    team_id: number;
+    team_name: string;
+    current_player_count: number;
+    position_breakdown: TeamSquadPositionBreakdown;
+    average_age: number | null;
+    joined_in_period: number;
+    left_in_period: number;
+    period_days: number | null;
+};
+export type TeamFinanceStats = {
+    team_id: number;
+    team_name: string;
+    season_id: number | null;
+    total_registration_fee_paid: number;
+    total_registration_fee_refunded: number;
+    total_bonus_payable: number;
+    total_fine_owed: number;
+};
+export type TeamSeasonStatsBatchEntry = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+};
+export type TeamSeasonStatsBatch = {
+    season_id: number;
+    teams: TeamSeasonStatsBatchEntry[];
+};
+export type PlayerTeamTenure = {
+    team_id: number;
+    team_name: string;
+    joined_at: string;
+    left_at: string | null;
+    jersey_number: number;
+    role: string;
+};
+export type PlayerParticipationStats = {
+    player_id: number;
+    player_name: string;
+    tournament_count: number;
+    season_count: number;
+    team_count: number;
+    current_team: {
+        team_id: number;
+        team_name: string;
+    } | null;
+    team_history: PlayerTeamTenure[];
+};
+export type PlayerPerformanceStats = {
+    player_id: number;
+    player_name: string;
+    season_id: number | null;
+    total_matches_played: number;
+    total_starter_count: number;
+    total_substitute_count: number;
+    total_captain_count: number;
+    total_minutes_played: number;
+    avg_minutes_per_match: number;
+    total_goals: number;
+    total_assists: number;
+    avg_goals_per_match: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+export type PlayerDisciplineStatus = {
+    player_id: number;
+    player_name: string;
+    season_id: number;
+    is_suspended: boolean;
+    suspension_matches_remaining: number;
+    yellow_cards_since_reset: number;
+    accumulated_yellow_cards: number;
+    total_fine_owed: number;
+};
+export type PlayerTeamsInPeriodEntry = {
+    team_id: number;
+    team_name: string;
+    season_id: number;
+    season_name: string;
+};
+export type PlayerTeamsInPeriodStats = {
+    player_id: number;
+    from: string;
+    to: string;
+    entries: PlayerTeamsInPeriodEntry[];
+    distinct_team_count: number;
+    distinct_season_count: number;
+};
+export type TeamFinanceEntry = {
+    team_id: number;
+    team_name: string;
+    total_registration_fee_paid: number;
+    total_registration_fee_refunded: number;
+    total_bonus_payable: number;
+    total_fine_owed: number;
+};
+export type PlayerPerformanceBatchEntry = {
+    player_id: number;
+    player_name: string;
+    total_matches_played: number;
+    total_starter_count: number;
+    total_substitute_count: number;
+    total_captain_count: number;
+    total_minutes_played: number;
+    avg_minutes_per_match: number;
+    total_goals: number;
+    total_assists: number;
+    avg_goals_per_match: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
 //# sourceMappingURL=statistics.type.d.ts.map

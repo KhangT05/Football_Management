@@ -689,6 +689,7 @@ export class MatchResultService {
                 away_team_id: true,
                 home_score: true,
                 away_score: true,
+                created_at: true,
                 finalize_home_half_time: true,
                 finalize_away_half_time: true,
                 venue: { select: { name: true } },
@@ -719,7 +720,7 @@ export class MatchResultService {
             }),
             this.prisma.matchEvent.findMany({
                 where: { match_id: matchId },
-                select: { player_id: true, team_id: true, type: true, minute: true, added_minute: true },
+                select: MATCH_EVENT_SELECT
             }),
         ]);
 
@@ -743,7 +744,10 @@ export class MatchResultService {
             lineup.map(l => [l.player_id, l.player.user.name]),
         );
 
-        const goalsTimeline = buildGoalsTimeline(events, match.home_team_id, match.away_team_id, playerNameLookup);
+        const goalsTimeline = buildGoalsTimeline(events,
+            match.home_team_id, match.away_team_id,
+            playerNameLookup, match.scheduled_at,
+        );
 
         return {
             matchId: match.id,

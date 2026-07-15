@@ -163,6 +163,7 @@ export const TournamentRuleScalarFieldEnum = {
     min_players_per_team: 'min_players_per_team',
     bonus_per_goal: 'bonus_per_goal',
     bonus_per_assist: 'bonus_per_assist',
+    custom_stages: 'custom_stages',
     teams_advance_per_group: 'teams_advance_per_group',
     tiebreaker_order: 'tiebreaker_order',
     user_id: 'user_id'
@@ -380,6 +381,7 @@ export const MatchEventScalarFieldEnum = {
     period: 'period',
     added_minute: 'added_minute',
     card_color: 'card_color',
+    time_source: 'time_source',
     sub_out_player_id: 'sub_out_player_id',
     created_at: 'created_at'
 };
@@ -507,6 +509,10 @@ export const ArticleMediaScalarFieldEnum = {
 export const SortOrder = {
     asc: 'asc',
     desc: 'desc'
+};
+export const NullableJsonNullValueInput = {
+    DbNull: DbNull,
+    JsonNull: JsonNull
 };
 export const JsonNullValueInput = {
     JsonNull: JsonNull

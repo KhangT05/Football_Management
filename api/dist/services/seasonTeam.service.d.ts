@@ -31,6 +31,14 @@ export declare class SeasonTeamService {
      * GroupService.autoAssignApprovedTeamToGroup — no-op (trả null) nếu
      * season không dùng flow group_count, group_id giữ nguyên null chờ
      * drawGroups thủ công như trước.
+     *
+     * NOTE (player conflict): KHÔNG re-check player conflict ở approve().
+     * Lý do: selfRegister/adminAdd đã chặn conflict ngay lúc tạo pending,
+     * nên tại thời điểm approve(), record đã tồn tại hợp lệ. Trường hợp
+     * duy nhất phát sinh conflict MỚI giữa lúc pending -> approve là admin
+     * chủ động thêm player trùng vào team khác sau khi team A đã pending —
+     * đây là thao tác riêng ở TeamPlayer, nên chặn ở chỗ thêm player vào
+     * team (ngoài scope service này), không chặn ở approve().
      */
     approve(id: number, requesterId: number): Promise<SeasonTeamWithRelations>;
     transferSeason(id: number, targetSeasonId: number, requesterId: number): Promise<SeasonTeamWithRelations>;
@@ -47,6 +55,26 @@ export declare class SeasonTeamService {
     assignGroup(id: number, data: AssignGroupDto): Promise<SeasonTeamWithRelations>;
     softDelete(id: number): Promise<void>;
     private assertSlotAvailable;
+    /**
+     * FIX (player conflict): chặn trường hợp 1 player đang active/approved
+     * ở `teamId` (team đang đăng ký/transfer) mà player đó ĐỒNG THỜI cũng
+     * đang active/approved ở 1 team KHÁC, và team khác đó đã có season_team
+     * (pending/approved/active, chưa xoá) trong CÙNG season này.
+     *
+     * Không chặn: player thuộc nhiều team nhưng các team đó không đụng
+     * nhau ở season này (khác season, hoặc team kia đã withdrawn/eliminated).
+     *
+     * LIMITATION (race condition): check này đọc snapshot tại thời điểm
+     * gọi, không có row nào đại diện cho cặp (player, season) để FOR UPDATE
+     * trực tiếp. Nếu 2 request đăng ký của 2 team share player chạy TRÙNG
+     * thời điểm (cùng mili-giây), lý thuyết cả 2 vẫn có thể pass check
+     * trước khi bên kia commit. Case này hiếm (đăng ký giải không phải
+     * high-frequency operation) — nếu cần chặn tuyệt đối, cân nhắc thêm
+     * `pg_advisory_xact_lock(hashtext('player:' || player_id))` cho từng
+     * player_id của team trước khi query, hoặc nâng isolation level lên
+     * Serializable cho transaction này.
+     */
+    private assertNoPlayerConflict;
     private createOrReactivate;
     listBySeasonWithTeamInfo(seasonId: number, statuses?: SeasonTeamStatus[]): Promise<{
         season: {

@@ -90,6 +90,49 @@ let StatisticsController = class StatisticsController extends Controller {
     async getPlayerFinanceStats(seasonId) {
         return this.statisticsService.getPlayerFinanceStats(seasonId);
     }
+    // StatisticsController — thêm vào class hiện có
+    // ═══ TEAM V2 (extended: home/away split, streak, biggest win/loss, clean sheets) ═══
+    async getTeamOverviewStatsV2(teamId, period) {
+        return this.statisticsService.getTeamOverviewStatsV2(teamId, period);
+    }
+    async getTeamTournamentStatsV2(teamId, tournamentId) {
+        return this.statisticsService.getTeamTournamentStatsV2(teamId, tournamentId);
+    }
+    async getTeamSeasonStatsV2(teamId, seasonId) {
+        return this.statisticsService.getTeamSeasonStatsV2(teamId, seasonId);
+    }
+    // ═══ TEAM — participation & finance ═══
+    async getTeamParticipationStats(teamId) {
+        return this.statisticsService.getTeamParticipationStats(teamId);
+    }
+    async getTeamsFinanceStatsBatch(seasonId) {
+        return this.statisticsService.getTeamsFinanceStatsBatch(seasonId);
+    }
+    // Batch team stats 1 season — thay thế N+1 call getTeamSeasonStats cho từng đội.
+    async getTeamsSeasonStatsBatch(seasonId) {
+        return this.statisticsService.getTeamsSeasonStatsBatch(seasonId);
+    }
+    // ═══ PLAYER — participation, performance, discipline, teams-in-period ═══
+    async getPlayerParticipationStats(playerId) {
+        return this.statisticsService.getPlayerParticipationStats(playerId);
+    }
+    async getPlayersPerformanceStatsBatch(seasonId) {
+        return this.statisticsService.getPlayersPerformanceStatsBatch(seasonId);
+    }
+    async getPlayerDisciplineStatus(playerId, seasonId) {
+        return this.statisticsService.getPlayerDisciplineStatus(playerId, seasonId);
+    }
+    // Assumption: reporting nội bộ (đối soát cầu thủ đổi đội theo khoảng thời gian) — khoá admin.
+    async getPlayerTeamsInPeriod(playerId, from, to) {
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+        if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+            // tsoa không tự validate format ISO cho string query — validate tay ở đây
+            this.setStatus(400);
+            throw new Error("from/to phải là ISO date string hợp lệ");
+        }
+        return this.statisticsService.getPlayerTeamsInPeriod(playerId, fromDate, toDate);
+    }
 };
 __decorate([
     Security("jwt", ["admin"]),
@@ -261,6 +304,84 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getPlayerFinanceStats", null);
+__decorate([
+    Get("teams/{teamId}/overview/extended"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamOverviewStatsV2", null);
+__decorate([
+    Get("teams/{teamId}/tournaments/{tournamentId}/extended"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamTournamentStatsV2", null);
+__decorate([
+    Get("teams/{teamId}/seasons/{seasonId}/extended"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamSeasonStatsV2", null);
+__decorate([
+    Get("teams/{teamId}/participations"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamParticipationStats", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("seasons/{seasonId}/teams/finance-batch"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamsFinanceStatsBatch", null);
+__decorate([
+    Get("seasons/{seasonId}/teams/batch"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamsSeasonStatsBatch", null);
+__decorate([
+    Get("players/{playerId}/participations"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerParticipationStats", null);
+__decorate([
+    Get("seasons/{seasonId}/players/performance-batch"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayersPerformanceStatsBatch", null);
+__decorate([
+    Get("players/{playerId}/seasons/{seasonId}/discipline"),
+    __param(0, Path()),
+    __param(1, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerDisciplineStatus", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("players/{playerId}/teams-in-period"),
+    __param(0, Path()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, String]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayerTeamsInPeriod", null);
 StatisticsController = __decorate([
     Route("statistics"),
     Tags("Statistics"),

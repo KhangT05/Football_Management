@@ -42,6 +42,7 @@ export type MatchEventMinAggregateOutputType = {
     period: $Enums.MatchPeriod | null;
     added_minute: number | null;
     card_color: $Enums.CardColor | null;
+    time_source: $Enums.MatchEventTimeSource | null;
     sub_out_player_id: number | null;
     created_at: Date | null;
 };
@@ -56,6 +57,7 @@ export type MatchEventMaxAggregateOutputType = {
     period: $Enums.MatchPeriod | null;
     added_minute: number | null;
     card_color: $Enums.CardColor | null;
+    time_source: $Enums.MatchEventTimeSource | null;
     sub_out_player_id: number | null;
     created_at: Date | null;
 };
@@ -70,6 +72,7 @@ export type MatchEventCountAggregateOutputType = {
     period: number;
     added_minute: number;
     card_color: number;
+    time_source: number;
     sub_out_player_id: number;
     created_at: number;
     _all: number;
@@ -103,6 +106,7 @@ export type MatchEventMinAggregateInputType = {
     period?: true;
     added_minute?: true;
     card_color?: true;
+    time_source?: true;
     sub_out_player_id?: true;
     created_at?: true;
 };
@@ -117,6 +121,7 @@ export type MatchEventMaxAggregateInputType = {
     period?: true;
     added_minute?: true;
     card_color?: true;
+    time_source?: true;
     sub_out_player_id?: true;
     created_at?: true;
 };
@@ -131,6 +136,7 @@ export type MatchEventCountAggregateInputType = {
     period?: true;
     added_minute?: true;
     card_color?: true;
+    time_source?: true;
     sub_out_player_id?: true;
     created_at?: true;
     _all?: true;
@@ -222,6 +228,7 @@ export type MatchEventGroupByOutputType = {
     period: $Enums.MatchPeriod | null;
     added_minute: number | null;
     card_color: $Enums.CardColor | null;
+    time_source: $Enums.MatchEventTimeSource;
     sub_out_player_id: number | null;
     created_at: Date;
     _count: MatchEventCountAggregateOutputType | null;
@@ -247,6 +254,7 @@ export type MatchEventWhereInput = {
     period?: Prisma.EnumMatchPeriodNullableFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
     added_minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFilter<"MatchEvent"> | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
     player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
@@ -265,6 +273,7 @@ export type MatchEventOrderByWithRelationInput = {
     period?: Prisma.SortOrderInput | Prisma.SortOrder;
     added_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
     card_color?: Prisma.SortOrderInput | Prisma.SortOrder;
+    time_source?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     player?: Prisma.PlayerOrderByWithRelationInput;
@@ -287,6 +296,7 @@ export type MatchEventWhereUniqueInput = Prisma.AtLeast<{
     period?: Prisma.EnumMatchPeriodNullableFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
     added_minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFilter<"MatchEvent"> | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
     player?: Prisma.XOR<Prisma.PlayerNullableScalarRelationFilter, Prisma.PlayerWhereInput> | null;
@@ -305,6 +315,7 @@ export type MatchEventOrderByWithAggregationInput = {
     period?: Prisma.SortOrderInput | Prisma.SortOrder;
     added_minute?: Prisma.SortOrderInput | Prisma.SortOrder;
     card_color?: Prisma.SortOrderInput | Prisma.SortOrder;
+    time_source?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     _count?: Prisma.MatchEventCountOrderByAggregateInput;
@@ -327,6 +338,7 @@ export type MatchEventScalarWhereWithAggregatesInput = {
     period?: Prisma.EnumMatchPeriodNullableWithAggregatesFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
     added_minute?: Prisma.IntNullableWithAggregatesFilter<"MatchEvent"> | number | null;
     card_color?: Prisma.EnumCardColorNullableWithAggregatesFilter<"MatchEvent"> | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceWithAggregatesFilter<"MatchEvent"> | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.IntNullableWithAggregatesFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"MatchEvent"> | Date | string;
 };
@@ -337,6 +349,7 @@ export type MatchEventCreateInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
     player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
     team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
@@ -354,6 +367,7 @@ export type MatchEventUncheckedCreateInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -364,6 +378,7 @@ export type MatchEventUpdateInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
     team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
@@ -381,6 +396,7 @@ export type MatchEventUncheckedUpdateInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -395,6 +411,7 @@ export type MatchEventCreateManyInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -405,6 +422,7 @@ export type MatchEventUpdateManyMutationInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type MatchEventUncheckedUpdateManyInput = {
@@ -418,6 +436,7 @@ export type MatchEventUncheckedUpdateManyInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -445,6 +464,7 @@ export type MatchEventCountOrderByAggregateInput = {
     period?: Prisma.SortOrder;
     added_minute?: Prisma.SortOrder;
     card_color?: Prisma.SortOrder;
+    time_source?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
 };
@@ -468,6 +488,7 @@ export type MatchEventMaxOrderByAggregateInput = {
     period?: Prisma.SortOrder;
     added_minute?: Prisma.SortOrder;
     card_color?: Prisma.SortOrder;
+    time_source?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
 };
@@ -482,6 +503,7 @@ export type MatchEventMinOrderByAggregateInput = {
     period?: Prisma.SortOrder;
     added_minute?: Prisma.SortOrder;
     card_color?: Prisma.SortOrder;
+    time_source?: Prisma.SortOrder;
     sub_out_player_id?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
 };
@@ -652,6 +674,9 @@ export type EnumMatchEventTypeFieldUpdateOperationsInput = {
 export type NullableEnumCardColorFieldUpdateOperationsInput = {
     set?: $Enums.CardColor | null;
 };
+export type EnumMatchEventTimeSourceFieldUpdateOperationsInput = {
+    set?: $Enums.MatchEventTimeSource;
+};
 export type MatchEventCreateWithoutTeamInput = {
     type: $Enums.MatchEventType;
     minute?: number | null;
@@ -659,6 +684,7 @@ export type MatchEventCreateWithoutTeamInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
     player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
     sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
@@ -674,6 +700,7 @@ export type MatchEventUncheckedCreateWithoutTeamInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -712,6 +739,7 @@ export type MatchEventScalarWhereInput = {
     period?: Prisma.EnumMatchPeriodNullableFilter<"MatchEvent"> | $Enums.MatchPeriod | null;
     added_minute?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     card_color?: Prisma.EnumCardColorNullableFilter<"MatchEvent"> | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFilter<"MatchEvent"> | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.IntNullableFilter<"MatchEvent"> | number | null;
     created_at?: Prisma.DateTimeFilter<"MatchEvent"> | Date | string;
 };
@@ -722,6 +750,7 @@ export type MatchEventCreateWithoutPlayerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
     team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
     sub_out_player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsSubOutInput;
@@ -737,6 +766,7 @@ export type MatchEventUncheckedCreateWithoutPlayerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -755,6 +785,7 @@ export type MatchEventCreateWithoutSub_out_playerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
     player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
     team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
@@ -771,6 +802,7 @@ export type MatchEventUncheckedCreateWithoutSub_out_playerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
 };
 export type MatchEventCreateOrConnectWithoutSub_out_playerInput = {
@@ -814,6 +846,7 @@ export type MatchEventCreateWithoutMatchInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
     player?: Prisma.PlayerCreateNestedOneWithoutMatchEventsInput;
     team?: Prisma.TeamCreateNestedOneWithoutMatchEventsInput;
@@ -829,6 +862,7 @@ export type MatchEventUncheckedCreateWithoutMatchInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -863,6 +897,7 @@ export type MatchEventCreateManyTeamInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -873,6 +908,7 @@ export type MatchEventUpdateWithoutTeamInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
     sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
@@ -888,6 +924,7 @@ export type MatchEventUncheckedUpdateWithoutTeamInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -901,6 +938,7 @@ export type MatchEventUncheckedUpdateManyWithoutTeamInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -914,6 +952,7 @@ export type MatchEventCreateManyPlayerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -928,6 +967,7 @@ export type MatchEventCreateManySub_out_playerInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     created_at?: Date | string;
 };
 export type MatchEventUpdateWithoutPlayerInput = {
@@ -937,6 +977,7 @@ export type MatchEventUpdateWithoutPlayerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
     sub_out_player?: Prisma.PlayerUpdateOneWithoutMatchEventsSubOutNestedInput;
@@ -952,6 +993,7 @@ export type MatchEventUncheckedUpdateWithoutPlayerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -965,6 +1007,7 @@ export type MatchEventUncheckedUpdateManyWithoutPlayerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -975,6 +1018,7 @@ export type MatchEventUpdateWithoutSub_out_playerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
     team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
@@ -991,6 +1035,7 @@ export type MatchEventUncheckedUpdateWithoutSub_out_playerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type MatchEventUncheckedUpdateManyWithoutSub_out_playerInput = {
@@ -1004,6 +1049,7 @@ export type MatchEventUncheckedUpdateManyWithoutSub_out_playerInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type MatchEventCreateManyMatchInput = {
@@ -1016,6 +1062,7 @@ export type MatchEventCreateManyMatchInput = {
     period?: $Enums.MatchPeriod | null;
     added_minute?: number | null;
     card_color?: $Enums.CardColor | null;
+    time_source?: $Enums.MatchEventTimeSource;
     sub_out_player_id?: number | null;
     created_at?: Date | string;
 };
@@ -1026,6 +1073,7 @@ export type MatchEventUpdateWithoutMatchInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     player?: Prisma.PlayerUpdateOneWithoutMatchEventsNestedInput;
     team?: Prisma.TeamUpdateOneWithoutMatchEventsNestedInput;
@@ -1041,6 +1089,7 @@ export type MatchEventUncheckedUpdateWithoutMatchInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1054,6 +1103,7 @@ export type MatchEventUncheckedUpdateManyWithoutMatchInput = {
     period?: Prisma.NullableEnumMatchPeriodFieldUpdateOperationsInput | $Enums.MatchPeriod | null;
     added_minute?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     card_color?: Prisma.NullableEnumCardColorFieldUpdateOperationsInput | $Enums.CardColor | null;
+    time_source?: Prisma.EnumMatchEventTimeSourceFieldUpdateOperationsInput | $Enums.MatchEventTimeSource;
     sub_out_player_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1068,6 +1118,7 @@ export type MatchEventSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
     period?: boolean;
     added_minute?: boolean;
     card_color?: boolean;
+    time_source?: boolean;
     sub_out_player_id?: boolean;
     created_at?: boolean;
     player?: boolean | Prisma.MatchEvent$playerArgs<ExtArgs>;
@@ -1086,10 +1137,11 @@ export type MatchEventSelectScalar = {
     period?: boolean;
     added_minute?: boolean;
     card_color?: boolean;
+    time_source?: boolean;
     sub_out_player_id?: boolean;
     created_at?: boolean;
 };
-export type MatchEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "player_id" | "team_id" | "type" | "minute" | "note" | "period" | "added_minute" | "card_color" | "sub_out_player_id" | "created_at", ExtArgs["result"]["matchEvent"]>;
+export type MatchEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "match_id" | "player_id" | "team_id" | "type" | "minute" | "note" | "period" | "added_minute" | "card_color" | "time_source" | "sub_out_player_id" | "created_at", ExtArgs["result"]["matchEvent"]>;
 export type MatchEventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     player?: boolean | Prisma.MatchEvent$playerArgs<ExtArgs>;
     team?: boolean | Prisma.MatchEvent$teamArgs<ExtArgs>;
@@ -1115,6 +1167,7 @@ export type $MatchEventPayload<ExtArgs extends runtime.Types.Extensions.Internal
         period: $Enums.MatchPeriod | null;
         added_minute: number | null;
         card_color: $Enums.CardColor | null;
+        time_source: $Enums.MatchEventTimeSource;
         sub_out_player_id: number | null;
         created_at: Date;
     }, ExtArgs["result"]["matchEvent"]>;
@@ -1433,6 +1486,7 @@ export interface MatchEventFieldRefs {
     readonly period: Prisma.FieldRef<"MatchEvent", 'MatchPeriod'>;
     readonly added_minute: Prisma.FieldRef<"MatchEvent", 'Int'>;
     readonly card_color: Prisma.FieldRef<"MatchEvent", 'CardColor'>;
+    readonly time_source: Prisma.FieldRef<"MatchEvent", 'MatchEventTimeSource'>;
     readonly sub_out_player_id: Prisma.FieldRef<"MatchEvent", 'Int'>;
     readonly created_at: Prisma.FieldRef<"MatchEvent", 'DateTime'>;
 }

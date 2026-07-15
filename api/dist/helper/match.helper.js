@@ -13,6 +13,7 @@ export const MATCH_EVENT_SELECT = {
     type: true,
     period: true,
     minute: true,
+    time_source: true,
     added_minute: true,
     created_at: true,
 };
@@ -30,6 +31,44 @@ export const MATCH_RESULT_SELECT = {
     notes: true,
     created_at: true,
 };
+// Baseline lý thuyết (chưa tính bù giờ — bù giờ là hướng phát triển sau,
+// để field trống hiện tại nghĩa là dùng baseline chuẩn 45/90/105/120).
+export const PERIOD_BASELINE_MINUTE = {
+    first_half: 0,
+    second_half: 45,
+    extra_time_first: 90,
+    extra_time_second: 105,
+    penalty_shootout: 120,
+};
+/**
+ * Tính giờ hiển thị cho 1 event.
+ * - time_source='live': dùng created_at thẳng — admin đã bấm ngay lúc xảy ra,
+ *   sai số chỉ là độ trễ thao tác (vài giây), coi là chính xác.
+ * - time_source='estimated': suy từ scheduled_at + minute, baseline lý
+ *   thuyết theo period (KHÔNG bù giờ thực tế — xem PERIOD_BASELINE_MINUTE).
+ *   Đây là ước lượng thô, sai số có thể vài phút/hàng chục phút nếu hiệp
+ *   trước đó có bù giờ dài hoặc nghỉ giữa hiệp không chuẩn 15p. Hướng phát
+ *   triển sau: thêm Match.first_half_added_time/second_half_added_time để
+ *   bù chính xác hơn — hàm này đã tách baseline riêng để dễ nâng cấp, không
+ *   cần đổi chữ ký khi thêm bù giờ.
+ */
+export function computeEventClockTime(match, evt) {
+    if (evt.time_source === 'live') {
+        return { time: evt.created_at, confidence: 'exact' };
+    }
+    if (!match.scheduled_at || evt.minute == null || !evt.period)
+        return null;
+    if (evt.period === MatchPeriod.penalty_shootout)
+        return null; // pen không có "phút" thật
+    const baseline = PERIOD_BASELINE_MINUTE[evt.period];
+    // minute lưu theo chuẩn cumulative bóng đá (hiệp 2: 46-90...), nên
+    // KHÔNG cộng thêm baseline vào minute — minute tự nó đã là tổng phút.
+    const totalMinutes = evt.minute + (evt.added_minute ?? 0);
+    return {
+        time: new Date(match.scheduled_at.getTime() + totalMinutes * 60_000),
+        confidence: 'estimated',
+    };
+}
 // ─── Minute rounding ──────────────────────────────────────────────────────────
 export function toMatchMinute(elapsedSeconds) {
     if (elapsedSeconds < 0)
@@ -232,7 +271,7 @@ export function buildMatchReportPlayerRows(lineup, jerseyLookup, events, teamId)
     })
         .sort((a, b) => Number(b.isStarting) - Number(a.isStarting) || (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999));
 }
-export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLookup) {
+export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLookup, scheduledAt) {
     const home = [];
     const away = [];
     for (const ev of events) {
@@ -243,11 +282,14 @@ export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLoo
         if (!isGoalType && !isOwnGoal)
             continue;
         const creditedHome = isCreditedToHomeTeam(homeTeamId, ev.team_id, ev.type);
+        const clock = computeEventClockTime({ scheduled_at: scheduledAt }, ev);
         const entry = {
             playerName: playerNameLookup.get(ev.player_id) ?? 'Unknown',
             minute: ev.minute,
             addedMinute: ev.added_minute,
             isOwnGoal,
+            clockTime: clock?.time ?? null, // NEW
+            clockConfidence: clock?.confidence ?? null, // NEW: 'exact' | 'estimated' | null
         };
         (creditedHome ? home : away).push(entry);
     }
@@ -257,6 +299,14 @@ export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLoo
 export function formatMinuteLabel(e) {
     const base = e.addedMinute ? `${e.minute}+${e.addedMinute}'` : `${e.minute}'`;
     return e.isOwnGoal ? `${base} (OG)` : base;
+}
+export function formatClockLabel(e) {
+    if (!e.clockTime)
+        return null;
+    const hh = e.clockTime.getHours().toString().padStart(2, '0');
+    const mm = e.clockTime.getMinutes().toString().padStart(2, '0');
+    const prefix = e.clockConfidence === 'estimated' ? '~' : '';
+    return `${prefix}${hh}:${mm}`;
 }
 export function assertMinuteInBounds(period, minute, addedMinute) {
     if (period === MatchPeriod.penalty_shootout)

@@ -2219,6 +2219,7 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly min_players_per_team: "min_players_per_team";
     readonly bonus_per_goal: "bonus_per_goal";
     readonly bonus_per_assist: "bonus_per_assist";
+    readonly custom_stages: "custom_stages";
     readonly teams_advance_per_group: "teams_advance_per_group";
     readonly tiebreaker_order: "tiebreaker_order";
     readonly user_id: "user_id";
@@ -2451,6 +2452,7 @@ export declare const MatchEventScalarFieldEnum: {
     readonly period: "period";
     readonly added_minute: "added_minute";
     readonly card_color: "card_color";
+    readonly time_source: "time_source";
     readonly sub_out_player_id: "sub_out_player_id";
     readonly created_at: "created_at";
 };
@@ -2589,6 +2591,11 @@ export declare const SortOrder: {
     readonly desc: "desc";
 };
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+export declare const NullableJsonNullValueInput: {
+    readonly DbNull: runtime.DbNullClass;
+    readonly JsonNull: runtime.JsonNullClass;
+};
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 export declare const JsonNullValueInput: {
     readonly JsonNull: runtime.JsonNullClass;
 };
@@ -2827,6 +2834,10 @@ export type EnumMatchEventTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$P
  * Reference to a field of type 'CardColor'
  */
 export type EnumCardColorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CardColor'>;
+/**
+ * Reference to a field of type 'MatchEventTimeSource'
+ */
+export type EnumMatchEventTimeSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchEventTimeSource'>;
 /**
  * Reference to a field of type 'MatchResultStatus'
  */

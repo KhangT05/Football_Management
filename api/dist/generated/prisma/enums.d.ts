@@ -3,6 +3,7 @@ export declare const SeasonFormat: {
     readonly knockout: "knockout";
     readonly round_robin_knockout: "round_robin_knockout";
     readonly multi_round_robin_knockout: "multi_round_robin_knockout";
+    readonly custom: "custom";
 };
 export type SeasonFormat = (typeof SeasonFormat)[keyof typeof SeasonFormat];
 export declare const PhaseType: {
@@ -125,6 +126,11 @@ export declare const MatchEventType: {
     readonly goal_disallowed: "goal_disallowed";
 };
 export type MatchEventType = (typeof MatchEventType)[keyof typeof MatchEventType];
+export declare const MatchEventTimeSource: {
+    readonly live: "live";
+    readonly estimated: "estimated";
+};
+export type MatchEventTimeSource = (typeof MatchEventTimeSource)[keyof typeof MatchEventTimeSource];
 export declare const CardColor: {
     readonly yellow: "yellow";
     readonly red: "red";

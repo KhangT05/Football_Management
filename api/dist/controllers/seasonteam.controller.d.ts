@@ -55,12 +55,12 @@ export declare class SeasonTeamController extends Controller {
         created_at: Date;
         updated_at: Date | null;
         format: import("../generated/prisma/enums.js").PhaseFormat;
+        order: number;
         teams_advance_per_group: number | null;
         status: import("../generated/prisma/enums.js").PhaseStatus;
         start_date: Date | null;
         end_date: Date | null;
         season_id: number;
-        order: number;
         min_rest_days_per_team: number;
         legs: number;
         teams_per_group: number | null;

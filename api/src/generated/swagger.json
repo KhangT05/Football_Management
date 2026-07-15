@@ -406,6 +406,7 @@
 			"SeasonFormat": {
 				"type": "string",
 				"enum": [
+					"custom",
 					"round_robin",
 					"knockout",
 					"round_robin_knockout",
@@ -422,6 +423,158 @@
 					"yellow_cards",
 					"red_cards"
 				]
+			},
+			"infer_typeofstageConfigSchema_": {
+				"anyOf": [
+					{
+						"properties": {
+							"source_stage_order": {
+								"type": "number",
+								"format": "double"
+							},
+							"points_per_loss": {
+								"type": "number",
+								"format": "double"
+							},
+							"points_per_draw": {
+								"type": "number",
+								"format": "double"
+							},
+							"points_per_win": {
+								"type": "number",
+								"format": "double"
+							},
+							"teams_advance_per_group": {
+								"type": "number",
+								"format": "double"
+							},
+							"group_count": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"round_robin"
+								],
+								"nullable": false
+							},
+							"name": {
+								"type": "string"
+							},
+							"order": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"points_per_loss",
+							"points_per_draw",
+							"points_per_win",
+							"teams_advance_per_group",
+							"group_count",
+							"type",
+							"name",
+							"order"
+						],
+						"type": "object"
+					},
+					{
+						"properties": {
+							"leg_type": {
+								"type": "string",
+								"enum": [
+									"single_leg",
+									"two_legged"
+								]
+							},
+							"seed_mode": {
+								"type": "string",
+								"enum": [
+									"standing_straight",
+									"standing_cross",
+									"standing_random",
+									"manual"
+								]
+							},
+							"source_stage_order": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"knockout"
+								],
+								"nullable": false
+							},
+							"name": {
+								"type": "string"
+							},
+							"order": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"leg_type",
+							"seed_mode",
+							"source_stage_order",
+							"type",
+							"name",
+							"order"
+						],
+						"type": "object"
+					},
+					{
+						"properties": {
+							"leg_type": {
+								"type": "string",
+								"enum": [
+									"single_leg",
+									"two_legged"
+								]
+							},
+							"source_kind": {
+								"type": "string",
+								"enum": [
+									"loser_of_stage",
+									"standing"
+								]
+							},
+							"source_stage_order": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"classification"
+								],
+								"nullable": false
+							},
+							"name": {
+								"type": "string"
+							},
+							"order": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"leg_type",
+							"source_kind",
+							"source_stage_order",
+							"type",
+							"name",
+							"order"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"StageConfig": {
+				"$ref": "#/components/schemas/infer_typeofstageConfigSchema_"
 			},
 			"TournamentRuleDto": {
 				"properties": {
@@ -500,6 +653,13 @@
 						},
 						"type": "array"
 					},
+					"custom_stages": {
+						"items": {
+							"$ref": "#/components/schemas/StageConfig"
+						},
+						"type": "array",
+						"nullable": true
+					},
 					"created_at": {
 						"type": "string",
 						"format": "date-time"
@@ -509,6 +669,11 @@
 						"format": "double"
 					},
 					"updated_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"deleted_at": {
 						"type": "string",
 						"format": "date-time",
 						"nullable": true
@@ -577,15 +742,169 @@
 					"min_players_per_team",
 					"teams_advance_per_group",
 					"tiebreaker_order",
+					"custom_stages",
 					"created_at",
 					"round_robin_stages",
-					"updated_at"
+					"updated_at",
+					"deleted_at"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
 			"input_typeofcreateTournamentRuleSchema_": {
 				"properties": {
+					"custom_stages": {
+						"items": {
+							"anyOf": [
+								{
+									"properties": {
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_loss": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_draw": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_win": {
+											"type": "number",
+											"format": "double"
+										},
+										"teams_advance_per_group": {
+											"type": "number",
+											"format": "double"
+										},
+										"group_count": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"round_robin"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"points_per_loss",
+										"points_per_draw",
+										"points_per_win",
+										"teams_advance_per_group",
+										"group_count",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								},
+								{
+									"properties": {
+										"leg_type": {
+											"type": "string",
+											"enum": [
+												"single_leg",
+												"two_legged"
+											]
+										},
+										"seed_mode": {
+											"type": "string",
+											"enum": [
+												"standing_straight",
+												"standing_cross",
+												"standing_random",
+												"manual"
+											]
+										},
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"knockout"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"leg_type",
+										"seed_mode",
+										"source_stage_order",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								},
+								{
+									"properties": {
+										"leg_type": {
+											"type": "string",
+											"enum": [
+												"single_leg",
+												"two_legged"
+											]
+										},
+										"source_kind": {
+											"type": "string",
+											"enum": [
+												"loser_of_stage",
+												"standing"
+											]
+										},
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"classification"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"leg_type",
+										"source_kind",
+										"source_stage_order",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								}
+							]
+						},
+						"type": "array"
+					},
 					"tiebreaker_order": {
 						"items": {
 							"type": "string",
@@ -606,6 +925,7 @@
 					"format": {
 						"type": "string",
 						"enum": [
+							"custom",
 							"round_robin",
 							"knockout",
 							"round_robin_knockout",
@@ -686,6 +1006,158 @@
 			},
 			"input_typeofupdateTournamentRuleSchema_": {
 				"properties": {
+					"custom_stages": {
+						"items": {
+							"anyOf": [
+								{
+									"properties": {
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_loss": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_draw": {
+											"type": "number",
+											"format": "double"
+										},
+										"points_per_win": {
+											"type": "number",
+											"format": "double"
+										},
+										"teams_advance_per_group": {
+											"type": "number",
+											"format": "double"
+										},
+										"group_count": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"round_robin"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"points_per_loss",
+										"points_per_draw",
+										"points_per_win",
+										"teams_advance_per_group",
+										"group_count",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								},
+								{
+									"properties": {
+										"leg_type": {
+											"type": "string",
+											"enum": [
+												"single_leg",
+												"two_legged"
+											]
+										},
+										"seed_mode": {
+											"type": "string",
+											"enum": [
+												"standing_straight",
+												"standing_cross",
+												"standing_random",
+												"manual"
+											]
+										},
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"knockout"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"leg_type",
+										"seed_mode",
+										"source_stage_order",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								},
+								{
+									"properties": {
+										"leg_type": {
+											"type": "string",
+											"enum": [
+												"single_leg",
+												"two_legged"
+											]
+										},
+										"source_kind": {
+											"type": "string",
+											"enum": [
+												"loser_of_stage",
+												"standing"
+											]
+										},
+										"source_stage_order": {
+											"type": "number",
+											"format": "double"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"classification"
+											],
+											"nullable": false
+										},
+										"name": {
+											"type": "string"
+										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"leg_type",
+										"source_kind",
+										"source_stage_order",
+										"type",
+										"name",
+										"order"
+									],
+									"type": "object"
+								}
+							]
+						},
+						"type": "array"
+					},
 					"tiebreaker_order": {
 						"items": {
 							"type": "string",
@@ -706,6 +1178,7 @@
 					"format": {
 						"type": "string",
 						"enum": [
+							"custom",
 							"round_robin",
 							"knockout",
 							"round_robin_knockout",
@@ -2453,6 +2926,573 @@
 				],
 				"type": "object"
 			},
+			"TeamHomeAwaySplit": {
+				"properties": {
+					"goals_against": {
+						"type": "number",
+						"format": "double"
+					},
+					"goals_for": {
+						"type": "number",
+						"format": "double"
+					},
+					"losses": {
+						"type": "number",
+						"format": "double"
+					},
+					"draws": {
+						"type": "number",
+						"format": "double"
+					},
+					"wins": {
+						"type": "number",
+						"format": "double"
+					},
+					"matches_played": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"goals_against",
+					"goals_for",
+					"losses",
+					"draws",
+					"wins",
+					"matches_played"
+				],
+				"type": "object"
+			},
+			"TeamBiggestResult": {
+				"properties": {
+					"played_at": {
+						"type": "string",
+						"nullable": true
+					},
+					"goals_against": {
+						"type": "number",
+						"format": "double"
+					},
+					"goals_for": {
+						"type": "number",
+						"format": "double"
+					},
+					"opponent_team_name": {
+						"type": "string"
+					},
+					"opponent_team_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"match_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"played_at",
+					"goals_against",
+					"goals_for",
+					"opponent_team_name",
+					"opponent_team_id",
+					"match_id"
+				],
+				"type": "object",
+				"nullable": true
+			},
+			"TeamStreakEntry": {
+				"properties": {
+					"count": {
+						"type": "number",
+						"format": "double"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"W",
+							"D",
+							"L"
+						]
+					}
+				},
+				"required": [
+					"count",
+					"type"
+				],
+				"type": "object",
+				"nullable": true
+			},
+			"TeamAggregateStatsExtended": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/TeamAggregateStatsBase"
+					},
+					{
+						"properties": {
+							"avg_goals_against_per_match": {
+								"type": "number",
+								"format": "double"
+							},
+							"avg_goals_for_per_match": {
+								"type": "number",
+								"format": "double"
+							},
+							"current_streak": {
+								"$ref": "#/components/schemas/TeamStreakEntry"
+							},
+							"biggest_loss": {
+								"$ref": "#/components/schemas/TeamBiggestResult"
+							},
+							"biggest_win": {
+								"$ref": "#/components/schemas/TeamBiggestResult"
+							},
+							"forfeit_losses": {
+								"type": "number",
+								"format": "double"
+							},
+							"forfeit_wins": {
+								"type": "number",
+								"format": "double"
+							},
+							"clean_sheets": {
+								"type": "number",
+								"format": "double"
+							},
+							"away": {
+								"$ref": "#/components/schemas/TeamHomeAwaySplit"
+							},
+							"home": {
+								"$ref": "#/components/schemas/TeamHomeAwaySplit"
+							}
+						},
+						"required": [
+							"avg_goals_against_per_match",
+							"avg_goals_for_per_match",
+							"current_streak",
+							"biggest_loss",
+							"biggest_win",
+							"forfeit_losses",
+							"forfeit_wins",
+							"clean_sheets",
+							"away",
+							"home"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"TeamParticipationStats": {
+				"properties": {
+					"participations": {
+						"items": {
+							"$ref": "#/components/schemas/TeamParticipation"
+						},
+						"type": "array"
+					},
+					"status_breakdown": {
+						"properties": {
+							"withdrawn": {
+								"type": "number",
+								"format": "double"
+							},
+							"eliminated": {
+								"type": "number",
+								"format": "double"
+							},
+							"active": {
+								"type": "number",
+								"format": "double"
+							},
+							"approved": {
+								"type": "number",
+								"format": "double"
+							},
+							"pending": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"withdrawn",
+							"eliminated",
+							"active",
+							"approved",
+							"pending"
+						],
+						"type": "object"
+					},
+					"season_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"participations",
+					"status_breakdown",
+					"season_count",
+					"tournament_count",
+					"team_name",
+					"team_id"
+				],
+				"type": "object"
+			},
+			"TeamFinanceEntry": {
+				"properties": {
+					"total_fine_owed": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_bonus_payable": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_registration_fee_refunded": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_registration_fee_paid": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"total_fine_owed",
+					"total_bonus_payable",
+					"total_registration_fee_refunded",
+					"total_registration_fee_paid",
+					"team_name",
+					"team_id"
+				],
+				"type": "object"
+			},
+			"TeamSeasonStatsBatchEntry": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/TeamAggregateStatsBase"
+					},
+					{
+						"properties": {
+							"team_name": {
+								"type": "string"
+							},
+							"team_id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"team_name",
+							"team_id"
+						],
+						"type": "object"
+					}
+				]
+			},
+			"TeamSeasonStatsBatch": {
+				"properties": {
+					"teams": {
+						"items": {
+							"$ref": "#/components/schemas/TeamSeasonStatsBatchEntry"
+						},
+						"type": "array"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"teams",
+					"season_id"
+				],
+				"type": "object"
+			},
+			"PlayerTeamTenure": {
+				"properties": {
+					"role": {
+						"type": "string"
+					},
+					"jersey_number": {
+						"type": "number",
+						"format": "double"
+					},
+					"left_at": {
+						"type": "string",
+						"nullable": true
+					},
+					"joined_at": {
+						"type": "string"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"role",
+					"jersey_number",
+					"left_at",
+					"joined_at",
+					"team_name",
+					"team_id"
+				],
+				"type": "object"
+			},
+			"PlayerParticipationStats": {
+				"properties": {
+					"team_history": {
+						"items": {
+							"$ref": "#/components/schemas/PlayerTeamTenure"
+						},
+						"type": "array"
+					},
+					"current_team": {
+						"properties": {
+							"team_name": {
+								"type": "string"
+							},
+							"team_id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"team_name",
+							"team_id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"team_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"season_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"tournament_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_name": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"team_history",
+					"current_team",
+					"team_count",
+					"season_count",
+					"tournament_count",
+					"player_name",
+					"player_id"
+				],
+				"type": "object"
+			},
+			"PlayerPerformanceBatchEntry": {
+				"properties": {
+					"total_red_cards": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_yellow_cards": {
+						"type": "number",
+						"format": "double"
+					},
+					"avg_goals_per_match": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_assists": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_goals": {
+						"type": "number",
+						"format": "double"
+					},
+					"avg_minutes_per_match": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_minutes_played": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_captain_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_substitute_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_starter_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"total_matches_played": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_name": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"total_red_cards",
+					"total_yellow_cards",
+					"avg_goals_per_match",
+					"total_assists",
+					"total_goals",
+					"avg_minutes_per_match",
+					"total_minutes_played",
+					"total_captain_count",
+					"total_substitute_count",
+					"total_starter_count",
+					"total_matches_played",
+					"player_name",
+					"player_id"
+				],
+				"type": "object"
+			},
+			"PlayerDisciplineStatus": {
+				"properties": {
+					"total_fine_owed": {
+						"type": "number",
+						"format": "double"
+					},
+					"accumulated_yellow_cards": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_since_reset": {
+						"type": "number",
+						"format": "double"
+					},
+					"suspension_matches_remaining": {
+						"type": "number",
+						"format": "double"
+					},
+					"is_suspended": {
+						"type": "boolean"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"player_name": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"total_fine_owed",
+					"accumulated_yellow_cards",
+					"yellow_cards_since_reset",
+					"suspension_matches_remaining",
+					"is_suspended",
+					"season_id",
+					"player_name",
+					"player_id"
+				],
+				"type": "object"
+			},
+			"PlayerTeamsInPeriodEntry": {
+				"properties": {
+					"season_name": {
+						"type": "string"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"team_name": {
+						"type": "string"
+					},
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"season_name",
+					"season_id",
+					"team_name",
+					"team_id"
+				],
+				"type": "object"
+			},
+			"PlayerTeamsInPeriodStats": {
+				"properties": {
+					"distinct_season_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"distinct_team_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/PlayerTeamsInPeriodEntry"
+						},
+						"type": "array"
+					},
+					"to": {
+						"type": "string"
+					},
+					"from": {
+						"type": "string"
+					},
+					"player_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"distinct_season_count",
+					"distinct_team_count",
+					"entries",
+					"to",
+					"from",
+					"player_id"
+				],
+				"type": "object"
+			},
 			"SeasonTeamStatus": {
 				"type": "string",
 				"enum": [
@@ -2870,6 +3910,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
 					"status": {
 						"$ref": "#/components/schemas/SeasonStatus"
 					},
@@ -2904,10 +3948,6 @@
 					"cancel_reason": {
 						"type": "string"
 					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
-					},
 					"pitch_type": {
 						"$ref": "#/components/schemas/PitchType"
 					}
@@ -2915,6 +3955,7 @@
 				"required": [
 					"name",
 					"id",
+					"group_count",
 					"status",
 					"start_date",
 					"end_date",
@@ -2925,7 +3966,6 @@
 					"bank_account_no",
 					"bank_account_name",
 					"cancel_reason",
-					"group_count",
 					"pitch_type"
 				],
 				"type": "object",
@@ -3006,10 +4046,6 @@
 					"pitch_type": {
 						"$ref": "#/components/schemas/PitchType"
 					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
-					},
 					"cancel_reason": {
 						"type": "string"
 					},
@@ -3055,6 +4091,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
 					"description": {
 						"type": "string"
 					},
@@ -3084,7 +4124,6 @@
 				"required": [
 					"tournament_rule_id",
 					"pitch_type",
-					"group_count",
 					"cancel_reason",
 					"registration_fee",
 					"bank_account_name",
@@ -3098,6 +4137,7 @@
 					"status",
 					"user_id",
 					"tournament_id",
+					"group_count",
 					"description",
 					"deleted_at",
 					"updated_at",
@@ -3205,10 +4245,6 @@
 							"san_11"
 						]
 					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
-					},
 					"bank_account_name": {
 						"type": "string"
 					},
@@ -3236,6 +4272,10 @@
 					"start_date": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
 					},
 					"description": {
 						"type": "string"
@@ -4887,11 +5927,21 @@
 					"goal_disallowed"
 				]
 			},
-			"PaginatedResult__id-number--created_at-Date--type-MatchEventType--team_id-number--player_id-number--match_id-number--minute-number--period-MatchPeriod--added_minute-number__": {
+			"MatchEventTimeSource": {
+				"type": "string",
+				"enum": [
+					"live",
+					"estimated"
+				]
+			},
+			"PaginatedResult__id-number--created_at-Date--type-MatchEventType--team_id-number--player_id-number--match_id-number--minute-number--period-MatchPeriod--added_minute-number--time_source-MatchEventTimeSource__": {
 				"properties": {
 					"data": {
 						"items": {
 							"properties": {
+								"time_source": {
+									"$ref": "#/components/schemas/MatchEventTimeSource"
+								},
 								"added_minute": {
 									"type": "number",
 									"format": "double"
@@ -4928,6 +5978,7 @@
 								}
 							},
 							"required": [
+								"time_source",
 								"added_minute",
 								"period",
 								"minute",
@@ -9726,6 +10777,562 @@
 				]
 			}
 		},
+		"/statistics/teams/{teamId}/overview/extended": {
+			"get": {
+				"operationId": "GetTeamOverviewStatsV2",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/TeamOverviewStats"
+										},
+										{
+											"properties": {
+												"extended": {
+													"$ref": "#/components/schemas/TeamAggregateStatsExtended"
+												}
+											},
+											"required": [
+												"extended"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "period",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"7d",
+								"30d",
+								"90d",
+								"3m",
+								"6m",
+								"1y"
+							]
+						}
+					}
+				]
+			}
+		},
+		"/statistics/teams/{teamId}/tournaments/{tournamentId}/extended": {
+			"get": {
+				"operationId": "GetTeamTournamentStatsV2",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/TeamAggregateStatsBase"
+										},
+										{
+											"properties": {
+												"seasons": {
+													"items": {
+														"properties": {
+															"season_name": {
+																"type": "string"
+															},
+															"season_id": {
+																"type": "number",
+																"format": "double"
+															}
+														},
+														"required": [
+															"season_name",
+															"season_id"
+														],
+														"type": "object"
+													},
+													"type": "array"
+												},
+												"season_count": {
+													"type": "number",
+													"format": "double"
+												},
+												"tournament_name": {
+													"type": "string"
+												},
+												"tournament_id": {
+													"type": "number",
+													"format": "double"
+												},
+												"team_name": {
+													"type": "string"
+												},
+												"team_id": {
+													"type": "number",
+													"format": "double"
+												}
+											},
+											"required": [
+												"seasons",
+												"season_count",
+												"tournament_name",
+												"tournament_id",
+												"team_name",
+												"team_id"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"extended": {
+													"$ref": "#/components/schemas/TeamAggregateStatsExtended"
+												}
+											},
+											"required": [
+												"extended"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "tournamentId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/teams/{teamId}/seasons/{seasonId}/extended": {
+			"get": {
+				"operationId": "GetTeamSeasonStatsV2",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/TeamAggregateStatsBase"
+										},
+										{
+											"properties": {
+												"group_name": {
+													"type": "string"
+												},
+												"tournament_name": {
+													"type": "string"
+												},
+												"tournament_id": {
+													"type": "number",
+													"format": "double"
+												},
+												"season_name": {
+													"type": "string"
+												},
+												"season_id": {
+													"type": "number",
+													"format": "double"
+												},
+												"team_name": {
+													"type": "string"
+												},
+												"team_id": {
+													"type": "number",
+													"format": "double"
+												}
+											},
+											"required": [
+												"group_name",
+												"tournament_name",
+												"tournament_id",
+												"season_name",
+												"season_id",
+												"team_name",
+												"team_id"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"extended": {
+													"$ref": "#/components/schemas/TeamAggregateStatsExtended"
+												}
+											},
+											"required": [
+												"extended"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/teams/{teamId}/participations": {
+			"get": {
+				"operationId": "GetTeamParticipationStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamParticipationStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/teams/finance-batch": {
+			"get": {
+				"operationId": "GetTeamsFinanceStatsBatch",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"teams": {
+											"items": {
+												"$ref": "#/components/schemas/TeamFinanceEntry"
+											},
+											"type": "array"
+										},
+										"season_id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"teams",
+										"season_id"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/teams/batch": {
+			"get": {
+				"operationId": "GetTeamsSeasonStatsBatch",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamSeasonStatsBatch"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/players/{playerId}/participations": {
+			"get": {
+				"operationId": "GetPlayerParticipationStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerParticipationStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "playerId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/seasons/{seasonId}/players/performance-batch": {
+			"get": {
+				"operationId": "GetPlayersPerformanceStatsBatch",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"players": {
+											"items": {
+												"$ref": "#/components/schemas/PlayerPerformanceBatchEntry"
+											},
+											"type": "array"
+										},
+										"season_id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"players",
+										"season_id"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/players/{playerId}/seasons/{seasonId}/discipline": {
+			"get": {
+				"operationId": "GetPlayerDisciplineStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerDisciplineStatus"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "playerId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/players/{playerId}/teams-in-period": {
+			"get": {
+				"operationId": "GetPlayerTeamsInPeriod",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PlayerTeamsInPeriodStats"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "playerId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "from",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "to",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
 		"/seasonteams": {
 			"get": {
 				"operationId": "FindAll",
@@ -10177,10 +11784,6 @@
 											"type": "string",
 											"format": "date-time"
 										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										},
 										"status": {
 											"$ref": "#/components/schemas/PhaseStatus"
 										},
@@ -10189,6 +11792,10 @@
 											"format": "double"
 										},
 										"teams_advance_per_group": {
+											"type": "number",
+											"format": "double"
+										},
+										"order": {
 											"type": "number",
 											"format": "double"
 										},
@@ -10223,10 +11830,10 @@
 										"min_rest_days_per_team",
 										"end_date",
 										"start_date",
-										"order",
 										"status",
 										"season_id",
 										"teams_advance_per_group",
+										"order",
 										"format",
 										"type",
 										"updated_at",
@@ -13234,7 +14841,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/PaginatedResult__id-number--created_at-Date--type-MatchEventType--team_id-number--player_id-number--match_id-number--minute-number--period-MatchPeriod--added_minute-number__"
+									"$ref": "#/components/schemas/PaginatedResult__id-number--created_at-Date--type-MatchEventType--team_id-number--player_id-number--match_id-number--minute-number--period-MatchPeriod--added_minute-number--time_source-MatchEventTimeSource__"
 								}
 							}
 						}

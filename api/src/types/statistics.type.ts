@@ -332,3 +332,213 @@ export type PlayerMatchStats = {
     events: PlayerMatchEventEntry[];
     note: string; // giải thích giới hạn dữ liệu (vd không có assist theo trận)
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEAM — PARTICIPATION (tham gia giải/mùa)
+// ═══════════════════════════════════════════════════════════════════════
+export type TeamParticipationStats = {
+    team_id: number;
+    team_name: string;
+    tournament_count: number; // distinct tournament đã tham gia
+    season_count: number;     // tổng số lần đăng ký mùa giải
+    status_breakdown: {
+        pending: number;
+        approved: number;
+        active: number;
+        eliminated: number;
+        withdrawn: number;
+    };
+    participations: TeamParticipation[]; // đã có sẵn type này
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEAM — PERFORMANCE EXTENDED (home/away, clean sheet, streak, biggest result)
+// ═══════════════════════════════════════════════════════════════════════
+export type TeamHomeAwaySplit = {
+    matches_played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals_for: number;
+    goals_against: number;
+};
+
+export type TeamBiggestResult = {
+    match_id: number;
+    opponent_team_id: number;
+    opponent_team_name: string;
+    goals_for: number;
+    goals_against: number;
+    played_at: string | null;
+} | null;
+
+export type TeamStreakEntry = { type: "W" | "D" | "L"; count: number } | null;
+
+export type TeamAggregateStatsExtended = TeamAggregateStatsBase & {
+    home: TeamHomeAwaySplit;
+    away: TeamHomeAwaySplit;
+    clean_sheets: number; // số trận không thủng lưới
+    forfeit_wins: number; // thắng do đối thủ bỏ cuộc
+    forfeit_losses: number; // thua do đội nhà bỏ cuộc
+    biggest_win: TeamBiggestResult;
+    biggest_loss: TeamBiggestResult;
+    current_streak: TeamStreakEntry; // chuỗi trận gần nhất (theo played_at)
+    avg_goals_for_per_match: number;
+    avg_goals_against_per_match: number;
+};
+
+// Filter dùng chung cho mọi tầng (toàn thời gian / theo giải / theo mùa / theo khoảng ngày)
+export type TeamStatsFilter = {
+    seasonId?: number;
+    tournamentId?: number;
+    period?: string; // '7d'|'30d'|'90d'|'3m'|'6m'|'1y'
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEAM — SQUAD (đội hình / nhân sự)
+// ═══════════════════════════════════════════════════════════════════════
+export type TeamSquadPositionBreakdown = {
+    goalkeeper: number;
+    defender: number;
+    midfielder: number;
+    forward: number;
+};
+
+export type TeamSquadStats = {
+    team_id: number;
+    team_name: string;
+    current_player_count: number;
+    position_breakdown: TeamSquadPositionBreakdown;
+    average_age: number | null; // null nếu chưa có cầu thủ nào
+    joined_in_period: number;  // số cầu thủ gia nhập trong period
+    left_in_period: number;    // số cầu thủ rời đội trong period
+    period_days: number | null;
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEAM — FINANCE (tài chính đội)
+// ═══════════════════════════════════════════════════════════════════════
+export type TeamFinanceStats = {
+    team_id: number;
+    team_name: string;
+    season_id: number | null; // null = toàn bộ lịch sử
+    total_registration_fee_paid: number; // sum Payment.amount status=confirmed
+    total_registration_fee_refunded: number;
+    total_bonus_payable: number; // sum PlayerStatistic bonus (goal+assist) của toàn đội
+    total_fine_owed: number;     // sum PlayerStatistic.total_fine_owed của toàn đội
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEAM — BATCH (bảng so sánh nhiều đội trong 1 mùa)
+// ═══════════════════════════════════════════════════════════════════════
+export type TeamSeasonStatsBatchEntry = TeamAggregateStatsBase & {
+    team_id: number;
+    team_name: string;
+};
+export type TeamSeasonStatsBatch = {
+    season_id: number;
+    teams: TeamSeasonStatsBatchEntry[];
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLAYER — PARTICIPATION
+// ═══════════════════════════════════════════════════════════════════════
+export type PlayerTeamTenure = {
+    team_id: number;
+    team_name: string;
+    joined_at: string;       // TeamPlayer.created_at
+    left_at: string | null;  // TeamPlayer.deleted_at, null = vẫn còn ở đội
+    jersey_number: number;
+    role: string;
+};
+
+export type PlayerParticipationStats = {
+    player_id: number;
+    player_name: string;
+    tournament_count: number;
+    season_count: number;
+    team_count: number; // distinct đội đã khoác áo (career, kể cả đã rời)
+    current_team: { team_id: number; team_name: string } | null;
+    team_history: PlayerTeamTenure[]; // sort theo joined_at desc
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLAYER — PERFORMANCE EXTENDED
+// ═══════════════════════════════════════════════════════════════════════
+export type PlayerPerformanceStats = {
+    player_id: number;
+    player_name: string;
+    season_id: number | null; // null = toàn bộ sự nghiệp
+    total_matches_played: number;
+    total_starter_count: number;
+    total_substitute_count: number;
+    total_captain_count: number;
+    total_minutes_played: number;
+    avg_minutes_per_match: number;
+    total_goals: number;
+    total_assists: number;
+    avg_goals_per_match: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLAYER — DISCIPLINE STATUS (trạng thái hiện tại, không phải lịch sử)
+// ═══════════════════════════════════════════════════════════════════════
+export type PlayerDisciplineStatus = {
+    player_id: number;
+    player_name: string;
+    season_id: number;
+    is_suspended: boolean;
+    suspension_matches_remaining: number;
+    yellow_cards_since_reset: number;
+    accumulated_yellow_cards: number;
+    total_fine_owed: number;
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLAYER — TEAMS/SEASONS TRONG 1 KHOẢNG THỜI GIAN
+// ═══════════════════════════════════════════════════════════════════════
+// LƯU Ý: bucket theo overlap giữa [from, to] và [Season.start_date,
+// Season.end_date]. Nếu season chưa có start_date/end_date (null), season
+// đó bị loại khỏi kết quả — không đoán mò ngày.
+export type PlayerTeamsInPeriodEntry = {
+    team_id: number;
+    team_name: string;
+    season_id: number;
+    season_name: string;
+};
+export type PlayerTeamsInPeriodStats = {
+    player_id: number;
+    from: string;
+    to: string;
+    entries: PlayerTeamsInPeriodEntry[];
+    distinct_team_count: number;
+    distinct_season_count: number;
+};
+
+export type TeamFinanceEntry = {
+    team_id: number;
+    team_name: string;
+    total_registration_fee_paid: number;
+    total_registration_fee_refunded: number;
+    total_bonus_payable: number;
+    total_fine_owed: number;
+};
+
+
+export type PlayerPerformanceBatchEntry = {
+    player_id: number;
+    player_name: string;
+    total_matches_played: number;
+    total_starter_count: number;
+    total_substitute_count: number;
+    total_captain_count: number;
+    total_minutes_played: number;
+    avg_minutes_per_match: number;
+    total_goals: number;
+    total_assists: number;
+    avg_goals_per_match: number;
+    total_yellow_cards: number;
+    total_red_cards: number;
+};

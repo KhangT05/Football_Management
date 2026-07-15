@@ -145,4 +145,76 @@ export class StatisticsController extends Controller {
     async getPlayerFinanceStats(@Path() seasonId: number) {
         return this.statisticsService.getPlayerFinanceStats(seasonId);
     }
+    // StatisticsController — thêm vào class hiện có
+
+    // ═══ TEAM V2 (extended: home/away split, streak, biggest win/loss, clean sheets) ═══
+    @Get("teams/{teamId}/overview/extended")
+    async getTeamOverviewStatsV2(
+        @Path() teamId: number,
+        @Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y",
+    ) {
+        return this.statisticsService.getTeamOverviewStatsV2(teamId, period);
+    }
+
+    @Get("teams/{teamId}/tournaments/{tournamentId}/extended")
+    async getTeamTournamentStatsV2(@Path() teamId: number, @Path() tournamentId: number) {
+        return this.statisticsService.getTeamTournamentStatsV2(teamId, tournamentId);
+    }
+
+    @Get("teams/{teamId}/seasons/{seasonId}/extended")
+    async getTeamSeasonStatsV2(@Path() teamId: number, @Path() seasonId: number) {
+        return this.statisticsService.getTeamSeasonStatsV2(teamId, seasonId);
+    }
+
+    // ═══ TEAM — participation & finance ═══
+    @Get("teams/{teamId}/participations")
+    async getTeamParticipationStats(@Path() teamId: number) {
+        return this.statisticsService.getTeamParticipationStats(teamId);
+    }
+
+    @Security("jwt", ["admin"])
+    @Get("seasons/{seasonId}/teams/finance-batch")
+    async getTeamsFinanceStatsBatch(@Path() seasonId: number) {
+        return this.statisticsService.getTeamsFinanceStatsBatch(seasonId);
+    }
+
+    // Batch team stats 1 season — thay thế N+1 call getTeamSeasonStats cho từng đội.
+    @Get("seasons/{seasonId}/teams/batch")
+    async getTeamsSeasonStatsBatch(@Path() seasonId: number) {
+        return this.statisticsService.getTeamsSeasonStatsBatch(seasonId);
+    }
+
+    // ═══ PLAYER — participation, performance, discipline, teams-in-period ═══
+    @Get("players/{playerId}/participations")
+    async getPlayerParticipationStats(@Path() playerId: number) {
+        return this.statisticsService.getPlayerParticipationStats(playerId);
+    }
+
+    @Get("seasons/{seasonId}/players/performance-batch")
+    async getPlayersPerformanceStatsBatch(@Path() seasonId: number) {
+        return this.statisticsService.getPlayersPerformanceStatsBatch(seasonId);
+    }
+
+    @Get("players/{playerId}/seasons/{seasonId}/discipline")
+    async getPlayerDisciplineStatus(@Path() playerId: number, @Path() seasonId: number) {
+        return this.statisticsService.getPlayerDisciplineStatus(playerId, seasonId);
+    }
+
+    // Assumption: reporting nội bộ (đối soát cầu thủ đổi đội theo khoảng thời gian) — khoá admin.
+    @Security("jwt", ["admin"])
+    @Get("players/{playerId}/teams-in-period")
+    async getPlayerTeamsInPeriod(
+        @Path() playerId: number,
+        @Query() from: string,
+        @Query() to: string,
+    ) {
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+        if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+            // tsoa không tự validate format ISO cho string query — validate tay ở đây
+            this.setStatus(400);
+            throw new Error("from/to phải là ISO date string hợp lệ");
+        }
+        return this.statisticsService.getPlayerTeamsInPeriod(playerId, fromDate, toDate);
+    }
 }

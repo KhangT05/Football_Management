@@ -11,6 +11,7 @@ export declare const MATCH_EVENT_SELECT: {
     type: true;
     period: true;
     minute: true;
+    time_source: true;
     added_minute: true;
     created_at: true;
 };
@@ -28,6 +29,32 @@ export declare const MATCH_RESULT_SELECT: {
     notes: true;
     created_at: true;
 };
+export declare const PERIOD_BASELINE_MINUTE: Record<MatchPeriod, number>;
+export interface EventClockTime {
+    time: Date;
+    confidence: 'exact' | 'estimated';
+}
+/**
+ * Tính giờ hiển thị cho 1 event.
+ * - time_source='live': dùng created_at thẳng — admin đã bấm ngay lúc xảy ra,
+ *   sai số chỉ là độ trễ thao tác (vài giây), coi là chính xác.
+ * - time_source='estimated': suy từ scheduled_at + minute, baseline lý
+ *   thuyết theo period (KHÔNG bù giờ thực tế — xem PERIOD_BASELINE_MINUTE).
+ *   Đây là ước lượng thô, sai số có thể vài phút/hàng chục phút nếu hiệp
+ *   trước đó có bù giờ dài hoặc nghỉ giữa hiệp không chuẩn 15p. Hướng phát
+ *   triển sau: thêm Match.first_half_added_time/second_half_added_time để
+ *   bù chính xác hơn — hàm này đã tách baseline riêng để dễ nâng cấp, không
+ *   cần đổi chữ ký khi thêm bù giờ.
+ */
+export declare function computeEventClockTime(match: {
+    scheduled_at: Date | null;
+}, evt: {
+    time_source: 'live' | 'estimated';
+    created_at: Date;
+    period: MatchPeriod | null;
+    minute: number | null;
+    added_minute: number | null;
+}): EventClockTime | null;
 export type MatchEventRow = Prisma.MatchEventGetPayload<{
     select: typeof MATCH_EVENT_SELECT;
 }>;
@@ -96,18 +123,24 @@ export interface MatchReportGoalEntry {
     minute: number | null;
     addedMinute: number | null;
     isOwnGoal: boolean;
+    clockTime: Date | null;
+    clockConfidence: 'exact' | 'estimated' | null;
 }
 export declare function buildGoalsTimeline(events: {
     player_id: number | null;
     team_id: number | null;
     type: MatchEventType;
+    period: MatchPeriod | null;
     minute: number | null;
     added_minute: number | null;
-}[], homeTeamId: number, awayTeamId: number, playerNameLookup: Map<number, string>): {
+    time_source: 'live' | 'estimated';
+    created_at: Date;
+}[], homeTeamId: number, awayTeamId: number, playerNameLookup: Map<number, string>, scheduledAt: Date | null): {
     home: MatchReportGoalEntry[];
     away: MatchReportGoalEntry[];
 };
 export declare function formatMinuteLabel(e: MatchReportGoalEntry): string;
+export declare function formatClockLabel(e: MatchReportGoalEntry): string | null;
 export declare function assertMinuteInBounds(period: MatchPeriod | null | undefined, minute: number | null | undefined, addedMinute?: number | null): void;
 export declare function assertPlayerNotSentOff(tx: Prisma.TransactionClient, matchId: number, playerId: number | null | undefined): Promise<void>;
 export declare function findAdvancedChildMatchId(tx: Prisma.TransactionClient, matchId: number): Promise<number | null>;

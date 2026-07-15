@@ -25,5 +25,45 @@ export declare class StatisticsController extends Controller {
     getPlayerSeasonStats(playerId: number, seasonId: number): Promise<import("../types/statistics.type.js").PlayerSeasonStats>;
     getPlayerMatchStats(playerId: number, matchId: number): Promise<import("../types/statistics.type.js").PlayerMatchStats>;
     getPlayerFinanceStats(seasonId: number): Promise<import("../services/statistics.service.js").SeasonFinanceStats>;
+    getTeamOverviewStatsV2(teamId: number, period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y"): Promise<import("../types/statistics.type.js").TeamOverviewStats & {
+        extended: import("../types/statistics.type.js").TeamAggregateStatsExtended;
+    }>;
+    getTeamTournamentStatsV2(teamId: number, tournamentId: number): Promise<import("../types/statistics.type.js").TeamAggregateStatsBase & {
+        team_id: number;
+        team_name: string;
+        tournament_id: number;
+        tournament_name: string;
+        season_count: number;
+        seasons: {
+            season_id: number;
+            season_name: string;
+        }[];
+    } & {
+        extended: import("../types/statistics.type.js").TeamAggregateStatsExtended;
+    }>;
+    getTeamSeasonStatsV2(teamId: number, seasonId: number): Promise<import("../types/statistics.type.js").TeamAggregateStatsBase & {
+        team_id: number;
+        team_name: string;
+        season_id: number;
+        season_name: string;
+        tournament_id: number;
+        tournament_name: string;
+        group_name: string | null;
+    } & {
+        extended: import("../types/statistics.type.js").TeamAggregateStatsExtended;
+    }>;
+    getTeamParticipationStats(teamId: number): Promise<import("../types/statistics.type.js").TeamParticipationStats>;
+    getTeamsFinanceStatsBatch(seasonId: number): Promise<{
+        season_id: number;
+        teams: import("../types/statistics.type.js").TeamFinanceEntry[];
+    }>;
+    getTeamsSeasonStatsBatch(seasonId: number): Promise<import("../types/statistics.type.js").TeamSeasonStatsBatch>;
+    getPlayerParticipationStats(playerId: number): Promise<import("../types/statistics.type.js").PlayerParticipationStats>;
+    getPlayersPerformanceStatsBatch(seasonId: number): Promise<{
+        season_id: number;
+        players: import("../types/statistics.type.js").PlayerPerformanceBatchEntry[];
+    }>;
+    getPlayerDisciplineStatus(playerId: number, seasonId: number): Promise<import("../types/statistics.type.js").PlayerDisciplineStatus>;
+    getPlayerTeamsInPeriod(playerId: number, from: string, to: string): Promise<import("../types/statistics.type.js").PlayerTeamsInPeriodStats>;
 }
 //# sourceMappingURL=statistics.controller.d.ts.map
