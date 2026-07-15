@@ -609,6 +609,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
     try {
       if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
         await matchApi.startMatch(selectedMatch.id);
+        setMatchStatus('ongoing');
       }
 
       await syncUnsavedEvents();

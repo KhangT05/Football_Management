@@ -13,11 +13,16 @@ const DEFAULT_PASSWORD = "Player@123456";
  * chưa được gán vào team nào — sẽ được ưu tiên nhét vào các team đầu tiên trước
  * khi sinh thêm player giả để lấp đầy 23 người/đội. Cách này thoả đúng yêu cầu
  * "player tự link sang user" mà không tạo trùng Player cho user đã có sẵn.
+ *
+ * NEW targetSquadSize: cho phép cố ý sinh đội hình KHÔNG đủ 23 (thậm chí < 11)
+ * để mô phỏng team đăng ký nhưng thiếu người — matchDetailSeeder sẽ tự skip
+ * lineup cho các trận của team này (đúng theo cảnh báo có sẵn trong code gốc).
  */
 export async function seedSquads(
   db: PrismaClient,
   teamIdByName: Record<string, number>,
-  existingPlayerIds: number[] = []
+  existingPlayerIds: number[] = [],
+  targetSquadSize: number = SQUAD_SIZE
 ): Promise<void> {
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
   const teamEntries = Object.entries(teamIdByName);
@@ -33,10 +38,10 @@ export async function seedSquads(
 
     // đã có cầu thủ nào trong team này chưa (chạy seed lại thì không tạo trùng)
     const alreadyCount = await db.teamPlayer.count({ where: { team_id: teamId } });
-    if (alreadyCount >= SQUAD_SIZE) continue;
+    if (alreadyCount >= targetSquadSize) continue;
 
     let jersey = alreadyCount + 1;
-    const slotsToFill = SQUAD_SIZE - alreadyCount;
+    const slotsToFill = targetSquadSize - alreadyCount;
 
     for (let i = 0; i < slotsToFill; i++) {
       const idx = (jersey - 1) % positions.length;
@@ -101,6 +106,6 @@ export async function seedSquads(
       jersey++;
     }
 
-    console.log(`[SquadSeeder] ${teamName}: đủ ${SQUAD_SIZE} cầu thủ`);
+    console.log(`[SquadSeeder] ${teamName}: đủ ${Math.min(alreadyCount + slotsToFill, targetSquadSize)}/${SQUAD_SIZE} cầu thủ (target=${targetSquadSize})`);
   }
 }

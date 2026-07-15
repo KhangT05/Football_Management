@@ -9,7 +9,11 @@ export function vnInputToUtcDate(value) {
     const utcMs = Date.parse(`${value}:00.000Z`) - VN_OFFSET_MS;
     return new Date(utcMs);
 }
-
+export const utcToVnDateInput = (value) => {
+    if (!value) return '';
+    const d = value instanceof Date ? value : new Date(value);
+    return formatInTimeZone(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+};
 /**
  * Date/ISO string (UTC instant) -> 'YYYY-MM-DDTHH:mm' để feed vào
  * <input type="datetime-local">, hiển thị đúng giờ VN bất kể TZ máy client.

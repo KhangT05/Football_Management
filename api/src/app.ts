@@ -58,7 +58,7 @@ async function bootstrap() {
 
     await prisma.$connect();
 
-    if (process.env.RUN_SEED_ON_BOOT === "false") {
+    if (process.env.RUN_SEED_ON_BOOT === "true") {
 
         console.warn("[Seed] RUN_SEED_ON_BOOT=true — đang chạy seedDatabase() lúc boot. " +
             "Chỉ nên bật cờ này cho lần setup môi trường đầu tiên, KHÔNG bật ở production thường trực.");

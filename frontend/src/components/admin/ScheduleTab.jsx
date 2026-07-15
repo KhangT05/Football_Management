@@ -14,24 +14,11 @@ import { groupApi, matchApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import {
-  vnInputToUtcDate, utcToVnInput, getDatesInRangeUtc, formatDateChipUtc,
+  vnInputToUtcDate, utcToVnInput, getDatesInRangeUtc, formatDateChipUtc, utcToVnDateInput
 } from '../../utils/vn-time';
-// FIX: dùng chung getFriendlyErrorMessage từ apiErrorHelper thay vì định
-// nghĩa lại VIETNAMESE_DIACRITICS_REGEX/isLikelyVietnameseMessage/
-// getFriendlyErrorMessage ở đây — bản local trước đó là bản copy y hệt
-// logic trong apiErrorHelper.js, vi phạm đúng nguyên tắc DRY mà comment
-// gốc trong apiErrorHelper.js đã nêu ("Không định nghĩa lại 3 hằng số/hàm
-// này ở từng component nữa"). CHỈNH LẠI ĐƯỜNG DẪN cho đúng vị trí thực tế
-// của file apiErrorHelper trong repo bạn.
 import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 // ─── Helpers: date range ───────────────────────────────────────────────────
-// FIX: dùng getDatesInRangeUtc/formatDateChipUtc — bản cũ dùng
-// `new Date(\`${d}T00:00:00\`)` (local-TZ parse) rồi `.toISOString()` (UTC
-// output), round-trip qua 2 TZ khác nhau gây off-by-one-day trên máy có TZ
-// dương so với UTC (VN = UTC+7): local midnight -> UTC 17:00 hôm trước ->
-// slice(0,10) ra sai ngày lùi 1. Bản mới build thuần UTC-calendar-day, không
-// có local-TZ nào can thiệp vào giữa chừng.
 const getDatesInRange = getDatesInRangeUtc;
 const formatDateChip = formatDateChipUtc;
 
@@ -41,40 +28,15 @@ const extractFilename = (contentDisposition, fallback) => {
   return m ? decodeURIComponent(m[1]) : fallback;
 };
 
-// Rút gọn 1 giá trị date (Date | ISO string | null) về "YYYY-MM-DD" để đổ
-// vào <input type="date">. Chỉ cắt chuỗi ISO, KHÔNG round-trip qua
-// `new Date(...).toISOString()` với 1 chuỗi đã là local-time literal — cùng
-// nguyên tắc "so sánh theo string, tránh Date object" dùng xuyên suốt codebase
-// (xem TournamentWizardModal: todayStr/addDaysStr).
-const toDateInputValue = (value) => {
-  if (!value) return '';
-  const iso = value instanceof Date ? value.toISOString() : String(value);
-  return iso.slice(0, 10);
-};
+const toDateInputValue = utcToVnDateInput;
 
-// FIX (khóa tạo lịch theo trạng thái mùa giải): thống nhất với
-// GroupDrawUI.jsx / KnockoutUI.jsx — chỉ khóa "tạo lịch thi đấu" hoàn toàn
-// khi season đã thực sự kết thúc (finished/cancelled). Riêng với "tạo bảng
-// mới ngầm định" (nhánh desiredGroupCount/minGroupSize/maxGroupSize) thì
-// còn phải chặn thêm khi season đã 'ongoing' — vì GroupDrawUI đã khóa cứng
-// việc tạo bảng mới từ 'ongoing' trở đi (autoFinalizeGroups() chạy ngay
-// trước khi chuyển ongoing), nên modal này không được phép âm thầm tạo
-// bảng mới trong tình huống đó nữa — sẽ phá vỡ đúng bất biến mà
-// GroupDrawUI đang bảo vệ.
 const isSeasonClosedStatus = (status) => status === 'finished' || status === 'cancelled';
 const isSeasonOngoingStatus = (status) => status === 'ongoing';
 
 // ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
-// native <input type="time"> render theo locale hệ điều hành của CLIENT
-// (Chrome/Edge lấy Intl locale máy, không theo `lang` attr set trên input),
-// nên máy admin locale en-US sẽ hiện AM/PM 12h — gõ "20" bị coi invalid,
-// đúng pattern "không nhập được time" bạn báo. Thay bằng 2 input số tự
-// control, cố định 24h, không phụ thuộc locale/OS.
 function TimeField({ value, onChange }) {
   const [h, m] = value ? value.split(':') : ['', ''];
 
-  // Trong lúc gõ: không pad, không clamp — chỉ giữ digit thô để user
-  // còn cơ hội gõ ký tự thứ 2 hoặc backspace sửa lại.
   const emit = (hh, mm) => {
     if (hh === '' && mm === '') { onChange(''); return; }
     onChange(`${hh}:${mm}`);
@@ -83,7 +45,6 @@ function TimeField({ value, onChange }) {
   const handleHour = (raw) => emit(raw.replace(/\D/g, '').slice(0, 2), m);
   const handleMinute = (raw) => emit(h, raw.replace(/\D/g, '').slice(0, 2));
 
-  // Chỉ clamp + pad khi rời field — lúc này mới "chốt" giá trị hợp lệ.
   const blurHour = () => {
     if (h === '') return;
     emit(String(Math.min(23, Math.max(0, Number(h)))).padStart(2, '0'), m);
@@ -117,21 +78,12 @@ function TimeField({ value, onChange }) {
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
   const toast = useToastStore();
-  // FIX: thay round-trip qua getTimezoneOffset() (phụ thuộc TZ của OS máy
-  // admin — sai nếu admin remote vào server/VPS TZ khác VN) bằng conversion
-  // tường minh theo Asia/Ho_Chi_Minh (+7 cố định, không DST).
   const [scheduledAt, setScheduledAt] = useState(() => utcToVnInput(match?.scheduled_at));
   const [venueId, setVenueId] = useState(match?.venue_id ? String(match.venue_id) : '');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // FIX (#5 review): RescheduleInput (BE type) khai scheduledAt: Date và
-    // venueId: number — CẢ HAI đều required, không optional. rescheduleMatch()
-    // ở schedule.service.ts gọi ngay input.scheduledAt.getTime() không
-    // null-check — nếu FE gửi undefined (field trống), BE crash với
-    // TypeError (500) thay vì trả lỗi nghiệp vụ có ý nghĩa. Validate ở đây
-    // trước khi gọi onSave, cùng pattern đã làm ở GenerateScheduleModal.
     if (!scheduledAt) {
       toast.warning('Vui lòng chọn thời gian thi đấu.');
       return;
@@ -237,29 +189,11 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ───────────────────────────────────────
-// `season` (start_date/end_date/status của season đang chọn) được truyền từ
-// ScheduleTab để validate TRỰC TIẾP theo season: BE tự lấy khoảng ngày xếp
-// lịch từ season.start_date/end_date (xem autoScheduleMatches) — KHÔNG nhận
-// startDate/endDate từ client (gửi lên sẽ bị BE trả 422 "excess property").
-// Modal dùng startDate/endDate để tính "ngày nghỉ" (excludedDates), kẹp
-// trong đúng khung ngày của season.
-//
-// FIX (#1 review — excludedDates không còn là UI ảo): trước đây
-// excludedDates/playableDates CHỈ dùng để hiển thị UI, KHÔNG gửi lên API —
-// admin tick "bỏ ngày X" nhưng buildSlotPool ở BE vẫn xếp trận vào đúng
-// ngày đó (false affordance). Giờ ScheduleOptions (BE) đã có field
-// `excludedDates?: string[]` và buildSlotPool đã skip đúng ngày — apiPayload
-// bên dưới gửi thẳng excludedDates lên, không còn là "chỉ để hiển thị" nữa.
 function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const toast = useToastStore();
-  // FIX (#2 review): scheduleApi không tồn tại trong dự án này (chỉ có
-  // scheduleStore) — bản cũ gọi `scheduleApi.getGroupStageRoundsSummary(...)`,
-  // một ReferenceError bị nuốt trong catch (chỉ console.error), khiến
-  // round-selector không bao giờ hiển thị. Dùng thẳng action có sẵn trong
-  // scheduleStore (fetchRoundsSummary), action này gọi đúng matchApi bên
-  // dưới thay vì 1 module scheduleApi không tồn tại.
   const fetchRoundsSummary = useScheduleStore(s => s.fetchRoundsSummary);
-
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState([]);
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
   const [groupCheckError, setGroupCheckError] = useState(false);
@@ -278,15 +212,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const seasonEndStr = toDateInputValue(season?.end_date);
   const seasonHasDateRange = Boolean(seasonStartStr && seasonEndStr);
 
-  // FIX: 2 điều kiện khóa tách biệt —
-  // - isSeasonClosed: season đã kết thúc thật sự -> khóa TOÀN BỘ modal,
-  //   không được tạo/sửa lịch nữa.
-  // - blocksImplicitGroupCreation: season đã 'ongoing' NHƯNG chưa có bảng
-  //   nào được bốc thăm (hasDrawnGroups === false) -> đây là trạng thái dữ
-  //   liệu không nên xảy ra (GroupDrawUI đã khóa tạo bảng từ ongoing trở
-  //   đi), nên KHÔNG cho nhánh "tự tạo bảng mới" (desiredGroupCount) chạy
-  //   ngầm ở đây nữa — tránh tạo ra 1 bộ bảng mới trong khi lẽ ra bảng phải
-  //   được chốt từ trước khi season chuyển ongoing.
   const isSeasonClosed = isSeasonClosedStatus(season?.status);
   const isSeasonOngoing = isSeasonOngoingStatus(season?.status);
   const blocksImplicitGroupCreation = isSeasonOngoing && !hasDrawnGroups && !checkingGroups;
@@ -303,8 +228,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Prefill + kẹp startDate/endDate theo đúng khung ngày của season mỗi khi
-  // season thay đổi (season có thể tải async sau khi modal đã mount).
   useEffect(() => {
     if (!seasonHasDateRange) return;
     setStartDate(prev => (!prev || prev < seasonStartStr || prev > seasonEndStr) ? seasonStartStr : prev);
@@ -328,33 +251,41 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     );
   };
 
-  // Chỉ có ý nghĩa khi hasDrawnGroups (nhánh generateFromGroups) — nhánh tự
-  // tạo bảng mới (generate) chưa có match nào tồn tại nên round summary luôn rỗng.
   useEffect(() => {
-    if (!seasonId || !hasDrawnGroups) return;
+    if (!seasonId || !hasDrawnGroups || selectedGroupIds.length === 0) return;
     let cancelled = false;
     (async () => {
       setLoadingRounds(true);
       try {
-        const payload = await fetchRoundsSummary(seasonId);
+        const payload = await fetchRoundsSummary(seasonId, selectedGroupIds);
         if (!cancelled) {
           setRoundSummaries(payload ?? []);
-          // mặc định chọn hết round chưa xếp xong
           setSelectedRounds((payload ?? []).filter(r => !r.fullyScheduled).map(r => r.round));
         }
-      } catch (err) {
-        console.error('[GenerateScheduleModal] fetch round summary failed:', err);
-      } finally {
-        if (!cancelled) setLoadingRounds(false);
-      }
+      } finally { if (!cancelled) setLoadingRounds(false); }
     })();
     return () => { cancelled = true; };
-  }, [seasonId, hasDrawnGroups, fetchRoundsSummary]);
+  }, [seasonId, hasDrawnGroups, selectedGroupIds, fetchRoundsSummary]);
+
+  const toggleGroup = (gid) => setSelectedGroupIds(prev =>
+    prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]
+  );
 
   const toggleRound = (round) => {
     setSelectedRounds(prev => prev.includes(round) ? prev.filter(r => r !== round) : [...prev, round]);
   };
 
+  // FIX (bug nghiêm trọng): logic fetch + tính eligible groups trước đây
+  // nằm rải rác ngoài mọi effect, ngay giữa component body (sau
+  // handleVenueToggle) — gọi groupApi.listBySeason(seasonId) KHÔNG await
+  // (res là Promise, res?.status luôn undefined -> payload/groups luôn
+  // rỗng) và gọi setGroups/setHasDrawnGroups/setSelectedGroupIds trực tiếp
+  // trong render body ở MỌI lần render. Hệ quả: React nhận state update
+  // trong lúc render -> "Too many re-renders" (infinite loop crash), đồng
+  // thời effect gốc bên dưới chỉ set hasDrawnGroups mà KHÔNG BAO GIỜ set
+  // `groups`/`selectedGroupIds` thật, nên UI "Chọn bảng đấu" không bao giờ
+  // hiển thị dù season đã có bảng. Gộp toàn bộ fetch + xử lý vào 1 effect
+  // async duy nhất, có `cancelled` guard, set đủ 3 state liên quan.
   useEffect(() => {
     if (!seasonId) return;
     let cancelled = false;
@@ -364,12 +295,18 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       try {
         const res = await groupApi.listBySeason(seasonId);
         const payload = typeof res?.status === 'boolean' ? res.data : res;
-        const groups = Array.isArray(payload?.groups) ? payload.groups : [];
-        const anyGroupHasEnoughTeams = groups.some(g => (g.season_teams?.length || 0) >= 2);
-        if (!cancelled) setHasDrawnGroups(anyGroupHasEnoughTeams);
+        const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
+        const eligible = fetchedGroups.filter(g => (g.season_teams?.length || 0) >= 2);
+        if (!cancelled) {
+          setGroups(eligible);
+          setHasDrawnGroups(eligible.length > 0);
+          // mặc định chọn hết group đủ điều kiện
+          setSelectedGroupIds(eligible.map(g => g.id));
+        }
       } catch (err) {
         console.error('[GenerateScheduleModal] check groups failed:', err);
         if (!cancelled) {
+          setGroups([]);
           setHasDrawnGroups(false);
           setGroupCheckError(true);
         }
@@ -394,8 +331,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     );
   };
 
-  // Đổi ngày bắt đầu: tự kẹp lại trong khung season + dọn ngày kết thúc nếu
-  // không còn hợp lệ, validate trực tiếp thay vì đợi submit.
   const handleStartDateChange = (value) => {
     if (seasonHasDateRange && (value < seasonStartStr || value > seasonEndStr)) {
       toast.warning(`Ngày bắt đầu phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr}).`);
@@ -462,14 +397,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
     setIsGenerating(true);
 
-    // CHỈ gửi field mà BE thực sự chấp nhận (ScheduleOptions +
-    // AutoScheduleFilterOptions + phần riêng cho từng nhánh). startDate/
-    // endDate/playableDates ở trên CHỈ dùng để tính/hiển thị UI (BE tự lấy
-    // khoảng ngày xếp lịch từ season.start_date/end_date) — gửi thêm 2 field
-    // này lên API sẽ bị 422 "excess property".
-    //
-    // FIX (#1): excludedDates giờ ĐƯỢC GỬI THẬT lên BE — ScheduleOptions đã
-    // có field này và buildSlotPool đã implement skip theo ngày VN-lịch.
     const apiPayload = {
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
@@ -481,23 +408,14 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
     try {
       if (hasDrawnGroups) {
-        // FIX (#3): trước đây selectedRounds không được gửi lên BE dù round-
-        // selector UI cho tick chọn — GenerateFromGroupsOptions (BE) chấp
-        // nhận rounds/groupIds đúng cho mục đích này (AutoScheduleFilterOptions).
-        // Chỉ đính kèm khi có ít nhất 1 round được chọn — mảng rỗng hoặc
-        // roundSummaries chưa load được thì giữ hành vi cũ (xếp hết mọi
-        // round chưa xong), tránh vô tình gửi rounds:[] khiến BE lọc ra 0
-        // match nào.
         await onGenerateFromGroups(seasonId, {
           ...apiPayload,
           doubleRound: false,
+          ...(selectedGroupIds.length > 0 && selectedGroupIds.length < groups.length ?
+            { groupIds: selectedGroupIds } : {}),
           ...(selectedRounds.length > 0 ? { rounds: selectedRounds } : {}),
         });
       } else {
-        // FIX: nhánh này tự tạo bảng mới (desiredGroupCount/minGroupSize/
-        // maxGroupSize) — chỉ còn có thể chạy tới đây khi hasDrawnGroups
-        // false VÀ blocksImplicitGroupCreation false, tức season CHƯA
-        // 'ongoing' (guard ở đầu handleSubmit đã chặn trường hợp ongoing).
         await onGenerate(seasonId, {
           ...apiPayload,
           desiredGroupCount: Number(formData.desiredGroupCount),
@@ -530,8 +448,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-            {/* FIX: banner khóa season đã kết thúc — ưu tiên hiện đầu tiên,
-                che lấp toàn bộ form phía dưới bằng fieldset disabled. */}
             {isSeasonClosed && (
               <p className="text-sm text-gray-300 bg-navy-dark/60 p-3 rounded-lg border border-navy-light flex items-start gap-2">
                 <Lock className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
@@ -539,10 +455,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
               </p>
             )}
 
-            {/* FIX: banner riêng cho case season đã ongoing nhưng chưa có
-                bảng nào — khác với isSeasonClosed, đây là dữ liệu bất
-                thường cần admin kiểm tra lại, không phải trạng thái bình
-                thường của 1 season đã xong mùa. */}
             {!isSeasonClosed && blocksImplicitGroupCreation && (
               <div className="flex items-start gap-2.5 text-amber-200 text-sm bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -634,8 +546,21 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                     />
                   </div>
                 </div>
-              ) : null /* blocksImplicitGroupCreation banner ở trên đã giải thích, không hiện form tạo bảng nữa */}
-
+              ) : null}
+              {hasDrawnGroups && groups.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn bảng đấu</label>
+                  <div className="flex flex-wrap gap-2">
+                    {groups.map(g => (
+                      <button key={g.id} type="button" onClick={() => toggleGroup(g.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-black border ${selectedGroupIds.includes(g.id) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy-dark border-navy-light text-gray-400'
+                          }`}>
+                        {g.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
                 <input
@@ -784,30 +709,10 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   );
 }
 
+// Match.status enum value cho "finished"
+const MatchStatusFinished = 'finished';
+
 // ─── Component: Confirm Export Report Modal ───────────────────────────────
-// Màn hình check trước khi xuất — fetch server-computed report preview
-// (getMatchReportData) và hiện ĐÚNG shape của MatchReportOutput
-// (types/matchReport.type.ts) — không đoán field flat như bản cũ.
-//
-// FIX so với bản trước:
-// - Điểm số: đọc từ `preview.score.{home,away}Final` (nested), không phải
-//   `preview.homeScore` (field không tồn tại -> luôn fallback stale prop).
-// - Timeline bàn thắng: đọc từ `preview.goalsTimeline.{home,away}` (2 mảng
-//   tách sẵn theo đội, mỗi entry có `playerName` — không phải `events`/
-//   `scorers` phẳng có `teamId` như bản cũ đoán).
-// - Đội hình (lineups): trước đây KHÔNG hiển thị gì — giờ render đủ từ
-//   `preview.lineups.{home,away}` (đá chính/dự bị, số áo, tên, vị trí, biên
-//   captain, số bàn/thẻ) — đây là phần bị thiếu khiến "không thấy tên cầu
-//   thủ" vì trước đó preview không đọc đúng field nào chứa tên cả.
-// - Logo trận đấu: dùng `preview.home.jersey.logoUrl` (áo thi đấu ĐÚNG trận
-//   này, có thể khác logo CLB nếu trùng màu áo phải đổi) khi có, fallback
-//   về logo CLB (`teams` store) nếu preview chưa tải xong / lỗi.
-// - `isFinished` lấy từ `preview.status` (server, không stale) thay vì
-//   `match.status` (prop FE có thể cũ nếu list season chưa refetch).
-// - Chữ ký: PDF export có 3 khung ký (2 đội + trọng tài) — preview modal chỉ
-//   là bản xem trước dữ liệu, không có ô ký thật (đó là khung để IN RA GIẤY
-//   rồi ký tay), nên chỉ hiện dòng ghi chú xác nhận sẽ có khung ký trong PDF,
-//   không giả lập ô ký tương tác vô nghĩa.
 function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -834,17 +739,27 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     return () => { cancelled = true; };
   }, [match?.id]);
 
+  // FIX (vi phạm Rules of Hooks): useMemo trước đây nằm SAU `if (!match)
+  // return null;` — nếu match chuyển từ truthy sang null/ngược lại giữa 2
+  // lần render của CÙNG 1 instance, số hook gọi ra sẽ khác nhau giữa các
+  // lần render -> React ném "Rendered fewer hooks than expected". Chuyển
+  // useMemo lên trước early return để thứ tự hook luôn cố định bất kể
+  // giá trị match. Nội dung callback vẫn an toàn khi preview null nhờ các
+  // optional chaining + fallback `?? []` sẵn có.
+  const mergedGoals = useMemo(() => {
+    const home = (preview?.goalsTimeline?.home ?? []).map(e => ({ ...e, side: 'home' }));
+    const away = (preview?.goalsTimeline?.away ?? []).map(e => ({ ...e, side: 'away' }));
+    return [...home, ...away].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+  }, [preview]);
+
   if (!match) return null;
 
   const fallbackHomeTeam = match.home_team || teams?.find(t => t.id === match.home_team_id);
   const fallbackAwayTeam = match.away_team || teams?.find(t => t.id === match.away_team_id);
 
-  // Tên đội: ưu tiên preview (server-computed, luôn đúng), fallback prop FE.
   const homeName = preview?.home?.name ?? fallbackHomeTeam?.name ?? `Đội ${match.home_team_id}`;
   const awayName = preview?.away?.name ?? fallbackAwayTeam?.name ?? `Đội ${match.away_team_id}`;
 
-  // Logo: ưu tiên áo thi đấu của ĐÚNG trận này (jersey.logoUrl), fallback
-  // logo CLB chung khi preview chưa có / không set ảnh jersey.
   const homeLogo = preview?.home?.jersey?.logoUrl ?? fallbackHomeTeam?.logo;
   const awayLogo = preview?.away?.jersey?.logoUrl ?? fallbackAwayTeam?.logo;
   const homeColor = preview?.home?.jersey?.primaryColor;
@@ -854,8 +769,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
     : 'Chưa xếp lịch';
 
-  // status server-computed — không dùng match.status (prop FE có thể stale
-  // nếu list season chưa refetch sau khi trận vừa finalize).
   const isFinished = preview?.status === MatchStatusFinished;
 
   const previewHomeScore = preview?.score?.homeFinal;
@@ -864,14 +777,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
 
   const homeHalfTime = preview?.score?.homeHalfTime;
   const awayHalfTime = preview?.score?.awayHalfTime;
-
-  // Gộp 2 mảng goalsTimeline.home/away thành 1 timeline có gắn `side`, sort
-  // theo phút — mỗi entry đã có sẵn `playerName` từ BE, không cần lookup gì thêm.
-  const mergedGoals = useMemo(() => {
-    const home = (preview?.goalsTimeline?.home ?? []).map(e => ({ ...e, side: 'home' }));
-    const away = (preview?.goalsTimeline?.away ?? []).map(e => ({ ...e, side: 'away' }));
-    return [...home, ...away].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
-  }, [preview]);
 
   const homeLineup = preview?.lineups?.home ?? [];
   const awayLineup = preview?.lineups?.away ?? [];
@@ -890,7 +795,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
         </div>
 
         <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
-          {/* ─── Logo + tên đội + tỉ số ─── */}
           <div className="flex items-center gap-2 justify-between">
             <div className="flex-1 text-center min-w-0">
               {homeLogo ? (
@@ -946,7 +850,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             </div>
           </div>
 
-          {/* ─── Timeline bàn thắng ─── */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Bàn thắng</label>
             {previewLoading ? (
@@ -979,7 +882,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             )}
           </div>
 
-          {/* ─── Đội hình ─── */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4 text-purple-400" /> Đội hình
@@ -1018,7 +920,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             </div>
           )}
 
-          {/* ─── Ghi chú khung ký ─── */}
           <div className="flex items-start gap-2 text-sm text-gray-400">
             <PenLine className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
             <span>File PDF sẽ có khung chữ ký cho đại diện hai đội và trọng tài để ký tay sau khi in.</span>
@@ -1049,13 +950,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
   );
 }
 
-// Match.status enum value cho "finished" — tách hằng số để không gõ nhầm
-// chuỗi ở nhiều chỗ (preview?.status so sánh với string literal).
-const MatchStatusFinished = 'finished';
-
-// Cột đội hình 1 đội — hiển thị đá chính trước, dự bị sau, kèm số áo, biên
-// captain, và badge số bàn/thẻ nếu có (đọc thẳng từ MatchReportPlayerRow,
-// field đã build sẵn ở BE: goals/ownGoals/yellowCards/redCards là mảng).
 function LineupColumn({ title, color, rows }) {
   const starters = rows.filter(r => r.isStarting);
   const subs = rows.filter(r => !r.isStarting);
@@ -1118,9 +1012,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [rescheduleMatchData, setRescheduleMatchData] = useState(null);
 
-  // Màn check trước khi xuất PDF — giữ match object đang chờ admin xác nhận.
   const [confirmExportMatch, setConfirmExportMatch] = useState(null);
-  // matchId đang thực sự gọi API tải PDF (để disable nút + hiện spinner đúng trận).
   const [exportingMatchId, setExportingMatchId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -1139,37 +1031,21 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   }, [selectedSeasonId, fetchBySeason]);
 
-  // FIX: reset về trang 1 mỗi khi đổi season — trước đây không có, nên nếu
-  // đang ở trang 3 của season A rồi đổi sang season B (season B chỉ có 1
-  // trang), `displayedMatches.slice(...)` sẽ ra mảng rỗng dù matches.length
-  // > 0, nhìn giống y hệt bug "loạn data/mất trận" dù data đã đúng.
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedSeasonId]);
 
-  // Season đang chọn — cần cho GenerateScheduleModal để validate TRỰC TIẾP
-  // theo khung ngày (start_date/end_date) VÀ trạng thái (status) của chính
-  // season này (xem isSeasonClosedStatus / isSeasonOngoingStatus).
   const selectedSeason = useMemo(
     () => (seasons || []).find(s => String(s.id) === String(selectedSeasonId)) ?? null,
     [seasons, selectedSeasonId],
   );
 
-  // FIX: dùng chung 1 điều kiện khóa "mùa giải đã kết thúc" cho toàn bộ tab
-  // lịch thi đấu — cả nút "Tạo lịch thi đấu" ở header lẫn nút "Đổi lịch/Sân"
-  // trên từng match card, để nhất quán với GenerateScheduleModal bên trong.
   const isSelectedSeasonClosed = isSeasonClosedStatus(selectedSeason?.status);
 
   const effectiveSeasonId = selectedSeasonId;
   const matches = useMemo(() => {
     if (!effectiveSeasonId) return [];
     let list = getMatchesFromCache(Number(effectiveSeasonId));
-    // FIX (#4 review): BE MATCH_CARD_INCLUDE trước đây KHÔNG có field
-    // `phase` — `m.phase?.format ?? m.phaseFormat` luôn undefined, filter
-    // luôn true, match knockout vẫn lọt vào Schedule Tab (tab chỉ dành cho
-    // group-stage). Đã bổ sung `phase: { select: { format: true } }` vào
-    // MATCH_CARD_INCLUDE ở schedule.service.ts — giờ đọc thẳng
-    // `m.phase?.format`, bỏ fallback `?? m.phaseFormat` vô nghĩa.
     list = list.filter(m => m.phase?.format !== 'knockout');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
@@ -1180,20 +1056,6 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       });
     }
     return list;
-    // FIX (root cause "loạn data" + "Chưa có lịch thi đấu" sai khi đổi
-    // season): thiếu `scheduleCache` trong dependency array. getMatchesFromCache
-    // là 1 hàm đọc snapshot get().scheduleCache[seasonId] tại thời điểm gọi —
-    // reference của hàm KHÔNG đổi khi state scheduleCache đổi (Zustand action
-    // cố định). Component vẫn re-render khi scheduleCache đổi (vì
-    // useScheduleStore() không dùng selector, subscribe toàn bộ store), NHƯNG
-    // useMemo chỉ tính lại khi 1 trong các dep liệt kê thay đổi — nếu thiếu
-    // scheduleCache, memo giữ nguyên giá trị cũ (season trước) dù component đã
-    // re-render với data mới trong store. Kết quả quan sát được: đổi sang
-    // season B nhưng UI vẫn hiện y hệt data của season A (memo "đóng băng"),
-    // hoặc hiện rỗng nếu season B chưa từng có cache nào trước đó trong lần
-    // tính memo gần nhất. Thêm scheduleCache vào deps để memo tính lại đúng
-    // lúc cache của season đang chọn thực sự có/đổi data — đúng pattern đã
-    // làm chuẩn ở LiveControlTab.jsx (allSeasonMatches useMemo).
   }, [effectiveSeasonId, getMatchesFromCache, scheduleCache, searchTerm, teams]);
 
   const isLoading = effectiveSeasonId
@@ -1245,12 +1107,10 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     }
   };
 
-  // Bước xác nhận: chỉ mở modal check, CHƯA gọi API.
   const handleRequestExportMatchReport = (match) => {
     setConfirmExportMatch(match);
   };
 
-  // Admin đã bấm "Xác nhận xuất" trong modal -> mới thực sự tải PDF.
   const handleConfirmExportMatchReport = async (matchId) => {
     setExportingMatchId(matchId);
     try {

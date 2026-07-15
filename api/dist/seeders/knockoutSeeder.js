@@ -9,16 +9,6 @@ function toMatchSummary(p) {
         awayScore: p.awayScore,
     };
 }
-// simulateKnockoutMatch() (helperSeeder.ts) handle: hoà 90p -> hiệp phụ -> vẫn hoà ->
-// luân lưu (loại trực tiếp không được hoà).
-//
-// FIX (khớp knockout.service.ts thật):
-// - Match KHÔNG có cột home_score/away_score — bản cũ ghi thẳng field này,
-//   không tồn tại trên schema Match. Điểm số CHỈ nằm ở MatchResult
-//   (home_final_score/away_final_score) — xem _computeAggregateWinner().
-// - Match luôn set `round` (string) — service thật set round ở
-//   createRound1Matches()/propagateWinner(). Bản cũ bỏ trống field này.
-// - `leg` luôn null vì seeder chỉ mô phỏng knockout single-leg (legs=1).
 async function playAndRecordMatch(db, phaseId, round, homeTeamId, awayTeamId, venueId) {
     const sim = simulateKnockoutMatch();
     const match = await db.match.create({
@@ -33,10 +23,6 @@ async function playAndRecordMatch(db, phaseId, round, homeTeamId, awayTeamId, ve
             status: MatchStatus.finished,
             round: String(round),
             leg: null,
-            // FIX: thiếu is_active khiến các trận knockout không hiện trong
-            // ScheduleService.getSeasonSchedule()/findMatchesBySeason dù
-            // bracket vẫn advance đúng (KnockoutService không dựa vào
-            // Match.is_active để advance winner).
             is_active: true,
         },
     });
@@ -68,17 +54,6 @@ async function playAndRecordMatch(db, phaseId, round, homeTeamId, awayTeamId, ve
         awayScore: sim.awayScore,
     };
 }
-// FIX (root cause chính): TOÀN BỘ cây knockout (R16 → QF → SF → F) giờ nằm
-// trong 1 PHASE DUY NHẤT, bracket_slots.round chạy 1..totalRounds, link qua
-// source_a_slot_id/source_b_slot_id — mirror ĐÚNG _buildBracketInPhase() +
-// bulkLinkSlots() thật trong knockout.service.ts. Công thức slot cha:
-// slot (round, n) nhận nguồn từ (round-1, 2n-1) và (round-1, 2n).
-//
-// Bản cũ tạo 1 PHASE RIÊNG cho mỗi vòng (round_of_16/quarter_final/
-// semi_final/final), mỗi slot hardcode round=1 — getBracket(phaseId) của
-// BE chỉ đọc 1 phase 1 lần nên mỗi phase seed ra sẽ luôn bị tính
-// totalRounds=1, khiến BracketView gắn nhãn sai (mọi phase hiện "Chung kết")
-// và không thể hiển thị cây đấu liên round.
 export async function seedKnockoutBracket(db, seasonId, topTwoByGroup, venueIds, roundOf16Template) {
     const bracketSize = roundOf16Template.length * 2; // 16 khi có 8 cặp round 1
     const totalRounds = Math.log2(bracketSize);
@@ -89,14 +64,13 @@ export async function seedKnockoutBracket(db, seasonId, topTwoByGroup, venueIds,
         data: {
             season_id: seasonId,
             name: "Vòng loại trực tiếp",
-            type: PhaseType.round_of_16, // ~ BRACKET_SIZE_TO_PHASE_TYPE[16] ở service thật
+            type: PhaseType.round_of_16,
             format: PhaseFormat.knockout,
             status: PhaseStatus.draft,
             order: 2,
             legs: 1,
         },
     });
-    // ── Round 1: slot có sẵn 2 đội (seeded_home/away_team_id) từ topTwoByGroup ──
     const slotIdByRoundNum = new Map();
     for (let i = 0; i < roundOf16Template.length; i++) {
         const pairing = roundOf16Template[i];
@@ -120,7 +94,6 @@ export async function seedKnockoutBracket(db, seasonId, topTwoByGroup, venueIds,
         });
         slotIdByRoundNum.set(`1:${i + 1}`, slot.id);
     }
-    // ── Round 2..totalRounds: tạo slot rỗng trước, link source_a/b_slot_id ──
     for (let round = 2; round <= totalRounds; round++) {
         const slotsInRound = bracketSize / Math.pow(2, round);
         for (let slotNum = 1; slotNum <= slotsInRound; slotNum++) {
@@ -139,7 +112,6 @@ export async function seedKnockoutBracket(db, seasonId, topTwoByGroup, venueIds,
             slotIdByRoundNum.set(`${round}:${slotNum}`, slot.id);
         }
     }
-    // ── Đá từng round, propagate winner lên slot cha — mirror propagateWinner() ──
     const allMatches = [];
     let semiFinalResults = [];
     let championTeamId = null;
@@ -178,15 +150,11 @@ export async function seedKnockoutBracket(db, seasonId, topTwoByGroup, venueIds,
             }
         }
         if (round === totalRounds - 1)
-            semiFinalResults = roundResults; // vòng áp chót = bán kết
+            semiFinalResults = roundResults;
         console.log(`[KnockoutSeeder] Round ${round}/${totalRounds} xong — Phase #${phase.id}`);
     }
     if (championTeamId == null)
         throw new Error("Không xác định được đội vô địch — final round không chạy");
-    // ── Tranh hạng 3: KHÔNG thuộc cây bracket_slots (generateKnockoutBracket
-    // thật không tự sinh phase này) — vẫn giữ 1 phase riêng, 1 trận độc lập
-    // giữa 2 đội thua bán kết. Bỏ qua nếu bracket quá nhỏ để có bán kết
-    // (bracketSize=2 → totalRounds=1 → không có vòng bán kết).
     if (totalRounds >= 2 && semiFinalResults.length >= 2) {
         const sf1 = semiFinalResults[0];
         const sf2 = semiFinalResults[1];

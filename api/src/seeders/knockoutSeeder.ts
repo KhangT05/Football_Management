@@ -38,16 +38,6 @@ function toMatchSummary(p: PlayedMatch): MatchSummary {
     };
 }
 
-// simulateKnockoutMatch() (helperSeeder.ts) handle: hoà 90p -> hiệp phụ -> vẫn hoà ->
-// luân lưu (loại trực tiếp không được hoà).
-//
-// FIX (khớp knockout.service.ts thật):
-// - Match KHÔNG có cột home_score/away_score — bản cũ ghi thẳng field này,
-//   không tồn tại trên schema Match. Điểm số CHỈ nằm ở MatchResult
-//   (home_final_score/away_final_score) — xem _computeAggregateWinner().
-// - Match luôn set `round` (string) — service thật set round ở
-//   createRound1Matches()/propagateWinner(). Bản cũ bỏ trống field này.
-// - `leg` luôn null vì seeder chỉ mô phỏng knockout single-leg (legs=1).
 async function playAndRecordMatch(
     db: DbClient,
     phaseId: number,
@@ -70,10 +60,6 @@ async function playAndRecordMatch(
             status: MatchStatus.finished,
             round: String(round),
             leg: null,
-            // FIX: thiếu is_active khiến các trận knockout không hiện trong
-            // ScheduleService.getSeasonSchedule()/findMatchesBySeason dù
-            // bracket vẫn advance đúng (KnockoutService không dựa vào
-            // Match.is_active để advance winner).
             is_active: true,
         },
     });
@@ -109,17 +95,20 @@ async function playAndRecordMatch(
     };
 }
 
-// FIX (root cause chính): TOÀN BỘ cây knockout (R16 → QF → SF → F) giờ nằm
-// trong 1 PHASE DUY NHẤT, bracket_slots.round chạy 1..totalRounds, link qua
-// source_a_slot_id/source_b_slot_id — mirror ĐÚNG _buildBracketInPhase() +
-// bulkLinkSlots() thật trong knockout.service.ts. Công thức slot cha:
-// slot (round, n) nhận nguồn từ (round-1, 2n-1) và (round-1, 2n).
-//
-// Bản cũ tạo 1 PHASE RIÊNG cho mỗi vòng (round_of_16/quarter_final/
-// semi_final/final), mỗi slot hardcode round=1 — getBracket(phaseId) của
-// BE chỉ đọc 1 phase 1 lần nên mỗi phase seed ra sẽ luôn bị tính
-// totalRounds=1, khiến BracketView gắn nhãn sai (mọi phase hiện "Chung kết")
-// và không thể hiển thị cây đấu liên round.
+/**
+ * FIX (P0): bản trước gọi thẳng `db.phase.create` cho phase knockout VÀ phase
+ * tranh hạng 3 mà không hề `findFirst` trước — không giống `seedGroupStage`
+ * (groupPhaseSeeder.ts) vốn đã làm đúng pattern này. Hệ quả: chạy lại seed
+ * script (hoặc retry sau crash giữa vòng propagate bracket) sẽ tạo PHASE
+ * TRÙNG cho cùng season, kéo theo toàn bộ bracket slot + match + match result
+ * bị nhân đôi/nhiều lần. Fix bằng cách coi (season_id, type) là khoá tự
+ * nhiên của phase, y hệt cách groupPhaseSeeder đã làm — và nếu phase đã tồn
+ * tại kèm bracket slot đầy đủ, coi như đã seed xong, bỏ qua toàn bộ việc mô
+ * phỏng trận đấu (không có cách rẻ nào để "resume" giữa chừng 1 bracket
+ * knockout vì kết quả round sau phụ thuộc round trước — coi phase đã có slot
+ * là seed xong, y hệt cách groupMatchSeeder coi season đã seed đủ 6 trận là
+ * xong 1 bảng).
+ */
 export async function seedKnockoutBracket(
     db: DbClient,
     seasonId: number,
@@ -135,11 +124,56 @@ export async function seedKnockoutBracket(
         );
     }
 
-    const phase = await db.phase.create({
+    let phase = await db.phase.findFirst({
+        where: { season_id: seasonId, type: PhaseType.round_of_16 },
+    });
+
+    if (phase) {
+        const existingSlotCount = await db.bracketSlot.count({ where: { phase_id: phase.id } });
+        const expectedSlotCount = bracketSize - 1; // tổng số slot toàn bộ bracket (round 1..N)
+        if (existingSlotCount >= expectedSlotCount) {
+            const finalMatch = await db.match.findFirst({
+                where: { phase_id: phase.id, round: String(totalRounds) },
+                include: { matchResult: true },
+            });
+            if (!finalMatch?.matchResult?.winner_team_id) {
+                throw new Error(
+                    `[KnockoutSeeder] Phase #${phase.id} đã có đủ ${existingSlotCount} slot nhưng không tìm thấy ` +
+                    `kết quả trận chung kết hợp lệ — dữ liệu khả năng bị lệch/hỏng, cần reset DB rồi seed lại từ đầu.`
+                );
+            }
+            console.log(
+                `[KnockoutSeeder] Phase #${phase.id} đã seed đủ bracket (${existingSlotCount} slot) — bỏ qua (idempotent).`
+            );
+            const allMatches = await db.match.findMany({
+                where: { phase_id: phase.id },
+                include: { matchResult: true },
+            });
+            return {
+                championTeamId: finalMatch.matchResult.winner_team_id,
+                allMatches: allMatches
+                    .filter((m) => m.matchResult)
+                    .map((m) => ({
+                        matchId: m.id,
+                        homeTeamId: m.home_team_id!,
+                        awayTeamId: m.away_team_id!,
+                        homeScore: m.matchResult!.home_final_score ?? 0,
+                        awayScore: m.matchResult!.away_final_score ?? 0,
+                    })),
+            };
+        }
+        throw new Error(
+            `[KnockoutSeeder] Phase #${phase.id} tồn tại nhưng bracket dở dang ` +
+            `(${existingSlotCount}/${expectedSlotCount} slot) — trạng thái này không tự resume được ` +
+            `(round sau phụ thuộc kết quả round trước). Cần reset DB (migrate reset) rồi seed lại từ đầu.`
+        );
+    }
+
+    phase = await db.phase.create({
         data: {
             season_id: seasonId,
             name: "Vòng loại trực tiếp",
-            type: PhaseType.round_of_16, // ~ BRACKET_SIZE_TO_PHASE_TYPE[16] ở service thật
+            type: PhaseType.round_of_16,
             format: PhaseFormat.knockout,
             status: PhaseStatus.draft,
             order: 2,
@@ -147,7 +181,6 @@ export async function seedKnockoutBracket(
         },
     });
 
-    // ── Round 1: slot có sẵn 2 đội (seeded_home/away_team_id) từ topTwoByGroup ──
     const slotIdByRoundNum = new Map<string, number>();
     for (let i = 0; i < roundOf16Template.length; i++) {
         const pairing = roundOf16Template[i];
@@ -171,7 +204,6 @@ export async function seedKnockoutBracket(
         slotIdByRoundNum.set(`1:${i + 1}`, slot.id);
     }
 
-    // ── Round 2..totalRounds: tạo slot rỗng trước, link source_a/b_slot_id ──
     for (let round = 2; round <= totalRounds; round++) {
         const slotsInRound = bracketSize / Math.pow(2, round);
         for (let slotNum = 1; slotNum <= slotsInRound; slotNum++) {
@@ -191,7 +223,6 @@ export async function seedKnockoutBracket(
         }
     }
 
-    // ── Đá từng round, propagate winner lên slot cha — mirror propagateWinner() ──
     const allMatches: MatchSummary[] = [];
     let semiFinalResults: PlayedMatch[] = [];
     let championTeamId: number | null = null;
@@ -240,42 +271,48 @@ export async function seedKnockoutBracket(
             }
         }
 
-        if (round === totalRounds - 1) semiFinalResults = roundResults; // vòng áp chót = bán kết
+        if (round === totalRounds - 1) semiFinalResults = roundResults;
         console.log(`[KnockoutSeeder] Round ${round}/${totalRounds} xong — Phase #${phase.id}`);
     }
 
     if (championTeamId == null) throw new Error("Không xác định được đội vô địch — final round không chạy");
 
-    // ── Tranh hạng 3: KHÔNG thuộc cây bracket_slots (generateKnockoutBracket
-    // thật không tự sinh phase này) — vẫn giữ 1 phase riêng, 1 trận độc lập
-    // giữa 2 đội thua bán kết. Bỏ qua nếu bracket quá nhỏ để có bán kết
-    // (bracketSize=2 → totalRounds=1 → không có vòng bán kết).
+    // FIX: cùng lý do idempotency ở trên — check phase third_place đã tồn tại
+    // chưa trước khi tạo, tránh nhân đôi trận tranh hạng 3 khi re-run.
     if (totalRounds >= 2 && semiFinalResults.length >= 2) {
         const sf1 = semiFinalResults[0];
         const sf2 = semiFinalResults[1];
         if (!sf1 || !sf2) throw new Error("Thiếu kết quả bán kết để tạo trận tranh hạng 3");
 
-        const thirdPlacePhase = await db.phase.create({
-            data: {
-                season_id: seasonId,
-                name: "Tranh hạng Ba",
-                type: PhaseType.third_place,
-                format: PhaseFormat.knockout,
-                status: PhaseStatus.draft,
-                order: totalRounds + 1,
-                legs: 1,
-            },
+        let thirdPlacePhase = await db.phase.findFirst({
+            where: { season_id: seasonId, type: PhaseType.third_place },
         });
-        const thirdPlaceMatch = await playAndRecordMatch(
-            db,
-            thirdPlacePhase.id,
-            1,
-            sf1.loserTeamId,
-            sf2.loserTeamId,
-            pickOrThrow(venueIds, "venueIds"),
-        );
-        allMatches.push(toMatchSummary(thirdPlaceMatch));
-        console.log(`[KnockoutSeeder] Tranh hạng 3 xong — Phase #${thirdPlacePhase.id}`);
+
+        if (!thirdPlacePhase) {
+            thirdPlacePhase = await db.phase.create({
+                data: {
+                    season_id: seasonId,
+                    name: "Tranh hạng Ba",
+                    type: PhaseType.third_place,
+                    format: PhaseFormat.knockout,
+                    status: PhaseStatus.draft,
+                    order: totalRounds + 1,
+                    legs: 1,
+                },
+            });
+            const thirdPlaceMatch = await playAndRecordMatch(
+                db,
+                thirdPlacePhase.id,
+                1,
+                sf1.loserTeamId,
+                sf2.loserTeamId,
+                pickOrThrow(venueIds, "venueIds"),
+            );
+            allMatches.push(toMatchSummary(thirdPlaceMatch));
+            console.log(`[KnockoutSeeder] Tranh hạng 3 xong — Phase #${thirdPlacePhase.id}`);
+        } else {
+            console.log(`[KnockoutSeeder] Phase tranh hạng 3 #${thirdPlacePhase.id} đã tồn tại — bỏ qua (idempotent).`);
+        }
     } else {
         console.log(`[KnockoutSeeder] Bỏ qua tranh hạng 3 — bracket chỉ có ${totalRounds} vòng, không có bán kết.`);
     }

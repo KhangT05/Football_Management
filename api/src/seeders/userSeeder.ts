@@ -1,4 +1,3 @@
-
 import bcrypt from "bcrypt";
 import { RoleName } from "./roleSeeder.js";
 import { PrismaClient } from "../generated/prisma/client.js";

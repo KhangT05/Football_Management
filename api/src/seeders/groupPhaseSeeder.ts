@@ -1,4 +1,3 @@
-// prisma/seed/groupPhaseSeeder.ts
 import { PhaseType, PhaseFormat, PhaseStatus, SeasonTeamStatus } from "../generated/prisma/client.js";
 import type { DbClient } from "./dbTypes.js";
 import type { GroupLetter } from "./teamGenerator.js";
