@@ -4,6 +4,7 @@ export const createTeamSchema = z.object({
     coach_name: z.string().trim().max(100).nullable().optional(),
     logo: z.string().nullable().optional(), // match DB field
     description: z.string().max(2000).nullable().optional(),
+    class_id: z.number().int().positive().nullable().optional(),
 });
 export const updateTeamSchema = createTeamSchema.partial();
 export const assignCaptainSchema = z.object({

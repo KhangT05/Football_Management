@@ -15,10 +15,12 @@ export type AggregateTeam = {
 export type TeamAvgAggregateOutputType = {
     id: number | null;
     user_id: number | null;
+    class_id: number | null;
 };
 export type TeamSumAggregateOutputType = {
     id: number | null;
     user_id: number | null;
+    class_id: number | null;
 };
 export type TeamMinAggregateOutputType = {
     id: number | null;
@@ -31,6 +33,7 @@ export type TeamMinAggregateOutputType = {
     updated_at: Date | null;
     deleted_at: Date | null;
     user_id: number | null;
+    class_id: number | null;
 };
 export type TeamMaxAggregateOutputType = {
     id: number | null;
@@ -43,6 +46,7 @@ export type TeamMaxAggregateOutputType = {
     updated_at: Date | null;
     deleted_at: Date | null;
     user_id: number | null;
+    class_id: number | null;
 };
 export type TeamCountAggregateOutputType = {
     id: number;
@@ -55,15 +59,18 @@ export type TeamCountAggregateOutputType = {
     updated_at: number;
     deleted_at: number;
     user_id: number;
+    class_id: number;
     _all: number;
 };
 export type TeamAvgAggregateInputType = {
     id?: true;
     user_id?: true;
+    class_id?: true;
 };
 export type TeamSumAggregateInputType = {
     id?: true;
     user_id?: true;
+    class_id?: true;
 };
 export type TeamMinAggregateInputType = {
     id?: true;
@@ -76,6 +83,7 @@ export type TeamMinAggregateInputType = {
     updated_at?: true;
     deleted_at?: true;
     user_id?: true;
+    class_id?: true;
 };
 export type TeamMaxAggregateInputType = {
     id?: true;
@@ -88,6 +96,7 @@ export type TeamMaxAggregateInputType = {
     updated_at?: true;
     deleted_at?: true;
     user_id?: true;
+    class_id?: true;
 };
 export type TeamCountAggregateInputType = {
     id?: true;
@@ -100,6 +109,7 @@ export type TeamCountAggregateInputType = {
     updated_at?: true;
     deleted_at?: true;
     user_id?: true;
+    class_id?: true;
     _all?: true;
 };
 export type TeamAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -189,6 +199,7 @@ export type TeamGroupByOutputType = {
     updated_at: Date | null;
     deleted_at: Date | null;
     user_id: number | null;
+    class_id: number | null;
     _count: TeamCountAggregateOutputType | null;
     _avg: TeamAvgAggregateOutputType | null;
     _sum: TeamSumAggregateOutputType | null;
@@ -212,6 +223,7 @@ export type TeamWhereInput = {
     updated_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Team"> | number | null;
+    class_id?: Prisma.IntNullableFilter<"Team"> | number | null;
     team_players?: Prisma.TeamPlayerListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     home_matches?: Prisma.MatchListRelationFilter;
@@ -226,6 +238,7 @@ export type TeamWhereInput = {
     matchLineups?: Prisma.MatchLineupListRelationFilter;
     matchEvents?: Prisma.MatchEventListRelationFilter;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentListRelationFilter;
+    class?: Prisma.XOR<Prisma.ClassNullableScalarRelationFilter, Prisma.ClassWhereInput> | null;
 };
 export type TeamOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -238,6 +251,7 @@ export type TeamOrderByWithRelationInput = {
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    class_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     team_players?: Prisma.TeamPlayerOrderByRelationAggregateInput;
     season_teams?: Prisma.SeasonTeamOrderByRelationAggregateInput;
     home_matches?: Prisma.MatchOrderByRelationAggregateInput;
@@ -252,6 +266,7 @@ export type TeamOrderByWithRelationInput = {
     matchLineups?: Prisma.MatchLineupOrderByRelationAggregateInput;
     matchEvents?: Prisma.MatchEventOrderByRelationAggregateInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentOrderByRelationAggregateInput;
+    class?: Prisma.ClassOrderByWithRelationInput;
     _relevance?: Prisma.TeamOrderByRelevanceInput;
 };
 export type TeamWhereUniqueInput = Prisma.AtLeast<{
@@ -268,6 +283,7 @@ export type TeamWhereUniqueInput = Prisma.AtLeast<{
     updated_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Team"> | number | null;
+    class_id?: Prisma.IntNullableFilter<"Team"> | number | null;
     team_players?: Prisma.TeamPlayerListRelationFilter;
     season_teams?: Prisma.SeasonTeamListRelationFilter;
     home_matches?: Prisma.MatchListRelationFilter;
@@ -282,6 +298,7 @@ export type TeamWhereUniqueInput = Prisma.AtLeast<{
     matchLineups?: Prisma.MatchLineupListRelationFilter;
     matchEvents?: Prisma.MatchEventListRelationFilter;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentListRelationFilter;
+    class?: Prisma.XOR<Prisma.ClassNullableScalarRelationFilter, Prisma.ClassWhereInput> | null;
 }, "id" | "name">;
 export type TeamOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -294,6 +311,7 @@ export type TeamOrderByWithAggregationInput = {
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
+    class_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.TeamCountOrderByAggregateInput;
     _avg?: Prisma.TeamAvgOrderByAggregateInput;
     _max?: Prisma.TeamMaxOrderByAggregateInput;
@@ -314,6 +332,7 @@ export type TeamScalarWhereWithAggregatesInput = {
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Team"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Team"> | Date | string | null;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"Team"> | number | null;
+    class_id?: Prisma.IntNullableWithAggregatesFilter<"Team"> | number | null;
 };
 export type TeamCreateInput = {
     name: string;
@@ -338,6 +357,7 @@ export type TeamCreateInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateInput = {
     id?: number;
@@ -350,6 +370,7 @@ export type TeamUncheckedCreateInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -387,6 +408,7 @@ export type TeamUpdateInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -399,6 +421,7 @@ export type TeamUncheckedUpdateInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -424,6 +447,7 @@ export type TeamCreateManyInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
 };
 export type TeamUpdateManyMutationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -446,6 +470,7 @@ export type TeamUncheckedUpdateManyInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TeamListRelationFilter = {
     every?: Prisma.TeamWhereInput;
@@ -471,10 +496,12 @@ export type TeamCountOrderByAggregateInput = {
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type TeamAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type TeamMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -487,6 +514,7 @@ export type TeamMaxOrderByAggregateInput = {
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type TeamMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -499,10 +527,12 @@ export type TeamMinOrderByAggregateInput = {
     updated_at?: Prisma.SortOrder;
     deleted_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type TeamSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
+    class_id?: Prisma.SortOrder;
 };
 export type TeamScalarRelationFilter = {
     is?: Prisma.TeamWhereInput;
@@ -548,6 +578,44 @@ export type TeamUncheckedUpdateManyWithoutUserNestedInput = {
     connect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
     update?: Prisma.TeamUpdateWithWhereUniqueWithoutUserInput | Prisma.TeamUpdateWithWhereUniqueWithoutUserInput[];
     updateMany?: Prisma.TeamUpdateManyWithWhereWithoutUserInput | Prisma.TeamUpdateManyWithWhereWithoutUserInput[];
+    deleteMany?: Prisma.TeamScalarWhereInput | Prisma.TeamScalarWhereInput[];
+};
+export type TeamCreateNestedManyWithoutClassInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput> | Prisma.TeamCreateWithoutClassInput[] | Prisma.TeamUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutClassInput | Prisma.TeamCreateOrConnectWithoutClassInput[];
+    createMany?: Prisma.TeamCreateManyClassInputEnvelope;
+    connect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+};
+export type TeamUncheckedCreateNestedManyWithoutClassInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput> | Prisma.TeamCreateWithoutClassInput[] | Prisma.TeamUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutClassInput | Prisma.TeamCreateOrConnectWithoutClassInput[];
+    createMany?: Prisma.TeamCreateManyClassInputEnvelope;
+    connect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+};
+export type TeamUpdateManyWithoutClassNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput> | Prisma.TeamCreateWithoutClassInput[] | Prisma.TeamUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutClassInput | Prisma.TeamCreateOrConnectWithoutClassInput[];
+    upsert?: Prisma.TeamUpsertWithWhereUniqueWithoutClassInput | Prisma.TeamUpsertWithWhereUniqueWithoutClassInput[];
+    createMany?: Prisma.TeamCreateManyClassInputEnvelope;
+    set?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    disconnect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    delete?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    connect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    update?: Prisma.TeamUpdateWithWhereUniqueWithoutClassInput | Prisma.TeamUpdateWithWhereUniqueWithoutClassInput[];
+    updateMany?: Prisma.TeamUpdateManyWithWhereWithoutClassInput | Prisma.TeamUpdateManyWithWhereWithoutClassInput[];
+    deleteMany?: Prisma.TeamScalarWhereInput | Prisma.TeamScalarWhereInput[];
+};
+export type TeamUncheckedUpdateManyWithoutClassNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput> | Prisma.TeamCreateWithoutClassInput[] | Prisma.TeamUncheckedCreateWithoutClassInput[];
+    connectOrCreate?: Prisma.TeamCreateOrConnectWithoutClassInput | Prisma.TeamCreateOrConnectWithoutClassInput[];
+    upsert?: Prisma.TeamUpsertWithWhereUniqueWithoutClassInput | Prisma.TeamUpsertWithWhereUniqueWithoutClassInput[];
+    createMany?: Prisma.TeamCreateManyClassInputEnvelope;
+    set?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    disconnect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    delete?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    connect?: Prisma.TeamWhereUniqueInput | Prisma.TeamWhereUniqueInput[];
+    update?: Prisma.TeamUpdateWithWhereUniqueWithoutClassInput | Prisma.TeamUpdateWithWhereUniqueWithoutClassInput[];
+    updateMany?: Prisma.TeamUpdateManyWithWhereWithoutClassInput | Prisma.TeamUpdateManyWithWhereWithoutClassInput[];
     deleteMany?: Prisma.TeamScalarWhereInput | Prisma.TeamScalarWhereInput[];
 };
 export type TeamCreateNestedOneWithoutMatchJerseyAssignmentsInput = {
@@ -736,6 +804,7 @@ export type TeamCreateWithoutUserInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutUserInput = {
     id?: number;
@@ -747,6 +816,7 @@ export type TeamUncheckedCreateWithoutUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -796,6 +866,77 @@ export type TeamScalarWhereInput = {
     updated_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
     user_id?: Prisma.IntNullableFilter<"Team"> | number | null;
+    class_id?: Prisma.IntNullableFilter<"Team"> | number | null;
+};
+export type TeamCreateWithoutClassInput = {
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    team_players?: Prisma.TeamPlayerCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchCreateNestedManyWithoutAway_teamInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamsInput;
+    teamLeaders?: Prisma.TeamLeaderCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
+    matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
+    matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+};
+export type TeamUncheckedCreateWithoutClassInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+    team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
+    season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
+    home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
+    away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedCreateNestedManyWithoutTeamInput;
+    teamStandings?: Prisma.TeamStandingUncheckedCreateNestedManyWithoutTeamInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedCreateNestedManyWithoutTeamInput;
+    notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTarget_teamInput;
+    matchResults?: Prisma.MatchResultUncheckedCreateNestedManyWithoutWinner_teamInput;
+    articles?: Prisma.ArticleUncheckedCreateNestedManyWithoutTeamInput;
+    matchLineups?: Prisma.MatchLineupUncheckedCreateNestedManyWithoutTeamInput;
+    matchEvents?: Prisma.MatchEventUncheckedCreateNestedManyWithoutTeamInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedCreateNestedManyWithoutTeamInput;
+};
+export type TeamCreateOrConnectWithoutClassInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput>;
+};
+export type TeamCreateManyClassInputEnvelope = {
+    data: Prisma.TeamCreateManyClassInput | Prisma.TeamCreateManyClassInput[];
+    skipDuplicates?: boolean;
+};
+export type TeamUpsertWithWhereUniqueWithoutClassInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    update: Prisma.XOR<Prisma.TeamUpdateWithoutClassInput, Prisma.TeamUncheckedUpdateWithoutClassInput>;
+    create: Prisma.XOR<Prisma.TeamCreateWithoutClassInput, Prisma.TeamUncheckedCreateWithoutClassInput>;
+};
+export type TeamUpdateWithWhereUniqueWithoutClassInput = {
+    where: Prisma.TeamWhereUniqueInput;
+    data: Prisma.XOR<Prisma.TeamUpdateWithoutClassInput, Prisma.TeamUncheckedUpdateWithoutClassInput>;
+};
+export type TeamUpdateManyWithWhereWithoutClassInput = {
+    where: Prisma.TeamScalarWhereInput;
+    data: Prisma.XOR<Prisma.TeamUpdateManyMutationInput, Prisma.TeamUncheckedUpdateManyWithoutClassInput>;
 };
 export type TeamCreateWithoutMatchJerseyAssignmentsInput = {
     name: string;
@@ -819,6 +960,7 @@ export type TeamCreateWithoutMatchJerseyAssignmentsInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutMatchJerseyAssignmentsInput = {
     id?: number;
@@ -831,6 +973,7 @@ export type TeamUncheckedCreateWithoutMatchJerseyAssignmentsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -879,6 +1022,7 @@ export type TeamUpdateWithoutMatchJerseyAssignmentsInput = {
     articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutMatchJerseyAssignmentsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -891,6 +1035,7 @@ export type TeamUncheckedUpdateWithoutMatchJerseyAssignmentsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -926,6 +1071,7 @@ export type TeamCreateWithoutTeam_playersInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutTeam_playersInput = {
     id?: number;
@@ -938,6 +1084,7 @@ export type TeamUncheckedCreateWithoutTeam_playersInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
     away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
@@ -986,6 +1133,7 @@ export type TeamUpdateWithoutTeam_playersInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeam_playersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -998,6 +1146,7 @@ export type TeamUncheckedUpdateWithoutTeam_playersInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
     away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
@@ -1033,6 +1182,7 @@ export type TeamCreateWithoutTeamLeadersInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutTeamLeadersInput = {
     id?: number;
@@ -1045,6 +1195,7 @@ export type TeamUncheckedCreateWithoutTeamLeadersInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1093,6 +1244,7 @@ export type TeamUpdateWithoutTeamLeadersInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeamLeadersInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1105,6 +1257,7 @@ export type TeamUncheckedUpdateWithoutTeamLeadersInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1140,6 +1293,7 @@ export type TeamCreateWithoutSeason_teamsInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutSeason_teamsInput = {
     id?: number;
@@ -1152,6 +1306,7 @@ export type TeamUncheckedCreateWithoutSeason_teamsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
     away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
@@ -1200,6 +1355,7 @@ export type TeamUpdateWithoutSeason_teamsInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutSeason_teamsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1212,6 +1368,7 @@ export type TeamUncheckedUpdateWithoutSeason_teamsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
     away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
@@ -1247,6 +1404,7 @@ export type TeamCreateWithoutMatchLineupsInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutMatchLineupsInput = {
     id?: number;
@@ -1259,6 +1417,7 @@ export type TeamUncheckedCreateWithoutMatchLineupsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1307,6 +1466,7 @@ export type TeamUpdateWithoutMatchLineupsInput = {
     articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutMatchLineupsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1319,6 +1479,7 @@ export type TeamUncheckedUpdateWithoutMatchLineupsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1354,6 +1515,7 @@ export type TeamCreateWithoutHome_matchesInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutHome_matchesInput = {
     id?: number;
@@ -1366,6 +1528,7 @@ export type TeamUncheckedCreateWithoutHome_matchesInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     away_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutAway_teamInput;
@@ -1405,6 +1568,7 @@ export type TeamCreateWithoutAway_matchesInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutAway_matchesInput = {
     id?: number;
@@ -1417,6 +1581,7 @@ export type TeamUncheckedCreateWithoutAway_matchesInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1465,6 +1630,7 @@ export type TeamUpdateWithoutHome_matchesInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutHome_matchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1477,6 +1643,7 @@ export type TeamUncheckedUpdateWithoutHome_matchesInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
@@ -1521,6 +1688,7 @@ export type TeamUpdateWithoutAway_matchesInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutAway_matchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1533,6 +1701,7 @@ export type TeamUncheckedUpdateWithoutAway_matchesInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1568,6 +1737,7 @@ export type TeamCreateWithoutMatchEventsInput = {
     articles?: Prisma.ArticleCreateNestedManyWithoutTeamInput;
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutMatchEventsInput = {
     id?: number;
@@ -1580,6 +1750,7 @@ export type TeamUncheckedCreateWithoutMatchEventsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1628,6 +1799,7 @@ export type TeamUpdateWithoutMatchEventsInput = {
     articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutMatchEventsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1640,6 +1812,7 @@ export type TeamUncheckedUpdateWithoutMatchEventsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1675,6 +1848,7 @@ export type TeamCreateWithoutTeamStandingsInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutTeamStandingsInput = {
     id?: number;
@@ -1687,6 +1861,7 @@ export type TeamUncheckedCreateWithoutTeamStandingsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1735,6 +1910,7 @@ export type TeamUpdateWithoutTeamStandingsInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutTeamStandingsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1747,6 +1923,7 @@ export type TeamUncheckedUpdateWithoutTeamStandingsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1782,6 +1959,7 @@ export type TeamCreateWithoutPlayerStatisticsInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutPlayerStatisticsInput = {
     id?: number;
@@ -1794,6 +1972,7 @@ export type TeamUncheckedCreateWithoutPlayerStatisticsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1842,6 +2021,7 @@ export type TeamUpdateWithoutPlayerStatisticsInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutPlayerStatisticsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1854,6 +2034,7 @@ export type TeamUncheckedUpdateWithoutPlayerStatisticsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1889,6 +2070,7 @@ export type TeamCreateWithoutMatchResultsInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutMatchResultsInput = {
     id?: number;
@@ -1901,6 +2083,7 @@ export type TeamUncheckedCreateWithoutMatchResultsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -1949,6 +2132,7 @@ export type TeamUpdateWithoutMatchResultsInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutMatchResultsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1961,6 +2145,7 @@ export type TeamUncheckedUpdateWithoutMatchResultsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -1996,6 +2181,7 @@ export type TeamCreateWithoutNotificationsInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutNotificationsInput = {
     id?: number;
@@ -2008,6 +2194,7 @@ export type TeamUncheckedCreateWithoutNotificationsInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -2056,6 +2243,7 @@ export type TeamUpdateWithoutNotificationsInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutNotificationsInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2068,6 +2256,7 @@ export type TeamUncheckedUpdateWithoutNotificationsInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -2103,6 +2292,7 @@ export type TeamCreateWithoutArticlesInput = {
     matchLineups?: Prisma.MatchLineupCreateNestedManyWithoutTeamInput;
     matchEvents?: Prisma.MatchEventCreateNestedManyWithoutTeamInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentCreateNestedManyWithoutTeamInput;
+    class?: Prisma.ClassCreateNestedOneWithoutTeamsInput;
 };
 export type TeamUncheckedCreateWithoutArticlesInput = {
     id?: number;
@@ -2115,6 +2305,7 @@ export type TeamUncheckedCreateWithoutArticlesInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     user_id?: number | null;
+    class_id?: number | null;
     team_players?: Prisma.TeamPlayerUncheckedCreateNestedManyWithoutTeamInput;
     season_teams?: Prisma.SeasonTeamUncheckedCreateNestedManyWithoutTeamInput;
     home_matches?: Prisma.MatchUncheckedCreateNestedManyWithoutHome_teamInput;
@@ -2163,6 +2354,7 @@ export type TeamUpdateWithoutArticlesInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutArticlesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2175,6 +2367,7 @@ export type TeamUncheckedUpdateWithoutArticlesInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -2198,6 +2391,7 @@ export type TeamCreateManyUserInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
+    class_id?: number | null;
 };
 export type TeamUpdateWithoutUserInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -2221,6 +2415,7 @@ export type TeamUpdateWithoutUserInput = {
     matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
     matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
     matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+    class?: Prisma.ClassUpdateOneWithoutTeamsNestedInput;
 };
 export type TeamUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -2232,6 +2427,7 @@ export type TeamUncheckedUpdateWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
     season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
     home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
@@ -2256,6 +2452,80 @@ export type TeamUncheckedUpdateManyWithoutUserInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    class_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+};
+export type TeamCreateManyClassInput = {
+    id?: number;
+    name: string;
+    coach_name?: string | null;
+    logo?: string | null;
+    description?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    user_id?: number | null;
+};
+export type TeamUpdateWithoutClassInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team_players?: Prisma.TeamPlayerUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUpdateManyWithoutAway_teamNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamsNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUpdateManyWithoutTeamNestedInput;
+    matchLineups?: Prisma.MatchLineupUpdateManyWithoutTeamNestedInput;
+    matchEvents?: Prisma.MatchEventUpdateManyWithoutTeamNestedInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateWithoutClassInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    team_players?: Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput;
+    season_teams?: Prisma.SeasonTeamUncheckedUpdateManyWithoutTeamNestedInput;
+    home_matches?: Prisma.MatchUncheckedUpdateManyWithoutHome_teamNestedInput;
+    away_matches?: Prisma.MatchUncheckedUpdateManyWithoutAway_teamNestedInput;
+    teamLeaders?: Prisma.TeamLeaderUncheckedUpdateManyWithoutTeamNestedInput;
+    teamStandings?: Prisma.TeamStandingUncheckedUpdateManyWithoutTeamNestedInput;
+    playerStatistics?: Prisma.PlayerStatisticUncheckedUpdateManyWithoutTeamNestedInput;
+    notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTarget_teamNestedInput;
+    matchResults?: Prisma.MatchResultUncheckedUpdateManyWithoutWinner_teamNestedInput;
+    articles?: Prisma.ArticleUncheckedUpdateManyWithoutTeamNestedInput;
+    matchLineups?: Prisma.MatchLineupUncheckedUpdateManyWithoutTeamNestedInput;
+    matchEvents?: Prisma.MatchEventUncheckedUpdateManyWithoutTeamNestedInput;
+    matchJerseyAssignments?: Prisma.MatchJerseyAssignmentUncheckedUpdateManyWithoutTeamNestedInput;
+};
+export type TeamUncheckedUpdateManyWithoutClassInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    coach_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 /**
  * Count Type TeamCountOutputType
@@ -2388,6 +2658,7 @@ export type TeamSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     updated_at?: boolean;
     deleted_at?: boolean;
     user_id?: boolean;
+    class_id?: boolean;
     team_players?: boolean | Prisma.Team$team_playersArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Team$season_teamsArgs<ExtArgs>;
     home_matches?: boolean | Prisma.Team$home_matchesArgs<ExtArgs>;
@@ -2402,6 +2673,7 @@ export type TeamSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     matchLineups?: boolean | Prisma.Team$matchLineupsArgs<ExtArgs>;
     matchEvents?: boolean | Prisma.Team$matchEventsArgs<ExtArgs>;
     matchJerseyAssignments?: boolean | Prisma.Team$matchJerseyAssignmentsArgs<ExtArgs>;
+    class?: boolean | Prisma.Team$classArgs<ExtArgs>;
     _count?: boolean | Prisma.TeamCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["team"]>;
 export type TeamSelectScalar = {
@@ -2415,8 +2687,9 @@ export type TeamSelectScalar = {
     updated_at?: boolean;
     deleted_at?: boolean;
     user_id?: boolean;
+    class_id?: boolean;
 };
-export type TeamOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "coach_name" | "logo" | "description" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id", ExtArgs["result"]["team"]>;
+export type TeamOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "coach_name" | "logo" | "description" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id" | "class_id", ExtArgs["result"]["team"]>;
 export type TeamInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     team_players?: boolean | Prisma.Team$team_playersArgs<ExtArgs>;
     season_teams?: boolean | Prisma.Team$season_teamsArgs<ExtArgs>;
@@ -2432,6 +2705,7 @@ export type TeamInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     matchLineups?: boolean | Prisma.Team$matchLineupsArgs<ExtArgs>;
     matchEvents?: boolean | Prisma.Team$matchEventsArgs<ExtArgs>;
     matchJerseyAssignments?: boolean | Prisma.Team$matchJerseyAssignmentsArgs<ExtArgs>;
+    class?: boolean | Prisma.Team$classArgs<ExtArgs>;
     _count?: boolean | Prisma.TeamCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2451,6 +2725,7 @@ export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         matchLineups: Prisma.$MatchLineupPayload<ExtArgs>[];
         matchEvents: Prisma.$MatchEventPayload<ExtArgs>[];
         matchJerseyAssignments: Prisma.$MatchJerseyAssignmentPayload<ExtArgs>[];
+        class: Prisma.$ClassPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -2463,6 +2738,7 @@ export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         updated_at: Date | null;
         deleted_at: Date | null;
         user_id: number | null;
+        class_id: number | null;
     }, ExtArgs["result"]["team"]>;
     composites: {};
 };
@@ -2754,6 +3030,7 @@ export interface Prisma__TeamClient<T, Null = never, ExtArgs extends runtime.Typ
     matchLineups<T extends Prisma.Team$matchLineupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$matchLineupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchLineupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     matchEvents<T extends Prisma.Team$matchEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$matchEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     matchJerseyAssignments<T extends Prisma.Team$matchJerseyAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$matchJerseyAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchJerseyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    class<T extends Prisma.Team$classArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$classArgs<ExtArgs>>): Prisma.Prisma__ClassClient<runtime.Types.Result.GetResult<Prisma.$ClassPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2789,6 +3066,7 @@ export interface TeamFieldRefs {
     readonly updated_at: Prisma.FieldRef<"Team", 'DateTime'>;
     readonly deleted_at: Prisma.FieldRef<"Team", 'DateTime'>;
     readonly user_id: Prisma.FieldRef<"Team", 'Int'>;
+    readonly class_id: Prisma.FieldRef<"Team", 'Int'>;
 }
 /**
  * Team findUnique
@@ -3437,6 +3715,24 @@ export type Team$matchJerseyAssignmentsArgs<ExtArgs extends runtime.Types.Extens
     take?: number;
     skip?: number;
     distinct?: Prisma.MatchJerseyAssignmentScalarFieldEnum | Prisma.MatchJerseyAssignmentScalarFieldEnum[];
+};
+/**
+ * Team.class
+ */
+export type Team$classArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Class
+     */
+    select?: Prisma.ClassSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Class
+     */
+    omit?: Prisma.ClassOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.ClassInclude<ExtArgs> | null;
+    where?: Prisma.ClassWhereInput;
 };
 /**
  * Team without action

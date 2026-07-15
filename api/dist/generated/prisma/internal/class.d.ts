@@ -173,6 +173,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.class`: Exposes CRUD operations for the **Class** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Classes
+      * const classes = await prisma.class.findMany()
+      * ```
+      */
+    get class(): Prisma.ClassDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.phase`: Exposes CRUD operations for the **Phase** model.
       * Example usage:
       * ```ts

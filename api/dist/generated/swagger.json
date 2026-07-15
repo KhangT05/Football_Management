@@ -175,6 +175,13 @@
                     "email_verified_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "class_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "student_code": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -187,7 +194,9 @@
                     "phone",
                     "avatar",
                     "email_verified",
-                    "email_verified_at"
+                    "email_verified_at",
+                    "class_id",
+                    "student_code"
                 ],
                 "type": "object",
                 "description": "From T, pick a set of properties whose keys are in the union K"
@@ -1068,6 +1077,10 @@
                     "description": {
                         "type": "string"
                     },
+                    "class_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
                     "deleted_at": {
                         "type": "string",
                         "format": "date-time"
@@ -1096,6 +1109,7 @@
                     "user_id",
                     "logo",
                     "description",
+                    "class_id",
                     "deleted_at",
                     "updated_at",
                     "created_at",
@@ -3763,6 +3777,10 @@
             },
             "DefaultSelection__36_SeasonPayload_": {
                 "properties": {
+                    "max_teams_per_class": {
+                        "type": "number",
+                        "format": "double"
+                    },
                     "tournament_rule_id": {
                         "type": "number",
                         "format": "double"
@@ -3846,6 +3864,7 @@
                     }
                 },
                 "required": [
+                    "max_teams_per_class",
                     "tournament_rule_id",
                     "pitch_type",
                     "group_count",
@@ -5366,6 +5385,9 @@
                         "type": "string",
                         "format": "date-time"
                     },
+                    "student_code": {
+                        "type": "string"
+                    },
                     "user_email": {
                         "type": "string"
                     },
@@ -5377,6 +5399,7 @@
                     "jersey_number",
                     "position",
                     "date_of_birth",
+                    "student_code",
                     "user_email",
                     "name"
                 ],
@@ -7462,6 +7485,57 @@
                 ],
                 "type": "object",
                 "additionalProperties": false
+            },
+            "ClassDto": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "is_active",
+                    "created_at"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "infer_typeofcreateClassSchema_": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "type": "object"
+            },
+            "CreateClassDto": {
+                "$ref": "#/components/schemas/infer_typeofcreateClassSchema_"
+            },
+            "infer_typeofupdateClassSchema_": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateClassDto": {
+                "$ref": "#/components/schemas/infer_typeofupdateClassSchema_"
             },
             "TokenResponseDto": {
                 "properties": {
@@ -17205,6 +17279,174 @@
                         }
                     }
                 }
+            }
+        },
+        "/classes": {
+            "get": {
+                "operationId": "List",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/ClassDto"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Classes"
+                ],
+                "security": [],
+                "parameters": []
+            },
+            "post": {
+                "operationId": "Create",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClassDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Classes"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateClassDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/classes/{id}": {
+            "get": {
+                "operationId": "FindById",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClassDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Classes"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "Update",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClassDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Classes"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateClassDto"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "SoftDelete",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                },
+                "tags": [
+                    "Classes"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
             }
         },
         "/auth/login": {

@@ -184,7 +184,7 @@ export class ScheduleService extends ScheduleEngine {
             const season = await tx.season.findUnique({
                 where: { id: seasonId },
                 include: {
-                    season_teams: { where: { status: { not: SeasonTeamStatus.withdrawn } } },
+                    season_teams: { where: { status: SeasonTeamStatus.approved, deleted_at: null } },
                     phases: { select: { id: true } },
                 },
             });

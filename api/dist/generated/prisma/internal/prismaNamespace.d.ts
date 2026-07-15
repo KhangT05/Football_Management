@@ -236,6 +236,7 @@ export declare const ModelName: {
     readonly User_Role: "User_Role";
     readonly Tournament: "Tournament";
     readonly TournamentRule: "TournamentRule";
+    readonly Class: "Class";
     readonly Phase: "Phase";
     readonly BracketSlot: "BracketSlot";
     readonly Season: "Season";
@@ -271,7 +272,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "phase" | "bracketSlot" | "season" | "group" | "team" | "matchJerseyAssignment" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "seasonTeamJersey" | "venue" | "matchLineup" | "match" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
+        modelProps: "user" | "role" | "user_Role" | "tournament" | "tournamentRule" | "class" | "phase" | "bracketSlot" | "season" | "group" | "team" | "matchJerseyAssignment" | "player" | "teamPlayer" | "teamLeader" | "seasonTeam" | "seasonTeamJersey" | "venue" | "matchLineup" | "match" | "matchEvent" | "teamStanding" | "playerStatistic" | "matchResult" | "notification" | "payment" | "article" | "articleTag" | "articleMedia";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -602,6 +603,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 count: {
                     args: Prisma.TournamentRuleCountArgs<ExtArgs>;
                     result: runtime.Types.Utils.Optional<Prisma.TournamentRuleCountAggregateOutputType> | number;
+                };
+            };
+        };
+        Class: {
+            payload: Prisma.$ClassPayload<ExtArgs>;
+            fields: Prisma.ClassFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.ClassFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.ClassFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                findFirst: {
+                    args: Prisma.ClassFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.ClassFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                findMany: {
+                    args: Prisma.ClassFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>[];
+                };
+                create: {
+                    args: Prisma.ClassCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                createMany: {
+                    args: Prisma.ClassCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.ClassDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                update: {
+                    args: Prisma.ClassUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.ClassDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.ClassUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.ClassUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassPayload>;
+                };
+                aggregate: {
+                    args: Prisma.ClassAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateClass>;
+                };
+                groupBy: {
+                    args: Prisma.ClassGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ClassGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.ClassCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ClassCountAggregateOutputType> | number;
                 };
             };
         };
@@ -2169,6 +2236,8 @@ export declare const UserScalarFieldEnum: {
     readonly email_verified_at: "email_verified_at";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
+    readonly class_id: "class_id";
+    readonly student_code: "student_code";
 };
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
 export declare const RoleScalarFieldEnum: {
@@ -2225,6 +2294,13 @@ export declare const TournamentRuleScalarFieldEnum: {
     readonly user_id: "user_id";
 };
 export type TournamentRuleScalarFieldEnum = (typeof TournamentRuleScalarFieldEnum)[keyof typeof TournamentRuleScalarFieldEnum];
+export declare const ClassScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly is_active: "is_active";
+    readonly created_at: "created_at";
+};
+export type ClassScalarFieldEnum = (typeof ClassScalarFieldEnum)[keyof typeof ClassScalarFieldEnum];
 export declare const PhaseScalarFieldEnum: {
     readonly id: "id";
     readonly season_id: "season_id";
@@ -2281,6 +2357,7 @@ export declare const SeasonScalarFieldEnum: {
     readonly pitch_type: "pitch_type";
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
+    readonly max_teams_per_class: "max_teams_per_class";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
 export declare const GroupScalarFieldEnum: {
@@ -2305,6 +2382,7 @@ export declare const TeamScalarFieldEnum: {
     readonly updated_at: "updated_at";
     readonly deleted_at: "deleted_at";
     readonly user_id: "user_id";
+    readonly class_id: "class_id";
 };
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
 export declare const MatchJerseyAssignmentScalarFieldEnum: {
@@ -2611,6 +2689,7 @@ export declare const UserOrderByRelevanceFieldEnum: {
     readonly password: "password";
     readonly phone: "phone";
     readonly avatar: "avatar";
+    readonly student_code: "student_code";
 };
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum];
 export declare const RoleOrderByRelevanceFieldEnum: {
@@ -2639,6 +2718,10 @@ export declare const TournamentRuleOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
 export type TournamentRuleOrderByRelevanceFieldEnum = (typeof TournamentRuleOrderByRelevanceFieldEnum)[keyof typeof TournamentRuleOrderByRelevanceFieldEnum];
+export declare const ClassOrderByRelevanceFieldEnum: {
+    readonly name: "name";
+};
+export type ClassOrderByRelevanceFieldEnum = (typeof ClassOrderByRelevanceFieldEnum)[keyof typeof ClassOrderByRelevanceFieldEnum];
 export declare const PhaseOrderByRelevanceFieldEnum: {
     readonly name: "name";
 };
@@ -2980,6 +3063,7 @@ export type GlobalOmitConfig = {
     user_Role?: Prisma.User_RoleOmit;
     tournament?: Prisma.TournamentOmit;
     tournamentRule?: Prisma.TournamentRuleOmit;
+    class?: Prisma.ClassOmit;
     phase?: Prisma.PhaseOmit;
     bracketSlot?: Prisma.BracketSlotOmit;
     season?: Prisma.SeasonOmit;

@@ -25,19 +25,12 @@ import redis from "../libs/redis.js";
 
 const MAX_IMPORT_ROWS = 200;
 const PLAYER_ROLE_NAME = "player";
-
-// FIX: đổi từ 7 ngày -> 24h theo yêu cầu. Token invite chỉ có hiệu lực tạo
-// tài khoản/đặt mật khẩu trong vòng 24h kể từ lúc admin/leader thêm player.
-// Hết hạn -> user phải được admin resend invite (tạo token mới), không tự gia hạn.
-const INVITE_TOKEN_TTL_SECONDS = 24 * 60 * 60; // 24 giờ
+const INVITE_TOKEN_TTL_SECONDS = 24 * 60 * 60;
 
 // ----------------------------------------------------------
 // IMPORT EXCEL — HỖ TRỢ FILE THUẦN TIẾNG VIỆT
 // ----------------------------------------------------------
 
-// Map header tiếng Việt (và vài biến thể/tiếng Anh) -> key chuẩn của
-// importPlayerRowSchema. So khớp sau khi đã trim + lowercase, nên không
-// quan trọng hoa/thường hay khoảng trắng dư.
 const IMPORT_HEADER_ALIASES: Record<string, keyof ImportPlayerRowDto> = {
     "họ và tên": "name",
     "họ tên": "name",
@@ -46,6 +39,11 @@ const IMPORT_HEADER_ALIASES: Record<string, keyof ImportPlayerRowDto> = {
 
     "email": "user_email",
     "user_email": "user_email",
+
+    // FIX: thêm alias MSSV — field bắt buộc mới, cần map từ header VN.
+    "mssv": "student_code",
+    "mã số sinh viên": "student_code",
+    "student_code": "student_code",
 
     "ngày sinh": "date_of_birth",
     "ngày sinh (yyyy-mm-dd)": "date_of_birth",
@@ -70,7 +68,6 @@ const IMPORT_HEADER_ALIASES: Record<string, keyof ImportPlayerRowDto> = {
     "nationality": "nationality",
 };
 
-// Map value cột "Vị trí" (mã hoặc chữ Việt) -> enum PlayerPosition thật.
 const IMPORT_POSITION_ALIASES: Record<string, PlayerPosition> = {
     "gk": PlayerPosition.goalkeeper,
     "thủ môn": PlayerPosition.goalkeeper,
@@ -96,31 +93,19 @@ function normalizeHeaderKey(raw: string): string {
 function normalizePositionValue(raw: unknown): unknown {
     if (typeof raw !== "string") return raw;
     const key = normalizeHeaderKey(raw);
-    return IMPORT_POSITION_ALIASES[key] ?? raw; // không match -> giữ nguyên, để Zod tự báo lỗi rõ ràng
+    return IMPORT_POSITION_ALIASES[key] ?? raw;
 }
 
-/**
- * Nhận 1 dòng raw (key = text header gốc trong file Excel, có thể là tiếng
- * Việt, tiếng Anh, hoặc lệch hoa/thường/khoảng trắng), trả về object với key
- * chuẩn đúng tên field của importPlayerRowSchema. Header không nhận diện
- * được sẽ bị bỏ qua (không throw ở bước này — để Zod báo lỗi "required" rõ
- * ràng theo từng dòng/cột thiếu thay vì fail âm thầm).
- */
 function normalizeImportRow(raw: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [rawKey, value] of Object.entries(raw)) {
         const mappedKey = IMPORT_HEADER_ALIASES[normalizeHeaderKey(rawKey)];
-        if (!mappedKey) continue; // cột lạ, không map được -> bỏ qua
+        if (!mappedKey) continue;
         out[mappedKey] = mappedKey === "position" ? normalizePositionValue(value) : value;
     }
     return out;
 }
 
-/**
- * exceljs trả cell.value có thể là string/number/Date, hoặc object phức tạp
- * (rich text, hyperlink, formula result...) — unwrap về giá trị thuần trước
- * khi đưa vào Zod.
- */
 function unwrapCellValue(value: ExcelJS.CellValue): unknown {
     if (value === null || value === undefined) return null;
     if (value instanceof Date) return value;
@@ -128,18 +113,13 @@ function unwrapCellValue(value: ExcelJS.CellValue): unknown {
         if ("richText" in (value as any)) {
             return (value as any).richText.map((t: any) => t.text).join("");
         }
-        if ("text" in (value as any)) return (value as any).text; // hyperlink { text, hyperlink }
-        if ("result" in (value as any)) return (value as any).result; // formula
+        if ("text" in (value as any)) return (value as any).text;
+        if ("result" in (value as any)) return (value as any).result;
         return null;
     }
     return value;
 }
 
-/**
- * Đọc worksheet -> mảng object thô, key = text hàng header (hàng 1).
- * Bỏ qua các hàng trống hoàn toàn (khác với xlsx cũ luôn trả cả hàng
- * blank-template thành object toàn null, gây fail oan ở bước validate).
- */
 function worksheetToRawRows(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
     const headers: Record<number, string> = {};
     ws.getRow(1).eachCell({ includeEmpty: false }, (cell, colNumber) => {
@@ -183,11 +163,11 @@ export class PlayerService {
         });
         this.playerQuery = new Queryable<PlayerRow>(prisma.player, {
             select: PLAYER_PUBLIC_SELECT,
-            sortable: ["id", "created_at", "date_of_birth"], // chỉ field scalar thật trên Player
+            sortable: ["id", "created_at", "date_of_birth"],
             defaultSort: { column: "id", direction: "desc" },
-            filterable: ["position", "nationality"], // nếu 2 cột này tồn tại trên Player, đúng như PLAYER_SELECT có
+            filterable: ["position", "nationality"],
             defaultPerPage: 20,
-            maxPerPage: 500, // FE đang gọi per_page=500 để tải hết 1 lần — cho phép
+            maxPerPage: 500,
         });
 
     }
@@ -215,30 +195,28 @@ export class PlayerService {
                 data: res.data.map((p) => this.toPlayerPublicDto(p)),
             }));
     }
+
     // ----------------------------------------------------------
     // PLAYER CRUD
     // ----------------------------------------------------------
 
     /**
-     * FIX: trước đây không validate user_id tồn tại (→ P2003 FK raw 500 nếu
-     * user_id sai), không dedupe theo user_id (→ CONFLICT rõ ràng thay vì raw
-     * P2002), và QUAN TRỌNG NHẤT — không gán role "player" cho user sau khi
-     * tạo Player. Khác với createPlayerForTeamWithUser/addPlayerToTeam/import
-     * (đều có ensurePlayerRole), path admin-gõ-tay này bị bỏ sót, khiến user
-     * có Player record nhưng không có Role -> mất quyền truy cập tính năng
-     * player-only ở phía FE/authorization middleware.
-     *
-     * Giờ wrap trong $transaction: create Player + upsert User_Role cùng lúc,
-     * đảm bảo không có trạng thái "có Player, thiếu Role" nếu 1 trong 2 fail.
-     * Dùng khi admin đã biết user_id có sẵn. Không dùng cho case "thêm player +
-     * chưa chắc user tồn tại" — xem createPlayerForTeamWithUser.
+     * FIX (giữ nguyên fix cũ) + FIX MỚI: bắt buộc user.student_code tồn tại
+     * trước khi tạo Player — "sinh viên đang học" là điều kiện tiên quyết
+     * theo yêu cầu đồ án. Check ở đây (path admin tạo trực tiếp bằng
+     * user_id có sẵn) vì đây là entrypoint duy nhất không đi qua
+     * createPlayerForTeamWithUser/import (2 path kia tự nhận student_code
+     * qua DTO và ghi vào User trước).
      */
     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
         const user = await this.prisma.user.findUnique({
             where: { id: dto.user_id },
-            select: { id: true },
+            select: { id: true, student_code: true },
         });
         if (!user) throw createAppError("NOT_FOUND", `User ${dto.user_id} not found`);
+        if (!user.student_code) {
+            throw createAppError("BAD_REQUEST", "User chưa có MSSV — không thể tạo hồ sơ cầu thủ");
+        }
 
         const existing = await this.prisma.player.findFirst({
             where: { user_id: dto.user_id, deleted_at: null },
@@ -253,11 +231,7 @@ export class PlayerService {
                 data: dto,
                 select: PLAYER_SELECT,
             });
-
-            // FIX: gán role "player" ngay khi tạo Player — trước đây thiếu,
-            // giờ nằm trong cùng transaction nên rollback cùng nhau nếu lỗi.
             await this.ensurePlayerRole(dto.user_id, tx);
-
             return created;
         });
 
@@ -329,17 +303,6 @@ export class PlayerService {
     // ROLE HELPERS
     // ----------------------------------------------------------
 
-    /**
-     * FIX: trước đây role không tồn tại thì chỉ logger.warn rồi return ->
-     * fail silent, Player/TeamPlayer được tạo thành công nhưng KHÔNG có role,
-     * không có tín hiệu nào lộ ra response hay đủ nghiêm trọng để bị chú ý
-     * trong log prod. Đổi thành throw để lỗi cấu hình (role "player" thiếu
-     * hoặc tên sai trong bảng roles) bị phát hiện ngay, không âm thầm tích
-     * tụ user thiếu role.
-     *
-     * Verify tên role thật trong DB trước khi deploy: SELECT name FROM roles;
-     * PLAYER_ROLE_NAME phải khớp CHÍNH XÁC (case-sensitive).
-     */
     private async ensurePlayerRole(
         userId: number,
         tx: Prisma.TransactionClient | PrismaClient = this.prisma
@@ -359,27 +322,51 @@ export class PlayerService {
         });
     }
 
+    /**
+     * FIX MỚI: class-match giữa User của player và Team đang gán vào.
+     * Không FK-enforce được (derived qua User.class_id vs Team.class_id,
+     * 2 hop khác bảng) nên validate ở service layer. Gọi TRƯỚC mọi thao
+     * tác tạo TeamPlayer, dùng cùng `tx` của caller khi có transaction mở
+     * để tránh 1 round-trip riêng ngoài transaction (race giữa check và
+     * write nếu class_id của user/team đổi giữa chừng — chấp nhận được ở
+     * scale đồ án, nhưng cùng tx vẫn rẻ hơn tách riêng).
+     *
+     * team.class_id == null (chưa gán lớp / data cũ) -> bỏ qua check để
+     * không phá migration path. Enforce cứng sau khi backfill xong bằng
+     * cách đổi Team.class_id thành NOT NULL ở schema.
+     */
+    private async assertPlayerClassMatchesTeam(
+        userId: number,
+        teamId: number,
+        tx: Prisma.TransactionClient | PrismaClient = this.prisma
+    ): Promise<void> {
+        const [user, team] = await Promise.all([
+            tx.user.findUniqueOrThrow({
+                where: { id: userId },
+                select: { class_id: true, student_code: true },
+            }),
+            tx.team.findUniqueOrThrow({
+                where: { id: teamId },
+                select: { class_id: true },
+            }),
+        ]);
+
+        if (!user.student_code) {
+            throw createAppError("BAD_REQUEST", "Tài khoản chưa có MSSV — không thể tham gia đội");
+        }
+        if (team.class_id != null && user.class_id !== team.class_id) {
+            throw createAppError("CONFLICT", "Cầu thủ không thuộc lớp của đội");
+        }
+    }
+
     // ----------------------------------------------------------
-    // INVITE TOKEN (Redis — thay cho cột invite_token_hash/expires_at trong DB)
+    // INVITE TOKEN
     // ----------------------------------------------------------
 
     private inviteKey(tokenHash: string): string {
         return `invite:token:${tokenHash}`;
     }
 
-    /**
-     * Sinh invite token cho 1 user mới tạo (chưa có mật khẩu — Player.user
-     * password nullable theo schema.prisma: `password String?`), lưu bản HASH
-     * (sha256) vào Redis với TTL 24h — không bao giờ lưu plaintext, không cần
-     * cột DB (invite_token_hash/invite_token_expires_at), Redis tự hết hạn.
-     * Trả về rawToken để gửi qua email (không log ra ngoài).
-     *
-     * QUAN TRỌNG: hàm này KHÔNG được gọi bên trong prisma.$transaction — Redis
-     * không tham gia rollback của Prisma. Nếu gọi trong tx mà tx rollback sau
-     * đó, token sẽ trỏ tới 1 userId "mồ côi" hoặc tệ hơn là bị tái sử dụng
-     * nhầm cho user khác nếu id được cấp lại. Luôn gọi SAU khi transaction
-     * tạo user/player/teamPlayer đã commit thành công.
-     */
     private async issueInviteToken(userId: number): Promise<string> {
         const rawToken = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
@@ -391,13 +378,6 @@ export class PlayerService {
         return rawToken;
     }
 
-    /**
-     * Xác thực raw token (dùng cho endpoint POST /auth/accept-invite — chưa
-     * có trong file này). Trả về userId nếu hợp lệ. Token là one-time-use:
-     * xoá ngay khỏi Redis sau khi đọc thành công để không dùng lại được lần 2.
-     * Hết hạn (quá 24h) hoặc sai token đều rơi vào nhánh BAD_REQUEST như nhau
-     * — không tiết lộ token đã từng tồn tại hay chưa.
-     */
     async consumeInviteToken(rawToken: string): Promise<number> {
         const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
         const key = this.inviteKey(tokenHash);
@@ -411,13 +391,6 @@ export class PlayerService {
         return Number(userId);
     }
 
-    /**
-     * Cho admin/leader bấm "gửi lại lời mời" khi token cũ đã hết hạn (24h).
-     * Phát hành token MỚI (token cũ nếu còn trong Redis vẫn còn hiệu lực tới
-     * khi hết TTL của chính nó — không revoke, chấp nhận có thể có 2 token
-     * sống song song trong thời gian ngắn, không phải vấn đề bảo mật vì cả
-     * hai đều one-time-use).
-     */
     async resendInvite(userId: number): Promise<void> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
@@ -462,6 +435,11 @@ export class PlayerService {
         return tp ? this.mapTeamPlayer(tp) : null;
     }
 
+    /**
+     * FIX MỚI: thêm assertPlayerClassMatchesTeam TRƯỚC dupPlayer/dupJersey
+     * check — fail nhanh vì đây là lỗi nghiệp vụ nghiêm trọng hơn (cầu thủ
+     * sai lớp) so với trùng số áo.
+     */
     async addPlayerToTeam(
         team_id: number,
         dto: AddPlayerToTeamDto
@@ -471,6 +449,8 @@ export class PlayerService {
             select: { id: true, user_id: true },
         });
         if (!player) throw createAppError("NOT_FOUND", `Player ${dto.player_id} not found`);
+
+        await this.assertPlayerClassMatchesTeam(player.user_id, team_id);
 
         const [dupPlayer, dupJersey] = await Promise.all([
             this.prisma.teamPlayer.findFirst({
@@ -514,35 +494,20 @@ export class PlayerService {
     }
 
     /**
-     * Thêm cầu thủ vào team, tự find-or-create User theo email nếu chưa
-     * tồn tại. Player KHÔNG có cột name/email (schema.prisma) — 2 field này
-     * thuộc về User, Player chỉ giữ user_id (@unique, 1-1). Khác
-     * createPlayer()+addPlayerToTeam() cũ (bắt buộc user có sẵn) — đây là
-     * entrypoint cho flow "leader nhập tên+email, hệ thống tự lo phần tài
-     * khoản".
+     * FIX MỚI: dto giờ bắt buộc student_code. Với user MỚI tạo, ghi luôn
+     * student_code vào User trong cùng tx (user mới chưa có gì để mất).
+     * Với user ĐÃ tồn tại, KHÔNG ghi đè student_code có sẵn (tránh leader
+     * sửa MSSV người khác qua form thêm player) — chỉ backfill nếu user
+     * đó đang null. Class-match check luôn chạy sau bước này, trong cùng
+     * tx, trước khi tạo TeamPlayer.
      *
-     * User mới tạo có password = null (cột nullable theo schema.prisma:
-     * `password String?`), is_active = false, kèm invite token (hash lưu
-     * Redis TTL 24h, raw token gửi qua email). Cần endpoint
-     * POST /auth/accept-invite (chưa có trong file này) để user set mật
-     * khẩu thật bằng token này rồi kích hoạt account, trong vòng 24h kể từ
-     * lúc tạo — quá hạn phải dùng resendInvite() để admin gửi lại.
-     *
-     * issueInviteToken() được gọi SAU khi transaction Prisma đã commit,
-     * không nằm trong tx — vì Redis không rollback theo transaction DB. Nếu
-     * để trong tx và transaction rollback (vd. do lỗi jersey trùng ở bước
-     * sau), sẽ có token "mồ côi" trỏ tới user không tồn tại (hoặc trỏ nhầm
-     * user nếu id được tái sử dụng).
-     *
-     * Gửi email NGOÀI transaction: network call không nên giữ DB
-     * connection, và nếu email fail thì không nên rollback việc tạo
-     * player — leader vẫn thấy player trong đội, admin có thể gọi
-     * resendInvite() thủ công sau.
-     *
-     * Pre-check jersey ngoài transaction để fail sớm (UX), P2002 trong
-     * catch là nguồn chân lý chống race — giả định đã có unique constraint
-     * (team_id, jersey_number) filter deleted_at null. Nếu chưa có, request
-     * đồng thời có thể pass cả 2 pre-check → cần thêm constraint DB.
+     * LƯU Ý CÒN HỞ: user mới tạo có class_id = null (chưa gán lớp), nên
+     * assertPlayerClassMatchesTeam sẽ pass cho user mới bất kể team thuộc
+     * lớp nào (điều kiện `team.class_id != null && user.class_id !== ...`
+     * chỉ fail khi cả 2 khác nhau VÀ đều có giá trị). Nếu cần chặn cứng
+     * "user phải có lớp trước khi vào team", phải thêm field class_id vào
+     * CreatePlayerForTeamDto và set ngay lúc tạo user — hỏi lại UX trước
+     * khi đổi, vì hiện tại đang cho phép admin gán lớp sau.
      */
     async createPlayerForTeamWithUser(
         team_id: number,
@@ -556,27 +521,31 @@ export class PlayerService {
             throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
         }
 
-        // Chỉ đánh dấu id user mới tạo (nếu có) — KHÔNG gọi Redis trong tx.
         let createdNewUserId: number | null = null;
 
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
                 let user = await tx.user.findUnique({
                     where: { email: dto.user_email },
-                    select: { id: true },
+                    select: { id: true, student_code: true },
                 });
 
                 if (!user) {
-                    user = await tx.user.create({
+                    const created = await tx.user.create({
                         data: {
                             email: dto.user_email,
                             name: dto.name,
+                            student_code: dto.student_code,
                             password: null,
                             is_active: false,
                         },
-                        select: { id: true },
+                        select: { id: true, student_code: true },
                     });
-                    createdNewUserId = user.id;
+                    user = created;
+                    createdNewUserId = created.id;
+                } else if (!user.student_code) {
+                    // Backfill MSSV cho user có sẵn nhưng chưa có
+                    await tx.user.update({ where: { id: user.id }, data: { student_code: dto.student_code } });
                 }
 
                 let player = await tx.player.findFirst({
@@ -601,6 +570,8 @@ export class PlayerService {
                     if (alreadyInTeam) throw createAppError("CONFLICT", "Player already in team");
                 }
 
+                await this.assertPlayerClassMatchesTeam(user.id, team_id, tx);
+
                 const created = await tx.teamPlayer.create({
                     data: {
                         team_id,
@@ -618,8 +589,6 @@ export class PlayerService {
                 return created;
             });
 
-            // Transaction đã commit thành công -> giờ mới an toàn để phát
-            // invite token (Redis, TTL 24h) + gửi mail.
             if (createdNewUserId) {
                 try {
                     const inviteToken = await this.issueInviteToken(createdNewUserId);
@@ -628,9 +597,6 @@ export class PlayerService {
                         name: dto.name,
                     });
                 } catch (err) {
-                    // fire-and-forget có kiểm soát: log để admin resendInvite() thủ
-                    // công sau, không throw — player đã được tạo thành công, đừng
-                    // revert vì Redis/email fail.
                     logger.error(`Failed to issue invite / send email to ${dto.user_email}`);
                 }
             }
@@ -644,18 +610,6 @@ export class PlayerService {
         }
     }
 
-    /**
-     * FIX: trước đây thiếu team_id trong where clause của check + update →
-     * IDOR — team A có thể sửa TeamPlayer của team B nếu biết đúng id
-     * (sequential integer, dễ enumerate). Giờ team_id là bắt buộc, service
-     * là nơi enforce invariant này — không phụ thuộc controller nhớ pre-check.
-     *
-     * FIX #2: trước đây update không re-check role player -> nếu role bị
-     * thiếu từ lúc tạo (bug tên delegate/tên role cũ), sửa/approve/reject sau
-     * đó cũng không có cơ hội tự heal. Giờ mọi update đều ensurePlayerRole
-     * lại trong cùng transaction — idempotent (upsert), không tốn thêm gì
-     * đáng kể so với 1 query lookup + upsert.
-     */
     async updateTeamPlayer(id: number, team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto> {
         const existing = await this.prisma.teamPlayer.findFirst({
             where: { id, team_id, deleted_at: null },
@@ -738,6 +692,7 @@ export class PlayerService {
             jersey_number: tp.jersey_number,
             name: tp.player?.user?.name ?? "",
             email: tp.player?.user?.email ?? "",
+            student_code: tp.player?.user?.student_code ?? "", // FIX: xuất kèm MSSV
             position: tp.position,
             role: tp.role,
             status: tp.status,
@@ -756,6 +711,7 @@ export class PlayerService {
             { header: "jersey_number", key: "jersey_number", width: 6 },
             { header: "name", key: "name", width: 24 },
             { header: "email", key: "email", width: 28 },
+            { header: "student_code", key: "student_code", width: 14 },
             { header: "position", key: "position", width: 12 },
             { header: "role", key: "role", width: 14 },
             { header: "status", key: "status", width: 10 },
@@ -771,9 +727,6 @@ export class PlayerService {
         return Buffer.from(buffer);
     }
 
-    // FIX: đổi từ xlsx -> exceljs. Hàm này giờ là async (writeBuffer() trả
-    // Promise) — nhớ `await playerService.exportImportTemplate(...)` ở
-    // controller, khác với bản cũ (đồng bộ).
     async exportImportTemplate(minRows = 5): Promise<Buffer> {
         const wb = new ExcelJS.Workbook();
 
@@ -781,6 +734,7 @@ export class PlayerService {
         ws.columns = [
             { header: "Họ và tên", key: "name", width: 24 },
             { header: "Email", key: "email", width: 28 },
+            { header: "MSSV", key: "student_code", width: 14 },
             { header: "Ngày sinh (YYYY-MM-DD)", key: "dob", width: 20 },
             { header: "Vị trí", key: "position", width: 10 },
             { header: "Số áo", key: "jersey_number", width: 8 },
@@ -789,11 +743,11 @@ export class PlayerService {
         ws.addRow({
             name: "Nguyễn Văn A",
             email: "player1@example.com",
+            student_code: "20120001",
             dob: "2000-01-15",
             position: "FW",
             jersey_number: 10,
         });
-        // Hàng ví dụ (hàng 2) — in nghiêng, màu xám để leader biết cần xoá/thay
         const sampleRow = ws.getRow(2);
         sampleRow.font = { italic: true, color: { argb: "FF888888" } };
 
@@ -809,6 +763,7 @@ export class PlayerService {
         const instructions = [
             { field: "name", note: "Họ và tên đầy đủ — bắt buộc. Dùng để tạo tài khoản mới nếu email chưa có trong hệ thống." },
             { field: "email", note: "Bắt buộc. Nếu email đã có tài khoản → gắn cầu thủ vào tài khoản đó. Nếu chưa có → hệ thống tự tạo tài khoản (chưa có mật khẩu) và gửi email mời đặt mật khẩu, hiệu lực 24h." },
+            { field: "student_code", note: "MSSV — bắt buộc. Xác nhận tư cách sinh viên, điều kiện tiên quyết để tham gia đội." },
             { field: "jersey_number", note: "Số nguyên 1-99, duy nhất trong đội" },
             { field: "date_of_birth", note: "Định dạng YYYY-MM-DD" },
             { field: "position", note: positionHint },
@@ -819,7 +774,6 @@ export class PlayerService {
             { field: "", note: `Tối đa ${MAX_IMPORT_ROWS} dòng / file` },
         ];
         wsInfo.addRows(instructions);
-        // Bold header row của cả 2 sheet cho dễ nhìn
         ws.getRow(1).font = { bold: true };
         wsInfo.getRow(1).font = { bold: true };
 
@@ -832,12 +786,12 @@ export class PlayerService {
     // ----------------------------------------------------------
 
     /**
-     * Hỗ trợ file Excel thuần tiếng Việt (header + giá trị "Vị trí" dạng
-     * GK/DEF/MID/FW hoặc "Thủ môn"/"Hậu vệ"...) lẫn file tiếng Anh cũ, thông
-     * qua normalizeImportRow() ở module-level phía trên. Nếu email chưa có
-     * tài khoản → tự tạo User (password=null, is_active=false) + phát invite
-     * token + gửi mail, đồng bộ hành vi với createPlayerForTeamWithUser().
-     * Mỗi dòng là 1 transaction riêng — 1 dòng lỗi không ảnh hưởng dòng khác.
+     * FIX MỚI: student_code bắt buộc trong schema (validate ở
+     * importPlayerRowSchema), ghi vào User khi tạo mới hoặc backfill khi
+     * user có sẵn nhưng chưa có. assertPlayerClassMatchesTeam chạy trong
+     * tx per-row, TRƯỚC khi tạo TeamPlayer — lỗi rơi vào catch hiện có,
+     * tự động log vào result.errors[].reason theo đúng hành vi cũ (1 dòng
+     * lỗi không ảnh hưởng dòng khác).
      */
     async importTeamPlayersFromExcel(team_id: number,
         fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult> {
@@ -862,8 +816,8 @@ export class PlayerService {
         type ValidRow = { rowNum: number; dto: ImportPlayerRowDto };
         const validRows: ValidRow[] = [];
         for (const [i, rawRow] of raw.entries()) {
-            const rowNum = i + 2; // +2: header ở hàng 1, data bắt đầu hàng 2
-            const normalized = normalizeImportRow(rawRow); // dịch header + value tiếng Việt trước khi validate
+            const rowNum = i + 2;
+            const normalized = normalizeImportRow(rawRow);
             const parsed = importPlayerRowSchema.safeParse(normalized);
             if (!parsed.success) {
                 result.failed++;
@@ -884,10 +838,11 @@ export class PlayerService {
 
         const users = await this.prisma.user.findMany({
             where: { email: { in: emails } },
-            select: { id: true, email: true },
+            select: { id: true, email: true, student_code: true },
         });
 
         const userByEmail = new Map(users.map((u) => [u.email, u.id]));
+        const studentCodeByUserId = new Map(users.map((u) => [u.id, u.student_code]));
 
         const userIds = users.map(u => u.id);
         const [players, existingTeamPlayers] = await Promise.all([
@@ -909,10 +864,6 @@ export class PlayerService {
 
         const playerRole = await this.prisma.role.findUnique({ where: { name: PLAYER_ROLE_NAME } });
         if (!playerRole) {
-            // Import xử lý nhiều dòng, throw ngay ở đây sẽ fail toàn bộ file
-            // dù có thể có dòng valid — giữ hành vi báo lỗi tổng quát 1 lần
-            // thay vì per-row, khác với ensurePlayerRole() ở các path khác
-            // (throw ngay vì chỉ ảnh hưởng 1 record).
             throw createAppError(
                 "INTERNAL_SERVER_ERROR",
                 `Role "${PLAYER_ROLE_NAME}" not found — kiểm tra lại seed data bảng roles trước khi import`
@@ -941,7 +892,6 @@ export class PlayerService {
                 continue;
             }
 
-            // Đánh dấu nếu dòng này tạo user mới — dùng để phát invite SAU tx.
             let createdNewUserId: number | null = null;
 
             try {
@@ -953,6 +903,7 @@ export class PlayerService {
                             data: {
                                 email: dto.user_email,
                                 name: dto.name,
+                                student_code: dto.student_code,
                                 password: null,
                                 is_active: false,
                             },
@@ -960,7 +911,13 @@ export class PlayerService {
                         });
                         userId = newUser.id;
                         createdNewUserId = newUser.id;
+                    } else if (!studentCodeByUserId.get(userId)) {
+                        // Backfill MSSV cho user có sẵn nhưng chưa có
+                        await tx.user.update({ where: { id: userId }, data: { student_code: dto.student_code } });
+                        studentCodeByUserId.set(userId, dto.student_code);
                     }
+
+                    await this.assertPlayerClassMatchesTeam(userId, team_id, tx);
 
                     let playerId = existingPlayerId;
                     if (!playerId) {
@@ -999,14 +956,12 @@ export class PlayerService {
                     return { playerId, userId };
                 });
 
-                // Tx đã commit — cập nhật cache cho các dòng tiếp theo trong vòng lặp.
                 userByEmail.set(dto.user_email, userId);
                 playerByUserId.set(userId, playerId);
                 teamPlayerSet.add(playerId);
                 usedJerseyNumbers.add(dto.jersey_number);
                 result.success++;
 
-                // Redis/mail NGOÀI transaction — không tham gia rollback DB.
                 if (createdNewUserId) {
                     try {
                         const inviteToken = await this.issueInviteToken(createdNewUserId);

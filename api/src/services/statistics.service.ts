@@ -314,7 +314,7 @@ export class StatisticsService {
             JOIN users u ON u.id = pl.user_id
             JOIN teams t ON t.id = me.team_id
             WHERE ph.season_id = ${seasonId}
-                AND me.event_type = 'goal'
+                AND me.type = 'goal'
             GROUP BY pl.id, u.name, t.id, t.name
             ORDER BY goal_count DESC, u.name ASC
             LIMIT ${limit}
@@ -340,12 +340,12 @@ export class StatisticsService {
             SELECT
             t.id AS team_id,
             t.name AS team_name,
-            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.event_type = 'yellow_card' THEN 1 ELSE 0 END), 0) AS yellow_count,
-            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.event_type = 'red_card' THEN 1 ELSE 0 END), 0) AS red_count
+            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.type = 'yellow_card' THEN 1 ELSE 0 END), 0) AS yellow_count,
+            COALESCE(SUM(CASE WHEN ph.id IS NOT NULL AND me.type = 'red_card' THEN 1 ELSE 0 END), 0) AS red_count
             FROM teams t
             JOIN season_teams st ON st.team_id = t.id AND st.season_id = ${seasonId}
             LEFT JOIN match_events me ON me.team_id = t.id
-                AND me.event_type IN ('yellow_card', 'red_card')
+                AND me.type IN ('yellow_card', 'red_card')
             LEFT JOIN matches m ON m.id = me.match_id
             LEFT JOIN phases ph ON ph.id = m.phase_id AND ph.season_id = ${seasonId}
             GROUP BY t.id, t.name

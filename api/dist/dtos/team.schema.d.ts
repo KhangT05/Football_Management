@@ -15,18 +15,21 @@ export interface TeamDto {
         phone: string | null;
     } | null;
     user_id: number | null;
+    class_id: number | null;
 }
 export declare const createTeamSchema: z.ZodObject<{
     name: z.ZodString;
     coach_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    class_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
 }, z.core.$strip>;
 export declare const updateTeamSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     coach_name: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     logo: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     description: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    class_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
 }, z.core.$strip>;
 export declare const assignCaptainSchema: z.ZodObject<{
     user_id: z.ZodNumber;

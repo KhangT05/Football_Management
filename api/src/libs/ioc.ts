@@ -1,5 +1,6 @@
 import { ArticleController } from "../controllers/article.controller.js";
 import { AuthController } from "../controllers/auth.controller.js";
+import { ClassController } from "../controllers/class.controller.js";
 import { GroupController } from "../controllers/group.controller.js";
 import { JerseyController } from "../controllers/jersey.controller.js";
 import { KnockoutController } from "../controllers/knockout.controller.js";
@@ -21,6 +22,7 @@ import { UserController } from "../controllers/user.controller.js";
 import { VenueController } from "../controllers/venue.controller.js";
 import { ArticleService } from "../services/article.service.js";
 import { AuthService } from "../services/auth.service.js";
+import { ClassService } from "../services/class.service.js";
 import { GroupService } from "../services/group.service.js";
 import { JerseyService } from "../services/jersey.service.js";
 import { KnockoutService } from "../services/knockout.service.js";
@@ -54,6 +56,7 @@ const controllerFactory = new Map<Function, () => unknown>([
     [RoleController, () => new RoleController(new RoleService(prisma))],
     [AuthController, () => new AuthController(new AuthService(prisma), new UserService(prisma))],
     [VenueController, () => new VenueController(new VenueService(prisma))],
+    [ClassController, () => new ClassController(new ClassService(prisma))],
     [TournamentController, () => new TournamentController(new TournamentService(prisma))],
     [SeasonController, () => new SeasonController(new SeasonService(prisma, new GroupService(prisma)), standingsService)],
     [StatisticsController, () => new StatisticsController(new StatisticsService(prisma))],
