@@ -22,7 +22,7 @@ export interface PlayerDto {
     is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
-    user?: { id: number; name: string; email: string; phone: string | null } | null;
+    user?: { id: number; name: string; email: string; phone: string | null; student_code: string | null } | null;
     user_id: number;
 }
 
@@ -106,7 +106,7 @@ export const bulkDeleteSchema = z.object({
 export const importPlayerRowSchema = z.object({
     name: z.string().trim().min(1, "Họ tên không được để trống").max(150),
     user_email: z.string().trim().toLowerCase().email(),
-    student_code: z.string().trim().min(1, "MSSV bắt buộc").max(30),
+    student_code: z.string().trim().max(30).optional(),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,
     height: z.number().positive().max(999.99).nullable().optional(),
@@ -117,7 +117,7 @@ export const importPlayerRowSchema = z.object({
 export const createPlayerForTeamSchema = z.object({
     name: z.string().trim().min(1).max(150),
     user_email: z.string().trim().toLowerCase().email(),
-    student_code: z.string().trim().min(1, "MSSV bắt buộc").max(30),
+    student_code: z.string().trim().max(30).optional(),
     date_of_birth: z.coerce.date(),
     position: PlayerPositionEnum,
     jersey_number: z.number().int().min(1).max(99),

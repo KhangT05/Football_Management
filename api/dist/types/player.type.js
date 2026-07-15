@@ -13,13 +13,13 @@ export const PLAYER_SELECT = {
     created_at: true,
     updated_at: true,
     user: {
-        select: { id: true, name: true, email: true, phone: true },
+        select: { id: true, name: true, email: true, student_code: true, phone: true },
     },
 };
 export const PLAYER_PUBLIC_SELECT = {
     id: true, date_of_birth: true, position: true, height: true,
     weight: true, nationality: true, avatar: true,
-    user: { select: { id: true, name: true } }, // bỏ email, phone
+    user: { select: { id: true, name: true, student_code: true } }, // bỏ email, phone
 };
 export const TEAM_PLAYER_SELECT = {
     id: true,

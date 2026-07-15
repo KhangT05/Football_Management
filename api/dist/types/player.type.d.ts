@@ -28,6 +28,7 @@ export declare const PLAYER_SELECT: {
             id: true;
             name: true;
             email: true;
+            student_code: true;
             phone: true;
         };
     };
@@ -44,6 +45,7 @@ export declare const PLAYER_PUBLIC_SELECT: {
         select: {
             id: true;
             name: true;
+            student_code: true;
         };
     };
 };
@@ -80,6 +82,7 @@ export declare const TEAM_PLAYER_SELECT: {
                     id: true;
                     name: true;
                     email: true;
+                    student_code: true;
                     phone: true;
                 };
             };
@@ -153,6 +156,7 @@ export declare const PLAYER_SELECT_WITH_SEASONS: {
             id: true;
             name: true;
             email: true;
+            student_code: true;
             phone: true;
         };
     };

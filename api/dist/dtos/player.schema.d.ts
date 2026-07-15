@@ -37,6 +37,7 @@ export interface PlayerDto {
         name: string;
         email: string;
         phone: string | null;
+        student_code: string | null;
     } | null;
     user_id: number;
 }
@@ -153,7 +154,7 @@ export declare const bulkDeleteSchema: z.ZodObject<{
 export declare const importPlayerRowSchema: z.ZodObject<{
     name: z.ZodString;
     user_email: z.ZodString;
-    student_code: z.ZodString;
+    student_code: z.ZodOptional<z.ZodString>;
     date_of_birth: z.ZodCoercedDate<unknown>;
     position: z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";
@@ -169,7 +170,7 @@ export declare const importPlayerRowSchema: z.ZodObject<{
 export declare const createPlayerForTeamSchema: z.ZodObject<{
     name: z.ZodString;
     user_email: z.ZodString;
-    student_code: z.ZodString;
+    student_code: z.ZodOptional<z.ZodString>;
     date_of_birth: z.ZodCoercedDate<unknown>;
     position: z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";

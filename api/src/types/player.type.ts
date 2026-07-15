@@ -27,14 +27,14 @@ export const PLAYER_SELECT = {
     created_at: true,
     updated_at: true,
     user: {
-        select: { id: true, name: true, email: true, phone: true },
+        select: { id: true, name: true, email: true, student_code: true, phone: true },
     },
 } satisfies Prisma.PlayerSelect;
 
 export const PLAYER_PUBLIC_SELECT = {
     id: true, date_of_birth: true, position: true, height: true,
     weight: true, nationality: true, avatar: true,
-    user: { select: { id: true, name: true } }, // bỏ email, phone
+    user: { select: { id: true, name: true, student_code: true } }, // bỏ email, phone
 } satisfies Prisma.PlayerSelect;
 
 export type PlayerPublicRow = Prisma.PlayerGetPayload<{ select: typeof PLAYER_PUBLIC_SELECT }>;
