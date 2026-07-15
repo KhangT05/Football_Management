@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Star } from 'lucide-react';
+import { Star, Trophy } from 'lucide-react';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 import { matchApi, jerseyApi } from '../api';
 
@@ -253,7 +253,7 @@ const AVATAR_PRESET = {
     },
 };
 
-export function TeamAvatar({ name, side, logo, jersey, size = 'md' }) {
+export function TeamAvatar({ name, side, logo, jersey, size = 'md', isWinner }) {
     const p = AVATAR_PRESET[size] ?? AVATAR_PRESET.md;
     const gradientCls = side === 'home'
         ? 'border-navy-light from-blue-700 to-cyan-800 shadow-blue-900/30 hover:border-blue-400'
@@ -283,6 +283,11 @@ export function TeamAvatar({ name, side, logo, jersey, size = 'md' }) {
             <h2 className={`${p.title} text-center font-black text-white uppercase tracking-widest line-clamp-2`}>
                 {name}
             </h2>
+            {isWinner && (
+                <div className="mt-2 flex items-center justify-center gap-1.5 bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border border-amber-500/30 shadow-sm">
+                    <Trophy className="w-3.5 h-3.5" /> Thắng
+                </div>
+            )}
         </div>
     );
 }
