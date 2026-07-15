@@ -205,7 +205,9 @@ export default function MatchModal({ match, onClose }) {
   const [playerState, setPlayerState] = useState({ home: [], away: [], loading: true });
   const [activeTab, setActiveTab] = useState('events');
   const [events, setEvents] = useState([]);
-  const [lineupView, setLineupView] = useState('formation');
+  const [lineupView, setLineupView] = useState({ home: 'formation', away: 'formation' });
+  const toggleLineupView = (side, mode) =>
+    setLineupView(prev => ({ ...prev, [side]: mode }));
   const { home: homePlayers, away: awayPlayers, loading: loadingPlayers } = playerState;
 
   const {
@@ -396,8 +398,8 @@ export default function MatchModal({ match, onClose }) {
                 loading={loadingPlayers}
                 kit={kitFor('home')}
                 events={events}
-                viewMode={lineupView}
-                onToggleView={setLineupView}
+                viewMode={lineupView.home}
+                onToggleView={(mode) => toggleLineupView('home', mode)}
               />
             </div>
             <div className={`${activeTab !== 'events' ? 'hidden lg:flex' : 'flex'} flex-col min-h-0 border border-navy-light/50 rounded-2xl bg-navy-dark/60 p-4 shadow-inner`}>
@@ -417,8 +419,8 @@ export default function MatchModal({ match, onClose }) {
                 loading={loadingPlayers}
                 kit={kitFor('away')}
                 events={events}
-                viewMode={lineupView}
-                onToggleView={setLineupView}
+                viewMode={lineupView.away}
+                onToggleView={(mode) => toggleLineupView('away', mode)}
               />
             </div>
           </div>
