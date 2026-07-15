@@ -282,19 +282,24 @@ export class PlayerService {
      * không phá migration path. Enforce cứng sau khi backfill xong bằng
      * cách đổi Team.class_id thành NOT NULL ở schema.
      */
+    /**
+ * FIX: đọc team.category TRƯỚC — nếu amateur, return ngay, không query User
+ * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
+ * student_code + class match.
+ */
     async assertPlayerClassMatchesTeam(userId, teamId, tx = this.prisma) {
-        const [user, team] = await Promise.all([
-            tx.user.findUniqueOrThrow({
-                where: { id: userId },
-                select: { class_id: true, student_code: true },
-            }),
-            tx.team.findUniqueOrThrow({
-                where: { id: teamId },
-                select: { class_id: true },
-            }),
-        ]);
+        const team = await tx.team.findUniqueOrThrow({
+            where: { id: teamId },
+            select: { category: true, class_id: true },
+        });
+        if (team.category === "amateur")
+            return;
+        const user = await tx.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { class_id: true, student_code: true },
+        });
         if (!user.student_code) {
-            throw createAppError("BAD_REQUEST", "Tài khoản chưa có MSSV — không thể tham gia đội");
+            throw createAppError("BAD_REQUEST", "Tài khoản chưa có MSSV — không thể tham gia đội sinh viên");
         }
         if (team.class_id != null && user.class_id !== team.class_id) {
             throw createAppError("CONFLICT", "Cầu thủ không thuộc lớp của đội");
@@ -452,7 +457,7 @@ export class PlayerService {
                         data: {
                             email: dto.user_email,
                             name: dto.name,
-                            student_code: dto.student_code,
+                            student_code: dto.student_code ?? null,
                             password: null,
                             is_active: false,
                         },
@@ -461,7 +466,7 @@ export class PlayerService {
                     user = created;
                     createdNewUserId = created.id;
                 }
-                else if (!user.student_code) {
+                else if (!user.student_code && dto.student_code) {
                     // Backfill MSSV cho user có sẵn nhưng chưa có
                     await tx.user.update({ where: { id: user.id }, data: { student_code: dto.student_code } });
                 }
@@ -769,7 +774,7 @@ export class PlayerService {
                             data: {
                                 email: dto.user_email,
                                 name: dto.name,
-                                student_code: dto.student_code,
+                                student_code: dto.student_code ?? null,
                                 password: null,
                                 is_active: false,
                             },
@@ -778,7 +783,7 @@ export class PlayerService {
                         userId = newUser.id;
                         createdNewUserId = newUser.id;
                     }
-                    else if (!studentCodeByUserId.get(userId)) {
+                    else if (!studentCodeByUserId.get(userId) && dto.student_code) {
                         // Backfill MSSV cho user có sẵn nhưng chưa có
                         await tx.user.update({ where: { id: userId }, data: { student_code: dto.student_code } });
                         studentCodeByUserId.set(userId, dto.student_code);

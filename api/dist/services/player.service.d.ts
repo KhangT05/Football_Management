@@ -37,6 +37,11 @@ export declare class PlayerService {
      * không phá migration path. Enforce cứng sau khi backfill xong bằng
      * cách đổi Team.class_id thành NOT NULL ở schema.
      */
+    /**
+ * FIX: đọc team.category TRƯỚC — nếu amateur, return ngay, không query User
+ * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
+ * student_code + class match.
+ */
     private assertPlayerClassMatchesTeam;
     private inviteKey;
     private issueInviteToken;
