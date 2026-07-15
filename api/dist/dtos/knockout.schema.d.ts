@@ -86,8 +86,12 @@ export declare const generateKnockoutRequestSchema: z.ZodObject<{
 export declare const advanceWinnerRequestSchema: z.ZodObject<{
     matchId: z.ZodNumber;
     winnerTeamId: z.ZodNumber;
-    venueIds: z.ZodArray<z.ZodNumber>;
-    matchTimes: z.ZodArray<z.ZodString>;
+    venueIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    dailyStartTime: z.ZodOptional<z.ZodString>;
+    dailyEndTime: z.ZodOptional<z.ZodString>;
+    bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
 export type AutoSeedKnockoutRequestDto = z.infer<typeof autoSeedKnockoutRequestSchema>;
 export type KnockoutGenerateOptionsDto = z.infer<typeof knockoutGenerateOptionsSchema>;

@@ -24,7 +24,7 @@ import {
     SwapSeedsInput,
 } from '../types/knockout.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
-import { ScheduleEngine, ScheduleCandidateMatch } from '../libs/schedule.engine.js';
+import { ScheduleEngine, ScheduleCandidateMatch, DEFAULT_VENUE_BUFFER_MINUTES } from '../libs/schedule.engine.js';
 import { buildRound1Pairings, nextPowerOf2 } from '../helper/match.helper.js';
 import { lockSeason } from '../helper/season-lock.helper.js';
 import { shuffle } from '../libs/array.utils.js';
@@ -33,7 +33,15 @@ import { StandingsService } from './standing.service.js';
 const TERMINAL_MATCH_STATUSES: MatchStatus[] = [MatchStatus.finished, MatchStatus.forfeited];
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
-
+// NEW: thứ tự tiền đề giữa các vòng knockout — dùng để chặn tạo phase sau
+// (vd 'final') khi phase trước ('semi_final') chưa tồn tại hoặc còn trận
+// chưa kết thúc. round_of_16 không có tiền đề trong bảng này (vòng đầu tiên).
+const KNOCKOUT_STAGE_PREREQUISITE: Partial<Record<PhaseType, PhaseType>> = {
+    [PhaseType.final]: PhaseType.semi_final,
+    [PhaseType.third_place]: PhaseType.semi_final,
+    [PhaseType.semi_final]: PhaseType.quarter_final,
+    [PhaseType.quarter_final]: PhaseType.round_of_16,
+};
 function vnStartOfDay(d: Date): Date {
     return new Date(d.getTime() - VN_OFFSET_MS);
 }
@@ -449,7 +457,8 @@ export class KnockoutService extends ScheduleEngine {
         const existingCount = await tx.bracketSlot.count({ where: { phase_id: phase.id } });
         if (existingCount > 0)
             throw createAppError('CONFLICT', `Phase ${phase.id} đã có bracket`);
-
+        // NEW: chặn tạo bracket cho phaseType này nếu vòng liền trước chưa xong.
+        await this._assertPreviousStageComplete(tx, seasonId, phaseType);
         const byeSlotNumbers = new Set(
             round1Pairings
                 .map((p, i) => (p.home === null || p.away === null ? i + 1 : null))
@@ -1136,8 +1145,6 @@ export class KnockoutService extends ScheduleEngine {
         return { createdMatchIds, slotMatchLinks };
     }
 
-    // ─── PRIVATE — SCHEDULING ─────────────────────────────────────────────────
-
     private async scheduleMatchBatch(
         matchIds: number[],
         seasonId: number,
@@ -1146,13 +1153,16 @@ export class KnockoutService extends ScheduleEngine {
     ): Promise<ScheduleBatchResult> {
         if (matchIds.length === 0) return { matchesScheduled: 0, failedMatchIds: [] };
 
-        if (!options.venueIds || options.venueIds.length === 0 || !options.matchTimes || options.matchTimes.length === 0) {
+        // FIX: check dailyStartTime/dailyEndTime thay vì matchTimes (đã bỏ fixed slots).
+        if (!options.venueIds || options.venueIds.length === 0 || !options.dailyStartTime || !options.dailyEndTime) {
             return {
                 matchesScheduled: 0,
                 failedMatchIds: matchIds,
-                error: 'Thiếu venueIds hoặc matchTimes — không thể xếp lịch tự động cho các match mới tạo.',
+                error: 'Thiếu venueIds hoặc dailyStartTime/dailyEndTime — không thể xếp lịch tự động cho các match mới tạo.',
             };
         }
+
+        const bufferMinutes = options.bufferMinutes ?? DEFAULT_VENUE_BUFFER_MINUTES;
 
         const [matches, phase, season] = await Promise.all([
             this.prisma.match.findMany({
@@ -1203,8 +1213,8 @@ export class KnockoutService extends ScheduleEngine {
             };
 
         const teamIds = matches.flatMap(m => [m.home_team_id, m.away_team_id]);
-        const [takenSet, recentMatches] = await Promise.all([
-            this.loadTakenSlots(options.venueIds, startDate, rangeEnd),
+        const [takenWindows, recentMatches] = await Promise.all([
+            this.loadTakenVenueWindows(options.venueIds, startDate, rangeEnd),
             this.prisma.match.findMany({
                 where: {
                     phase: { season_id: seasonId },
@@ -1221,14 +1231,18 @@ export class KnockoutService extends ScheduleEngine {
             }),
         ]);
 
-        const pool = this.buildSlotPool(options.venueIds, startDate, rangeEnd, options.matchTimes, takenSet);
+        const pool = this.buildSlotPool(
+            options.venueIds, startDate, rangeEnd, options.dailyStartTime,
+            options.dailyEndTime, bufferMinutes, takenWindows,
+            options.excludedDates ?? [],
+        );
         if (pool.length < matches.length) {
             return {
                 matchesScheduled: 0,
                 failedMatchIds: matchIds,
                 error:
                     `Không đủ slot cho knockout: cần ${matches.length}, chỉ có ${pool.length}. ` +
-                    `Thêm venueId / matchTime hoặc mở rộng end_date của season.`,
+                    `Thêm venueId, mở rộng khung giờ, giảm bufferMinutes, hoặc mở rộng end_date của season.`,
             };
         }
 
@@ -1247,12 +1261,6 @@ export class KnockoutService extends ScheduleEngine {
             round: m.round,
         }));
 
-        // Player-sharing conflict avoidance — same pattern as
-        // ScheduleService.autoScheduleMatches: preload conflictMap +
-        // occupiedWindows from the WHOLE system (not just this season) so
-        // the greedy search itself avoids slots already claimed by a
-        // related team, instead of assigning first and discovering the
-        // conflict only after write.
         const conflictContext = await this.loadPlayerConflictContext(this.prisma, teamIds);
 
         const { updates, unscheduled } = this.scheduleMatchesWithRetry(
@@ -1261,12 +1269,6 @@ export class KnockoutService extends ScheduleEngine {
 
         const failedFromCollision = await this.writeScheduleBatch(updates);
 
-        // Quarantine pass is a safety net for the rare race between
-        // loadPlayerConflictContext (read, above) and writeScheduleBatch
-        // (write, above) — e.g. a concurrent rescheduleMatch/autoSchedule
-        // committing into that exact window for a shared team/player. With
-        // avoidance already applied during search, the number quarantined
-        // here is expected to be ~0 under normal conditions.
         const writtenIds = updates
             .map(u => u.id)
             .filter(id => !failedFromCollision.includes(id));
@@ -1338,5 +1340,66 @@ export class KnockoutService extends ScheduleEngine {
                 WHERE id IN (${Prisma.join(ids)})
             `;
         }
+    }
+    /**
+ * Guard dùng NGAY TRONG transaction tạo bracket — chặn tạo phase 'final'/
+ * 'third_place'/'semi_final'/'quarter_final' khi phase liền trước chưa tồn
+ * tại hoặc còn match chưa kết thúc (finished/forfeited).
+ */
+    private async _assertPreviousStageComplete(
+        tx: Prisma.TransactionClient,
+        seasonId: number,
+        phaseType: PhaseType,
+    ): Promise<void> {
+        const priorType = KNOCKOUT_STAGE_PREREQUISITE[phaseType];
+        if (!priorType) return;
+
+        const priorPhase = await tx.phase.findFirst({
+            where: { season_id: seasonId, format: PhaseFormat.knockout, type: priorType, is_active: true },
+            select: { id: true },
+        });
+        if (!priorPhase)
+            throw createAppError(
+                'CONFLICT',
+                `Chưa có phase '${priorType}' cho season ${seasonId} — không thể tạo '${phaseType}' ` +
+                `trước khi hoàn thành ${priorType}`,
+            );
+
+        const unfinishedCount = await tx.match.count({
+            where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
+        });
+        if (unfinishedCount > 0)
+            throw createAppError(
+                'CONFLICT',
+                `Còn ${unfinishedCount} trận '${priorType}' chưa kết thúc — hoàn thành trước khi tạo '${phaseType}'`,
+            );
+    }
+
+    /**
+     * NEW: đọc-only version cho FE — gọi TRƯỚC khi bấm "Tạo Sơ Đồ Bracket" để
+     * disable nút + hiện lý do, thay vì để user ăn lỗi 409 sau khi submit. Cần
+     * thêm route (chưa có sẵn controller trong context này):
+     *   GET /knockout/seasons/:seasonId/stage-readiness?phaseType=final
+     */
+    async getStageReadiness(seasonId: number, targetPhaseType: PhaseType): Promise<{
+        ready: boolean;
+        priorPhaseType: PhaseType | null;
+        priorPhaseExists: boolean;
+        unfinishedCount: number;
+    }> {
+        const priorType = KNOCKOUT_STAGE_PREREQUISITE[targetPhaseType] ?? null;
+        if (!priorType) return { ready: true, priorPhaseType: null, priorPhaseExists: true, unfinishedCount: 0 };
+
+        const priorPhase = await this.prisma.phase.findFirst({
+            where: { season_id: seasonId, format: PhaseFormat.knockout, type: priorType, is_active: true },
+            select: { id: true },
+        });
+        if (!priorPhase)
+            return { ready: false, priorPhaseType: priorType, priorPhaseExists: false, unfinishedCount: 0 };
+
+        const unfinishedCount = await this.prisma.match.count({
+            where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
+        });
+        return { ready: unfinishedCount === 0, priorPhaseType: priorType, priorPhaseExists: true, unfinishedCount };
     }
 }

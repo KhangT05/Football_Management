@@ -94,7 +94,6 @@ export declare class MatchResultService {
         isKnockout: boolean;
         groupId: number | null;
     }>;
-    overrideResult(matchId: number, input: EditScoreInput, scheduleOptions: OptionalScheduleOptions): Promise<void>;
     /**
      * FIX (player stats drift — bug report #2): trước đây `played` set chỉ
      * suy từ match_events HIỆN TẠI của match này (đọc SAU khi đã

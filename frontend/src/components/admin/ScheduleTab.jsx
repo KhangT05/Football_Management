@@ -116,6 +116,7 @@ function TimeField({ value, onChange }) {
 
 // ─── Component: Reschedule Modal ──────────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
+  const toast = useToastStore();
   // FIX: thay round-trip qua getTimezoneOffset() (phụ thuộc TZ của OS máy
   // admin — sai nếu admin remote vào server/VPS TZ khác VN) bằng conversion
   // tường minh theo Asia/Ho_Chi_Minh (+7 cố định, không DST).
@@ -125,10 +126,25 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // FIX (#5 review): RescheduleInput (BE type) khai scheduledAt: Date và
+    // venueId: number — CẢ HAI đều required, không optional. rescheduleMatch()
+    // ở schedule.service.ts gọi ngay input.scheduledAt.getTime() không
+    // null-check — nếu FE gửi undefined (field trống), BE crash với
+    // TypeError (500) thay vì trả lỗi nghiệp vụ có ý nghĩa. Validate ở đây
+    // trước khi gọi onSave, cùng pattern đã làm ở GenerateScheduleModal.
+    if (!scheduledAt) {
+      toast.warning('Vui lòng chọn thời gian thi đấu.');
+      return;
+    }
+    if (!venueId) {
+      toast.warning('Vui lòng chọn sân thi đấu.');
+      return;
+    }
+
     setIsSaving(true);
     await onSave(match.id, {
-      scheduledAt: scheduledAt ? vnInputToUtcDate(scheduledAt) : undefined,
-      venueId: venueId ? Number(venueId) : undefined,
+      scheduledAt: vnInputToUtcDate(scheduledAt),
+      venueId: Number(venueId),
     });
     setIsSaving(false);
   };
@@ -183,6 +199,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
             </label>
             <input
               type="datetime-local"
+              required
               value={scheduledAt}
               onChange={e => setScheduledAt(e.target.value)}
               className="w-full px-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon transition-colors scheme-dark"
@@ -194,6 +211,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
               <MapPin className="w-4 h-4 text-blue-400" /> Sân thi đấu
             </label>
             <select
+              required
               value={venueId}
               onChange={e => setVenueId(e.target.value)}
               className="w-full px-4 py-3 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:outline-none focus:border-neon transition-colors appearance-none"
@@ -222,15 +240,32 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 // `season` (start_date/end_date/status của season đang chọn) được truyền từ
 // ScheduleTab để validate TRỰC TIẾP theo season: BE tự lấy khoảng ngày xếp
 // lịch từ season.start_date/end_date (xem autoScheduleMatches) — KHÔNG nhận
-// startDate/endDate/playableDates từ client (gửi lên sẽ bị BE trả 422
-// "excess property"). Modal giờ chỉ dùng startDate/endDate/playableDates để
-// tính "ngày nghỉ" hiển thị cho admin tham khảo, kẹp trong đúng khung ngày
-// của season — không còn gửi 3 field này lên API nữa.
+// startDate/endDate từ client (gửi lên sẽ bị BE trả 422 "excess property").
+// Modal dùng startDate/endDate để tính "ngày nghỉ" (excludedDates), kẹp
+// trong đúng khung ngày của season.
+//
+// FIX (#1 review — excludedDates không còn là UI ảo): trước đây
+// excludedDates/playableDates CHỈ dùng để hiển thị UI, KHÔNG gửi lên API —
+// admin tick "bỏ ngày X" nhưng buildSlotPool ở BE vẫn xếp trận vào đúng
+// ngày đó (false affordance). Giờ ScheduleOptions (BE) đã có field
+// `excludedDates?: string[]` và buildSlotPool đã skip đúng ngày — apiPayload
+// bên dưới gửi thẳng excludedDates lên, không còn là "chỉ để hiển thị" nữa.
 function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const toast = useToastStore();
+  // FIX (#2 review): scheduleApi không tồn tại trong dự án này (chỉ có
+  // scheduleStore) — bản cũ gọi `scheduleApi.getGroupStageRoundsSummary(...)`,
+  // một ReferenceError bị nuốt trong catch (chỉ console.error), khiến
+  // round-selector không bao giờ hiển thị. Dùng thẳng action có sẵn trong
+  // scheduleStore (fetchRoundsSummary), action này gọi đúng matchApi bên
+  // dưới thay vì 1 module scheduleApi không tồn tại.
+  const fetchRoundsSummary = useScheduleStore(s => s.fetchRoundsSummary);
+
   const [checkingGroups, setCheckingGroups] = useState(true);
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
   const [groupCheckError, setGroupCheckError] = useState(false);
+  const [roundSummaries, setRoundSummaries] = useState([]);
+  const [selectedRounds, setSelectedRounds] = useState([]);
+  const [loadingRounds, setLoadingRounds] = useState(false);
 
   const [formData, setFormData] = useState({
     desiredGroupCount: 1,
@@ -257,12 +292,13 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const blocksImplicitGroupCreation = isSeasonOngoing && !hasDrawnGroups && !checkingGroups;
   const isModalDisabled = isSeasonClosed || blocksImplicitGroupCreation;
 
+  const [dailyStartTime, setDailyStartTime] = useState('08:00');
+  const [dailyEndTime, setDailyEndTime] = useState('20:00');
+  const [bufferMinutes, setBufferMinutes] = useState(30);
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [excludedDates, setExcludedDates] = useState([]);
-
-  const [timeSlots, setTimeSlots] = useState(['08:00', '15:00']);
-  const [newTime, setNewTime] = useState('');
 
   const [selectedVenues, setSelectedVenues] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -292,14 +328,31 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     );
   };
 
-  const addTimeSlot = () => {
-    if (!newTime || newTime.length < 5) return;
-    setTimeSlots(prev => (prev.includes(newTime) ? prev : [...prev, newTime].sort()));
-    setNewTime('');
-  };
+  // Chỉ có ý nghĩa khi hasDrawnGroups (nhánh generateFromGroups) — nhánh tự
+  // tạo bảng mới (generate) chưa có match nào tồn tại nên round summary luôn rỗng.
+  useEffect(() => {
+    if (!seasonId || !hasDrawnGroups) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingRounds(true);
+      try {
+        const payload = await fetchRoundsSummary(seasonId);
+        if (!cancelled) {
+          setRoundSummaries(payload ?? []);
+          // mặc định chọn hết round chưa xếp xong
+          setSelectedRounds((payload ?? []).filter(r => !r.fullyScheduled).map(r => r.round));
+        }
+      } catch (err) {
+        console.error('[GenerateScheduleModal] fetch round summary failed:', err);
+      } finally {
+        if (!cancelled) setLoadingRounds(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [seasonId, hasDrawnGroups, fetchRoundsSummary]);
 
-  const removeTimeSlot = (t) => {
-    setTimeSlots(prev => prev.filter(x => x !== t));
+  const toggleRound = (round) => {
+    setSelectedRounds(prev => prev.includes(round) ? prev.filter(r => r !== round) : [...prev, round]);
   };
 
   useEffect(() => {
@@ -397,28 +450,49 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       toast.warning('Không có ngày nào có thể đá trong khoảng đã chọn.');
       return;
     }
-    if (timeSlots.length === 0) {
-      toast.warning('Vui lòng chọn ít nhất một khung giờ đá.');
+
+    if (!dailyStartTime || !dailyEndTime) {
+      toast.warning('Vui lòng nhập khung giờ hoạt động trong ngày (bắt đầu & kết thúc).');
+      return;
+    }
+    if (dailyStartTime >= dailyEndTime) {
+      toast.warning('Giờ bắt đầu phải trước giờ kết thúc.');
       return;
     }
 
     setIsGenerating(true);
 
-    // CHỈ gửi field mà BE thực sự chấp nhận (venueIds, matchTimes,
-    // minRestDaysPerTeam, + desiredGroupCount/minGroupSize/maxGroupSize cho
-    // nhánh tự chia bảng, doubleRound). startDate/endDate/playableDates ở
-    // trên CHỈ dùng để tính toán/hiển thị UI (ngày nghỉ) — BE tự lấy khoảng
-    // ngày xếp lịch từ season.start_date/end_date, gửi thêm 3 field này lên
-    // API sẽ bị 422 "excess property" (đúng lỗi bạn gặp).
+    // CHỈ gửi field mà BE thực sự chấp nhận (ScheduleOptions +
+    // AutoScheduleFilterOptions + phần riêng cho từng nhánh). startDate/
+    // endDate/playableDates ở trên CHỈ dùng để tính/hiển thị UI (BE tự lấy
+    // khoảng ngày xếp lịch từ season.start_date/end_date) — gửi thêm 2 field
+    // này lên API sẽ bị 422 "excess property".
+    //
+    // FIX (#1): excludedDates giờ ĐƯỢC GỬI THẬT lên BE — ScheduleOptions đã
+    // có field này và buildSlotPool đã implement skip theo ngày VN-lịch.
     const apiPayload = {
       minRestDaysPerTeam: Number(formData.minRestDaysPerTeam),
       venueIds: selectedVenues.map(Number),
-      matchTimes: timeSlots,
+      dailyStartTime,
+      dailyEndTime,
+      bufferMinutes: Number(bufferMinutes),
+      excludedDates,
     };
 
     try {
       if (hasDrawnGroups) {
-        await onGenerateFromGroups(seasonId, { ...apiPayload, doubleRound: false });
+        // FIX (#3): trước đây selectedRounds không được gửi lên BE dù round-
+        // selector UI cho tick chọn — GenerateFromGroupsOptions (BE) chấp
+        // nhận rounds/groupIds đúng cho mục đích này (AutoScheduleFilterOptions).
+        // Chỉ đính kèm khi có ít nhất 1 round được chọn — mảng rỗng hoặc
+        // roundSummaries chưa load được thì giữ hành vi cũ (xếp hết mọi
+        // round chưa xong), tránh vô tình gửi rounds:[] khiến BE lọc ra 0
+        // match nào.
+        await onGenerateFromGroups(seasonId, {
+          ...apiPayload,
+          doubleRound: false,
+          ...(selectedRounds.length > 0 ? { rounds: selectedRounds } : {}),
+        });
       } else {
         // FIX: nhánh này tự tạo bảng mới (desiredGroupCount/minGroupSize/
         // maxGroupSize) — chỉ còn có thể chạy tới đây khi hasDrawnGroups
@@ -493,7 +567,40 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 bảng, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
               </p>
             )}
-
+            {hasDrawnGroups && roundSummaries.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Chọn vòng đấu cần xếp lịch
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {roundSummaries.map(r => (
+                    <button
+                      key={r.round}
+                      type="button"
+                      disabled={r.fullyScheduled}
+                      onClick={() => toggleRound(r.round)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${selectedRounds.includes(r.round)
+                        ? 'bg-neon/10 border-neon text-neon'
+                        : 'bg-navy-dark border-navy-light text-gray-400'
+                        }`}
+                    >
+                      Vòng {r.round} ({r.unscheduled}/{r.total} chưa xếp)
+                      {r.fullyScheduled && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+                {selectedRounds.length === 0 && (
+                  <p className="text-[11px] text-amber-400/80 italic">
+                    Chưa chọn vòng nào — hệ thống sẽ xếp lịch cho TẤT CẢ vòng chưa xong (không lọc theo round).
+                  </p>
+                )}
+              </div>
+            )}
+            {loadingRounds && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang tải danh sách vòng đấu...
+              </div>
+            )}
             <fieldset disabled={isModalDisabled} className="space-y-6 disabled:opacity-50">
               {hasDrawnGroups ? (
                 <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
@@ -540,7 +647,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
               <div className="space-y-3">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-400" /> Khoảng ngày thi đấu (tham khảo — chọn ngày nghỉ)
+                  <Calendar className="w-4 h-4 text-emerald-400" /> Khoảng ngày thi đấu — chọn ngày nghỉ
                 </label>
                 {seasonHasDateRange && (
                   <p className="text-[11px] text-gray-500 italic flex items-center gap-1.5">
@@ -610,35 +717,30 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 )}
               </div>
 
-              {/* Khung giờ đá — TimeField custom, không phụ thuộc OS locale */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-400" /> Khung giờ đá (giờ VN, 24h)
+                  <Clock className="w-4 h-4 text-blue-400" /> Khung giờ hoạt động trong ngày (giờ VN, 24h)
                 </label>
-                <div className="flex items-center gap-2">
-                  <TimeField value={newTime} onChange={setNewTime} />
-                  <button
-                    type="button"
-                    onClick={addTimeSlot}
-                    disabled={!newTime || newTime.length < 5}
-                    className="px-4 py-2.5 rounded-xl bg-navy-dark border border-navy-light text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-40 flex items-center gap-1.5 font-bold text-sm"
-                  >
-                    <Plus className="w-4 h-4" /> Thêm
-                  </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
+                    <TimeField value={dailyStartTime} onChange={setDailyStartTime} />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
+                    <TimeField value={dailyEndTime} onChange={setDailyEndTime} />
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {timeSlots.length === 0 ? (
-                    <span className="text-xs text-gray-500 italic">Chưa có khung giờ nào — thêm ít nhất một khung giờ.</span>
-                  ) : (
-                    timeSlots.map(t => (
-                      <span key={t} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black bg-blue-500/10 border border-blue-500/30 text-blue-300">
-                        {t}
-                        <button type="button" onClick={() => removeTimeSlot(t)} className="text-blue-300/70 hover:text-white">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))
-                  )}
+                <div className="space-y-1 max-w-xs">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">
+                    Cách quãng tối thiểu giữa 2 trận cùng sân (phút)
+                  </span>
+                  <input
+                    type="number" min="0"
+                    value={bufferMinutes}
+                    onChange={e => setBufferMinutes(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
+                  />
                 </div>
               </div>
 
@@ -1062,7 +1164,13 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const matches = useMemo(() => {
     if (!effectiveSeasonId) return [];
     let list = getMatchesFromCache(Number(effectiveSeasonId));
-    list = list.filter(m => (m.phase?.format ?? m.phaseFormat) !== 'knockout');
+    // FIX (#4 review): BE MATCH_CARD_INCLUDE trước đây KHÔNG có field
+    // `phase` — `m.phase?.format ?? m.phaseFormat` luôn undefined, filter
+    // luôn true, match knockout vẫn lọt vào Schedule Tab (tab chỉ dành cho
+    // group-stage). Đã bổ sung `phase: { select: { format: true } }` vào
+    // MATCH_CARD_INCLUDE ở schedule.service.ts — giờ đọc thẳng
+    // `m.phase?.format`, bỏ fallback `?? m.phaseFormat` vô nghĩa.
+    list = list.filter(m => m.phase?.format !== 'knockout');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       list = list.filter(m => {

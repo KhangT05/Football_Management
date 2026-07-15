@@ -4,7 +4,7 @@ import {
 } from 'tsoa';
 import { ScheduleService } from '../services/schedule.service.js';
 import * as scheduleSchema from '../dtos/schedule.schema.js';
-import { GenerateResult, MatchByTeamRow } from '../types/schedule.type.js';
+import { GenerateResult, MatchByTeamRow, RoundSummary } from '../types/schedule.type.js';
 import { rescheduleMatchSchema } from '../dtos/schedule.schema.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { Match } from '../generated/prisma/client.js';
@@ -27,7 +27,21 @@ export class ScheduleController extends Controller {
         this.setStatus(201);
         return this.service.generateGroupsAndSchedule(seasonId, parsed);
     }
-
+    // NEW: round-selector cho GenerateScheduleModal — cho biết mỗi round
+    // group_stage còn bao nhiêu match chưa xếp lịch. groupIds query param
+    // (CSV) optional — nếu admin đã chọn subset bảng đấu trước khi mở
+    // round selector, chỉ tính round trong phạm vi đó.
+    @Security('jwt', ['organizing'])
+    @Get('seasons/{seasonId}/rounds-summary')
+    async getRoundsSummary(
+        @Path() seasonId: number,
+        @Query() groupIds?: string,
+    ): Promise<RoundSummary[]> {
+        const parsedGroupIds = groupIds
+            ? groupIds.split(',').map(Number).filter(n => !Number.isNaN(n))
+            : undefined;
+        return this.service.getGroupStageRoundsSummary(seasonId, parsedGroupIds);
+    }
     /**
      * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
      * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc

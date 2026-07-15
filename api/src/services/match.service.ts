@@ -553,7 +553,7 @@ export class MatchLifecycleService {
         });
     }
 
-    async resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<void> {
+    async resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<CorrectionResult> {
         const { isKnockout, groupId } = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
 
@@ -610,13 +610,17 @@ export class MatchLifecycleService {
             return { isKnockout, groupId: match.group_id };
         });
 
+        const warnings: string[] = [];
         if (!isKnockout && groupId) {
             try {
                 await this.matchResultService.recomputeStandingsFor(groupId);
             } catch (err) {
-                console.error(`[resolveAppeal] recompute standings failed for group ${groupId}:`, err);
+                const msg = `Recompute standings thất bại cho group ${groupId}: ${err instanceof Error ? err.message : String(err)}`;
+                console.error(`[resolveAppeal] ${msg}`);
+                warnings.push(msg);
             }
         }
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
 
     private async _assertCorrectionWindow(matchId: number, client: DbClient = this.prisma): Promise<void> {
@@ -675,7 +679,6 @@ export class MatchLifecycleService {
     async addEvent(
         matchId: number,
         input: AddEventInput,
-        scheduleOptions: OptionalScheduleOptions,
     ): Promise<CorrectionResult> {
         const { groupId, isKnockout } = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
@@ -756,7 +759,6 @@ export class MatchLifecycleService {
         matchId: number,
         eventId: number,
         input: EditEventInput,
-        scheduleOptions: OptionalScheduleOptions,
     ): Promise<CorrectionResult> {
         if (input.playerId != null) {
             const exists = await this.prisma.player.findUnique({ where: { id: input.playerId }, select: { id: true } });
@@ -845,7 +847,6 @@ export class MatchLifecycleService {
     async editScore(
         matchId: number,
         input: EditScoreInput,
-        scheduleOptions: OptionalScheduleOptions,
     ): Promise<CorrectionResult> {
         const { isKnockout, groupId } = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;

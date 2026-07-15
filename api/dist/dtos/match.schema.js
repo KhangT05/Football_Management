@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { MatchEventType, MatchPeriod, MatchResultType } from '../generated/prisma/client.js';
-// ─── Record event ─────────────────────────────────────────────────────────────
+// Body rỗng về data match — mọi data đã lưu lúc finalize/manual-score.
+// venueIds/dailyStartTime/dailyEndTime/bufferMinutes cho knockout advance
+// match tiếp theo nếu cần (advanceWinner -> ScheduleEngine continuous slot).
+const dailyTimeField = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Định dạng phải là HH:mm');
 export const RecordEventSchema = z
     .object({
     playerId: z.coerce.number().int().positive().optional(),
@@ -64,21 +67,24 @@ export const ManualScoreSchema = z
     || (d.homePenalty !== undefined && d.awayPenalty !== undefined), { path: ['homePenalty'], message: 'homePenalty + awayPenalty bắt buộc khi resultType = penalty' })
     .refine(d => d.resultType !== MatchResultType.penalty
     || d.homePenalty !== d.awayPenalty, { path: ['homePenalty'], message: 'Penalty không được hoà' });
-// ─── Confirm official ─────────────────────────────────────────────────────────
-// Body rỗng về data match — mọi data đã lưu lúc finalize/manual-score.
-// venueIds/matchTimes cho knockout advance match tiếp theo nếu cần.
 export const ConfirmOfficialSchema = z.object({
     venueIds: z.array(z.coerce.number().int().positive()).optional(),
-    matchTimes: z.array(z.string().datetime()).optional(),
-});
-// ─── Forfeit ──────────────────────────────────────────────────────────────────
+    dailyStartTime: dailyTimeField.optional(),
+    dailyEndTime: dailyTimeField.optional(),
+    bufferMinutes: z.coerce.number().int().positive().optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+}).refine(d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime, { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' });
 export const ForfeitMatchSchema = z.object({
     forfeitingTeamId: z.coerce.number().int().positive(),
     // Schedule options cho knockout advance sau forfeit
     venueIds: z.array(z.coerce.number().int().positive()).optional(),
-    matchTimes: z.array(z.string().datetime()).optional(),
-});
-// ─── Abandon ─────────────────────────────────────────────────────────────────
+    dailyStartTime: dailyTimeField.optional(),
+    dailyEndTime: dailyTimeField.optional(),
+    bufferMinutes: z.coerce.number().int().positive().optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+}).refine(d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime, { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' });
 export const AbandonMatchSchema = z.object({
     minute: z.coerce.number().int().min(0).max(130),
     reason: z.string().max(1000).optional(),

@@ -79,7 +79,7 @@ export declare class MatchController extends Controller {
      * overturn = đảo ngược kết quả → overturned + recompute standings.
      * Knockout overturn chưa hỗ trợ tự động (bracket đã advance).
      */
-    resolveAppeal(id: number, body: matchSchema.ResolveAppealDto): Promise<void>;
+    resolveAppeal(id: number, body: matchSchema.ResolveAppealDto): Promise<CorrectionApiResult>;
     /**
      * Thêm event bị sót sau khi match finished.
      * Chỉ trong 15p kể từ played_at. period bắt buộc (AddEventInput).
@@ -93,7 +93,7 @@ export declare class MatchController extends Controller {
      * recompute standings/player stats thành công hay fail âm thầm. Đổi sang
      * 200 + trả nguyên object.
      */
-    addEvent(id: number, body: matchType.AddEventInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
+    addEvent(id: number, body: matchType.AddEventInput): Promise<CorrectionApiResult>;
     /**
      * Xóa event nhập sai sau khi match finished.
      * Chỉ trong 15p kể từ played_at.
@@ -104,22 +104,8 @@ export declare class MatchController extends Controller {
      * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
      */
     deleteEvent(id: number, eventId: number, query: matchSchema.DeleteEventQueryDto): Promise<CorrectionApiResult>;
-    /**
-     * Sửa event (minute, type, player, period, note) sau khi match finished.
-     * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
-     * Tự recompute MatchResult sau khi sửa.
-     *
-     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
-     */
-    editEvent(id: number, eventId: number, body: matchType.EditEventInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
-    /**
-     * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
-     * Chỉ trong 15p kể từ played_at.
-     * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
-     *
-     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
-     */
-    editScore(id: number, body: matchType.EditScoreInput & matchSchema.ConfirmOfficialDto): Promise<CorrectionApiResult>;
+    editEvent(id: number, eventId: number, body: matchType.EditEventInput): Promise<CorrectionApiResult>;
+    editScore(id: number, body: matchType.EditScoreInput): Promise<CorrectionApiResult>;
     /**
  * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
  *

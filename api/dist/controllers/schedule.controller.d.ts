@@ -1,13 +1,14 @@
 import { Controller } from 'tsoa';
 import { ScheduleService } from '../services/schedule.service.js';
 import * as scheduleSchema from '../dtos/schedule.schema.js';
-import { GenerateResult, MatchByTeamRow } from '../types/schedule.type.js';
+import { GenerateResult, MatchByTeamRow, RoundSummary } from '../types/schedule.type.js';
 import { PaginatedResult } from '../types/queryable.type.js';
 import { Match } from '../generated/prisma/client.js';
 export declare class ScheduleController extends Controller {
     private service;
     constructor(service: ScheduleService);
     generateSchedule(seasonId: number, body: scheduleSchema.GenerateScheduleDto): Promise<GenerateResult>;
+    getRoundsSummary(seasonId: number, groupIds?: string): Promise<RoundSummary[]>;
     /**
      * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
      * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc

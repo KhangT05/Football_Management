@@ -15,20 +15,14 @@ export type GreedyPassResult = {
     unscheduled: number[];
 };
 
-// Nguồn chân lý DUY NHẤT cho "1 trận chiếm bao lâu" khi tính overlap —
-// dùng ở CẢ ScheduleEngine (greedy search) LẪN ScheduleService
-// (rescheduleMatch, quarantine pass). Trước đây ScheduleService tự định
-// nghĩa 1 bản riêng — dễ lệch giá trị nếu sửa 1 chỗ quên chỗ kia. Export ra
-// đây, ScheduleService import lại thay vì tự khai báo.
 export const ASSUMED_MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h (đá + nghỉ + dự phòng)
 
-// Status không tính vào conflict/occupancy check — trận đã huỷ/xử thua
-// không còn giữ chỗ lịch của team/player nữa.
-const NON_BLOCKING_STATUSES: MatchStatus[] = [MatchStatus.cancelled, MatchStatus.forfeited];
+// NEW: nguồn chân lý DUY NHẤT cho "cách quãng tối thiểu giữa 2 trận cùng sân
+// cùng ngày" khi caller không truyền bufferMinutes — dùng ở ScheduleService,
+// KnockoutService, và làm mặc định cho rescheduleMatch.
+export const DEFAULT_VENUE_BUFFER_MINUTES = 30;
 
-// Số lần thử lại greedy scheduling với thứ tự match xáo trộn khác nhau, giữ
-// lại kết quả có ít match thất bại nhất. Dùng CHUNG cho ScheduleService
-// (round-robin) và KnockoutService (bracket).
+const NON_BLOCKING_STATUSES: MatchStatus[] = [MatchStatus.cancelled, MatchStatus.forfeited];
 const SCHEDULE_RESTARTS = 20;
 
 type TimeWindow = { start: number; end: number };
@@ -41,46 +35,56 @@ export class ScheduleEngine {
     }
 
     /**
-     * FIX: Slot giờ cache `scheduledAtMs` (epoch ms, đã tính vnTimeToUtc) ngay
-     * tại thời điểm build — trước đây field này KHÔNG được lưu, khiến 2 nơi
-     * downstream tự tính lại timestamp theo 2 cách khác nhau:
-     *   - findEarliestValidSlot dùng `date.getTime()` — bỏ qua giờ trong ngày,
-     *     rest-days constraint sai lệch tới ~23h59 tuỳ giờ đá.
-     *   - orderByMostConstrained dùng `vnTimeToUtc(date, time).getTime()` — đúng.
-     * MRV ordering và assignment thật do đó dùng 2 nguồn sự thật khác nhau
-     * trong cùng 1 pass. Cache 1 lần tại đây, mọi nơi khác đọc lại giá trị
-     * này thay vì tính lại.
+     * FIX (bỏ fixed matchTimes, chuyển continuous slot): trước đây pool chỉ
+     * gồm đúng N khung giờ cố định/ngày (matchTimes: string[]) — 2 trận cùng
+     * sân ở 2 matchTimes gần nhau vẫn được coi hợp lệ dù cách nhau <30p, và
+     * admin phải tự đoán khung giờ "đủ xa" nhau. Giờ sinh slot LIÊN TỤC từ
+     * dailyStartTime đến dailyEndTime, mỗi slot cách slot trước đúng
+     * `ASSUMED_MATCH_DURATION_MS + bufferMinutes` — invariant "cách quãng tối
+     * thiểu" nằm ngay trong cách sinh pool, không cần validate rời rạc sau.
      *
-     * Yêu cầu: type Slot (types/schedule.type.ts) cần thêm field
-     * `scheduledAtMs: number`.
+     * takenWindows (Map venue_id -> danh sách [start,end] các trận ĐÃ có
+     * scheduled_at trong DB, KHÔNG giới hạn theo grid của lần generate này)
+     * được check bằng OVERLAP + buffer, không phải exact-timestamp-match như
+     * bản Set<string> cũ — vì trận đã tồn tại có thể không nằm đúng trên grid
+     * của lần build này (buffer/dailyStartTime khác lần trước).
      */
     protected buildSlotPool(
         venueIds: number[],
         startDate: Date,
         rangeEnd: Date,
-        matchTimes: string[],
-        takenSet: Set<string>,
+        dailyStartTime: string,
+        dailyEndTime: string,
+        bufferMinutes: number,
+        takenWindows: Map<number, TimeWindow[]>,
+        excludedDates: string[] = [], // NEW — xem comment ScheduleOptions.excludedDates
     ): Slot[] {
         const slots: Slot[] = [];
+        const bufferMs = bufferMinutes * 60_000;
+        const stepMs = ASSUMED_MATCH_DURATION_MS + bufferMs;
+        const excludedSet = new Set(excludedDates);
         const cursor = new Date(startDate);
-
         while (cursor <= rangeEnd) {
+            // NEW: so theo NGÀY-LỊCH-VN của cursor (không phải UTC date) — nhất
+            // quán với vnTimeToUtc bên dưới, tránh lệch ngày do VN = UTC+7.
+            const vnDateStr = formatInTimeZone(cursor, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+            if (excludedSet.has(vnDateStr)) {
+                cursor.setUTCDate(cursor.getUTCDate() + 1);
+                continue;
+            }
             for (const venueId of venueIds) {
-                for (const time of matchTimes) {
-                    const dt = this.vnTimeToUtc(cursor, time);
-                    if (!takenSet.has(`${venueId}_${dt.toISOString()}`)) {
-                        slots.push({
-                            venue_id: venueId,
-                            date: new Date(cursor),
-                            time,
-                            scheduledAtMs: dt.getTime(),
-                        });
-                    }
+                const dayStartMs = this.vnTimeToUtc(cursor, dailyStartTime).getTime();
+                const dayEndMs = this.vnTimeToUtc(cursor, dailyEndTime).getTime();
+                const windows = takenWindows.get(venueId) ?? [];
+                for (let t = dayStartMs; t + ASSUMED_MATCH_DURATION_MS <= dayEndMs; t += stepMs) {
+                    const slotEnd = t + ASSUMED_MATCH_DURATION_MS;
+                    const conflicts = windows.some(w => t < w.end + bufferMs && (w.start - bufferMs) < slotEnd);
+                    if (conflicts) continue;
+                    slots.push({ venue_id: venueId, scheduledAtMs: t });
                 }
             }
             cursor.setUTCDate(cursor.getUTCDate() + 1);
         }
-
         return slots.sort((a, b) => a.scheduledAtMs - b.scheduledAtMs);
     }
 
@@ -91,23 +95,6 @@ export class ScheduleEngine {
         return fromZonedTime(localStr, 'Asia/Ho_Chi_Minh');
     }
 
-    /**
-     * FIX (player-sharing conflict — tích hợp thẳng vào search, không phải
-     * quarantine sau khi ghi): trước đây chỉ check minRestDays theo
-     * home_team_id/away_team_id CHÍNH XÁC của match — bỏ sót 2 trường hợp:
-     *   1. Cùng team_id nhưng minRestDays quá nhỏ (hoặc =0) vẫn có thể ra 2
-     *      slot khác giờ CÙNG NGÀY mà không hề overlap-check theo giờ thực.
-     *   2. 2 team KHÁC NHAU (khác season/giải, thậm chí khác season đang
-     *      chạy song song — season overlap là HỢP LỆ theo nghiệp vụ) nhưng
-     *      share chung 1 player — hoàn toàn không nằm trong minRestDays vì
-     *      đó là constraint theo team_id, không theo player.
-     *
-     * conflictMap + occupiedWindows (optional, mặc định rỗng — giữ
-     * backward-compat cho caller chưa truyền, ví dụ KnockoutService nếu
-     * chưa update) bổ sung hard constraint riêng, ĐỘC LẬP với minRestDays:
-     * slot bị loại nếu rơi vào khung ±ASSUMED_MATCH_DURATION_MS quanh 1
-     * match đã có của CHÍNH team này hoặc bất kỳ team nào share player.
-     */
     protected findEarliestValidSlot(
         pool: Slot[],
         usedSlotIdx: Set<number>,
@@ -122,7 +109,7 @@ export class ScheduleEngine {
 
         for (let i = 0; i < pool.length; i++) {
             if (usedSlotIdx.has(i)) continue;
-            const slotTime = pool[i]!.scheduledAtMs; // FIX: dùng giá trị cache, không phải date.getTime()
+            const slotTime = pool[i]!.scheduledAtMs;
             const homeLast = lastPlayedAt.get(homeTeamId);
             const awayLast = lastPlayedAt.get(awayTeamId);
             if (homeLast !== undefined && slotTime - homeLast < minRestMs) continue;
@@ -138,7 +125,16 @@ export class ScheduleEngine {
         return -1;
     }
 
-    protected async loadTakenSlots(venueIds: number[], startDate: Date, rangeEnd: Date): Promise<Set<string>> {
+    /**
+     * RENAMED từ loadTakenSlots: trả về Map venue_id -> windows thay vì
+     * Set<string> theo exact timestamp — cần thiết cho overlap+buffer check
+     * trong buildSlotPool (xem comment ở đó).
+     */
+    protected async loadTakenVenueWindows(
+        venueIds: number[],
+        startDate: Date,
+        rangeEnd: Date,
+    ): Promise<Map<number, TimeWindow[]>> {
         const taken = await this.prisma.match.findMany({
             where: {
                 venue_id: { in: venueIds },
@@ -147,22 +143,18 @@ export class ScheduleEngine {
             },
             select: { venue_id: true, scheduled_at: true },
         });
-        return new Set(taken.map(m => `${m.venue_id}_${m.scheduled_at!.toISOString()}`));
+
+        const map = new Map<number, TimeWindow[]>();
+        for (const m of taken) {
+            if (m.venue_id === null) continue;
+            const t = m.scheduled_at!.getTime();
+            const list = map.get(m.venue_id) ?? [];
+            list.push({ start: t, end: t + ASSUMED_MATCH_DURATION_MS });
+            map.set(m.venue_id, list);
+        }
+        return map;
     }
 
-    /**
-     * Với 1 tập team đầu vào, trả về Map: team_id -> Set<team_id> gồm CHÍNH
-     * NÓ + mọi team KHÁC (không giới hạn trong tập đầu vào — quét toàn hệ
-     * thống) có chung ít nhất 1 player active trong roster.
-     *
-     * Shared giữa ScheduleService (rescheduleMatch — strict, throw ngay
-     * trong transaction) và autoScheduleMatches/KnockoutService (search-time
-     * avoidance qua loadPlayerConflictContext bên dưới).
-     *
-     * `client` nhận cả PrismaClient lẫn Prisma.TransactionClient (cùng
-     * pattern PlayerService.ensurePlayerRole) — cho phép gọi trong hoặc
-     * ngoài transaction tuỳ nơi dùng.
-     */
     protected async buildTeamConflictMap(
         client: Prisma.TransactionClient | PrismaClient,
         teamIds: number[],
@@ -179,9 +171,6 @@ export class ScheduleEngine {
         const playerIds = [...new Set(rosterRows.map(r => r.player_id))];
         if (playerIds.length === 0) return map;
 
-        // Toàn bộ team (kể cả NGOÀI uniqueTeamIds) mà các player này đang có
-        // mặt — bắt buộc quét không giới hạn: player có thể ở team C mà C
-        // không nằm trong input ban đầu.
         const allRosterRows = await client.teamPlayer.findMany({
             where: { player_id: { in: playerIds }, deleted_at: null },
             select: { team_id: true, player_id: true },
@@ -201,20 +190,6 @@ export class ScheduleEngine {
         return map;
     }
 
-    /**
-     * Preload BASELINE occupied windows từ DB (bất kỳ season/giải nào,
-     * KHÔNG giới hạn theo season đang generate) cho toàn bộ "conflict
-     * closure" của teamIds — dùng để seed search TRƯỚC KHI chạy greedy pass,
-     * để thuật toán tự né những khung giờ đã bị chiếm bởi chính team này
-     * hoặc team share player, thay vì assign rồi mới phát hiện conflict sau
-     * khi ghi (quarantine — chỉ còn là safety net cho race hiếm, xem
-     * ScheduleService.autoScheduleMatches).
-     *
-     * excludeMatchIds: dùng khi seed cho 1 match ĐANG ĐƯỢC reschedule (loại
-     * chính nó khỏi baseline) — autoScheduleMatches không cần vì match đang
-     * xếp lịch luôn có scheduled_at=null, tự động không xuất hiện trong kết
-     * quả query (đã filter `scheduled_at: { not: null }`).
-     */
     protected async loadPlayerConflictContext(
         client: Prisma.TransactionClient | PrismaClient,
         teamIds: number[],
@@ -303,9 +278,6 @@ export class ScheduleEngine {
                 `;
             return [];
         } catch (err) {
-            // FIX: log trước khi fallback — trước đây catch rỗng, không có
-            // cách nào phân biệt "hết slot" (logic) vs "DB lỗi" (infra) khi
-            // debug incident chỉ dựa vào failedMatchIds ở tầng caller.
             console.error('[ScheduleEngine] Bulk UPDATE thất bại, fallback per-row:', err);
             const failed: number[] = [];
             for (const u of updates) {
@@ -323,36 +295,6 @@ export class ScheduleEngine {
         }
     }
 
-    /**
-     * SHARED scheduler — dùng bởi cả ScheduleService.autoScheduleMatches
-     * (round-robin) và KnockoutService.scheduleMatchBatch (bracket).
-     *
-     * KHÔNG đánh dấu async: toàn bộ thân hàm CPU-bound, không có await bên
-     * trong. Đánh dấu async ở đây không khiến nó non-blocking — Node vẫn
-     * chạy hết computation đồng bộ trước khi resolve Promise, chỉ tạo ảo
-     * giác "đã async hoá" và bắt buộc caller phải nhớ await (nếu quên,
-     * destructure trên Promise object → undefined → crash ở writeScheduleBatch).
-     * Giữ sync — caller gọi thẳng, không cần await.
-     *
-     * conflictContext (MỚI — optional, backward-compat): load TRƯỚC (I/O,
-     * async) bằng loadPlayerConflictContext() ở caller rồi truyền vào đây —
-     * giữ đúng nguyên tắc tách I/O (loadTakenSlots/loadPlayerConflictContext,
-     * async) ra khỏi search (buildSlotPool/scheduleMatchesWithRetry, sync/
-     * CPU-bound), không phá vỡ lý do giữ hàm này sync ở trên. Không truyền
-     * (hoặc caller cũ như KnockoutService chưa update) → mặc định rỗng,
-     * hành vi y hệt trước đây, KHÔNG có player-conflict avoidance.
-     *
-     * Với scale hiện tại (SCHEDULE_RESTARTS=20 × MRV O(candidates × pool),
-     * vài chục match/giải sinh viên) block event loop trong thời gian ngắn,
-     * chấp nhận được. Nếu tournament scale lên vài trăm match/pool vài nghìn
-     * slot, cần chủ động yield (vd setImmediate giữa các attempt) — thêm
-     * async suông không giải quyết vấn đề này.
-     *
-     * @param initialLastPlayedAt map lastPlayedAt (ms epoch) theo team_id,
-     *   seed sẵn TRƯỚC khi chạy pass đầu. Dùng cho knockout khi cần tôn
-     *   trọng rest-days tính từ trận vòng bảng cuối cùng của mỗi team.
-     *   Round-robin không cần, bỏ trống (mặc định map rỗng).
-     */
     protected scheduleMatchesWithRetry(
         matches: ScheduleCandidateMatch[],
         pool: Slot[],
@@ -374,14 +316,12 @@ export class ScheduleEngine {
             );
             if (!best || result.unscheduled.length < best.unscheduled.length) {
                 best = result;
-                if (best.unscheduled.length === 0) break; // tìm được lịch hoàn chỉnh, dừng sớm
+                if (best.unscheduled.length === 0) break;
             }
         }
 
         return best!;
     }
-
-    // ─── Greedy scheduling pass (1 lần thử, dùng nội bộ bởi scheduleMatchesWithRetry) ─
 
     private runGreedyPass(
         matches: ScheduleCandidateMatch[],
@@ -397,10 +337,6 @@ export class ScheduleEngine {
         const updates: { id: number; scheduledAt: Date; venueId: number }[] = [];
         const unscheduled: number[] = [];
 
-        // Clone baseline occupied windows MỖI attempt — không được để các
-        // assignment của attempt trước rò rỉ sang attempt sau (mỗi attempt
-        // phải bắt đầu lại từ đúng baseline DB, chỉ khác nhau ở thứ tự xử
-        // lý match nhờ shuffle/MRV).
         const occupiedWindows = new Map<number, TimeWindow[]>();
         for (const [teamId, windows] of baseOccupiedWindows) occupiedWindows.set(teamId, [...windows]);
 
@@ -415,9 +351,6 @@ export class ScheduleEngine {
         for (const round of [...byRound.keys()].sort((a, b) => a - b)) {
             const roundMatches = byRound.get(round)!;
 
-            // attempt 0 = thứ tự gốc (deterministic, dễ debug/reproduce).
-            // attempt > 0 = MRV ordering trên bản shuffle khác nhau mỗi lần,
-            // tránh tie-break luôn rơi vào cùng 1 cục bộ tối ưu.
             const ordered = attemptSeed === 0
                 ? roundMatches
                 : this.orderByMostConstrained(
@@ -436,7 +369,7 @@ export class ScheduleEngine {
                 if (slotIdx === -1) { unscheduled.push(match.id); continue; }
 
                 const slot = pool[slotIdx]!;
-                const scheduledAt = new Date(slot.scheduledAtMs); // FIX: khỏi gọi lại vnTimeToUtc
+                const scheduledAt = new Date(slot.scheduledAtMs);
 
                 usedSlotIdx.add(slotIdx);
                 lastPlayedAt.set(match.home_team_id, scheduledAt.getTime());
@@ -454,14 +387,6 @@ export class ScheduleEngine {
         return { updates, unscheduled };
     }
 
-    // MRV heuristic: với mỗi match còn lại trong round, đếm số slot hợp lệ
-    // (chưa used, thoả rest-days cho cả 2 team, VÀ không rơi vào window đã
-    // bị chiếm bởi team/player liên quan) TẠI THỜI ĐIỂM HIỆN TẠI — không
-    // commit, chỉ đếm để sort. Match nào có ít lựa chọn nhất xử lý trước,
-    // giảm rủi ro nó bị match khác "tiện tay" chiếm mất slot duy nhất nó
-    // cần. Proxy, không phải đếm chính xác theo lý thuyết CSP đầy đủ (không
-    // tính ảnh hưởng dây chuyền các match sau), nhưng đủ tốt để cải thiện tỷ
-    // lệ thành công so với thứ tự cố định ban đầu.
     private orderByMostConstrained(
         candidates: ScheduleCandidateMatch[],
         pool: Slot[],
@@ -475,7 +400,7 @@ export class ScheduleEngine {
             let degree = 0;
             for (let idx = 0; idx < pool.length; idx++) {
                 if (usedSlotIdx.has(idx)) continue;
-                const candidateAt = pool[idx]!.scheduledAtMs; // FIX: dùng giá trị cache, cùng nguồn với findEarliestValidSlot
+                const candidateAt = pool[idx]!.scheduledAtMs;
                 if (!this.isRestDaysSatisfied(match.home_team_id, candidateAt, lastPlayedAt, minRestDays)) continue;
                 if (!this.isRestDaysSatisfied(match.away_team_id, candidateAt, lastPlayedAt, minRestDays)) continue;
 
@@ -504,55 +429,7 @@ export class ScheduleEngine {
         const diffDays = Math.abs(candidateAtMs - last) / (24 * 60 * 60 * 1000);
         return diffDays >= minRestDays;
     }
-    /**
-     * MOVED from ScheduleService — shared by both ScheduleService
-     * (autoScheduleMatches, round-robin) and KnockoutService
-     * (scheduleMatchBatch, bracket). Same greedy detect-and-revert pass,
-     * now callable from either subclass instead of being duplicated.
-     *
-     * Best-effort pass run AFTER writeScheduleBatch() has written
-     * scheduled_at for a batch of matches. Detect-and-revert:
-     *
-     * 1. Re-read exactly the matches in `writtenMatchIds` that have
-     *    scheduled_at set.
-     * 2. Build a conflict map for all teams involved (once, reused).
-     * 3. Walk in ascending scheduled_at order (earlier-scheduled match wins)
-     *    — any match landing in a window already "claimed" by a related
-     *    team (itself or a player-sharing team) gets reverted
-     *    (scheduled_at=null, venue_id=null) and returned as quarantined.
-     *
-     * GREEDY, NOT OPTIMAL: a different processing order could keep more
-     * matches (this is an independent-set-on-interval-graph problem per
-     * team "line" — earliest-start greedy is a reasonable heuristic, not a
-     * global optimum when many teams overlap in complex ways).
-     */
-    // ----------------------------------------------------------
-    // PLAYER-SHARED-ROSTER CONFLICT DETECTION (quarantine safety-net)
-    // ----------------------------------------------------------
-    // buildTeamConflictMap / loadPlayerConflictContext giờ nằm ở
-    // ScheduleEngine (base class) — dùng chung với KnockoutService. Chỉ còn
-    // quarantinePlayerConflicts ở đây, vì nó gắn với write path riêng của
-    // autoScheduleMatches (revert scheduled_at sau khi ghi bulk).
 
-    /**
-     * Best-effort pass chạy SAU KHI writeScheduleBatch() đã ghi scheduled_at
-     * cho 1 batch match (autoScheduleMatches). Không sửa được thuật toán
-     * search bên trong ScheduleEngine (không có file đó), nên xử lý theo
-     * hướng detect-and-revert:
-     *
-     * 1. Đọc lại đúng các match trong `writtenMatchIds` đã có scheduled_at.
-     * 2. Build conflict map cho toàn bộ team liên quan (1 lần, tái sử dụng).
-     * 3. Duyệt tuần tự theo scheduled_at tăng dần (match xếp giờ sớm hơn
-     *    được ưu tiên giữ) — match nào rơi vào khung giờ đã bị 1 team liên
-     *    quan (chính nó hoặc share player) "chiếm" trước đó thì bị revert
-     *    (scheduled_at=null, venue_id=null) và trả về trong danh sách quarantined.
-     *
-     * ĐÂY LÀ GREEDY, KHÔNG PHẢI OPTIMAL: thứ tự xử lý khác có thể giữ được
-     * nhiều match hơn (bài toán tương đương independent-set trên interval
-     * graph theo từng "line" team — greedy theo earliest-start là heuristic
-     * hợp lý nhưng không đảm bảo tối ưu toàn cục khi có nhiều team chồng
-     * chéo phức tạp).
-     */
     protected async quarantinePlayerConflicts(
         tx: Prisma.TransactionClient,
         writtenMatchIds: number[],
@@ -576,7 +453,6 @@ export class ScheduleEngine {
         const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number) =>
             aStart <= bEnd && bStart <= aEnd;
 
-        // occupied: team_id -> danh sách khung giờ [start, end] đã "chốt"
         const occupied = new Map<number, { start: number; end: number }[]>();
         const rejectedIds: number[] = [];
 

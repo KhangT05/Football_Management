@@ -34,7 +34,6 @@ let MatchController = class MatchController extends Controller {
         super();
         this.lifecycleService = lifecycleService;
     }
-    // ─── State machine ────────────────────────────────────────────────────────
     /**
      * Bắt đầu trận đấu — chuyển scheduled → ongoing.
      * Khởi tạo home_score/away_score = 0, current_period = first_half.
@@ -94,7 +93,10 @@ let MatchController = class MatchController extends Controller {
      * cần sửa ngược lại matchApi.js thay vì ở đây, xác nhận với người review.
      */
     async confirmOfficial(id, body) {
-        return this.lifecycleService.confirmOfficial(id, body);
+        const { venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd } = matchSchema.ConfirmOfficialSchema.parse(body);
+        return this.lifecycleService.confirmOfficial(id, {
+            venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
+        });
     }
     // ─── Special match outcomes ───────────────────────────────────────────────
     /**
@@ -105,8 +107,10 @@ let MatchController = class MatchController extends Controller {
      * venueIds/matchTimes optional — bắt buộc nếu knockout (validated tại matchResultService).
      */
     async forfeitMatch(id, body) {
-        const { forfeitingTeamId, ...scheduleOptions } = body;
-        return this.lifecycleService.forfeitMatch(id, forfeitingTeamId, scheduleOptions);
+        const { forfeitingTeamId, venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd } = matchSchema.ForfeitMatchSchema.parse(body);
+        return this.lifecycleService.forfeitMatch(id, forfeitingTeamId, {
+            venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
+        });
     }
     /**
      * Dừng trận giữa chừng (thời tiết, bạo lực...).
@@ -158,8 +162,7 @@ let MatchController = class MatchController extends Controller {
      * 200 + trả nguyên object.
      */
     async addEvent(id, body) {
-        const { venueIds, matchTimes, ...eventInput } = body;
-        return this.lifecycleService.addEvent(id, eventInput, { venueIds, matchTimes });
+        return this.lifecycleService.addEvent(id, body);
     }
     /**
      * Xóa event nhập sai sau khi match finished.
@@ -173,27 +176,11 @@ let MatchController = class MatchController extends Controller {
     async deleteEvent(id, eventId, query) {
         return this.lifecycleService.deleteEvent(id, eventId, query);
     }
-    /**
-     * Sửa event (minute, type, player, period, note) sau khi match finished.
-     * Chỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.
-     * Tự recompute MatchResult sau khi sửa.
-     *
-     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
-     */
     async editEvent(id, eventId, body) {
-        const { venueIds, matchTimes, ...editInput } = body;
-        return this.lifecycleService.editEvent(id, eventId, editInput, { venueIds, matchTimes });
+        return this.lifecycleService.editEvent(id, eventId, body);
     }
-    /**
-     * Override score trực tiếp — chỉ dùng cho manual path (match không có events).
-     * Chỉ trong 15p kể từ played_at.
-     * Reject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.
-     *
-     * FIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.
-     */
     async editScore(id, body) {
-        const { venueIds, matchTimes, ...scoreInput } = body;
-        return this.lifecycleService.editScore(id, scoreInput, { venueIds, matchTimes });
+        return this.lifecycleService.editScore(id, body);
     }
     /**
  * Admin nhập kết quả trực tiếp cho trận ở bất kỳ trạng thái hợp lệ nào.
@@ -264,7 +251,7 @@ __decorate([
 ], MatchController.prototype, "submitManualScore", null);
 __decorate([
     Security("jwt", ["admin", 'organizing']),
-    Post("{id}/confirm-official"),
+    Post("{id}/correction/confirm-official"),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),
@@ -273,7 +260,7 @@ __decorate([
 ], MatchController.prototype, "confirmOfficial", null);
 __decorate([
     Security("jwt", ["admin", 'organizing']),
-    Post("{id}/forfeit"),
+    Post("{id}/correction/forfeit"),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),

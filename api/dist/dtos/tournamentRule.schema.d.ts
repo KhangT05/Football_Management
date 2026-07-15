@@ -35,6 +35,58 @@ export interface TournamentRuleDto {
         name: string;
     } | null;
 }
+interface BaseStage {
+    order: number;
+    name: string;
+}
+interface RoundRobinStage extends BaseStage {
+    type: "round_robin";
+    group_count: number;
+    teams_advance_per_group: number;
+    points_per_win: number;
+    points_per_draw: number;
+    points_per_loss: number;
+    source_stage_order: number | null;
+    source_rank_range: {
+        from: number;
+        to: number;
+    } | null;
+}
+export interface CreateTournamentRuleRequest {
+    tournament_id: number;
+    name?: string;
+    points_per_win?: number;
+    points_per_draw?: number;
+    points_per_loss?: number;
+    forfeit_score?: number;
+    suspension_match_count?: number;
+    yellow_cards_suspension?: number;
+    fine_per_yellow_card?: number;
+    fine_per_red_card?: number;
+    bonus_per_goal?: number;
+    bonus_per_assist?: number;
+    max_players_per_team?: number;
+    min_players_per_team?: number;
+    teams_advance_per_group?: number;
+    round_robin_stages?: number;
+    format?: SeasonFormat;
+    is_active?: boolean;
+    tiebreaker_order?: TiebreakerOption[];
+    custom_stages?: StageConfig[] | null;
+}
+export type UpdateTournamentRuleRequest = Partial<CreateTournamentRuleRequest>;
+interface KnockoutStage extends BaseStage {
+    type: "knockout";
+    source_stage_order: number | null;
+    seed_mode: "standing_straight" | "standing_cross" | "standing_random" | "manual";
+    leg_type: "single_leg" | "two_legged";
+}
+interface ClassificationStage extends BaseStage {
+    type: "classification";
+    source_stage_order: number;
+    source_kind: "loser_of_stage" | "standing";
+    leg_type: "single_leg" | "two_legged";
+}
 export declare const TIEBREAKER_OPTIONS: readonly ["goal_diff", "goals_scored", "head_to_head", "goals_conceded", "yellow_cards", "red_cards"];
 export declare const SEASON_FORMATS: readonly ["round_robin", "knockout", "round_robin_knockout", "multi_round_robin_knockout", "custom"];
 export type SeasonFormat = (typeof SEASON_FORMATS)[number];
@@ -49,11 +101,15 @@ export declare const stageConfigSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     points_per_draw: z.ZodNumber;
     points_per_loss: z.ZodNumber;
     source_stage_order: z.ZodNullable<z.ZodNumber>;
+    source_rank_range: z.ZodNullable<z.ZodObject<{
+        from: z.ZodNumber;
+        to: z.ZodNumber;
+    }, z.core.$strip>>;
 }, z.core.$strip>, z.ZodObject<{
     order: z.ZodNumber;
     name: z.ZodString;
     type: z.ZodLiteral<"knockout">;
-    source_stage_order: z.ZodNumber;
+    source_stage_order: z.ZodNullable<z.ZodNumber>;
     seed_mode: z.ZodEnum<{
         standing_straight: "standing_straight";
         standing_cross: "standing_cross";
@@ -78,7 +134,6 @@ export declare const stageConfigSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
         two_legged: "two_legged";
     }>;
 }, z.core.$strip>], "type">;
-export type StageConfig = z.infer<typeof stageConfigSchema>;
 export declare const customStagesSchema: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
     order: z.ZodNumber;
     name: z.ZodString;
@@ -89,11 +144,15 @@ export declare const customStagesSchema: z.ZodArray<z.ZodDiscriminatedUnion<[z.Z
     points_per_draw: z.ZodNumber;
     points_per_loss: z.ZodNumber;
     source_stage_order: z.ZodNullable<z.ZodNumber>;
+    source_rank_range: z.ZodNullable<z.ZodObject<{
+        from: z.ZodNumber;
+        to: z.ZodNumber;
+    }, z.core.$strip>>;
 }, z.core.$strip>, z.ZodObject<{
     order: z.ZodNumber;
     name: z.ZodString;
     type: z.ZodLiteral<"knockout">;
-    source_stage_order: z.ZodNumber;
+    source_stage_order: z.ZodNullable<z.ZodNumber>;
     seed_mode: z.ZodEnum<{
         standing_straight: "standing_straight";
         standing_cross: "standing_cross";
@@ -161,11 +220,15 @@ export declare const createTournamentRuleSchema: z.ZodObject<{
         points_per_draw: z.ZodNumber;
         points_per_loss: z.ZodNumber;
         source_stage_order: z.ZodNullable<z.ZodNumber>;
+        source_rank_range: z.ZodNullable<z.ZodObject<{
+            from: z.ZodNumber;
+            to: z.ZodNumber;
+        }, z.core.$strip>>;
     }, z.core.$strip>, z.ZodObject<{
         order: z.ZodNumber;
         name: z.ZodString;
         type: z.ZodLiteral<"knockout">;
-        source_stage_order: z.ZodNumber;
+        source_stage_order: z.ZodNullable<z.ZodNumber>;
         seed_mode: z.ZodEnum<{
             standing_straight: "standing_straight";
             standing_cross: "standing_cross";
@@ -234,11 +297,15 @@ export declare const updateTournamentRuleSchema: z.ZodObject<{
         points_per_draw: z.ZodNumber;
         points_per_loss: z.ZodNumber;
         source_stage_order: z.ZodNullable<z.ZodNumber>;
+        source_rank_range: z.ZodNullable<z.ZodObject<{
+            from: z.ZodNumber;
+            to: z.ZodNumber;
+        }, z.core.$strip>>;
     }, z.core.$strip>, z.ZodObject<{
         order: z.ZodNumber;
         name: z.ZodString;
         type: z.ZodLiteral<"knockout">;
-        source_stage_order: z.ZodNumber;
+        source_stage_order: z.ZodNullable<z.ZodNumber>;
         seed_mode: z.ZodEnum<{
             standing_straight: "standing_straight";
             standing_cross: "standing_cross";
@@ -268,4 +335,6 @@ export type CreateTournamentRuleInput = z.input<typeof createTournamentRuleSchem
 export type UpdateTournamentRuleInput = z.input<typeof updateTournamentRuleSchema>;
 export type CreateTournamentRuleDto = z.output<typeof createTournamentRuleSchema>;
 export type UpdateTournamentRuleDto = z.output<typeof updateTournamentRuleSchema>;
+export type StageConfig = RoundRobinStage | KnockoutStage | ClassificationStage;
+export {};
 //# sourceMappingURL=tournamentRule.schema.d.ts.map

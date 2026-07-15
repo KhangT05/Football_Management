@@ -69,37 +69,46 @@ export class TournamentRuleService {
         if (JSON.stringify(orders) !== JSON.stringify(orders.map((_, i) => i)))
             throw createAppError("VALIDATION_ERROR", "custom_stages.order phải liên tục 0..n-1, không trùng");
         const byOrder = new Map(stages.map(s => [s.order, s]));
+        // Stage đầu: round_robin hoặc knockout, source phải null
         const first = byOrder.get(0);
         if (first.type !== 'round_robin' && first.type !== 'knockout')
-            throw createAppError("VALIDATION_ERROR", "Stage đầu tiên (order=0) phải là round_robin hoặc knockout — chưa có nguồn nào để lấy đội");
-        if (first.type === 'round_robin' && first.source_stage_order !== null)
+            throw createAppError("VALIDATION_ERROR", "Stage đầu tiên (order=0) phải là round_robin hoặc knockout");
+        if (first.source_stage_order != null)
             throw createAppError("VALIDATION_ERROR", "Stage đầu tiên không được có source_stage_order");
+        // Không còn ép "phải là stage liền trước", cho phép trỏ về BẤT KỲ stage
+        // nào có order nhỏ hơn (branching pipeline)
         for (const stage of stages) {
             if (stage.order === 0)
                 continue;
             const sourceOrder = stage.source_stage_order;
-            if (sourceOrder === null || sourceOrder === undefined) {
+            if (sourceOrder == null) {
                 if (stage.type === 'round_robin')
-                    continue; // round_robin sau vẫn được phép lấy toàn bộ approved pool mới (multi-stage RR song song, hiếm nhưng hợp lệ)
+                    continue;
                 throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order} (${stage.type}) bắt buộc có source_stage_order`);
             }
             if (sourceOrder >= stage.order)
                 throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_stage_order phải nhỏ hơn order của chính nó`);
             if (!byOrder.has(sourceOrder))
                 throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_stage_order=${sourceOrder} không tồn tại`);
+            // validate rank_range cho round_robin có source
+            if (stage.type === 'round_robin') {
+                const src = byOrder.get(sourceOrder);
+                if (!stage.source_rank_range)
+                    throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: thiếu source_rank_range`);
+                if (src.type === 'round_robin' && stage.source_rank_range.to > src.teams_advance_per_group)
+                    throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_rank_range vượt quá teams_advance_per_group của stage nguồn`);
+            }
         }
-        // classification.source_kind='loser_of_stage' chỉ hợp lệ nếu source là stage knockout
-        // (round_robin không có khái niệm "loser 1 trận cụ thể" — chỉ có standings)
         for (const stage of stages) {
             if (stage.type === 'classification' && stage.source_kind === 'loser_of_stage') {
                 const source = byOrder.get(stage.source_stage_order);
                 if (source?.type !== 'knockout')
-                    throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: source_kind='loser_of_stage' chỉ hợp lệ khi source là stage knockout`);
+                    throw createAppError("VALIDATION_ERROR", `Stage order=${stage.order}: loser_of_stage chỉ hợp lệ khi source là knockout`);
             }
         }
         const names = stages.map(s => s.name.trim().toLowerCase());
         if (new Set(names).size !== names.length)
-            throw createAppError("VALIDATION_ERROR", "Tên stage không được trùng — dùng để hiển thị/tham chiếu trên UI vận hành");
+            throw createAppError("VALIDATION_ERROR", "Tên stage không được trùng");
     }
     /**
      * DUY NHẤT nơi chứa business rule: format <-> round_robin_stages / custom_stages.

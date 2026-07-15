@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { Prisma } from "../generated/prisma/client.js";
+
+
 
 export interface TournamentRuleDto {
     id: number;
@@ -30,6 +31,61 @@ export interface TournamentRuleDto {
     tournament?: { id: number; name: string } | null;
 }
 
+interface BaseStage {
+    order: number;
+    name: string;
+}
+
+interface RoundRobinStage extends BaseStage {
+    type: "round_robin";
+    group_count: number;
+    teams_advance_per_group: number;
+    points_per_win: number;
+    points_per_draw: number;
+    points_per_loss: number;
+    source_stage_order: number | null;
+    source_rank_range: { from: number; to: number } | null;
+}
+export interface CreateTournamentRuleRequest {
+    tournament_id: number;
+    name?: string;
+    points_per_win?: number;
+    points_per_draw?: number;
+    points_per_loss?: number;
+    forfeit_score?: number;
+    suspension_match_count?: number;
+    yellow_cards_suspension?: number;
+    fine_per_yellow_card?: number;
+    fine_per_red_card?: number;
+    bonus_per_goal?: number;
+    bonus_per_assist?: number;
+    max_players_per_team?: number;
+    min_players_per_team?: number;
+    teams_advance_per_group?: number;
+    round_robin_stages?: number;
+    format?: SeasonFormat;
+    is_active?: boolean;
+    tiebreaker_order?: TiebreakerOption[];
+    custom_stages?: StageConfig[] | null;
+}
+
+export type UpdateTournamentRuleRequest = Partial<CreateTournamentRuleRequest>;
+
+interface KnockoutStage extends BaseStage {
+    type: "knockout";
+    source_stage_order: number | null;
+    seed_mode: "standing_straight" | "standing_cross" | "standing_random" | "manual";
+    leg_type: "single_leg" | "two_legged";
+}
+
+interface ClassificationStage extends BaseStage {
+    type: "classification";
+    source_stage_order: number;
+    source_kind: "loser_of_stage" | "standing";
+    leg_type: "single_leg" | "two_legged";
+}
+
+
 export const TIEBREAKER_OPTIONS = [
     "goal_diff",
     "goals_scored",
@@ -59,11 +115,16 @@ const ROUND_ROBIN_BASED_FORMATS: SeasonFormat[] = [
 export type SeasonFormat = (typeof SEASON_FORMATS)[number];
 export type TiebreakerOption = (typeof TIEBREAKER_OPTIONS)[number];
 
-// ---------- custom_stages ----------
+
 
 const baseStage = z.object({
     order: z.number().int().min(0),
     name: z.string().min(1).max(100), // hiển thị trên UI vận hành, vd "Vòng bảng", "Bán kết", "Tranh hạng 3"
+});
+
+const rankRangeSchema = z.object({
+    from: z.number().int().min(1),
+    to: z.number().int().min(1),
 });
 
 const roundRobinStageSchema = baseStage.extend({
@@ -76,11 +137,14 @@ const roundRobinStageSchema = baseStage.extend({
     // null nếu là stage đầu tiên (lấy toàn bộ approved team),
     // hoặc trỏ tới order của 1 stage trước để lấy đội advance ra từ đó
     source_stage_order: z.number().int().min(0).nullable(),
+    source_rank_range: rankRangeSchema.nullable(),
 });
 
 const knockoutStageSchema = baseStage.extend({
     type: z.literal("knockout"),
-    source_stage_order: z.number().int().min(0), // bắt buộc — knockout không tự có đội
+    // source_stage_order đổi thành nullable — cho phép knockout ở order=0 (bốc thăm trực tiếp
+    // từ pool đăng ký, không cần vòng bảng trước)
+    source_stage_order: z.number().int().min(0).nullable(),
     seed_mode: z.enum(["standing_straight", "standing_cross", "standing_random", "manual"]),
     leg_type: z.enum(["single_leg", "two_legged"]),
 });
@@ -97,8 +161,10 @@ export const stageConfigSchema = z.discriminatedUnion("type", [
     knockoutStageSchema,
     classificationStageSchema,
 ]);
-
-export type StageConfig = z.infer<typeof stageConfigSchema>;
+// guard chống lệch giữa zod schema và static type — build sẽ fail nếu 2 bên khác nhau
+type Expect<T extends true> = T;
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type _StageConfigInSync = Expect<Equal<z.infer<typeof stageConfigSchema>, StageConfig>>;
 
 export const customStagesSchema = z
     .array(stageConfigSchema)
@@ -109,42 +175,38 @@ export const customStagesSchema = z
         stages.forEach((s) => orderCount.set(s.order, (orderCount.get(s.order) ?? 0) + 1));
 
         stages.forEach((s, i) => {
-            // order phải unique trong mảng
             if ((orderCount.get(s.order) ?? 0) > 1) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: [i, "order"],
-                    message: `order=${s.order} bị trùng, mỗi stage phải có order duy nhất`,
-                });
+                ctx.addIssue({ code: "custom", path: [i, "order"], message: `order=${s.order} bị trùng` });
             }
 
-            if (s.type === "round_robin") return; // stage đầu, không bắt buộc có source
-
-            // knockout / classification bắt buộc source_stage_order hợp lệ, không forward-reference, không self-reference
-            const sourceOrder = s.source_stage_order;
-            const sourceStage = stages.find((x) => x.order === sourceOrder);
-
-            if (!sourceStage || sourceOrder >= s.order) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: [i, "source_stage_order"],
-                    message: "source_stage_order phải trỏ tới order nhỏ hơn và tồn tại trong custom_stages",
-                });
+            // Stage đầu (order=0): round_robin hoặc knockout, source phải null
+            if (s.order === 0) {
+                if (s.source_stage_order != null) {
+                    ctx.addIssue({ code: "custom", path: [i, "source_stage_order"], message: "Stage đầu tiên không được có source_stage_order" });
+                }
                 return;
             }
 
-            // classification.source_kind = 'loser_of_stage' chỉ hợp lệ khi source là knockout/classification
-            // (round_robin không có "loser" đơn — chỉ có bảng xếp hạng, không có ý nghĩa "đội thua")
-            if (
-                s.type === "classification" &&
-                s.source_kind === "loser_of_stage" &&
-                sourceStage.type === "round_robin"
-            ) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: [i, "source_kind"],
-                    message: "loser_of_stage không hợp lệ khi source_stage là round_robin, dùng source_kind='standing' thay thế",
-                });
+            if (s.type === "round_robin" && s.source_stage_order == null) return; // pool mới — hợp lệ
+
+            const sourceOrder = s.source_stage_order;
+            const sourceStage = stages.find((x) => x.order === sourceOrder);
+
+            if (sourceOrder == null || !sourceStage || sourceOrder >= s.order) {
+                ctx.addIssue({ code: "custom", path: [i, "source_stage_order"], message: "source_stage_order phải trỏ tới order nhỏ hơn và tồn tại" });
+                return;
+            }
+
+            if (s.type === "round_robin") {
+                if (!s.source_rank_range) {
+                    ctx.addIssue({ code: "custom", path: [i, "source_rank_range"], message: "source_rank_range bắt buộc khi có source_stage_order" });
+                } else if (sourceStage.type === "round_robin" && s.source_rank_range.to > sourceStage.teams_advance_per_group) {
+                    ctx.addIssue({ code: "custom", path: [i, "source_rank_range"], message: `Hạng lấy vượt quá teams_advance_per_group (${sourceStage.teams_advance_per_group}) của stage nguồn` });
+                }
+            }
+
+            if (s.type === "classification" && s.source_kind === "loser_of_stage" && sourceStage.type !== "knockout") {
+                ctx.addIssue({ code: "custom", path: [i, "source_kind"], message: "loser_of_stage chỉ hợp lệ khi source là knockout" });
             }
         });
     });
@@ -236,3 +298,4 @@ export type CreateTournamentRuleInput = z.input<typeof createTournamentRuleSchem
 export type UpdateTournamentRuleInput = z.input<typeof updateTournamentRuleSchema>;
 export type CreateTournamentRuleDto = z.output<typeof createTournamentRuleSchema>;
 export type UpdateTournamentRuleDto = z.output<typeof updateTournamentRuleSchema>;
+export type StageConfig = RoundRobinStage | KnockoutStage | ClassificationStage;

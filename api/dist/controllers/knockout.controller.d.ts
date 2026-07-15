@@ -18,6 +18,7 @@ export declare class KnockoutController extends Controller {
     advanceWinner(seasonId: number, phaseId: number, body: knockoutSchema.AdvanceWinnerRequestDto): Promise<{
         matchCreated: boolean;
         newMatchId?: number;
+        scheduleWarning?: string;
     }>;
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
     /**

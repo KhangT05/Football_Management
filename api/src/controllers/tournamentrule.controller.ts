@@ -1,13 +1,7 @@
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request, Query } from "tsoa";
 import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
-import {
-  TournamentRuleDto,
-  createTournamentRuleSchema,
-  updateTournamentRuleSchema,
-  type CreateTournamentRuleInput,
-  type UpdateTournamentRuleInput,
-} from "../dtos/tournamentRule.schema.js";
+import * as tournamentRuleSchema from "../dtos/tournamentRule.schema.js";
 import { createAppError } from "../common/app.error.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 
@@ -19,12 +13,12 @@ export class TournamentRuleController extends Controller {
   }
 
   @Get("/")
-  async findAll(): Promise<TournamentRuleDto[]> {
+  async findAll(): Promise<tournamentRuleSchema.TournamentRuleDto[]> {
     return this.service.findAll();
   }
 
   @Get("{id}")
-  async findById(@Path() id: number): Promise<TournamentRuleDto> {
+  async findById(@Path() id: number): Promise<tournamentRuleSchema.TournamentRuleDto> {
     return this.service.findByIdOrFail(id);
   }
 
@@ -32,10 +26,10 @@ export class TournamentRuleController extends Controller {
   @Security("jwt", ["admin", "organizing"])
   @SuccessResponse(201, "Created")
   async create(
-    @Body() body: CreateTournamentRuleInput,
+    @Body() body: tournamentRuleSchema.CreateTournamentRuleRequest,
     @Request() req: AuthRequest
-  ): Promise<TournamentRuleDto> {
-    const parsed = createTournamentRuleSchema.safeParse(body);
+  ): Promise<tournamentRuleSchema.TournamentRuleDto> {
+    const parsed = tournamentRuleSchema.createTournamentRuleSchema.safeParse(body);
     if (!parsed.success) {
       throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
     }
@@ -47,10 +41,10 @@ export class TournamentRuleController extends Controller {
   @Security("jwt", ["admin", "organizing"])
   async update(
     @Path() id: number,
-    @Body() body: UpdateTournamentRuleInput,
+    @Body() body: tournamentRuleSchema.UpdateTournamentRuleRequest,
     @Query() force?: boolean,
-  ): Promise<TournamentRuleDto> {
-    const parsed = updateTournamentRuleSchema.safeParse(body);
+  ): Promise<tournamentRuleSchema.TournamentRuleDto> {
+    const parsed = tournamentRuleSchema.updateTournamentRuleSchema.safeParse(body);
     if (!parsed.success) {
       throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
     }
@@ -67,12 +61,12 @@ export class TournamentRuleController extends Controller {
 
   @Patch("{id}/restore")
   @Security("jwt", ["admin", "organizing"])
-  async restore(@Path() id: number): Promise<TournamentRuleDto> {
+  async restore(@Path() id: number): Promise<tournamentRuleSchema.TournamentRuleDto> {
     return this.service.restore(id);
   }
 
   @Get("tournament/{tournamentId}")
-  async listByTournament(@Path() tournamentId: number): Promise<TournamentRuleDto[]> {
+  async listByTournament(@Path() tournamentId: number): Promise<tournamentRuleSchema.TournamentRuleDto[]> {
     return this.service.listByTournament(tournamentId);
   }
 }

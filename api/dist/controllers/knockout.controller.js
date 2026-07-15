@@ -37,8 +37,10 @@ let KnockoutController = class KnockoutController extends Controller {
         return this.service.generateKnockoutBracket(parsed);
     }
     async advanceWinner(seasonId, phaseId, body) {
-        const { venueIds, matchTimes, ...input } = knockoutSchema.advanceWinnerRequestSchema.parse(body);
-        return this.service.advanceWinner(phaseId, seasonId, input, { venueIds, matchTimes });
+        const { venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd, ...input } = knockoutSchema.advanceWinnerRequestSchema.parse(body);
+        return this.service.advanceWinner(phaseId, seasonId, input, {
+            venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
+        });
     }
     async getBracket(phaseId) {
         return this.service.getBracket(phaseId);

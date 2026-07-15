@@ -58,12 +58,20 @@ export declare const ManualScoreSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const ConfirmOfficialSchema: z.ZodObject<{
     venueIds: z.ZodOptional<z.ZodArray<z.ZodCoercedNumber<unknown>>>;
-    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    dailyStartTime: z.ZodOptional<z.ZodString>;
+    dailyEndTime: z.ZodOptional<z.ZodString>;
+    bufferMinutes: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
 export declare const ForfeitMatchSchema: z.ZodObject<{
     forfeitingTeamId: z.ZodCoercedNumber<unknown>;
     venueIds: z.ZodOptional<z.ZodArray<z.ZodCoercedNumber<unknown>>>;
-    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    dailyStartTime: z.ZodOptional<z.ZodString>;
+    dailyEndTime: z.ZodOptional<z.ZodString>;
+    bufferMinutes: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
+    dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
 export declare const AbandonMatchSchema: z.ZodObject<{
     minute: z.ZodCoercedNumber<unknown>;
