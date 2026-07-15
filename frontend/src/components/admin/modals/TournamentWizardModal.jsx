@@ -71,7 +71,7 @@ const FORMAT_META = [
   {
     value: 'custom',
     label: 'Tùy chỉnh (Hybrid)',
-    desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: có trận tranh hạng 3, seed tùy biến).',
+    desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: knockout trước rồi vào vòng tròn tính điểm, top mỗi bảng đá vòng tròn chọn hạng, nhiều nhánh song song...).',
     icon: Puzzle,
     color: 'fuchsia',
     hasGroupPhase: null,
@@ -175,52 +175,68 @@ const NumField = ({ label, required, value, onChange, min, max, step, allowDecim
 );
 
 // ============================================================
-// Custom stage builder helpers
-// Đơn giản hóa cố ý so với schema BE (cho phép graph tùy ý): builder này chỉ dựng được
-// pipeline TUYẾN TÍNH (stage sau luôn lấy nguồn từ đúng stage liền trước), và chỉ được
-// xóa stage CUỐI CÙNG. Lý do: nếu cho sửa/xóa stage giữa chừng + chọn source tùy ý, phải
-// tự replicate toàn bộ validateCustomStages() (order liên tục, không forward-reference,
-// không dangling source) ngay trên client — rủi ro lệch với BE cao hơn lợi ích. Pipeline
-// tuyến tính khớp với mọi ví dụ thực tế bạn đưa (vòng bảng -> knockout -> tranh hạng), và
-// vẫn map thẳng vào customStagesSchema vì source_stage_order tuyến tính vẫn hợp lệ với
-// mọi rule của BE (chỉ là tập con chặt hơn, không phải tập lớn hơn).
+// Custom stage builder — REWRITTEN
+//
+// Trước đây builder chỉ dựng được pipeline TUYẾN TÍNH (stage sau luôn lấy nguồn từ đúng
+// stage liền trước, chỉ append/xóa-cuối, luôn ép stage đầu = round_robin). Điều đó không
+// khớp với tinh thần "custom": người dùng phải tự do chọn NGUỒN của mỗi stage (không bị ép
+// theo vị trí), được xóa/sửa stage bất kỳ, và stage đầu có thể là round_robin HOẶC knockout.
+//
+// Model mới: mỗi stage có `_cid` (client-only id, KHÔNG gửi lên BE) làm khóa tham chiếu ổn
+// định. `source_stage_cid` trỏ tới `_cid` của 1 stage khác (thay vì order số, vốn dễ vỡ khi
+// thêm/xóa giữa chừng). Chỉ convert `_cid` -> `order` số nguyên đúng 1 lần lúc build payload
+// gửi BE (convertCustomStagesForApi). Nhiều stage được phép cùng trỏ 1 nguồn (branching —
+// vd 1 vòng bảng tách ra Cup chính + Cup phụ) — LƯU Ý: khả năng branching thật sự với
+// round_robin còn tùy backend hỗ trợ (xem phần "kiểm tra knockout và group" cuối câu trả lời).
+//
+// source_rank_range: field mới cho round_robin có nguồn — xác định lấy đội HẠNG MẤY (trong
+// mỗi group của stage nguồn) để đưa vào pool của stage này. VD [1,1] = chỉ lấy đội hạng 1
+// mỗi bảng (case "4 đội nhất bảng vào đá vòng tròn tính điểm chọn hạng 1-2-3-4").
 // ============================================================
-const createDefaultStage = (order, type, prevStage) => {
+const newCid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `s${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
+const createDefaultStage = (type, cid, defaultSourceCid, sameTypeCount = 0) => {
   if (type === 'round_robin') {
     return {
-      order,
+      _cid: cid,
       type: 'round_robin',
-      name: order === 0 ? 'Vòng bảng' : `Vòng bảng ${order + 1}`,
+      name: sameTypeCount === 0 ? 'Vòng bảng' : `Vòng bảng ${sameTypeCount + 1}`,
       group_count: 4,
       teams_advance_per_group: 2,
       points_per_win: 3,
       points_per_draw: 1,
       points_per_loss: 0,
-      source_stage_order: null,
+      // Mặc định null (pool đăng ký mới) — KHÔNG tự gán theo vị trí như bản cũ. User tự
+      // chọn nguồn qua dropdown nếu muốn stage này lấy đội advance từ 1 stage trước.
+      source_stage_cid: null,
+      // Chỉ có ý nghĩa khi source_stage_cid != null và nguồn là round_robin.
+      source_rank_range: null,
     };
   }
   if (type === 'knockout') {
     return {
-      order,
+      _cid: cid,
       type: 'knockout',
-      name: 'Loại trực tiếp',
-      source_stage_order: prevStage ? prevStage.order : null,
+      name: sameTypeCount === 0 ? 'Loại trực tiếp' : `Loại trực tiếp ${sameTypeCount + 1}`,
+      // Gợi ý mặc định = stage cuối cùng hiện có (tiện dụng), luôn sửa được qua dropdown.
+      // null nếu đây là stage đầu tiên -> bốc thăm trực tiếp từ pool đăng ký approved.
+      source_stage_cid: defaultSourceCid,
       seed_mode: 'standing_cross',
       leg_type: 'single_leg',
     };
   }
   return {
-    order,
+    _cid: cid,
     type: 'classification',
-    name: 'Tranh hạng 3',
-    source_stage_order: prevStage ? prevStage.order : null,
-    source_kind: prevStage?.type === 'knockout' ? 'loser_of_stage' : 'standing',
+    name: sameTypeCount === 0 ? 'Tranh hạng 3' : `Tranh hạng ${sameTypeCount + 1}`,
+    source_stage_cid: defaultSourceCid,
+    source_kind: 'standing',
     leg_type: 'single_leg',
   };
 };
 
-// Mirror phần validateCustomStages() bên BE ở mức đủ để chặn lỗi sớm trên FE.
-// Không thay thế validate BE — chỉ giảm số lần user bị reject sau khi submit.
+// Mirror validateCustomStages() bên BE ở mức đủ để chặn lỗi sớm trên FE. Không thay thế
+// validate BE — chỉ giảm số lần user bị reject sau khi submit.
 const validateCustomStagesLocal = (stages) => {
   if (!stages || stages.length === 0) return 'Vui lòng thêm ít nhất 1 stage cho thể thức tùy chỉnh';
 
@@ -228,19 +244,81 @@ const validateCustomStagesLocal = (stages) => {
   if (names.some(n => !n)) return 'Tên stage không được để trống';
   if (new Set(names).size !== names.length) return 'Tên các stage không được trùng nhau';
 
-  if (stages[0].type !== 'round_robin') return 'Stage đầu tiên phải là "Vòng bảng"';
+  // Stage đầu tiên (vị trí 0 trong danh sách hiển thị): round_robin hoặc knockout —
+  // classification không thể là stage đầu vì chưa có gì để tranh hạng.
+  if (!['round_robin', 'knockout'].includes(stages[0].type)) {
+    return 'Stage đầu tiên phải là "Vòng bảng" hoặc "Loại trực tiếp"';
+  }
+  if (stages[0].source_stage_cid) {
+    return `Stage "${stages[0].name}" là stage đầu tiên, không được có nguồn`;
+  }
+
+  const cidToIndex = new Map(stages.map((s, i) => [s._cid, i]));
 
   for (let i = 0; i < stages.length; i++) {
     const s = stages[i];
+
     if (s.type === 'round_robin') {
       if (s.group_count < 1 || s.group_count > 32) return `Stage "${s.name}": số bảng phải từ 1 đến 32`;
       if (s.teams_advance_per_group < 1) return `Stage "${s.name}": số đội đi tiếp mỗi bảng phải >= 1`;
       if (s.points_per_win < 0 || s.points_per_draw < 0 || s.points_per_loss < 0) return `Stage "${s.name}": điểm trận không được âm`;
-    } else if (s.source_stage_order === null || s.source_stage_order === undefined) {
-      return `Stage "${s.name}": thiếu stage nguồn`;
+
+      if (i > 0 && s.source_stage_cid) {
+        const srcIdx = cidToIndex.get(s.source_stage_cid);
+        if (srcIdx === undefined || srcIdx >= i) return `Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`;
+        const src = stages[srcIdx];
+        if (!s.source_rank_range) return `Stage "${s.name}": thiếu khoảng hạng lấy đội (source_rank_range)`;
+        const [from, to] = s.source_rank_range;
+        if (from < 1 || to < from) return `Stage "${s.name}": khoảng hạng không hợp lệ`;
+        if (src.type === 'round_robin' && to > src.teams_advance_per_group) {
+          return `Stage "${s.name}": lấy tới hạng ${to} nhưng stage nguồn "${src.name}" chỉ cho ${src.teams_advance_per_group} đội đi tiếp/bảng`;
+        }
+      }
+      continue;
+    }
+
+    // knockout / classification không phải stage đầu
+    if (i === 0) return `Stage "${s.name}" (${s.type === 'knockout' ? 'Loại trực tiếp' : 'Tranh hạng'}) không thể là stage đầu tiên nếu không đứng ở vị trí 0`;
+    if (!s.source_stage_cid) return `Stage "${s.name}": thiếu stage nguồn`;
+    const srcIdx = cidToIndex.get(s.source_stage_cid);
+    if (srcIdx === undefined || srcIdx >= i) return `Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`;
+
+    if (s.type === 'classification' && s.source_kind === 'loser_of_stage' && stages[srcIdx].type !== 'knockout') {
+      return `Stage "${s.name}": "Đội thua ở stage nguồn" chỉ hợp lệ khi nguồn là Loại trực tiếp`;
     }
   }
   return null;
+};
+
+// Convert state FE (dùng _cid) -> payload BE (dùng order số nguyên). Gọi ĐÚNG 1 LẦN lúc
+// build request submit — KHÔNG lưu dạng order trong state, tránh vỡ liên kết khi thêm/xóa
+// stage giữa chừng (index dịch chuyển nhưng _cid luôn ổn định).
+const convertCustomStagesForApi = (stages) => {
+  const cidToOrder = new Map(stages.map((s, idx) => [s._cid, idx]));
+  return stages.map((s, idx) => {
+    const { _cid, source_stage_cid, ...rest } = s;
+    return {
+      ...rest,
+      order: idx,
+      source_stage_order: source_stage_cid != null ? (cidToOrder.get(source_stage_cid) ?? null) : null,
+    };
+  });
+};
+
+// Convert ngược: payload BE (order số) -> state FE (_cid). Dùng khi load 1 rule template có
+// sẵn custom_stages từ DB vào form để sửa tiếp.
+const convertCustomStagesFromApi = (stagesFromApi) => {
+  if (!Array.isArray(stagesFromApi)) return [];
+  const sorted = [...stagesFromApi].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const cids = sorted.map(() => newCid());
+  return sorted.map((s, idx) => {
+    const { order, source_stage_order, ...rest } = s;
+    return {
+      ...rest,
+      _cid: cids[idx],
+      source_stage_cid: source_stage_order != null ? (cids[source_stage_order] ?? null) : null,
+    };
+  });
 };
 
 const defaultRuleForm = {
@@ -283,7 +361,8 @@ const ruleDtoToFormShape = (rule) => ({
   bonus_per_assist: Number(rule.bonus_per_assist ?? 0),
   teams_advance_per_group: rule.teams_advance_per_group ?? 2,
   tiebreaker_order: Array.isArray(rule.tiebreaker_order) ? [...rule.tiebreaker_order] : [],
-  custom_stages: Array.isArray(rule.custom_stages) ? rule.custom_stages.map(s => ({ ...s })) : [],
+  // CHANGED — convert order-based (từ BE) sang _cid-based (cho FE builder)
+  custom_stages: convertCustomStagesFromApi(rule.custom_stages),
 });
 
 // So sánh theo string ISO date (YYYY-MM-DD), KHÔNG qua Date object.
@@ -422,6 +501,8 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   // Zero-out các field mất ý nghĩa theo format (chỉ áp dụng cho 4 format "chuẩn").
   // Với format='custom': không zero-out gì (BE bỏ qua toàn bộ các field này), chỉ đảm bảo
   // custom_stages có ít nhất 1 stage khởi tạo sẵn để user không thấy màn hình trống trơn.
+  // Stage khởi tạo mặc định là round_robin CHỈ vì tiện dụng cho form trống — user có thể
+  // xóa nó và bắt đầu bằng knockout nếu muốn (vd knockout 32 đội trước, RR sau).
   // Trade-off: đổi qua lại format sẽ MẤT giá trị đã nhập (không auto-restore) —
   // chấp nhận được vì step 2 còn ở đầu wizard, chưa có side-effect gì cần rollback.
   useEffect(() => {
@@ -430,7 +511,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
       if (meta.value === 'custom') {
         if (f.custom_stages && f.custom_stages.length > 0) return f;
-        return { ...f, custom_stages: [createDefaultStage(0, 'round_robin', null)] };
+        return { ...f, custom_stages: [createDefaultStage('round_robin', newCid(), null, 0)] };
       }
 
       if (!meta.hasGroupPhase) {
@@ -474,49 +555,70 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   const addCustomStage = (type) => {
     setRuleForm(f => {
       const stages = f.custom_stages || [];
-      if (type !== 'round_robin' && stages.length === 0) {
-        toast.warning('Stage đầu tiên phải là "Vòng bảng" — knockout/tranh hạng cần có nguồn đội từ stage trước.');
+      if (type === 'classification' && stages.length === 0) {
+        toast.warning('Tranh hạng không thể là stage đầu tiên — cần có nguồn đội từ stage trước.');
         return f;
       }
-      const prevStage = stages[stages.length - 1] || null;
-      const newStage = createDefaultStage(stages.length, type, prevStage);
+      const cid = newCid();
+      const sameTypeCount = stages.filter(s => s.type === type).length;
+      const lastStage = stages[stages.length - 1] || null;
+      const newStage = createDefaultStage(type, cid, lastStage ? lastStage._cid : null, sameTypeCount);
       return { ...f, custom_stages: [...stages, newStage] };
     });
   };
 
-  const removeLastCustomStage = () => {
+  // Xóa được BẤT KỲ stage nào (không chỉ cuối cùng như bản cũ). Nếu có stage khác đang trỏ
+  // nguồn vào stage bị xóa, tự động gỡ nguồn của chúng về null/'standing' và cảnh báo user
+  // chọn lại — tránh để lại tham chiếu treo (_cid không tồn tại).
+  const removeCustomStage = (cid) => {
     setRuleForm(f => {
       const stages = f.custom_stages || [];
       if (stages.length <= 1) {
         toast.warning('Phải có ít nhất 1 stage.');
         return f;
       }
-      return { ...f, custom_stages: stages.slice(0, -1) };
+      const removed = stages.find(s => s._cid === cid);
+      const remaining = stages.filter(s => s._cid !== cid);
+      let cascaded = 0;
+      const patched = remaining.map(s => {
+        if (s.source_stage_cid === cid) {
+          cascaded++;
+          return {
+            ...s,
+            source_stage_cid: null,
+            ...(s.type === 'round_robin' ? { source_rank_range: null } : {}),
+            ...(s.type === 'classification' ? { source_kind: 'standing' } : {}),
+          };
+        }
+        return s;
+      });
+      if (cascaded > 0) {
+        toast.warning(`Đã xóa "${removed?.name}" — ${cascaded} stage phụ thuộc vào nó đã bị gỡ nguồn, vui lòng chọn lại.`);
+      }
+      return { ...f, custom_stages: patched };
     });
   };
 
-  const updateCustomStage = (index, patch) => {
-    setRuleForm(f => {
-      const stages = [...(f.custom_stages || [])];
-      stages[index] = { ...stages[index], ...patch };
-      return { ...f, custom_stages: stages };
-    });
+  const updateCustomStage = (cid, patch) => {
+    setRuleForm(f => ({
+      ...f,
+      custom_stages: (f.custom_stages || []).map(s => (s._cid === cid ? { ...s, ...patch } : s)),
+    }));
   };
 
-  // round_robin không phải stage đầu: cho phép chọn giữa "lấy đội từ stage trước" (thường không
-  // dùng — round_robin không nhận input từ 1 stage khác) hoặc "pool mới hoàn toàn" (source=null).
-  // Field này thực chất chỉ có ý nghĩa demo cho round_robin song song độc lập, mặc định luôn null.
-  const toggleFreshPool = (index) => {
-    setRuleForm(f => {
-      const stages = [...f.custom_stages];
-      const stage = stages[index];
-      const prevOrder = index > 0 ? stages[index - 1].order : null;
-      stages[index] = {
-        ...stage,
-        source_stage_order: stage.source_stage_order === null ? prevOrder : null,
-      };
-      return { ...f, custom_stages: stages };
-    });
+  // Đổi nguồn của 1 stage — reset kèm các field phụ thuộc vào nguồn cũ (rank_range,
+  // source_kind) để tránh giữ lại giá trị không còn ý nghĩa với nguồn mới.
+  const updateStageSource = (cid, sourceCid) => {
+    setRuleForm(f => ({
+      ...f,
+      custom_stages: (f.custom_stages || []).map(s => {
+        if (s._cid !== cid) return s;
+        const patch = { source_stage_cid: sourceCid || null };
+        if (s.type === 'round_robin') patch.source_rank_range = sourceCid ? [1, s.teams_advance_per_group || 1] : null;
+        if (s.type === 'classification') patch.source_kind = 'standing';
+        return { ...s, ...patch };
+      }),
+    }));
   };
 
   const validateStep = () => {
@@ -694,6 +796,8 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       let finalFormat;
       let finalCustomStages = null;
       if (willCreateNewRule) {
+        // CHANGED — convert _cid-based state sang order-based payload đúng 1 lần ở đây.
+        const apiCustomStages = ruleForm.format === 'custom' ? convertCustomStagesForApi(ruleForm.custom_stages) : null;
         const rulePayload = {
           ...ruleForm,
           name: ruleForm.name.trim(),
@@ -701,17 +805,17 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
           // format != custom -> custom_stages phải null (schema cấm gửi kèm format khác custom).
           // format == custom -> round_robin_stages không được BE đọc, gửi 0 cho rõ ràng thay vì
           // giá trị default 1 gây hiểu lầm là "có 1 vòng bảng cố định".
-          custom_stages: ruleForm.format === 'custom' ? ruleForm.custom_stages : null,
+          custom_stages: apiCustomStages,
           round_robin_stages: ruleForm.format === 'custom' ? 0 : ruleForm.round_robin_stages,
         };
         const rRes = await tournamentRuleApi.create(rulePayload);
         finalRuleId = rRes.data?.id || rRes.id;
         finalFormat = ruleForm.format;
-        finalCustomStages = ruleForm.custom_stages;
+        finalCustomStages = apiCustomStages;
       } else {
         finalRuleId = selectedRuleId;
         finalFormat = selectedRuleObj?.format;
-        finalCustomStages = selectedRuleObj?.custom_stages ?? null;
+        finalCustomStages = selectedRuleObj?.custom_stages ?? null; // đã order-based sẵn (từ BE)
       }
 
       const finalMeta = getFormatMeta(finalFormat);
@@ -719,7 +823,8 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       const firstCustomStage = finalIsCustom ? finalCustomStages?.[0] : null;
 
       // Group phase ban đầu: format chuẩn dùng flag hasGroupPhase + groupCount (step 3);
-      // format custom lấy trực tiếp từ stage[0] (luôn là round_robin theo ràng buộc builder).
+      // format custom lấy trực tiếp từ stage[0] — có thể là round_robin (group_count có sẵn)
+      // hoặc knockout (không tạo group ban đầu, bốc thăm trực tiếp toàn bộ pool đăng ký).
       const shouldCreateInitialGroups = finalIsCustom
         ? firstCustomStage?.type === 'round_robin'
         : finalMeta.hasGroupPhase;
@@ -750,12 +855,13 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       // Nếu user chọn "Mở đăng ký ngay" thì tự động chuyển status trước khi tạo group.
       // Các bước này không throw ra ngoài để không rollback tournament/rule/season đã tạo thành công.
       //
-      // Với format='custom': builder này CHỈ tự động tạo group cho stage đầu tiên. Các stage
-      // sau (knockout/classification) cần dữ liệu chỉ có được SAU KHI vòng bảng kết thúc
-      // (groupId, matchId thật của các trận bán kết...) — không thể generate trước tại thời
-      // điểm tạo season. Việc kích hoạt knockoutApi.generateKnockoutFromStandings(...) và
-      // knockoutApi.generateKnockoutBracket(...) cho các stage tiếp theo phải làm ở màn hình
-      // quản lý season (sau khi vòng bảng có kết quả), không thuộc phạm vi wizard này.
+      // Với format='custom' + stage đầu = round_robin: builder này CHỈ tự động tạo group cho
+      // stage đầu tiên. Với stage đầu = knockout: KHÔNG tạo group gì cả — bracket knockout sẽ
+      // được generate thủ công ở màn hình quản lý season. Các stage sau (round_robin/knockout/
+      // classification có nguồn) cần dữ liệu chỉ có được SAU KHI stage nguồn kết thúc (standings/
+      // kết quả bracket thật) — không thể generate trước tại thời điểm tạo season, và (xem phần
+      // "kiểm tra knockout và group" cuối câu trả lời) chính API để tự động hoá bước này vẫn còn
+      // thiếu ở service layer — hiện phải làm thủ công ở màn hình quản lý season.
       let groupCreationWarning = null;
       if (shouldCreateInitialGroups && initialGroupCount > 0) {
         if (seasonForm.is_registration_open) {
@@ -777,7 +883,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       if (groupCreationWarning) {
         toast.warning(groupCreationWarning);
       } else if (finalIsCustom && finalCustomStages?.length > 1) {
-        toast.success('Khởi tạo Giải đấu và Mùa giải thành công! Đã tạo vòng bảng — các stage tiếp theo (knockout/tranh hạng) cần kích hoạt thủ công sau khi vòng bảng kết thúc.');
+        toast.success('Khởi tạo Giải đấu và Mùa giải thành công! Stage đầu tiên đã sẵn sàng — các stage tiếp theo cần kích hoạt thủ công sau khi stage đầu kết thúc.');
       } else {
         toast.success('Khởi tạo Giải đấu và Mùa giải thành công!');
       }
@@ -867,12 +973,12 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   // ---------- Custom stage card renderer ----------
   const renderStageCard = (stage, index) => {
-    const isLast = index === ruleForm.custom_stages.length - 1;
-    const prevStage = index > 0 ? ruleForm.custom_stages[index - 1] : null;
     const typeLabel = STAGE_TYPE_META.find(t => t.value === stage.type)?.label || stage.type;
+    const priorStages = ruleForm.custom_stages.filter((_, i) => i < index);
+    const sourceStage = ruleForm.custom_stages.find(s => s._cid === stage.source_stage_cid) || null;
 
     return (
-      <div key={index} className="bg-navy border border-navy-light rounded-2xl p-4 space-y-4">
+      <div key={stage._cid} className="bg-navy border border-navy-light rounded-2xl p-4 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-fuchsia-500/20 text-fuchsia-300 text-xs font-bold flex items-center justify-center shrink-0">
@@ -880,10 +986,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
             </span>
             <span className="text-xs font-bold uppercase tracking-wider text-fuchsia-300">{typeLabel}</span>
           </div>
-          {isLast && ruleForm.custom_stages.length > 1 && (
+          {ruleForm.custom_stages.length > 1 && (
             <button
               type="button"
-              onClick={removeLastCustomStage}
+              onClick={() => removeCustomStage(stage._cid)}
               className="text-gray-500 hover:text-red-400 flex items-center gap-1 text-xs"
             >
               <Trash2 className="w-3.5 h-3.5" /> Xóa
@@ -896,9 +1002,36 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
             className={INPUT}
             value={stage.name}
             placeholder="VD: Vòng bảng, Bán kết, Tranh hạng 3"
-            onChange={(e) => updateCustomStage(index, { name: e.target.value })}
+            onChange={(e) => updateCustomStage(stage._cid, { name: e.target.value })}
           />
         </FormField>
+
+        {/* Nguồn đội — chọn TỰ DO trong số các stage đứng trước, không ép "phải là stage liền
+            trước" như bản cũ. index===0 luôn ngầm hiểu là lấy toàn bộ pool đăng ký approved. */}
+        {index > 0 && (
+          <FormField
+            label={stage.type === 'round_robin' ? 'Nguồn đội (tùy chọn)' : 'Nguồn đội'}
+            required={stage.type !== 'round_robin'}
+          >
+            <select
+              className={INPUT}
+              value={stage.source_stage_cid ?? ''}
+              onChange={(e) => updateStageSource(stage._cid, e.target.value || null)}
+            >
+              {stage.type === 'round_robin' && <option value="">— Pool đăng ký mới (độc lập) —</option>}
+              {stage.type !== 'round_robin' && <option value="" disabled>-- chọn stage nguồn --</option>}
+              {priorStages.map(s => (
+                <option key={s._cid} value={s._cid}>{s.name}</option>
+              ))}
+            </select>
+          </FormField>
+        )}
+        {index === 0 && stage.type === 'knockout' && (
+          <p className="text-[11px] text-gray-500 italic flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            Bốc thăm trực tiếp từ danh sách đội đã duyệt — không qua vòng bảng nào trước.
+          </p>
+        )}
 
         {stage.type === 'round_robin' && (
           <>
@@ -906,40 +1039,59 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
               <NumField
                 label="Số bảng" required min={1} max={32}
                 value={stage.group_count}
-                onChange={(v) => updateCustomStage(index, { group_count: v })}
+                onChange={(v) => updateCustomStage(stage._cid, { group_count: v })}
               />
               <NumField
                 label="Số đội đi tiếp / bảng" required min={1}
                 value={stage.teams_advance_per_group}
-                onChange={(v) => updateCustomStage(index, { teams_advance_per_group: v })}
+                onChange={(v) => updateCustomStage(stage._cid, { teams_advance_per_group: v })}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <NumField
                 label="Điểm Thắng" required min={0}
                 value={stage.points_per_win}
-                onChange={(v) => updateCustomStage(index, { points_per_win: v })}
+                onChange={(v) => updateCustomStage(stage._cid, { points_per_win: v })}
               />
               <NumField
                 label="Điểm Hòa" required min={0}
                 value={stage.points_per_draw}
-                onChange={(v) => updateCustomStage(index, { points_per_draw: v })}
+                onChange={(v) => updateCustomStage(stage._cid, { points_per_draw: v })}
               />
               <NumField
                 label="Điểm Thua" required min={0}
                 value={stage.points_per_loss}
-                onChange={(v) => updateCustomStage(index, { points_per_loss: v })}
+                onChange={(v) => updateCustomStage(stage._cid, { points_per_loss: v })}
               />
             </div>
-            {index > 0 && (
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
-                <input
-                  type="checkbox"
-                  checked={stage.source_stage_order === null}
-                  onChange={() => toggleFreshPool(index)}
+
+            {/* NEW — khoảng hạng lấy đội từ stage nguồn. VD: 4 đội hạng 1 mỗi bảng vào đá
+                vòng tròn tính điểm lần 2 -> chọn [1,1]. Chỉ hiện khi đã chọn nguồn. */}
+            {stage.source_stage_cid && (
+              <div className="grid grid-cols-2 gap-4">
+                <NumField
+                  label="Lấy đội từ hạng"
+                  required min={1}
+                  value={stage.source_rank_range ? stage.source_rank_range[0] : 1}
+                  onChange={(v) => updateCustomStage(stage._cid, {
+                    source_rank_range: [v, Math.max(v, stage.source_rank_range ? stage.source_rank_range[1] : v)],
+                  })}
                 />
-                Lấy pool đội mới hoàn toàn (không phụ thuộc stage trước)
-              </label>
+                <NumField
+                  label="Đến hạng"
+                  required min={1}
+                  value={stage.source_rank_range ? stage.source_rank_range[1] : 1}
+                  onChange={(v) => updateCustomStage(stage._cid, {
+                    source_rank_range: [Math.min(v, stage.source_rank_range ? stage.source_rank_range[0] : v), v],
+                  })}
+                />
+                {sourceStage?.type === 'round_robin' && (
+                  <p className="col-span-2 text-[11px] text-gray-500 italic flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    Ví dụ [1,1] = chỉ lấy đội hạng 1 mỗi bảng của "{sourceStage.name}" (tối đa {sourceStage.teams_advance_per_group}).
+                  </p>
+                )}
+              </div>
             )}
           </>
         )}
@@ -950,7 +1102,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
               <select
                 className={INPUT}
                 value={stage.seed_mode}
-                onChange={(e) => updateCustomStage(index, { seed_mode: e.target.value })}
+                onChange={(e) => updateCustomStage(stage._cid, { seed_mode: e.target.value })}
               >
                 {SEED_MODE_META.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -961,7 +1113,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
               <select
                 className={INPUT}
                 value={stage.leg_type}
-                onChange={(e) => updateCustomStage(index, { leg_type: e.target.value })}
+                onChange={(e) => updateCustomStage(stage._cid, { leg_type: e.target.value })}
               >
                 {KNOCKOUT_LEG_TYPE_META.map(k => (
                   <option key={k.value} value={k.value}>{k.label}</option>
@@ -973,16 +1125,16 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
         {stage.type === 'classification' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Nguồn đội" required>
+            <FormField label="Nguồn đội (loại)" required>
               <select
                 className={INPUT}
                 value={stage.source_kind}
-                onChange={(e) => updateCustomStage(index, { source_kind: e.target.value })}
-                disabled={prevStage?.type !== 'knockout'}
+                onChange={(e) => updateCustomStage(stage._cid, { source_kind: e.target.value })}
+                disabled={sourceStage?.type !== 'knockout'}
               >
                 <option value="standing">Theo bảng xếp hạng</option>
-                <option value="loser_of_stage" disabled={prevStage?.type !== 'knockout'}>
-                  Đội thua ở stage trước
+                <option value="loser_of_stage" disabled={sourceStage?.type !== 'knockout'}>
+                  Đội thua ở stage nguồn
                 </option>
               </select>
             </FormField>
@@ -990,17 +1142,17 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
               <select
                 className={INPUT}
                 value={stage.leg_type}
-                onChange={(e) => updateCustomStage(index, { leg_type: e.target.value })}
+                onChange={(e) => updateCustomStage(stage._cid, { leg_type: e.target.value })}
               >
                 {KNOCKOUT_LEG_TYPE_META.map(k => (
                   <option key={k.value} value={k.value}>{k.label}</option>
                 ))}
               </select>
             </FormField>
-            {prevStage?.type !== 'knockout' && (
+            {sourceStage?.type !== 'knockout' && (
               <p className="sm:col-span-2 text-[11px] text-gray-500 italic flex items-center gap-1.5">
                 <Info className="w-3.5 h-3.5 shrink-0" />
-                "Đội thua ở stage trước" chỉ dùng được khi stage liền trước là Loại trực tiếp.
+                "Đội thua ở stage nguồn" chỉ dùng được khi stage nguồn đang chọn là Loại trực tiếp.
               </p>
             )}
           </div>
@@ -1284,9 +1436,6 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                   </div>
                 )}
 
-                {/* Đội hình & xử thua — 3 field CỐ ĐỊNH, luôn cùng 1 layout bất kể format, tránh
-                    lệch dòng như bản trước (trước đây điều kiện cột theo hasGroupPhase && hasKnockout
-                    dù 3 field này không phụ thuộc gì vào group phase). */}
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1378,7 +1527,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                     </p>
                     <p className="text-[11px] text-gray-500 italic mb-3 flex items-center gap-1.5">
                       <Info className="w-3.5 h-3.5 shrink-0" />
-                      Chỉ dựng được pipeline tuyến tính (stage sau lấy nguồn từ đúng stage liền trước) và chỉ xóa được stage cuối cùng.
+                      Mỗi stage tự chọn nguồn đội (bất kỳ stage nào đứng trước, không bắt buộc liền kề). Xóa/sửa được stage bất kỳ.
                     </p>
                     <div className="space-y-3">
                       {ruleForm.custom_stages.map((stage, idx) => renderStageCard(stage, idx))}

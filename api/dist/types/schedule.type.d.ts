@@ -9,21 +9,39 @@ export type MatchDraft = {
 };
 export type Slot = {
     venue_id: number;
-    date: Date;
-    time: string;
     scheduledAtMs: number;
 };
-export type GenerateOptions = {
+export type AutoScheduleFilterOptions = {
+    rounds?: number[];
+    groupIds?: number[];
+};
+export type ScheduleOptions = {
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+};
+export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
+export type GenerateOptions = ScheduleOptions & AutoScheduleFilterOptions & {
     desiredGroupCount: number;
     minGroupSize: number;
     maxGroupSize: number;
-    venueIds: number[];
-    matchTimes: string[];
     doubleRound?: boolean;
     minRestDaysPerTeam?: number;
 };
-export type ScheduleOptions = Pick<GenerateOptions, 'venueIds' | 'matchTimes'>;
-export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
+/**
+ * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions: không có
+ * desiredGroupCount/minGroupSize/maxGroupSize vì group đã được tạo & bốc
+ * thăm sẵn qua GroupService (GroupDrawUI). rounds/groupIds ở đây không ảnh
+ * hưởng bước TẠO match (luôn tạo đủ mọi round cho mọi group đã bốc thăm) —
+ * chỉ áp dụng cho bước xếp lịch (autoScheduleMatches) chạy ngay sau đó.
+ */
+export interface GenerateFromGroupsOptions extends ScheduleOptions, AutoScheduleFilterOptions {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    allowPastDate?: boolean;
+}
 export type GenerateResult = {
     groupCount: number;
     groupIds: number[];
@@ -34,6 +52,7 @@ export type GenerateResult = {
 export type RescheduleInput = {
     scheduledAt: Date;
     venueId: number;
+    bufferMinutes?: number;
 };
 export type ScheduleMatchItem = {
     matchId: number;
@@ -51,19 +70,12 @@ export type SeasonSchedule = {
     unscheduledMatches: number;
     matches: ScheduleMatchItem[];
 };
-/**
- * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions:
- * không có desiredGroupCount/minGroupSize/maxGroupSize vì group đã được
- * tạo & bốc thăm sẵn qua GroupService (GroupDrawUI). Chỉ cần thông tin
- * xếp lịch (sân, khung giờ, số ngày nghỉ).
- */
-export interface GenerateFromGroupsOptions {
-    doubleRound?: boolean;
-    minRestDaysPerTeam?: number;
-    venueIds: number[];
-    matchTimes: string[];
-    allowPastDate?: boolean;
-}
+export type RoundSummary = {
+    round: number;
+    total: number;
+    unscheduled: number;
+    fullyScheduled: boolean;
+};
 export declare const matchScheduleSelect: {
     readonly id: true;
     readonly round: true;

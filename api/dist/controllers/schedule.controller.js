@@ -25,6 +25,16 @@ let ScheduleController = class ScheduleController extends Controller {
         this.setStatus(201);
         return this.service.generateGroupsAndSchedule(seasonId, parsed);
     }
+    // NEW: round-selector cho GenerateScheduleModal — cho biết mỗi round
+    // group_stage còn bao nhiêu match chưa xếp lịch. groupIds query param
+    // (CSV) optional — nếu admin đã chọn subset bảng đấu trước khi mở
+    // round selector, chỉ tính round trong phạm vi đó.
+    async getRoundsSummary(seasonId, groupIds) {
+        const parsedGroupIds = groupIds
+            ? groupIds.split(',').map(Number).filter(n => !Number.isNaN(n))
+            : undefined;
+        return this.service.getGroupStageRoundsSummary(seasonId, parsedGroupIds);
+    }
     /**
      * NEW: Sinh lịch thi đấu cho season ĐÃ có bảng đấu + đã bốc thăm qua
      * GroupService (POST /groups/bulk, POST /groups/{seasonId}/draw hoặc
@@ -67,6 +77,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "generateSchedule", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Get('seasons/{seasonId}/rounds-summary'),
+    __param(0, Path()),
+    __param(1, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "getRoundsSummary", null);
 __decorate([
     Security('jwt', ['organizing']),
     Post('seasons/{seasonId}/generate-from-groups'),

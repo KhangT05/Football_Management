@@ -1,40 +1,60 @@
 import { z } from 'zod';
 
-import { venueIdsField, matchTimesField, vnTimeRegex } from '../dtos/fields.schema.js';
+import { venueIdsField, vnTimeRegex } from '../dtos/fields.schema.js';
 
+const dailyTimeField = z.string().regex(vnTimeRegex ?? /^([01]\d|2[0-3]):[0-5]\d$/, 'Định dạng giờ phải là HH:mm');
 
-const isoDatetime = (fieldName: string) =>
-    z.string().datetime().transform(s => new Date(s));
+const scheduleWindowFields = {
+    venueIds: venueIdsField,
+    dailyStartTime: dailyTimeField,
+    dailyEndTime: dailyTimeField,
+    bufferMinutes: z.number().int().positive().optional(),
+};
 
+const scheduleWindowRefine = <T extends { dailyStartTime: string; dailyEndTime: string }>(d: T) =>
+    d.dailyStartTime < d.dailyEndTime;
 
 export const generateScheduleSchema = z.object({
     desiredGroupCount: z.number().int().min(1),
     minGroupSize: z.number().int().min(2),
     maxGroupSize: z.number().int().min(2),
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
+    ...scheduleWindowFields,
     doubleRound: z.boolean().optional().default(true),
     minRestDaysPerTeam: z.number().int().min(1).optional(),
+}).refine(scheduleWindowRefine, {
+    path: ['dailyEndTime'],
+    message: 'dailyEndTime phải sau dailyStartTime',
 });
 
 export const autoScheduleSchema = z.object({
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
+    ...scheduleWindowFields,
+    rounds: z.array(z.number().int().positive()).optional(),
+    groupIds: z.array(z.number().int().positive()).optional(),
+    allowPastDate: z.boolean().optional(),
+}).refine(scheduleWindowRefine, {
+    path: ['dailyEndTime'],
+    message: 'dailyEndTime phải sau dailyStartTime',
 });
 
 export const rescheduleMatchSchema = z.object({
     scheduledAt: z.date(),
     venueId: z.number().int().positive(),
+    bufferMinutes: z.number().int().positive().optional(),
 });
 
 export const generateFromGroupsSchema = z.object({
     doubleRound: z.boolean().optional(),
     minRestDaysPerTeam: z.number().int().min(0).optional(),
     venueIds: z.array(z.number().int().positive()).min(1, 'venueIds không được rỗng'),
-    matchTimes: z
-        .array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Định dạng giờ phải là HH:mm'))
-        .min(1, 'matchTimes không được rỗng'),
+    dailyStartTime: dailyTimeField,
+    dailyEndTime: dailyTimeField,
+    bufferMinutes: z.number().int().positive().optional(),
+    rounds: z.array(z.number().int().positive()).optional(),
+    groupIds: z.array(z.number().int().positive()).optional(),
     allowPastDate: z.boolean().optional(),
+}).refine(scheduleWindowRefine, {
+    path: ['dailyEndTime'],
+    message: 'dailyEndTime phải sau dailyStartTime',
 });
 
 export type GenerateFromGroupsDto = z.infer<typeof generateFromGroupsSchema>;

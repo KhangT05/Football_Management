@@ -239,26 +239,6 @@ export class MatchResultService {
         });
         return { isKnockout, groupId: match.group_id };
     }
-    async overrideResult(matchId, input, scheduleOptions) {
-        const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
-            await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
-            return this.overrideResultInTx(tx, matchId, input);
-        });
-        if (!isKnockout && groupId) {
-            try {
-                await this.standingsService.recomputeGroupStandings(groupId);
-            }
-            catch (err) {
-                console.error(`[overrideResult] recompute standings failed for group ${groupId}:`, err);
-            }
-        }
-        try {
-            await this.recomputePlayerStats(matchId);
-        }
-        catch (err) {
-            console.error(`[overrideResult] recompute player stats failed for match ${matchId}:`, err);
-        }
-    }
     /**
      * FIX (player stats drift — bug report #2): trước đây `played` set chỉ
      * suy từ match_events HIỆN TẠI của match này (đọc SAU khi đã

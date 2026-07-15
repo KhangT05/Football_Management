@@ -497,14 +497,18 @@ export class MatchLifecycleService {
             }
             return { isKnockout, groupId: match.group_id };
         });
+        const warnings = [];
         if (!isKnockout && groupId) {
             try {
                 await this.matchResultService.recomputeStandingsFor(groupId);
             }
             catch (err) {
-                console.error(`[resolveAppeal] recompute standings failed for group ${groupId}:`, err);
+                const msg = `Recompute standings thất bại cho group ${groupId}: ${err instanceof Error ? err.message : String(err)}`;
+                console.error(`[resolveAppeal] ${msg}`);
+                warnings.push(msg);
             }
         }
+        return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
     async _assertCorrectionWindow(matchId, client = this.prisma) {
         const match = await client.match.findUniqueOrThrow({
@@ -549,7 +553,7 @@ export class MatchLifecycleService {
         }
         return warnings;
     }
-    async addEvent(matchId, input, scheduleOptions) {
+    async addEvent(matchId, input) {
         const { groupId, isKnockout } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
             await this._assertCorrectionWindow(matchId, tx);
@@ -619,7 +623,7 @@ export class MatchLifecycleService {
         const warnings = await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
         return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
-    async editEvent(matchId, eventId, input, scheduleOptions) {
+    async editEvent(matchId, eventId, input) {
         if (input.playerId != null) {
             const exists = await this.prisma.player.findUnique({ where: { id: input.playerId }, select: { id: true } });
             if (!exists)
@@ -712,7 +716,7 @@ export class MatchLifecycleService {
         const warnings = await this._runPostCorrectionSteps(matchId, groupId, isKnockout, affectedPlayers);
         return warnings.length > 0 ? { postCommitWarnings: warnings } : {};
     }
-    async editScore(matchId, input, scheduleOptions) {
+    async editScore(matchId, input) {
         const { isKnockout, groupId } = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
             await this._assertCorrectionWindow(matchId, tx);

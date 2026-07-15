@@ -1,57 +1,18 @@
 import axiosClient from './axiosClient';
 
-/**
- * ============================================================
- * matchApi — API calls cho Matches
- * ============================================================
- *
- * Schedule endpoints (schedule.controller.ts):
- * ✅ GET  /schedules/seasons/{seasonId}/schedule
- * ✅ GET  /schedules/seasons/{seasonId}/teams/{teamId}/schedule
- * ✅ POST /schedules/seasons/{seasonId}/generate
- * ✅ POST /schedules/seasons/{seasonId}/generate-from-groups
- * ✅ POST /schedules/seasons/{seasonId}/schedule
- * ✅ PATCH /schedules/matches/{matchId}/reschedule
- * ✅ GET  /phases/{phaseId}/knockout/bracket
- *
- * Match lifecycle (match.controller.ts):
- * ✅ POST /matches/{id}/start
- * ✅ POST /matches/{id}/period
- * ✅ POST /matches/{id}/events          → recordEvent
- * ✅ POST /matches/{id}/finalize
- * ✅ POST /matches/{id}/confirm-official
- * ✅ POST /matches/{id}/forfeit
- * ✅ POST /matches/{id}/abandon
- * ✅ POST /matches/{id}/manual-score
- * ✅ POST /matches/{id}/admin-result    → adminRecordResult
- *
- * Match result (matchResult.controller.ts):
- * ✅ GET  /matches/{id}/result          → getMatchById
- * ✅ GET  /matches/{id}/events          → getMatchEvents
- * ✅ GET  /matches/{id}/report          → getMatchReport (blob PDF)
- * ✅ GET  /matches/{id}/report/data     → getMatchReportData (JSON preview,
- *      chưa có UI nào gọi — optional, giữ lại cho preview trước khi export)
- * ✅ PATCH /matches/{id}/score          → editScore (correction window, manual path only)
- *
- * ❌ POST /matches/{id}/void-result  — CHƯA IMPLEMENT
- *      Schema (MatchResultStatus) không có void status.
- *      Cần quyết định: DELETE match_result + reset status, hay is_active=false.
- * ❌ POST   /matches    — không tồn tại
- * ❌ PATCH  /matches/{id} — không tồn tại
- * ❌ DELETE /matches/{id} — không tồn tại
- * ❌ GET    /matches/{id} — không tồn tại (dùng /matches/{id}/result)
- * ============================================================
- */
 
 export const matchApi = {
-
-  // ── Schedule ────────────────────────────────────────────────────────────────
 
   getScheduleBySeason: (seasonId, params = {}) =>
     axiosClient.get(`/schedules/seasons/${seasonId}/schedule`, { params }),
 
   getTeamSchedule: (seasonId, teamId, params = {}) =>
     axiosClient.get(`/schedules/seasons/${seasonId}/teams/${teamId}/schedule`, { params }),
+
+  getGroupStageRoundsSummary: (seasonId, groupIds) =>
+    axiosClient.get(`/schedules/seasons/${seasonId}/rounds-summary`, {
+      params: groupIds?.length ? { groupIds: groupIds.join(',') } : {},
+    }),
 
   generateSchedule: (seasonId, body) =>
     axiosClient.post(`/schedules/seasons/${seasonId}/generate`, body),
@@ -76,14 +37,6 @@ export const matchApi = {
   transitionPeriod: (id, body) =>
     axiosClient.post(`/matches/${id}/period`, body),
 
-  /**
-   * Record single event — live path (ongoing / pending_official).
-   * Card/sub từ admin UI gửi qua đây sau adminRecordResult (audit trail, fire-and-forget).
-   * Backend guard reject nếu match đã finished — expected, không phải error.
-   *
-   * body: { teamId, type: MatchEventType, minute, note? }
-   * type dùng MatchEventType enum từ MatchDetailModal.jsx — không hardcode string.
-   */
   recordEvent: (id, body) =>
     axiosClient.post(`/matches/${id}/events`, body),
 
@@ -102,22 +55,6 @@ export const matchApi = {
   submitManualScore: (id, body) =>
     axiosClient.post(`/matches/${id}/manual-score`, body),
 
-  /**
-   * Admin finalize kết quả cho match ở bất kỳ trạng thái hợp lệ nào.
-   * Allowed: scheduled / postponed / bye / ongoing / pending_official / needs_review
-   * Score = body.homeScore / awayScore — KHÔNG compute từ events.
-   * scorers[] → insert MatchEvent làm audit trail / player stats.
-   *
-   * body: {
-   *   homeScore: number,
-   *   awayScore: number,
-   *   scorers?: Array<{ teamId, type: 'goal'|'own_goal', minute, playerName? }>,
-   *   resultType?: MatchResultType,   // default: full_time
-   *   homeHalfTimeScore?: number,
-   *   awayHalfTimeScore?: number,
-   * }
-   * → POST /matches/{id}/admin-result (201)
-   */
   adminRecordResult: (id, body) =>
     axiosClient.post(`/matches/${id}/admin-result`, body),
 
@@ -126,30 +63,15 @@ export const matchApi = {
   getMatchById: (id) =>
     axiosClient.get(`/matches/${id}/result`),
 
-  // Alias — MatchShared.useMatchExtras gọi matchApi.getMatchResult(id) thay vì
-  // getMatchById; thêm alias để không phải sửa MatchShared (nhiều nơi dùng).
   getMatchResult: (id) =>
     axiosClient.get(`/matches/${id}/result`),
 
   getMatchEvents: (id, params = {}) =>
     axiosClient.get(`/matches/${id}/events`, { params }),
 
-  /**
-   * GET /matches/{matchId}/report — trả PDF binary (Content-Type:
-   * application/pdf, Content-Disposition: attachment). responseType: 'blob'
-   * bắt buộc, nếu không axios sẽ cố parse binary PDF như text/JSON và
-   * corrupt data trước khi ScheduleTab kịp tạo Blob từ res.data.
-   */
   getMatchReport: (matchId) =>
     axiosClient.get(`/matches/${matchId}/report`, { responseType: 'blob' }),
 
-  /**
-   * GET /matches/{matchId}/report/data — JSON preview (MatchReportOutput).
-   * Chưa có UI nào gọi — ConfirmExportModal hiện fetch trực tiếp field từ
-   * `match`/`teams` truyền vào props thay vì gọi API riêng. Giữ lại cho
-   * trường hợp cần preview server-computed data (lineup, goal timeline...)
-   * trước khi admin bấm xuất PDF thật.
-   */
   getMatchReportData: (matchId) =>
     axiosClient.get(`/matches/${matchId}/report/data`),
 
@@ -179,9 +101,6 @@ export const matchApi = {
   // ── TODO ─────────────────────────────────────────────────────────────────────
 
   // voidResult — CHƯA IMPLEMENT.
-  // Schema MatchResultStatus không có void status.
-  // UI đang disable nút Hủy KQ cho đến khi backend implement.
-  // voidResult: (id) => axiosClient.post(`/matches/${id}/void-result`),
 
   // ── Deprecated ───────────────────────────────────────────────────────────────
 

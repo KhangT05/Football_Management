@@ -31,13 +31,13 @@ export declare class MatchLifecycleService {
     fileAppeal(matchId: number, reason: string): Promise<void>;
     fileProtest(matchId: number, reason: string): Promise<void>;
     private _fileDispute;
-    resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<void>;
+    resolveAppeal(matchId: number, input: ResolveAppealInput): Promise<CorrectionResult>;
     private _assertCorrectionWindow;
     private _runPostCorrectionSteps;
-    addEvent(matchId: number, input: AddEventInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    addEvent(matchId: number, input: AddEventInput): Promise<CorrectionResult>;
     deleteEvent(matchId: number, eventId: number, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
-    editEvent(matchId: number, eventId: number, input: EditEventInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
-    editScore(matchId: number, input: EditScoreInput, scheduleOptions: OptionalScheduleOptions): Promise<CorrectionResult>;
+    editEvent(matchId: number, eventId: number, input: EditEventInput): Promise<CorrectionResult>;
+    editScore(matchId: number, input: EditScoreInput): Promise<CorrectionResult>;
     private _recalculateResultTx;
     /**
      * FIX (knockout draw guard + penalty forwarding):

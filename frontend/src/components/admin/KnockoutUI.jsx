@@ -8,6 +8,12 @@ import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
 import { BTN_PRIMARY } from '../../utils/adminStyles';
 import BracketView from './BracketView';
+// FIX (tech debt nêu trong review): trước đây file này tự định nghĩa lại
+// VIETNAMESE_DIACRITICS_REGEX/isLikelyVietnameseMessage/getFriendlyErrorMessage
+// y hệt bản trong utils/errorHelper.js (đã dùng chung ở ScheduleTab.jsx) —
+// vi phạm DRY, 2 file dễ lệch nhau nếu 1 bên sửa logic mà bên kia quên.
+// Dùng lại đúng 1 nguồn duy nhất.
+import { getFriendlyErrorMessage, isLikelyVietnameseMessage } from '../../utils/errorHelper';
 
 const TIME_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
@@ -16,23 +22,6 @@ const TIME_INPUT_CLASS =
 const SELECT_INPUT_CLASS =
   'px-3 py-2 bg-navy-dark border border-navy-light rounded-lg text-white text-sm ' +
   'focus:outline-none focus:border-amber-500';
-
-// Nhận diện message tiếng Việt (có dấu) — dùng để lọc message backend trước
-// khi đẩy ra toast. Các AppError nghiệp vụ của BE thường viết tiếng Việt có
-// dấu, nhưng lỗi validate framework-level (Zod/Joi kiểu "is not allowed",
-// "is required") hoặc lỗi network (err.message dạng "Network Error") là
-// tiếng Anh thuần — không nên hiện thẳng ra cho người dùng.
-const VIETNAMESE_DIACRITICS_REGEX = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
-const isLikelyVietnameseMessage = (msg) => typeof msg === 'string' && VIETNAMESE_DIACRITICS_REGEX.test(msg);
-
-// Helper dùng chung cho mọi catch-block hiển thị lỗi API ra toast: ưu tiên
-// message tiếng Việt cụ thể từ backend, nếu message là tiếng Anh (lỗi
-// validate framework-level, lỗi network, v.v.) thì luôn dùng fallback tiếng
-// Việt — không bao giờ để lộ text tiếng Anh thô ra UI.
-const getFriendlyErrorMessage = (err, fallback) => {
-  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
-  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
-};
 
 // Khớp helper.match.helper.ts::nextPowerOf2 phía BE — dùng để PREVIEW
 // bracket size / số bye cho user trước khi submit, KHÔNG dùng để chặn submit
@@ -80,9 +69,12 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
   const seasonHasDateRange = Boolean(seasonStartStr && seasonEndStr);
   const isSeasonClosed = isSeasonClosedStatus(season?.status);
 
+  const [dailyStartTime, setDailyStartTime] = useState('08:00');
+  const [dailyEndTime, setDailyEndTime] = useState('20:00');
+  const [bufferMinutes, setBufferMinutes] = useState(30);
+
   const [venueIds, setVenueIds] = useState([]);
-  const [matchTimes, setMatchTimes] = useState([]);
-  const [timeInput, setTimeInput] = useState('');
+
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -98,31 +90,28 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonStartStr, seasonEndStr, seasonHasDateRange]);
 
-  const addTimeSlot = () => {
-    if (!timeInput) return;
-    if (matchTimes.includes(timeInput)) return toast.error('Giờ này đã được thêm');
-    setMatchTimes(prev => [...prev, timeInput].sort());
-    setTimeInput('');
-  };
-
-  const removeTimeSlot = (t) => setMatchTimes(prev => prev.filter(x => x !== t));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSeasonClosed) return toast.error('Mùa giải đã kết thúc — không thể xếp lịch knockout nữa.');
     if (venueIds.length === 0) return toast.error('Chọn ít nhất 1 sân đấu');
-    if (matchTimes.length === 0) return toast.error('Thêm ít nhất 1 khung giờ');
+    if (!dailyStartTime || !dailyEndTime) return toast.error('Nhập khung giờ hoạt động trong ngày');
+    if (dailyStartTime >= dailyEndTime) return toast.error('Giờ bắt đầu phải trước giờ kết thúc');
     if (dateRangeStart && dateRangeEnd && dateRangeStart > dateRangeEnd) {
       return toast.error('Ngày bắt đầu phải trước ngày kết thúc');
     }
-    // FIX: chặn ngay ở FE thay vì để BE trả lỗi rồi mới biết.
     if (seasonHasDateRange && ((dateRangeStart && dateRangeStart < seasonStartStr) || (dateRangeEnd && dateRangeEnd > seasonEndStr))) {
       return toast.error(`Khoảng ngày phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr})`);
     }
 
     setSubmitting(true);
     try {
-      const payload = { venueIds, matchTimes };
+      // CHỈ gửi field khớp OptionalScheduleOptions (schedule.type.ts) —
+      // dailyStartTime/dailyEndTime/bufferMinutes thay cho matchTimes cũ.
+      // excludedDates cũng thuộc ScheduleOptions (BE) nếu sau này thêm UI
+      // chọn ngày nghỉ cho knockout — hiện modal này chưa có control đó nên
+      // không gửi field rỗng.
+      const payload = { venueIds, dailyStartTime, dailyEndTime, bufferMinutes: Number(bufferMinutes) };
       if (dateRangeStart) payload.dateRangeStart = dateRangeStart;
       if (dateRangeEnd) payload.dateRangeEnd = dateRangeEnd;
 
@@ -169,34 +158,26 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
 
           <fieldset disabled={isSeasonClosed} className="space-y-5 disabled:opacity-50">
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1">Giờ thi đấu</label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="time"
-                  value={timeInput}
-                  onChange={e => setTimeInput(e.target.value)}
-                  className={`${TIME_INPUT_CLASS} flex-1`}
-                />
-                <button
-                  type="button"
-                  onClick={addTimeSlot}
-                  className="px-3 rounded-lg bg-navy-dark border border-navy-light text-gray-300 hover:text-white hover:border-amber-500"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              {matchTimes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {matchTimes.map(t => (
-                    <span key={t} className="flex items-center gap-1 bg-navy-dark border border-navy-light rounded-full px-3 py-1 text-xs text-gray-300">
-                      {t}
-                      <button type="button" onClick={() => removeTimeSlot(t)} className="hover:text-red-400">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
+              <label className="block text-xs font-bold text-gray-400 mb-1">Khung giờ hoạt động trong ngày</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
+                  <TimeField value={dailyStartTime} onChange={setDailyStartTime} />
                 </div>
-              )}
+                <div>
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
+                  <TimeField value={dailyEndTime} onChange={setDailyEndTime} />
+                </div>
+              </div>
+              <div className="mt-3 max-w-[200px]">
+                <span className="text-[11px] text-gray-500 font-bold uppercase">Cách quãng tối thiểu (phút)</span>
+                <input
+                  type="number" min="0"
+                  value={bufferMinutes}
+                  onChange={e => setBufferMinutes(e.target.value)}
+                  className={`${SELECT_INPUT_CLASS} w-full mt-1`}
+                />
+              </div>
             </div>
 
             <div>

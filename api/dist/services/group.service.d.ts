@@ -60,7 +60,10 @@ export declare class GroupService {
         minTeamsPerGroup?: number;
         maxTeamsPerGroup?: number;
     }): Promise<DrawAssignment[]>;
-    advanceToNextRoundRobin(fromPhaseId: number, newGroupCount: number): Promise<{
+    advanceToNextRoundRobin(fromPhaseId: number, newGroupCount: number, rankRange?: {
+        from: number;
+        to: number;
+    }): Promise<{
         newPhaseId: number;
         assignments: DrawAssignment[];
     }>;

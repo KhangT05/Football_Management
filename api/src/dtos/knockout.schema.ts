@@ -97,9 +97,16 @@ export const generateKnockoutRequestSchema = knockoutGenerateOptionsSchema.omit(
 });
 
 export const advanceWinnerRequestSchema = advanceWinnerInputSchema.extend({
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
-});
+    venueIds: z.array(z.number().int().positive()).optional(),
+    dailyStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    dailyEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    bufferMinutes: z.number().int().positive().optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+}).refine(
+    d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime,
+    { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' },
+);
 
 export type AutoSeedKnockoutRequestDto = z.infer<typeof autoSeedKnockoutRequestSchema>;
 export type KnockoutGenerateOptionsDto = z.infer<typeof knockoutGenerateOptionsSchema>;

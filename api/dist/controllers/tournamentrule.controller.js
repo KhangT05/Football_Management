@@ -11,7 +11,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Request, Query } from "tsoa";
-import { createTournamentRuleSchema, updateTournamentRuleSchema, } from "../dtos/tournamentRule.schema.js";
+import * as tournamentRuleSchema from "../dtos/tournamentRule.schema.js";
 import { createAppError } from "../common/app.error.js";
 import { TournamentRuleService } from "../services/tournamentRule.service.js";
 let TournamentRuleController = class TournamentRuleController extends Controller {
@@ -27,7 +27,7 @@ let TournamentRuleController = class TournamentRuleController extends Controller
         return this.service.findByIdOrFail(id);
     }
     async create(body, req) {
-        const parsed = createTournamentRuleSchema.safeParse(body);
+        const parsed = tournamentRuleSchema.createTournamentRuleSchema.safeParse(body);
         if (!parsed.success) {
             throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
         }
@@ -35,7 +35,7 @@ let TournamentRuleController = class TournamentRuleController extends Controller
         return this.service.create(parsed.data, req.user.user_id);
     }
     async update(id, body, force) {
-        const parsed = updateTournamentRuleSchema.safeParse(body);
+        const parsed = tournamentRuleSchema.updateTournamentRuleSchema.safeParse(body);
         if (!parsed.success) {
             throw createAppError("VALIDATION_ERROR", parsed.error.issues.map(i => i.message).join("; "));
         }

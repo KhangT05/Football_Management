@@ -1,10 +1,12 @@
 import {
     Controller, Route, Tags, Post, Get,
     Path, Body, Security, SuccessResponse,
+    Query,
 } from 'tsoa';
 import { KnockoutService } from '../services/knockout.service.js';
 import * as knockoutSchema from '../dtos/knockout.schema.js';
 import { BracketSlotNode, KnockoutGenerateResult } from '../types/knockout.type.js';
+import { RoundSummary } from '../types/schedule.type.js';
 
 @Route('')
 @Tags('Knockout')
@@ -44,10 +46,14 @@ export class KnockoutController extends Controller {
         @Path() seasonId: number,
         @Path() phaseId: number,
         @Body() body: knockoutSchema.AdvanceWinnerRequestDto,
-    ): Promise<{ matchCreated: boolean; newMatchId?: number }> {
-        const { venueIds, matchTimes, ...input } = knockoutSchema.advanceWinnerRequestSchema.parse(body);
-        return this.service.advanceWinner(phaseId, seasonId, input, { venueIds, matchTimes });
+    ): Promise<{ matchCreated: boolean; newMatchId?: number; scheduleWarning?: string }> {
+        const { venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd, ...input } =
+            knockoutSchema.advanceWinnerRequestSchema.parse(body);
+        return this.service.advanceWinner(phaseId, seasonId, input, {
+            venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
+        });
     }
+
     @Get('phases/{phaseId}/knockout/bracket')
     async getBracket(
         @Path() phaseId: number,

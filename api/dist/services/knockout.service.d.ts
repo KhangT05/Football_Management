@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaClient, PhaseType } from '../generated/prisma/client.js';
 import { AdvanceWinnerInput, BracketSlotNode, KnockoutGenerateOptions, KnockoutGenerateResult, AutoSeedKnockoutOptions, SwapSeedsInput } from '../types/knockout.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
@@ -110,5 +110,23 @@ export declare class KnockoutService extends ScheduleEngine {
     private scheduleMatchBatch;
     private buildAllSlotCreateData;
     private bulkLinkSlots;
+    /**
+ * Guard dùng NGAY TRONG transaction tạo bracket — chặn tạo phase 'final'/
+ * 'third_place'/'semi_final'/'quarter_final' khi phase liền trước chưa tồn
+ * tại hoặc còn match chưa kết thúc (finished/forfeited).
+ */
+    private _assertPreviousStageComplete;
+    /**
+     * NEW: đọc-only version cho FE — gọi TRƯỚC khi bấm "Tạo Sơ Đồ Bracket" để
+     * disable nút + hiện lý do, thay vì để user ăn lỗi 409 sau khi submit. Cần
+     * thêm route (chưa có sẵn controller trong context này):
+     *   GET /knockout/seasons/:seasonId/stage-readiness?phaseType=final
+     */
+    getStageReadiness(seasonId: number, targetPhaseType: PhaseType): Promise<{
+        ready: boolean;
+        priorPhaseType: PhaseType | null;
+        priorPhaseExists: boolean;
+        unfinishedCount: number;
+    }>;
 }
 //# sourceMappingURL=knockout.service.d.ts.map

@@ -9,31 +9,62 @@ export type MatchDraft = {
     status: MatchStatus;
 };
 
+// FIX (bỏ fixed matchTimes): Slot giờ chỉ cần venue_id + scheduledAtMs — thời
+// điểm start được tính liên tục (dailyStartTime + k*(duration+buffer)), không
+// còn khái niệm "1 trong N khung giờ cố định trong ngày" nữa. Xem
+// ScheduleEngine.buildSlotPool.
 export type Slot = {
     venue_id: number;
-    date: Date;
-    time: string;
-    scheduledAtMs: number; // epoch ms, cache sẵn từ vnTimeToUtc(date, time) — 
-    // single source of truth cho mọi so sánh rest-days,
-    // tránh tính lại timezone conversion nhiều lần/không nhất quán
+    scheduledAtMs: number;
 };
 
-export type GenerateOptions = {
+// NEW: filter áp dụng cho autoScheduleMatches — cho phép admin chọn xếp lịch
+// cho 1 tập round/group cụ thể (vd tạo cùng lúc vòng 1,2,3 cho 5 bảng), thay
+// vì luôn xếp TOÀN BỘ match chưa scheduled_at của season. Dùng chung cho cả
+// GenerateOptions, GenerateFromGroupsOptions, và lời gọi autoScheduleMatches
+// trực tiếp (endpoint /schedule) để re-schedule phần còn lại sau này.
+export type AutoScheduleFilterOptions = {
+    rounds?: number[];
+    groupIds?: number[];
+};
+
+// FIX (thay matchTimes: string[] bằng continuous window + buffer): trước đây
+// chỉ đá được đúng N khung giờ cố định/ngày (vd 08:00, 15:00) — 2 trận cùng
+// sân khác matchTimes có thể sát nhau bất kỳ khoảng cách nào nếu admin nhập
+// 2 giờ gần nhau. Giờ chỉ cần khung giờ hoạt động trong ngày (dailyStartTime
+// → dailyEndTime) + khoảng cách tối thiểu bufferMinutes giữa 2 trận CÙNG SÂN
+// — slot tự sinh liên tục theo bước (ASSUMED_MATCH_DURATION_MS + buffer).
+export type ScheduleOptions = {
+    venueIds: number[];
+    dailyStartTime: string; // "HH:mm", giờ VN
+    dailyEndTime: string;   // "HH:mm", giờ VN
+    bufferMinutes?: number; // mặc định DEFAULT_VENUE_BUFFER_MINUTES (30) — xem schedule.engine.ts
+    excludedDates?: string[];
+};
+
+// Dùng khi advance knockout — venueIds/dailyStartTime/dailyEndTime có thể chưa có
+export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
+
+export type GenerateOptions = ScheduleOptions & AutoScheduleFilterOptions & {
     desiredGroupCount: number;
     minGroupSize: number;
     maxGroupSize: number;
-    venueIds: number[];
-    matchTimes: string[];
     doubleRound?: boolean;
     minRestDaysPerTeam?: number;
 };
 
-export type ScheduleOptions = Pick<
-    GenerateOptions,
-    'venueIds' | 'matchTimes'
->;
-// Dùng khi advance knockout — venueIds/matchTimes có thể chưa có
-export type OptionalScheduleOptions = Partial<ScheduleOptions> & DateRangeOverride;
+/**
+ * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions: không có
+ * desiredGroupCount/minGroupSize/maxGroupSize vì group đã được tạo & bốc
+ * thăm sẵn qua GroupService (GroupDrawUI). rounds/groupIds ở đây không ảnh
+ * hưởng bước TẠO match (luôn tạo đủ mọi round cho mọi group đã bốc thăm) —
+ * chỉ áp dụng cho bước xếp lịch (autoScheduleMatches) chạy ngay sau đó.
+ */
+export interface GenerateFromGroupsOptions extends ScheduleOptions, AutoScheduleFilterOptions {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    allowPastDate?: boolean;
+}
 
 export type GenerateResult = {
     groupCount: number;
@@ -43,9 +74,12 @@ export type GenerateResult = {
     warnings: string[];
 };
 
+// NEW: bufferMinutes optional — mặc định DEFAULT_VENUE_BUFFER_MINUTES nếu
+// không truyền. Dùng cho rescheduleMatch (đổi lịch 1 trận thủ công).
 export type RescheduleInput = {
     scheduledAt: Date;
     venueId: number;
+    bufferMinutes?: number;
 };
 
 export type ScheduleMatchItem = {
@@ -65,26 +99,17 @@ export type SeasonSchedule = {
     unscheduledMatches: number;
     matches: ScheduleMatchItem[];
 };
-/**
- * Options cho generateMatchesFromDrawnGroups — KHÁC GenerateOptions:
- * không có desiredGroupCount/minGroupSize/maxGroupSize vì group đã được
- * tạo & bốc thăm sẵn qua GroupService (GroupDrawUI). Chỉ cần thông tin
- * xếp lịch (sân, khung giờ, số ngày nghỉ).
- */
-export interface GenerateFromGroupsOptions {
-    doubleRound?: boolean;
-    minRestDaysPerTeam?: number;
-    venueIds: number[];
-    matchTimes: string[];
-    allowPastDate?: boolean;
-}
-// ─── Projection cho Queryable<Match> ─────────────────────────────────────────
-// Derive type trực tiếp từ Prisma schema qua MatchGetPayload thay vì khai tay
-// 1 interface song song với `select` — tránh drift khi schema đổi field/nullability.
-// KHÔNG dùng type này làm response DTO cho tsoa: Prisma payload type là generic
-// mapped type, tsoa khó introspect đúng (giống lý do SeasonTeamWithRelations phải
-// khai tay thay vì dùng Prisma.SeasonTeamGetPayload trực tiếp). ScheduleMatchItem
-// (flat, ở trên) mới là DTO băng qua controller boundary.
+
+// NEW: DTO cho round-selector FE (GenerateScheduleModal) — cho biết mỗi round
+// group_stage còn bao nhiêu match chưa xếp lịch, để FE disable round đã xếp
+// hết và cho phép chọn nhiều round cùng lúc khi generate.
+export type RoundSummary = {
+    round: number;
+    total: number;
+    unscheduled: number;
+    fullyScheduled: boolean;
+};
+
 export const matchScheduleSelect = {
     id: true,
     round: true,
@@ -95,8 +120,6 @@ export const matchScheduleSelect = {
     status: true,
 } as const satisfies Prisma.MatchSelect;
 
-// Shape thực tế trả về bởi findMatchesByTeam — khớp đúng `select` dùng trong query.
-// Dùng Pick<Match, ...> thay vì Match để compiler tự bắt mismatch nếu select đổi mà quên sync type.
 export type MatchByTeamRow = Pick<Match,
     'id' | 'round' | 'home_team_id' | 'away_team_id' | 'scheduled_at' | 'venue_id' | 'status'>;
 
@@ -104,4 +127,5 @@ export type DateRangeOverride = {
     dateRangeStart?: Date;
     dateRangeEnd?: Date;
 };
+
 export type MatchScheduleRow = Prisma.MatchGetPayload<{ select: typeof matchScheduleSelect }>;

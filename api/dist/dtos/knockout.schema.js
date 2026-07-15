@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { PhaseType } from '../generated/prisma/client.js';
-import { venueIdsField, matchTimesField } from '../dtos/fields.schema.js';
 // third_place CỐ TÌNH KHÔNG nằm trong list này. Bracket tree hiện tại
 // (round/slot_number, source_a/source_b) là cây nhị phân thuần túy — trận
 // tranh hạng 3 là 1 match đơn giữa 2 đội THUA bán kết, không phải node
@@ -80,7 +79,11 @@ export const generateKnockoutRequestSchema = knockoutGenerateOptionsSchema.omit(
     seasonId: true,
 });
 export const advanceWinnerRequestSchema = advanceWinnerInputSchema.extend({
-    venueIds: venueIdsField,
-    matchTimes: matchTimesField,
-});
+    venueIds: z.array(z.number().int().positive()).optional(),
+    dailyStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    dailyEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    bufferMinutes: z.number().int().positive().optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+}).refine(d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime, { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' });
 //# sourceMappingURL=knockout.schema.js.map

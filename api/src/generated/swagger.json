@@ -424,157 +424,188 @@
 					"red_cards"
 				]
 			},
-			"infer_typeofstageConfigSchema_": {
-				"anyOf": [
-					{
-						"properties": {
-							"source_stage_order": {
-								"type": "number",
-								"format": "double"
-							},
-							"points_per_loss": {
-								"type": "number",
-								"format": "double"
-							},
-							"points_per_draw": {
-								"type": "number",
-								"format": "double"
-							},
-							"points_per_win": {
-								"type": "number",
-								"format": "double"
-							},
-							"teams_advance_per_group": {
-								"type": "number",
-								"format": "double"
-							},
-							"group_count": {
-								"type": "number",
-								"format": "double"
-							},
-							"type": {
-								"type": "string",
-								"enum": [
-									"round_robin"
-								],
-								"nullable": false
-							},
-							"name": {
-								"type": "string"
-							},
-							"order": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"points_per_loss",
-							"points_per_draw",
-							"points_per_win",
-							"teams_advance_per_group",
-							"group_count",
-							"type",
-							"name",
-							"order"
-						],
-						"type": "object"
+			"RoundRobinStage": {
+				"properties": {
+					"order": {
+						"type": "number",
+						"format": "double"
 					},
-					{
-						"properties": {
-							"leg_type": {
-								"type": "string",
-								"enum": [
-									"single_leg",
-									"two_legged"
-								]
-							},
-							"seed_mode": {
-								"type": "string",
-								"enum": [
-									"standing_straight",
-									"standing_cross",
-									"standing_random",
-									"manual"
-								]
-							},
-							"source_stage_order": {
-								"type": "number",
-								"format": "double"
-							},
-							"type": {
-								"type": "string",
-								"enum": [
-									"knockout"
-								],
-								"nullable": false
-							},
-							"name": {
-								"type": "string"
-							},
-							"order": {
-								"type": "number",
-								"format": "double"
-							}
-						},
-						"required": [
-							"leg_type",
-							"seed_mode",
-							"source_stage_order",
-							"type",
-							"name",
-							"order"
-						],
-						"type": "object"
+					"name": {
+						"type": "string"
 					},
-					{
+					"type": {
+						"type": "string",
+						"enum": [
+							"round_robin"
+						],
+						"nullable": false
+					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_win": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_draw": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_loss": {
+						"type": "number",
+						"format": "double"
+					},
+					"source_stage_order": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"source_rank_range": {
 						"properties": {
-							"leg_type": {
-								"type": "string",
-								"enum": [
-									"single_leg",
-									"two_legged"
-								]
-							},
-							"source_kind": {
-								"type": "string",
-								"enum": [
-									"loser_of_stage",
-									"standing"
-								]
-							},
-							"source_stage_order": {
+							"to": {
 								"type": "number",
 								"format": "double"
 							},
-							"type": {
-								"type": "string",
-								"enum": [
-									"classification"
-								],
-								"nullable": false
-							},
-							"name": {
-								"type": "string"
-							},
-							"order": {
+							"from": {
 								"type": "number",
 								"format": "double"
 							}
 						},
 						"required": [
-							"leg_type",
-							"source_kind",
-							"source_stage_order",
-							"type",
-							"name",
-							"order"
+							"to",
+							"from"
 						],
-						"type": "object"
+						"type": "object",
+						"nullable": true
 					}
-				]
+				},
+				"required": [
+					"order",
+					"name",
+					"type",
+					"group_count",
+					"teams_advance_per_group",
+					"points_per_win",
+					"points_per_draw",
+					"points_per_loss",
+					"source_stage_order",
+					"source_rank_range"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"KnockoutStage": {
+				"properties": {
+					"order": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"knockout"
+						],
+						"nullable": false
+					},
+					"source_stage_order": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"seed_mode": {
+						"type": "string",
+						"enum": [
+							"standing_straight",
+							"standing_cross",
+							"standing_random",
+							"manual"
+						]
+					},
+					"leg_type": {
+						"type": "string",
+						"enum": [
+							"single_leg",
+							"two_legged"
+						]
+					}
+				},
+				"required": [
+					"order",
+					"name",
+					"type",
+					"source_stage_order",
+					"seed_mode",
+					"leg_type"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ClassificationStage": {
+				"properties": {
+					"order": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"classification"
+						],
+						"nullable": false
+					},
+					"source_stage_order": {
+						"type": "number",
+						"format": "double"
+					},
+					"source_kind": {
+						"type": "string",
+						"enum": [
+							"loser_of_stage",
+							"standing"
+						]
+					},
+					"leg_type": {
+						"type": "string",
+						"enum": [
+							"single_leg",
+							"two_legged"
+						]
+					}
+				},
+				"required": [
+					"order",
+					"name",
+					"type",
+					"source_stage_order",
+					"source_kind",
+					"leg_type"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"StageConfig": {
-				"$ref": "#/components/schemas/infer_typeofstageConfigSchema_"
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/RoundRobinStage"
+					},
+					{
+						"$ref": "#/components/schemas/KnockoutStage"
+					},
+					{
+						"$ref": "#/components/schemas/ClassificationStage"
+					}
+				]
 			},
 			"TournamentRuleDto": {
 				"properties": {
@@ -751,232 +782,16 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"input_typeofcreateTournamentRuleSchema_": {
+			"CreateTournamentRuleRequest": {
 				"properties": {
-					"custom_stages": {
-						"items": {
-							"anyOf": [
-								{
-									"properties": {
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_loss": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_draw": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_win": {
-											"type": "number",
-											"format": "double"
-										},
-										"teams_advance_per_group": {
-											"type": "number",
-											"format": "double"
-										},
-										"group_count": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"round_robin"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"points_per_loss",
-										"points_per_draw",
-										"points_per_win",
-										"teams_advance_per_group",
-										"group_count",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								},
-								{
-									"properties": {
-										"leg_type": {
-											"type": "string",
-											"enum": [
-												"single_leg",
-												"two_legged"
-											]
-										},
-										"seed_mode": {
-											"type": "string",
-											"enum": [
-												"standing_straight",
-												"standing_cross",
-												"standing_random",
-												"manual"
-											]
-										},
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"knockout"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"leg_type",
-										"seed_mode",
-										"source_stage_order",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								},
-								{
-									"properties": {
-										"leg_type": {
-											"type": "string",
-											"enum": [
-												"single_leg",
-												"two_legged"
-											]
-										},
-										"source_kind": {
-											"type": "string",
-											"enum": [
-												"loser_of_stage",
-												"standing"
-											]
-										},
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"classification"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"leg_type",
-										"source_kind",
-										"source_stage_order",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								}
-							]
-						},
-						"type": "array"
-					},
-					"tiebreaker_order": {
-						"items": {
-							"type": "string",
-							"enum": [
-								"goal_diff",
-								"goals_scored",
-								"head_to_head",
-								"goals_conceded",
-								"yellow_cards",
-								"red_cards"
-							]
-						},
-						"type": "array"
-					},
-					"is_active": {
-						"type": "boolean"
-					},
-					"format": {
-						"type": "string",
-						"enum": [
-							"custom",
-							"round_robin",
-							"knockout",
-							"round_robin_knockout",
-							"multi_round_robin_knockout"
-						]
-					},
-					"round_robin_stages": {
+					"tournament_id": {
 						"type": "number",
 						"format": "double"
 					},
-					"teams_advance_per_group": {
-						"type": "number",
-						"format": "double"
+					"name": {
+						"type": "string"
 					},
-					"min_players_per_team": {
-						"type": "number",
-						"format": "double"
-					},
-					"max_players_per_team": {
-						"type": "number",
-						"format": "double"
-					},
-					"bonus_per_assist": {
-						"type": "number",
-						"format": "double"
-					},
-					"bonus_per_goal": {
-						"type": "number",
-						"format": "double"
-					},
-					"fine_per_red_card": {
-						"type": "number",
-						"format": "double"
-					},
-					"fine_per_yellow_card": {
-						"type": "number",
-						"format": "double"
-					},
-					"yellow_cards_suspension": {
-						"type": "number",
-						"format": "double"
-					},
-					"suspension_match_count": {
-						"type": "number",
-						"format": "double"
-					},
-					"forfeit_score": {
-						"type": "number",
-						"format": "double"
-					},
-					"points_per_loss": {
+					"points_per_win": {
 						"type": "number",
 						"format": "double"
 					},
@@ -984,179 +799,157 @@
 						"type": "number",
 						"format": "double"
 					},
-					"points_per_win": {
+					"points_per_loss": {
 						"type": "number",
 						"format": "double"
 					},
-					"name": {
-						"type": "string"
-					},
-					"tournament_id": {
+					"forfeit_score": {
 						"type": "number",
 						"format": "double"
+					},
+					"suspension_match_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_yellow_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_red_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_goal": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_assist": {
+						"type": "number",
+						"format": "double"
+					},
+					"max_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"min_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"round_robin_stages": {
+						"type": "number",
+						"format": "double"
+					},
+					"format": {
+						"$ref": "#/components/schemas/SeasonFormat"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
+					"tiebreaker_order": {
+						"items": {
+							"$ref": "#/components/schemas/TiebreakerOption"
+						},
+						"type": "array"
+					},
+					"custom_stages": {
+						"items": {
+							"$ref": "#/components/schemas/StageConfig"
+						},
+						"type": "array",
+						"nullable": true
 					}
 				},
 				"required": [
 					"tournament_id"
 				],
-				"type": "object"
+				"type": "object",
+				"additionalProperties": false
 			},
-			"CreateTournamentRuleInput": {
-				"$ref": "#/components/schemas/input_typeofcreateTournamentRuleSchema_"
-			},
-			"input_typeofupdateTournamentRuleSchema_": {
+			"Partial_CreateTournamentRuleRequest_": {
 				"properties": {
-					"custom_stages": {
-						"items": {
-							"anyOf": [
-								{
-									"properties": {
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_loss": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_draw": {
-											"type": "number",
-											"format": "double"
-										},
-										"points_per_win": {
-											"type": "number",
-											"format": "double"
-										},
-										"teams_advance_per_group": {
-											"type": "number",
-											"format": "double"
-										},
-										"group_count": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"round_robin"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"points_per_loss",
-										"points_per_draw",
-										"points_per_win",
-										"teams_advance_per_group",
-										"group_count",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								},
-								{
-									"properties": {
-										"leg_type": {
-											"type": "string",
-											"enum": [
-												"single_leg",
-												"two_legged"
-											]
-										},
-										"seed_mode": {
-											"type": "string",
-											"enum": [
-												"standing_straight",
-												"standing_cross",
-												"standing_random",
-												"manual"
-											]
-										},
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"knockout"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"leg_type",
-										"seed_mode",
-										"source_stage_order",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								},
-								{
-									"properties": {
-										"leg_type": {
-											"type": "string",
-											"enum": [
-												"single_leg",
-												"two_legged"
-											]
-										},
-										"source_kind": {
-											"type": "string",
-											"enum": [
-												"loser_of_stage",
-												"standing"
-											]
-										},
-										"source_stage_order": {
-											"type": "number",
-											"format": "double"
-										},
-										"type": {
-											"type": "string",
-											"enum": [
-												"classification"
-											],
-											"nullable": false
-										},
-										"name": {
-											"type": "string"
-										},
-										"order": {
-											"type": "number",
-											"format": "double"
-										}
-									},
-									"required": [
-										"leg_type",
-										"source_kind",
-										"source_stage_order",
-										"type",
-										"name",
-										"order"
-									],
-									"type": "object"
-								}
-							]
-						},
-						"type": "array"
+					"tournament_id": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"points_per_win": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_draw": {
+						"type": "number",
+						"format": "double"
+					},
+					"points_per_loss": {
+						"type": "number",
+						"format": "double"
+					},
+					"forfeit_score": {
+						"type": "number",
+						"format": "double"
+					},
+					"suspension_match_count": {
+						"type": "number",
+						"format": "double"
+					},
+					"yellow_cards_suspension": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_yellow_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"fine_per_red_card": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_goal": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonus_per_assist": {
+						"type": "number",
+						"format": "double"
+					},
+					"max_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"min_players_per_team": {
+						"type": "number",
+						"format": "double"
+					},
+					"teams_advance_per_group": {
+						"type": "number",
+						"format": "double"
+					},
+					"round_robin_stages": {
+						"type": "number",
+						"format": "double"
+					},
+					"format": {
+						"type": "string",
+						"enum": [
+							"custom",
+							"round_robin",
+							"knockout",
+							"round_robin_knockout",
+							"multi_round_robin_knockout"
+						]
+					},
+					"is_active": {
+						"type": "boolean"
 					},
 					"tiebreaker_order": {
 						"items": {
@@ -1172,87 +965,18 @@
 						},
 						"type": "array"
 					},
-					"is_active": {
-						"type": "boolean"
-					},
-					"format": {
-						"type": "string",
-						"enum": [
-							"custom",
-							"round_robin",
-							"knockout",
-							"round_robin_knockout",
-							"multi_round_robin_knockout"
-						]
-					},
-					"round_robin_stages": {
-						"type": "number",
-						"format": "double"
-					},
-					"teams_advance_per_group": {
-						"type": "number",
-						"format": "double"
-					},
-					"min_players_per_team": {
-						"type": "number",
-						"format": "double"
-					},
-					"max_players_per_team": {
-						"type": "number",
-						"format": "double"
-					},
-					"bonus_per_assist": {
-						"type": "number",
-						"format": "double"
-					},
-					"bonus_per_goal": {
-						"type": "number",
-						"format": "double"
-					},
-					"fine_per_red_card": {
-						"type": "number",
-						"format": "double"
-					},
-					"fine_per_yellow_card": {
-						"type": "number",
-						"format": "double"
-					},
-					"yellow_cards_suspension": {
-						"type": "number",
-						"format": "double"
-					},
-					"suspension_match_count": {
-						"type": "number",
-						"format": "double"
-					},
-					"forfeit_score": {
-						"type": "number",
-						"format": "double"
-					},
-					"points_per_loss": {
-						"type": "number",
-						"format": "double"
-					},
-					"points_per_draw": {
-						"type": "number",
-						"format": "double"
-					},
-					"points_per_win": {
-						"type": "number",
-						"format": "double"
-					},
-					"name": {
-						"type": "string"
-					},
-					"tournament_id": {
-						"type": "number",
-						"format": "double"
+					"custom_stages": {
+						"items": {
+							"$ref": "#/components/schemas/StageConfig"
+						},
+						"type": "array"
 					}
 				},
-				"type": "object"
+				"type": "object",
+				"description": "Make all properties in T optional"
 			},
-			"UpdateTournamentRuleInput": {
-				"$ref": "#/components/schemas/input_typeofupdateTournamentRuleSchema_"
+			"UpdateTournamentRuleRequest": {
+				"$ref": "#/components/schemas/Partial_CreateTournamentRuleRequest_"
 			},
 			"DefaultSelection__36_TournamentPayload_": {
 				"properties": {
@@ -3910,10 +3634,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
-					},
 					"status": {
 						"$ref": "#/components/schemas/SeasonStatus"
 					},
@@ -3948,6 +3668,10 @@
 					"cancel_reason": {
 						"type": "string"
 					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
 					"pitch_type": {
 						"$ref": "#/components/schemas/PitchType"
 					}
@@ -3955,7 +3679,6 @@
 				"required": [
 					"name",
 					"id",
-					"group_count",
 					"status",
 					"start_date",
 					"end_date",
@@ -3966,6 +3689,7 @@
 					"bank_account_no",
 					"bank_account_name",
 					"cancel_reason",
+					"group_count",
 					"pitch_type"
 				],
 				"type": "object",
@@ -4046,6 +3770,10 @@
 					"pitch_type": {
 						"$ref": "#/components/schemas/PitchType"
 					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
 					"cancel_reason": {
 						"type": "string"
 					},
@@ -4091,10 +3819,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
-					},
 					"description": {
 						"type": "string"
 					},
@@ -4124,6 +3848,7 @@
 				"required": [
 					"tournament_rule_id",
 					"pitch_type",
+					"group_count",
 					"cancel_reason",
 					"registration_fee",
 					"bank_account_name",
@@ -4137,7 +3862,6 @@
 					"status",
 					"user_id",
 					"tournament_id",
-					"group_count",
 					"description",
 					"deleted_at",
 					"updated_at",
@@ -4245,6 +3969,10 @@
 							"san_11"
 						]
 					},
+					"group_count": {
+						"type": "number",
+						"format": "double"
+					},
 					"bank_account_name": {
 						"type": "string"
 					},
@@ -4272,10 +4000,6 @@
 					"start_date": {
 						"type": "string",
 						"format": "date-time"
-					},
-					"group_count": {
-						"type": "number",
-						"format": "double"
 					},
 					"description": {
 						"type": "string"
@@ -4657,25 +4381,13 @@
 			},
 			"infer_typeofgenerateScheduleSchema_": {
 				"properties": {
-					"minRestDaysPerTeam": {
+					"bufferMinutes": {
 						"type": "number",
 						"format": "double"
 					},
-					"doubleRound": {
-						"type": "boolean"
-					},
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"venueIds": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array"
+					"minRestDaysPerTeam": {
+						"type": "number",
+						"format": "double"
 					},
 					"maxGroupSize": {
 						"type": "number",
@@ -4688,25 +4400,86 @@
 					"desiredGroupCount": {
 						"type": "number",
 						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"doubleRound": {
+						"type": "boolean"
 					}
 				},
 				"required": [
-					"doubleRound",
-					"matchTimes",
-					"venueIds",
 					"maxGroupSize",
 					"minGroupSize",
-					"desiredGroupCount"
+					"desiredGroupCount",
+					"dailyEndTime",
+					"dailyStartTime",
+					"venueIds",
+					"doubleRound"
 				],
 				"type": "object"
 			},
 			"GenerateScheduleDto": {
 				"$ref": "#/components/schemas/infer_typeofgenerateScheduleSchema_"
 			},
+			"RoundSummary": {
+				"properties": {
+					"fullyScheduled": {
+						"type": "boolean"
+					},
+					"unscheduled": {
+						"type": "number",
+						"format": "double"
+					},
+					"total": {
+						"type": "number",
+						"format": "double"
+					},
+					"round": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"fullyScheduled",
+					"unscheduled",
+					"total",
+					"round"
+				],
+				"type": "object"
+			},
 			"infer_typeofgenerateFromGroupsSchema_": {
 				"properties": {
 					"allowPastDate": {
 						"type": "boolean"
+					},
+					"groupIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"rounds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
 					},
 					"minRestDaysPerTeam": {
 						"type": "number",
@@ -4715,11 +4488,11 @@
 					"doubleRound": {
 						"type": "boolean"
 					},
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -4730,7 +4503,8 @@
 					}
 				},
 				"required": [
-					"matchTimes",
+					"dailyEndTime",
+					"dailyStartTime",
 					"venueIds"
 				],
 				"type": "object"
@@ -4740,11 +4514,32 @@
 			},
 			"infer_typeofautoScheduleSchema_": {
 				"properties": {
-					"matchTimes": {
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"allowPastDate": {
+						"type": "boolean"
+					},
+					"groupIds": {
 						"items": {
-							"type": "string"
+							"type": "number",
+							"format": "double"
 						},
 						"type": "array"
+					},
+					"rounds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -4755,7 +4550,8 @@
 					}
 				},
 				"required": [
-					"matchTimes",
+					"dailyEndTime",
+					"dailyStartTime",
 					"venueIds"
 				],
 				"type": "object"
@@ -4765,6 +4561,10 @@
 			},
 			"infer_typeofrescheduleMatchSchema_": {
 				"properties": {
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
 					"venueId": {
 						"type": "number",
 						"format": "double"
@@ -6116,31 +5916,38 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"Pick_GenerateOptions.venueIds-or-matchTimes_": {
+			"ScheduleOptions": {
 				"properties": {
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
 					"venueIds": {
 						"items": {
 							"type": "number",
 							"format": "double"
 						},
 						"type": "array"
-					},
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
 					}
 				},
 				"required": [
-					"venueIds",
-					"matchTimes"
+					"dailyEndTime",
+					"dailyStartTime",
+					"venueIds"
 				],
-				"type": "object",
-				"description": "From T, pick a set of properties whose keys are in the union K"
-			},
-			"ScheduleOptions": {
-				"$ref": "#/components/schemas/Pick_GenerateOptions.venueIds-or-matchTimes_"
+				"type": "object"
 			},
 			"ConfirmOfficialBody": {
 				"properties": {
@@ -6449,11 +6256,23 @@
 			},
 			"infer_typeofConfirmOfficialSchema_": {
 				"properties": {
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
+					"dateRangeEnd": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"dateRangeStart": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -6470,11 +6289,23 @@
 			},
 			"infer_typeofForfeitMatchSchema_": {
 				"properties": {
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
+					"dateRangeEnd": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"dateRangeStart": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -6528,6 +6359,17 @@
 			"FileDisputeDto": {
 				"$ref": "#/components/schemas/infer_typeofFileDisputeSchema_"
 			},
+			"CorrectionApiResult": {
+				"properties": {
+					"postCommitWarnings": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
+			},
 			"infer_typeofResolveAppealSchema_": {
 				"properties": {
 					"newAwayScore": {
@@ -6557,17 +6399,6 @@
 			},
 			"ResolveAppealDto": {
 				"$ref": "#/components/schemas/infer_typeofResolveAppealSchema_"
-			},
-			"CorrectionApiResult": {
-				"properties": {
-					"postCommitWarnings": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					}
-				},
-				"type": "object"
 			},
 			"Pick_RecordEventInput.Exclude_keyofRecordEventInput.period__": {
 				"properties": {
@@ -7011,11 +6842,23 @@
 			},
 			"infer_typeofadvanceWinnerRequestSchema_": {
 				"properties": {
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
+					"dateRangeEnd": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"dateRangeStart": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -7034,8 +6877,6 @@
 					}
 				},
 				"required": [
-					"matchTimes",
-					"venueIds",
 					"winnerTeamId",
 					"matchId"
 				],
@@ -9106,7 +8947,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateTournamentRuleInput"
+								"$ref": "#/components/schemas/CreateTournamentRuleRequest"
 							}
 						}
 					}
@@ -9193,7 +9034,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateTournamentRuleInput"
+								"$ref": "#/components/schemas/UpdateTournamentRuleRequest"
 							}
 						}
 					}
@@ -11784,6 +11625,10 @@
 											"type": "string",
 											"format": "date-time"
 										},
+										"order": {
+											"type": "number",
+											"format": "double"
+										},
 										"status": {
 											"$ref": "#/components/schemas/PhaseStatus"
 										},
@@ -11792,10 +11637,6 @@
 											"format": "double"
 										},
 										"teams_advance_per_group": {
-											"type": "number",
-											"format": "double"
-										},
-										"order": {
 											"type": "number",
 											"format": "double"
 										},
@@ -11830,10 +11671,10 @@
 										"min_rest_days_per_team",
 										"end_date",
 										"start_date",
+										"order",
 										"status",
 										"season_id",
 										"teams_advance_per_group",
-										"order",
 										"format",
 										"type",
 										"updated_at",
@@ -12834,6 +12675,55 @@
 						}
 					}
 				}
+			}
+		},
+		"/schedules/seasons/{seasonId}/rounds-summary": {
+			"get": {
+				"operationId": "GetRoundsSummary",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/RoundSummary"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "groupIds",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		},
 		"/schedules/seasons/{seasonId}/generate-from-groups": {
@@ -15485,7 +15375,7 @@
 				}
 			}
 		},
-		"/matches/{id}/confirm-official": {
+		"/matches/{id}/correction/confirm-official": {
 			"post": {
 				"operationId": "ConfirmOfficial",
 				"responses": {
@@ -15535,7 +15425,7 @@
 				}
 			}
 		},
-		"/matches/{id}/forfeit": {
+		"/matches/{id}/correction/forfeit": {
 			"post": {
 				"operationId": "ForfeitMatch",
 				"responses": {
@@ -15723,7 +15613,14 @@
 				"operationId": "ResolveAppeal",
 				"responses": {
 					"204": {
-						"description": "Appeal resolved"
+						"description": "Appeal resolved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CorrectionApiResult"
+								}
+							}
+						}
 					}
 				},
 				"description": "Giải quyết khiếu nại / phản đối.\r\nuphold   = giữ nguyên kết quả → official.\r\noverturn = đảo ngược kết quả → overturned + recompute standings.\r\nKnockout overturn chưa hỗ trợ tự động (bracket đã advance).",
@@ -15804,14 +15701,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/AddEventInput"
-									},
-									{
-										"$ref": "#/components/schemas/ConfirmOfficialDto"
-									}
-								]
+								"$ref": "#/components/schemas/AddEventInput"
 							}
 						}
 					}
@@ -15903,7 +15793,6 @@
 						}
 					}
 				},
-				"description": "Sửa event (minute, type, player, period, note) sau khi match finished.\r\nChỉ trong 15p kể từ played_at. Partial patch — chỉ field được truyền.\r\nTự recompute MatchResult sau khi sửa.\r\n\r\nFIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.",
 				"tags": [
 					"Match"
 				],
@@ -15940,14 +15829,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/EditEventInput"
-									},
-									{
-										"$ref": "#/components/schemas/ConfirmOfficialDto"
-									}
-								]
+								"$ref": "#/components/schemas/EditEventInput"
 							}
 						}
 					}
@@ -15969,7 +15851,6 @@
 						}
 					}
 				},
-				"description": "Override score trực tiếp — chỉ dùng cho manual path (match không có events).\r\nChỉ trong 15p kể từ played_at.\r\nReject nếu match có events → dùng addEvent/deleteEvent/editEvent thay thế.\r\n\r\nFIX: cùng lý do addEvent — 204 -> 200 + trả postCommitWarnings.",
 				"tags": [
 					"Match"
 				],
@@ -15997,14 +15878,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/EditScoreInput"
-									},
-									{
-										"$ref": "#/components/schemas/ConfirmOfficialDto"
-									}
-								]
+								"$ref": "#/components/schemas/EditScoreInput"
 							}
 						}
 					}
@@ -16120,6 +15994,9 @@
 							"application/json": {
 								"schema": {
 									"properties": {
+										"scheduleWarning": {
+											"type": "string"
+										},
 										"newMatchId": {
 											"type": "number",
 											"format": "double"

@@ -391,7 +391,9 @@ export class GroupService {
     async advanceToNextRoundRobin(
         fromPhaseId: number,
         newGroupCount: number,
+        rankRange: { from: number; to: number } = { from: 1, to: 1 },// default giữ tương thích ngược
     ): Promise<{ newPhaseId: number; assignments: DrawAssignment[] }> {
+
         return this.prisma.$transaction(async (tx) => {
             const fromPhase = await tx.phase.findUniqueOrThrow({ where: { id: fromPhaseId } });
             if (fromPhase.format !== PhaseFormat.round_robin)
@@ -403,19 +405,22 @@ export class GroupService {
 
             await lockSeason(tx, fromPhase.season_id);
 
-            const advanceN = fromPhase.teams_advance_per_group;
+            const advanceN = rankRange.to;
             const groups = await tx.group.findMany({ where: { phase_id: fromPhaseId, is_active: true } });
 
             const advancedTeamIds: number[] = [];
             for (const g of groups) {
                 const standings = await tx.teamStanding.findMany({
-                    where: { group_id: g.id, deleted_at: null },
+                    where: {
+                        group_id: g.id, deleted_at: null,
+                        position: { gte: rankRange.from, lte: rankRange.to }
+                    },
                     orderBy: { position: "asc" },
-                    take: advanceN,
                     select: { team_id: true },
                 });
-                if (standings.length < advanceN)
-                    throw createAppError("CONFLICT", `Group ${g.id} chưa đủ ${advanceN} standings để advance`);
+                const expectedCount = rankRange.to - rankRange.from + 1;
+                if (standings.length < expectedCount)
+                    throw createAppError("CONFLICT", `Group ${g.id} chưa đủ ${rankRange.from}-${rankRange.to} standings để advance`);
                 advancedTeamIds.push(...standings.map((s) => s.team_id));
             }
 

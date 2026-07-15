@@ -333,7 +333,18 @@ const useScheduleStore = create((set, get) => ({
     get().invalidateSeason(seasonId);
     return res;
   },
+  // Thêm vào bên trong create((set, get) => ({ ... }))
 
+  /**
+   * NEW: lấy round summary cho round-selector (GenerateScheduleModal).
+   * Không cache — dữ liệu cần tươi mỗi lần mở modal vì phản ánh trạng thái
+   * "đã xếp lịch" hiện tại của từng round.
+   */
+  fetchRoundsSummary: async (seasonId, groupIds) => {
+    const res = await matchApi.getGroupStageRoundsSummary(seasonId, groupIds);
+    const payload = typeof res?.status === 'boolean' ? res.data : res;
+    return Array.isArray(payload) ? payload : [];
+  },
 
   /**
    * Tạo lịch thi đấu từ các bảng/nhóm đã chia (admin)
