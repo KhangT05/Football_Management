@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
 import {
   UserPlus, Edit, X, AlertTriangle, CheckCircle2, Loader2,
-  Info, UploadCloud, FileDown, Mail, GraduationCap, FileText
+  Info, UploadCloud, FileDown, Mail,
 } from 'lucide-react';
-import { classApi } from '../../api';
 
 const POSITIONS = [
   { value: 'goalkeeper', label: 'GK – Thủ môn' },
@@ -38,22 +36,6 @@ export default function PlayerFormModal({
 }) {
   const isAdd = mode === 'add';
   const emailMissing = isAdd && !String(form.email ?? '').trim();
-
-  const [classes, setClasses] = useState([]);
-  const [loadingClasses, setLoadingClasses] = useState(false);
-
-  useEffect(() => {
-    if (isAdd) {
-      setLoadingClasses(true);
-      classApi.getAll({ per_page: 100 })
-        .then(res => {
-          const payload = res.data || res;
-          setClasses(Array.isArray(payload) ? payload : (payload.data || []));
-        })
-        .catch(err => console.error("Lỗi khi tải danh sách lớp:", err))
-        .finally(() => setLoadingClasses(false));
-    }
-  }, [isAdd]);
 
   const handleField = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -106,7 +88,7 @@ export default function PlayerFormModal({
                 </div>
                 <p className="text-sm text-emerald-50 font-semibold leading-relaxed">
                   Thêm nhiều cầu thủ cùng lúc bằng file Excel. Tải file mẫu, điền thông tin rồi upload lại.
-                  File mẫu yêu cầu cột <span className="font-black text-emerald-300">Email</span> và <span className="font-black text-emerald-300">MSSV</span> — thiếu email dòng đó sẽ import lỗi.
+                  File mẫu yêu cầu cột <span className="font-black text-emerald-300">Email</span> — thiếu email dòng đó sẽ import lỗi.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -191,47 +173,6 @@ export default function PlayerFormModal({
               }`}
               title={!isAdd ? 'Họ tên được quản lý ở phần tài khoản' : ''}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                Lớp sinh hoạt
-              </label>
-              <select
-                value={form.class_id ?? ''}
-                onChange={handleField('class_id')}
-                disabled={!isAdd || loadingClasses}
-                className={`w-full px-5 py-4 border rounded-2xl text-sm transition-all font-bold appearance-none ${
-                  isAdd
-                    ? 'bg-navy/50 border-navy-light text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 cursor-pointer'
-                    : 'bg-navy-dark/50 border-navy-light/50 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <option value="">-- Chọn lớp --</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                MSSV
-              </label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 20120001"
-                value={form.student_code ?? ''}
-                onChange={handleField('student_code')}
-                disabled={!isAdd}
-                className={`w-full px-5 py-4 border rounded-2xl text-sm transition-all font-bold ${
-                  isAdd
-                    ? 'bg-navy/50 border-navy-light text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
-                    : 'bg-navy-dark/50 border-navy-light/50 text-gray-400 cursor-not-allowed'
-                }`}
-              />
-            </div>
           </div>
 
           {isAdd && (

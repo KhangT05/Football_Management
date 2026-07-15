@@ -198,8 +198,6 @@ export default function ManageTeams() {
       height: player.player?.height ?? '',
       weight: player.player?.weight ?? '',
       nationality: player.player?.nationality ?? '',
-      student_code: player.player?.user?.student_code ?? '',
-      class_id: player.player?.user?.class_id ?? '',
     });
   };
 
@@ -217,8 +215,6 @@ export default function ManageTeams() {
       height: playerCrud.form.height ? parseFloat(playerCrud.form.height) : undefined,
       weight: playerCrud.form.weight ? parseFloat(playerCrud.form.weight) : undefined,
       nationality: playerCrud.form.nationality?.trim() || undefined,
-      student_code: playerCrud.form.student_code?.trim() || undefined,
-      class_id: playerCrud.form.class_id ? parseInt(playerCrud.form.class_id) : undefined,
     };
 
     playerCrud.save(async () => {

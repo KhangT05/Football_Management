@@ -728,7 +728,7 @@ export default function MyTeam() {
   const openAddModal = () => {
     setEditingPlayer(null);
     setModalError('');
-    setPlayerForm({ name: '', email: '', date_of_birth: '', number: '', position: 'midfielder', role: 'player', student_code: '', class_id: '' });
+    setPlayerForm({ name: '', email: '', date_of_birth: '', number: '', position: 'midfielder', role: 'player' });
     setPlayerModal('add');
   };
 
@@ -776,8 +776,6 @@ export default function MyTeam() {
         date_of_birth: values.date_of_birth,
         position: values.position,
         jersey_number: parseInt(values.number, 10),
-        student_code: values.student_code?.trim() || undefined,
-        class_id: values.class_id ? parseInt(values.class_id) : undefined,
       });
       toast.success(`Đã thêm "${values.name}" (áo số ${values.number}) vào đội...`);
       setPlayerModal(null);
@@ -845,8 +843,6 @@ export default function MyTeam() {
       number: player.number,
       position: player.position,
       role: player.role,
-      student_code: player.player?.user?.student_code ?? '',
-      class_id: player.player?.user?.class_id ?? '',
     });
     setPlayerModal('edit');
   };

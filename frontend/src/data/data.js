@@ -137,7 +137,7 @@ export const POSITIONS = [
   { value: 'FW', label: 'FW – Tiền đạo' },
 ];
 export const EMPTY_TEAM = { name: '', coach_name: '', description: '', logo: null, jersey_color: '#ffffff', is_active: true };
-export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player', student_code: '', class_id: '' };
+export const EMPTY_PLAYER = { name: '', number: '', position: 'forward', role: 'player' };
 
 // FIX: khớp đúng PaymentStatus enum thật (Prisma) — chỉ có 4 giá trị:
 //   pending | confirmed | refund_pending | refunded
