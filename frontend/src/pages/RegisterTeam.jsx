@@ -223,11 +223,31 @@ export default function RegisterTeam() {
     setIsSubmitting(true);
     try {
       if (playerInputMode === 'excel' && excelFile) {
-        const formData = new FormData();
-        formData.append('file', excelFile);
-        await playerApi.importTeamPlayers(createdTeam.id, formData);
-        toast.success('Import danh sách cầu thủ thành công!', 5000);
-      } else if (playerInputMode === 'manual') {
+  const formData = new FormData();
+  formData.append('file', excelFile);
+  const res = await playerApi.importTeamPlayers(createdTeam.id, formData);
+  const result = res?.data ?? res;
+  const successCount = result?.success ?? 0;
+  const failedCount = result?.failed ?? 0;
+
+  if (successCount > 0) {
+    toast.success(
+      `Import thành công ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`,
+      5000
+    );
+  } else {
+    const firstErrors = (result?.errors ?? [])
+      .slice(0, 3)
+      .map(e => `Dòng ${e.row}: ${e.reason}`)
+      .join('\n');
+    toast.error(
+      firstErrors || 'Import thất bại — không có cầu thủ nào được thêm. Vui lòng kiểm tra file Excel (đặc biệt cột MSSV).',
+      8000
+    );
+    setIsSubmitting(false);
+    return; // dừng lại, không chuyển sang màn "thành công" vì chưa tạo được gì
+  }
+} else if (playerInputMode === 'manual') {
         const validPlayers = players.filter(p => p.email.trim() && p.name.trim());
         const skipped = players.length - validPlayers.length;
         if (skipped > 0) {

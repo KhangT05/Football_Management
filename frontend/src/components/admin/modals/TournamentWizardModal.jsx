@@ -417,7 +417,6 @@ const initialWizardState = {
     registration_deadline: '',
     max_teams: 16,
     is_registration_open: true,
-    knockout_leg_type: 'single_leg',
     pitch_type: 'san_5',
   },
 };

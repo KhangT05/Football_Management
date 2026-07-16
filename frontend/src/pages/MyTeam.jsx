@@ -786,19 +786,35 @@ export default function MyTeam() {
     } finally { setIsSaving(false); }
   };
   const handleImportExcel = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      setIsSaving(true);
-      await playerApi.importTeamPlayers(activeTeam.id, formData);
-      toast.success('Nhập dữ liệu từ file Excel thành công!');
-      await loadTeamDetail(activeTeamId);
-    } catch (err) {
-      toast.error(parseApiError(err, 'Có lỗi khi nhập dữ liệu Excel.'));
-    } finally { setIsSaving(false); e.target.value = null; }
-  };
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsSaving(true);
+    const res = await playerApi.importTeamPlayers(activeTeam.id, formData);
+    const result = res?.data ?? res;
+    const successCount = result?.success ?? 0;
+    const failedCount = result?.failed ?? 0;
+
+    if (successCount > 0) {
+      toast.success(
+        `Đã import ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`,
+        5000
+      );
+      setPlayerModal(null); // đóng modal để thấy ngay danh sách vừa cập nhật
+    } else {
+      const firstErrors = (result?.errors ?? [])
+        .slice(0, 3)
+        .map(e2 => `Dòng ${e2.row}: ${e2.reason}`)
+        .join(' | ');
+      toast.error(firstErrors || 'Không có cầu thủ nào được thêm. Kiểm tra lại file Excel.', 8000);
+    }
+    await loadTeamDetail(activeTeamId);
+  } catch (err) {
+    toast.error(parseApiError(err, 'Có lỗi khi nhập dữ liệu Excel.'));
+  } finally { setIsSaving(false); e.target.value = null; }
+};
 
   const handleDownloadTemplate = async () => {
     setIsDownloadingTemplate(true);
