@@ -1,6 +1,6 @@
 // prisma/seed/edgeCaseUserSeeder.ts
 //
-// NEW FILE — tập hợp các trạng thái "dữ liệu chưa hoàn thiện" ở mức
+// tập hợp các trạng thái "dữ liệu chưa hoàn thiện" ở mức
 // User/Team/Player mà pipeline gốc không tạo ra:
 //   - User có role "leader" nhưng CHƯA từng được gán làm TeamLeader của đội nào.
 //   - User có role "player" nhưng CHƯA từng có TeamPlayer (Player mồ côi).
@@ -10,7 +10,7 @@
 //     (bản gốc luôn hardcode approved/active).
 import bcrypt from "bcrypt";
 import { PlayerPosition, PlayerRole, ApprovalStatus, PlayerStatus } from "../generated/prisma/client.js";
-import { randInt, pickOrThrow } from "./helperSeeder.js";
+import { randInt, pickOrThrow, buildSquadPositions } from "./helperSeeder.js";
 const BCRYPT_ROUNDS = 12;
 const DEFAULT_PASSWORD = "EdgeCase@123456";
 /** Tạo N user role=leader nhưng KHÔNG gán TeamLeader — mô phỏng "đăng ký làm trưởng đoàn nhưng chưa lập đội". */
@@ -74,11 +74,30 @@ export async function seedFreeAgentPlayers(db, roleMap, count) {
  * (đã có HLV, có thể có vài cầu thủ) nhưng chưa từng tham dự giải đấu nào.
  * Nếu squadSize < 11, đội này cũng minh hoạ luôn case "chưa đủ người đá".
  *
- * NEW classIdByName (từ classSeeder.seedClasses, PHẢI chạy trước): đội mồ côi
+ * classIdByName (từ classSeeder.seedClasses, PHẢI chạy trước): đội mồ côi
  * vẫn cần class_id giống mọi Team khác trong hệ thống (đội sinh viên gắn với
- * 1 lớp cụ thể) — trước đây hàm này tạo Team thiếu field này, khiến đội mồ
- * côi trở thành trường hợp KHÔNG đại diện đúng cho business rule "Team luôn
- * thuộc 1 Class".
+ * 1 lớp cụ thể).
+ *
+ * FIX (P1 — jersey convention mismatch): bản trước gán vị trí theo
+ * `positions[jersey % 4]` (round-robin 4 vị trí cơ bản theo thứ tự cố định:
+ * GK, DF, MF, FW lặp lại mỗi 4 người) — KHÁC HẲN convention thật của hệ
+ * thống. `squadSeeder.seedSquads` dùng `buildSquadPositions()`
+ * (helperSeeder.ts): 23 người xếp thành BLOCK liên tục 3 GK (jersey 1-3) + 8
+ * DF (4-11) + 8 MF (12-19) + 4 FW (20-23). `matchDetailSeeder.splitStartersSubs`
+ * đọc ngược lại đúng theo block đó (`jersey<=3` -> GK, `4-11` -> DF,
+ * `12-19` -> MF, `>=20` -> FW) để dựng đội hình ra sân.
+ *
+ * Nếu orphan team (squadSize >= 11) từng được lịch vào 1 trận thật, 2
+ * convention lệch nhau sẽ khiến `splitStartersSubs` gán sai vị trí thực tế:
+ * jersey #4 ở orphan team là DF theo modulo-4 nhưng `matchDetailSeeder` vẫn
+ * coi #4 là DF (đúng ở biên này) — nhưng jersey #5 modulo-4 lại là GK (vì
+ * `positions[5%4]=positions[1]=DF`... thực chất mọi vị trí modulo-4 lệch
+ * hoàn toàn khỏi block 3/8/8/4 ngay từ jersey #4 trở đi) trong khi
+ * `matchDetailSeeder` coi #5-11 đều là DF — kết quả: cầu thủ đăng ký vị trí
+ * X (Player.position) có thể bị xếp đá ở vị trí khác trên sân
+ * (MatchLineup.position lấy theo TeamPlayer.position, TeamPlayer.position
+ * lại lấy theo convention modulo-4 sai). Fix: dùng chung
+ * `buildSquadPositions()` như squadSeeder để 2 nơi luôn khớp nhau.
  */
 export async function seedOrphanTeam(db, adminUserId, teamName, squadSize, classIdByName) {
     const classIds = Object.values(classIdByName);
@@ -92,7 +111,9 @@ export async function seedOrphanTeam(db, adminUserId, teamName, squadSize, class
         create: { name: teamName, coach_name: `HLV trưởng ${teamName}`, user_id: adminUserId, class_id: classId },
     });
     const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
-    const positions = [PlayerPosition.goalkeeper, PlayerPosition.defender, PlayerPosition.midfielder, PlayerPosition.forward];
+    // FIX: dùng đúng block convention 3GK/8DF/8MF/4FW giống squadSeeder,
+    // thay vì round-robin modulo-4 riêng của file này.
+    const positions = buildSquadPositions();
     const already = await db.teamPlayer.count({ where: { team_id: team.id } });
     for (let jersey = already + 1; jersey <= squadSize; jersey++) {
         const email = `orphan-team.${team.id}.p${jersey}@fifa-seed.local`;
@@ -107,7 +128,8 @@ export async function seedOrphanTeam(db, adminUserId, teamName, squadSize, class
                 email_verified_at: new Date(),
             },
         });
-        const position = positions[jersey % positions.length];
+        const idx = (jersey - 1) % positions.length;
+        const position = positions[idx];
         const player = await db.player.upsert({
             where: { user_id: user.id },
             update: {},

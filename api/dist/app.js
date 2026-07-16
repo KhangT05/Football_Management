@@ -12,7 +12,6 @@ import cookieParser from "cookie-parser";
 import { connectRedis } from "./libs/redis.js";
 import { MatchReportBinaryController } from "./controllers/matchReportBinary.controller.js";
 import { matchResultService } from "./libs/ioc.js";
-import { seedDatabase } from "./seeders/index.js";
 const app = express();
 app.use(cors({
     origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
@@ -44,7 +43,6 @@ async function bootstrap() {
     if (process.env.RUN_SEED_ON_BOOT === "true") {
         console.warn("[Seed] RUN_SEED_ON_BOOT=true — đang chạy seedDatabase() lúc boot. " +
             "Chỉ nên bật cờ này cho lần setup môi trường đầu tiên, KHÔNG bật ở production thường trực.");
-        await seedDatabase();
     }
     app.listen(PORT, () => {
         console.log(`[App]  localhost:${PORT} (${process.env.NODE_ENV})`);

@@ -4398,17 +4398,9 @@
                 ],
                 "type": "object"
             },
-            "infer_typeofgenerateScheduleSchema_": {
+            "GenerateScheduleDto": {
                 "properties": {
-                    "bufferMinutes": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "minRestDaysPerTeam": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "maxGroupSize": {
+                    "desiredGroupCount": {
                         "type": "number",
                         "format": "double"
                     },
@@ -4416,15 +4408,9 @@
                         "type": "number",
                         "format": "double"
                     },
-                    "desiredGroupCount": {
+                    "maxGroupSize": {
                         "type": "number",
                         "format": "double"
-                    },
-                    "dailyEndTime": {
-                        "type": "string"
-                    },
-                    "dailyStartTime": {
-                        "type": "string"
                     },
                     "venueIds": {
                         "items": {
@@ -4433,23 +4419,40 @@
                         },
                         "type": "array"
                     },
+                    "dailyStartTime": {
+                        "type": "string"
+                    },
+                    "dailyEndTime": {
+                        "type": "string"
+                    },
+                    "bufferMinutes": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "excludedDates": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
                     "doubleRound": {
                         "type": "boolean"
+                    },
+                    "minRestDaysPerTeam": {
+                        "type": "number",
+                        "format": "double"
                     }
                 },
                 "required": [
-                    "maxGroupSize",
-                    "minGroupSize",
                     "desiredGroupCount",
-                    "dailyEndTime",
-                    "dailyStartTime",
+                    "minGroupSize",
+                    "maxGroupSize",
                     "venueIds",
-                    "doubleRound"
+                    "dailyStartTime",
+                    "dailyEndTime"
                 ],
-                "type": "object"
-            },
-            "GenerateScheduleDto": {
-                "$ref": "#/components/schemas/infer_typeofgenerateScheduleSchema_"
+                "type": "object",
+                "additionalProperties": false
             },
             "RoundSummary": {
                 "properties": {
@@ -4477,73 +4480,35 @@
                 ],
                 "type": "object"
             },
-            "infer_typeofgenerateFromGroupsSchema_": {
+            "GenerateFromGroupsDto": {
                 "properties": {
-                    "allowPastDate": {
+                    "doubleRound": {
                         "type": "boolean"
-                    },
-                    "groupIds": {
-                        "items": {
-                            "type": "number",
-                            "format": "double"
-                        },
-                        "type": "array"
-                    },
-                    "rounds": {
-                        "items": {
-                            "type": "number",
-                            "format": "double"
-                        },
-                        "type": "array"
-                    },
-                    "bufferMinutes": {
-                        "type": "number",
-                        "format": "double"
                     },
                     "minRestDaysPerTeam": {
                         "type": "number",
                         "format": "double"
                     },
-                    "doubleRound": {
-                        "type": "boolean"
-                    },
-                    "dailyEndTime": {
-                        "type": "string"
-                    },
-                    "dailyStartTime": {
-                        "type": "string"
-                    },
                     "venueIds": {
                         "items": {
                             "type": "number",
                             "format": "double"
                         },
                         "type": "array"
-                    }
-                },
-                "required": [
-                    "dailyEndTime",
-                    "dailyStartTime",
-                    "venueIds"
-                ],
-                "type": "object"
-            },
-            "GenerateFromGroupsDto": {
-                "$ref": "#/components/schemas/infer_typeofgenerateFromGroupsSchema_"
-            },
-            "infer_typeofautoScheduleSchema_": {
-                "properties": {
+                    },
+                    "dailyStartTime": {
+                        "type": "string"
+                    },
+                    "dailyEndTime": {
+                        "type": "string"
+                    },
                     "bufferMinutes": {
                         "type": "number",
                         "format": "double"
                     },
-                    "allowPastDate": {
-                        "type": "boolean"
-                    },
-                    "groupIds": {
+                    "excludedDates": {
                         "items": {
-                            "type": "number",
-                            "format": "double"
+                            "type": "string"
                         },
                         "type": "array"
                     },
@@ -4554,53 +4519,97 @@
                         },
                         "type": "array"
                     },
-                    "dailyEndTime": {
-                        "type": "string"
+                    "groupIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
                     },
-                    "dailyStartTime": {
-                        "type": "string"
-                    },
+                    "allowPastDate": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "venueIds",
+                    "dailyStartTime",
+                    "dailyEndTime"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AutoScheduleDto": {
+                "properties": {
                     "venueIds": {
                         "items": {
                             "type": "number",
                             "format": "double"
                         },
                         "type": "array"
-                    }
-                },
-                "required": [
-                    "dailyEndTime",
-                    "dailyStartTime",
-                    "venueIds"
-                ],
-                "type": "object"
-            },
-            "AutoScheduleDto": {
-                "$ref": "#/components/schemas/infer_typeofautoScheduleSchema_"
-            },
-            "infer_typeofrescheduleMatchSchema_": {
-                "properties": {
+                    },
+                    "dailyStartTime": {
+                        "type": "string"
+                    },
+                    "dailyEndTime": {
+                        "type": "string"
+                    },
                     "bufferMinutes": {
                         "type": "number",
                         "format": "double"
+                    },
+                    "excludedDates": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "rounds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    },
+                    "allowPastDate": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "venueIds",
+                    "dailyStartTime",
+                    "dailyEndTime"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RescheduleMatchDto": {
+                "properties": {
+                    "scheduledAt": {
+                        "type": "string",
+                        "format": "date-time"
                     },
                     "venueId": {
                         "type": "number",
                         "format": "double"
                     },
-                    "scheduledAt": {
-                        "type": "string",
-                        "format": "date-time"
+                    "bufferMinutes": {
+                        "type": "number",
+                        "format": "double"
                     }
                 },
                 "required": [
-                    "venueId",
-                    "scheduledAt"
+                    "scheduledAt",
+                    "venueId"
                 ],
-                "type": "object"
-            },
-            "RescheduleMatchDto": {
-                "$ref": "#/components/schemas/infer_typeofrescheduleMatchSchema_"
+                "type": "object",
+                "additionalProperties": false
             },
             "MatchStatus": {
                 "type": "string",
@@ -6912,6 +6921,39 @@
             "AdvanceWinnerRequestDto": {
                 "$ref": "#/components/schemas/infer_typeofadvanceWinnerRequestSchema_"
             },
+            "infer_typeofscheduleKnockoutBracketRequestSchema_": {
+                "properties": {
+                    "dateRangeEnd": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "dateRangeStart": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "bufferMinutes": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "dailyEndTime": {
+                        "type": "string"
+                    },
+                    "dailyStartTime": {
+                        "type": "string"
+                    },
+                    "venueIds": {
+                        "items": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
+            "ScheduleKnockoutBracketRequestDto": {
+                "$ref": "#/components/schemas/infer_typeofscheduleKnockoutBracketRequestSchema_"
+            },
             "BracketSlotNode": {
                 "properties": {
                     "slotId": {
@@ -6988,11 +7030,15 @@
                         "type": "string",
                         "format": "date-time"
                     },
-                    "matchTimes": {
-                        "items": {
-                            "type": "string"
-                        },
-                        "type": "array"
+                    "bufferMinutes": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "dailyEndTime": {
+                        "type": "string"
+                    },
+                    "dailyStartTime": {
+                        "type": "string"
                     },
                     "venueIds": {
                         "items": {
@@ -16128,6 +16174,83 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/AdvanceWinnerRequestDto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/seasons/{seasonId}/phases/{phaseId}/knockout/schedule": {
+            "post": {
+                "operationId": "ScheduleBracket",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "scheduleWarning": {
+                                            "type": "string"
+                                        },
+                                        "failedMatchIds": {
+                                            "items": {
+                                                "type": "number",
+                                                "format": "double"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "scheduledCount": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "failedMatchIds",
+                                        "scheduledCount"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Knockout"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "organizing"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "seasonId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "phaseId",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScheduleKnockoutBracketRequestDto"
                             }
                         }
                     }

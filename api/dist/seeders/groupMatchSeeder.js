@@ -9,9 +9,23 @@ const ROUND_ROBIN_PAIRS = [
     [0, 3],
     [1, 2],
 ];
-export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupIdByLetter, teamIdByName, seasonId, venueIds, groups, 
-// NEW — bị thiếu ở bản trước, gây ReferenceError
-rulePoints) {
+/**
+ * FIX (P1): bản trước quyết định "đã seed xong bảng này chưa" dựa vào
+ * `existingCount >= 6` (aggregate count trên toàn group), rồi hoặc replay
+ * TOÀN BỘ 6 cặp bằng match mới (nếu count < 6), hoặc đọc lại TOÀN BỘ 6 cặp
+ * cũ (nếu count >= 6) — không có branch nào xử lý đúng case "crash giữa
+ * chừng" (vd 3/6 match đã tạo). Nếu crash ở match thứ 4, lần seed lại sẽ có
+ * `existingCount=3 < 6` -> chạy lại từ pair đầu tiên -> TẠO TRÙNG 3 match đã
+ * có (vì `Match.leg` nullable nên unique constraint không chặn được — đúng
+ * cảnh báo trong dbTypes.ts). Kết quả: 9 match thay vì 6, tally cộng dồn sai,
+ * standings sai lặng lẽ.
+ *
+ * Fix: check tồn tại theo ĐÚNG cặp (home, away) trước khi tạo, y hệt pattern
+ * đã áp dụng đúng ở messySeasonSeeder.ts (sau fix). Không còn phụ thuộc vào
+ * aggregate count nữa — mỗi cặp tự quyết định resume hay tạo mới, độc lập
+ * với các cặp khác trong cùng group.
+ */
+export async function seedGroupMatchesAndStandings(db, groupStagePhaseId, groupIdByLetter, teamIdByName, seasonId, venueIds, groups, rulePoints) {
     const topTwoByGroup = {};
     const createdMatches = [];
     let matchDayOffset = 0;
@@ -42,16 +56,29 @@ rulePoints) {
             }
             return t;
         };
-        const existingCount = await db.match.count({ where: { phase_id: groupStagePhaseId, group_id: groupId } });
-        const alreadySimulated = existingCount >= ROUND_ROBIN_PAIRS.length;
         for (const [i, j] of ROUND_ROBIN_PAIRS) {
             const homeTeamId = teamIds[i];
             const awayTeamId = teamIds[j];
             if (homeTeamId === undefined || awayTeamId === undefined) {
                 throw new Error(`Bảng ${letter} thiếu đội ở vị trí ${i}/${j} (cần đúng 4 đội)`);
             }
-            let homeScore, awayScore;
-            if (!alreadySimulated) {
+            // FIX: check tồn tại theo ĐÚNG cặp, không dựa vào aggregate count.
+            const existing = await db.match.findFirst({
+                where: { phase_id: groupStagePhaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
+            });
+            let homeScore, awayScore, matchId;
+            if (existing) {
+                if (existing.home_score === null || existing.away_score === null) {
+                    throw new Error(`[GroupMatchSeeder] Bảng ${letter}: tìm thấy match #${existing.id} (${homeTeamId} vs ${awayTeamId}) ` +
+                        `nhưng thiếu tỉ số (home_score/away_score null). Dữ liệu đã seed có khả năng bị lệch/hỏng ` +
+                        `(vd crash giữa lúc tạo match và tạo match_result) — cần reset DB (migrate reset) rồi seed lại từ đầu, ` +
+                        `không được để standings tính sai lặng lẽ.`);
+                }
+                matchId = existing.id;
+                homeScore = existing.home_score;
+                awayScore = existing.away_score;
+            }
+            else {
                 const sim = simulateGroupMatch();
                 homeScore = sim.homeScore;
                 awayScore = sim.awayScore;
@@ -82,23 +109,10 @@ rulePoints) {
                         status: MatchResultStatus.official,
                     },
                 });
-                createdMatches.push({ matchId: match.id, homeTeamId, awayTeamId, homeScore, awayScore });
+                matchId = match.id;
                 matchDayOffset++;
             }
-            else {
-                const existing = await db.match.findFirst({
-                    where: { phase_id: groupStagePhaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
-                });
-                if (!existing || existing.home_score === null || existing.away_score === null) {
-                    throw new Error(`[GroupMatchSeeder] Bảng ${letter}: existingCount=${existingCount} (đủ ${ROUND_ROBIN_PAIRS.length}) ` +
-                        `nhưng không tìm thấy match hợp lệ cho ${homeTeamId} vs ${awayTeamId}. ` +
-                        `Dữ liệu đã seed có khả năng bị lệch/hỏng — cần reset DB (migrate reset) rồi seed lại từ đầu, ` +
-                        `không được để standings tính sai lặng lẽ.`);
-                }
-                homeScore = existing.home_score;
-                awayScore = existing.away_score;
-                createdMatches.push({ matchId: existing.id, homeTeamId, awayTeamId, homeScore, awayScore });
-            }
+            createdMatches.push({ matchId, homeTeamId, awayTeamId, homeScore, awayScore });
             const homeTally = getTally(homeTeamId);
             const awayTally = getTally(awayTeamId);
             homeTally.played++;

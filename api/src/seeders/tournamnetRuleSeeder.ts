@@ -1,58 +1,65 @@
-import { SeasonFormat } from "../generated/prisma/client.js";
 import type { DbClient } from "./dbTypes.js";
 
 /**
- * Seed TournamentRule mặc định cho tournament + gán tournament_rule_id vào season.
- * PHẢI chạy TRƯỚC seedGroupStage/seedGroupMatchesAndStandings — các bước đó
- * (hoặc StandingsService ở read-path) join qua season.tournamentRule để lấy
- * points_per_win/draw/loss. Season tạo ra thiếu tournament_rule_id sẽ khiến
- * mọi API/FE tính standings từ rule bị null-reference hoặc fallback 0 — đây
- * là nguyên nhân PTS luôn hiện 0 dù TeamStanding.points đã lưu đúng giá trị
- * (position vẫn đúng vì cột đó không phụ thuộc rule).
+ * FIX (P0 — DEPRECATED, giữ lại chỉ để không phá import cũ):
+ *
+ * Bản trước hàm này (a) tự tạo 1 TournamentRule "Default Rule" với mọi giá
+ * trị HARDCODE cứng (3-1-0, yellow_cards_suspension=3, ...) nếu không tìm
+ * thấy rule `is_active: true` cho tournament, rồi (b) LUÔN ghi đè
+ * `season.tournament_rule_id` sang rule đó.
+ *
+ * Vấn đề: `seedSeasonConfigurable` (seasonSeeder.ts) đã nhận `tournamentRuleId`
+ * làm tham số và set thẳng vào season NGAY KHI TẠO — season không bao giờ
+ * thiếu tournament_rule_id trong pipeline hiện tại (đây vốn là lý do hàm này
+ * ra đời — "Season tạo ra trước đó không có tournament_rule_id" — nhưng
+ * seasonSeeder đã tự khắc phục việc đó ở nguồn). Nếu hàm này vẫn được gọi
+ * sau seedSeasonConfigurable, nó sẽ:
+ *   1. Tìm rule active theo tournament — nếu `tournamentSeeder.seedTournament`
+ *      đã set `is_active: true` (đã fix), sẽ tìm thấy ĐÚNG rule theo từng
+ *      giải (vd amateur 2-1-0).
+ *   2. Nhưng nếu vì lý do nào đó (data cũ, race condition, gọi seedTournament
+ *      phiên bản trước fix) rule active không tồn tại, hàm sẽ tạo 1 rule
+ *      GENERIC 3-1-0 và ghi đè season sang rule sai — vô hiệu hoá hoàn toàn
+ *      ruleOverrides theo giải.
+ *
+ * Fix: hàm này giờ CHỈ là no-op phòng vệ. Không tạo rule mới, không ghi đè
+ * season đã có tournament_rule_id. Chỉ throw nếu season KHÔNG có rule nào —
+ * đây là bug thật cần biết sớm (season được tạo sai luồng, bỏ qua
+ * seedSeasonConfigurable), không phải trường hợp nên tự "vá" bằng rule generic.
+ *
+ * KHÔNG gọi hàm này trong index.ts của pipeline hiện tại — seedTournament +
+ * seedSeasonConfigurable đã đủ để gán đúng rule cho season. Giữ lại file này
+ * chỉ để không phá bất kỳ import cũ nào còn trỏ tới nó.
  */
 export async function seedTournamentRule(
     db: DbClient,
     tournamentId: number,
     seasonId: number
 ): Promise<{ ruleId: number }> {
-    let rule = await db.tournamentRule.findFirst({
-        where: { tournament_id: tournamentId, is_active: true },
+    const season = await db.season.findUniqueOrThrow({
+        where: { id: seasonId },
+        select: { tournament_rule_id: true, tournament_id: true },
     });
 
-    if (!rule) {
-        rule = await db.tournamentRule.create({
-            data: {
-                name: "Default Rule",
-                tournament_id: tournamentId,
-                is_active: true,
-                points_per_win: 3,
-                points_per_draw: 1,
-                points_per_loss: 0,
-                format: SeasonFormat.round_robin_knockout,
-                round_robin_stages: 1,
-                forfeit_score: 3,
-                yellow_cards_suspension: 3,
-                suspension_match_count: 1,
-                max_players_per_team: 11,
-                min_players_per_team: 7,
-                teams_advance_per_group: 2,
-                fine_per_yellow_card: 0,
-                fine_per_red_card: 0,
-                bonus_per_goal: 0,
-                bonus_per_assist: 0,
-                tiebreaker_order: ["goal_diff", "goals_scored", "head_to_head"],
-            },
-        });
+    if (season.tournament_id !== tournamentId) {
+        throw new Error(
+            `seedTournamentRule: season #${seasonId} thuộc tournament #${season.tournament_id}, ` +
+            `không phải tournament #${tournamentId} truyền vào — kiểm tra lại thứ tự gọi seeder.`
+        );
     }
 
-    // FIX: đây là bước bị thiếu — Season tạo ra trước đó không có
-    // tournament_rule_id, nên dù rule đã tồn tại trong bảng tournament_rules,
-    // season vẫn không "thấy" nó qua relation.
-    await db.season.update({
-        where: { id: seasonId },
-        data: { tournament_rule_id: rule.id },
-    });
+    if (season.tournament_rule_id != null) {
+        console.log(
+            `[TournamentRuleSeeder] Season #${seasonId} đã có tournament_rule_id=${season.tournament_rule_id} ` +
+            `(gán từ seedSeasonConfigurable) — bỏ qua, KHÔNG tạo rule generic hay ghi đè.`
+        );
+        return { ruleId: season.tournament_rule_id };
+    }
 
-    console.log(`[TournamentRuleSeeder] Rule #${rule.id} đã gán cho Season #${seasonId}`);
-    return { ruleId: rule.id };
+    throw new Error(
+        `seedTournamentRule: season #${seasonId} không có tournament_rule_id. ` +
+        `Season phải được tạo qua seedSeasonConfigurable với tournamentRuleId đã biết trước ` +
+        `(từ seedTournament) — không tự tạo rule generic ở bước này nữa để tránh ghi đè ` +
+        `ruleOverrides riêng của từng giải. Kiểm tra lại thứ tự gọi trong index.ts.`
+    );
 }

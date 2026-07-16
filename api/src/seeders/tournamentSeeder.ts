@@ -26,6 +26,18 @@ export interface TournamentRuleOverrides {
 // ruleOverrides tường minh — mỗi giải có thể có luật tính điểm/phạt/thưởng
 // khác nhau (đúng thực tế: giải phong trào thường phạt/thưởng khác giải
 // chuyên nghiệp). Vẫn giữ idempotency qua upsert theo Tournament.name.
+//
+// FIX (P0 — xung đột với tournamentRuleSeeder.ts): rule tạo ở đây giờ LUÔN
+// set `is_active: true`. Trước đây field này bị bỏ trống (default schema),
+// khiến `tournamentRuleSeeder.seedTournamentRule` (lookup theo
+// `is_active: true`) không "thấy" rule đã tạo ở đây, tự tạo thêm 1 rule
+// generic (3-1-0, mọi override mặc định) rồi GHI ĐÈ season.tournament_rule_id
+// sang rule generic đó — vô hiệu hoá hoàn toàn ruleOverrides theo từng giải
+// (vd. amateur 2-1-0 sẽ bị tính nhầm thành 3-1-0). `seedSeasonConfigurable`
+// đã nhận `tournamentRuleId` và set thẳng vào season khi tạo, nên
+// `tournamentRuleSeeder.ts` không còn cần thiết trong pipeline mới — không
+// được gọi nó nữa sau bước này (xem index.ts). Nó được giữ lại chỉ với vai
+// trò no-op phòng vệ, không tạo/ghi đè gì nếu season đã có rule.
 export async function seedTournament(
   db: PrismaClient,
   organizerUserId: number,
@@ -49,7 +61,7 @@ export async function seedTournament(
   });
 
   const existingRule = await db.tournamentRule.findFirst({
-    where: { tournament_id: tournament.id },
+    where: { tournament_id: tournament.id, is_active: true },
   });
 
   const rule =
@@ -59,6 +71,7 @@ export async function seedTournament(
         name: ruleName,
         tournament_id: tournament.id,
         user_id: organizerUserId,
+        is_active: true,
         format: SeasonFormat.round_robin_knockout,
         round_robin_stages: 1,
         points_per_win: ruleOverrides.points_per_win ?? 3,
@@ -78,7 +91,7 @@ export async function seedTournament(
       },
     }));
 
-  console.log(`[TournamentSeeder] Tournament #${tournament.id} (${name}), Rule #${rule.id}`);
+  console.log(`[TournamentSeeder] Tournament #${tournament.id} (${name}), Rule #${rule.id} (is_active=true)`);
   return { tournamentId: tournament.id, tournamentRuleId: rule.id };
 }
 

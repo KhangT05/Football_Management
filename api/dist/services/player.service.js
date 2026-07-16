@@ -290,9 +290,10 @@ export class PlayerService {
     async assertPlayerClassMatchesTeam(userId, teamId, tx = this.prisma) {
         const team = await tx.team.findUniqueOrThrow({
             where: { id: teamId },
-            select: { category: true, class_id: true },
+            select: { class_id: true },
         });
-        if (team.category === "amateur")
+        // Đội không gắn lớp (class_id = null) → không ràng buộc sinh viên, bỏ qua
+        if (team.class_id == null)
             return;
         const user = await tx.user.findUniqueOrThrow({
             where: { id: userId },
