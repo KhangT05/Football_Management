@@ -50,6 +50,7 @@ export const generateFromGroupsSchema = z.object({
     dailyStartTime: dailyTimeField,
     dailyEndTime: dailyTimeField,
     bufferMinutes: z.number().int().positive().optional(),
+    excludedDates: z.array(z.string()).optional(),
     rounds: z.array(z.number().int().positive()).optional(),
     groupIds: z.array(z.number().int().positive()).optional(),
     allowPastDate: z.boolean().optional(),
@@ -58,7 +59,46 @@ export const generateFromGroupsSchema = z.object({
     message: 'dailyEndTime phải sau dailyStartTime',
 });
 
-export type GenerateFromGroupsDto = z.infer<typeof generateFromGroupsSchema>;
-export type AutoScheduleDto = z.infer<typeof autoScheduleSchema>;
-export type GenerateScheduleDto = z.infer<typeof generateScheduleSchema>;
-export type RescheduleMatchDto = z.infer<typeof rescheduleMatchSchema>;
+// Explicit TypeScript interfaces (tsoa reads these, not z.infer<>)
+export interface GenerateScheduleDto {
+    desiredGroupCount: number;
+    minGroupSize: number;
+    maxGroupSize: number;
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+}
+
+export interface GenerateFromGroupsDto {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    rounds?: number[];
+    groupIds?: number[];
+    allowPastDate?: boolean;
+}
+
+export interface AutoScheduleDto {
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    rounds?: number[];
+    groupIds?: number[];
+    allowPastDate?: boolean;
+}
+
+export interface RescheduleMatchDto {
+    scheduledAt: Date;
+    venueId: number;
+    bufferMinutes?: number;
+}

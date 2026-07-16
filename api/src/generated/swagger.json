@@ -4400,6 +4400,12 @@
 			},
 			"infer_typeofgenerateScheduleSchema_": {
 				"properties": {
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
 					"bufferMinutes": {
 						"type": "number",
 						"format": "double"
@@ -4533,6 +4539,12 @@
 			},
 			"infer_typeofautoScheduleSchema_": {
 				"properties": {
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
 					"bufferMinutes": {
 						"type": "number",
 						"format": "double"
@@ -11934,7 +11946,7 @@
 						}
 					}
 				},
-				"description": "List seasons có thể xem standings.\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\n\nQuery params:\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\n  ?tournamentId=1\n  ?page=1&per_page=20\n  ?q=keyword&sort=start_date&direction=desc",
+				"description": "List seasons có thể xem standings.\r\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\r\n\r\nQuery params:\r\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\r\n  ?tournamentId=1\r\n  ?page=1&per_page=20\r\n  ?q=keyword&sort=start_date&direction=desc",
 				"tags": [
 					"Seasons"
 				],
@@ -12173,7 +12185,7 @@
 						}
 					}
 				},
-				"description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\n(theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho\naudit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có\nđường tắt nào set 'cancelled' mà thiếu cancel_reason.",
+				"description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\r\n(theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho\r\naudit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có\r\nđường tắt nào set 'cancelled' mà thiếu cancel_reason.",
 				"tags": [
 					"Seasons"
 				],
@@ -12222,7 +12234,7 @@
 						}
 					}
 				},
-				"description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\n(id, status) — dùng cho registration_open/ongoing/finished, organizing bấm\ntay song song với cron SeasonService.runAutoTransitions().",
+				"description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\r\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\r\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\r\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\r\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\r\n(id, status) — dùng cho registration_open/ongoing/finished, organizing bấm\r\ntay song song với cron SeasonService.runAutoTransitions().",
 				"tags": [
 					"Seasons"
 				],
@@ -12293,7 +12305,7 @@
 						}
 					}
 				},
-				"description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\ncho organizing/ops, không phải cách vận hành chính.",
+				"description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\r\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\r\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\r\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\r\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\r\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\r\ncho organizing/ops, không phải cách vận hành chính.",
 				"tags": [
 					"Seasons"
 				],
