@@ -9,6 +9,7 @@ const scheduleWindowFields = {
     dailyStartTime: dailyTimeField,
     dailyEndTime: dailyTimeField,
     bufferMinutes: z.number().int().positive().optional(),
+    excludedDates: z.array(z.string()).optional(),
 };
 
 const scheduleWindowRefine = <T extends { dailyStartTime: string; dailyEndTime: string }>(d: T) =>

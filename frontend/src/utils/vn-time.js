@@ -12,7 +12,7 @@ export function vnInputToUtcDate(value) {
 export const utcToVnDateInput = (value) => {
     if (!value) return '';
     const d = value instanceof Date ? value : new Date(value);
-    return formatInTimeZone(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    return new Date(d.getTime() + VN_OFFSET_MS).toISOString().slice(0, 10);
 };
 /**
  * Date/ISO string (UTC instant) -> 'YYYY-MM-DDTHH:mm' để feed vào

@@ -38,16 +38,16 @@ const FORMAT_META = [
     hasKnockout: false,
     stagesMode: 'min1',
   },
-  {
-    value: 'knockout',
-    label: 'Loại trực tiếp',
-    desc: 'Đá loại trực tiếp toàn giải ngay từ đầu.',
-    icon: Trophy,
-    color: 'orange',
-    hasGroupPhase: false,
-    hasKnockout: true,
-    stagesMode: 'fixed0',
-  },
+  // {
+  //   value: 'knockout',
+  //   label: 'Loại trực tiếp',
+  //   desc: 'Đá loại trực tiếp toàn giải ngay từ đầu.',
+  //   icon: Trophy,
+  //   color: 'orange',
+  //   hasGroupPhase: false,
+  //   hasKnockout: true,
+  //   stagesMode: 'fixed0',
+  // },
   {
     value: 'round_robin_knockout',
     label: 'Vòng bảng → Loại trực tiếp',
@@ -68,16 +68,16 @@ const FORMAT_META = [
     hasKnockout: true,
     stagesMode: 'min2',
   },
-  {
-    value: 'custom',
-    label: 'Tùy chỉnh (Hybrid)',
-    desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: knockout trước rồi vào vòng tròn tính điểm, top mỗi bảng đá vòng tròn chọn hạng, nhiều nhánh song song...).',
-    icon: Puzzle,
-    color: 'fuchsia',
-    hasGroupPhase: null,
-    hasKnockout: null,
-    stagesMode: 'custom',
-  },
+  // {
+  //   value: 'custom',
+  //   label: 'Tùy chỉnh (Hybrid)',
+  //   desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: knockout trước rồi vào vòng tròn tính điểm, top mỗi bảng đá vòng tròn chọn hạng, nhiều nhánh song song...).',
+  //   icon: Puzzle,
+  //   color: 'fuchsia',
+  //   hasGroupPhase: null,
+  //   hasKnockout: null,
+  //   stagesMode: 'custom',
+  // },
 ];
 
 const PITCH_TYPE_META = [
