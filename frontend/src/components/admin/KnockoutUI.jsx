@@ -115,7 +115,7 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
       if (dateRangeStart) payload.dateRangeStart = dateRangeStart;
       if (dateRangeEnd) payload.dateRangeEnd = dateRangeEnd;
 
-      const res = await knockoutApi.scheduleBracket(phaseId, payload);
+      const res = await knockoutApi.scheduleBracket(season?.id, phaseId, payload);
       const result = typeof res?.status === 'boolean' ? res.data : res;
       toast.success(`Đã xếp lịch ${result?.scheduledCount ?? ''} trận`.trim());
       onScheduled();
@@ -504,7 +504,7 @@ export default function KnockoutUI({ seasonId }) {
     // truyền true) rồi mới ăn lỗi CONFLICT từ swapSeeds() sau khi gọi API.
     if (isBracketConfirmed) return toast.error('Sơ đồ đã được xác nhận — không thể đổi nhánh nữa.');
     try {
-      await knockoutApi.swapSeeds(selectedPhaseId, {
+      await knockoutApi.swapSeeds(seasonId, selectedPhaseId, {
         slotIdA: source.slotId, sideA: source.side,
         slotIdB: target.slotId, sideB: target.side,
       });
@@ -523,7 +523,7 @@ export default function KnockoutUI({ seasonId }) {
     if (isBracketConfirmed) return toast.error('Sơ đồ đã được xác nhận trước đó.');
     setConfirming(true);
     try {
-      await knockoutApi.confirmBracket(selectedPhaseId);
+      await knockoutApi.confirmBracket(seasonId, selectedPhaseId);
       toast.success('Đã xác nhận sơ đồ knockout');
       await refreshPhases();
       fetchBracket(selectedPhaseId);

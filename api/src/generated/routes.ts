@@ -1794,6 +1794,16 @@ const models: TsoaRoute.Models = {
         "type": {"ref":"infer_typeofadvanceWinnerRequestSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofscheduleKnockoutBracketRequestSchema_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"dateRangeEnd":{"dataType":"datetime"},"dateRangeStart":{"dataType":"datetime"},"bufferMinutes":{"dataType":"double"},"dailyEndTime":{"dataType":"string"},"dailyStartTime":{"dataType":"string"},"venueIds":{"dataType":"array","array":{"dataType":"double"}}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ScheduleKnockoutBracketRequestDto": {
+        "dataType": "refAlias",
+        "type": {"ref":"infer_typeofscheduleKnockoutBracketRequestSchema_","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "BracketSlotNode": {
         "dataType": "refObject",
         "properties": {
@@ -1813,7 +1823,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofautoSeedKnockoutRequestSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"dateRangeEnd":{"dataType":"datetime"},"dateRangeStart":{"dataType":"datetime"},"matchTimes":{"dataType":"array","array":{"dataType":"string"}},"venueIds":{"dataType":"array","array":{"dataType":"double"}},"phaseTypeOverride":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group_stage"]},{"dataType":"enum","enums":["round_of_16"]},{"dataType":"enum","enums":["quarter_final"]},{"dataType":"enum","enums":["semi_final"]},{"dataType":"enum","enums":["third_place"]},{"dataType":"enum","enums":["final"]}]},"legs":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]}]},"mode":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["straight"]},{"dataType":"enum","enums":["cross"]},{"dataType":"enum","enums":["random"]}],"required":true},"topN":{"dataType":"double","required":true},"groupIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"dateRangeEnd":{"dataType":"datetime"},"dateRangeStart":{"dataType":"datetime"},"bufferMinutes":{"dataType":"double"},"dailyEndTime":{"dataType":"string"},"dailyStartTime":{"dataType":"string"},"venueIds":{"dataType":"array","array":{"dataType":"double"}},"phaseTypeOverride":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group_stage"]},{"dataType":"enum","enums":["round_of_16"]},{"dataType":"enum","enums":["quarter_final"]},{"dataType":"enum","enums":["semi_final"]},{"dataType":"enum","enums":["third_place"]},{"dataType":"enum","enums":["final"]}]},"legs":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]}]},"mode":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["straight"]},{"dataType":"enum","enums":["cross"]},{"dataType":"enum","enums":["random"]}],"required":true},"topN":{"dataType":"double","required":true},"groupIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AutoSeedKnockoutRequestDto": {
@@ -8093,6 +8103,44 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'advanceWinner',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsKnockoutController_scheduleBracket: Record<string, TsoaRoute.ParameterSchema> = {
+                seasonId: {"in":"path","name":"seasonId","required":true,"dataType":"double"},
+                phaseId: {"in":"path","name":"phaseId","required":true,"dataType":"double"},
+                body: {"in":"body","name":"body","required":true,"ref":"ScheduleKnockoutBracketRequestDto"},
+        };
+        app.post('/seasons/:seasonId/phases/:phaseId/knockout/schedule',
+            authenticateMiddleware([{"jwt":["organizing"]}]),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController)),
+            ...(fetchMiddlewares<RequestHandler>(KnockoutController.prototype.scheduleBracket)),
+
+            async function KnockoutController_scheduleBracket(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsKnockoutController_scheduleBracket, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<KnockoutController>(KnockoutController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'scheduleBracket',
                 controller,
                 response,
                 next,

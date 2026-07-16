@@ -779,6 +779,45 @@ export class KnockoutService extends ScheduleEngine {
         );
     }
 
+    async scheduleBracket(
+        phaseId: number,
+        seasonId: number,
+        scheduleOptions: OptionalScheduleOptions,
+    ): Promise<{ scheduledCount: number; failedMatchIds: number[]; scheduleWarning?: string }> {
+        const matches = await this.prisma.match.findMany({
+            where: {
+                phase_id: phaseId,
+                scheduled_at: null,
+                status: MatchStatus.scheduled,
+                deleted_at: null,
+            },
+            select: { id: true },
+            orderBy: { id: 'asc' },
+        });
+
+        if (matches.length === 0) {
+            return { scheduledCount: 0, failedMatchIds: [] };
+        }
+
+        const matchIds = matches.map(m => m.id);
+        const result = await this.scheduleMatchBatch(matchIds, seasonId, phaseId, scheduleOptions);
+        
+        let scheduleWarning: string | undefined;
+        if (result.error) {
+            scheduleWarning = `Lỗi xếp lịch: ${result.error}`;
+            console.warn(`[KnockoutService] ${scheduleWarning}`);
+        } else if (result.failedMatchIds.length > 0) {
+            scheduleWarning = `${result.failedMatchIds.length} trận chưa thể xếp lịch. IDs [${result.failedMatchIds.join(', ')}]`;
+            console.warn(`[KnockoutService] ${scheduleWarning}`);
+        }
+
+        return {
+            scheduledCount: result.matchesScheduled,
+            failedMatchIds: result.failedMatchIds,
+            scheduleWarning,
+        };
+    }
+
     async getBracket(phaseId: number): Promise<BracketSlotNode[]> {
         const phase = await this.prisma.phase.findUnique({
             where: { id: phaseId },

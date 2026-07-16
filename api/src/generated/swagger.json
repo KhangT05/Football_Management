@@ -6921,6 +6921,39 @@
 			"AdvanceWinnerRequestDto": {
 				"$ref": "#/components/schemas/infer_typeofadvanceWinnerRequestSchema_"
 			},
+			"infer_typeofscheduleKnockoutBracketRequestSchema_": {
+				"properties": {
+					"dateRangeEnd": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"dateRangeStart": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
+			},
+			"ScheduleKnockoutBracketRequestDto": {
+				"$ref": "#/components/schemas/infer_typeofscheduleKnockoutBracketRequestSchema_"
+			},
 			"BracketSlotNode": {
 				"properties": {
 					"slotId": {
@@ -6997,11 +7030,15 @@
 						"type": "string",
 						"format": "date-time"
 					},
-					"matchTimes": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -16137,6 +16174,83 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/AdvanceWinnerRequestDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/seasons/{seasonId}/phases/{phaseId}/knockout/schedule": {
+			"post": {
+				"operationId": "ScheduleBracket",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"scheduleWarning": {
+											"type": "string"
+										},
+										"failedMatchIds": {
+											"items": {
+												"type": "number",
+												"format": "double"
+											},
+											"type": "array"
+										},
+										"scheduledCount": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"failedMatchIds",
+										"scheduledCount"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Knockout"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "phaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ScheduleKnockoutBracketRequestDto"
 							}
 						}
 					}

@@ -54,6 +54,18 @@ export class KnockoutController extends Controller {
         });
     }
 
+    @Security('jwt', ['organizing'])
+    @Post('seasons/{seasonId}/phases/{phaseId}/knockout/schedule')
+    @SuccessResponse(200, 'OK')
+    async scheduleBracket(
+        @Path() seasonId: number,
+        @Path() phaseId: number,
+        @Body() body: knockoutSchema.ScheduleKnockoutBracketRequestDto,
+    ): Promise<{ scheduledCount: number; failedMatchIds: number[]; scheduleWarning?: string }> {
+        const parsed = knockoutSchema.scheduleKnockoutBracketRequestSchema.parse(body);
+        return this.service.scheduleBracket(phaseId, seasonId, parsed);
+    }
+
     @Get('phases/{phaseId}/knockout/bracket')
     async getBracket(
         @Path() phaseId: number,
