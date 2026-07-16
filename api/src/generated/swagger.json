@@ -4398,23 +4398,9 @@
 				],
 				"type": "object"
 			},
-			"infer_typeofgenerateScheduleSchema_": {
+			"GenerateScheduleDto": {
 				"properties": {
-					"excludedDates": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"bufferMinutes": {
-						"type": "number",
-						"format": "double"
-					},
-					"minRestDaysPerTeam": {
-						"type": "number",
-						"format": "double"
-					},
-					"maxGroupSize": {
+					"desiredGroupCount": {
 						"type": "number",
 						"format": "double"
 					},
@@ -4422,15 +4408,9 @@
 						"type": "number",
 						"format": "double"
 					},
-					"desiredGroupCount": {
+					"maxGroupSize": {
 						"type": "number",
 						"format": "double"
-					},
-					"dailyEndTime": {
-						"type": "string"
-					},
-					"dailyStartTime": {
-						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -4439,23 +4419,40 @@
 						},
 						"type": "array"
 					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
 					"doubleRound": {
 						"type": "boolean"
+					},
+					"minRestDaysPerTeam": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
-					"maxGroupSize",
-					"minGroupSize",
 					"desiredGroupCount",
-					"dailyEndTime",
-					"dailyStartTime",
+					"minGroupSize",
+					"maxGroupSize",
 					"venueIds",
-					"doubleRound"
+					"dailyStartTime",
+					"dailyEndTime"
 				],
-				"type": "object"
-			},
-			"GenerateScheduleDto": {
-				"$ref": "#/components/schemas/infer_typeofgenerateScheduleSchema_"
+				"type": "object",
+				"additionalProperties": false
 			},
 			"RoundSummary": {
 				"properties": {
@@ -4483,41 +4480,14 @@
 				],
 				"type": "object"
 			},
-			"infer_typeofgenerateFromGroupsSchema_": {
+			"GenerateFromGroupsDto": {
 				"properties": {
-					"allowPastDate": {
+					"doubleRound": {
 						"type": "boolean"
-					},
-					"groupIds": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array"
-					},
-					"rounds": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array"
-					},
-					"bufferMinutes": {
-						"type": "number",
-						"format": "double"
 					},
 					"minRestDaysPerTeam": {
 						"type": "number",
 						"format": "double"
-					},
-					"doubleRound": {
-						"type": "boolean"
-					},
-					"dailyEndTime": {
-						"type": "string"
-					},
-					"dailyStartTime": {
-						"type": "string"
 					},
 					"venueIds": {
 						"items": {
@@ -4525,37 +4495,71 @@
 							"format": "double"
 						},
 						"type": "array"
-					}
-				},
-				"required": [
-					"dailyEndTime",
-					"dailyStartTime",
-					"venueIds"
-				],
-				"type": "object"
-			},
-			"GenerateFromGroupsDto": {
-				"$ref": "#/components/schemas/infer_typeofgenerateFromGroupsSchema_"
-			},
-			"infer_typeofautoScheduleSchema_": {
-				"properties": {
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
 					"excludedDates": {
 						"items": {
 							"type": "string"
 						},
 						"type": "array"
 					},
-					"bufferMinutes": {
-						"type": "number",
-						"format": "double"
-					},
-					"allowPastDate": {
-						"type": "boolean"
+					"rounds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
 					},
 					"groupIds": {
 						"items": {
 							"type": "number",
 							"format": "double"
+						},
+						"type": "array"
+					},
+					"allowPastDate": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"venueIds",
+					"dailyStartTime",
+					"dailyEndTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AutoScheduleDto": {
+				"properties": {
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"excludedDates": {
+						"items": {
+							"type": "string"
 						},
 						"type": "array"
 					},
@@ -4566,53 +4570,46 @@
 						},
 						"type": "array"
 					},
-					"dailyEndTime": {
-						"type": "string"
-					},
-					"dailyStartTime": {
-						"type": "string"
-					},
-					"venueIds": {
+					"groupIds": {
 						"items": {
 							"type": "number",
 							"format": "double"
 						},
 						"type": "array"
+					},
+					"allowPastDate": {
+						"type": "boolean"
 					}
 				},
 				"required": [
-					"dailyEndTime",
+					"venueIds",
 					"dailyStartTime",
-					"venueIds"
+					"dailyEndTime"
 				],
-				"type": "object"
+				"type": "object",
+				"additionalProperties": false
 			},
-			"AutoScheduleDto": {
-				"$ref": "#/components/schemas/infer_typeofautoScheduleSchema_"
-			},
-			"infer_typeofrescheduleMatchSchema_": {
+			"RescheduleMatchDto": {
 				"properties": {
-					"bufferMinutes": {
-						"type": "number",
-						"format": "double"
+					"scheduledAt": {
+						"type": "string",
+						"format": "date-time"
 					},
 					"venueId": {
 						"type": "number",
 						"format": "double"
 					},
-					"scheduledAt": {
-						"type": "string",
-						"format": "date-time"
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
-					"venueId",
-					"scheduledAt"
+					"scheduledAt",
+					"venueId"
 				],
-				"type": "object"
-			},
-			"RescheduleMatchDto": {
-				"$ref": "#/components/schemas/infer_typeofrescheduleMatchSchema_"
+				"type": "object",
+				"additionalProperties": false
 			},
 			"MatchStatus": {
 				"type": "string",

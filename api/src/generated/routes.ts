@@ -1030,14 +1030,21 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"warnings":{"dataType":"array","array":{"dataType":"string"},"required":true},"failedMatchIds":{"dataType":"array","array":{"dataType":"double"},"required":true},"matchesScheduled":{"dataType":"double","required":true},"groupIds":{"dataType":"array","array":{"dataType":"double"},"required":true},"groupCount":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofgenerateScheduleSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"excludedDates":{"dataType":"array","array":{"dataType":"string"}},"bufferMinutes":{"dataType":"double"},"minRestDaysPerTeam":{"dataType":"double"},"maxGroupSize":{"dataType":"double","required":true},"minGroupSize":{"dataType":"double","required":true},"desiredGroupCount":{"dataType":"double","required":true},"dailyEndTime":{"dataType":"string","required":true},"dailyStartTime":{"dataType":"string","required":true},"venueIds":{"dataType":"array","array":{"dataType":"double"},"required":true},"doubleRound":{"dataType":"boolean","required":true}},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GenerateScheduleDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofgenerateScheduleSchema_","validators":{}},
+        "dataType": "refObject",
+        "properties": {
+            "desiredGroupCount": {"dataType":"double","required":true},
+            "minGroupSize": {"dataType":"double","required":true},
+            "maxGroupSize": {"dataType":"double","required":true},
+            "venueIds": {"dataType":"array","array":{"dataType":"double"},"required":true},
+            "dailyStartTime": {"dataType":"string","required":true},
+            "dailyEndTime": {"dataType":"string","required":true},
+            "bufferMinutes": {"dataType":"double"},
+            "excludedDates": {"dataType":"array","array":{"dataType":"string"}},
+            "doubleRound": {"dataType":"boolean"},
+            "minRestDaysPerTeam": {"dataType":"double"},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RoundSummary": {
@@ -1045,34 +1052,46 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"fullyScheduled":{"dataType":"boolean","required":true},"unscheduled":{"dataType":"double","required":true},"total":{"dataType":"double","required":true},"round":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofgenerateFromGroupsSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"allowPastDate":{"dataType":"boolean"},"groupIds":{"dataType":"array","array":{"dataType":"double"}},"rounds":{"dataType":"array","array":{"dataType":"double"}},"bufferMinutes":{"dataType":"double"},"minRestDaysPerTeam":{"dataType":"double"},"doubleRound":{"dataType":"boolean"},"dailyEndTime":{"dataType":"string","required":true},"dailyStartTime":{"dataType":"string","required":true},"venueIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GenerateFromGroupsDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofgenerateFromGroupsSchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofautoScheduleSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"excludedDates":{"dataType":"array","array":{"dataType":"string"}},"bufferMinutes":{"dataType":"double"},"allowPastDate":{"dataType":"boolean"},"groupIds":{"dataType":"array","array":{"dataType":"double"}},"rounds":{"dataType":"array","array":{"dataType":"double"}},"dailyEndTime":{"dataType":"string","required":true},"dailyStartTime":{"dataType":"string","required":true},"venueIds":{"dataType":"array","array":{"dataType":"double"},"required":true}},"validators":{}},
+        "dataType": "refObject",
+        "properties": {
+            "doubleRound": {"dataType":"boolean"},
+            "minRestDaysPerTeam": {"dataType":"double"},
+            "venueIds": {"dataType":"array","array":{"dataType":"double"},"required":true},
+            "dailyStartTime": {"dataType":"string","required":true},
+            "dailyEndTime": {"dataType":"string","required":true},
+            "bufferMinutes": {"dataType":"double"},
+            "excludedDates": {"dataType":"array","array":{"dataType":"string"}},
+            "rounds": {"dataType":"array","array":{"dataType":"double"}},
+            "groupIds": {"dataType":"array","array":{"dataType":"double"}},
+            "allowPastDate": {"dataType":"boolean"},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AutoScheduleDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofautoScheduleSchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofrescheduleMatchSchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"bufferMinutes":{"dataType":"double"},"venueId":{"dataType":"double","required":true},"scheduledAt":{"dataType":"datetime","required":true}},"validators":{}},
+        "dataType": "refObject",
+        "properties": {
+            "venueIds": {"dataType":"array","array":{"dataType":"double"},"required":true},
+            "dailyStartTime": {"dataType":"string","required":true},
+            "dailyEndTime": {"dataType":"string","required":true},
+            "bufferMinutes": {"dataType":"double"},
+            "excludedDates": {"dataType":"array","array":{"dataType":"string"}},
+            "rounds": {"dataType":"array","array":{"dataType":"double"}},
+            "groupIds": {"dataType":"array","array":{"dataType":"double"}},
+            "allowPastDate": {"dataType":"boolean"},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RescheduleMatchDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofrescheduleMatchSchema_","validators":{}},
+        "dataType": "refObject",
+        "properties": {
+            "scheduledAt": {"dataType":"datetime","required":true},
+            "venueId": {"dataType":"double","required":true},
+            "bufferMinutes": {"dataType":"double"},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MatchStatus": {
