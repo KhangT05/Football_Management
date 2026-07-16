@@ -229,14 +229,17 @@ const tournamentRuleBaseSchema = z.object({
     max_players_per_team: z.number().int().min(1).max(50).default(25),
     min_players_per_team: z.number().int().min(1).max(50).default(11),
     // chỉ có ý nghĩa khi format thuộc ROUND_ROBIN_BASED_FORMATS; với "knockout"/"custom" field này
-    // vẫn tồn tại vì DB không nullable, nhưng bị service layer bỏ qua — xem note dưới createTournamentRuleSchema
-    teams_advance_per_group: z.number().int().min(1).default(2),
+    // vẫn tồn tại vì DB không nullable, nhưng bị service layer bỏ qua — xem note dưới createTournamentRuleSchema.
+    // min(0) thay vì min(1): knockout/custom gửi 0 hợp lệ — service layer bỏ qua giá trị này.
+    teams_advance_per_group: z.number().int().min(0).default(2),
     round_robin_stages: z.number().int().min(0).max(50).default(1),
     format: z.enum(SEASON_FORMATS).default("round_robin_knockout"),
     is_active: z.boolean().default(true),
+    // min(0) thay vì min(1): format knockout/custom không có vòng bảng nên không cần tiêu chí
+    // xếp hạng — FE gửi [] là hợp lệ. Service layer bỏ qua field này khi format không có group.
     tiebreaker_order: z
         .array(z.enum(TIEBREAKER_OPTIONS))
-        .min(1)
+        .min(0)
         .default(["goal_diff", "goals_scored", "head_to_head"]),
     // required khi format="custom", cấm khi format khác — validate ở superRefine bên dưới
     custom_stages: customStagesSchema.nullish(),

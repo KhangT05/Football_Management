@@ -312,7 +312,7 @@ const convertCustomStagesFromApi = (stagesFromApi) => {
   const sorted = [...stagesFromApi].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const cids = sorted.map(() => newCid());
   return sorted.map((s, idx) => {
-    const { order, source_stage_order, ...rest } = s;
+    const { order: _order, source_stage_order, ...rest } = s;
     return {
       ...rest,
       _cid: cids[idx],
@@ -514,15 +514,15 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
         return { ...f, custom_stages: [createDefaultStage('round_robin', newCid(), null, 0)] };
       }
 
+      // Clamp round_robin_stages theo format constraint.
+      // Không zero-out tiebreaker_order hay teams_advance_per_group — BE vẫn validate
+      // 2 field này ngay cả khi format không có group phase, chỉ cần giá trị >= 0 hợp lệ.
+      // Chỉ zero-out points khi format không có group phase để tránh hiểu nhầm.
       if (!meta.hasGroupPhase) {
-        if (f.points_per_win === 0 && f.points_per_draw === 0 && f.points_per_loss === 0 &&
-          f.teams_advance_per_group === 0 && f.tiebreaker_order.length === 0) {
+        if (f.points_per_win === 0 && f.points_per_draw === 0 && f.points_per_loss === 0) {
           return f; // đã ở trạng thái đúng, tránh set thừa gây re-render
         }
-        return { ...f, points_per_win: 0, points_per_draw: 0, points_per_loss: 0, teams_advance_per_group: 0, tiebreaker_order: [] };
-      }
-      if (!meta.hasKnockout && f.teams_advance_per_group !== 0) {
-        return { ...f, teams_advance_per_group: 0 };
+        return { ...f, points_per_win: 0, points_per_draw: 0, points_per_loss: 0 };
       }
       return f;
     });
@@ -867,14 +867,14 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
         if (seasonForm.is_registration_open) {
           try {
             await seasonApi.updateStatus(finalSeasonId, { status: 'registration_open' });
-          } catch (statusErr) {
+          } catch (_statusErr) {
             groupCreationWarning = 'Mùa giải đã được tạo nhưng chưa thể tự động mở đăng ký. Vui lòng vào mùa giải để mở đăng ký và tạo bảng đấu thủ công.';
           }
         }
         if (!groupCreationWarning) {
           try {
             await groupApi.createGroupsBulk(finalSeasonId, initialGroupCount);
-          } catch (groupErr) {
+          } catch (_groupErr) {
             groupCreationWarning = 'Mùa giải đã được tạo nhưng chưa thể tự động tạo bảng đấu (season chưa ở trạng thái phù hợp). Vui lòng vào mùa giải để tạo bảng đấu thủ công.';
           }
         }
