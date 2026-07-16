@@ -1,6 +1,6 @@
 // prisma/seed/messySeasonSeeder.ts
 //
-// NEW FILE — dành riêng cho mùa giải archetype "ongoing" (đang đá dở).
+// dành riêng cho mùa giải archetype "ongoing" (đang đá dở).
 // Khác với groupMatchSeeder.ts (LUÔN kết thúc đủ 6 trận/bảng với status
 // finished), file này cố ý tạo ra bức tranh "thật" của 1 giải đang chạy:
 // một số trận đã xong, một số chưa đá, một số bị hoãn/hủy/bỏ dở, một số
@@ -43,6 +43,42 @@ const COUNTS_TOWARD_STANDINGS = new Set([
     "forfeited",
     "abandoned", // có tỉ số tại thời điểm bỏ dở, vẫn được tính (như bóng đá thật)
 ]);
+/**
+ * FIX (P0): bản trước tạo match VÔ ĐIỀU KIỆN cho mọi (group, pair) mỗi lần
+ * hàm này chạy — không hề có existence check, khác hẳn (và tệ hơn) so với
+ * groupMatchSeeder.ts (vốn ít nhất còn có aggregate `existingCount >= 6`).
+ * Retry sau lỗi mạng/DB timeout giữa các phase/group của seed script (rất
+ * thực tế với khối lượng seed 3 giải x nhiều mùa) sẽ nhân đôi toàn bộ match
+ * đã tạo trước đó, tally cộng dồn sai, standings sai lặng lẽ.
+ *
+ * Fix: check tồn tại theo ĐÚNG cặp (phase, group, home, away) trước khi tạo.
+ * Nếu đã tồn tại, đọc lại kết quả cũ thay vì tạo mới — logic tally dùng
+ * chung cho cả 2 nhánh (mới tạo / đã tồn tại), tương tự pattern đã áp dụng
+ * đúng ở nhánh "alreadySimulated" của groupMatchSeeder.ts.
+ */
+async function findExistingFlavorMatch(db, phaseId, groupId, homeTeamId, awayTeamId) {
+    const existing = await db.match.findFirst({
+        where: { phase_id: phaseId, group_id: groupId, home_team_id: homeTeamId, away_team_id: awayTeamId },
+        include: { matchResult: true },
+    });
+    if (!existing)
+        return null;
+    const officialStatuses = new Set([
+        MatchResultStatus.official,
+        MatchResultStatus.protested,
+        MatchResultStatus.under_review,
+    ]);
+    const matchResult = existing.matchResult;
+    const hasOfficialResult = matchResult?.home_final_score != null &&
+        matchResult?.away_final_score != null &&
+        officialStatuses.has(matchResult.status);
+    return {
+        matchId: existing.id,
+        homeScore: hasOfficialResult ? existing.matchResult.home_final_score : existing.home_score,
+        awayScore: hasOfficialResult ? existing.matchResult.away_final_score : existing.away_score,
+        hasOfficialResult,
+    };
+}
 async function createFlavorMatch(db, flavor, phaseId, groupId, homeTeamId, awayTeamId, venueId, dayOffset, forfeitScore, round) {
     const now = Date.now();
     const future = new Date(now + (dayOffset + 3) * 86400000);
@@ -319,6 +355,7 @@ export async function seedMessyGroupStageMatches(db, groupStagePhaseId, groupIdB
         });
         const tally = new Map();
         teamIds.forEach((id) => tally.set(id, { teamId: id, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, points: 0 }));
+        const groupCreatedMatches = [];
         for (let pairIdx = 0; pairIdx < ROUND_ROBIN_PAIRS.length; pairIdx++) {
             const pair = ROUND_ROBIN_PAIRS[pairIdx];
             if (!pair)
@@ -331,10 +368,26 @@ export async function seedMessyGroupStageMatches(db, groupStagePhaseId, groupIdB
             const flavor = FLAVORS[(gi * ROUND_ROBIN_PAIRS.length + pairIdx) % FLAVORS.length];
             if (!flavor)
                 continue;
-            const { matchId, homeScore, awayScore } = await createFlavorMatch(db, flavor, groupStagePhaseId, groupId, homeTeamId, awayTeamId, pickOrThrow(venueIds, "messySeasonSeeder venueIds"), globalDayOffset, forfeitScore, pairIdx + 1);
-            globalDayOffset++;
+            // FIX (P0): check tồn tại theo ĐÚNG cặp trước khi tạo — tránh
+            // tạo trùng khi seed script chạy lại/retry.
+            const existing = await findExistingFlavorMatch(db, groupStagePhaseId, groupId, homeTeamId, awayTeamId);
+            let matchId;
+            let homeScore;
+            let awayScore;
+            if (existing) {
+                matchId = existing.matchId;
+                homeScore = existing.hasOfficialResult ? existing.homeScore : null;
+                awayScore = existing.hasOfficialResult ? existing.awayScore : null;
+            }
+            else {
+                const created = await createFlavorMatch(db, flavor, groupStagePhaseId, groupId, homeTeamId, awayTeamId, pickOrThrow(venueIds, "messySeasonSeeder venueIds"), globalDayOffset, forfeitScore, pairIdx + 1);
+                matchId = created.matchId;
+                homeScore = created.homeScore;
+                awayScore = created.awayScore;
+                globalDayOffset++;
+            }
             if (COUNTS_TOWARD_STANDINGS.has(flavor) && homeScore !== null && awayScore !== null) {
-                createdMatches.push({ matchId, homeTeamId, awayTeamId, homeScore, awayScore });
+                groupCreatedMatches.push({ matchId, homeTeamId, awayTeamId, homeScore, awayScore });
                 const homeTally = tally.get(homeTeamId);
                 const awayTally = tally.get(awayTeamId);
                 homeTally.played++;
@@ -363,6 +416,7 @@ export async function seedMessyGroupStageMatches(db, groupStagePhaseId, groupIdB
                 }
             }
         }
+        createdMatches.push(...groupCreatedMatches);
         // Standings CHỈ phản ánh những trận đã có tỉ số chính thức — đúng thực tế 1 mùa
         // giải đang chạy dở, KHÔNG phải mọi đội đã đá đủ 6 trận.
         const sorted = Array.from(tally.values()).sort((a, b) => {
@@ -407,7 +461,7 @@ export async function seedMessyGroupStageMatches(db, groupStagePhaseId, groupIdB
         }
         await db.group.update({ where: { id: groupId }, data: { status: GroupStatus.SCHEDULED, scheduleGeneratedAt: new Date() } });
         scheduledGroupLetters.push(letter);
-        console.log(`[MessySeasonSeeder] Bảng ${letter}: SCHEDULED — ${createdMatches.filter((m) => teamIds.includes(m.homeTeamId)).length} trận có tỉ số chính thức / ${ROUND_ROBIN_PAIRS.length} tổng.`);
+        console.log(`[MessySeasonSeeder] Bảng ${letter}: SCHEDULED — ${groupCreatedMatches.length} trận có tỉ số chính thức / ${ROUND_ROBIN_PAIRS.length} tổng.`);
     }
     await db.phase.update({ where: { id: groupStagePhaseId }, data: { status: PhaseStatus.in_progress } });
     return { createdMatches, scheduledGroupLetters, draftGroupLetters, scheduleFailedGroupLetters };

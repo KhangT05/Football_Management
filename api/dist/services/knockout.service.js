@@ -569,6 +569,37 @@ export class KnockoutService extends ScheduleEngine {
         throw createAppError('CONFLICT', `Aggregate hoà ${slotHomeAgg}-${slotAwayAgg} giữa leg 1 (${leg1MatchId}) và leg 2 (${leg2MatchId}) ` +
             `nhưng leg 2 không có penalty score — không xác định được winner.`);
     }
+    async scheduleBracket(phaseId, seasonId, scheduleOptions) {
+        const matches = await this.prisma.match.findMany({
+            where: {
+                phase_id: phaseId,
+                scheduled_at: null,
+                status: MatchStatus.scheduled,
+                deleted_at: null,
+            },
+            select: { id: true },
+            orderBy: { id: 'asc' },
+        });
+        if (matches.length === 0) {
+            return { scheduledCount: 0, failedMatchIds: [] };
+        }
+        const matchIds = matches.map(m => m.id);
+        const result = await this.scheduleMatchBatch(matchIds, seasonId, phaseId, scheduleOptions);
+        let scheduleWarning;
+        if (result.error) {
+            scheduleWarning = `Lỗi xếp lịch: ${result.error}`;
+            console.warn(`[KnockoutService] ${scheduleWarning}`);
+        }
+        else if (result.failedMatchIds.length > 0) {
+            scheduleWarning = `${result.failedMatchIds.length} trận chưa thể xếp lịch. IDs [${result.failedMatchIds.join(', ')}]`;
+            console.warn(`[KnockoutService] ${scheduleWarning}`);
+        }
+        return {
+            scheduledCount: result.matchesScheduled,
+            failedMatchIds: result.failedMatchIds,
+            scheduleWarning,
+        };
+    }
     async getBracket(phaseId) {
         const phase = await this.prisma.phase.findUnique({
             where: { id: phaseId },
@@ -1045,8 +1076,7 @@ export class KnockoutService extends ScheduleEngine {
             select: { id: true },
         });
         if (!priorPhase)
-            throw createAppError('CONFLICT', `Chưa có phase '${priorType}' cho season ${seasonId} — không thể tạo '${phaseType}' ` +
-                `trước khi hoàn thành ${priorType}`);
+            return;
         const unfinishedCount = await tx.match.count({
             where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
         });
@@ -1068,7 +1098,7 @@ export class KnockoutService extends ScheduleEngine {
             select: { id: true },
         });
         if (!priorPhase)
-            return { ready: false, priorPhaseType: priorType, priorPhaseExists: false, unfinishedCount: 0 };
+            return { ready: true, priorPhaseType: priorType, priorPhaseExists: false, unfinishedCount: 0 };
         const unfinishedCount = await this.prisma.match.count({
             where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
         });

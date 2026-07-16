@@ -59,6 +59,11 @@ export declare class KnockoutService extends ScheduleEngine {
         scheduleWarning?: string;
     }>;
     private _computeAggregateWinner;
+    scheduleBracket(phaseId: number, seasonId: number, scheduleOptions: OptionalScheduleOptions): Promise<{
+        scheduledCount: number;
+        failedMatchIds: number[];
+        scheduleWarning?: string;
+    }>;
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
     /**
      * Đổi chỗ 2 đội đang seed ở round 1 — dùng khi admin muốn tránh cùng

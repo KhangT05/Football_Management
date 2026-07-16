@@ -6,6 +6,7 @@ const scheduleWindowFields = {
     dailyStartTime: dailyTimeField,
     dailyEndTime: dailyTimeField,
     bufferMinutes: z.number().int().positive().optional(),
+    excludedDates: z.array(z.string()).optional(),
 };
 const scheduleWindowRefine = (d) => d.dailyStartTime < d.dailyEndTime;
 export const generateScheduleSchema = z.object({
@@ -40,6 +41,7 @@ export const generateFromGroupsSchema = z.object({
     dailyStartTime: dailyTimeField,
     dailyEndTime: dailyTimeField,
     bufferMinutes: z.number().int().positive().optional(),
+    excludedDates: z.array(z.string()).optional(),
     rounds: z.array(z.number().int().positive()).optional(),
     groupIds: z.array(z.number().int().positive()).optional(),
     allowPastDate: z.boolean().optional(),

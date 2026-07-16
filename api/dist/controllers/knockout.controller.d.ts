@@ -20,6 +20,11 @@ export declare class KnockoutController extends Controller {
         newMatchId?: number;
         scheduleWarning?: string;
     }>;
+    scheduleBracket(seasonId: number, phaseId: number, body: knockoutSchema.ScheduleKnockoutBracketRequestDto): Promise<{
+        scheduledCount: number;
+        failedMatchIds: number[];
+        scheduleWarning?: string;
+    }>;
     getBracket(phaseId: number): Promise<BracketSlotNode[]>;
     /**
      * Auto-seed knockout từ standing hiện tại của các group — không cần

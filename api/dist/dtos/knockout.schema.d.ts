@@ -60,7 +60,9 @@ export declare const autoSeedKnockoutRequestSchema: z.ZodObject<{
         readonly final: "final";
     }>>;
     venueIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
-    matchTimes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    dailyStartTime: z.ZodOptional<z.ZodString>;
+    dailyEndTime: z.ZodOptional<z.ZodString>;
+    bufferMinutes: z.ZodOptional<z.ZodNumber>;
     dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
     dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
@@ -98,4 +100,13 @@ export type KnockoutGenerateOptionsDto = z.infer<typeof knockoutGenerateOptionsS
 export type GenerateKnockoutRequestDto = z.infer<typeof generateKnockoutRequestSchema>;
 export type AdvanceWinnerRequestDto = z.infer<typeof advanceWinnerRequestSchema>;
 export type AdvanceWinnerInputDto = z.infer<typeof advanceWinnerInputSchema>;
+export declare const scheduleKnockoutBracketRequestSchema: z.ZodObject<{
+    venueIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    dailyStartTime: z.ZodOptional<z.ZodString>;
+    dailyEndTime: z.ZodOptional<z.ZodString>;
+    bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    dateRangeStart: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+}, z.core.$strip>;
+export type ScheduleKnockoutBracketRequestDto = z.infer<typeof scheduleKnockoutBracketRequestSchema>;
 //# sourceMappingURL=knockout.schema.d.ts.map

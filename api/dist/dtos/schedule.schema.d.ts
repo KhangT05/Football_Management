@@ -6,6 +6,7 @@ export declare const generateScheduleSchema: z.ZodObject<{
     dailyStartTime: z.ZodString;
     dailyEndTime: z.ZodString;
     bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    excludedDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
     desiredGroupCount: z.ZodNumber;
     minGroupSize: z.ZodNumber;
     maxGroupSize: z.ZodNumber;
@@ -18,6 +19,7 @@ export declare const autoScheduleSchema: z.ZodObject<{
     dailyStartTime: z.ZodString;
     dailyEndTime: z.ZodString;
     bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    excludedDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
 }, z.core.$strip>;
 export declare const rescheduleMatchSchema: z.ZodObject<{
     scheduledAt: z.ZodDate;
@@ -31,12 +33,48 @@ export declare const generateFromGroupsSchema: z.ZodObject<{
     dailyStartTime: z.ZodString;
     dailyEndTime: z.ZodString;
     bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    excludedDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
     rounds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
     groupIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
     allowPastDate: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
-export type GenerateFromGroupsDto = z.infer<typeof generateFromGroupsSchema>;
-export type AutoScheduleDto = z.infer<typeof autoScheduleSchema>;
-export type GenerateScheduleDto = z.infer<typeof generateScheduleSchema>;
-export type RescheduleMatchDto = z.infer<typeof rescheduleMatchSchema>;
+export interface GenerateScheduleDto {
+    desiredGroupCount: number;
+    minGroupSize: number;
+    maxGroupSize: number;
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+}
+export interface GenerateFromGroupsDto {
+    doubleRound?: boolean;
+    minRestDaysPerTeam?: number;
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    rounds?: number[];
+    groupIds?: number[];
+    allowPastDate?: boolean;
+}
+export interface AutoScheduleDto {
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+    excludedDates?: string[];
+    rounds?: number[];
+    groupIds?: number[];
+    allowPastDate?: boolean;
+}
+export interface RescheduleMatchDto {
+    scheduledAt: Date;
+    venueId: number;
+    bufferMinutes?: number;
+}
 //# sourceMappingURL=schedule.schema.d.ts.map

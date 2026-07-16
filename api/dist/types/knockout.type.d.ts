@@ -14,7 +14,9 @@ export interface KnockoutGenerateOptions {
     legs: 1 | 2;
     phaseTypeOverride?: PhaseType;
     venueIds?: number[];
-    matchTimes?: string[];
+    dailyStartTime?: string;
+    dailyEndTime?: string;
+    bufferMinutes?: number;
     dateRangeStart?: Date;
     dateRangeEnd?: Date;
 }
@@ -119,7 +121,9 @@ export interface AutoSeedKnockoutOptions {
     legs: 1 | 2;
     phaseTypeOverride?: PhaseType;
     venueIds?: number[];
-    matchTimes?: string[];
+    dailyStartTime?: string;
+    dailyEndTime?: string;
+    bufferMinutes?: number;
     dateRangeStart?: Date;
     dateRangeEnd?: Date;
 }

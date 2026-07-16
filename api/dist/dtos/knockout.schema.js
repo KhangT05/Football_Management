@@ -71,7 +71,9 @@ export const autoSeedKnockoutRequestSchema = z.object({
     legs: z.union([z.literal(1), z.literal(2)]),
     phaseTypeOverride: z.nativeEnum(PhaseType).optional(),
     venueIds: z.array(z.number().int().positive()).optional(),
-    matchTimes: z.array(z.string()).optional(),
+    dailyStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    dailyEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    bufferMinutes: z.number().int().positive().optional(),
     dateRangeStart: z.coerce.date().optional(),
     dateRangeEnd: z.coerce.date().optional(),
 });
@@ -79,6 +81,14 @@ export const generateKnockoutRequestSchema = knockoutGenerateOptionsSchema.omit(
     seasonId: true,
 });
 export const advanceWinnerRequestSchema = advanceWinnerInputSchema.extend({
+    venueIds: z.array(z.number().int().positive()).optional(),
+    dailyStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    dailyEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
+    bufferMinutes: z.number().int().positive().optional(),
+    dateRangeStart: z.coerce.date().optional(),
+    dateRangeEnd: z.coerce.date().optional(),
+}).refine(d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime, { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' });
+export const scheduleKnockoutBracketRequestSchema = z.object({
     venueIds: z.array(z.number().int().positive()).optional(),
     dailyStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),
     dailyEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm').optional(),

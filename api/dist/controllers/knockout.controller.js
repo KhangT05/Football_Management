@@ -42,6 +42,10 @@ let KnockoutController = class KnockoutController extends Controller {
             venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
         });
     }
+    async scheduleBracket(seasonId, phaseId, body) {
+        const parsed = knockoutSchema.scheduleKnockoutBracketRequestSchema.parse(body);
+        return this.service.scheduleBracket(phaseId, seasonId, parsed);
+    }
     async getBracket(phaseId) {
         return this.service.getBracket(phaseId);
     }
@@ -91,6 +95,17 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, Object]),
     __metadata("design:returntype", Promise)
 ], KnockoutController.prototype, "advanceWinner", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Post('seasons/{seasonId}/phases/{phaseId}/knockout/schedule'),
+    SuccessResponse(200, 'OK'),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], KnockoutController.prototype, "scheduleBracket", null);
 __decorate([
     Get('phases/{phaseId}/knockout/bracket'),
     __param(0, Path()),
