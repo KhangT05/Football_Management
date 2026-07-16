@@ -1399,12 +1399,7 @@ export class KnockoutService extends ScheduleEngine {
             where: { season_id: seasonId, format: PhaseFormat.knockout, type: priorType, is_active: true },
             select: { id: true },
         });
-        if (!priorPhase)
-            throw createAppError(
-                'CONFLICT',
-                `Chưa có phase '${priorType}' cho season ${seasonId} — không thể tạo '${phaseType}' ` +
-                `trước khi hoàn thành ${priorType}`,
-            );
+        if (!priorPhase) return;
 
         const unfinishedCount = await tx.match.count({
             where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
@@ -1436,7 +1431,7 @@ export class KnockoutService extends ScheduleEngine {
             select: { id: true },
         });
         if (!priorPhase)
-            return { ready: false, priorPhaseType: priorType, priorPhaseExists: false, unfinishedCount: 0 };
+            return { ready: true, priorPhaseType: priorType, priorPhaseExists: false, unfinishedCount: 0 };
 
         const unfinishedCount = await this.prisma.match.count({
             where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
