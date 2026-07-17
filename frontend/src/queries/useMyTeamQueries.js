@@ -10,8 +10,8 @@ export function useMyTeams(userId) {
     return useQuery({
         queryKey: myTeamKeys.list(userId),
         queryFn: async () => {
-            const res = await teamApi.getTeams({ per_page: 50 });
-            const mine = parseList(res).filter((t) => t.user_id === userId);
+            const res = await teamApi.getTeams({ per_page: 50, user_id: userId, sort: 'id', direction: 'desc' });
+            const mine = parseList(res);
             return mine.map((t) => ({
                 id: t.id,
                 name: t.name,

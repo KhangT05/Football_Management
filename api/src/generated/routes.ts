@@ -3399,6 +3399,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 per_page: {"default":20,"in":"query","name":"per_page","dataType":"double"},
                 q: {"in":"query","name":"q","dataType":"string"},
                 sort: {"in":"query","name":"sort","dataType":"string"},
+                user_id: {"in":"query","name":"user_id","dataType":"double"},
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/teams',
