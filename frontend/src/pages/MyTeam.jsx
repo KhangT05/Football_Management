@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   AlertTriangle, CheckCircle2, Loader2, X,
   Search, ArrowUpDown, CreditCard, Shield, Calendar,
   DollarSign, Flame, Award, Ban, Activity, Save,
+  ChevronDown, Plus,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi, statisticsApi } from '../api';
+import { teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi, statisticsApi, seasonApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -186,7 +187,7 @@ function RosterPitch({ players, kit, onSelectPlayer, onDropPlayer }) {
       else if (rowKey === 'MID') mappedPos = 'midfielder';
       else if (rowKey === 'DEF') mappedPos = 'defender';
       else if (rowKey === 'GK') mappedPos = 'goalkeeper';
-      
+
       onDropPlayer(Number(playerId), mappedPos);
     }
   };
@@ -288,8 +289,8 @@ function RosterPitch({ players, kit, onSelectPlayer, onDropPlayer }) {
         {/* Players */}
         <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10">
           {rowsData.map((row, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               onDragOver={handleDragOver(row.pos)}
               onDragLeave={handleDragLeave(row.pos)}
               onDrop={handleDrop(row.pos)}
@@ -320,6 +321,193 @@ function StatBox({ label, value, color }) {
     <div className="bg-navy/60 border border-navy-light rounded-2xl p-4 text-center">
       <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1.5">{label}</p>
       <p className={`text-2xl font-black ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+// ─── Team Switcher ────────────────────────────────────────
+// Thay cho flex-wrap pill list cũ — không scale khi user sở hữu nhiều team
+// (xem thảo luận UI). Searchable dropdown pattern (Slack/Vercel workspace
+// switcher): header gọn, group theo status, search theo tên. Không cần
+// virtualize (react-window) trừ khi > ~200 team/user.
+function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef(null);
+  const activeTeam = teams.find(t => t.id === activeTeamId);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [open]);
+
+  const filtered = useMemo(
+    () => teams.filter(t => t.name.toLowerCase().includes(query.toLowerCase())),
+    [teams, query]
+  );
+  const groups = useMemo(() => ({
+    approved: filtered.filter(t => t.status === 'approved'),
+    pending: filtered.filter(t => t.status === 'pending'),
+  }), [filtered]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2.5 bg-navy/60 backdrop-blur-xl border border-navy-light rounded-2xl px-4 py-2.5 hover:border-blue-500/50 transition-colors"
+      >
+        {activeTeam?.logo ? (
+          <img src={activeTeam.logo} alt={activeTeam.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+        ) : (
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+            style={{ backgroundColor: activeTeam?.colorHex }}
+          >
+            {getInitials(activeTeam?.name || '')[0]}
+          </div>
+        )}
+        <span className="font-bold text-sm text-white truncate max-w-[160px]">{activeTeam?.name}</span>
+        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-2 w-80 bg-navy-dark border border-navy-light rounded-2xl shadow-2xl overflow-hidden">
+          <div className="p-2 border-b border-navy-light">
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Tìm đội bóng..."
+              className="w-full bg-navy px-3 py-2 rounded-lg text-sm text-white placeholder-gray-500 outline-none"
+            />
+          </div>
+          <div className="max-h-80 overflow-y-auto custom-scrollbar">
+            {[['Đang hoạt động', groups.approved], ['Chờ duyệt', groups.pending]].map(([label, list]) => (
+              list.length > 0 && (
+                <div key={label}>
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
+                  {list.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => { onSwitch(t.id); setOpen(false); setQuery(''); }}
+                      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-navy-light/40 transition-colors ${t.id === activeTeamId ? 'text-neon' : 'text-gray-300'}`}
+                    >
+                      {t.logo ? (
+                        <img src={t.logo} alt={t.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0"
+                          style={{ backgroundColor: t.colorHex }}
+                        >
+                          {getInitials(t.name)[0]}
+                        </div>
+                      )}
+                      <span className="truncate">{t.name}</span>
+                      {t.id === activeTeamId && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-neon shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )
+            ))}
+            {filtered.length === 0 && (
+              <p className="p-4 text-sm text-gray-500 text-center">Không tìm thấy đội bóng nào</p>
+            )}
+          </div>
+          {onCreateNew && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onCreateNew(); }}
+              className="w-full p-3 text-sm font-bold text-blue-400 hover:bg-navy-light/40 border-t border-navy-light flex items-center gap-2 justify-center"
+            >
+              <Plus className="w-4 h-4" /> Tạo đội mới
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Season Registration Modal ───────────────────────────────
+// Fix cho bug kiến trúc cũ: banner cũ chỉ dựa trên "1 active season" của
+// team, nên một khi team đã có ≥1 bản ghi season_team thì banner đăng ký
+// không bao giờ hiện lại kể cả khi có mùa giải mới mở.
+//
+// FIX (eligibility): trước đây modal chỉ diff theo registeredSeasonIds
+// (FE tự suy ra) — không biết gì về player-conflict, cái đó chỉ được BE
+// (assertNoPlayerConflict) chặn lúc submit → user bấm "Đăng ký", request
+// fail, toast lỗi mới hiện ra. Giờ nhận thẳng `seasons` là kết quả từ
+// GET /season-teams/registration-eligibility (đã tính already_registered +
+// conflict cho từng season), disable nút + hiển thị lý do ngay trong modal
+// thay vì để user bấm rồi mới biết lỗi.
+function SeasonRegistrationModal({ seasons, registeringId, onRegister, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-navy border border-navy-light rounded-3xl w-full max-w-lg p-6 max-h-[85vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5 shrink-0">
+          <h3 className="text-lg font-black text-white flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-emerald-400" /> Đăng ký giải đấu mới
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {seasons.length === 0 ? (
+          <div className="text-center py-10">
+            <Trophy className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">Không có giải nào đang mở đăng ký.</p>
+          </div>
+        ) : (
+          <div className="space-y-3 overflow-y-auto custom-scrollbar">
+            {seasons.map(s => {
+              // already_registered / conflict do BE tính sẵn (xem
+              // seasonTeamApi.getRegistrationEligibility) — FE chỉ render,
+              // không tự suy đoán lại để tránh lệch với check thật ở
+              // SeasonTeamService.assertNoPlayerConflict.
+              const disabledReason = s.already_registered
+                ? 'Đội đã đăng ký giải này'
+                : s.conflict
+                  ? `Cầu thủ ${s.conflict.playerName} đang thuộc đội ${s.conflict.teamName}, đội này đã đăng ký giải này`
+                  : null;
+              return (
+                <div
+                  key={s.season_id}
+                  className={`flex items-center justify-between p-4 bg-navy-dark rounded-2xl border gap-4 ${disabledReason ? 'border-navy-light/50' : 'border-navy-light'}`}
+                >
+                  <div className="min-w-0">
+                    <p className={`font-bold truncate ${disabledReason ? 'text-gray-400' : 'text-white'}`}>{s.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Khai mạc: {s.start_date ? new Date(s.start_date).toLocaleDateString('vi-VN') : '—'}
+                    </p>
+                    {disabledReason && (
+                      <p className="text-xs text-red-400 mt-1.5 flex items-start gap-1">
+                        <Ban className="w-3 h-3 shrink-0 mt-0.5" /> <span>{disabledReason}</span>
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    disabled={!!disabledReason || registeringId === s.season_id}
+                    onClick={() => onRegister(s.season_id)}
+                    className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-navy-light disabled:hover:bg-navy-light disabled:text-gray-500"
+                  >
+                    {registeringId === s.season_id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Đăng ký'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -370,6 +558,18 @@ export default function MyTeam() {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState('number');
   const [showPayment, setShowPayment] = useState(false);
+
+  // ── Season registration state ───────────────────────────
+  // FIX (eligibility): trước đây có 2 state riêng (openSeasons +
+  // registeredSeasonIds) và tự diff bằng useMemo (unregisteredOpenSeasons)
+  // — hoàn toàn không biết về player-conflict, chỉ chặn được ở BE lúc
+  // submit. Giờ gọi thẳng 1 endpoint duy nhất
+  // (seasonTeamApi.getRegistrationEligibility) trả về cho mỗi season mở:
+  // { already_registered, conflict, eligible } — tính sẵn ở BE bằng cùng
+  // logic với assertNoPlayerConflict, tránh 2 nơi lệch nhau.
+  const [seasonEligibility, setSeasonEligibility] = useState([]);
+  const [showSeasonRegModal, setShowSeasonRegModal] = useState(false);
+  const [registeringSeasonId, setRegisteringSeasonId] = useState(null);
 
   // Modal state
   const [editTeamModalOpen, setEditTeamModalOpen] = useState(false);
@@ -480,6 +680,54 @@ export default function MyTeam() {
     setPlayersPerf([]);
   }, [activeTeamId]);
 
+  // ── Load eligibility đăng ký giải cho team đang chọn ────────────────
+  // FIX (eligibility): thay cho 2 call cũ (seasonApi.getAll +
+  // seasonTeamApi.getAll) tự diff bằng tay — giờ 1 call duy nhất trả về
+  // sẵn already_registered + conflict (player đang thuộc team khác đã
+  // đăng ký season đó) cho từng season đang mở đăng ký. Nguồn sự thật vẫn
+  // là SeasonTeamService.assertNoPlayerConflict trong transaction lúc
+  // submit — endpoint này chỉ để hiển thị trước cho UX, không thay thế.
+  const loadSeasonEligibility = useCallback(async () => {
+    if (!activeTeamId) { setSeasonEligibility([]); return; }
+    try {
+      const res = await seasonTeamApi.getRegistrationEligibility(activeTeamId);
+      setSeasonEligibility(parseList(res));
+    } catch (e) {
+      console.warn('Cannot load season registration eligibility:', e);
+    }
+  }, [activeTeamId]);
+
+  useEffect(() => { loadSeasonEligibility(); }, [loadSeasonEligibility]);
+
+  const eligibleSeasonCount = useMemo(
+    () => seasonEligibility.filter(s => s.eligible).length,
+    [seasonEligibility]
+  );
+
+  const handleRegisterSeason = async (seasonId) => {
+    if (!activeTeamId) return;
+    setRegisteringSeasonId(seasonId);
+    try {
+      // FIX: BE selfRegister() trước đây tự suy team qua
+      // findFirst({ user_id }) không orderBy — với user multi-team, request
+      // đăng ký cho team B bị ghi nhầm vào team đầu tiên user tạo. BE giờ
+      // yêu cầu team_id tường minh, FE phải luôn gửi kèm activeTeamId.
+      await seasonTeamApi.register({ season_id: seasonId, team_id: activeTeamId });
+      toast.success('Đã gửi yêu cầu đăng ký giải!');
+      // Refetch eligibility ngay để season vừa đăng ký chuyển sang
+      // disabled (already_registered) trong modal, không cần đóng modal
+      // để thấy trạng thái mới.
+      await Promise.all([reloadCurrent(), loadSeasonEligibility()]);
+    } catch (err) {
+      toast.error(parseApiError(err, 'Không thể đăng ký giải.'));
+      // Request fail (vd race condition player-conflict phát sinh giữa lúc
+      // mở modal và lúc bấm đăng ký) — refetch để đồng bộ lại UI với BE.
+      loadSeasonEligibility();
+    } finally {
+      setRegisteringSeasonId(null);
+    }
+  };
+
   // ── Load matches for active-team + selected season ────────
   const loadMatches = useCallback(async (teamId, seasonId) => {
     if (!teamId || !seasonId) return;
@@ -547,6 +795,12 @@ export default function MyTeam() {
       // normalizePlayer). Nếu BE chỉ trả season_id phẳng (không nested),
       // cần đổi thành 1 lookup bổ sung — nhưng vẫn PHẢI filter theo
       // season_team trước, không được quay lại seasonApi.getAll().
+      //
+      // NOTE: `active` ở khối này CHỈ dùng để hiển thị header (tên season
+      // hiện tại + thông tin thanh toán), KHÔNG còn dùng để quyết định có
+      // hiện được đăng ký giải mới hay không — logic đó nằm ở
+      // seasonEligibility (effect riêng phía trên), tránh lặp lại bug
+      // "chỉ nhận diện được 1 active season".
       try {
         const stAllRes = await seasonTeamApi.getAll({ team_id: teamId });
         const stAllList = parseList(stAllRes);
@@ -786,35 +1040,35 @@ export default function MyTeam() {
     } finally { setIsSaving(false); }
   };
   const handleImportExcel = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    setIsSaving(true);
-    const res = await playerApi.importTeamPlayers(activeTeam.id, formData);
-    const result = res?.data ?? res;
-    const successCount = result?.success ?? 0;
-    const failedCount = result?.failed ?? 0;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      setIsSaving(true);
+      const res = await playerApi.importTeamPlayers(activeTeam.id, formData);
+      const result = res?.data ?? res;
+      const successCount = result?.success ?? 0;
+      const failedCount = result?.failed ?? 0;
 
-    if (successCount > 0) {
-      toast.success(
-        `Đã import ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`,
-        5000
-      );
-      setPlayerModal(null); // đóng modal để thấy ngay danh sách vừa cập nhật
-    } else {
-      const firstErrors = (result?.errors ?? [])
-        .slice(0, 3)
-        .map(e2 => `Dòng ${e2.row}: ${e2.reason}`)
-        .join(' | ');
-      toast.error(firstErrors || 'Không có cầu thủ nào được thêm. Kiểm tra lại file Excel.', 8000);
-    }
-    await loadTeamDetail(activeTeamId);
-  } catch (err) {
-    toast.error(parseApiError(err, 'Có lỗi khi nhập dữ liệu Excel.'));
-  } finally { setIsSaving(false); e.target.value = null; }
-};
+      if (successCount > 0) {
+        toast.success(
+          `Đã import ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`,
+          5000
+        );
+        setPlayerModal(null); // đóng modal để thấy ngay danh sách vừa cập nhật
+      } else {
+        const firstErrors = (result?.errors ?? [])
+          .slice(0, 3)
+          .map(e2 => `Dòng ${e2.row}: ${e2.reason}`)
+          .join(' | ');
+        toast.error(firstErrors || 'Không có cầu thủ nào được thêm. Kiểm tra lại file Excel.', 8000);
+      }
+      await loadTeamDetail(activeTeamId);
+    } catch (err) {
+      toast.error(parseApiError(err, 'Có lỗi khi nhập dữ liệu Excel.'));
+    } finally { setIsSaving(false); e.target.value = null; }
+  };
 
   const handleDownloadTemplate = async () => {
     setIsDownloadingTemplate(true);
@@ -951,39 +1205,37 @@ export default function MyTeam() {
 
       <div className="container mx-auto px-4 max-w-[1400px] animate-fade-in relative z-10">
 
-        {/* ─── Team Switcher (multi-team) ───────────────── */}
-        {!isLoading && teams.length > 1 && (
-          <div className="mb-8 animate-slide-up">
-            <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5" /> Chọn đội bóng để quản lý
-            </p>
-            <div className="flex flex-wrap gap-2.5">
-              {teams.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => handleSwitchTeam(t.id)}
-                  className={`snap-start shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-sm border transition-all duration-300 ${t.id === activeTeamId
-                    ? 'bg-neon/10 border-neon/40 text-neon shadow-[0_0_15px_rgba(57,255,20,0.2)]'
-                    : 'bg-navy/50 border-navy-light text-gray-300 hover:border-blue-500/50 hover:text-white'
-                    }`}
-                >
-                  {t.logo ? (
-                    <img src={t.logo} alt={t.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
-                      style={{ backgroundColor: t.colorHex }}
-                    >
-                      {getInitials(t.name)[0]}
-                    </div>
-                  )}
-                  <span className="truncate max-w-[140px]">{t.name}</span>
-                  {t.id === activeTeamId && (
-                    <span className="w-2 h-2 rounded-full bg-neon shadow-[0_0_6px_rgba(57,255,20,0.6)] shrink-0" />
-                  )}
-                </button>
-              ))}
-            </div>
+        {/* ─── Team Switcher + Đăng ký giải mới ───────────────── */}
+        {/* Thay flex-wrap pill list cũ (không scale khi nhiều team) bằng
+            dropdown search. Nút "Đăng ký giải" luôn hiện (không phụ thuộc
+            teams.length) — badge số lượng lấy từ eligibleSeasonCount
+            (đã trừ cả already_registered lẫn player-conflict), tính đúng
+            bất kể team đã đăng ký bao nhiêu season trước đó. */}
+        {!isLoading && activeTeamId && (
+          <div className="mb-8 animate-slide-up flex items-center gap-3 flex-wrap">
+            {teams.length > 1 && (
+              <TeamSwitcher
+                teams={teams}
+                activeTeamId={activeTeamId}
+                onSwitch={handleSwitchTeam}
+                onCreateNew={() => navigate('/dang-ky-doi-bong')}
+              // NOTE: xác nhận lại path route thực tế trỏ tới RegisterTeam.jsx
+              // trong router config của bạn — không có file route trong context
+              // nên đây là giá trị giả định.
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => setShowSeasonRegModal(true)}
+              className="relative flex items-center gap-2 bg-navy/60 backdrop-blur-xl border border-navy-light rounded-2xl px-4 py-2.5 hover:border-emerald-500/50 transition-colors text-sm font-bold text-gray-300"
+            >
+              <Trophy className="w-4 h-4 text-emerald-400" /> Đăng ký giải
+              {eligibleSeasonCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center bg-emerald-500 text-white text-[10px] font-black rounded-full shadow-md">
+                  {eligibleSeasonCount}
+                </span>
+              )}
+            </button>
           </div>
         )}
 
@@ -1009,33 +1261,6 @@ export default function MyTeam() {
                 <p className="text-red-400 font-medium">Yêu cầu tham gia giải <strong>{activeTeam.season}</strong> đang chờ Admin xác nhận.</p>
               </div>
             </div>
-          </div>
-        )}
-
-        {!isLoading && activeTeam?.status === 'approved' && !activeTeam?.registrationStatus && activeTeam?.activeSeasonId && (
-          <div className="bg-navy border border-navy-light p-5 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-slide-up shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-            <div className="flex items-start sm:items-center gap-4">
-              <div className="p-2 bg-red-500/20 rounded-xl shrink-0"><Info className="w-6 h-6 text-red-500" /></div>
-              <div>
-                <p className="text-red-500 font-black text-lg mb-1 tracking-tight">Giải đấu đang mở đăng ký</p>
-                <p className="text-red-400 font-medium">Đội chưa đăng ký tham gia giải <strong>{activeTeam.season}</strong>.</p>
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  setIsLoading(true);
-                  await seasonTeamApi.register({ season_id: activeTeam.activeSeasonId });
-                  toast.success('Đã gửi yêu cầu tham gia giải!');
-                  await loadTeamDetail(activeTeamId);
-                } catch (err) {
-                  toast.error(parseApiError(err, 'Không thể đăng ký tham gia giải.'));
-                } finally { setIsLoading(false); }
-              }}
-              className="px-6 py-3.5 shrink-0 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap"
-            >
-              <UserPlus className="w-5 h-5" /> Đăng ký ngay
-            </button>
           </div>
         )}
 
@@ -1797,6 +2022,15 @@ export default function MyTeam() {
           teamId={activeTeam.id}
           roster={players}
           onClose={() => setLineupModalMatch(null)}
+        />
+      )}
+
+      {showSeasonRegModal && (
+        <SeasonRegistrationModal
+          seasons={seasonEligibility}
+          registeringId={registeringSeasonId}
+          onRegister={handleRegisterSeason}
+          onClose={() => setShowSeasonRegModal(false)}
         />
       )}
     </div>

@@ -178,7 +178,7 @@ async function seedRegistrationOnlySeason(tournament, season, tournamentId, tour
     await seedPayments(prisma, seasonTeamIdByTeamId, FULL_SPREAD_WEIGHTS, seasonConfig.registrationFee);
     console.log(`[Index] Season "${seasonName}" (#${seasonId}, ${season.archetype}) xong — chỉ có đăng ký, chưa có group/phase.`);
 }
-async function main() {
+export async function main() {
     console.log("[Index] === Bắt đầu seed ===");
     const roleMap = await seedRoles(prisma);
     await seedUsers(prisma, roleMap);
@@ -230,12 +230,4 @@ async function main() {
     await seedIncompleteApprovalStates(prisma, orphanTeamId);
     console.log("[Index] === Seed hoàn tất ===");
 }
-main()
-    .catch((err) => {
-    console.error("[Index] Seed thất bại:", err);
-    process.exitCode = 1;
-})
-    .finally(async () => {
-    await prisma.$disconnect();
-});
 //# sourceMappingURL=index.js.map

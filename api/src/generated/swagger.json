@@ -3511,12 +3511,17 @@
 			},
 			"infer_typeofselfRegisterSeasonTeamSchema_": {
 				"properties": {
+					"team_id": {
+						"type": "number",
+						"format": "double"
+					},
 					"season_id": {
 						"type": "number",
 						"format": "double"
 					}
 				},
 				"required": [
+					"team_id",
 					"season_id"
 				],
 				"type": "object"
@@ -3630,6 +3635,59 @@
 					"in_progress",
 					"locked"
 				]
+			},
+			"SeasonRegistrationEligibility": {
+				"properties": {
+					"eligible": {
+						"type": "boolean"
+					},
+					"conflict": {
+						"properties": {
+							"teamName": {
+								"type": "string"
+							},
+							"playerName": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"teamName",
+							"playerName"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"already_registered": {
+						"type": "boolean"
+					},
+					"registration_deadline": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"start_date": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"season_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"eligible",
+					"conflict",
+					"already_registered",
+					"registration_deadline",
+					"start_date",
+					"name",
+					"season_id"
+				],
+				"type": "object"
 			},
 			"PitchType": {
 				"type": "string",
@@ -11516,7 +11574,9 @@
 				"security": [
 					{
 						"jwt": [
-							"leader"
+							"leader",
+							"user",
+							"player"
 						]
 					}
 				],
@@ -11960,6 +12020,41 @@
 							"items": {
 								"$ref": "#/components/schemas/SeasonTeamStatus"
 							}
+						}
+					}
+				]
+			}
+		},
+		"/seasonteams/season-teams/registration-eligibility": {
+			"get": {
+				"operationId": "GetTeamRegistrationEligibility",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/SeasonRegistrationEligibility"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"SeasonTeams"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
 						}
 					}
 				]
