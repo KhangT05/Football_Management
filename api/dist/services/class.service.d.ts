@@ -1,13 +1,21 @@
-import { Prisma, PrismaClient } from "../generated/prisma/client.js";
-import { CreateClassDto, UpdateClassDto, ClassDto } from "../dtos/class.schema.js";
+import { Prisma, PrismaClient, Class } from "../generated/prisma/client.js";
+import { CreateClassDto, UpdateClassDto } from "../dtos/class.schema.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 export declare class ClassService {
     private readonly prisma;
+    private readonly query;
     constructor(prisma: PrismaClient);
-    list(): Promise<ClassDto[]>;
-    getByIdOrFail(id: number): Promise<ClassDto>;
-    create(dto: CreateClassDto): Promise<ClassDto>;
-    update(id: number, dto: UpdateClassDto): Promise<ClassDto>;
+    /** Danh sách active, không phân trang — dùng cho dropdown/select. */
+    listActive(): Promise<Class[]>;
+    /** Danh sách có phân trang/tìm kiếm/sort — dùng cho trang quản trị. */
+    findAll(req?: QueryRequest): Promise<PaginatedResult<Class>>;
+    findById(id: number): Promise<Class | null>;
+    getByIdOrFail(id: number): Promise<Class>;
+    create(dto: CreateClassDto): Promise<Class>;
+    update(id: number, dto: UpdateClassDto): Promise<Class>;
     softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<Class>;
+    findDeleted(): Promise<Class[]>;
     /**
      * Enforce Season.max_teams_per_class. PHẢI gọi bằng `tx` đang mở của
      * caller (SeasonTeamService.registerTeam) — không tự mở transaction ở
@@ -18,5 +26,6 @@ export declare class ClassService {
      * aggregate/join thông thường.
      */
     assertClassTeamQuota(tx: Prisma.TransactionClient, seasonId: number, classId: number): Promise<void>;
+    private mapWriteError;
 }
 //# sourceMappingURL=class.service.d.ts.map

@@ -34,6 +34,10 @@ const toDateInputValue = utcToVnDateInput;
 const isSeasonClosedStatus = (status) => status === 'finished' || status === 'cancelled';
 const isSeasonOngoingStatus = (status) => status === 'ongoing';
 
+// Số đội tối thiểu để 1 group được coi là "sẵn sàng" xếp lịch (đồng bộ với
+// điều kiện round_robin ở BE: generateRoundRobin() cần >= 2 đội mới sinh match).
+const MIN_TEAMS_PER_GROUP_READY = 2;
+
 // ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
 function TimeField({ value, onChange }) {
   const [h, m] = value ? value.split(':') : ['', ''];
@@ -193,9 +197,16 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const toast = useToastStore();
   const fetchRoundsSummary = useScheduleStore(s => s.fetchRoundsSummary);
+
+  // `groups`: TẤT CẢ group tồn tại của season (kể cả group vừa tạo, chưa có
+  // đội nào — auto-assign nhét đội vào rải rác, không đồng loạt như draw).
   const [groups, setGroups] = useState([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState([]);
   const [checkingGroups, setCheckingGroups] = useState(true);
+  // `hasDrawnGroups` giờ chỉ còn ý nghĩa "season đã có group nào tồn tại
+  // chưa" — KHÔNG còn đòi hỏi group đó phải có sẵn >= 2 đội. "Group tồn
+  // tại" và "group đủ đội để xếp lịch" là 2 khái niệm khác nhau, xử lý
+  // riêng ở UI (xem readyGroupIds / notReady bên dưới).
   const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
   const [groupCheckError, setGroupCheckError] = useState(false);
   const [roundSummaries, setRoundSummaries] = useState([]);
@@ -217,6 +228,15 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const isSeasonOngoing = isSeasonOngoingStatus(season?.status);
   const blocksImplicitGroupCreation = isSeasonOngoing && !hasDrawnGroups && !checkingGroups;
   const isModalDisabled = isSeasonClosed || blocksImplicitGroupCreation;
+
+  // Group nào đã có đủ đội (>= MIN_TEAMS_PER_GROUP_READY) để có thể sinh
+  // round-robin / xếp lịch. Group chưa đủ đội vẫn hiển thị nhưng bị disable
+  // trong danh sách chọn bên dưới, thay vì bị ẩn hoàn toàn như trước.
+  const readyGroups = useMemo(
+    () => groups.filter(g => (g.season_teams?.length || 0) >= MIN_TEAMS_PER_GROUP_READY),
+    [groups],
+  );
+  const hasAnyReadyGroup = readyGroups.length > 0;
 
   const [dailyStartTime, setDailyStartTime] = useState('08:00');
   const [dailyEndTime, setDailyEndTime] = useState('20:00');
@@ -276,17 +296,33 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     setSelectedRounds(prev => prev.includes(round) ? prev.filter(r => r !== round) : [...prev, round]);
   };
 
-  // FIX (bug nghiêm trọng): logic fetch + tính eligible groups trước đây
-  // nằm rải rác ngoài mọi effect, ngay giữa component body (sau
-  // handleVenueToggle) — gọi groupApi.listBySeason(seasonId) KHÔNG await
-  // (res là Promise, res?.status luôn undefined -> payload/groups luôn
-  // rỗng) và gọi setGroups/setHasDrawnGroups/setSelectedGroupIds trực tiếp
-  // trong render body ở MỌI lần render. Hệ quả: React nhận state update
-  // trong lúc render -> "Too many re-renders" (infinite loop crash), đồng
-  // thời effect gốc bên dưới chỉ set hasDrawnGroups mà KHÔNG BAO GIỜ set
-  // `groups`/`selectedGroupIds` thật, nên UI "Chọn bảng đấu" không bao giờ
-  // hiển thị dù season đã có bảng. Gộp toàn bộ fetch + xử lý vào 1 effect
-  // async duy nhất, có `cancelled` guard, set đủ 3 state liên quan.
+  // FIX (bug nghiêm trọng, lần 1): logic fetch + tính eligible groups trước
+  // đây nằm rải rác ngoài mọi effect, ngay giữa component body — gọi
+  // groupApi.listBySeason(seasonId) KHÔNG await (res là Promise, res?.status
+  // luôn undefined -> payload/groups luôn rỗng) và gọi setGroups/
+  // setHasDrawnGroups/setSelectedGroupIds trực tiếp trong render body ở MỌI
+  // lần render -> "Too many re-renders". Gộp toàn bộ fetch + xử lý vào 1
+  // effect async duy nhất, có `cancelled` guard.
+  //
+  // FIX (bug lần 2 — nguồn của "bảng A/B/C đều không chọn được, vòng đấu
+  // không hiện"): season KHÔNG bốc thăm 1 lần cho tất cả (drawGroups) mà
+  // dùng autoAssignApprovedTeamToGroup() nhét TỪNG đội một vào group đang
+  // ít quân nhất mỗi khi 1 đăng ký được approve (xem GroupService). Vì vậy
+  // tại một thời điểm bất kỳ, các group hoàn toàn có thể đang ở trạng thái
+  // "có group nhưng chưa đủ 2 đội" (0 hoặc 1 đội). Bản cũ lọc luôn
+  // `g.season_teams.length >= 2` NGAY TRÊN state `groups` — khiến các group
+  // chưa đủ quân biến mất khỏi UI hoàn toàn (không hiển thị được để chọn),
+  // và nếu MỌI group đều chưa đủ quân thì `hasDrawnGroups` sai thành false,
+  // kéo theo effect fetchRoundsSummary phía trên không bao giờ chạy (điều
+  // kiện `hasDrawnGroups` false) -> danh sách vòng đấu không bao giờ hiện,
+  // đồng thời nếu season đã 'ongoing' thì cả modal bị khoá nhầm
+  // (blocksImplicitGroupCreation) với thông báo sai "chưa có bảng đấu nào
+  // được bốc thăm" dù bảng đã tồn tại thật.
+  //
+  // Sửa: tách 2 khái niệm — "group tồn tại" (season đã bước sang giai đoạn
+  // có bảng, không cho tạo bảng mới ngầm) và "group đã đủ đội để xếp lịch"
+  // (chỉ ảnh hưởng việc group đó có được PHÉP CHỌN hay không, xử lý ở UI
+  // render bằng readyGroups/notReady, không xoá khỏi state gốc).
   useEffect(() => {
     if (!seasonId) return;
     let cancelled = false;
@@ -297,12 +333,16 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
         const res = await groupApi.listBySeason(seasonId);
         const payload = typeof res?.status === 'boolean' ? res.data : res;
         const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
-        const eligible = fetchedGroups.filter(g => (g.season_teams?.length || 0) >= 2);
+        const readyGroupIds = fetchedGroups
+          .filter(g => (g.season_teams?.length || 0) >= MIN_TEAMS_PER_GROUP_READY)
+          .map(g => g.id);
         if (!cancelled) {
-          setGroups(eligible);
-          setHasDrawnGroups(eligible.length > 0);
-          // mặc định chọn hết group đủ điều kiện
-          setSelectedGroupIds(eligible.map(g => g.id));
+          setGroups(fetchedGroups);
+          setHasDrawnGroups(fetchedGroups.length > 0);
+          // Mặc định chọn các bảng ĐÃ SẴN SÀNG (đủ >=2 đội). Nếu chưa bảng
+          // nào sẵn sàng, không chọn gì cả (chờ admin bổ sung đội) thay vì
+          // chọn nhầm bảng rỗng.
+          setSelectedGroupIds(readyGroupIds);
         }
       } catch (err) {
         console.error('[GenerateScheduleModal] check groups failed:', err);
@@ -363,7 +403,15 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       return;
     }
     if (blocksImplicitGroupCreation) {
-      toast.warning('Mùa giải đã bắt đầu nhưng chưa có bảng đấu nào được bốc thăm — không thể tự tạo bảng mới ở bước này. Vui lòng kiểm tra lại bước "Bốc thăm chia bảng".');
+      toast.warning('Mùa giải đã bắt đầu nhưng chưa có bảng đấu nào được tạo — không thể tự tạo bảng mới ở bước này. Vui lòng kiểm tra lại bước "Bốc thăm chia bảng".');
+      return;
+    }
+    if (hasDrawnGroups && !hasAnyReadyGroup) {
+      toast.warning('Các bảng đấu hiện có đều chưa đủ tối thiểu 2 đội — bổ sung đội vào bảng trước khi tạo lịch.');
+      return;
+    }
+    if (hasDrawnGroups && selectedGroupIds.length === 0) {
+      toast.warning('Vui lòng chọn ít nhất một bảng đấu đã đủ đội.');
       return;
     }
     if (!seasonHasDateRange) {
@@ -412,7 +460,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
         await onGenerateFromGroups(seasonId, {
           ...apiPayload,
           doubleRound: false,
-          ...(selectedGroupIds.length > 0 && selectedGroupIds.length < groups.length ?
+          ...(selectedGroupIds.length > 0 && selectedGroupIds.length < readyGroups.length ?
             { groupIds: selectedGroupIds } : {}),
           ...(selectedRounds.length > 0 ? { rounds: selectedRounds } : {}),
         });
@@ -460,9 +508,20 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
               <div className="flex items-start gap-2.5 text-amber-200 text-sm bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
-                  Mùa giải đã ở trạng thái <strong>ongoing</strong> nhưng chưa có bảng đấu nào được bốc thăm.
+                  Mùa giải đã ở trạng thái <strong>ongoing</strong> nhưng chưa có bảng đấu nào được tạo.
                   Hệ thống không cho tự tạo bảng mới ở bước này nữa (bảng đấu phải được chốt trước khi mùa giải
                   chuyển sang ongoing). Vui lòng kiểm tra lại tab "Bốc thăm chia bảng" trước khi tạo lịch.
+                </span>
+              </div>
+            )}
+
+            {!isSeasonClosed && !blocksImplicitGroupCreation && hasDrawnGroups && !hasAnyReadyGroup && (
+              <div className="flex items-start gap-2.5 text-amber-200 text-sm bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Season đã có {groups.length} bảng đấu nhưng chưa bảng nào đủ tối thiểu {MIN_TEAMS_PER_GROUP_READY} đội
+                  (đội đang được tự động phân bổ dần theo tiến độ duyệt đăng ký). Vui lòng chờ đủ đội hoặc bổ sung
+                  thủ công ở tab "Bốc thăm chia bảng" trước khi tạo lịch.
                 </span>
               </div>
             )}
@@ -476,11 +535,11 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
             {groupCheckError && (
               <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
-                Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã bốc thăm
-                bảng, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
+                Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã có bảng
+                đấu, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
               </p>
             )}
-            {hasDrawnGroups && roundSummaries.length > 0 && (
+            {hasDrawnGroups && hasAnyReadyGroup && roundSummaries.length > 0 && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Chọn vòng đấu cần xếp lịch
@@ -517,8 +576,8 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
             <fieldset disabled={isModalDisabled} className="space-y-6 disabled:opacity-50">
               {hasDrawnGroups ? (
                 <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
-                  Season đã có bảng đấu và đã bốc thăm. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng
-                  hiện có rồi xếp giờ/sân — không tạo lại bảng hay chia lại đội.
+                  Season đã có bảng đấu. Hệ thống sẽ sinh trận đấu vòng tròn cho các bảng đã đủ đội rồi xếp
+                  giờ/sân — không tạo lại bảng hay chia lại đội.
                 </div>
               ) : !isSeasonOngoing ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -552,14 +611,33 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn bảng đấu</label>
                   <div className="flex flex-wrap gap-2">
-                    {groups.map(g => (
-                      <button key={g.id} type="button" onClick={() => toggleGroup(g.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-black border ${selectedGroupIds.includes(g.id) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy-dark border-navy-light text-gray-400'
-                          }`}>
-                        {g.name}
-                      </button>
-                    ))}
+                    {groups.map(g => {
+                      const teamCount = g.season_teams?.length || 0;
+                      const notReady = teamCount < MIN_TEAMS_PER_GROUP_READY;
+                      return (
+                        <button
+                          key={g.id}
+                          type="button"
+                          disabled={notReady}
+                          onClick={() => toggleGroup(g.id)}
+                          title={notReady
+                            ? `Bảng chưa đủ đội (${teamCount}/${MIN_TEAMS_PER_GROUP_READY}) — chưa thể xếp lịch`
+                            : undefined}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${selectedGroupIds.includes(g.id)
+                            ? 'bg-neon/10 border-neon text-neon'
+                            : 'bg-navy-dark border-navy-light text-gray-400'
+                            }`}
+                        >
+                          {g.name}{notReady ? ` (${teamCount}/${MIN_TEAMS_PER_GROUP_READY})` : ''}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {groups.some(g => (g.season_teams?.length || 0) < MIN_TEAMS_PER_GROUP_READY) && (
+                    <p className="text-[11px] text-gray-500 italic">
+                      Bảng hiển thị mờ, không chọn được là bảng chưa đủ tối thiểu {MIN_TEAMS_PER_GROUP_READY} đội.
+                    </p>
+                  )}
                 </div>
               )}
               <div className="space-y-2">
@@ -696,7 +774,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
               <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors">Đóng</button>
               <button
                 type="submit"
-                disabled={isGenerating || venues.length === 0 || !seasonHasDateRange || isModalDisabled}
+                disabled={isGenerating || venues.length === 0 || !seasonHasDateRange || isModalDisabled || (hasDrawnGroups && !hasAnyReadyGroup)}
                 className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50"
               >
                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
@@ -740,13 +818,8 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     return () => { cancelled = true; };
   }, [match?.id]);
 
-  // FIX (vi phạm Rules of Hooks): useMemo trước đây nằm SAU `if (!match)
-  // return null;` — nếu match chuyển từ truthy sang null/ngược lại giữa 2
-  // lần render của CÙNG 1 instance, số hook gọi ra sẽ khác nhau giữa các
-  // lần render -> React ném "Rendered fewer hooks than expected". Chuyển
-  // useMemo lên trước early return để thứ tự hook luôn cố định bất kể
-  // giá trị match. Nội dung callback vẫn an toàn khi preview null nhờ các
-  // optional chaining + fallback `?? []` sẵn có.
+  // Rules of Hooks: useMemo phải nằm TRƯỚC early return `if (!match) return
+  // null;` để thứ tự hook luôn cố định bất kể giá trị match.
   const mergedGoals = useMemo(() => {
     const home = (preview?.goalsTimeline?.home ?? []).map(e => ({ ...e, side: 'home' }));
     const away = (preview?.goalsTimeline?.away ?? []).map(e => ({ ...e, side: 'away' }));
