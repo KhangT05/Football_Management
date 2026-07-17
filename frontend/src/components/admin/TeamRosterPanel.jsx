@@ -1,4 +1,4 @@
-import { Edit, Trash2, UserPlus, Users } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Users, Star } from 'lucide-react';
 import PosBadge from '../myteam/PosBadge';
 
 /**
@@ -104,7 +104,7 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                           ? 'bg-amber-400/10 text-amber-400 border-amber-400/30'
                           : 'bg-navy-dark text-gray-400 border-navy-light'
                       }`}>
-                        {player.role === 'captain' ? '⭐ Đội trưởng'
+                        {player.role === 'captain' ? <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Đội trưởng</span>
                           : player.role === 'vice_captain' ? 'Phó'
                           : 'Thành viên'}
                       </span>

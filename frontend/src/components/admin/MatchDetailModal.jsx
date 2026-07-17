@@ -4,6 +4,7 @@ import { matchApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 
 import { RESULT_AVAILABLE_STATUSES } from '../MatchShared'
+import { parseApiError } from '../../utils/errorHelper';
 
 const MatchStatus = {
   scheduled: 'scheduled',
@@ -345,9 +346,11 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
             <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase tracking-wide ${statusMeta.cls}`}>{statusMeta.label}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => toast.info?.('Tính năng xuất biên bản đang phát triển.')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs font-bold transition-all">
-              <FileText className="w-3.5 h-3.5" /> Biên bản
-            </button>
+            {(match?.status === 'completed' || match?.status === 'finished') && (
+              <button onClick={() => toast.info?.('Tính năng xuất biên bản đang phát triển.')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs font-bold transition-all">
+                <FileText className="w-3.5 h-3.5" /> Biên bản
+              </button>
+            )}
             {mode === 'view' && canEdit && (
               <button onClick={() => setMode('edit')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition-all">
                 <Edit className="w-3.5 h-3.5" /> Cập nhật

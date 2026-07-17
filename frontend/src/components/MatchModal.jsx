@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, MapPin, Shield, Activity, Users } from 'lucide-react';
+import { X, Clock, MapPin, Shield, Activity, Users, ArrowRightLeft } from 'lucide-react';
 import { teamApi, matchApi, matchLineupApi } from '../api';
 import {
   useMatchExtras,
@@ -24,7 +24,7 @@ import { EVENT_ICON } from '../data/data';
 // tự implement lại y hệt logic ở local eventIcon() — trước đây 2 nơi định
 // nghĩa icon cho cùng khái niệm, sửa 1 chỗ (vd thêm type mới) dễ quên chỗ kia.
 function eventIcon(type) {
-  return EVENT_ICON[type] ?? <span className="text-lg leading-none">🔄</span>;
+  return EVENT_ICON[type] ?? <ArrowRightLeft className="w-4 h-4" />;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -381,11 +381,13 @@ export default function MatchModal({ match, onClose }) {
         </div>
         {/* Mobile tab nav */}
         <div className="lg:hidden flex border-b border-navy-light/50 bg-navy-dark/50 shrink-0">
+          {/* eslint-disable-next-line no-unused-vars */}
           {[['events', Activity, 'Diễn biến', 'text-neon border-neon bg-neon/5'], ['lineup', Users, 'Đội hình', 'text-blue-400 border-blue-400 bg-blue-400/5']].map(([key, Icon, label, activeCls]) => (
             <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider flex justify-center items-center gap-2 transition-colors ${activeTab === key ? `${activeCls} border-b-2` : 'text-gray-400'}`}>
               <Icon className="w-4 h-4" /> {label}
             </button>
           ))}
+
         </div>
         {/* Body */}
         <div className="flex-1 min-h-0 p-4 sm:p-6">

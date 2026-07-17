@@ -1,6 +1,5 @@
 import { User, Mail, Shield, Camera, Save, Phone, Loader2, CheckCircle2, Edit2, X, CalendarDays, Lock } from 'lucide-react';
 import { parseApiError } from '../utils/errorHelper';
-
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useProfileStore from '../store/profileStore';
@@ -9,21 +8,48 @@ import { userApi } from '../api';
 import { useShallow } from 'zustand/react/shallow';
 import { INPUT_CLASS } from '../data/data';
 
-
-
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
   const toast = useToastStore();
-        setIsPasswordModalOpen(false);
-      }, 2000);
+
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const fileInputRef = useRef(null);
+
+  const handlePasswordChange = (e) => {
+    setPasswordForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setPasswordError('');
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Mật khẩu mới và xác nhận không khớp.');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      await userApi.changePassword(user.id, { currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
+      setPasswordSuccess(true);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => { setPasswordSuccess(false); setIsPasswordModalOpen(false); }, 2000);
     } catch (err) {
       setPasswordError(parseApiError(err, 'Không thể đổi mật khẩu. Vui lòng thử lại.'));
     } finally {
       setIsUpdatingPassword(false);
     }
   };
-  
-  const { 
+
+  const {
     isEditing, isFetching, isSaving, saveSuccess, formData,
     setEditing, setFetching, setSaving, setSaveSuccess,
     updateField, syncFromUser, handleCancel, updateAfterSave
@@ -78,7 +104,6 @@ export default function Profile() {
         phone: formData.phone
       });
 
-      // The API returns the user object directly, so res IS the user object
       if (res && res.id) {
         const updated = {
           name: res.name || formData.name,
@@ -86,7 +111,7 @@ export default function Profile() {
         };
         updateAfterSave(updated);
         setUser({ ...user, ...res });
-        toast.success('Cập nhật thông tin thành công! 🎉');
+        toast.success('Cập nhật thông tin thành công!');
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (error) {
@@ -100,8 +125,7 @@ export default function Profile() {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
-    
-    // Check size limit (e.g. 5MB)
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Kích thước ảnh quá lớn (tối đa 5MB).');
       return;
@@ -119,7 +143,6 @@ export default function Profile() {
       toast.error(parseApiError(error, 'Lỗi khi tải lên ảnh đại diện.'));
     } finally {
       setIsUploadingAvatar(false);
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -163,14 +186,14 @@ export default function Profile() {
                     <span className="text-5xl md:text-6xl font-black text-white">{userInitial}</span>
                   )}
                 </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleAvatarUpload} 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
                 />
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingAvatar || isFetching}
                   className="absolute bottom-1 right-1 md:bottom-2 md:right-2 w-10 h-10 md:w-12 md:h-12 bg-navy hover:bg-navy-light text-gray-300 hover:text-white rounded-full flex items-center justify-center border-4 border-navy shadow-lg transition-colors group-hover:scale-110 disabled:opacity-50"
@@ -352,7 +375,7 @@ export default function Profile() {
                       <Shield className="w-5 h-5 text-purple-400" />
                       Đổi mật khẩu
                     </button>
-                    
+
                     {isEditing && (
                       <button
                         type="submit"
@@ -368,7 +391,7 @@ export default function Profile() {
                 </form>
               </div>
             </div>
-            
+
           </div>
 
         </div>
@@ -379,13 +402,13 @@ export default function Profile() {
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-navy border border-navy-light rounded-3xl w-full max-w-xl shadow-2xl shadow-black relative overflow-hidden animate-slide-up">
             <div className="p-6 md:p-8 relative z-10">
-              <button 
+              <button
                 onClick={() => setIsPasswordModalOpen(false)}
                 className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
-              
+
               <div className="mb-8">
                 <h3 className="text-2xl font-bold text-white flex items-center gap-3">
                   <Shield className="text-purple-500 w-7 h-7" />

@@ -349,8 +349,7 @@ export default function ScheduleResults() {
                     <option value="">-- Chọn mùa giải --</option>
                     {seasons.map(s => (
                       <option key={s.id} value={s.id}>
-                        {s.name}
-                        {s.status === 'ongoing' ? ' 🔴' : s.status === 'registration_open' ? ' 📋' : ''}
+                        {s.name}{s.status === 'ongoing' ? ' (đang diễn)' : s.status === 'registration_open' ? ' (mở đk)' : ''}
                       </option>
                     ))}
                   </select>

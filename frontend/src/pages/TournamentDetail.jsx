@@ -378,7 +378,7 @@ export default function TournamentDetail() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">{name}</p>
                               <p className="text-[11px] text-gray-500 font-medium">
-                                {st.status === 'approved' ? '✅ Đã duyệt' : st.status === 'pending' ? '⏳ Chờ duyệt' : st.status}
+                                {st.status === 'approved' ? 'Đã duyệt' : st.status === 'pending' ? 'Chờ duyệt' : st.status}
                               </p>
                             </div>
                             <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors shrink-0" />

@@ -1,4 +1,4 @@
-import { Search, RefreshCw, Zap } from 'lucide-react';
+import { Search, RefreshCw, Zap, Clock } from 'lucide-react';
 import Pagination from '../ui/Pagination';
 
 /**
@@ -172,7 +172,7 @@ export default function MatchSelectorPanel({
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
                             LIVE
                           </span>
-                        ) : '⏳ SẮP DIỄN RA'}
+                        ) : <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Sắp diễn ra</span>}
                       </div>
                       <span className="text-xs text-gray-600">{fmtMatchDate(m)}</span>
                     </div>

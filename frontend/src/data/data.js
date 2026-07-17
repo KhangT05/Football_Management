@@ -1,5 +1,7 @@
-import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Shield, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle, Loader2, GraduationCap } from 'lucide-react';
-import React from 'react'
+import { LayoutDashboard, Users, UserPlus, Calendar, CheckSquare, Settings, Newspaper, Trophy, Scale, LayoutGrid, CalendarDays, CreditCard, AlertTriangle, CheckCircle, XCircle, Loader2, GraduationCap, ArrowRightLeft } from 'lucide-react';
+import React from 'react';
+import { IoFootballOutline, IoFootball } from 'react-icons/io5';
+
 // Map tên tiếng Anh → tiếng Việt cho nav items (hiện tại đã đổi thẳng sang tiếng Việt ở data.js)
 export const VI_LABELS = {};
 
@@ -180,15 +182,15 @@ export const POSITION_COLORS = {
   FW: 'bg-red-400/10 text-red-400 border-red-400/30',
 };
 export const EVENT_ICON = {
-  goal: React.createElement('span', { className: "text-lg leading-none" }, "⚽"),
-  own_goal: React.createElement('span', { className: "text-lg leading-none" }, "⚽"),
-  penalty_scored: React.createElement('span', { className: "text-lg leading-none" }, "🥅"),
+  goal: React.createElement(IoFootball, { className: "w-4 h-4" }),
+  own_goal: React.createElement(IoFootball, { className: "w-4 h-4 text-red-500" }),
+  penalty_scored: React.createElement(IoFootballOutline, { className: "w-4 h-4 text-emerald-400" }),
   yellow_card: React.createElement('div', { className: "w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" }),
   second_yellow: React.createElement('div', { className: "relative w-4 h-4 shrink-0" },
     React.createElement('div', { className: "absolute inset-y-0 left-0 w-3 h-4 bg-yellow-400 rounded-sm" }),
     React.createElement('div', { className: "absolute inset-y-0 left-1 w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" })
   ),
   red_card: React.createElement('div', { className: "w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" }),
-  substitution_in: React.createElement('span', { className: "text-lg leading-none" }, "🔄"),
-  substitution_out: React.createElement('span', { className: "text-lg leading-none" }, "🔄"),
+  substitution_in: React.createElement(ArrowRightLeft, { className: "w-4 h-4 text-emerald-400" }),
+  substitution_out: React.createElement(ArrowRightLeft, { className: "w-4 h-4 text-red-400" }),
 };

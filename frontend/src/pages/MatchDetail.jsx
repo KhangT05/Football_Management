@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Construction, Settings, Trophy } from 'lucide-react';
 import { RESULT_AVAILABLE_STATUSES } from '../components/MatchShared'
 
 import { useShallow } from 'zustand/react/shallow';
@@ -17,6 +17,7 @@ import {
   GOAL_EVENT_TYPES, EVENT_TYPE_LABEL, formatMinuteLabel, resolveEventPlayerName,
   NO_EVENT_STATUSES, getVsLabel,
 } from '../components/MatchShared';
+import { EVENT_ICON } from '../data/data';
 
 // ── Construction Banner ───────────────────────────────────────
 function ApiBanner({ message }) {
@@ -64,7 +65,7 @@ function FormationPitch({ starters = [], kit, team, score, events = [], isWinner
           <span className="text-xs font-black text-white uppercase tracking-wide truncate">{team?.name}</span>
           {isWinner && (
             <span className="shrink-0 flex items-center gap-1 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/40 rounded-full px-2 py-0.5">
-              🏆 Thắng
+              <Trophy className="w-3 h-3" /> Thắng
             </span>
           )}
         </div>
@@ -99,9 +100,11 @@ function FormationPitch({ starters = [], kit, team, score, events = [], isWinner
 // timeline chi tiết (icon timeline giữ nguyên 🟨🟥 kép cho second_yellow để
 // rõ "vàng rồi đỏ"; ở đây chỉ cần 1 icon đại diện gọn theo mẫu tham chiếu).
 function headerEventIcon(evt) {
-  if (GOAL_EVENT_TYPES.has(evt.type) || evt.type === 'own_goal') return '⚽';
-  if (evt.type === 'yellow_card') return '🟨';
-  return '🟥'; // red_card, second_yellow
+  if (evt.type === 'own_goal') return EVENT_ICON.own_goal;
+  if (GOAL_EVENT_TYPES.has(evt.type)) return EVENT_ICON.goal;
+  if (evt.type === 'yellow_card') return EVENT_ICON.yellow_card;
+  if (evt.type === 'second_yellow') return EVENT_ICON.second_yellow;
+  return EVENT_ICON.red_card;
 }
 function computeTeamEventStats(teamId, opponentId, events) {
   const teamEvents = events.filter(e => e.team_id === teamId);
@@ -468,12 +471,7 @@ export default function MatchDetail() {
                     // 'second_yellow'/'red_card'/'penalty_scored'/'substitution_*')
                     // thay vì 'goal'/'yellow'/'red' cũ (không khớp gì cả, luôn rơi
                     // vào nhánh 🔄 mặc định).
-                    const icon = GOAL_EVENT_TYPES.has(evt.type) ? '⚽'
-                      : evt.type === 'own_goal' ? '⚽'
-                        : evt.type === 'yellow_card' ? '🟨'
-                          : evt.type === 'second_yellow' ? '🟨🟥'
-                            : evt.type === 'red_card' ? '🟥'
-                              : '🔄';
+                    const icon = EVENT_ICON[evt.type] || (GOAL_EVENT_TYPES.has(evt.type) ? EVENT_ICON.goal : EVENT_ICON.substitution_in);
                     const eventLabel = EVENT_TYPE_LABEL[evt.type] ?? evt.type;
                     const playerName = resolveEventName(evt);
 

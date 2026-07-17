@@ -1,4 +1,5 @@
-import { Clock, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, Trash2, AlertTriangle, ArrowRightLeft } from 'lucide-react';
+import { IoFootball } from 'react-icons/io5';
 
 /**
  * EventCard — Card hiển thị 1 sự kiện trận đấu (bàn thắng, thẻ vàng, thẻ đỏ, thay người).
@@ -46,11 +47,11 @@ export default function EventCard({
 
   const getEventIcon = (type) => {
     switch (type) {
-      case 'goal': return '⚽';
-      case 'yellow': return '🟨';
-      case 'red': return '🟥';
-      case 'substitution': return '🔄';
-      default: return '❓';
+      case 'goal': return <IoFootball className="w-3.5 h-3.5" />;
+      case 'yellow': return <div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm shadow-[0_0_4px_rgba(250,204,21,0.5)] shrink-0" />;
+      case 'red': return <div className="w-2.5 h-3.5 bg-red-500 rounded-sm shadow-[0_0_4px_rgba(239,68,68,0.5)] shrink-0" />;
+      case 'substitution': return <ArrowRightLeft className="w-3.5 h-3.5" />;
+      default: return null;
     }
   };
 

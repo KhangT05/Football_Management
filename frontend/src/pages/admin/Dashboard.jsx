@@ -304,7 +304,7 @@ export default function Dashboard() {
         <div className="bg-navy p-6 rounded-2xl border border-navy-light shadow-lg shadow-black/20 border-l-4 border-l-neon relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-extrabold text-neon tracking-tight mb-1 relative z-10">
-              Xin chào, {user?.name || 'Admin'}! 👋
+              Xin chào, {user?.name || 'Admin'}!
             </h2>
             <p className="text-gray-400 font-medium relative z-10">
               Tổng quan thống kê hệ thống quản lý giải đấu bóng đá.

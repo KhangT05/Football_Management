@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Star, Trophy } from 'lucide-react';
+import { IoFootball } from 'react-icons/io5';
 import { getInitials, POSITION_LABELS } from '../utils/constants';
 import { matchApi, jerseyApi } from '../api';
 
@@ -423,13 +424,13 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
                 {hasBadge && (
                     <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-px whitespace-nowrap">
                         {badges.goals > 0 && (
-                            <span className="text-[9px] leading-none">⚽{badges.goals > 1 ? badges.goals : ''}</span>
+                            <span className="flex items-center leading-none"><IoFootball className="w-2.5 h-2.5" />{badges.goals > 1 ? badges.goals : ''}</span>
                         )}
                         {badges.ownGoals > 0 && (
                             <span className="text-[8px] leading-none font-black text-red-400">OG{badges.ownGoals > 1 ? badges.ownGoals : ''}</span>
                         )}
-                        {badges.yellows > 0 && <span className="text-[9px] leading-none">🟨</span>}
-                        {badges.reds > 0 && <span className="text-[9px] leading-none">🟥</span>}
+                        {badges.yellows > 0 && <div className="w-2 h-2.5 bg-yellow-400 rounded-sm shadow-[0_0_4px_rgba(250,204,21,0.5)] shrink-0" />}
+                        {badges.reds > 0 && <div className="w-2 h-2.5 bg-red-500 rounded-sm shadow-[0_0_4px_rgba(239,68,68,0.5)] shrink-0" />}
                     </div>
                 )}
             </div>

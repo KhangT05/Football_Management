@@ -4,12 +4,12 @@ import {
   AlertTriangle, CheckCircle2, Loader2, X,
   Search, ArrowUpDown, CreditCard, Shield, Calendar,
   DollarSign, Flame, Award, Ban, Activity, Save,
-  ChevronDown, Plus,
+  ChevronDown, Plus, Star,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
-import { teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi, statisticsApi, seasonApi } from '../api';
+import { teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi, statisticsApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import { useShallow } from 'zustand/react/shallow';
@@ -1641,12 +1641,14 @@ export default function MyTeam() {
                           <p className="text-sm text-gray-400 mt-1 truncate">Sân: {match.venue?.name || 'Chưa xếp sân'}</p>
                         </div>
                         <div className="shrink-0 flex items-center gap-2 flex-wrap justify-end">
-                          <button
-                            onClick={() => handleExportMatchReport(match.id)}
-                            className="w-full sm:w-auto px-4 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-xs transition-all whitespace-nowrap"
-                          >
-                            Xuất Biên Bản
-                          </button>
+                          {(match.status === 'completed' || match.status === 'finished') && (
+                            <button
+                              onClick={() => handleExportMatchReport(match.id)}
+                              className="w-full sm:w-auto px-4 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-xs transition-all whitespace-nowrap"
+                            >
+                              Xuất Biên Bản
+                            </button>
+                          )}
                           {isActive ? (
                             <button
                               onClick={() => setLineupModalMatch(match)}
@@ -1912,8 +1914,8 @@ export default function MyTeam() {
                                             <PosBadge pos={player.position} />
                                           </div>
                                           <p className="text-xs font-medium text-gray-500 mt-0.5">
-                                            {player.role === 'captain' && '⭐ Đội trưởng'}
-                                            {player.role === 'vice_captain' && '🔹 Phó đội trưởng'}
+                                            {player.role === 'captain' && <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Đội trưởng</span>}
+                                            {player.role === 'vice_captain' && <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-blue-400" /> Phó đội trưởng</span>}
                                           </p>
                                         </div>
                                       </div>

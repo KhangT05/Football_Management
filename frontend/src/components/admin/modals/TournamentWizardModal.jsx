@@ -1194,7 +1194,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       icon={Trophy}
       iconClass="text-blue-400"
       onClose={onClose}
-      size="xl"
+      size="4xl"
       footer={
         <>
           {step > 1 ? (
@@ -1455,7 +1455,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                 {!isCustomFormat && (
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Điểm số</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                       <NumField label="Điểm Thắng" required min={0} max={10} value={ruleForm.points_per_win} onChange={(v) => setRuleForm(f => ({ ...f, points_per_win: v }))} />
                       <NumField label="Điểm Hòa" required min={0} max={10} value={ruleForm.points_per_draw} onChange={(v) => setRuleForm(f => ({ ...f, points_per_draw: v }))} />
                       <NumField label="Điểm Thua" required min={0} max={10} value={ruleForm.points_per_loss} onChange={(v) => setRuleForm(f => ({ ...f, points_per_loss: v }))} />
@@ -1465,7 +1465,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đội hình & xử thua</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <NumField label="Số người tối đa / đội" required min={1} max={50} value={ruleForm.max_players_per_team} onChange={(v) => setRuleForm(f => ({ ...f, max_players_per_team: v }))} />
                     <NumField label="Số người tối thiểu" required min={1} max={50} value={ruleForm.min_players_per_team} onChange={(v) => setRuleForm(f => ({ ...f, min_players_per_team: v }))} />
                     <NumField label="Điểm xử thua" required min={0} max={20} value={ruleForm.forfeit_score} onChange={(v) => setRuleForm(f => ({ ...f, forfeit_score: v }))} />
@@ -1473,7 +1473,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                 </div>
 
                 {!isCustomFormat && activeFormatMeta.hasKnockout && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                     {activeFormatMeta.hasGroupPhase && (
                       <NumField label="Số đội đi tiếp / bảng" required min={1} value={ruleForm.teams_advance_per_group} onChange={(v) => setRuleForm(f => ({ ...f, teams_advance_per_group: v }))} />
                     )}
@@ -1493,7 +1493,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỷ luật</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                     <NumField label="Thẻ vàng tích lũy / treo giò" required min={1} value={ruleForm.yellow_cards_suspension} onChange={(v) => setRuleForm(f => ({ ...f, yellow_cards_suspension: v }))} />
                     <NumField label="Số trận bị treo giò" required min={1} value={ruleForm.suspension_match_count} onChange={(v) => setRuleForm(f => ({ ...f, suspension_match_count: v }))} />
                     <NumField label="Phạt tiền / thẻ vàng" min={0} allowDecimal value={ruleForm.fine_per_yellow_card} onChange={(v) => setRuleForm(f => ({ ...f, fine_per_yellow_card: v }))} />
@@ -1503,7 +1503,7 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Thưởng</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                     <NumField label="Thưởng / bàn thắng" min={0} allowDecimal value={ruleForm.bonus_per_goal} onChange={(v) => setRuleForm(f => ({ ...f, bonus_per_goal: v }))} />
                     <NumField label="Thưởng / kiến tạo" min={0} allowDecimal value={ruleForm.bonus_per_assist} onChange={(v) => setRuleForm(f => ({ ...f, bonus_per_assist: v }))} />
                   </div>

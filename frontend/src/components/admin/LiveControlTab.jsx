@@ -3,8 +3,9 @@ import {
   Save, Plus, Trash2, Activity,
   Loader2, RefreshCw,
   RotateCcw,
-  Flag, Zap, Target, Shield, Search
+  Flag, Zap, Target, Shield, Search, ArrowRightLeft, MousePointerClick
 } from 'lucide-react';
+import { IoFootball } from 'react-icons/io5';
 import { teamApi, matchApi, matchLineupApi } from '../../api';
 import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
@@ -26,10 +27,10 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
-  { key: 'goal', label: 'Bàn thắng', icon: '⚽', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/40' },
-  { key: 'yellow', label: 'Thẻ Vàng', icon: '🟨', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
-  { key: 'red', label: 'Thẻ Đỏ', icon: '🟥', cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
-  { key: 'substitution', label: 'Thay người', icon: '🔄', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
+  { key: 'goal', label: 'Bàn thắng', icon: <IoFootball className="w-4 h-4" />, cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/40' },
+  { key: 'yellow', label: 'Thẻ Vàng', icon: <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-[0_0_5px_rgba(250,204,21,0.5)]" />, cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20 hover:border-yellow-400' },
+  { key: 'red', label: 'Thẻ Đỏ', icon: <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />, cls: 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20 hover:border-red-400' },
+  { key: 'substitution', label: 'Thay người', icon: <ArrowRightLeft className="w-4 h-4" />, cls: 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-400' },
 ];
 
 // FIX (trần phút cứng 130 cho mọi loại trận): trước đây MAX_MINUTE=130 áp
@@ -623,7 +624,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
 
       const res = await submitAdminResult();
       setMatchStatus('finished');
-      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả thành công! Standings và bracket đã được cập nhật. 🎉');
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả thành công! Standings và bracket đã được cập nhật.');
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
@@ -666,7 +667,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       });
       setMatchStatus('finished');
       setEtModalOpen(false);
-      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm hiệp phụ) thành công! 🎉');
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm hiệp phụ) thành công!');
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
@@ -718,7 +719,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       });
       setMatchStatus('finished');
       setPenaltyModalOpen(false);
-      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm loạt sút luân lưu) thành công! 🎉');
+      showResultToast(toast, extractWarnings(res), 'Xác nhận kết quả (kèm loạt sút luân lưu) thành công!');
       setIsDirty(false);
       handleRefresh();
     } catch (err) {
@@ -891,7 +892,7 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
         {/* ── Empty state ── */}
         {!selectedMatch && effectiveSeasonId && !isLoadingMatches && matches.length > 0 && (
           <div className="text-center py-16 border border-dashed border-navy-light rounded-3xl">
-            <div className="text-5xl mb-4">👆</div>
+            <MousePointerClick className="w-12 h-12 mx-auto mb-4 text-gray-600" />
             <p className="text-gray-500 font-medium">Chọn một trận đấu ở trên để bắt đầu quản lý</p>
           </div>
         )}
@@ -902,10 +903,10 @@ export default function LiveControlTab({ selectedSeasonId, selectedMatchId, setS
       {selectedMatch && !isFinished && (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-navy-light bg-navy/90 backdrop-blur-xl px-3 py-2 sm:px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-              <span>⚽ {homeGoalCount + awayGoalCount}</span>
+            <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><IoFootball className="w-3.5 h-3.5" /> {homeGoalCount + awayGoalCount}</span>
               <span className="text-gray-700">·</span>
-              <span>🔄 {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length}</span>
+              <span className="flex items-center gap-1"><ArrowRightLeft className="w-3.5 h-3.5" /> {homeEvents.filter(e => e.type === 'substitution').length + awayEvents.filter(e => e.type === 'substitution').length}</span>
               {isDirty && <span className="ml-1 text-amber-400/80 font-semibold">• chưa lưu</span>}
             </div>
 

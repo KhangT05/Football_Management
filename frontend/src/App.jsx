@@ -48,6 +48,11 @@ const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
 // Tournament detail
 const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
 
+// Static Pages
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Contact = lazy(() => import("./pages/Contact"));
+
 // ── Loading Fallback ───────────────────────────────────────
 function PageLoader() {
   return (
@@ -118,6 +123,9 @@ function App() {
             <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
             <Route path="/giai-dau/:id" element={<TournamentDetail />} />
             <Route path="/players/:playerId/career" element={<PlayerCareer />} />
+            <Route path="/dieu-khoan-su-dung" element={<TermsOfService />} />
+            <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
+            <Route path="/lien-he" element={<Contact />} />
             {/* Protected routes – cần đăng nhập */}
             <Route path="/dang-ky-doi-bong" element={
               <ProtectedRoute><RegisterTeam /></ProtectedRoute>

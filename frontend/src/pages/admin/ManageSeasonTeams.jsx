@@ -29,11 +29,11 @@ import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'pending', label: '⏳ Chờ duyệt' },
-  { value: 'approved', label: '✅ Đã duyệt' },
-  { value: 'active', label: '🔵 Đang tham gia' },
-  { value: 'rejected', label: '❌ Từ chối' },
-  { value: 'withdrawn', label: '🚫 Đã rút' },
+  { value: 'pending', label: 'Chờ duyệt' },
+  { value: 'approved', label: 'Đã duyệt' },
+  { value: 'active', label: 'Đang tham gia' },
+  { value: 'rejected', label: 'Từ chối' },
+  { value: 'withdrawn', label: 'Đã rút' },
 ];
 
 const STATS_CARDS = [
@@ -431,10 +431,10 @@ export default function ManageSeasonTeams() {
             <div className="flex gap-1.5 flex-wrap">
               {[
                 { value: '', label: 'Tất cả' },
-                { value: 'registration_open', label: '✅ Mở ĐK' },
-                { value: 'ongoing', label: '🔴 Đang diễn' },
-                { value: 'upcoming', label: '⏳ Sắp tới' },
-                { value: 'finished', label: '✓ Kết thúc' },
+                { value: 'registration_open', label: 'Mở ĐK' },
+                { value: 'ongoing', label: 'Đang diễn' },
+                { value: 'upcoming', label: 'Sắp tới' },
+                { value: 'finished', label: 'Kết thúc' },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -457,8 +457,8 @@ export default function ManageSeasonTeams() {
               >
                 <option value="">-- Chọn mùa giải --</option>
                 {filteredSeasons.map(s => {
-                  const icon = { registration_open: '✅', ongoing: '🔴', finished: '✓', upcoming: '⏳', cancelled: '❌' }[s.status] ?? '';
-                  return <option key={s.id} value={s.id}>{icon} {s.name}</option>;
+                  const statusLabel = { registration_open: 'Mở', ongoing: 'Đang diễn', finished: 'Kết thúc', upcoming: 'Sắp tới', cancelled: 'Đã hủy' }[s.status] ?? s.status;
+                  return <option key={s.id} value={s.id}>{s.name} ({statusLabel})</option>;
                 })}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />

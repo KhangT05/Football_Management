@@ -38,12 +38,17 @@ export const parseApiError = (err, defaultMsg = 'Có lỗi xảy ra') => {
     return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
   }
 
-  // FIX: trước đây return thẳng data.message — leak raw message tiếng Anh
-  // (framework/network error) ra UI nếu message không rơi vào các nhánh
-  // trên. Áp cùng chuẩn với getFriendlyErrorMessage bên dưới: chỉ tin
-  // message có dấu tiếng Việt (AppError nghiệp vụ từ BE), còn lại luôn
-  // fallback về defaultMsg.
-  return isLikelyVietnameseMessage(data.message) ? data.message : defaultMsg;
+  // FIX: Không giấu toàn bộ message tiếng Anh nữa. Nếu message là tiếng Việt thì dùng luôn.
+  // Nếu là tiếng Anh/lỗi khác, nối vào fallback để người dùng/tester có thể thấy nguyên nhân gốc
+  // (ví dụ: "Phase already confirmed" hay lỗi swap team).
+  if (typeof data.message === 'string') {
+    if (isLikelyVietnameseMessage(data.message)) {
+      return data.message;
+    }
+    return `${defaultMsg} (${data.message})`;
+  }
+
+  return defaultMsg;
 };
 
 // Dictionary đơn giản để dịch các validation message phổ biến sang tiếng Việt

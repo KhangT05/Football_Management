@@ -1,6 +1,6 @@
 import React from 'react';
 import PosBadge from './myteam/PosBadge';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Star } from 'lucide-react';
 
 export default function PlayerRosterTable({ 
   players, 
@@ -83,7 +83,7 @@ export default function PlayerRosterTable({
                           ? 'bg-gray-100 text-gray-500 border-gray-200' 
                           : 'bg-navy-dark text-gray-400 border-navy-light'
                     }`}>
-                      {player.role === 'captain' ? '⭐ Đội trưởng'
+                      {player.role === 'captain' ? <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Đội trưởng</span>
                         : player.role === 'vice_captain' ? 'Phó'
                         : 'Thành viên'}
                     </span>

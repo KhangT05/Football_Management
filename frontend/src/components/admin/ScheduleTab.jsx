@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   CalendarPlus, Zap, Edit3, X, Save,
   MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus,
-  FileText, ShieldCheck, AlertTriangle, Users, PenLine, Lock,
+  FileText, ShieldCheck, AlertTriangle, Users, PenLine, Lock, CheckCircle2 as CheckMini,
 } from 'lucide-react';
+import { IoFootball } from 'react-icons/io5';
 import { createPortal } from 'react-dom';
 import useScheduleStore from '../../store/scheduleStore';
 import useVenueStore from '../../store/venueStore';
@@ -497,7 +498,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                         }`}
                     >
                       Vòng {r.round} ({r.unscheduled}/{r.total} chưa xếp)
-                      {r.fullyScheduled && ' ✓'}
+                      {r.fullyScheduled && <CheckMini className="inline-block w-3 h-3 ml-1 text-emerald-400" />}
                     </button>
                   ))}
                 </div>
@@ -907,9 +908,9 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
           </div>
 
           {!isFinished && !previewLoading && (
-            <div className="flex items-start gap-2 text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
+            <div className="flex items-start gap-2 text-sm text-red-400 bg-red-950/60 p-3 rounded-lg border border-red-500/40">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Trận đấu chưa ở trạng thái kết thúc. Biên bản xuất ra có thể chưa đầy đủ tỉ số / sự kiện cuối cùng.</span>
+              <span>Trận đấu chưa kết thúc. Không thể xuất biên bản cho trận đấu chưa diễn ra hoặc đang thi đấu.</span>
             </div>
           )}
 
@@ -937,8 +938,8 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             <button
               type="button"
               onClick={() => onConfirm(match.id)}
-              disabled={isExporting}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50"
+              disabled={isExporting || !isFinished}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
               Xác nhận xuất
@@ -961,10 +962,10 @@ function LineupColumn({ title, color, rows }) {
         {p.fullName}{p.isCaptain ? ' (C)' : ''}
       </span>
       <span className="shrink-0 flex items-center gap-1 text-[10px] text-gray-500 font-bold">
-        {p.goals?.length > 0 && <span className="text-emerald-400">⚽{p.goals.length}</span>}
+        {p.goals?.length > 0 && <span className="flex items-center gap-0.5 text-emerald-400"><IoFootball className="w-3 h-3" />{p.goals.length}</span>}
         {p.ownGoals?.length > 0 && <span className="text-red-400">OG{p.ownGoals.length}</span>}
-        {p.yellowCards?.length > 0 && <span className="text-yellow-400">🟨{p.yellowCards.length}</span>}
-        {p.redCards?.length > 0 && <span className="text-red-500">🟥{p.redCards.length}</span>}
+        {p.yellowCards?.length > 0 && <span className="flex items-center gap-0.5 text-yellow-400"><div className="w-2 h-2.5 bg-yellow-400 rounded-sm shrink-0" />{p.yellowCards.length}</span>}
+        {p.redCards?.length > 0 && <span className="flex items-center gap-0.5 text-red-500"><div className="w-2 h-2.5 bg-red-500 rounded-sm shrink-0" />{p.redCards.length}</span>}
       </span>
     </div>
   );
@@ -1249,14 +1250,16 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                         <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
                       </div>
                       <div className="flex gap-2 w-full mt-2">
-                        <button
-                          onClick={() => handleRequestExportMatchReport(m)}
-                          disabled={isExportingThis}
-                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isExportingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                          Xuất Biên bản
-                        </button>
+                        {(m.status === 'completed' || m.status === 'finished') && (
+                          <button
+                            onClick={() => handleRequestExportMatchReport(m)}
+                            disabled={isExportingThis}
+                            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {isExportingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                            Xuất Biên bản
+                          </button>
+                        )}
                         <button
                           onClick={() => onGoToLiveControl(m.id)}
                           className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"

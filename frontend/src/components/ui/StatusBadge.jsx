@@ -2,7 +2,7 @@ export default function StatusBadge({ status, variant = 'match', size = 'default
   const configs = {
     match: {
       scheduled: { cls: 'bg-amber-400/10 text-amber-400 border-amber-400/30', label: 'Sắp diễn ra' },
-      ongoing: { cls: 'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse', label: '🔴 Đang diễn ra' },
+      ongoing: { cls: 'bg-red-400/10 text-red-400 border-red-400/30 animate-pulse', label: 'Đang diễn ra' },
       finished: { cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30', label: 'Đã kết thúc' },
       cancelled: { cls: 'bg-gray-400/10 text-gray-400 border-gray-400/30', label: 'Đã hủy' },
       forfeited: { cls: 'bg-orange-400/10 text-orange-400 border-orange-400/30', label: 'Xử thua' },

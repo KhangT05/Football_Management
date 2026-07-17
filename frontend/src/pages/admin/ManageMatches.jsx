@@ -7,11 +7,11 @@ import { tournamentApi } from '../../api';
 import { CalendarDays, ChevronDown, Activity, Calendar, Trophy } from 'lucide-react';
 
 const SEASON_STATUS_LABEL = {
-  registration_open: '🟢 Mở đăng ký',
-  ongoing: '🔴 Đang diễn ra',
-  finished: '✓ Kết thúc',
-  upcoming: '⏳ Sắp diễn ra',
-  cancelled: '❌ Đã hủy',
+  registration_open: 'Mở đăng ký',
+  ongoing: 'Đang diễn ra',
+  finished: 'Kết thúc',
+  upcoming: 'Sắp diễn ra',
+  cancelled: 'Đã hủy',
 };
 
 export default function ManageMatches() {
