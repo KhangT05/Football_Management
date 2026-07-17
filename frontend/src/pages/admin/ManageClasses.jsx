@@ -80,7 +80,7 @@ export default function ManageClasses() {
       toast.success(`Đã xóa lớp học "${cls.name}".`);
     }).catch((err) => {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Không thể xóa lớp học.');
+      toast.error(parseApiError(err, 'Không thể xóa lớp học.'));
     });
   };
 

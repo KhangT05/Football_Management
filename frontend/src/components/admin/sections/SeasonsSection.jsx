@@ -214,13 +214,14 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
       name, registration_deadline, max_teams, start_date,
       bank_id, bank_account_no, bank_account_name,
     } = crud.form;
+    const errors = [];
 
     // bank all-or-nothing luôn phải đúng bất kể editMode — kể cả ở chế độ
     // 'bank', thiếu 1-2/3 field vẫn phải chặn (mirror BE refine).
     const bankFilled = [bank_id, bank_account_no, bank_account_name]
       .filter(v => v && v.trim()).length;
     if (bankFilled > 0 && bankFilled < 3) {
-      return 'Vui lòng nhập đầy đủ cả 3 trường ngân hàng, hoặc để trống toàn bộ.';
+      errors.push('Vui lòng nhập đầy đủ cả 3 trường ngân hàng, hoặc để trống toàn bộ.');
     }
 
     // Các field khác chỉ validate khi thực sự có thể bị ghi (editMode ===
@@ -228,20 +229,24 @@ export default function SeasonsSection({ onOpenWizard } = {}) {
     // không được gửi lên BE — validate chúng ở đây là vô nghĩa và có thể
     // chặn nhầm submit hợp lệ (VD season cũ có name rỗng do data cũ).
     if (editMode === 'full') {
-      if (!name.trim()) return 'Tên mùa giải không được bỏ trống.';
-      if (!registration_deadline) return 'Vui lòng nhập hạn đăng ký.';
-      if (Number(max_teams) < 2) return 'Số đội tham dự tối thiểu là 2.';
-      if (registration_deadline < todayStr()) return 'Hạn đăng ký không được ở quá khứ.';
-      if (start_date && registration_deadline >= start_date) {
-        return 'Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày với ngày bắt đầu.';
+      if (!name.trim()) errors.push('Tên mùa giải không được bỏ trống.');
+      if (!registration_deadline) errors.push('Vui lòng nhập hạn đăng ký.');
+      if (Number(max_teams) < 2) errors.push('Số đội tham dự tối thiểu là 2.');
+      if (registration_deadline && registration_deadline < todayStr()) errors.push('Hạn đăng ký không được ở quá khứ.');
+      if (start_date && registration_deadline && registration_deadline >= start_date) {
+        errors.push('Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày với ngày bắt đầu.');
       }
     }
-    return '';
+    return errors;
   };
 
   const handleSave = () => {
-    const err = validate();
-    if (err) { toast.error(err); crud.setFormError(err); return; }
+    const errors = validate();
+    if (errors && errors.length > 0) { 
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined }); 
+      crud.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.'); 
+      return; 
+    }
     crud.save(async () => {
       const bankPayload = {
         // Gửi null tường minh khi rỗng để CLEAR được bank info trong DB

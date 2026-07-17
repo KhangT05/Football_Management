@@ -30,13 +30,13 @@ export default function ResetPassword() {
     e.preventDefault();
     setError('');
 
-    if (newPassword !== confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
-      return;
-    }
+    const errors = [];
+    if (!newPassword) errors.push('Vui lòng nhập mật khẩu mới.');
+    if (newPassword.length < 8) errors.push('Mật khẩu phải có ít nhất 8 ký tự.');
+    if (newPassword !== confirmPassword) errors.push('Mật khẩu xác nhận không khớp.');
 
-    if (newPassword.length < 8) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự.');
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
       return;
     }
 

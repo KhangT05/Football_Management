@@ -44,17 +44,17 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
       ) : (
         <div className="bg-navy border border-navy-light rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left whitespace-nowrap min-w-[900px]">
+            <table className="w-full text-sm text-left whitespace-nowrap min-w-full">
               <thead>
                 <tr className="bg-navy-dark text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
                   <th className="py-3 px-4 w-16 text-center">Số</th>
-                  <th className="py-3 px-4">Cầu thủ</th>
-                  <th className="py-3 px-4 text-center">Ngày sinh</th>
-                  <th className="py-3 px-4 text-center">Chiều cao / Cân nặng</th>
-                  <th className="py-3 px-4 text-center">Quốc tịch</th>
-                  <th className="py-3 px-4 text-center">Vị trí</th>
-                  <th className="py-3 px-4 text-center">Vai trò</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-3 px-4 w-auto">Cầu thủ</th>
+                  <th className="py-3 px-4 w-32 text-center">Ngày sinh</th>
+                  <th className="py-3 px-4 w-40 text-center">Chiều cao / Cân nặng</th>
+                  <th className="py-3 px-4 w-32 text-center">Quốc tịch</th>
+                  <th className="py-3 px-4 w-24 text-center">Vị trí</th>
+                  <th className="py-3 px-4 w-28 text-center">Vai trò</th>
+                  <th className="py-3 px-4 w-24 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy-light">

@@ -285,8 +285,16 @@ export default function ManageSeasonTeams() {
   };
 
   const handleAddTeam = () => {
-    if (!addTeamModal.form.season_id) { addTeamModal.setFormError('Vui lòng chọn mùa giải.'); return; }
-    if (!addTeamModal.form.team_id) { addTeamModal.setFormError('Vui lòng chọn đội bóng.'); return; }
+    const errors = [];
+    if (!addTeamModal.form.season_id) errors.push('Vui lòng chọn mùa giải.');
+    if (!addTeamModal.form.team_id) errors.push('Vui lòng chọn đội bóng.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      addTeamModal.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
+    }
+
     addTeamModal.save(async () => {
       await seasonTeamApi.adminAdd({
         season_id: Number(addTeamModal.form.season_id),
@@ -308,7 +316,15 @@ export default function ManageSeasonTeams() {
   const assignModal = useCrudModal({ emptyForm: { group_id: '' } });
   const openAssignGroup = (st) => assignModal.openEdit(st, { group_id: st.group_id || '' });
   const handleAssign = () => {
-    if (!assignModal.form.group_id) { assignModal.setFormError('Vui lòng nhập ID bảng!'); return; }
+    const errors = [];
+    if (!assignModal.form.group_id) errors.push('Vui lòng nhập ID bảng!');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      assignModal.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
+    }
+
     assignModal.save(async () => {
       await seasonTeamApi.assignGroup(assignModal.editing.id, { group_id: Number(assignModal.form.group_id) });
       toast.success('Đã xếp đội vào bảng thủ công!');
@@ -325,7 +341,15 @@ export default function ManageSeasonTeams() {
     transferModal.openEdit(st, { target_season_id: '' });
   };
   const handleTransferTeam = () => {
-    if (!transferModal.form.target_season_id) { transferModal.setFormError('Vui lòng chọn mùa giải đích.'); return; }
+    const errors = [];
+    if (!transferModal.form.target_season_id) errors.push('Vui lòng chọn mùa giải đích.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      transferModal.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
+    }
+
     transferModal.save(async () => {
       await seasonTeamApi.transferSeason(transferModal.editing.id, { season_id: Number(transferModal.form.target_season_id) });
       toast.success('Đã chuyển đội sang mùa giải mới!');
@@ -561,15 +585,15 @@ export default function ManageSeasonTeams() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap min-w-[700px]">
+                <table className="w-full text-left whitespace-nowrap min-w-full">
                   <thead>
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <th className="py-4 px-6 w-16 text-center">ID</th>
-                      <th className="py-4 px-6">Đội bóng</th>
-                      {!selectedSeason && <th className="py-4 px-6">Mùa giải</th>}
-                      <th className="py-4 px-6 text-center">Trạng thái</th>
-                      <th className="py-4 px-6 text-center">Duyệt</th>
-                      <th className="py-4 px-6 text-right">Thao tác</th>
+                      <th className="py-4 px-6 w-auto">Đội bóng</th>
+                      {!selectedSeason && <th className="py-4 px-6 w-48">Mùa giải</th>}
+                      <th className="py-4 px-6 w-32 text-center">Trạng thái</th>
+                      <th className="py-4 px-6 w-24 text-center">Duyệt</th>
+                      <th className="py-4 px-6 w-40 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-navy-light/50">

@@ -122,7 +122,15 @@ export default function ManageTeams() {
   };
 
   const handleSaveTeam = () => {
-    if (!teamCrud.form.name.trim()) { teamCrud.setFormError('Vui lòng nhập tên đội bóng.'); return; }
+    const errors = [];
+    if (!teamCrud.form.name.trim()) errors.push('Vui lòng nhập tên đội bóng.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined });
+      teamCrud.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
+    }
+
     const payload = {
       name: teamCrud.form.name.trim(),
       coach_name: teamCrud.form.coach_name.trim() || undefined,
@@ -149,7 +157,7 @@ export default function ManageTeams() {
       if (expandedTeamId === team.id) setExpandedTeamId(null);
       toast.success(`Đã xóa đội "${team.name}".`);
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa đội bóng.');
+      toast.error(parseApiError(err, 'Không thể xóa đội bóng.'));
     });
   };
 
@@ -158,7 +166,7 @@ export default function ManageTeams() {
       await updateTeam(team.id, { is_active: true });
       toast.success(`Đã duyệt đội bóng "${team.name}". Đội bóng hiện có thể đăng ký giải đấu.`);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi duyệt đội bóng.');
+      toast.error(parseApiError(err, 'Lỗi khi duyệt đội bóng.'));
     }
   };
 
@@ -202,8 +210,15 @@ export default function ManageTeams() {
   };
 
   const handleSavePlayer = () => {
-    if (!playerCrud.form.name.trim()) { playerCrud.setFormError('Vui lòng nhập tên cầu thủ.'); return; }
-    if (!playerCrud.form.number || isNaN(playerCrud.form.number)) { playerCrud.setFormError('Vui lòng nhập số áo hợp lệ.'); return; }
+    const errors = [];
+    if (!playerCrud.form.name.trim()) errors.push('Vui lòng nhập tên cầu thủ.');
+    if (!playerCrud.form.number || isNaN(playerCrud.form.number)) errors.push('Vui lòng nhập số áo hợp lệ (phải là số).');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin cầu thủ:', { details: errors.length > 1 ? errors : undefined });
+      playerCrud.setFormError(errors.length === 1 ? errors[0] : 'Có lỗi, vui lòng xem thông báo.');
+      return;
+    }
 
     const payload = {
       name: playerCrud.form.name.trim(),
@@ -243,7 +258,7 @@ export default function ManageTeams() {
       setDeletePlayerState(null);
       fetchPlayers(teamId, { force: true });
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể xóa cầu thủ.');
+      toast.error(parseApiError(err, 'Không thể xóa cầu thủ.'));
     } finally {
       setIsDeletingPlayer(false);
     }
@@ -284,7 +299,7 @@ export default function ManageTeams() {
       fetchPlayers(playerTargetTeamId, { force: true });
       playerCrud.closeModal();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Import Excel thất bại.');
+      toast.error(parseApiError(err, 'Import Excel thất bại.'));
     } finally {
       setIsImportingExcel(false);
     }
@@ -315,15 +330,15 @@ export default function ManageTeams() {
             {/* Teams Table */}
             <div className="bg-navy border border-navy-light rounded-xl shadow-lg shadow-black/20 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap min-w-[1000px]">
+                <table className="w-full text-left whitespace-nowrap min-w-full">
                   <thead>
                     <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <th className="py-4 px-6 w-16 text-center">ID</th>
-                      <th className="py-4 px-6">Đội bóng</th>
-                      <th className="py-4 px-6">Mùa giải</th>
-                      <th className="py-4 px-6 text-center">Trạng thái</th>
-                      <th className="py-4 px-6 text-center">Duyệt</th>
-                      <th className="py-4 px-6 text-right">Thao tác</th>
+                      <th className="py-4 px-6 w-auto">Đội bóng</th>
+                      <th className="py-4 px-6 w-48">Mùa giải</th>
+                      <th className="py-4 px-6 w-32 text-center">Trạng thái</th>
+                      <th className="py-4 px-6 w-24 text-center">Duyệt</th>
+                      <th className="py-4 px-6 w-40 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>

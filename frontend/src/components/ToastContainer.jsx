@@ -59,27 +59,34 @@ function ToastItem({ toast }) {
     <div
       className={`
         flex items-start gap-3 px-4 py-3.5 rounded-xl border shadow-2xl shadow-black/50
-        backdrop-blur-xl min-w-[280px] max-w-md relative overflow-hidden
+        min-w-[280px] max-w-md relative overflow-hidden
         transition-all duration-300 ease-out
-        ${color.border} ${color.bg}
+        ${color.border}
         ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}
       `}
+      style={{ backgroundColor: 'var(--color-navy)' }}
     >
+      {/* Tint overlay */}
+      <div className={`absolute inset-0 pointer-events-none ${color.bg}`} />
+
       {/* Progress bar */}
       <div
-        className={`absolute bottom-0 left-0 h-0.5 ${color.bar} animate-progress-bar`}
+        className={`absolute bottom-0 left-0 h-0.5 ${color.bar} animate-progress-bar z-10`}
         style={{ animationDuration: `${toast.duration}ms` }}
       />
 
-      <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${color.icon}`} />
+      <Icon className={`w-5 h-5 shrink-0 mt-0.5 relative z-10 ${color.icon}`} />
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 relative z-10">
         {toast.title && <p className="text-sm font-bold text-white mb-0.5">{toast.title}</p>}
         <p className={`text-sm font-medium leading-relaxed text-wrap ${toast.title ? 'text-gray-300' : 'text-white'}`}>
           {toast.message}
         </p>
         {toast.details && (
-          <ul className="mt-2 text-xs text-gray-400 list-disc list-inside space-y-1 bg-black/20 p-2 rounded-lg">
+          <ul 
+            className="mt-2 text-xs text-gray-400 list-disc list-inside space-y-1 p-2.5 rounded-lg border border-black/5"
+            style={{ backgroundColor: 'var(--color-navy-dark)' }}
+          >
             {Array.isArray(toast.details) 
               ? toast.details.map((d, i) => <li key={i}>{d}</li>)
               : typeof toast.details === 'object'
@@ -96,7 +103,7 @@ function ToastItem({ toast }) {
 
       <button
         onClick={handleClose}
-        className="shrink-0 text-gray-400 hover:text-white transition-colors ml-1"
+        className="shrink-0 text-gray-400 hover:text-white transition-colors ml-1 relative z-10"
       >
         <X className="w-4 h-4" />
       </button>

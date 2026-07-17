@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Save, Image as ImageIcon } from 'lucide-react';
+import useToastStore from '../../store/toastStore';
 
 export default function ArticleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState(initialData);
@@ -44,16 +45,19 @@ export default function ArticleFormModal({ mode, initialData, isSaving, onSave, 
     setCoverPreview(URL.createObjectURL(file));
   };
 
+  const toast = useToastStore();
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.title.trim()) {
-      setFormError('Vui lòng nhập tiêu đề bài viết.');
+    const errors = [];
+    if (!form.title.trim()) errors.push('Vui lòng nhập tiêu đề bài viết.');
+    if (!form.content.trim()) errors.push('Vui lòng nhập nội dung bài viết.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined });
+      setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
       return;
     }
-    if (!form.content.trim()) {
-      setFormError('Vui lòng nhập nội dung bài viết.');
-      return;
-    }
+
     setFormError('');
     onSave(form);
   };

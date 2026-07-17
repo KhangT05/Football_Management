@@ -5,6 +5,7 @@ import { Mail, ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-reac
 import { Link } from 'react-router-dom';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { authApi } from '../api/authApi';
+import useToastStore from '../store/toastStore';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -12,9 +13,20 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const toast = useToastStore();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const errors = [];
+    if (!email.trim()) errors.push('Vui lòng nhập email.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await authApi.forgotPassword({ email });

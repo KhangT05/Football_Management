@@ -14,45 +14,6 @@ import { INPUT_CLASS } from '../data/data';
 export default function Profile() {
   const { user, setUser } = useAuthStore(useShallow(state => ({ user: state.user, setUser: state.setUser })));
   const toast = useToastStore();
-  const fileInputRef = useRef(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  // Thêm state cho form Đổi mật khẩu
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  
-  const handlePasswordChange = (e) => {
-    setPasswordForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    setPasswordError('');
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (!user?.id) return;
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Mật khẩu xác nhận không khớp.');
-      return;
-    }
-    if (passwordForm.newPassword.length < 6) {
-      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    setPasswordError('');
-    try {
-      await userApi.updatePassword(user.id, {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      });
-      setPasswordSuccess(true);
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Đổi mật khẩu thành công! 🔒');
-      setTimeout(() => {
-        setPasswordSuccess(false);
         setIsPasswordModalOpen(false);
       }, 2000);
     } catch (err) {

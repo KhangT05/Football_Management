@@ -238,19 +238,21 @@ const createDefaultStage = (type, cid, defaultSourceCid, sameTypeCount = 0) => {
 // Mirror validateCustomStages() bên BE ở mức đủ để chặn lỗi sớm trên FE. Không thay thế
 // validate BE — chỉ giảm số lần user bị reject sau khi submit.
 const validateCustomStagesLocal = (stages) => {
-  if (!stages || stages.length === 0) return 'Vui lòng thêm ít nhất 1 stage cho thể thức tùy chỉnh';
+  const errors = [];
+  if (!stages || stages.length === 0) {
+    errors.push('Vui lòng thêm ít nhất 1 stage cho thể thức tùy chỉnh');
+    return errors;
+  }
 
   const names = stages.map(s => (s.name || '').trim().toLowerCase());
-  if (names.some(n => !n)) return 'Tên stage không được để trống';
-  if (new Set(names).size !== names.length) return 'Tên các stage không được trùng nhau';
+  if (names.some(n => !n)) errors.push('Tên stage không được để trống');
+  if (new Set(names).size !== names.length) errors.push('Tên các stage không được trùng nhau');
 
-  // Stage đầu tiên (vị trí 0 trong danh sách hiển thị): round_robin hoặc knockout —
-  // classification không thể là stage đầu vì chưa có gì để tranh hạng.
   if (!['round_robin', 'knockout'].includes(stages[0].type)) {
-    return 'Stage đầu tiên phải là "Vòng bảng" hoặc "Loại trực tiếp"';
+    errors.push('Stage đầu tiên phải là "Vòng bảng" hoặc "Loại trực tiếp"');
   }
   if (stages[0].source_stage_cid) {
-    return `Stage "${stages[0].name}" là stage đầu tiên, không được có nguồn`;
+    errors.push(`Stage "${stages[0].name}" là stage đầu tiên, không được có nguồn`);
   }
 
   const cidToIndex = new Map(stages.map((s, i) => [s._cid, i]));
@@ -259,35 +261,47 @@ const validateCustomStagesLocal = (stages) => {
     const s = stages[i];
 
     if (s.type === 'round_robin') {
-      if (s.group_count < 1 || s.group_count > 32) return `Stage "${s.name}": số bảng phải từ 1 đến 32`;
-      if (s.teams_advance_per_group < 1) return `Stage "${s.name}": số đội đi tiếp mỗi bảng phải >= 1`;
-      if (s.points_per_win < 0 || s.points_per_draw < 0 || s.points_per_loss < 0) return `Stage "${s.name}": điểm trận không được âm`;
+      if (s.group_count < 1 || s.group_count > 32) errors.push(`Stage "${s.name}": số bảng phải từ 1 đến 32`);
+      if (s.teams_advance_per_group < 1) errors.push(`Stage "${s.name}": số đội đi tiếp mỗi bảng phải >= 1`);
+      if (s.points_per_win < 0 || s.points_per_draw < 0 || s.points_per_loss < 0) errors.push(`Stage "${s.name}": điểm trận không được âm`);
 
       if (i > 0 && s.source_stage_cid) {
         const srcIdx = cidToIndex.get(s.source_stage_cid);
-        if (srcIdx === undefined || srcIdx >= i) return `Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`;
-        const src = stages[srcIdx];
-        if (!s.source_rank_range) return `Stage "${s.name}": thiếu khoảng hạng lấy đội (source_rank_range)`;
-        const [from, to] = s.source_rank_range;
-        if (from < 1 || to < from) return `Stage "${s.name}": khoảng hạng không hợp lệ`;
-        if (src.type === 'round_robin' && to > src.teams_advance_per_group) {
-          return `Stage "${s.name}": lấy tới hạng ${to} nhưng stage nguồn "${src.name}" chỉ cho ${src.teams_advance_per_group} đội đi tiếp/bảng`;
+        if (srcIdx === undefined || srcIdx >= i) {
+          errors.push(`Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`);
+        } else {
+          const src = stages[srcIdx];
+          if (!s.source_rank_range) {
+             errors.push(`Stage "${s.name}": thiếu khoảng hạng lấy đội (source_rank_range)`);
+          } else {
+            const [from, to] = s.source_rank_range;
+            if (from < 1 || to < from) errors.push(`Stage "${s.name}": khoảng hạng không hợp lệ`);
+            if (src.type === 'round_robin' && to > src.teams_advance_per_group) {
+              errors.push(`Stage "${s.name}": lấy tới hạng ${to} nhưng stage nguồn "${src.name}" chỉ cho ${src.teams_advance_per_group} đội đi tiếp/bảng`);
+            }
+          }
         }
       }
       continue;
     }
 
-    // knockout / classification không phải stage đầu
-    if (i === 0) return `Stage "${s.name}" (${s.type === 'knockout' ? 'Loại trực tiếp' : 'Tranh hạng'}) không thể là stage đầu tiên nếu không đứng ở vị trí 0`;
-    if (!s.source_stage_cid) return `Stage "${s.name}": thiếu stage nguồn`;
-    const srcIdx = cidToIndex.get(s.source_stage_cid);
-    if (srcIdx === undefined || srcIdx >= i) return `Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`;
-
-    if (s.type === 'classification' && s.source_kind === 'loser_of_stage' && stages[srcIdx].type !== 'knockout') {
-      return `Stage "${s.name}": "Đội thua ở stage nguồn" chỉ hợp lệ khi nguồn là Loại trực tiếp`;
+    if (i === 0) {
+      if (s.type === 'classification') errors.push(`Stage "${s.name}" (Tranh hạng) không thể là stage đầu tiên nếu không đứng ở vị trí 0`);
+      continue;
+    }
+    
+    if (!s.source_stage_cid) {
+      errors.push(`Stage "${s.name}": thiếu stage nguồn`);
+    } else {
+      const srcIdx = cidToIndex.get(s.source_stage_cid);
+      if (srcIdx === undefined || srcIdx >= i) {
+        errors.push(`Stage "${s.name}": nguồn không hợp lệ (phải trỏ về stage đứng trước nó)`);
+      } else if (s.type === 'classification' && s.source_kind === 'loser_of_stage' && stages[srcIdx].type !== 'knockout') {
+        errors.push(`Stage "${s.name}": "Đội thua ở stage nguồn" chỉ hợp lệ khi nguồn là Loại trực tiếp`);
+      }
     }
   }
-  return null;
+  return errors;
 };
 
 // Convert state FE (dùng _cid) -> payload BE (dùng order số nguyên). Gọi ĐÚNG 1 LẦN lúc
@@ -621,64 +635,75 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   };
 
   const validateStep = () => {
+    const errors = [];
     if (step === 1) {
-      if (tournamentMode === 'new' && !tournamentForm.logo) return 'Vui lòng tải logo cho giải đấu';
-      if (tournamentMode === 'new' && !tournamentForm.name.trim()) return 'Tên giải đấu không được để trống';
-      if (tournamentMode === 'existing' && !selectedTournamentId) return 'Vui lòng chọn một giải đấu';
+      if (tournamentMode === 'new' && !tournamentForm.logo) errors.push('Vui lòng tải logo cho giải đấu');
+      if (tournamentMode === 'new' && !tournamentForm.name.trim()) errors.push('Tên giải đấu không được để trống');
+      if (tournamentMode === 'existing' && !selectedTournamentId) errors.push('Vui lòng chọn một giải đấu');
     }
 
     if (step === 2) {
-      if (ruleMode === 'template' && !selectedRuleId) return 'Vui lòng chọn một rule template làm baseline';
+      if (ruleMode === 'template' && !selectedRuleId) errors.push('Vui lòng chọn một rule template làm baseline');
 
       const r = ruleForm;
-      if (willCreateNewRule && !r.name.trim()) return 'Vui lòng nhập tên rule';
-      if (r.min_players_per_team < 1) return 'Số người tối thiểu phải >= 1';
-      if (r.max_players_per_team < r.min_players_per_team) return 'Số người tối đa phải >= tối thiểu';
-      if (r.suspension_match_count < 1) return 'Số trận treo giò phải >= 1';
-      if (r.yellow_cards_suspension < 1) return 'Số thẻ vàng tích lũy phải >= 1';
-      if (r.forfeit_score < 0) return 'Điểm xử thua không được âm';
-      if (r.fine_per_yellow_card < 0 || r.fine_per_red_card < 0) return 'Mức phạt không được âm';
-      if (r.bonus_per_goal < 0 || r.bonus_per_assist < 0) return 'Mức thưởng không được âm';
+      if (willCreateNewRule && !r.name.trim()) errors.push('Vui lòng nhập tên rule');
+      if (r.min_players_per_team < 1) errors.push('Số người tối thiểu phải >= 1');
+      if (r.max_players_per_team < r.min_players_per_team) errors.push('Số người tối đa phải >= tối thiểu');
+      if (r.suspension_match_count < 1) errors.push('Số trận treo giò phải >= 1');
+      if (r.yellow_cards_suspension < 1) errors.push('Số thẻ vàng tích lũy phải >= 1');
+      if (r.forfeit_score < 0) errors.push('Điểm xử thua không được âm');
+      if (r.fine_per_yellow_card < 0 || r.fine_per_red_card < 0) errors.push('Mức phạt không được âm');
+      if (r.bonus_per_goal < 0 || r.bonus_per_assist < 0) errors.push('Mức thưởng không được âm');
 
       const meta = getFormatMeta(r.format);
       if (meta.value === 'custom') {
-        const stageErr = validateCustomStagesLocal(r.custom_stages);
-        if (stageErr) return stageErr;
+        const stageErrs = validateCustomStagesLocal(r.custom_stages);
+        if (stageErrs && stageErrs.length > 0) errors.push(...stageErrs);
       } else {
-        if (r.points_per_win < 0 || r.points_per_draw < 0 || r.points_per_loss < 0) return 'Điểm trận không được âm';
+        if (r.points_per_win < 0 || r.points_per_draw < 0 || r.points_per_loss < 0) errors.push('Điểm trận không được âm');
         if (meta.hasGroupPhase) {
-          if (meta.hasKnockout && r.teams_advance_per_group < 1) return 'Số đội đi tiếp mỗi bảng phải >= 1';
-          if (!r.tiebreaker_order.length) return 'Vui lòng chọn ít nhất 1 tiêu chí xếp hạng phụ';
+          if (meta.hasKnockout && r.teams_advance_per_group < 1) errors.push('Số đội đi tiếp mỗi bảng phải >= 1');
+          if (!r.tiebreaker_order.length) errors.push('Vui lòng chọn ít nhất 1 tiêu chí xếp hạng phụ');
         }
       }
     }
 
     if (step === 3 && hasGroupPhase && (groupCount < 1 || groupCount > 32)) {
-      return 'Số lượng bảng đấu phải từ 1 đến 32';
+      errors.push('Số lượng bảng đấu phải từ 1 đến 32');
     }
 
     if (step === 4) {
-      if (!seasonForm.name.trim()) return 'Tên mùa giải không được để trống';
-      if (!seasonForm.start_date || !seasonForm.end_date) return 'Vui lòng chọn ngày bắt đầu và kết thúc';
-      if (!seasonForm.registration_deadline) return 'Vui lòng chọn hạn chót đăng ký';
+      if (!seasonForm.name.trim()) errors.push('Tên mùa giải không được để trống');
+      if (!seasonForm.start_date || !seasonForm.end_date) errors.push('Vui lòng chọn ngày bắt đầu và kết thúc');
+      if (!seasonForm.registration_deadline) errors.push('Vui lòng chọn hạn chót đăng ký');
 
       // Chặn quá khứ — so string ISO, không qua Date object (tránh timezone drift).
-      if (seasonForm.start_date < todayStr()) return 'Ngày bắt đầu không được ở quá khứ';
-      if (seasonForm.registration_deadline < todayStr()) return 'Hạn đăng ký không được ở quá khứ';
+      if (seasonForm.start_date && seasonForm.start_date < todayStr()) errors.push('Ngày bắt đầu không được ở quá khứ');
+      if (seasonForm.registration_deadline && seasonForm.registration_deadline < todayStr()) errors.push('Hạn đăng ký không được ở quá khứ');
 
       // Hạn đăng ký phải TRƯỚC ngày bắt đầu, không được trùng ngày (so sánh strict, không dùng >=).
-      if (seasonForm.registration_deadline >= seasonForm.start_date) {
-        return 'Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày với ngày bắt đầu';
+      if (seasonForm.registration_deadline && seasonForm.start_date && seasonForm.registration_deadline >= seasonForm.start_date) {
+        errors.push('Hạn đăng ký phải trước ngày bắt đầu, không được trùng ngày với ngày bắt đầu');
       }
-      if (seasonForm.end_date < seasonForm.start_date) return 'Ngày kết thúc phải sau ngày bắt đầu';
-      if (!seasonForm.max_teams || Number(seasonForm.max_teams) < 2) return 'Số đội tối đa ít nhất là 2';
+      if (seasonForm.end_date && seasonForm.start_date && seasonForm.end_date < seasonForm.start_date) errors.push('Ngày kết thúc phải sau ngày bắt đầu');
+      if (!seasonForm.max_teams || Number(seasonForm.max_teams) < 2) errors.push('Số đội tối đa ít nhất là 2');
+
+      // Group phase validations
+      if (hasGroupPhase) {
+        if (Number(seasonForm.max_teams) < groupCount) {
+          errors.push(`Số đội tối đa (${seasonForm.max_teams}) phải lớn hơn hoặc bằng số lượng bảng đấu (${groupCount})`);
+        }
+      }
     }
-    return null;
+    return errors;
   };
 
   const handleNext = () => {
-    const err = validateStep();
-    if (err) { toast.warning(err); return; }
+    const errs = validateStep();
+    if (errs && errs.length > 0) { 
+      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined }); 
+      return; 
+    }
     if (step === 2) setStep(nextStepAfterRule());
     else setStep(s => s + 1);
   };
@@ -775,8 +800,11 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
-    const err = validateStep();
-    if (err) { toast.warning(err); return; }
+    const errs = validateStep();
+    if (errs && errs.length > 0) { 
+      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined }); 
+      return; 
+    }
     setIsSubmitting(true);
 
     try {

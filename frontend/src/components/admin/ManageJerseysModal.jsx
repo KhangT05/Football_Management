@@ -53,7 +53,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
       setEditingIndex(null);
       resetForm();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi lưu áo đấu');
+      toast.error(parseApiError(err, 'Lỗi khi lưu áo đấu'));
     }
   };
 
@@ -64,7 +64,7 @@ export default function ManageJerseysModal({ isOpen, onClose, seasonTeam }) {
       toast.success('Đã xóa áo đấu');
       loadJerseys();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Lỗi khi xóa áo đấu');
+      toast.error(parseApiError(err, 'Lỗi khi xóa áo đấu'));
     }
   };
 

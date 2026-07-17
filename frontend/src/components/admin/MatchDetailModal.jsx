@@ -324,7 +324,7 @@ export default function MatchDetailModal({ match, homeTeamName, awayTeamName, on
       setMode('view');
       onUpdated?.();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể lưu kết quả.');
+      toast.error(parseApiError(err, 'Không thể lưu kết quả.'));
     } finally {
       setIsSaving(false);
     }

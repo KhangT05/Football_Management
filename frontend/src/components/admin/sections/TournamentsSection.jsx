@@ -89,10 +89,15 @@ export default function TournamentsSection({ refreshTrigger }) {
   const handleSave = () => {
     const name = (crud.form.name || '').trim();
     const description = (crud.form.description || '').trim();
-    if (!name) { 
-      toast.error('Tên giải đấu không được bỏ trống.');
-      crud.setFormError('Tên giải đấu không được bỏ trống.'); 
-      return; 
+    const errors = [];
+
+    if (!name) errors.push('Tên giải đấu không được bỏ trống.');
+    if (crud.modal === 'add' && !crud.form.logo) errors.push('Vui lòng tải logo cho giải đấu.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      crud.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
     }
     crud.save(async () => {
       if (crud.modal === 'add') {
@@ -117,7 +122,7 @@ export default function TournamentsSection({ refreshTrigger }) {
       await tournamentApi.delete(item.id);
       toast.success(`Đã xóa "${item.name}".`);
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa giải đấu.');
+      toast.error(parseApiError(err, 'Không thể xóa giải đấu.'));
       crud.setDeleting(null);
     });
   };
@@ -136,7 +141,7 @@ export default function TournamentsSection({ refreshTrigger }) {
         ...(searchTerm.trim() ? { q: searchTerm.trim() } : {})
       });
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Không thể khôi phục giải đấu.');
+      toast.error(parseApiError(err, 'Không thể khôi phục giải đấu.'));
     }
   };
 

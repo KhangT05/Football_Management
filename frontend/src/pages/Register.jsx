@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Fingerprint, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import useToastStore from '../store/toastStore';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -35,13 +36,24 @@ export default function Register() {
     setSocialLoadingProvider(null);
   };
 
+  const toast = useToastStore();
+
   const handleRegister = async (e) => {
     e.preventDefault();
     clearError();
     setFormError('');
 
+    const errors = [];
+    if (!formData.ten.trim()) errors.push('Vui lòng nhập họ và tên.');
+    if (!formData.email.trim()) errors.push('Vui lòng nhập email.');
+    if (!formData.password) errors.push('Vui lòng nhập mật khẩu.');
     if (formData.password !== formData.confirmPassword) {
-      setFormError('Mật khẩu xác nhận không khớp!');
+      errors.push('Mật khẩu xác nhận không khớp!');
+    }
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
       return;
     }
 

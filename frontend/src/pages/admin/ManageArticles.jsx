@@ -105,7 +105,7 @@ export default function ManageArticles() {
       toast.success(`Đã xóa bài viết "${article.title}".`);
       fetchArticles();
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa bài viết.');
+      toast.error(parseApiError(err, 'Không thể xóa bài viết.'));
     });
   };
 

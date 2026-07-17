@@ -226,7 +226,7 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
             onSaved?.();
             return true;
         } catch (err) {
-            toast.error(err?.response?.data?.message || 'Lỗi khi lưu đội hình');
+            toast.error(parseApiError(err, 'Lỗi khi lưu đội hình'));
             return false;
         } finally {
             setIsSaving(false);

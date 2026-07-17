@@ -68,7 +68,7 @@ export default function AdminLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen flex bg-navy-dark text-white font-sans">
+    <div className="h-dvh w-full flex overflow-hidden bg-navy-dark text-white font-sans">
 
       {/* Mobile overlay */}
       {sidebarOpen && (

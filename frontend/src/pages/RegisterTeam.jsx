@@ -180,8 +180,11 @@ export default function RegisterTeam() {
   // ── BƯỚC 1: chỉ tạo Team (+ đăng ký mùa giải nếu có chọn) ──
   const handleCreateTeam = async (e) => {
     e.preventDefault();
-    if (!teamInfo.name.trim()) {
-      toast.error('Vui lòng nhập tên đội bóng!');
+    const errors = [];
+    if (!teamInfo.name.trim()) errors.push('Vui lòng nhập tên đội bóng!');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
       return;
     }
 

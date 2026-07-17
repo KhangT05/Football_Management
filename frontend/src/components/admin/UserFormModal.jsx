@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Shield } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import useToastStore from '../../store/toastStore';
 import { roleApi } from '../../api';
 
 export default function UserFormModal({ mode, initialData, isSaving, onSave, onClose }) {
@@ -49,16 +50,21 @@ export default function UserFormModal({ mode, initialData, isSaving, onSave, onC
     });
   };
 
+  const toast = useToastStore();
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setFormError('Vui lòng nhập họ tên.');
-      return;
-    }
+    const errors = [];
+    if (!form.name.trim()) errors.push('Vui lòng nhập họ tên.');
     if (mode === 'add' && (!form.email.trim() || !form.password.trim())) {
-      setFormError('Vui lòng nhập đầy đủ Email và Mật khẩu cho user mới.');
+      errors.push('Vui lòng nhập đầy đủ Email và Mật khẩu cho user mới.');
+    }
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined });
+      setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
       return;
     }
+
     setFormError('');
     onSave(form);
   };

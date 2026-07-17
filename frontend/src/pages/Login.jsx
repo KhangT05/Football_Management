@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import useToastStore from '../store/toastStore';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -16,12 +17,28 @@ export default function Login() {
   const { login, socialLogin, loading, error, clearError } = useAuthStore(useShallow(state => ({ login: state.login, socialLogin: state.socialLogin, loading: state.loading, error: state.error, clearError: state.clearError })));
   const [socialLoadingProvider, setSocialLoadingProvider] = useState(null);
 
+  const toast = useToastStore();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     clearError();
+
+    const errors = [];
+    if (!email.trim()) errors.push('Vui lòng nhập email.');
+    if (!password) errors.push('Vui lòng nhập mật khẩu.');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin:', { details: errors.length > 1 ? errors : undefined });
+      return;
+    }
+
     const result = await login({ email, password });
     if (result.success) {
       navigate(from, { replace: true });
+    } else {
+      if (result.error) {
+         toast.error(result.error);
+      }
     }
   };
 

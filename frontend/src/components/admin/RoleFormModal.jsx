@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import useToastStore from '../../store/toastStore';
 
 export default function RoleFormModal({ mode, initialData, isSaving, onSave, onClose }) {
   const [form, setForm] = useState({
@@ -18,12 +19,18 @@ export default function RoleFormModal({ mode, initialData, isSaving, onSave, onC
     }));
   };
 
+  const toast = useToastStore();
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setFormError('Vui lòng nhập tên vai trò (Role Name).');
+    const errors = [];
+    if (!form.name.trim()) errors.push('Vui lòng nhập tên vai trò (Role Name).');
+
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined });
+      setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
       return;
     }
+
     setFormError('');
     onSave(form);
   };

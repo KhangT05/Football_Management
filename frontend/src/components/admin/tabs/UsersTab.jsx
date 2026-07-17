@@ -88,7 +88,7 @@ export default function UsersTab() {
       toast.success(`Đã xóa người dùng "${user.name}".`);
     }).catch((err) => {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Không thể xóa người dùng.');
+      toast.error(parseApiError(err, 'Không thể xóa người dùng.'));
     });
   };
 

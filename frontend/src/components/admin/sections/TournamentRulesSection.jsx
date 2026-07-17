@@ -292,13 +292,17 @@ export default function TournamentRulesSection() {
   };
 
   const validateClientSide = (payload) => {
-    if (!payload.tournament_id) return 'Vui lòng chọn giải đấu.';
-    if (!payload.name) return 'Vui lòng nhập tên luật.';
-    if (payload.tiebreaker_order.length === 0) return 'Chọn ít nhất 1 tiêu chí phân điểm.';
+    const errors = [];
+    if (!payload.tournament_id) errors.push('Vui lòng chọn giải đấu.');
+    if (!payload.name) errors.push('Vui lòng nhập tên luật.');
+    if (payload.tiebreaker_order.length === 0) errors.push('Chọn ít nhất 1 tiêu chí phân điểm.');
     if (payload.max_players_per_team < payload.min_players_per_team) {
-      return 'Số HV tối đa phải >= số HV tối thiểu.';
+      errors.push('Số HV tối đa phải >= số HV tối thiểu.');
     }
-    return validateFormatConsistency(payload.format, payload.round_robin_stages);
+    const formatErr = validateFormatConsistency(payload.format, payload.round_robin_stages);
+    if (formatErr) errors.push(formatErr);
+
+    return errors;
   };
 
   // Gán rule vừa create/update cho các season được chọn. CHỈ ASSIGN (không
@@ -408,8 +412,12 @@ export default function TournamentRulesSection() {
 
   const handleSave = () => {
     const payload = buildPayload();
-    const err = validateClientSide(payload);
-    if (err) { crud.setFormError(err); toast.error(err); return; }
+    const errors = validateClientSide(payload);
+    if (errors && errors.length > 0) { 
+      crud.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.'); 
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined }); 
+      return; 
+    }
     setConflict(null);
     runSave(payload, false);
   };

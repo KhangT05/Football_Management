@@ -22,6 +22,7 @@ export default function Header() {
   };
 
   const isAdmin = user?.role === 'admin' || (Array.isArray(user?.roles) && user.roles.includes('admin')) || user?.is_admin === true;
+  const isOrganizing = user?.role === 'organizing' || (Array.isArray(user?.roles) && user.roles.includes('organizing')) || user?.is_organizing === true;
 
   const isActive = (path) => location.pathname === path;
 
@@ -151,6 +152,19 @@ export default function Header() {
                               <Shield className="w-4 h-4" />
                             </div>
                             Trang quản trị (Admin)
+                          </Link>
+                        </>
+                      )}
+                    </>
+                    <>
+                      {isOrganizing && (
+                        <>
+                          <div className="h-px bg-navy-light my-1 mx-2"></div>
+                          <Link to="/quan-ly-giai-dau" className="group/item flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 rounded-xl transition-all border border-transparent hover:border-blue-600/20">
+                            <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center group-hover/item:bg-blue-600/20 transition-colors">
+                              <Trophy className="w-4 h-4" />
+                            </div>
+                            Trang Ban Tổ Chức
                           </Link>
                         </>
                       )}

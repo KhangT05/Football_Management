@@ -56,7 +56,7 @@ export default function RolesTab() {
       toast.success(`Đã xóa vai trò "${role.name}".`);
       fetchRoles();
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa vai trò.');
+      toast.error(parseApiError(err, 'Không thể xóa vai trò.'));
     });
   };
 

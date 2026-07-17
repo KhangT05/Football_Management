@@ -14,17 +14,7 @@ function unwrapResponse(res) {
 // dấu, nhưng lỗi validate framework-level (Zod/Joi kiểu "is not allowed",
 // "is required") hoặc lỗi network (err.message dạng "Network Error") là
 // tiếng Anh thuần — không nên hiện thẳng ra cho người dùng.
-const VIETNAMESE_DIACRITICS_REGEX = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
-const isLikelyVietnameseMessage = (msg) => typeof msg === 'string' && VIETNAMESE_DIACRITICS_REGEX.test(msg);
-
-// Helper dùng chung cho mọi catch-block hiển thị lỗi API ra toast: ưu tiên
-// message tiếng Việt cụ thể từ backend, nếu message là tiếng Anh (lỗi
-// validate framework-level, lỗi network, v.v.) thì luôn dùng fallback tiếng
-// Việt — không bao giờ để lộ text tiếng Anh thô ra UI.
-const getFriendlyErrorMessage = (err, fallback) => {
-  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
-  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
-};
+import { parseApiError as getFriendlyErrorMessage } from '../../utils/errorHelper';
 
 // FIX (khóa bảng đấu theo trạng thái mùa giải — bản sửa cho RR -> RR):
 // SeasonService.updateStatus() gọi autoFinalizeGroups() ngay TRƯỚC KHI

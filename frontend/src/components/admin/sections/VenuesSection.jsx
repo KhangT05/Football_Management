@@ -60,7 +60,17 @@ export default function VenuesSection() {
   const openEdit = (item) => crud.openEdit(item, { name: item.name, address: item.address ?? '', is_active: item.is_active ?? true });
 
   const handleSave = () => {
-    if (!crud.form.name.trim()) { crud.setFormError('Tên sân không được bỏ trống.'); return; }
+    const errors = [];
+    if (!crud.form.name.trim()) errors.push('Tên sân không được bỏ trống.');
+    
+    // Add logic if address required, etc. Currently only name is required
+    
+    if (errors.length > 0) {
+      toast.warning(errors.length === 1 ? errors[0] : 'Vui lòng kiểm tra lại thông tin chưa hợp lệ:', { details: errors.length > 1 ? errors : undefined });
+      crud.setFormError(errors.length === 1 ? errors[0] : 'Có một số lỗi cần khắc phục, vui lòng xem thông báo.');
+      return;
+    }
+
     crud.save(async () => {
       if (crud.modal === 'add') {
         await venueApi.create({ name: crud.form.name.trim(), address: crud.form.address.trim() || undefined, is_active: crud.form.is_active });
@@ -78,7 +88,7 @@ export default function VenuesSection() {
       await venueApi.delete(item.id);
       toast.success(`Đã xóa sân "${item.name}".`);
     }).catch((err) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa sân.');
+      toast.error(parseApiError(err, 'Không thể xóa sân.'));
     });
   };
   const handleItemsPerPageChange = (newLimit) => {

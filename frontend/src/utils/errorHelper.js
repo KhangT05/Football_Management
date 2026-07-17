@@ -77,24 +77,28 @@ function translateValidationError(field, msg) {
   const fName = fieldNames[cleanField.toLowerCase()] || cleanField;
 
   // Common English validation rules sang tiếng Việt
-  if (msg.includes('is required') || msg.includes('should not be empty')) {
+  if (msg.includes('is required') || msg.includes('should not be empty') || msg === 'Required') {
     translated = `${fName} không được để trống`;
-  } else if (msg.includes('must be an email')) {
+  } else if (msg.includes('must be an email') || msg.includes('Invalid email')) {
     translated = `${fName} phải là một địa chỉ email hợp lệ`;
-  } else if (msg.includes('must be a number') || msg.includes('must be an integer')) {
+  } else if (msg.includes('must be a number') || msg.includes('must be an integer') || msg.includes('Expected number') || msg.includes('invalid float number') || msg.includes('invalid integer number')) {
     translated = `${fName} phải là một số`;
-  } else if (msg.includes('must be at least')) {
+  } else if (msg.includes('must be at least') || msg.includes('contain at least')) {
     const min = msg.match(/\d+/)?.[0] || '';
     translated = `${fName} phải có ít nhất ${min} ký tự`;
-  } else if (msg.includes('must not be greater than')) {
+  } else if (msg.includes('must not be greater than') || msg.includes('contain at most')) {
     const max = msg.match(/\d+/)?.[0] || '';
     translated = `${fName} không được vượt quá ${max} ký tự`;
   } else if (msg.includes('already exists') || msg.includes('has already been taken')) {
     translated = `${fName} đã tồn tại trong hệ thống`;
-  } else if (msg.includes('must be a valid date')) {
+  } else if (msg.includes('must be a valid date') || msg.includes('invalid Date') || msg.includes('invalid date')) {
     translated = `${fName} phải là một ngày hợp lệ`;
   } else if (msg.includes('not found')) {
     translated = `Không tìm thấy ${fName}`;
+  } else if (msg.includes('is an excess property')) {
+    translated = `${fName} không được phép gửi kèm trong yêu cầu này`;
+  } else if (msg.includes('invalid type') || msg.includes('Expected') || msg.includes('invalid boolean') || msg.includes('invalid string')) {
+    translated = `${fName} sai định dạng dữ liệu`;
   } else if (msg.includes('invalid')) {
     translated = `${fName} không hợp lệ`;
   } else if (msg === 'Validation failed') {
@@ -130,6 +134,5 @@ export const isLikelyVietnameseMessage = (msg) =>
  *                             không đáng tin (không có dấu / không tồn tại)
  */
 export const getFriendlyErrorMessage = (err, fallback) => {
-  const backendMessage = err?.response?.data?.body?.message || err?.response?.data?.message || '';
-  return isLikelyVietnameseMessage(backendMessage) ? backendMessage : fallback;
+  return parseApiError(err, fallback);
 };
