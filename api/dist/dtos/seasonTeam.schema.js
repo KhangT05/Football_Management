@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SeasonTeamStatus } from "../generated/prisma/client.js";
 export const selfRegisterSeasonTeamSchema = z.object({
     season_id: z.number().int().positive(),
+    team_id: z.number().int().positive(),
 });
 export const adminAddSeasonTeamSchema = z.object({
     season_id: z.number().int().positive(),

@@ -3,6 +3,18 @@ import { AdminAddSeasonTeamDto, AssignGroupDto, SelfRegisterSeasonTeamDto, Updat
 import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { GroupService } from "./group.service.js";
+export type SeasonRegistrationEligibility = {
+    season_id: number;
+    name: string;
+    start_date: Date | null;
+    registration_deadline: Date | null;
+    already_registered: boolean;
+    conflict: {
+        playerName: string;
+        teamName: string;
+    } | null;
+    eligible: boolean;
+};
 export declare class SeasonTeamService {
     private readonly prisma;
     private readonly groupService;
@@ -10,6 +22,18 @@ export declare class SeasonTeamService {
     constructor(prisma: PrismaClient, groupService: GroupService);
     findAll(req?: QueryRequest): Promise<PaginatedResult<SeasonTeamWithRelations>>;
     findByIdOrFail(id: number): Promise<SeasonTeamWithRelations>;
+    /**
+     * FIX (multi-team ownership bug): trước đây resolve team qua
+     * `findFirst({ where: { user_id: userId } })` — không có orderBy, không
+     * scope theo team_id nào cả. Với user sở hữu NHIỀU team, request đăng ký
+     * season cho team B thực tế bị ghi nhầm vào team đầu tiên user tạo
+     * (team A), vì Prisma trả về bản ghi bất kỳ khớp user_id đầu tiên.
+     * Bug này SILENT — không throw lỗi, dữ liệu sai lặng lẽ.
+     *
+     * Fix: bắt buộc `data.team_id` trong request (FE phải gửi kèm, xem
+     * SelfRegisterSeasonTeamDto), verify đúng team đó thuộc về user hiện
+     * tại thay vì suy đoán "1 team bất kỳ của user".
+     */
     selfRegister(data: SelfRegisterSeasonTeamDto, userId: number): Promise<SeasonTeamWithRelations>;
     /**
      * FIX (auto-assign hook): adminAdd() có thể tạo thẳng status='approved'
@@ -75,6 +99,28 @@ export declare class SeasonTeamService {
      * Serializable cho transaction này.
      */
     private assertNoPlayerConflict;
+    /**
+     * NEW — trả về eligibility đăng ký cho MỌI season đang mở đăng ký, tính
+     * sẵn `already_registered` + `conflict` (player trùng với team khác đã
+     * ở season đó) cho team truyền vào.
+     *
+     * Lý do cần endpoint riêng thay vì chỉ dựa vào lỗi từ selfRegister():
+     * trước đây FE tự suy already_registered bằng cách diff 2 danh sách
+     * (season mở + season_team đã có) và hoàn toàn không biết gì về
+     * player-conflict — conflict chỉ lộ ra SAU khi user bấm "Đăng ký" và
+     * request fail. Endpoint này cho phép disable nút + hiển thị lý do
+     * NGAY trong modal, trước khi user thao tác.
+     *
+     * PERF: gom toàn bộ season mở vào 1-2 query (không loop per season) —
+     * tránh N+1 khi season mở đăng ký cùng lúc nhiều giải.
+     *
+     * LIMITATION: đây là snapshot đọc, cùng race-condition window đã ghi ở
+     * assertNoPlayerConflict (2 request đăng ký chạy trùng thời điểm vẫn có
+     * thể lách qua bước hiển thị này). assertNoPlayerConflict trong
+     * selfRegister() transaction vẫn là nguồn sự thật cuối cùng — endpoint
+     * này CHỈ phục vụ UX, không thay thế check đó.
+     */
+    getTeamRegistrationEligibility(teamId: number): Promise<SeasonRegistrationEligibility[]>;
     private createOrReactivate;
     listBySeasonWithTeamInfo(seasonId: number, statuses?: SeasonTeamStatus[]): Promise<{
         season: {

@@ -92,6 +92,9 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
     async listBySeasonWithTeamInfo(seasonId, status) {
         return this.service.listBySeasonWithTeamInfo(seasonId, status);
     }
+    async getTeamRegistrationEligibility(teamId) {
+        return this.service.getTeamRegistrationEligibility(teamId);
+    }
 };
 __decorate([
     Get("/"),
@@ -115,7 +118,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "findById", null);
 __decorate([
-    Security("jwt", ["leader"]),
+    Security("jwt", ["leader", "user", "player"]),
     Post("/register"),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
@@ -196,6 +199,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Array]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "listBySeasonWithTeamInfo", null);
+__decorate([
+    Get("/season-teams/registration-eligibility"),
+    __param(0, Query("team_id")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "getTeamRegistrationEligibility", null);
 SeasonTeamController = __decorate([
     Route("seasonteams"),
     Tags("SeasonTeams"),

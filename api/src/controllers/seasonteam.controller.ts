@@ -50,7 +50,7 @@ export class SeasonTeamController extends Controller {
     return this.service.findByIdOrFail(id);
   }
   /** Team leader tự đăng ký vào season */
-  @Security("jwt", ["leader"])
+  @Security("jwt", ["leader", "user", "player"])
   @Post("/register")
   @SuccessResponse(201, "Created")
   async selfRegister(
@@ -133,5 +133,11 @@ export class SeasonTeamController extends Controller {
     @Query() status?: SeasonTeamStatus[],
   ) {
     return this.service.listBySeasonWithTeamInfo(seasonId, status);
+  }
+  @Get("/season-teams/registration-eligibility")
+  async getTeamRegistrationEligibility(
+    @Query("team_id") teamId: number,
+  ) {
+    return this.service.getTeamRegistrationEligibility(teamId);
   }
 }

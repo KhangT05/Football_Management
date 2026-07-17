@@ -93,6 +93,7 @@ export declare class SeasonTeamController extends Controller {
             group_id: number | null;
         }[];
     }>;
+    getTeamRegistrationEligibility(teamId: number): Promise<import("../services/seasonTeam.service.js").SeasonRegistrationEligibility[]>;
 }
 export {};
 //# sourceMappingURL=seasonteam.controller.d.ts.map
