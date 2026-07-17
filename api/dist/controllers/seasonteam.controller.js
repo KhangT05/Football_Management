@@ -43,6 +43,16 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
             season_id, team_id, status,
         });
     }
+    /**
+  * PHẢI khai báo TRƯỚC findById({id}) — tsoa/Express match route theo thứ
+  * tự khai báo trong class, {id} là wildcard 1-segment nên sẽ shadow bất
+  * kỳ static route 1-segment nào đứng sau nó. Đây từng là literal 2 lớp
+  * "/season-teams/registration-eligibility" (khác cả tên "seasonteams"
+  * ở @Route) khiến FE gọi sai path và luôn nhận 404 im lặng.
+  */
+    async getTeamRegistrationEligibility(teamId) {
+        return this.service.getTeamRegistrationEligibility(teamId);
+    }
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
@@ -77,23 +87,20 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
         return this.service.softDelete(id);
     }
     /** Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.
-   *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
+    *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
     async getOrCreateGroupPhase(seasonId) {
         return this.service.getOrCreateGroupPhase(seasonId);
     }
     /**
-   * List teams đã đăng ký của 1 season kèm team info (name/logo) + group_id.
-   * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
-   * hình public nào cần xem "season X có những team nào, đã vào group chưa".
-   *
-   * Public — không cần auth, giống các GET season/standings khác.
-   * default statuses = ['approved'] nếu không truyền (khớp default của service).
-   */
+    * List teams đã đăng ký của 1 season kèm team info (name/logo)  group_id.
+    * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
+    * hình public nào cần xem "season X có những team nào, đã vào group chưa".
+    *
+    * Public — không cần auth, giống các GET season/standings khác.
+    * default statuses = ['approved'] nếu không truyền (khớp default của service).
+    */
     async listBySeasonWithTeamInfo(seasonId, status) {
         return this.service.listBySeasonWithTeamInfo(seasonId, status);
-    }
-    async getTeamRegistrationEligibility(teamId) {
-        return this.service.getTeamRegistrationEligibility(teamId);
     }
 };
 __decorate([
@@ -110,6 +117,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, String, String, String, Number, Number, String]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "findAll", null);
+__decorate([
+    Get("registration-eligibility"),
+    __param(0, Query("team_id")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "getTeamRegistrationEligibility", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
@@ -199,13 +213,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Array]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "listBySeasonWithTeamInfo", null);
-__decorate([
-    Get("/season-teams/registration-eligibility"),
-    __param(0, Query("team_id")),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], SeasonTeamController.prototype, "getTeamRegistrationEligibility", null);
 SeasonTeamController = __decorate([
     Route("seasonteams"),
     Tags("SeasonTeams"),

@@ -34,9 +34,10 @@ export class TeamController extends Controller {
     @Query() per_page = 20,
     @Query() q?: string,
     @Query() sort?: string,
+    @Query() user_id?: number,
     @Query() direction?: "asc" | "desc"
   ): Promise<PaginatedResult<Team>> {
-    return this.service.findAll({ page, per_page, q, sort, direction });
+    return this.service.findAll({ page, per_page, q, sort, direction, user_id });
   }
 
   @Get("{id}")

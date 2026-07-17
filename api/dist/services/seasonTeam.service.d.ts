@@ -8,6 +8,12 @@ export type SeasonRegistrationEligibility = {
     name: string;
     start_date: Date | null;
     registration_deadline: Date | null;
+    season_status: SeasonStatus;
+    tournament: {
+        id: number;
+        name: string;
+        logo: string | null;
+    };
     already_registered: boolean;
     conflict: {
         playerName: string;

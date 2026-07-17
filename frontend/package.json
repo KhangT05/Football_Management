@@ -10,11 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-react": "^11.2.0",
+    "@hookform/resolvers": "^5.4.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.101.2",
     "axios": "^1.16.1",
-    "ckeditor5": "^48.3.0",
     "lucide-react": "^1.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -25,6 +24,7 @@
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.2.2",
+    "zod": "^4.4.3",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

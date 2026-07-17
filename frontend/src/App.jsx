@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PublicLayout from "./layouts/PublicLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -8,7 +9,6 @@ import useAuthStore from "./store/authStore";
 import { useShallow } from 'zustand/react/shallow';
 
 // ── Lazy-loaded Pages ──────────────────────────────────────
-// Mỗi page chỉ được tải khi user navigate tới → giảm initial bundle size
 const Home = lazy(() => import("./pages/Home"));
 const ScheduleResults = lazy(() => import("./pages/ScheduleResults"));
 const LeaderboardTeams = lazy(() => import("./pages/LeaderboardTeams"));
@@ -47,11 +47,25 @@ const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
 
 // Tournament detail
 const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
-
 // Static Pages
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Contact = lazy(() => import("./pages/Contact"));
+
+// ── React Query Client ─────────────────────────────────────
+// Tạo ở module scope (ngoài component) — chỉ 1 instance duy nhất
+// cho toàn bộ lifetime của app. Nếu tạo trong App(), mỗi re-render
+// (ví dụ khi isInitialized đổi) sẽ tạo client mới → mất toàn bộ
+// cache và hủy các query đang chạy.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,       // 1 phút — chỉnh theo nhu cầu freshness thực tế
+      retry: 1,
+      refetchOnWindowFocus: false, // tránh refetch spam khi user chuyển tab
+    },
+  },
+});
 
 // ── Loading Fallback ───────────────────────────────────────
 function PageLoader() {
@@ -66,8 +80,6 @@ function PageLoader() {
 }
 
 // ── Auth Initializing Loader ───────────────────────────────
-// Hiển thị trong khi initializeAuth() đang chạy (F5 / mở tab mới)
-// Ngăn AdminRoute/ProtectedRoute redirect sai trước khi biết auth state
 function AuthInitLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-dark">
@@ -91,107 +103,101 @@ function App() {
   const { initializeAuth, isInitialized } = useAuthStore(useShallow(state => ({ initializeAuth: state.initializeAuth, isInitialized: state.isInitialized })));
 
   useEffect(() => {
-    /**
-     * Khôi phục session khi user F5 hoặc mở tab mới
-     * - access token (in-memory) bị mất khi reload → cần refresh
-     * - httpOnly cookie refresh_token vẫn còn → gọi /auth/refresh để lấy token mới
-     * - Sau khi xong → set isInitialized = true → App render routes
-     */
     initializeAuth();
   }, [initializeAuth]);
 
-  // Chờ auth initialization xong trước khi render routes
-  // Tránh AdminRoute/ProtectedRoute đọc isAuthenticated = false sai lúc đang refresh
   if (!isInitialized) {
     return <AuthInitLoader />;
   }
 
   return (
-    <Router>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/lich-thi-dau" element={<ScheduleResults />} />
-            <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
-            <Route path="/tra-cuu-doi-bong" element={<SearchTeams />} />
-            <Route path="/tim-kiem-giai-dau" element={<SearchTournaments />} />
-            <Route path="/tra-cuu-cau-thu" element={<SearchPlayers />} />
-            <Route path="/doi-bong/:id" element={<TeamDetail />} />
-            <Route path="/tran-dau/:id" element={<MatchDetail />} />
-            <Route path="/tin-tuc" element={<News />} />
-            <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
-            <Route path="/giai-dau/:id" element={<TournamentDetail />} />
-            <Route path="/players/:playerId/career" element={<PlayerCareer />} />
-            <Route path="/dieu-khoan-su-dung" element={<TermsOfService />} />
-            <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
-            <Route path="/lien-he" element={<Contact />} />
-            {/* Protected routes – cần đăng nhập */}
-            <Route path="/dang-ky-doi-bong" element={
-              <ProtectedRoute><RegisterTeam /></ProtectedRoute>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/lich-thi-dau" element={<ScheduleResults />} />
+              <Route path="/bang-xep-hang" element={<LeaderboardTeams />} />
+              <Route path="/tra-cuu-doi-bong" element={<SearchTeams />} />
+              <Route path="/tim-kiem-giai-dau" element={<SearchTournaments />} />
+              <Route path="/tra-cuu-cau-thu" element={<SearchPlayers />} />
+              <Route path="/doi-bong/:id" element={<TeamDetail />} />
+              <Route path="/tran-dau/:id" element={<MatchDetail />} />
+              <Route path="/tin-tuc" element={<News />} />
+              <Route path="/tin-tuc/:slug" element={<ArticleDetail />} />
+              <Route path="/giai-dau/:id" element={<TournamentDetail />} />
+              <Route path="/players/:playerId/career" element={<PlayerCareer />} />
+              <Route path="/dieu-khoan-su-dung" element={<TermsOfService />} />
+              <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
+              <Route path="/lien-he" element={<Contact />} />
+              {/* Protected routes – cần đăng nhập */}
+              <Route path="/dang-ky-doi-bong" element={
+                <ProtectedRoute><RegisterTeam /></ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute><Profile /></ProtectedRoute>
+              } />
+              <Route path="/doi-cua-toi" element={
+                <ProtectedRoute><MyTeam /></ProtectedRoute>
+              } />
+              <Route path="/tran-dau/:matchId/doi-hinh" element={
+                <ProtectedRoute><ManageMatchLineup /></ProtectedRoute>
+              } />
+
+              {/* Payment Result — VNPay callback return URL */}
+              <Route path="/thanh-toan/ket-qua" element={
+                <ProtectedRoute><PaymentResultPage /></ProtectedRoute>
+              } />
+
+              {/* 403 Forbidden */}
+              <Route path="/forbidden" element={<ForbiddenPage />} />
+            </Route>
+
+            {/* Auth Routes */}
+            <Route path="/dang-nhap" element={<Login />} />
+            <Route path="/dang-ky" element={<Register />} />
+            <Route path="/quen-mau-khau" element={<ForgotPassword />} />
+            <Route path="/khoi-phuc-mat-khau" element={<ResetPassword />} />
+
+            {/* Admin Routes – bắt buộc đã đăng nhập + có role admin */}
+            <Route path="/quan-ly-giai-dau" element={
+              <AdminRoute><Dashboard /></AdminRoute>
             } />
-            <Route path="/profile" element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
+            <Route path="/quan-ly-giai-dau/tran-dau" element={
+              <AdminRoute><ManageMatches /></AdminRoute>
             } />
-            <Route path="/doi-cua-toi" element={
-              <ProtectedRoute><MyTeam /></ProtectedRoute>
+            <Route path="/quan-ly-giai-dau/doi-bong" element={
+              <AdminRoute><ManageTeams /></AdminRoute>
             } />
-            <Route path="/tran-dau/:matchId/doi-hinh" element={
-              <ProtectedRoute><ManageMatchLineup /></ProtectedRoute>
+            <Route path="/quan-ly-giai-dau/tai-khoan" element={
+              <AdminRoute><ManageAccounts /></AdminRoute>
+            } />
+            <Route path="/quan-ly-giai-dau/lop-hoc" element={
+              <AdminRoute><ManageClasses /></AdminRoute>
+            } />
+            <Route path="/quan-ly-giai-dau/boc-tham-len-lich" element={
+              <AdminRoute><ManageSeasonTeams /></AdminRoute>
+            } />
+            <Route path="/quan-ly-giai-dau/thiet-lap-giai-dau" element={
+              <AdminRoute><ManageSetup defaultTab="tournaments" /></AdminRoute>
+            } />
+            <Route path="/quan-ly-giai-dau/bai-viet" element={
+              <AdminRoute><ManageArticles /></AdminRoute>
+            } />
+            <Route path="/quan-ly-giai-dau/xac-nhan-thanh-toan" element={
+              <AdminRoute><ManagePayments /></AdminRoute>
             } />
 
-            {/* Payment Result — VNPay callback return URL */}
-            <Route path="/thanh-toan/ket-qua" element={
-              <ProtectedRoute><PaymentResultPage /></ProtectedRoute>
-            } />
+            {/* 404 — phải để cuối cùng */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
 
-            {/* 403 Forbidden */}
-            <Route path="/forbidden" element={<ForbiddenPage />} />
-          </Route>
-
-          {/* Auth Routes */}
-          <Route path="/dang-nhap" element={<Login />} />
-          <Route path="/dang-ky" element={<Register />} />
-          <Route path="/quen-mau-khau" element={<ForgotPassword />} />
-          <Route path="/khoi-phuc-mat-khau" element={<ResetPassword />} />
-
-          {/* Admin Routes – bắt buộc đã đăng nhập + có role admin */}
-          <Route path="/quan-ly-giai-dau" element={
-            <AdminRoute><Dashboard /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/tran-dau" element={
-            <AdminRoute><ManageMatches /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/doi-bong" element={
-            <AdminRoute><ManageTeams /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/tai-khoan" element={
-            <AdminRoute><ManageAccounts /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/lop-hoc" element={
-            <AdminRoute><ManageClasses /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/boc-tham-len-lich" element={
-            <AdminRoute><ManageSeasonTeams /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/thiet-lap-giai-dau" element={
-            <AdminRoute><ManageSetup defaultTab="tournaments" /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/bai-viet" element={
-            <AdminRoute><ManageArticles /></AdminRoute>
-          } />
-          <Route path="/quan-ly-giai-dau/xac-nhan-thanh-toan" element={
-            <AdminRoute><ManagePayments /></AdminRoute>
-          } />
-
-          {/* 404 — phải để cuối cùng */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
-
-      {/* Global toast notifications */}
-      <ToastContainer />
-    </Router>
+        {/* Global toast notifications */}
+        <ToastContainer />
+      </Router>
+    </QueryClientProvider>
   );
 }
 

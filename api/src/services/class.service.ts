@@ -1,32 +1,81 @@
-import { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import { Prisma, PrismaClient, Class } from "../generated/prisma/client.js";
 import { createAppError } from "../common/app.error.js";
-import { CreateClassDto, UpdateClassDto, ClassDto } from "../dtos/class.schema.js";
+import { CreateClassDto, UpdateClassDto } from "../dtos/class.schema.js";
+import { Queryable } from "../libs/queryable.js";
+import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 
 export class ClassService {
-    constructor(private readonly prisma: PrismaClient) { }
+    private readonly query: Queryable<Class>;
 
-    list(): Promise<ClassDto[]> {
+    constructor(private readonly prisma: PrismaClient) {
+        this.query = new Queryable<Class>(prisma.class, {
+            searchFields: ["name"],
+            sortable: ["id", "name", "created_at"],
+            defaultSort: { column: "name", direction: "asc" },
+            filterable: ["is_active"],
+            defaultPerPage: 20,
+            maxPerPage: 100,
+        });
+    }
+
+    /** Danh sách active, không phân trang — dùng cho dropdown/select. */
+    listActive(): Promise<Class[]> {
         return this.prisma.class.findMany({ where: { is_active: true }, orderBy: { name: "asc" } });
     }
 
-    async getByIdOrFail(id: number): Promise<ClassDto> {
-        const cls = await this.prisma.class.findUnique({ where: { id } });
+    /** Danh sách có phân trang/tìm kiếm/sort — dùng cho trang quản trị. */
+    findAll(req: QueryRequest = {}): Promise<PaginatedResult<Class>> {
+        return this.query.run(req);
+    }
+
+    findById(id: number): Promise<Class | null> {
+        return this.prisma.class.findUnique({ where: { id } });
+    }
+
+    async getByIdOrFail(id: number): Promise<Class> {
+        const cls = await this.findById(id);
         if (!cls) throw createAppError("NOT_FOUND", `Class ${id} not found`);
         return cls;
     }
 
-    create(dto: CreateClassDto): Promise<ClassDto> {
-        return this.prisma.class.create({ data: dto });
+    async create(dto: CreateClassDto): Promise<Class> {
+        try {
+            return await this.prisma.class.create({ data: dto });
+        } catch (err) {
+            throw this.mapWriteError(err, dto.name);
+        }
     }
 
-    async update(id: number, dto: UpdateClassDto): Promise<ClassDto> {
+    async update(id: number, dto: UpdateClassDto): Promise<Class> {
         await this.getByIdOrFail(id);
-        return this.prisma.class.update({ where: { id }, data: dto });
+        try {
+            return await this.prisma.class.update({ where: { id }, data: dto });
+        } catch (err) {
+            throw this.mapWriteError(err, dto.name);
+        }
     }
 
     async softDelete(id: number): Promise<void> {
         await this.getByIdOrFail(id);
         await this.prisma.class.update({ where: { id }, data: { is_active: false } });
+    }
+
+    async restore(id: number): Promise<Class> {
+        const result = await this.prisma.class.updateMany({
+            where: { id, is_active: false },
+            data: { is_active: true },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `Class ${id} not found or not inactive`);
+        }
+        return this.getByIdOrFail(id);
+    }
+
+    findDeleted(): Promise<Class[]> {
+        return this.prisma.class.findMany({
+            where: { is_active: false },
+            orderBy: { name: "asc" },
+        });
     }
 
     /**
@@ -58,5 +107,12 @@ export class ClassService {
         if (rows.length >= season.max_teams_per_class) {
             throw createAppError("CONFLICT", `Lớp đã đạt giới hạn ${season.max_teams_per_class} đội trong mùa giải`);
         }
+    }
+
+    private mapWriteError(err: unknown, name?: string) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+            return createAppError("CONFLICT", `Class name "${name}" already exists`);
+        }
+        return err;
     }
 }
