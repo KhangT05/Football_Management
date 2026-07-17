@@ -46,13 +46,25 @@ export class SeasonTeamService {
             throw createAppError("NOT_FOUND", `SeasonTeam ${id} not found`);
         return record;
     }
+    /**
+     * FIX (multi-team ownership bug): trước đây resolve team qua
+     * `findFirst({ where: { user_id: userId } })` — không có orderBy, không
+     * scope theo team_id nào cả. Với user sở hữu NHIỀU team, request đăng ký
+     * season cho team B thực tế bị ghi nhầm vào team đầu tiên user tạo
+     * (team A), vì Prisma trả về bản ghi bất kỳ khớp user_id đầu tiên.
+     * Bug này SILENT — không throw lỗi, dữ liệu sai lặng lẽ.
+     *
+     * Fix: bắt buộc `data.team_id` trong request (FE phải gửi kèm, xem
+     * SelfRegisterSeasonTeamDto), verify đúng team đó thuộc về user hiện
+     * tại thay vì suy đoán "1 team bất kỳ của user".
+     */
     async selfRegister(data, userId) {
         const team = await this.prisma.team.findFirst({
-            where: { user_id: userId },
+            where: { id: data.team_id, user_id: userId },
             select: { id: true },
         });
         if (!team)
-            throw createAppError("FORBIDDEN", "You are not a leader of any team");
+            throw createAppError("FORBIDDEN", "You are not the leader of this team");
         return this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM seasons WHERE id = ${data.season_id} FOR UPDATE`;
             const season = await tx.season.findUnique({ where: { id: data.season_id } });
@@ -350,6 +362,116 @@ export class SeasonTeamService {
         const playerName = conflict.player.user?.name ?? `#${conflict.player.id}`;
         const rivalTeamName = rivalTeamPlayer?.team?.name ?? "một đội khác";
         throw createAppError("CONFLICT", `Cầu thủ ${playerName} đang thuộc đội ${rivalTeamName}, đội này đã đăng ký mùa giải này rồi — không thể đăng ký thêm đội có cùng cầu thủ vào cùng 1 mùa giải`);
+    }
+    /**
+     * NEW — trả về eligibility đăng ký cho MỌI season đang mở đăng ký, tính
+     * sẵn `already_registered` + `conflict` (player trùng với team khác đã
+     * ở season đó) cho team truyền vào.
+     *
+     * Lý do cần endpoint riêng thay vì chỉ dựa vào lỗi từ selfRegister():
+     * trước đây FE tự suy already_registered bằng cách diff 2 danh sách
+     * (season mở + season_team đã có) và hoàn toàn không biết gì về
+     * player-conflict — conflict chỉ lộ ra SAU khi user bấm "Đăng ký" và
+     * request fail. Endpoint này cho phép disable nút + hiển thị lý do
+     * NGAY trong modal, trước khi user thao tác.
+     *
+     * PERF: gom toàn bộ season mở vào 1-2 query (không loop per season) —
+     * tránh N+1 khi season mở đăng ký cùng lúc nhiều giải.
+     *
+     * LIMITATION: đây là snapshot đọc, cùng race-condition window đã ghi ở
+     * assertNoPlayerConflict (2 request đăng ký chạy trùng thời điểm vẫn có
+     * thể lách qua bước hiển thị này). assertNoPlayerConflict trong
+     * selfRegister() transaction vẫn là nguồn sự thật cuối cùng — endpoint
+     * này CHỈ phục vụ UX, không thay thế check đó.
+     */
+    async getTeamRegistrationEligibility(teamId) {
+        const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });
+        if (!team)
+            throw createAppError("NOT_FOUND", `Team ${teamId} not found`);
+        const openSeasons = await this.prisma.season.findMany({
+            where: { status: SeasonStatus.registration_open, deleted_at: null },
+            select: { id: true, name: true, start_date: true, registration_deadline: true },
+            orderBy: { id: "desc" },
+        });
+        if (openSeasons.length === 0)
+            return [];
+        const openSeasonIds = openSeasons.map((s) => s.id);
+        const [registeredRows, myPlayerIdRows] = await Promise.all([
+            this.prisma.seasonTeam.findMany({
+                where: { team_id: teamId, season_id: { in: openSeasonIds }, deleted_at: null },
+                select: { season_id: true },
+            }),
+            this.prisma.teamPlayer.findMany({
+                where: { team_id: teamId, is_active: true, approval_status: ApprovalStatus.approved },
+                select: { player_id: true },
+            }),
+        ]);
+        const registeredSeasonIds = new Set(registeredRows.map((r) => r.season_id));
+        const myPlayerIds = myPlayerIdRows.map((r) => r.player_id);
+        // season_id -> conflict info. Query 1 lần duy nhất bất kể số season
+        // mở, thay vì gọi assertNoPlayerConflict lặp lại per season (N+1).
+        const conflictBySeason = new Map();
+        if (myPlayerIds.length > 0) {
+            const rivalTeamPlayers = await this.prisma.teamPlayer.findMany({
+                where: {
+                    player_id: { in: myPlayerIds },
+                    team_id: { not: teamId },
+                    is_active: true,
+                    approval_status: ApprovalStatus.approved,
+                    team: {
+                        season_teams: {
+                            some: {
+                                season_id: { in: openSeasonIds },
+                                deleted_at: null,
+                                status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                            },
+                        },
+                    },
+                },
+                select: {
+                    player: { select: { user: { select: { name: true } } } },
+                    team: {
+                        select: {
+                            name: true,
+                            season_teams: {
+                                where: {
+                                    season_id: { in: openSeasonIds },
+                                    deleted_at: null,
+                                    status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                                },
+                                select: { season_id: true },
+                            },
+                        },
+                    },
+                },
+            });
+            for (const tp of rivalTeamPlayers) {
+                for (const st of tp.team.season_teams) {
+                    // Giữ conflict đầu tiên tìm thấy / season — đủ để hiển thị lý
+                    // do, hiếm khi có >1 player trùng cùng lúc nên không cần liệt
+                    // kê hết trong response.
+                    if (!conflictBySeason.has(st.season_id)) {
+                        conflictBySeason.set(st.season_id, {
+                            playerName: tp.player.user?.name ?? "Cầu thủ",
+                            teamName: tp.team.name,
+                        });
+                    }
+                }
+            }
+        }
+        return openSeasons.map((s) => {
+            const already_registered = registeredSeasonIds.has(s.id);
+            const conflict = conflictBySeason.get(s.id) ?? null;
+            return {
+                season_id: s.id,
+                name: s.name,
+                start_date: s.start_date,
+                registration_deadline: s.registration_deadline,
+                already_registered,
+                conflict,
+                eligible: !already_registered && !conflict,
+            };
+        });
     }
     async createOrReactivate(tx, seasonId, teamId, userId, status) {
         const existing = await tx.seasonTeam.findUnique({

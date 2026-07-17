@@ -816,7 +816,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofselfRegisterSeasonTeamSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"season_id":{"dataType":"double","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"team_id":{"dataType":"double","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SelfRegisterSeasonTeamDto": {
@@ -877,6 +877,11 @@ const models: TsoaRoute.Models = {
     "PhaseStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["draft"]},{"dataType":"enum","enums":["in_progress"]},{"dataType":"enum","enums":["locked"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SeasonRegistrationEligibility": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"eligible":{"dataType":"boolean","required":true},"conflict":{"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"teamName":{"dataType":"string","required":true},"playerName":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},"already_registered":{"dataType":"boolean","required":true},"registration_deadline":{"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},"start_date":{"dataType":"union","subSchemas":[{"dataType":"datetime"},{"dataType":"enum","enums":[null]}],"required":true},"name":{"dataType":"string","required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PitchType": {
@@ -4888,7 +4893,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
         app.post('/seasonteams/register',
-            authenticateMiddleware([{"jwt":["leader"]}]),
+            authenticateMiddleware([{"jwt":["leader","user","player"]}]),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
             ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.selfRegister)),
 
@@ -5203,6 +5208,41 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
 
               await templateService.apiHandler({
                 methodName: 'listBySeasonWithTeamInfo',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSeasonTeamController_getTeamRegistrationEligibility: Record<string, TsoaRoute.ParameterSchema> = {
+                teamId: {"in":"query","name":"team_id","required":true,"dataType":"double"},
+        };
+        app.get('/seasonteams/season-teams/registration-eligibility',
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
+            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.getTeamRegistrationEligibility)),
+
+            async function SeasonTeamController_getTeamRegistrationEligibility(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_getTeamRegistrationEligibility, request, response });
+
+                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
+
+                const controller: any = await container.get<SeasonTeamController>(SeasonTeamController);
+                if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+                }
+
+              await templateService.apiHandler({
+                methodName: 'getTeamRegistrationEligibility',
                 controller,
                 response,
                 next,
