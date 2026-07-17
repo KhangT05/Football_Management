@@ -13,7 +13,7 @@ export class TeamService {
             searchFields: ["name", "description"],
             sortable: ["id", "name", "created_at"],
             defaultSort: { column: "id", direction: "asc" },
-            filterable: ["is_active", "class_id"], // FIX: cho phép filter team theo lớp (danh sách đội của 1 lớp)
+            filterable: ["is_active", "class_id", "user_id"],
             defaultPerPage: 20,
             maxPerPage: 100,
             beforeBuild: (where) => { where.push({ is_active: true }); },

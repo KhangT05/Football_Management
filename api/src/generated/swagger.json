@@ -9692,6 +9692,15 @@
 					},
 					{
 						"in": "query",
+						"name": "user_id",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
 						"name": "direction",
 						"required": false,
 						"schema": {

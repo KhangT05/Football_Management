@@ -19,8 +19,8 @@ let TeamController = class TeamController extends Controller {
         super();
         this.service = service;
     }
-    async findAll(page = 1, per_page = 20, q, sort, direction) {
-        return this.service.findAll({ page, per_page, q, sort, direction });
+    async findAll(page = 1, per_page = 20, q, sort, user_id, direction) {
+        return this.service.findAll({ page, per_page, q, sort, direction, user_id });
     }
     async findById(id) {
         return this.service.findByIdOrFail(id);
@@ -75,8 +75,9 @@ __decorate([
     __param(2, Query()),
     __param(3, Query()),
     __param(4, Query()),
+    __param(5, Query()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, Number, String]),
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "findAll", null);
 __decorate([

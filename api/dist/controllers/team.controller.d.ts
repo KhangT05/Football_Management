@@ -11,7 +11,7 @@ import { PaginatedResult } from "../types/queryable.type.js";
 export declare class TeamController extends Controller {
     private service;
     constructor(service: TeamService);
-    findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Team>>;
+    findAll(page?: number, per_page?: number, q?: string, sort?: string, user_id?: number, direction?: "asc" | "desc"): Promise<PaginatedResult<Team>>;
     findById(id: number): Promise<Team>;
     create(name: string, req: AuthRequest, coach_name?: string, description?: string, logo?: Express.Multer.File): Promise<Team>;
     update(id: number, name?: string, coach_name?: string, description?: string, logoFile?: Express.Multer.File): Promise<Team>;
