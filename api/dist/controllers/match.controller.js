@@ -144,7 +144,6 @@ let MatchController = class MatchController extends Controller {
      * Knockout overturn chưa hỗ trợ tự động (bracket đã advance).
      */
     async resolveAppeal(id, body) {
-        this.setStatus(204);
         return this.lifecycleService.resolveAppeal(id, body);
     }
     // ─── Correction window (admin only, 15p sau finished) ────────────────────
@@ -300,7 +299,7 @@ __decorate([
 __decorate([
     Security("jwt", ["admin", 'organizing']),
     Post("{id}/resolve-appeal"),
-    SuccessResponse(204, "Appeal resolved"),
+    SuccessResponse(200, "Appeal resolved"),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),

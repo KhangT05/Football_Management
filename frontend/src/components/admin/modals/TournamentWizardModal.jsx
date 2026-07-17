@@ -38,16 +38,16 @@ const FORMAT_META = [
     hasKnockout: false,
     stagesMode: 'min1',
   },
-  // {
-  //   value: 'knockout',
-  //   label: 'Loại trực tiếp',
-  //   desc: 'Đá loại trực tiếp toàn giải ngay từ đầu.',
-  //   icon: Trophy,
-  //   color: 'orange',
-  //   hasGroupPhase: false,
-  //   hasKnockout: true,
-  //   stagesMode: 'fixed0',
-  // },
+  {
+    value: 'knockout',
+    label: 'Loại trực tiếp',
+    desc: 'Đá loại trực tiếp toàn giải ngay từ đầu.',
+    icon: Trophy,
+    color: 'orange',
+    hasGroupPhase: false,
+    hasKnockout: true,
+    stagesMode: 'fixed0',
+  },
   {
     value: 'round_robin_knockout',
     label: 'Vòng bảng → Loại trực tiếp',
@@ -68,16 +68,16 @@ const FORMAT_META = [
     hasKnockout: true,
     stagesMode: 'min2',
   },
-  // {
-  //   value: 'custom',
-  //   label: 'Tùy chỉnh (Hybrid)',
-  //   desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: knockout trước rồi vào vòng tròn tính điểm, top mỗi bảng đá vòng tròn chọn hạng, nhiều nhánh song song...).',
-  //   icon: Puzzle,
-  //   color: 'fuchsia',
-  //   hasGroupPhase: null,
-  //   hasKnockout: null,
-  //   stagesMode: 'custom',
-  // },
+  {
+    value: 'custom',
+    label: 'Tùy chỉnh (Hybrid)',
+    desc: 'Tự dựng pipeline nhiều stage: vòng bảng → knockout → tranh hạng... Dùng cho giải có cấu trúc không khớp 4 mẫu trên (VD: knockout trước rồi vào vòng tròn tính điểm, top mỗi bảng đá vòng tròn chọn hạng, nhiều nhánh song song...).',
+    icon: Puzzle,
+    color: 'fuchsia',
+    hasGroupPhase: null,
+    hasKnockout: null,
+    stagesMode: 'custom',
+  },
 ];
 
 const PITCH_TYPE_META = [
@@ -169,7 +169,7 @@ const NumField = ({ label, required, value, onChange, min, max, step, allowDecim
       step={step ?? (allowDecimal ? 0.01 : 1)}
       placeholder={placeholder}
       onKeyDown={blockNonNumericKeys}
-      onChange={(e) => onChange(allowDecimal ? safeFloat(e.target.value, 0) : safeInt(e.target.value, 0))}
+      onChange={(e) => onChange(allowDecimal ? safeFloat(e.target.value, 0) : safeInt(e.target.value, min ?? 0))}
     />
   </FormField>
 );
@@ -272,7 +272,7 @@ const validateCustomStagesLocal = (stages) => {
         } else {
           const src = stages[srcIdx];
           if (!s.source_rank_range) {
-             errors.push(`Stage "${s.name}": thiếu khoảng hạng lấy đội (source_rank_range)`);
+            errors.push(`Stage "${s.name}": thiếu khoảng hạng lấy đội (source_rank_range)`);
           } else {
             const [from, to] = s.source_rank_range;
             if (from < 1 || to < from) errors.push(`Stage "${s.name}": khoảng hạng không hợp lệ`);
@@ -289,7 +289,7 @@ const validateCustomStagesLocal = (stages) => {
       if (s.type === 'classification') errors.push(`Stage "${s.name}" (Tranh hạng) không thể là stage đầu tiên nếu không đứng ở vị trí 0`);
       continue;
     }
-    
+
     if (!s.source_stage_cid) {
       errors.push(`Stage "${s.name}": thiếu stage nguồn`);
     } else {
@@ -432,6 +432,20 @@ const initialWizardState = {
     max_teams: 16,
     is_registration_open: true,
     pitch_type: 'san_5',
+    // FIX (bug phát hiện khi bật format 'knockout' để test): field này được
+    // bind vào <select> ở step 2 (khối "Thể thức sân đấu (Knockout)") nhưng
+    // trước đây KHÔNG có trong initialWizardState — khiến input chuyển từ
+    // uncontrolled -> controlled ngay khi user chọn 1 giá trị (React warning),
+    // và QUAN TRỌNG HƠN: nếu user không bao giờ mở dropdown đó, field này
+    // hoàn toàn vắng mặt khỏi payload gửi BE dù UI trông như đã chọn sẵn
+    // "1 trận" — mất dữ liệu leg_type âm thầm cho MỌI format có hasKnockout
+    // (round_robin_knockout, multi_round_robin_knockout, knockout thuần).
+    // TODO-CONFIRM: field name 'knockout_leg_type' suy đoán từ chính tên
+    // biến cũ trong code, CHƯA xác nhận khớp field nào trong Season/
+    // TournamentRule DTO thật — cần đối chiếu lại với BE trước khi coi đây
+    // là fix hoàn chỉnh (có thể BE cần field này nằm trong rulePayload thay
+    // vì seasonForm, hoặc dùng tên khác hẳn).
+    knockout_leg_type: 'single_leg',
   },
 };
 
@@ -700,9 +714,9 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   const handleNext = () => {
     const errs = validateStep();
-    if (errs && errs.length > 0) { 
-      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined }); 
-      return; 
+    if (errs && errs.length > 0) {
+      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined });
+      return;
     }
     if (step === 2) setStep(nextStepAfterRule());
     else setStep(s => s + 1);
@@ -801,9 +815,9 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     const errs = validateStep();
-    if (errs && errs.length > 0) { 
-      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined }); 
-      return; 
+    if (errs && errs.length > 0) {
+      toast.warning(errs.length === 1 ? errs[0] : 'Vui lòng kiểm tra lại các thông tin chưa hợp lệ:', { details: errs.length > 1 ? errs : undefined });
+      return;
     }
     setIsSubmitting(true);
 
@@ -870,7 +884,6 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       const sRes = await seasonApi.create({
         ...formattedSeasonForm,
         is_active: true,
-        group_count: shouldCreateInitialGroups ? initialGroupCount : 0,
         tournament_id: finalTournamentId,
         tournament_rule_id: finalRuleId,
       });
@@ -889,6 +902,11 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
       // kết quả bracket thật) — không thể generate trước tại thời điểm tạo season, và (xem phần
       // "kiểm tra knockout và group" cuối câu trả lời) chính API để tự động hoá bước này vẫn còn
       // thiếu ở service layer — hiện phải làm thủ công ở màn hình quản lý season.
+      //
+      // Với format='knockout' THUẦN (không custom): finalMeta.hasGroupPhase=false nên
+      // shouldCreateInitialGroups=false — season tạo xong KHÔNG có group/bracket nào cả.
+      // Admin phải tự vào KnockoutUI, chọn seed thủ công (không có standings nào để seed
+      // theo bảng xếp hạng vì chưa từng có vòng bảng) rồi generate bracket riêng.
       let groupCreationWarning = null;
       if (shouldCreateInitialGroups && initialGroupCount > 0) {
         if (seasonForm.is_registration_open) {
@@ -911,6 +929,8 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
         toast.warning(groupCreationWarning);
       } else if (finalIsCustom && finalCustomStages?.length > 1) {
         toast.success('Khởi tạo Giải đấu và Mùa giải thành công! Stage đầu tiên đã sẵn sàng — các stage tiếp theo cần kích hoạt thủ công sau khi stage đầu kết thúc.');
+      } else if (!finalIsCustom && finalFormat === 'knockout') {
+        toast.success('Khởi tạo Giải đấu và Mùa giải thành công! Vào mục Knockout để tạo sơ đồ bracket (chọn seed thủ công).');
       } else {
         toast.success('Khởi tạo Giải đấu và Mùa giải thành công!');
       }
@@ -1478,6 +1498,10 @@ export default function TournamentWizardModal({ onClose, onSuccess }) {
                       <NumField label="Số đội đi tiếp / bảng" required min={1} value={ruleForm.teams_advance_per_group} onChange={(v) => setRuleForm(f => ({ ...f, teams_advance_per_group: v }))} />
                     )}
                     <FormField label="Thể thức sân đấu (Knockout)" required>
+                      {/* FIX: value giờ luôn có default 'single_leg' từ initialWizardState
+                          (xem comment ở seasonForm) — trước đây field này không tồn tại
+                          trong state ban đầu, khiến input uncontrolled -> controlled và
+                          payload thiếu field nếu user không chạm vào dropdown. */}
                       <select
                         className={INPUT}
                         value={seasonForm.knockout_leg_type}

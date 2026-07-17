@@ -1,6 +1,7 @@
 import { ArticleController } from "../controllers/article.controller.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { ClassController } from "../controllers/class.controller.js";
+import { CustomPipelineController } from "../controllers/customPipeline.controller.js";
 import { GroupController } from "../controllers/group.controller.js";
 import { JerseyController } from "../controllers/jersey.controller.js";
 import { KnockoutController } from "../controllers/knockout.controller.js";
@@ -23,6 +24,7 @@ import { VenueController } from "../controllers/venue.controller.js";
 import { ArticleService } from "../services/article.service.js";
 import { AuthService } from "../services/auth.service.js";
 import { ClassService } from "../services/class.service.js";
+import { CustomPipelineService } from "../services/customPipeline.service.js";
 import { GroupService } from "../services/group.service.js";
 import { JerseyService } from "../services/jersey.service.js";
 import { KnockoutService } from "../services/knockout.service.js";
@@ -73,6 +75,7 @@ const controllerFactory = new Map([
     [JerseyController, () => new JerseyController(new JerseyService(prisma))],
     [ArticleController, () => new ArticleController(new ArticleService(prisma))],
     [MatchReportController, () => new MatchReportController(matchResultService)],
+    [CustomPipelineController, () => new CustomPipelineController(new CustomPipelineService(prisma, new GroupService(prisma), knockoutService, standingsService))],
     [PaymentController, () => new PaymentController(new PaymentService(prisma, vnpay))],
 ]);
 export const iocContainer = {

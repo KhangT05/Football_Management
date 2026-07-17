@@ -7620,28 +7620,154 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"ClassDto": {
+			"AdvancePipelineResult": {
 				"properties": {
+					"warnings": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"startedStages": {
+						"items": {
+							"properties": {
+								"note": {
+									"type": "string"
+								},
+								"requiresManualAction": {
+									"type": "boolean"
+								},
+								"phaseId": {
+									"type": "number",
+									"format": "double",
+									"nullable": true
+								},
+								"stageType": {
+									"type": "string",
+									"enum": [
+										"round_robin",
+										"knockout",
+										"classification"
+									]
+								},
+								"stageName": {
+									"type": "string"
+								},
+								"stageOrder": {
+									"type": "number",
+									"format": "double"
+								}
+							},
+							"required": [
+								"requiresManualAction",
+								"phaseId",
+								"stageType",
+								"stageName",
+								"stageOrder"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"completedStageOrder": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"warnings",
+					"startedStages",
+					"completedStageOrder"
+				],
+				"type": "object"
+			},
+			"infer_typeofAdvancePipelineSchema_": {
+				"properties": {
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"dateRangeEnd": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"dateRangeStart": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
+			},
+			"AdvancePipelineDto": {
+				"$ref": "#/components/schemas/infer_typeofAdvancePipelineSchema_"
+			},
+			"DefaultSelection__36_ClassPayload_": {
+				"properties": {
+					"created_at": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"is_active": {
+						"type": "boolean"
+					},
 					"id": {
 						"type": "number",
 						"format": "double"
 					},
 					"name": {
 						"type": "string"
-					},
-					"is_active": {
-						"type": "boolean"
-					},
-					"created_at": {
-						"type": "string",
-						"format": "date-time"
 					}
 				},
 				"required": [
-					"id",
-					"name",
+					"created_at",
 					"is_active",
-					"created_at"
+					"id",
+					"name"
+				],
+				"type": "object"
+			},
+			"ClassModel": {
+				"$ref": "#/components/schemas/DefaultSelection__36_ClassPayload_",
+				"description": "Model Class"
+			},
+			"Class": {
+				"$ref": "#/components/schemas/ClassModel",
+				"description": "Model Class"
+			},
+			"PaginatedResult_Class_": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/Class"
+						},
+						"type": "array"
+					},
+					"meta": {
+						"$ref": "#/components/schemas/PaginationMeta"
+					}
+				},
+				"required": [
+					"data",
+					"meta"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -15867,7 +15993,7 @@
 			"post": {
 				"operationId": "ResolveAppeal",
 				"responses": {
-					"204": {
+					"200": {
 						"description": "Appeal resolved",
 						"content": {
 							"application/json": {
@@ -17539,9 +17665,68 @@
 				}
 			}
 		},
-		"/classes": {
+		"/seasons/{seasonId}/pipeline/advance/{fromPhaseId}": {
+			"post": {
+				"operationId": "AdvancePipeline",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AdvancePipelineResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Admin bấm \"Chạy stage tiếp theo\" trong màn quản lý season (chỉ áp dụng\r\nseason có TournamentRule.format = 'custom'). fromPhaseId = phase VỪA\r\nlocked — controller/service KHÔNG tự phát hiện phase nào vừa xong, đó\r\nlà trách nhiệm của season management UI (xem comment gốc ở\r\nCustomPipelineService.advanceFromPhase()).\r\n\r\nscheduleOptions optional: chỉ cần khi (các) stage con sinh ra là\r\nknockout/classification cần venue+thời gian đá. Nếu toàn bộ stage con\r\nlà round_robin, gửi body {} là đủ.\r\n\r\nQUAN TRỌNG — luôn trả 200 (trừ lỗi validate season/phase ở đầu hàm,\r\nném qua createAppError → global error middleware xử lý như thường lệ).\r\nTừng stage con lỗi (VD classification chưa implement, hoặc knockout\r\nseed_mode=manual cần thao tác tay) KHÔNG làm fail cả request — nó nằm\r\ntrong result.startedStages[].requiresManualAction hoặc result.warnings.\r\nFE bắt buộc phải đọc 2 field này để hiển thị đúng trạng thái, không\r\nđược suy luận \"thành công toàn bộ\" chỉ từ HTTP status 200.",
+				"tags": [
+					"CustomPipeline"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "fromPhaseId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AdvancePipelineDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/classes/active": {
 			"get": {
-				"operationId": "List",
+				"operationId": "ListActive",
 				"responses": {
 					"200": {
 						"description": "Ok",
@@ -17549,7 +17734,33 @@
 							"application/json": {
 								"schema": {
 									"items": {
-										"$ref": "#/components/schemas/ClassDto"
+										"$ref": "#/components/schemas/Class"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "Danh sách active, không phân trang — dùng cho dropdown/select.",
+				"tags": [
+					"Classes"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/classes/deleted": {
+			"get": {
+				"operationId": "FindDeleted",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Class"
 									},
 									"type": "array"
 								}
@@ -17560,18 +17771,95 @@
 				"tags": [
 					"Classes"
 				],
-				"security": [],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
 				"parameters": []
-			},
-			"post": {
-				"operationId": "Create",
+			}
+		},
+		"/classes": {
+			"get": {
+				"operationId": "FindAll",
 				"responses": {
 					"200": {
 						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/ClassDto"
+									"$ref": "#/components/schemas/PaginatedResult_Class_"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Classes"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "per_page",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "q",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "direction",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"asc",
+								"desc"
+							]
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Class"
 								}
 							}
 						}
@@ -17609,7 +17897,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/ClassDto"
+									"$ref": "#/components/schemas/Class"
 								}
 							}
 						}
@@ -17639,7 +17927,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/ClassDto"
+									"$ref": "#/components/schemas/Class"
 								}
 							}
 						}
@@ -17681,7 +17969,45 @@
 				"operationId": "SoftDelete",
 				"responses": {
 					"204": {
-						"description": "No content"
+						"description": "Deleted"
+					}
+				},
+				"tags": [
+					"Classes"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/classes/{id}/restore": {
+			"patch": {
+				"operationId": "Restore",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Class"
+								}
+							}
+						}
 					}
 				},
 				"tags": [

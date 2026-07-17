@@ -215,6 +215,7 @@ export class CustomPipelineService {
             topN,
             mode,
             legs,
+            ...scheduleOptions,
         });
         await this.prisma.phase.update({
             where: { id: result.phaseId },

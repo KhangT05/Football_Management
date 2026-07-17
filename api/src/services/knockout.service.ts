@@ -278,6 +278,7 @@ export class KnockoutService extends ScheduleEngine {
 
         const result = await this.prisma.$transaction(async (tx) => {
             await lockSeason(tx, options.seasonId);
+            await this.assertSeasonOperable(tx, options.seasonId);
             await this._ensureGroupsReadyAndRecompute(tx, options.groupIds);
 
             const rows = await tx.teamStanding.findMany({
@@ -451,6 +452,7 @@ export class KnockoutService extends ScheduleEngine {
 
         const phase = await this.getOrCreateKnockoutPhase(tx, seasonId, phaseType, legsOption);
         await this.ensureSeasonOngoing(tx, seasonId);
+        await this.assertSeasonOperable(tx, seasonId);
 
         if (!phase.is_active) throw createAppError('CONFLICT', 'Phase đã bị deactivate');
         if (phase.status === PhaseStatus.locked)
@@ -784,6 +786,7 @@ export class KnockoutService extends ScheduleEngine {
         seasonId: number,
         scheduleOptions: OptionalScheduleOptions,
     ): Promise<{ scheduledCount: number; failedMatchIds: number[]; scheduleWarning?: string }> {
+        await this.assertSeasonOperable(this.prisma, seasonId);
         const matches = await this.prisma.match.findMany({
             where: {
                 phase_id: phaseId,
@@ -801,7 +804,7 @@ export class KnockoutService extends ScheduleEngine {
 
         const matchIds = matches.map(m => m.id);
         const result = await this.scheduleMatchBatch(matchIds, seasonId, phaseId, scheduleOptions);
-        
+
         let scheduleWarning: string | undefined;
         if (result.error) {
             scheduleWarning = `Lỗi xếp lịch: ${result.error}`;
@@ -874,12 +877,13 @@ export class KnockoutService extends ScheduleEngine {
         await this.prisma.$transaction(async (tx) => {
             const phase = await tx.phase.findUnique({
                 where: { id: phaseId },
-                select: { id: true, status: true, format: true, legs: true },
+                select: { id: true, status: true, format: true, legs: true, season_id: true },
             });
             if (!phase)
                 throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
             if (phase.format !== PhaseFormat.knockout)
                 throw createAppError('VALIDATION_ERROR', `Phase ${phaseId} không phải phase knockout`);
+            await this.assertSeasonOperable(tx, phase.season_id);
             if (phase.status === PhaseStatus.locked)
                 throw createAppError('CONFLICT', 'Sơ đồ đã được xác nhận — không thể đổi nhánh nữa');
 
@@ -1036,12 +1040,13 @@ export class KnockoutService extends ScheduleEngine {
         await this.prisma.$transaction(async (tx) => {
             const phase = await tx.phase.findUnique({
                 where: { id: phaseId },
-                select: { id: true, status: true, format: true },
+                select: { id: true, status: true, format: true, season_id: true },
             });
             if (!phase)
                 throw createAppError('NOT_FOUND', `Phase ${phaseId} không tồn tại`);
             if (phase.format !== PhaseFormat.knockout)
                 throw createAppError('VALIDATION_ERROR', `Phase ${phaseId} không phải phase knockout`);
+            await this.assertSeasonOperable(tx, phase.season_id);
             if (phase.status === PhaseStatus.locked)
                 throw createAppError('CONFLICT', 'Sơ đồ đã được xác nhận trước đó');
 
@@ -1437,5 +1442,17 @@ export class KnockoutService extends ScheduleEngine {
             where: { phase_id: priorPhase.id, deleted_at: null, status: { notIn: TERMINAL_MATCH_STATUSES } },
         });
         return { ready: unfinishedCount === 0, priorPhaseType: priorType, priorPhaseExists: true, unfinishedCount };
+    }
+    private async assertSeasonOperable(tx: Prisma.TransactionClient, seasonId: number): Promise<void> {
+        const season = await tx.season.findUnique({
+            where: { id: seasonId },
+            select: { status: true },
+        });
+        if (!season) throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (season.status === SeasonStatus.finished || season.status === SeasonStatus.cancelled)
+            throw createAppError(
+                'CONFLICT',
+                `Season đang ở trạng thái '${season.status}' — không thể thao tác knockout nữa`,
+            );
     }
 }
