@@ -13,5 +13,5 @@ export const seasonTeamApi = {
   getOrCreateGroupPhase: (seasonId) =>
     axiosClient.post(`/seasonteams/season/${seasonId}/group-phase`),
   getRegistrationEligibility: (teamId) =>
-    axiosClient.get('/season-teams/registration-eligibility', { params: { team_id: teamId } }),
+    axiosClient.get('/seasonteams/registration-eligibility', { params: { team_id: teamId } }),
 };

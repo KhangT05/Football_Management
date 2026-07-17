@@ -48,6 +48,8 @@ export type SeasonRegistrationEligibility = {
     name: string;
     start_date: Date | null;
     registration_deadline: Date | null;
+    season_status: SeasonStatus;
+    tournament: { id: number; name: string; logo: string | null };
     already_registered: boolean;
     conflict: { playerName: string; teamName: string } | null;
     eligible: boolean;
@@ -484,17 +486,32 @@ export class SeasonTeamService {
         const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });
         if (!team) throw createAppError("NOT_FOUND", `Team ${teamId} not found`);
 
-        const openSeasons = await this.prisma.season.findMany({
-            where: { status: SeasonStatus.registration_open, deleted_at: null },
-            select: { id: true, name: true, start_date: true, registration_deadline: true },
-            orderBy: { id: "desc" },
+        // FIX: trước đây chỉ lấy status = registration_open — season 'upcoming'
+        // (đã tạo, đã có lịch nhưng admin chưa bấm "Mở đăng ký") bị loại hoàn
+        // toàn khỏi kết quả, khiến team leader không biết giải này tồn tại cho
+        // tới khi admin mở. Giờ trả về cả 2, để FE hiển thị "sắp mở đăng ký"
+        // thay vì im lặng.
+        const seasons = await this.prisma.season.findMany({
+            where: {
+                status: { in: [SeasonStatus.registration_open, SeasonStatus.upcoming] },
+                deleted_at: null,
+            },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                start_date: true,
+                registration_deadline: true,
+                tournament: { select: { id: true, name: true, logo: true } },
+            },
+            orderBy: [{ status: "asc" }, { id: "desc" }], // registration_open lên trước upcoming (enum order: registration_open < upcoming alphabetically không đảm bảo — xem note bên dưới)
         });
-        if (openSeasons.length === 0) return [];
-        const openSeasonIds = openSeasons.map((s) => s.id);
+        if (seasons.length === 0) return [];
+        const seasonIds = seasons.map((s) => s.id);
 
         const [registeredRows, myPlayerIdRows] = await Promise.all([
             this.prisma.seasonTeam.findMany({
-                where: { team_id: teamId, season_id: { in: openSeasonIds }, deleted_at: null },
+                where: { team_id: teamId, season_id: { in: seasonIds }, deleted_at: null },
                 select: { season_id: true },
             }),
             this.prisma.teamPlayer.findMany({
@@ -505,8 +522,6 @@ export class SeasonTeamService {
         const registeredSeasonIds = new Set(registeredRows.map((r) => r.season_id));
         const myPlayerIds = myPlayerIdRows.map((r) => r.player_id);
 
-        // season_id -> conflict info. Query 1 lần duy nhất bất kể số season
-        // mở, thay vì gọi assertNoPlayerConflict lặp lại per season (N+1).
         const conflictBySeason = new Map<number, { playerName: string; teamName: string }>();
         if (myPlayerIds.length > 0) {
             const rivalTeamPlayers = await this.prisma.teamPlayer.findMany({
@@ -518,7 +533,7 @@ export class SeasonTeamService {
                     team: {
                         season_teams: {
                             some: {
-                                season_id: { in: openSeasonIds },
+                                season_id: { in: seasonIds },
                                 deleted_at: null,
                                 status: { in: ACTIVE_SEASON_TEAM_STATUSES },
                             },
@@ -531,23 +546,15 @@ export class SeasonTeamService {
                         select: {
                             name: true,
                             season_teams: {
-                                where: {
-                                    season_id: { in: openSeasonIds },
-                                    deleted_at: null,
-                                    status: { in: ACTIVE_SEASON_TEAM_STATUSES },
-                                },
+                                where: { season_id: { in: seasonIds }, deleted_at: null, status: { in: ACTIVE_SEASON_TEAM_STATUSES } },
                                 select: { season_id: true },
                             },
                         },
                     },
                 },
             });
-
             for (const tp of rivalTeamPlayers) {
                 for (const st of tp.team.season_teams) {
-                    // Giữ conflict đầu tiên tìm thấy / season — đủ để hiển thị lý
-                    // do, hiếm khi có >1 player trùng cùng lúc nên không cần liệt
-                    // kê hết trong response.
                     if (!conflictBySeason.has(st.season_id)) {
                         conflictBySeason.set(st.season_id, {
                             playerName: tp.player.user?.name ?? "Cầu thủ",
@@ -558,17 +565,23 @@ export class SeasonTeamService {
             }
         }
 
-        return openSeasons.map((s) => {
+        return seasons.map((s) => {
             const already_registered = registeredSeasonIds.has(s.id);
             const conflict = conflictBySeason.get(s.id) ?? null;
+            const isOpen = s.status === SeasonStatus.registration_open;
             return {
                 season_id: s.id,
                 name: s.name,
+                season_status: s.status,
                 start_date: s.start_date,
                 registration_deadline: s.registration_deadline,
                 already_registered,
                 conflict,
-                eligible: !already_registered && !conflict,
+                tournament: s.tournament,
+                // FIX: eligible giờ bắt buộc season phải đang registration_open —
+                // trước đây thiếu check này, season 'upcoming' (nếu lọt qua) sẽ
+                // bị coi eligible=true sai, cho phép bấm đăng ký season chưa mở.
+                eligible: isOpen && !already_registered && !conflict,
             };
         });
     }
