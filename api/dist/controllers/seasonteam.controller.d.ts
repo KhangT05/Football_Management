@@ -31,6 +31,14 @@ export declare class SeasonTeamController extends Controller {
      * -> luôn rỗng, silent, không lỗi). Field này chỉ nên control nội bộ.
      */
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc", season_id?: number, team_id?: number, status?: SeasonTeamStatus): Promise<PaginatedResult<SeasonTeam>>;
+    /**
+  * PHẢI khai báo TRƯỚC findById({id}) — tsoa/Express match route theo thứ
+  * tự khai báo trong class, {id} là wildcard 1-segment nên sẽ shadow bất
+  * kỳ static route 1-segment nào đứng sau nó. Đây từng là literal 2 lớp
+  * "/season-teams/registration-eligibility" (khác cả tên "seasonteams"
+  * ở @Route) khiến FE gọi sai path và luôn nhận 404 im lặng.
+  */
+    getTeamRegistrationEligibility(teamId: number): Promise<import("../services/seasonTeam.service.js").SeasonRegistrationEligibility[]>;
     findById(id: number): Promise<SeasonTeam>;
     /** Team leader tự đăng ký vào season */
     selfRegister(body: seasonTeamSchema.SelfRegisterSeasonTeamDto, req: AuthRequest): Promise<SeasonTeamWithRelations>;
@@ -46,7 +54,7 @@ export declare class SeasonTeamController extends Controller {
     assignGroup(id: number, body: seasonTeamSchema.AssignGroupDto): Promise<SeasonTeamWithRelations>;
     softDelete(id: number): Promise<void>;
     /** Admin: lấy (hoặc tạo mới nếu chưa có) phase vòng bảng round_robin của season.
-   *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
+    *  Mỗi season chỉ có đúng 1 phase loại này — không cần chọn, chỉ cần gọi là có. */
     getOrCreateGroupPhase(seasonId: number): Promise<{
         type: import("../generated/prisma/enums.js").PhaseType;
         name: string;
@@ -66,13 +74,13 @@ export declare class SeasonTeamController extends Controller {
         teams_per_group: number | null;
     }>;
     /**
-   * List teams đã đăng ký của 1 season kèm team info (name/logo) + group_id.
-   * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
-   * hình public nào cần xem "season X có những team nào, đã vào group chưa".
-   *
-   * Public — không cần auth, giống các GET season/standings khác.
-   * default statuses = ['approved'] nếu không truyền (khớp default của service).
-   */
+    * List teams đã đăng ký của 1 season kèm team info (name/logo)  group_id.
+    * Dùng cho FE GroupDrawUI hiển thị danh sách trước khi draw, và bất kỳ màn
+    * hình public nào cần xem "season X có những team nào, đã vào group chưa".
+    *
+    * Public — không cần auth, giống các GET season/standings khác.
+    * default statuses = ['approved'] nếu không truyền (khớp default của service).
+    */
     listBySeasonWithTeamInfo(seasonId: number, status?: SeasonTeamStatus[]): Promise<{
         season: {
             id: number;
@@ -93,7 +101,6 @@ export declare class SeasonTeamController extends Controller {
             group_id: number | null;
         }[];
     }>;
-    getTeamRegistrationEligibility(teamId: number): Promise<import("../services/seasonTeam.service.js").SeasonRegistrationEligibility[]>;
 }
 export {};
 //# sourceMappingURL=seasonteam.controller.d.ts.map

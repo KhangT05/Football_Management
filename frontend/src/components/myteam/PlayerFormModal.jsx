@@ -1,21 +1,37 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { UserPlus, Edit, Camera, AlertTriangle, Info, Loader2, FileDown, UploadCloud, CheckCircle2, X } from 'lucide-react';
+import { legacyPlayerSchema } from '../../schemas/playerFormSchema';
 
-export default function PlayerFormModal({ mode, player,
-  onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate }) {
-  const [form, setForm] = useState({
-    name: player?.name || '',
-    number: player?.number || '',
-    position: player?.position || 'MID',
-    goals: player?.goals || 0,
+/**
+ * REFACTORED — react-hook-form thay cho useState nội bộ.
+ * onSave giờ nhận thẳng values đã validate: onSave(values)
+ */
+export default function PlayerFormModal({
+  mode, player,
+  onSave, onClose, isSaving, error, onImport, onDownloadTemplate, isDownloadingTemplate,
+}) {
+  const schema = legacyPlayerSchema(mode);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: player?.name || '',
+      number: player?.number || '',
+      position: player?.position || 'MID',
+      goals: player?.goals ?? 0,
+    },
   });
 
-  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const submit = handleSubmit((values) => onSave(values));
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden">
+      <form onSubmit={submit} className="relative bg-navy-dark/95 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-md animate-scale-in flex flex-col overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent pointer-events-none"></div>
 
         {/* Header */}
@@ -28,7 +44,7 @@ export default function PlayerFormModal({ mode, player,
               {mode === 'add' ? 'Thêm cầu thủ' : 'Chỉnh sửa'}
             </h3>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
+          <button type="button" onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -95,13 +111,12 @@ export default function PlayerFormModal({ mode, player,
               Họ và tên <span className="text-red-400">*</span>
             </label>
             <input
-              name="name"
               type="text"
-              value={form.name}
-              onChange={handleChange}
               placeholder="Nguyễn Văn A"
+              {...register('name')}
               className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold"
             />
+            {errors.name && <p className="text-[11px] text-red-400 font-bold ml-1">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-5">
@@ -111,23 +126,20 @@ export default function PlayerFormModal({ mode, player,
                 Số áo <span className="text-red-400">*</span>
               </label>
               <input
-                name="number"
                 type="number"
                 min="1" max="99"
-                value={form.number}
-                onChange={handleChange}
                 placeholder="10"
+                {...register('number')}
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-black text-center transition-all"
               />
+              {errors.number && <p className="text-[11px] text-red-400 font-bold ml-1 text-center">{errors.number.message}</p>}
             </div>
 
             {/* Vị trí */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Vị trí</label>
               <select
-                name="position"
-                value={form.position}
-                onChange={handleChange}
+                {...register('position')}
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm transition-all font-bold appearance-none cursor-pointer text-center"
               >
                 <option value="GK">GK – Thủ môn</option>
@@ -143,32 +155,31 @@ export default function PlayerFormModal({ mode, player,
             <div className="space-y-2 pt-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center">Số bàn thắng</label>
               <input
-                name="goals"
                 type="number"
                 min="0"
-                value={form.goals}
-                onChange={handleChange}
+                {...register('goals')}
                 className="w-full px-5 py-4 bg-navy/50 border border-navy-light rounded-2xl text-neon focus:outline-none focus:border-neon focus:ring-4 focus:ring-neon/20 text-xl font-black text-center transition-all"
               />
+              {errors.goals && <p className="text-[11px] text-red-400 font-bold ml-1 text-center">{errors.goals.message}</p>}
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-8 py-6 border-t border-navy-light bg-navy/40 flex justify-end gap-4 relative z-10">
-          <button onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
+          <button type="button" onClick={onClose} className="px-6 py-3.5 font-bold text-gray-400 hover:text-white hover:bg-navy-light rounded-2xl transition-all duration-300">
             Hủy bỏ
           </button>
           <button
-            onClick={() => onSave(form)}
-            disabled={isSaving}
+            type="submit"
+            disabled={isSaving || isSubmitting}
             className="px-8 py-3.5 font-black bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center gap-3 hover:from-blue-400 hover:to-indigo-500 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] uppercase tracking-wider text-sm hover:-translate-y-0.5"
           >
-            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+            {isSaving || isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
             {mode === 'add' ? 'LƯU CẦU THỦ' : 'CẬP NHẬT'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
