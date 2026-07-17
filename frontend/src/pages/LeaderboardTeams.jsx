@@ -18,6 +18,7 @@ import axiosClient from '../api/axiosClient';
 import StandingPlayerRow from '../components/StandingPlayerRow';
 import PublicBracketView from '../components/PublicBracketView';
 import { useSeasonTeams } from '../queries/useSeasonTeamQueries';
+import { formatSeasonStatus } from '../utils/utils';
 // axiosClient interceptor luôn unwrap 1 lớp axios envelope, trả về
 // ApiResponseShape { status, message, data, timestamp }. Payload thật
 // luôn nằm ở .data.
@@ -427,7 +428,7 @@ export default function LeaderboardTeams() {
                   <option value="">-- Chọn mùa giải --</option>
                   {seasons.map(s => (
                     <option key={s.id} value={s.id}>
-                      {s.name}{s.status === 'ongoing' ? ' (đang diễn)' : s.status === 'registration_open' ? ' (mở đk)' : ''}
+                      {s.name}{formatSeasonStatus(s.status)}
                     </option>
                   ))}
                 </select>

@@ -13,7 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { groupApi } from '../api/groupApi';
 import { matchApi } from '../api/matchApi';
 import { Link } from 'react-router-dom';
-
+import { formatSeasonStatus } from '../utils/utils';
 function unwrapGroupsResponse(res) {
   const candidates = [res?.data?.data, res?.data, res];
   for (const c of candidates) {
@@ -349,7 +349,7 @@ export default function ScheduleResults() {
                     <option value="">-- Chọn mùa giải --</option>
                     {seasons.map(s => (
                       <option key={s.id} value={s.id}>
-                        {s.name}{s.status === 'ongoing' ? ' (đang diễn)' : s.status === 'registration_open' ? ' (mở đk)' : ''}
+                        {s.name}{formatSeasonStatus(s.status)}
                       </option>
                     ))}
                   </select>
