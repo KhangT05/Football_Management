@@ -4,7 +4,6 @@ import { Trophy, Users, RefreshCw, ArrowRight, Shield, ChevronDown, Loader2 } fr
 import useTeamStore from '../store/teamStore';
 import useSeasonStore from '../store/seasonStore';
 import { useShallow } from 'zustand/react/shallow';
-import useSeasonTeamStore from '../store/seasonTeamStore';
 import useAuthStore from '../store/authStore';
 import LeaderboardSkeleton from '../components/skeletons/LeaderboardSkeleton';
 import TeamCardSkeleton from '../components/skeletons/TeamCardSkeleton';
@@ -18,7 +17,7 @@ import { matchApi } from '../api/matchApi';
 import axiosClient from '../api/axiosClient';
 import StandingPlayerRow from '../components/StandingPlayerRow';
 import PublicBracketView from '../components/PublicBracketView';
-
+import { useSeasonTeams } from '../queries/useSeasonTeamQueries';
 // axiosClient interceptor luôn unwrap 1 lớp axios envelope, trả về
 // ApiResponseShape { status, message, data, timestamp }. Payload thật
 // luôn nằm ở .data.
@@ -52,21 +51,22 @@ export default function LeaderboardTeams() {
       getStandingsFromCache: state.getStandingsFromCache,
     }))
   );
-  const { fetchSeasonTeams, loadingSeasons: seasonTeamsLoading, getSeasonTeamsFromCache } = useSeasonTeamStore(
-    useShallow((state) => ({
-      fetchSeasonTeams: state.fetchSeasonTeams,
-      loadingSeasons: state.loadingSeasons,
-      getSeasonTeamsFromCache: state.getSeasonTeamsFromCache,
-    }))
-  );
+
+
+
   const { user } = useAuthStore();
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [activeTab, setActiveTab] = useState('group'); // 'group' or 'knockout'
+
+  const {
+    data: seasonTeams = [],
+    isLoading: loadingSeasonTeams,
+    refetch: refetchSeasonTeams,
+  } = useSeasonTeams(selectedSeasonId);
+
+  const [activeTab, setActiveTab] = useState('group');
   const groupedStandings = getStandingsFromCache(selectedSeasonId);
   const isLoadingStandings = standingsLoading[selectedSeasonId] || false;
   const currentStandingsError = standingsError[selectedSeasonId] || null;
-  const seasonTeams = getSeasonTeamsFromCache(selectedSeasonId);
-  const loadingSeasonTeams = seasonTeamsLoading[selectedSeasonId] || false;
 
   const [seasonGroups, setSeasonGroups] = useState([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(false);
@@ -115,7 +115,7 @@ export default function LeaderboardTeams() {
         const res = await matchApi.getScheduleBySeason(selectedSeasonId);
         const scheduleRes = typeof res?.status === 'boolean' ? res.data : res;
         const matches = Array.isArray(scheduleRes?.data) ? scheduleRes.data : [];
-        
+
         const knockoutPhaseIds = new Set();
         matches.forEach(m => {
           if (m.phase_id && !m.group_id) {
@@ -182,7 +182,7 @@ export default function LeaderboardTeams() {
       } else if (payload && Array.isArray(payload.data)) {
         rawItems = payload.data;
       }
-      
+
       let allPlayers = rawItems.map((r) => ({
         player_id: r.player_id,
         player_name: r.player?.user?.name || 'Unknown',
@@ -272,7 +272,7 @@ export default function LeaderboardTeams() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchStandings(selectedSeasonId);
-      fetchSeasonTeams(selectedSeasonId);
+      if (selectedSeasonId) refetchSeasonTeams();
       if (teams.length === 0) {
         fetchPublicTeamsBySeason(selectedSeasonId);
       }
