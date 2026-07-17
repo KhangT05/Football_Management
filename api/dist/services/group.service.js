@@ -325,6 +325,7 @@ export class GroupService {
             if (!fromPhase.teams_advance_per_group)
                 throw createAppError("VALIDATION_ERROR", `Phase ${fromPhaseId} chưa cấu hình teams_advance_per_group`);
             await lockSeason(tx, fromPhase.season_id);
+            await this.assertSeasonAcceptsGroupOps(tx, fromPhase.season_id);
             const advanceN = rankRange.to;
             const groups = await tx.group.findMany({ where: { phase_id: fromPhaseId, is_active: true } });
             const advancedTeamIds = [];

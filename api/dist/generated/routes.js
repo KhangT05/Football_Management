@@ -38,6 +38,8 @@ import { JerseyController } from './../controllers/jersey.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { GroupController } from './../controllers/group.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { CustomPipelineController } from './../controllers/customPipeline.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClassController } from './../controllers/class.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AuthController } from './../controllers/auth.controller.js';
@@ -1985,13 +1987,41 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ClassDto": {
+    "AdvancePipelineResult": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "warnings": { "dataType": "array", "array": { "dataType": "string" }, "required": true }, "startedStages": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "note": { "dataType": "string" }, "requiresManualAction": { "dataType": "boolean", "required": true }, "phaseId": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true }, "stageType": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["round_robin"] }, { "dataType": "enum", "enums": ["knockout"] }, { "dataType": "enum", "enums": ["classification"] }], "required": true }, "stageName": { "dataType": "string", "required": true }, "stageOrder": { "dataType": "double", "required": true } } }, "required": true }, "completedStageOrder": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofAdvancePipelineSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "excludedDates": { "dataType": "array", "array": { "dataType": "string" } }, "dateRangeEnd": { "dataType": "datetime" }, "dateRangeStart": { "dataType": "datetime" }, "bufferMinutes": { "dataType": "double" }, "dailyEndTime": { "dataType": "string" }, "dailyStartTime": { "dataType": "string" }, "venueIds": { "dataType": "array", "array": { "dataType": "double" } } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AdvancePipelineDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofAdvancePipelineSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DefaultSelection__36_ClassPayload_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "created_at": { "dataType": "datetime", "required": true }, "is_active": { "dataType": "boolean", "required": true }, "id": { "dataType": "double", "required": true }, "name": { "dataType": "string", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ClassModel": {
+        "dataType": "refAlias",
+        "type": { "ref": "DefaultSelection__36_ClassPayload_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Class": {
+        "dataType": "refAlias",
+        "type": { "ref": "ClassModel", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PaginatedResult_Class_": {
         "dataType": "refObject",
         "properties": {
-            "id": { "dataType": "double", "required": true },
-            "name": { "dataType": "string", "required": true },
-            "is_active": { "dataType": "boolean", "required": true },
-            "created_at": { "dataType": "datetime", "required": true },
+            "data": { "dataType": "array", "array": { "dataType": "refAlias", "ref": "Class" }, "required": true },
+            "meta": { "ref": "PaginationMeta", "required": true },
         },
         "additionalProperties": false,
     },
@@ -6548,7 +6578,7 @@ export function RegisterRoutes(app, opts) {
                 response,
                 next,
                 validatedArgs,
-                successStatus: 204,
+                successStatus: 200,
             });
         }
         catch (err) {
@@ -7394,19 +7424,104 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsClassController_list = {};
-    app.get('/classes', ...(fetchMiddlewares(ClassController)), ...(fetchMiddlewares(ClassController.prototype.list)), async function ClassController_list(request, response, next) {
+    const argsCustomPipelineController_advancePipeline = {
+        seasonId: { "in": "path", "name": "seasonId", "required": true, "dataType": "double" },
+        fromPhaseId: { "in": "path", "name": "fromPhaseId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "AdvancePipelineDto" },
+    };
+    app.post('/seasons/:seasonId/pipeline/advance/:fromPhaseId', authenticateMiddleware([{ "jwt": ["admin", "organizing"] }]), ...(fetchMiddlewares(CustomPipelineController)), ...(fetchMiddlewares(CustomPipelineController.prototype.advancePipeline)), async function CustomPipelineController_advancePipeline(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsClassController_list, request, response });
+            validatedArgs = templateService.getValidatedArgs({ args: argsCustomPipelineController_advancePipeline, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(CustomPipelineController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'advancePipeline',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsClassController_listActive = {};
+    app.get('/classes/active', ...(fetchMiddlewares(ClassController)), ...(fetchMiddlewares(ClassController.prototype.listActive)), async function ClassController_listActive(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsClassController_listActive, request, response });
             const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
             const controller = await container.get(ClassController);
             if (typeof controller['setStatus'] === 'function') {
                 controller.setStatus(undefined);
             }
             await templateService.apiHandler({
-                methodName: 'list',
+                methodName: 'listActive',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsClassController_findDeleted = {};
+    app.get('/classes/deleted', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(ClassController)), ...(fetchMiddlewares(ClassController.prototype.findDeleted)), async function ClassController_findDeleted(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsClassController_findDeleted, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(ClassController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'findDeleted',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsClassController_findAll = {
+        page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
+        per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
+        q: { "in": "query", "name": "q", "dataType": "string" },
+        sort: { "in": "query", "name": "sort", "dataType": "string" },
+        direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
+    };
+    app.get('/classes', ...(fetchMiddlewares(ClassController)), ...(fetchMiddlewares(ClassController.prototype.findAll)), async function ClassController_findAll(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsClassController_findAll, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(ClassController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'findAll',
                 controller,
                 response,
                 next,
@@ -7465,7 +7580,7 @@ export function RegisterRoutes(app, opts) {
                 response,
                 next,
                 validatedArgs,
-                successStatus: undefined,
+                successStatus: 201,
             });
         }
         catch (err) {
@@ -7516,6 +7631,33 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'softDelete',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsClassController_restore = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
+    };
+    app.patch('/classes/:id/restore', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(ClassController)), ...(fetchMiddlewares(ClassController.prototype.restore)), async function ClassController_restore(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsClassController_restore, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(ClassController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'restore',
                 controller,
                 response,
                 next,

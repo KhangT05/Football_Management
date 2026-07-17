@@ -230,12 +230,11 @@ export class MatchController extends Controller {
      */
     @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/resolve-appeal")
-    @SuccessResponse(204, "Appeal resolved")
+    @SuccessResponse(200, "Appeal resolved")
     async resolveAppeal(
         @Path() id: number,
         @Body() body: matchSchema.ResolveAppealDto,
     ): Promise<CorrectionApiResult> {
-        this.setStatus(204);
         return this.lifecycleService.resolveAppeal(id, body);
     }
 

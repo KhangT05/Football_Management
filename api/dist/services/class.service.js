@@ -1,28 +1,73 @@
+import { Prisma } from "../generated/prisma/client.js";
 import { createAppError } from "../common/app.error.js";
+import { Queryable } from "../libs/queryable.js";
 export class ClassService {
     prisma;
+    query;
     constructor(prisma) {
         this.prisma = prisma;
+        this.query = new Queryable(prisma.class, {
+            searchFields: ["name"],
+            sortable: ["id", "name", "created_at"],
+            defaultSort: { column: "name", direction: "asc" },
+            filterable: ["is_active"],
+            defaultPerPage: 20,
+            maxPerPage: 100,
+        });
     }
-    list() {
+    /** Danh sách active, không phân trang — dùng cho dropdown/select. */
+    listActive() {
         return this.prisma.class.findMany({ where: { is_active: true }, orderBy: { name: "asc" } });
     }
+    /** Danh sách có phân trang/tìm kiếm/sort — dùng cho trang quản trị. */
+    findAll(req = {}) {
+        return this.query.run(req);
+    }
+    findById(id) {
+        return this.prisma.class.findUnique({ where: { id } });
+    }
     async getByIdOrFail(id) {
-        const cls = await this.prisma.class.findUnique({ where: { id } });
+        const cls = await this.findById(id);
         if (!cls)
             throw createAppError("NOT_FOUND", `Class ${id} not found`);
         return cls;
     }
-    create(dto) {
-        return this.prisma.class.create({ data: dto });
+    async create(dto) {
+        try {
+            return await this.prisma.class.create({ data: dto });
+        }
+        catch (err) {
+            throw this.mapWriteError(err, dto.name);
+        }
     }
     async update(id, dto) {
         await this.getByIdOrFail(id);
-        return this.prisma.class.update({ where: { id }, data: dto });
+        try {
+            return await this.prisma.class.update({ where: { id }, data: dto });
+        }
+        catch (err) {
+            throw this.mapWriteError(err, dto.name);
+        }
     }
     async softDelete(id) {
         await this.getByIdOrFail(id);
         await this.prisma.class.update({ where: { id }, data: { is_active: false } });
+    }
+    async restore(id) {
+        const result = await this.prisma.class.updateMany({
+            where: { id, is_active: false },
+            data: { is_active: true },
+        });
+        if (result.count === 0) {
+            throw createAppError("NOT_FOUND", `Class ${id} not found or not inactive`);
+        }
+        return this.getByIdOrFail(id);
+    }
+    findDeleted() {
+        return this.prisma.class.findMany({
+            where: { is_active: false },
+            orderBy: { name: "asc" },
+        });
     }
     /**
      * Enforce Season.max_teams_per_class. PHẢI gọi bằng `tx` đang mở của
@@ -52,6 +97,12 @@ export class ClassService {
         if (rows.length >= season.max_teams_per_class) {
             throw createAppError("CONFLICT", `Lớp đã đạt giới hạn ${season.max_teams_per_class} đội trong mùa giải`);
         }
+    }
+    mapWriteError(err, name) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+            return createAppError("CONFLICT", `Class name "${name}" already exists`);
+        }
+        return err;
     }
 }
 //# sourceMappingURL=class.service.js.map

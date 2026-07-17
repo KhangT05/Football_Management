@@ -133,5 +133,6 @@ export declare class KnockoutService extends ScheduleEngine {
         priorPhaseExists: boolean;
         unfinishedCount: number;
     }>;
+    private assertSeasonOperable;
 }
 //# sourceMappingURL=knockout.service.d.ts.map
