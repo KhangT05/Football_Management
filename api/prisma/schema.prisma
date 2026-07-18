@@ -247,41 +247,56 @@ enum PitchType {
 }
 
 model Season {
-  id                    Int               @id @default(autoincrement())
-  name                  String            @unique
-  description           String?
-  status                SeasonStatus      @default(upcoming)
-  start_date            DateTime?
-  end_date              DateTime?
-  registration_deadline DateTime?
-  max_teams             Int
-  is_registration_open  Boolean           @default(false)
-  is_active             Boolean           @default(true)
-  created_at            DateTime          @default(now())
-  updated_at            DateTime?         @updatedAt
-  bank_id               String?
-  bank_account_no       String?
-  bank_account_name     String?
-  deleted_at            DateTime?
-  registration_fee      Decimal           @default(0) @db.Decimal(10, 2)
-  cancel_reason         String?
-  tournament_id         Int
-  group_count           Int?
-  tournament            Tournament        @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
-  pitch_type            PitchType         @default(san_5)
-  phases                Phase[]
-  season_teams          SeasonTeam[]
-  user                  User?             @relation(fields: [user_id], references: [id])
-  user_id               Int?
-  playerStatistics      PlayerStatistic[]
-  notifications         Notification[]
-  articles              Article[]
-  teamStandings         TeamStanding[]
-  tournament_rule_id    Int?
-  tournamentRule        TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
-  max_teams_per_class   Int?
+  id                       Int               @id @default(autoincrement())
+  name                     String            @unique
+  description              String?
+  status                   SeasonStatus      @default(upcoming)
+  start_date               DateTime?
+  end_date                 DateTime?
+  registration_deadline    DateTime?
+  max_teams                Int
+  is_registration_open     Boolean           @default(false)
+  is_active                Boolean           @default(true)
+  created_at               DateTime          @default(now())
+  updated_at               DateTime?         @updatedAt
+  bank_id                  String?
+  bank_account_no          String?
+  bank_account_name        String?
+  deleted_at               DateTime?
+  registration_fee         Decimal           @default(0) @db.Decimal(10, 2)
+  cancel_reason            String?
+  tournament_id            Int
+  group_count              Int?
+  tournament               Tournament        @relation(fields: [tournament_id], references: [id], onDelete: Restrict)
+  pitch_type               PitchType         @default(san_5)
+  phases                   Phase[]
+  season_teams             SeasonTeam[]
+  user                     User?             @relation(fields: [user_id], references: [id])
+  user_id                  Int?
+  playerStatistics         PlayerStatistic[]
+  notifications            Notification[]
+  articles                 Article[]
+  teamStandings            TeamStanding[]
+  tournament_rule_id       Int?
+  tournamentRule           TournamentRule?   @relation(fields: [tournament_rule_id], references: [id])
+  max_teams_per_class      Int?
+  default_daily_start_time String?           @db.VarChar(5) // "HH:mm"
+  default_daily_end_time   String?           @db.VarChar(5)
+  default_buffer_minutes   Int?
+
+  default_venues SeasonDefaultVenue[]
 
   @@map("seasons")
+}
+
+model SeasonDefaultVenue {
+  season_id Int
+  venue_id  Int
+
+  season Season @relation(fields: [season_id], references: [id], onDelete: Cascade)
+  venue  Venue  @relation(fields: [venue_id], references: [id], onDelete: Cascade)
+
+  @@id([season_id, venue_id])
 }
 
 // ============================================================
@@ -326,9 +341,7 @@ model Team {
   created_at  DateTime  @default(now())
   updated_at  DateTime? @updatedAt
 
-  deleted_at DateTime?
-
-  team_players           TeamPlayer[]
+  deleted_at             DateTime?
   season_teams           SeasonTeam[]
   home_matches           Match[]                 @relation("Match_homeTeam")
   away_matches           Match[]                 @relation("Match_awayTeam")
@@ -397,11 +410,12 @@ model Player {
   user_id Int  @unique
   user    User @relation(fields: [user_id], references: [id], onDelete: Restrict)
 
-  team_players      TeamPlayer[]
-  playerStatistics  PlayerStatistic[]
-  matchLineups      MatchLineup[]
-  matchEvents       MatchEvent[]      @relation("EventPlayer")
-  matchEventsSubOut MatchEvent[]      @relation("EventSubOut")
+  team_players        TeamPlayer[]
+  team_player_history TeamPlayerHistory[]
+  playerStatistics    PlayerStatistic[]
+  matchLineups        MatchLineup[]
+  matchEvents         MatchEvent[]        @relation("EventPlayer")
+  matchEventsSubOut   MatchEvent[]        @relation("EventSubOut")
 
   @@map("players")
 }
@@ -430,28 +444,53 @@ enum ApprovalStatus {
 
 model TeamPlayer {
   id              Int            @id @default(autoincrement())
-  team_id         Int
+  season_team_id  Int
   player_id       Int
   jersey_number   Int
   position        PlayerPosition
   role            PlayerRole     @default(player)
   status          PlayerStatus   @default(active)
   approval_status ApprovalStatus @default(pending)
-  is_active       Boolean        @default(true)
   created_at      DateTime       @default(now())
   updated_at      DateTime?      @updatedAt
+  joined_at       DateTime       @default(now())
 
-  deleted_at DateTime?
-
-  team   Team   @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  player Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+  player      Player     @relation(fields: [player_id], references: [id], onDelete: Cascade)
 
   user    User? @relation(fields: [user_id], references: [id])
   user_id Int?
 
-  @@unique([team_id, jersey_number])
-  @@unique([team_id, player_id])
+  @@unique([season_team_id, jersey_number])
+  @@unique([season_team_id, player_id])
   @@map("team_players")
+}
+
+model TeamPlayerHistory {
+  id             Int            @id @default(autoincrement())
+  season_team_id Int
+  player_id      Int
+  jersey_number  Int
+  position       PlayerPosition
+  role           PlayerRole
+  joined_at      DateTime
+  left_at        DateTime
+  left_reason    LeaveReason?
+
+  season_team SeasonTeam @relation(fields: [season_team_id], references: [id], onDelete: Cascade)
+  player      Player     @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  @@index([player_id])
+  @@index([season_team_id])
+  @@map("team_player_history")
+}
+
+enum LeaveReason {
+  transferred
+  dropped
+  disqualified
+  season_ended
+  injured
 }
 
 model TeamLeader {
@@ -500,9 +539,11 @@ model SeasonTeam {
   team   Team   @relation(fields: [team_id], references: [id], onDelete: Restrict)
   group  Group? @relation(fields: [group_id], references: [id], onDelete: SetNull)
 
-  user     User?     @relation(fields: [user_id], references: [id])
-  user_id  Int?
-  payments Payment[]
+  user                User?               @relation(fields: [user_id], references: [id])
+  user_id             Int?
+  payments            Payment[]
+  team_players        TeamPlayer[]
+  team_player_history TeamPlayerHistory[]
 
   @@unique([season_id, team_id])
   @@map("season_teams")
@@ -535,7 +576,8 @@ model Venue {
   updated_at DateTime? @updatedAt
   deleted_at DateTime?
 
-  matches Match[]
+  matches             Match[]
+  seasonDefaultVenues SeasonDefaultVenue[]
 
   @@map("venues")
 }

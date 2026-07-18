@@ -66,6 +66,21 @@ let ScheduleController = class ScheduleController extends Controller {
         const req = { page, per_page, sort, direction };
         return this.service.findMatchesByTeam(seasonId, teamId, req);
     }
+    async getUnscheduledMatchesInRound(seasonId, groupId, round) {
+        return this.service.findUnscheduledMatchesInRound(seasonId, groupId, round);
+    }
+    async getAvailableSlotsForMatch(seasonId, matchId, body) {
+        const parsed = scheduleSchema.getAvailableSlotsSchema.parse(body);
+        return this.service.getAvailableSlotsForMatch(seasonId, matchId, parsed);
+    }
+    async getScheduleDefaults(seasonId) {
+        return this.service.getScheduleDefaults(seasonId);
+    }
+    async saveScheduleDefaults(seasonId, body) {
+        const parsed = scheduleSchema.seasonScheduleDefaultsSchema.parse(body);
+        await this.service.saveScheduleDefaults(seasonId, parsed);
+        this.setStatus(204);
+    }
 };
 __decorate([
     Security('jwt', ['organizing']),
@@ -138,6 +153,44 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, Object, Object, String, String]),
     __metadata("design:returntype", Promise)
 ], ScheduleController.prototype, "getTeamSchedule", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Get('seasons/{seasonId}/groups/{groupId}/rounds/{round}/unscheduled-matches'),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "getUnscheduledMatchesInRound", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Post('seasons/{seasonId}/matches/{matchId}/available-slots'),
+    __param(0, Path()),
+    __param(1, Path()),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "getAvailableSlotsForMatch", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Get('seasons/{seasonId}/defaults'),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "getScheduleDefaults", null);
+__decorate([
+    Security('jwt', ['organizing']),
+    Patch('seasons/{seasonId}/defaults'),
+    SuccessResponse(204, 'No Content'),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ScheduleController.prototype, "saveScheduleDefaults", null);
 ScheduleController = __decorate([
     Route('schedules'),
     Tags('Schedules'),

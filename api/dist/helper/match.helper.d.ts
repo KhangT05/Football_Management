@@ -1,7 +1,7 @@
 import { MatchEventType, MatchPeriod, MatchStatus, PhaseFormat, PlayerPosition, Prisma } from "../generated/prisma/client.js";
-import { MatchReportPlayerRow } from "../types/matchReport.type.js";
-import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
 import { QueryRequest } from "../types/queryable.type.js";
+import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
+import { MatchReportPlayerRow } from '../types/matchReport.type.js';
 export declare function isKnockoutFormat(format: PhaseFormat): boolean;
 export declare const MATCH_EVENT_SELECT: {
     id: true;
@@ -55,6 +55,25 @@ export declare function computeEventClockTime(match: {
     minute: number | null;
     added_minute: number | null;
 }): EventClockTime | null;
+/**
+ * FIX (type trùng lặp): trước đây `MatchReportEventEntry` (dùng cho thẻ,
+ * khai ở types/matchReport.type.ts) và field lõi của `MatchReportGoalEntry`
+ * (dùng cho bàn thắng, khai ở đây) là 2 khai báo riêng nhưng CÙNG shape
+ * (minute/addedMinute/clockTime/clockConfidence) — khi thêm giờ thực cho
+ * goal trước đó, phải nhớ sửa cả 2 nơi, dễ lệch nếu quên 1 bên (thực tế đã
+ * xảy ra: card bị bỏ sót clockTime/clockConfidence). Gộp về 1 interface lõi
+ * DUY NHẤT ở đây — `matchReport.type.ts` giờ import lại, không tự khai nữa.
+ */
+export interface MatchReportEventEntry {
+    minute: number | null;
+    addedMinute: number | null;
+    clockTime: Date | null;
+    clockConfidence: 'exact' | 'estimated' | null;
+}
+export interface MatchReportGoalEntry extends MatchReportEventEntry {
+    playerName: string;
+    isOwnGoal: boolean;
+}
 export type MatchEventRow = Prisma.MatchEventGetPayload<{
     select: typeof MATCH_EVENT_SELECT;
 }>;
@@ -116,16 +135,11 @@ type EventRow = {
     type: MatchEventType;
     minute: number | null;
     added_minute: number | null;
+    period: MatchPeriod | null;
+    time_source: 'live' | 'estimated';
+    created_at: Date;
 };
-export declare function buildMatchReportPlayerRows(lineup: LineupRow[], jerseyLookup: JerseyLookupRow[], events: EventRow[], teamId: number): MatchReportPlayerRow[];
-export interface MatchReportGoalEntry {
-    playerName: string;
-    minute: number | null;
-    addedMinute: number | null;
-    isOwnGoal: boolean;
-    clockTime: Date | null;
-    clockConfidence: 'exact' | 'estimated' | null;
-}
+export declare function buildMatchReportPlayerRows(lineup: LineupRow[], jerseyLookup: JerseyLookupRow[], events: EventRow[], teamId: number, scheduledAt: Date | null): MatchReportPlayerRow[];
 export declare function buildGoalsTimeline(events: {
     player_id: number | null;
     team_id: number | null;

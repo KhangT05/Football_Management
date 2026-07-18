@@ -3861,6 +3861,16 @@
 			},
 			"DefaultSelection__36_SeasonPayload_": {
 				"properties": {
+					"default_buffer_minutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"default_daily_end_time": {
+						"type": "string"
+					},
+					"default_daily_start_time": {
+						"type": "string"
+					},
 					"max_teams_per_class": {
 						"type": "number",
 						"format": "double"
@@ -3948,6 +3958,9 @@
 					}
 				},
 				"required": [
+					"default_buffer_minutes",
+					"default_daily_end_time",
+					"default_daily_start_time",
 					"max_teams_per_class",
 					"tournament_rule_id",
 					"pitch_type",
@@ -4998,6 +5011,122 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"UnscheduledMatchOption": {
+				"properties": {
+					"awayTeamName": {
+						"type": "string"
+					},
+					"awayTeamId": {
+						"type": "number",
+						"format": "double"
+					},
+					"homeTeamName": {
+						"type": "string"
+					},
+					"homeTeamId": {
+						"type": "number",
+						"format": "double"
+					},
+					"id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"awayTeamName",
+					"awayTeamId",
+					"homeTeamName",
+					"homeTeamId",
+					"id"
+				],
+				"type": "object"
+			},
+			"MatchSlotOption": {
+				"properties": {
+					"scheduledAt": {
+						"type": "string"
+					},
+					"venueName": {
+						"type": "string"
+					},
+					"venueId": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"scheduledAt",
+					"venueName",
+					"venueId"
+				],
+				"type": "object"
+			},
+			"GetAvailableSlotsDto": {
+				"properties": {
+					"excludedDates": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"limit": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"dailyEndTime",
+					"dailyStartTime",
+					"venueIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeasonScheduleDefaultsDto": {
+				"properties": {
+					"venueIds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
+					"dailyStartTime": {
+						"type": "string"
+					},
+					"dailyEndTime": {
+						"type": "string"
+					},
+					"bufferMinutes": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"venueIds",
+					"dailyStartTime",
+					"dailyEndTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PaginatedResult_Role_": {
 				"properties": {
 					"data": {
@@ -5345,7 +5474,7 @@
 						"type": "number",
 						"format": "double"
 					},
-					"team_id": {
+					"season_team_id": {
 						"type": "number",
 						"format": "double"
 					},
@@ -5369,8 +5498,9 @@
 					"approval_status": {
 						"$ref": "#/components/schemas/ApprovalStatus"
 					},
-					"is_active": {
-						"type": "boolean"
+					"joined_at": {
+						"type": "string",
+						"format": "date-time"
 					},
 					"created_at": {
 						"type": "string",
@@ -5392,14 +5522,14 @@
 				},
 				"required": [
 					"id",
-					"team_id",
+					"season_team_id",
 					"player_id",
 					"jersey_number",
 					"position",
 					"role",
 					"status",
 					"approval_status",
-					"is_active",
+					"joined_at",
 					"created_at",
 					"updated_at"
 				],
@@ -5507,9 +5637,6 @@
 			},
 			"infer_typeofupdateTeamPlayerSchema_": {
 				"properties": {
-					"is_active": {
-						"type": "boolean"
-					},
 					"approval_status": {
 						"type": "string",
 						"enum": [
@@ -5555,6 +5682,16 @@
 			},
 			"infer_typeofbulkDeleteSchema_": {
 				"properties": {
+					"reason": {
+						"type": "string",
+						"enum": [
+							"injured",
+							"transferred",
+							"dropped",
+							"disqualified",
+							"season_ended"
+						]
+					},
 					"ids": {
 						"items": {
 							"type": "number",
@@ -5564,6 +5701,7 @@
 					}
 				},
 				"required": [
+					"reason",
 					"ids"
 				],
 				"type": "object"
@@ -5581,7 +5719,30 @@
 						"type": "number",
 						"format": "double"
 					},
+					"skipped": {
+						"type": "number",
+						"format": "double"
+					},
 					"errors": {
+						"items": {
+							"properties": {
+								"reason": {
+									"type": "string"
+								},
+								"row": {
+									"type": "number",
+									"format": "double"
+								}
+							},
+							"required": [
+								"reason",
+								"row"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"skippedRows": {
 						"items": {
 							"properties": {
 								"reason": {
@@ -5604,7 +5765,9 @@
 				"required": [
 					"success",
 					"failed",
-					"errors"
+					"skipped",
+					"errors",
+					"skippedRows"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -13415,6 +13578,227 @@
 						}
 					}
 				]
+			}
+		},
+		"/schedules/seasons/{seasonId}/groups/{groupId}/rounds/{round}/unscheduled-matches": {
+			"get": {
+				"operationId": "GetUnscheduledMatchesInRound",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/UnscheduledMatchOption"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "round",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/schedules/seasons/{seasonId}/matches/{matchId}/available-slots": {
+			"post": {
+				"operationId": "GetAvailableSlotsForMatch",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/MatchSlotOption"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "path",
+						"name": "matchId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GetAvailableSlotsDto"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/schedules/seasons/{seasonId}/defaults": {
+			"get": {
+				"operationId": "GetScheduleDefaults",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"bufferMinutes": {
+											"type": "number",
+											"format": "double"
+										},
+										"dailyEndTime": {
+											"type": "string"
+										},
+										"dailyStartTime": {
+											"type": "string"
+										},
+										"venueIds": {
+											"items": {
+												"type": "number",
+												"format": "double"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"bufferMinutes",
+										"dailyEndTime",
+										"dailyStartTime",
+										"venueIds"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "SaveScheduleDefaults",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Schedules"
+				],
+				"security": [
+					{
+						"jwt": [
+							"organizing"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "seasonId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SeasonScheduleDefaultsDto"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/roles": {

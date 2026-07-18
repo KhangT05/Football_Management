@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { importPlayerRowSchema } from "../dtos/player.schema.js";
 import { Queryable } from "../libs/queryable.js";
 import { createAppError } from "../common/app.error.js";
-import { ApprovalStatus, PlayerPosition, Prisma } from "../generated/prisma/client.js";
+import { ApprovalStatus, LeaveReason, PlayerPosition, Prisma } from "../generated/prisma/client.js";
 import { storageService } from "./storage.service.js";
 import { logger } from "../libs/logger.js";
 import { PLAYER_PUBLIC_SELECT, PLAYER_SELECT, PLAYER_SELECT_WITH_SEASONS, TEAM_PLAYER_SELECT } from "../types/player.type.js";
@@ -213,20 +213,20 @@ export class PlayerService {
     }
     mapPlayerWithSeasons(p) {
         const base = this.mapPlayer(p);
-        const seasons = p.team_players.flatMap((tp) => tp.team.season_teams.map((st) => ({
-            season_id: st.season.id,
-            season_name: st.season.name,
-            season_status: st.season.status,
-            tournament_id: st.season.tournament.id,
-            tournament_name: st.season.tournament.name,
-            tournament_logo: st.season.tournament.logo,
-            group_name: st.group?.name || null,
-            team_id: tp.team.id,
-            team_name: tp.team.name,
-            season_team_status: st.status,
-            group_id: st.group_id,
+        const seasons = p.team_players.map((tp) => ({
+            season_id: tp.season_team.season.id,
+            season_name: tp.season_team.season.name,
+            season_status: tp.season_team.season.status,
+            tournament_id: tp.season_team.season.tournament.id,
+            tournament_name: tp.season_team.season.tournament.name,
+            tournament_logo: tp.season_team.season.tournament.logo,
+            group_name: tp.season_team.group?.name ?? null,
+            team_id: tp.season_team.team.id,
+            team_name: tp.season_team.team.name,
+            season_team_status: tp.season_team.status,
+            group_id: tp.season_team.group_id,
             jersey_number: tp.jersey_number,
-        })));
+        }));
         return { ...base, seasons };
     }
     async getPlayerByIdOrFail(id) {
@@ -287,13 +287,14 @@ export class PlayerService {
  * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
  * student_code + class match.
  */
-    async assertPlayerClassMatchesTeam(userId, teamId, tx = this.prisma) {
-        const team = await tx.team.findUniqueOrThrow({
-            where: { id: teamId },
-            select: { class_id: true },
-        });
-        // Đội không gắn lớp (class_id = null) → không ràng buộc sinh viên, bỏ qua
-        if (team.class_id == null)
+    /**
+ * FIX: nhận teamClassId đã biết thay vì tự query seasonTeam mỗi lần gọi.
+ * Trước đây mỗi call query lại team.class_id — trong import loop, giá trị
+ * này CỐ ĐỊNH cho toàn bộ request (cùng season_team_id), nên query lặp lại
+ * N lần là N-1 lần thừa. Caller chịu trách nhiệm fetch 1 lần duy nhất.
+ */
+    async assertPlayerClassMatchesUser(teamClassId, userId, tx = this.prisma) {
+        if (teamClassId == null)
             return;
         const user = await tx.user.findUniqueOrThrow({
             where: { id: userId },
@@ -302,9 +303,17 @@ export class PlayerService {
         if (!user.student_code) {
             throw createAppError("BAD_REQUEST", "Tài khoản chưa có MSSV — không thể tham gia đội sinh viên");
         }
-        if (team.class_id != null && user.class_id !== team.class_id) {
+        if (user.class_id !== teamClassId) {
             throw createAppError("CONFLICT", "Cầu thủ không thuộc lớp của đội");
         }
+    }
+    /** Helper fetch teamClassId 1 lần — dùng ở mọi entrypoint gọi assertPlayerClassMatchesUser */
+    async getTeamClassId(seasonTeamId, tx = this.prisma) {
+        const seasonTeam = await tx.seasonTeam.findUniqueOrThrow({
+            where: { id: seasonTeamId },
+            select: { team: { select: { class_id: true } } },
+        });
+        return seasonTeam.team.class_id;
     }
     // ----------------------------------------------------------
     // INVITE TOKEN
@@ -350,47 +359,30 @@ export class PlayerService {
     // TEAM PLAYER
     // ----------------------------------------------------------
     listTeamPlayers(query) {
-        const { team_id, ...req } = query;
+        const { season_team_id, ...req } = query;
         return this.teamPlayerQuery
-            .run(req, {
-            beforeBuild: (where) => {
-                where.push({ team_id, deleted_at: null });
-            },
-        })
-            .then((res) => ({
-            ...res,
-            data: res.data.map((tp) => this.mapTeamPlayer(tp)),
-        }));
+            .run(req, { beforeBuild: (where) => { where.push({ season_team_id }); } })
+            .then((res) => ({ ...res, data: res.data.map((tp) => this.mapTeamPlayer(tp)) }));
     }
-    async getTeamPlayerById(id, team_id) {
+    async getTeamPlayerById(id, season_team_id) {
         const tp = await this.prisma.teamPlayer.findFirst({
-            where: { id, team_id, deleted_at: null },
+            where: { id, season_team_id },
             select: TEAM_PLAYER_SELECT,
         });
         return tp ? this.mapTeamPlayer(tp) : null;
     }
-    /**
-     * FIX MỚI: thêm assertPlayerClassMatchesTeam TRƯỚC dupPlayer/dupJersey
-     * check — fail nhanh vì đây là lỗi nghiệp vụ nghiêm trọng hơn (cầu thủ
-     * sai lớp) so với trùng số áo.
-     */
-    async addPlayerToTeam(team_id, dto) {
+    async addPlayerToTeam(season_team_id, dto) {
         const player = await this.prisma.player.findFirst({
             where: { id: dto.player_id, deleted_at: null },
             select: { id: true, user_id: true },
         });
         if (!player)
             throw createAppError("NOT_FOUND", `Player ${dto.player_id} not found`);
-        await this.assertPlayerClassMatchesTeam(player.user_id, team_id);
+        const teamClassId = await this.getTeamClassId(season_team_id);
+        await this.assertPlayerClassMatchesUser(teamClassId, player.user_id);
         const [dupPlayer, dupJersey] = await Promise.all([
-            this.prisma.teamPlayer.findFirst({
-                where: { team_id, player_id: dto.player_id, deleted_at: null },
-                select: { id: true },
-            }),
-            this.prisma.teamPlayer.findFirst({
-                where: { team_id, jersey_number: dto.jersey_number, deleted_at: null },
-                select: { id: true },
-            }),
+            this.prisma.teamPlayer.findFirst({ where: { season_team_id, player_id: dto.player_id }, select: { id: true } }),
+            this.prisma.teamPlayer.findFirst({ where: { season_team_id, jersey_number: dto.jersey_number }, select: { id: true } }),
         ]);
         if (dupPlayer)
             throw createAppError("CONFLICT", "Player already in team");
@@ -400,7 +392,7 @@ export class PlayerService {
             const tp = await this.prisma.$transaction(async (tx) => {
                 const created = await tx.teamPlayer.create({
                     data: {
-                        team_id,
+                        season_team_id,
                         player_id: dto.player_id,
                         jersey_number: dto.jersey_number,
                         position: dto.position,
@@ -438,15 +430,15 @@ export class PlayerService {
      * CreatePlayerForTeamDto và set ngay lúc tạo user — hỏi lại UX trước
      * khi đổi, vì hiện tại đang cho phép admin gán lớp sau.
      */
-    async createPlayerForTeamWithUser(team_id, dto) {
+    async createPlayerForTeamWithUser(season_team_id, dto) {
         const dupJersey = await this.prisma.teamPlayer.findFirst({
-            where: { team_id, jersey_number: dto.jersey_number, deleted_at: null },
+            where: { season_team_id, jersey_number: dto.jersey_number },
             select: { id: true },
         });
-        if (dupJersey) {
+        if (dupJersey)
             throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
-        }
         let createdNewUserId = null;
+        const teamClassId = await this.getTeamClassId(season_team_id);
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
                 let user = await tx.user.findUnique({
@@ -468,7 +460,6 @@ export class PlayerService {
                     createdNewUserId = created.id;
                 }
                 else if (!user.student_code && dto.student_code) {
-                    // Backfill MSSV cho user có sẵn nhưng chưa có
                     await tx.user.update({ where: { id: user.id }, data: { student_code: dto.student_code } });
                 }
                 let player = await tx.player.findFirst({
@@ -477,26 +468,22 @@ export class PlayerService {
                 });
                 if (!player) {
                     player = await tx.player.create({
-                        data: {
-                            user_id: user.id,
-                            date_of_birth: dto.date_of_birth,
-                            position: dto.position,
-                        },
+                        data: { user_id: user.id, date_of_birth: dto.date_of_birth, position: dto.position },
                         select: { id: true },
                     });
                 }
                 else {
                     const alreadyInTeam = await tx.teamPlayer.findFirst({
-                        where: { team_id, player_id: player.id, deleted_at: null },
+                        where: { season_team_id, player_id: player.id },
                         select: { id: true },
                     });
                     if (alreadyInTeam)
                         throw createAppError("CONFLICT", "Player already in team");
                 }
-                await this.assertPlayerClassMatchesTeam(user.id, team_id, tx);
+                await this.assertPlayerClassMatchesUser(teamClassId, user.id, tx);
                 const created = await tx.teamPlayer.create({
                     data: {
-                        team_id,
+                        season_team_id,
                         player_id: player.id,
                         jersey_number: dto.jersey_number,
                         position: dto.position,
@@ -512,10 +499,7 @@ export class PlayerService {
             if (createdNewUserId) {
                 try {
                     const inviteToken = await this.issueInviteToken(createdNewUserId);
-                    await mailService.sendInviteEmail(dto.user_email, {
-                        token: inviteToken,
-                        name: dto.name,
-                    });
+                    await mailService.sendInviteEmail(dto.user_email, { token: inviteToken, name: dto.name });
                 }
                 catch (err) {
                     logger.error(`Failed to issue invite / send email to ${dto.user_email}`);
@@ -530,63 +514,141 @@ export class PlayerService {
             throw err;
         }
     }
-    async updateTeamPlayer(id, team_id, dto) {
+    async updateTeamPlayer(id, season_team_id, dto) {
         const existing = await this.prisma.teamPlayer.findFirst({
-            where: { id, team_id, deleted_at: null },
+            where: { id, season_team_id },
             select: { id: true, user_id: true },
         });
         if (!existing)
-            throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in team ${team_id}`);
+            throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in season_team ${season_team_id}`);
         const tp = await this.prisma.$transaction(async (tx) => {
-            const updated = await tx.teamPlayer.update({
-                where: { id },
-                data: dto,
-                select: TEAM_PLAYER_SELECT,
-            });
-            if (existing.user_id) {
+            const updated = await tx.teamPlayer.update({ where: { id }, data: dto, select: TEAM_PLAYER_SELECT });
+            if (existing.user_id)
                 await this.ensurePlayerRole(existing.user_id, tx);
-            }
             return updated;
         });
         return this.mapTeamPlayer(tp);
     }
-    approveTeamPlayer(id, team_id) {
-        return this.updateTeamPlayer(id, team_id, { approval_status: ApprovalStatus.approved });
+    // ----------------------------------------------------------
+    // BULK DELETE — TeamPlayer không soft-delete được (không có is_active/
+    // deleted_at). Schema có sẵn TeamPlayerHistory cho đúng mục đích này —
+    // xoá cứng TeamPlayer + ghi lại lịch sử rời đội trong cùng transaction.
+    // LƯU Ý: BulkDeleteDto chưa có field `reason`, tạm default "dropped" —
+    // nên thêm reason?: LeaveReason vào bulkDeleteSchema nếu FE cần chọn lý do.
+    // ----------------------------------------------------------
+    approveTeamPlayer(id, season_team_id) {
+        return this.updateTeamPlayer(id, season_team_id, { approval_status: ApprovalStatus.approved });
     }
-    rejectTeamPlayer(id, team_id) {
-        return this.updateTeamPlayer(id, team_id, { approval_status: ApprovalStatus.rejected });
+    rejectTeamPlayer(id, season_team_id) {
+        return this.updateTeamPlayer(id, season_team_id, { approval_status: ApprovalStatus.rejected });
     }
     // ----------------------------------------------------------
-    // BULK DELETE
+    // BULK DELETE — TeamPlayer không soft-delete được (không có is_active/
+    // deleted_at trên schema). Xoá cứng + ghi TeamPlayerHistory trong cùng
+    // transaction để giữ lịch sử rời đội.
     // ----------------------------------------------------------
-    async bulkDeleteTeamPlayers(team_id, dto) {
-        const now = new Date();
+    async bulkDeleteTeamPlayers(season_team_id, dto) {
         const existing = await this.prisma.teamPlayer.findMany({
-            where: { id: { in: dto.ids }, team_id, deleted_at: null },
-            select: { id: true },
+            where: { id: { in: dto.ids }, season_team_id },
+            select: { id: true, player_id: true, jersey_number: true, position: true, role: true, joined_at: true },
         });
         const existingIds = new Set(existing.map((r) => r.id));
         const notFound = dto.ids.filter((id) => !existingIds.has(id));
-        if (existingIds.size === 0)
+        if (existing.length === 0)
             return { deleted: 0, notFound };
-        await this.prisma.teamPlayer.updateMany({
-            where: { id: { in: [...existingIds] }, team_id },
-            data: { deleted_at: now, is_active: false },
-        });
+        const now = new Date();
+        await this.prisma.$transaction([
+            this.prisma.teamPlayerHistory.createMany({
+                data: existing.map((tp) => ({
+                    season_team_id,
+                    player_id: tp.player_id,
+                    jersey_number: tp.jersey_number,
+                    position: tp.position,
+                    role: tp.role,
+                    joined_at: tp.joined_at,
+                    left_at: now,
+                    left_reason: dto.reason,
+                })),
+            }),
+            this.prisma.teamPlayer.deleteMany({ where: { id: { in: [...existingIds] } } }),
+        ]);
         return { deleted: existingIds.size, notFound };
     }
-    async hardDeleteTeamPlayers(team_id, dto) {
-        const result = await this.prisma.teamPlayer.deleteMany({
-            where: { id: { in: dto.ids }, team_id },
+    async hardDeleteTeamPlayers(season_team_id, dto, reason = LeaveReason.dropped) {
+        const existing = await this.prisma.teamPlayer.findMany({
+            where: { id: { in: dto.ids }, season_team_id },
+            select: { id: true, player_id: true, jersey_number: true, position: true, role: true, joined_at: true },
         });
-        return { deleted: result.count };
+        const existingIds = new Set(existing.map((r) => r.id));
+        const notFound = dto.ids.filter((id) => !existingIds.has(id));
+        if (existing.length === 0)
+            return { deleted: 0, notFound };
+        const now = new Date();
+        await this.prisma.$transaction([
+            this.prisma.teamPlayerHistory.createMany({
+                data: existing.map((tp) => ({
+                    season_team_id,
+                    player_id: tp.player_id,
+                    jersey_number: tp.jersey_number,
+                    position: tp.position,
+                    role: tp.role,
+                    joined_at: tp.joined_at,
+                    left_at: now,
+                    left_reason: reason,
+                })),
+            }),
+            this.prisma.teamPlayer.deleteMany({ where: { id: { in: [...existingIds] } } }),
+        ]);
+        return { deleted: existingIds.size, notFound };
+    }
+    async getPlayerTeamHistory(player_id) {
+        const rows = await this.prisma.teamPlayerHistory.findMany({
+            where: { player_id },
+            select: {
+                id: true,
+                jersey_number: true,
+                position: true,
+                role: true,
+                joined_at: true,
+                left_at: true,
+                left_reason: true,
+                season_team: {
+                    select: {
+                        team: { select: { id: true, name: true } },
+                        season: {
+                            select: {
+                                id: true,
+                                name: true,
+                                tournament: { select: { id: true, name: true } },
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: { left_at: "desc" },
+        });
+        return rows.map((r) => ({
+            history_id: r.id,
+            team_id: r.season_team.team.id,
+            team_name: r.season_team.team.name,
+            season_id: r.season_team.season.id,
+            season_name: r.season_team.season.name,
+            tournament_id: r.season_team.season.tournament.id,
+            tournament_name: r.season_team.season.tournament.name,
+            jersey_number: r.jersey_number,
+            position: r.position,
+            role: r.role,
+            joined_at: r.joined_at,
+            left_at: r.left_at,
+            left_reason: r.left_reason,
+        }));
     }
     // ----------------------------------------------------------
     // EXPORT EXCEL
     // ----------------------------------------------------------
-    async exportTeamPlayersExcel(team_id) {
+    async exportTeamPlayersExcel(season_team_id) {
         const records = await this.prisma.teamPlayer.findMany({
-            where: { team_id, deleted_at: null },
+            where: { season_team_id },
             select: TEAM_PLAYER_SELECT,
             orderBy: { jersey_number: "asc" },
         });
@@ -685,7 +747,7 @@ export class PlayerService {
      * tự động log vào result.errors[].reason theo đúng hành vi cũ (1 dòng
      * lỗi không ảnh hưởng dòng khác).
      */
-    async importTeamPlayersFromExcel(team_id, fileBuffer) {
+    async importTeamPlayersFromExcel(season_team_id, fileBuffer) {
         const wb = new ExcelJS.Workbook();
         try {
             await wb.xlsx.load(fileBuffer);
@@ -700,7 +762,7 @@ export class PlayerService {
         if (raw.length > MAX_IMPORT_ROWS) {
             throw createAppError("BAD_REQUEST", `File has ${raw.length} rows, max ${MAX_IMPORT_ROWS} allowed`);
         }
-        const result = { success: 0, failed: 0, errors: [] };
+        const result = { success: 0, failed: 0, skipped: 0, errors: [], skippedRows: [] };
         const validRows = [];
         for (const [i, rawRow] of raw.entries()) {
             const rowNum = i + 2;
@@ -710,9 +772,7 @@ export class PlayerService {
                 result.failed++;
                 result.errors.push({
                     row: rowNum,
-                    reason: parsed.error.issues
-                        .map((e) => `${e.path.join(".")}: ${e.message}`)
-                        .join("; "),
+                    reason: parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
                 });
             }
             else {
@@ -721,14 +781,16 @@ export class PlayerService {
         }
         if (validRows.length === 0)
             return result;
+        const teamClassId = await this.getTeamClassId(season_team_id);
         const emails = [...new Set(validRows.map((r) => r.dto.user_email))];
         const users = await this.prisma.user.findMany({
             where: { email: { in: emails } },
-            select: { id: true, email: true, student_code: true },
+            select: { id: true, email: true, student_code: true, class_id: true }, // FIX: thêm class_id
         });
         const userByEmail = new Map(users.map((u) => [u.email, u.id]));
         const studentCodeByUserId = new Map(users.map((u) => [u.id, u.student_code]));
-        const userIds = users.map(u => u.id);
+        const classIdByUserId = new Map(users.map((u) => [u.id, u.class_id]));
+        const userIds = users.map((u) => u.id);
         const [players, existingTeamPlayers] = await Promise.all([
             userIds.length
                 ? this.prisma.player.findMany({
@@ -736,8 +798,9 @@ export class PlayerService {
                     select: { id: true, user_id: true },
                 })
                 : Promise.resolve([]),
+            // FIX: bỏ deleted_at (không tồn tại) — filter theo season_team_id
             this.prisma.teamPlayer.findMany({
-                where: { team_id, deleted_at: null },
+                where: { season_team_id },
                 select: { player_id: true, jersey_number: true },
             }),
         ]);
@@ -754,16 +817,34 @@ export class PlayerService {
                 result.errors.push({ row: rowNum, reason: "jersey_number required for team assignment" });
                 continue;
             }
-            if (usedJerseyNumbers.has(dto.jersey_number)) {
-                result.failed++;
-                result.errors.push({ row: rowNum, reason: `Jersey number ${dto.jersey_number} đã được sử dụng trong đội` });
-                continue;
-            }
             const existingUserId = userByEmail.get(dto.user_email);
             const existingPlayerId = existingUserId ? playerByUserId.get(existingUserId) : undefined;
             if (existingPlayerId && teamPlayerSet.has(existingPlayerId)) {
+                // FIX: trước đây skip vô điều kiện — giờ re-validate class-match
+                // bằng data đã có sẵn trong memory (không query DB thêm). Nếu
+                // team đổi class_id SAU KHI player đã join, lần import lại sẽ
+                // bắt được thay vì âm thầm skip qua vi phạm.
+                if (teamClassId != null) {
+                    const studentCode = studentCodeByUserId.get(existingUserId);
+                    const classId = classIdByUserId.get(existingUserId);
+                    if (!studentCode) {
+                        result.failed++;
+                        result.errors.push({ row: rowNum, reason: "Tài khoản chưa có MSSV — không thể tham gia đội sinh viên" });
+                        continue;
+                    }
+                    if (classId !== teamClassId) {
+                        result.failed++;
+                        result.errors.push({ row: rowNum, reason: "Cầu thủ không thuộc lớp của đội (dữ liệu cũ không còn hợp lệ)" });
+                        continue;
+                    }
+                }
+                result.skipped++;
+                result.skippedRows.push({ row: rowNum, reason: "Player already in team — skipped" });
+                continue;
+            }
+            if (usedJerseyNumbers.has(dto.jersey_number)) {
                 result.failed++;
-                result.errors.push({ row: rowNum, reason: "Player already in team" });
+                result.errors.push({ row: rowNum, reason: `Jersey number ${dto.jersey_number} đã được sử dụng trong đội` });
                 continue;
             }
             let createdNewUserId = null;
@@ -785,11 +866,10 @@ export class PlayerService {
                         createdNewUserId = newUser.id;
                     }
                     else if (!studentCodeByUserId.get(userId) && dto.student_code) {
-                        // Backfill MSSV cho user có sẵn nhưng chưa có
                         await tx.user.update({ where: { id: userId }, data: { student_code: dto.student_code } });
                         studentCodeByUserId.set(userId, dto.student_code);
                     }
-                    await this.assertPlayerClassMatchesTeam(userId, team_id, tx);
+                    await this.assertPlayerClassMatchesUser(teamClassId, userId, tx);
                     let playerId = existingPlayerId;
                     if (!playerId) {
                         const created = await tx.player.create({
@@ -805,9 +885,10 @@ export class PlayerService {
                         });
                         playerId = created.id;
                     }
+                    // FIX: data.team_id -> data.season_team_id
                     await tx.teamPlayer.create({
                         data: {
-                            team_id,
+                            season_team_id,
                             player_id: playerId,
                             jersey_number: dto.jersey_number,
                             position: dto.position,
@@ -831,10 +912,7 @@ export class PlayerService {
                 if (createdNewUserId) {
                     try {
                         const inviteToken = await this.issueInviteToken(createdNewUserId);
-                        await mailService.sendInviteEmail(dto.user_email, {
-                            token: inviteToken,
-                            name: dto.name,
-                        });
+                        await mailService.sendInviteEmail(dto.user_email, { token: inviteToken, name: dto.name });
                     }
                     catch (err) {
                         logger.error(`Failed to issue invite / send email to ${dto.user_email} (row ${rowNum})`);

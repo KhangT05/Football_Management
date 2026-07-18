@@ -1,5 +1,5 @@
 import { Match, PrismaClient } from '../generated/prisma/client.js';
-import { GenerateFromGroupsOptions, GenerateOptions, GenerateResult, MatchByTeamRow, RescheduleInput, RoundSummary, ScheduleOptions, AutoScheduleFilterOptions, SeasonSchedule } from '../types/schedule.type.js';
+import { GenerateFromGroupsOptions, GenerateOptions, GenerateResult, MatchByTeamRow, RescheduleInput, RoundSummary, ScheduleOptions, AutoScheduleFilterOptions, SeasonSchedule, MatchSlotOption, UnscheduledMatchOption } from '../types/schedule.type.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { ScheduleEngine } from '../libs/schedule.engine.js';
 export declare class ScheduleService extends ScheduleEngine {
@@ -42,6 +42,22 @@ export declare class ScheduleService extends ScheduleEngine {
      */
     rescheduleMatch(matchId: number, input: RescheduleInput): Promise<void>;
     getSeasonSchedule(seasonId: number): Promise<SeasonSchedule>;
+    findUnscheduledMatchesInRound(seasonId: number, groupId: number, round: number): Promise<UnscheduledMatchOption[]>;
+    getAvailableSlotsForMatch(seasonId: number, matchId: number, options: ScheduleOptions & {
+        limit?: number;
+    }): Promise<MatchSlotOption[]>;
+    getScheduleDefaults(seasonId: number): Promise<{
+        venueIds: number[];
+        dailyStartTime: string | null;
+        dailyEndTime: string | null;
+        bufferMinutes: number | null;
+    } | null>;
+    saveScheduleDefaults(seasonId: number, input: {
+        venueIds: number[];
+        dailyStartTime: string;
+        dailyEndTime: string;
+        bufferMinutes?: number;
+    }): Promise<void>;
     private resolveGroupCount;
     private assignTeamsToGroups;
     private generateRoundRobin;

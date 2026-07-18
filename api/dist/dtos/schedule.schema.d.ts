@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ScheduleOptions } from '../types/schedule.type.js';
 export declare const generateScheduleSchema: z.ZodObject<{
     doubleRound: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     minRestDaysPerTeam: z.ZodOptional<z.ZodNumber>;
@@ -27,16 +28,30 @@ export declare const rescheduleMatchSchema: z.ZodObject<{
     bufferMinutes: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export declare const generateFromGroupsSchema: z.ZodObject<{
-    doubleRound: z.ZodOptional<z.ZodBoolean>;
-    minRestDaysPerTeam: z.ZodOptional<z.ZodNumber>;
+    rounds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    groupIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    allowPastDate: z.ZodOptional<z.ZodBoolean>;
     venueIds: z.ZodArray<z.ZodNumber>;
     dailyStartTime: z.ZodString;
     dailyEndTime: z.ZodString;
     bufferMinutes: z.ZodOptional<z.ZodNumber>;
     excludedDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    rounds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
-    groupIds: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
-    allowPastDate: z.ZodOptional<z.ZodBoolean>;
+    doubleRound: z.ZodOptional<z.ZodBoolean>;
+    minRestDaysPerTeam: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strip>;
+export declare const getAvailableSlotsSchema: z.ZodObject<{
+    limit: z.ZodOptional<z.ZodNumber>;
+    venueIds: z.ZodArray<z.ZodNumber>;
+    dailyStartTime: z.ZodString;
+    dailyEndTime: z.ZodString;
+    bufferMinutes: z.ZodOptional<z.ZodNumber>;
+    excludedDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
+export declare const seasonScheduleDefaultsSchema: z.ZodObject<{
+    venueIds: z.ZodArray<z.ZodNumber>;
+    dailyStartTime: z.ZodString;
+    dailyEndTime: z.ZodString;
+    bufferMinutes: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export interface GenerateScheduleDto {
     desiredGroupCount: number;
@@ -75,6 +90,15 @@ export interface AutoScheduleDto {
 export interface RescheduleMatchDto {
     scheduledAt: Date;
     venueId: number;
+    bufferMinutes?: number;
+}
+export interface GetAvailableSlotsDto extends ScheduleOptions {
+    limit?: number;
+}
+export interface SeasonScheduleDefaultsDto {
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
     bufferMinutes?: number;
 }
 //# sourceMappingURL=schedule.schema.d.ts.map

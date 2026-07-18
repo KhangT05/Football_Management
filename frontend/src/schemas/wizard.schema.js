@@ -59,6 +59,7 @@ export const customStageSchema = z.discriminatedUnion('type', [
 export const customStagesSchema = z.array(customStageSchema)
     .min(1, 'Vui lòng thêm ít nhất 1 stage cho thể thức tùy chỉnh')
     .superRefine((stages, ctx) => {
+        if (stages.length === 0) return;
         const names = stages.map(s => s.name.trim().toLowerCase());
         const nameCount = new Map();
         names.forEach(n => nameCount.set(n, (nameCount.get(n) ?? 0) + 1));
@@ -68,9 +69,9 @@ export const customStagesSchema = z.array(customStageSchema)
             }
         });
 
-        if (!['round_robin', 'knockout'].includes(stages[0].type)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, path: [0, 'type'], message: 'Stage đầu tiên phải là "Vòng bảng" hoặc "Loại trực tiếp"' });
-        }
+        // if (!['round_robin', 'knockout'].includes(stages[0].type)) {
+        //     ctx.addIssue({ code: z.ZodIssueCode.custom, path: [0, 'type'], message: 'Stage đầu tiên phải là "Vòng bảng" hoặc "Loại trực tiếp"' });
+        // }
         if (stages[0].source_stage_cid) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, path: [0, 'source_stage_cid'], message: `Stage "${stages[0].name}" là stage đầu tiên, không được có nguồn` });
         }
@@ -214,11 +215,6 @@ export const wizardSchema = z.object({
         max_teams: z.number().int().min(2, 'Số đội tối đa ít nhất là 2'),
         is_registration_open: z.boolean(),
         pitch_type: z.enum(['san_5', 'san_7', 'san_11']),
-        // Field lịch sử: bind vào UI ở khối "Thể thức sân đấu (Knockout)" trong step Rule nhưng
-        // BE nhận nó qua season payload (xem wizard.mappers.js). TODO-CONFIRM: chưa đối chiếu
-        // lại với BE xem field này đúng ra có nên nằm trong rule payload thay vì season payload
-        // không — giữ nguyên vị trí gốc, không tự ý đổi API contract ở lần refactor này.
-        knockout_leg_type: z.enum(['single_leg', 'two_legged']),
     }),
 })
     .superRefine((w, ctx) => {
@@ -295,7 +291,6 @@ export const defaultWizardValues = {
     season: {
         name: '', start_date: '', end_date: '', registration_deadline: '',
         max_teams: 16, is_registration_open: true, pitch_type: 'san_5',
-        knockout_leg_type: 'single_leg',
     },
 };
 

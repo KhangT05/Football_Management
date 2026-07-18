@@ -15,121 +15,115 @@ export type AggregateTeamPlayer = {
 };
 export type TeamPlayerAvgAggregateOutputType = {
     id: number | null;
-    team_id: number | null;
+    season_team_id: number | null;
     player_id: number | null;
     jersey_number: number | null;
     user_id: number | null;
 };
 export type TeamPlayerSumAggregateOutputType = {
     id: number | null;
-    team_id: number | null;
+    season_team_id: number | null;
     player_id: number | null;
     jersey_number: number | null;
     user_id: number | null;
 };
 export type TeamPlayerMinAggregateOutputType = {
     id: number | null;
-    team_id: number | null;
+    season_team_id: number | null;
     player_id: number | null;
     jersey_number: number | null;
     position: $Enums.PlayerPosition | null;
     role: $Enums.PlayerRole | null;
     status: $Enums.PlayerStatus | null;
     approval_status: $Enums.ApprovalStatus | null;
-    is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
-    deleted_at: Date | null;
+    joined_at: Date | null;
     user_id: number | null;
 };
 export type TeamPlayerMaxAggregateOutputType = {
     id: number | null;
-    team_id: number | null;
+    season_team_id: number | null;
     player_id: number | null;
     jersey_number: number | null;
     position: $Enums.PlayerPosition | null;
     role: $Enums.PlayerRole | null;
     status: $Enums.PlayerStatus | null;
     approval_status: $Enums.ApprovalStatus | null;
-    is_active: boolean | null;
     created_at: Date | null;
     updated_at: Date | null;
-    deleted_at: Date | null;
+    joined_at: Date | null;
     user_id: number | null;
 };
 export type TeamPlayerCountAggregateOutputType = {
     id: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: number;
     role: number;
     status: number;
     approval_status: number;
-    is_active: number;
     created_at: number;
     updated_at: number;
-    deleted_at: number;
+    joined_at: number;
     user_id: number;
     _all: number;
 };
 export type TeamPlayerAvgAggregateInputType = {
     id?: true;
-    team_id?: true;
+    season_team_id?: true;
     player_id?: true;
     jersey_number?: true;
     user_id?: true;
 };
 export type TeamPlayerSumAggregateInputType = {
     id?: true;
-    team_id?: true;
+    season_team_id?: true;
     player_id?: true;
     jersey_number?: true;
     user_id?: true;
 };
 export type TeamPlayerMinAggregateInputType = {
     id?: true;
-    team_id?: true;
+    season_team_id?: true;
     player_id?: true;
     jersey_number?: true;
     position?: true;
     role?: true;
     status?: true;
     approval_status?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
+    joined_at?: true;
     user_id?: true;
 };
 export type TeamPlayerMaxAggregateInputType = {
     id?: true;
-    team_id?: true;
+    season_team_id?: true;
     player_id?: true;
     jersey_number?: true;
     position?: true;
     role?: true;
     status?: true;
     approval_status?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
+    joined_at?: true;
     user_id?: true;
 };
 export type TeamPlayerCountAggregateInputType = {
     id?: true;
-    team_id?: true;
+    season_team_id?: true;
     player_id?: true;
     jersey_number?: true;
     position?: true;
     role?: true;
     status?: true;
     approval_status?: true;
-    is_active?: true;
     created_at?: true;
     updated_at?: true;
-    deleted_at?: true;
+    joined_at?: true;
     user_id?: true;
     _all?: true;
 };
@@ -211,17 +205,16 @@ export type TeamPlayerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 };
 export type TeamPlayerGroupByOutputType = {
     id: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role: $Enums.PlayerRole;
     status: $Enums.PlayerStatus;
     approval_status: $Enums.ApprovalStatus;
-    is_active: boolean;
     created_at: Date;
     updated_at: Date | null;
-    deleted_at: Date | null;
+    joined_at: Date;
     user_id: number | null;
     _count: TeamPlayerCountAggregateOutputType | null;
     _avg: TeamPlayerAvgAggregateOutputType | null;
@@ -237,76 +230,72 @@ export type TeamPlayerWhereInput = {
     OR?: Prisma.TeamPlayerWhereInput[];
     NOT?: Prisma.TeamPlayerWhereInput | Prisma.TeamPlayerWhereInput[];
     id?: Prisma.IntFilter<"TeamPlayer"> | number;
-    team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
+    season_team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     player_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     jersey_number?: Prisma.IntFilter<"TeamPlayer"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"TeamPlayer"> | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFilter<"TeamPlayer"> | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFilter<"TeamPlayer"> | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFilter<"TeamPlayer"> | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFilter<"TeamPlayer"> | boolean;
     created_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
+    joined_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     user_id?: Prisma.IntNullableFilter<"TeamPlayer"> | number | null;
-    team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
+    season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
     player?: Prisma.XOR<Prisma.PlayerScalarRelationFilter, Prisma.PlayerWhereInput>;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
 };
 export type TeamPlayerOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     approval_status?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    joined_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
-    team?: Prisma.TeamOrderByWithRelationInput;
+    season_team?: Prisma.SeasonTeamOrderByWithRelationInput;
     player?: Prisma.PlayerOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
 };
 export type TeamPlayerWhereUniqueInput = Prisma.AtLeast<{
     id?: number;
-    team_id_jersey_number?: Prisma.TeamPlayerTeam_idJersey_numberCompoundUniqueInput;
-    team_id_player_id?: Prisma.TeamPlayerTeam_idPlayer_idCompoundUniqueInput;
+    season_team_id_jersey_number?: Prisma.TeamPlayerSeason_team_idJersey_numberCompoundUniqueInput;
+    season_team_id_player_id?: Prisma.TeamPlayerSeason_team_idPlayer_idCompoundUniqueInput;
     AND?: Prisma.TeamPlayerWhereInput | Prisma.TeamPlayerWhereInput[];
     OR?: Prisma.TeamPlayerWhereInput[];
     NOT?: Prisma.TeamPlayerWhereInput | Prisma.TeamPlayerWhereInput[];
-    team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
+    season_team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     player_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     jersey_number?: Prisma.IntFilter<"TeamPlayer"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"TeamPlayer"> | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFilter<"TeamPlayer"> | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFilter<"TeamPlayer"> | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFilter<"TeamPlayer"> | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFilter<"TeamPlayer"> | boolean;
     created_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
+    joined_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     user_id?: Prisma.IntNullableFilter<"TeamPlayer"> | number | null;
-    team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
+    season_team?: Prisma.XOR<Prisma.SeasonTeamScalarRelationFilter, Prisma.SeasonTeamWhereInput>;
     player?: Prisma.XOR<Prisma.PlayerScalarRelationFilter, Prisma.PlayerWhereInput>;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
-}, "id" | "team_id_jersey_number" | "team_id_player_id">;
+}, "id" | "season_team_id_jersey_number" | "season_team_id_player_id">;
 export type TeamPlayerOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     approval_status?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
+    joined_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.TeamPlayerCountOrderByAggregateInput;
     _avg?: Prisma.TeamPlayerAvgOrderByAggregateInput;
@@ -319,17 +308,16 @@ export type TeamPlayerScalarWhereWithAggregatesInput = {
     OR?: Prisma.TeamPlayerScalarWhereWithAggregatesInput[];
     NOT?: Prisma.TeamPlayerScalarWhereWithAggregatesInput | Prisma.TeamPlayerScalarWhereWithAggregatesInput[];
     id?: Prisma.IntWithAggregatesFilter<"TeamPlayer"> | number;
-    team_id?: Prisma.IntWithAggregatesFilter<"TeamPlayer"> | number;
+    season_team_id?: Prisma.IntWithAggregatesFilter<"TeamPlayer"> | number;
     player_id?: Prisma.IntWithAggregatesFilter<"TeamPlayer"> | number;
     jersey_number?: Prisma.IntWithAggregatesFilter<"TeamPlayer"> | number;
     position?: Prisma.EnumPlayerPositionWithAggregatesFilter<"TeamPlayer"> | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleWithAggregatesFilter<"TeamPlayer"> | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusWithAggregatesFilter<"TeamPlayer"> | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusWithAggregatesFilter<"TeamPlayer"> | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolWithAggregatesFilter<"TeamPlayer"> | boolean;
     created_at?: Prisma.DateTimeWithAggregatesFilter<"TeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamPlayer"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"TeamPlayer"> | Date | string | null;
+    joined_at?: Prisma.DateTimeWithAggregatesFilter<"TeamPlayer"> | Date | string;
     user_id?: Prisma.IntNullableWithAggregatesFilter<"TeamPlayer"> | number | null;
 };
 export type TeamPlayerCreateInput = {
@@ -338,27 +326,25 @@ export type TeamPlayerCreateInput = {
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team: Prisma.TeamCreateNestedOneWithoutTeam_playersInput;
+    joined_at?: Date | string;
+    season_team: Prisma.SeasonTeamCreateNestedOneWithoutTeam_playersInput;
     player: Prisma.PlayerCreateNestedOneWithoutTeam_playersInput;
     user?: Prisma.UserCreateNestedOneWithoutTeamPlayersInput;
 };
 export type TeamPlayerUncheckedCreateInput = {
     id?: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
     user_id?: number | null;
 };
 export type TeamPlayerUpdateInput = {
@@ -367,42 +353,39 @@ export type TeamPlayerUpdateInput = {
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team?: Prisma.TeamUpdateOneRequiredWithoutTeam_playersNestedInput;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutTeam_playersNestedInput;
     player?: Prisma.PlayerUpdateOneRequiredWithoutTeam_playersNestedInput;
     user?: Prisma.UserUpdateOneWithoutTeamPlayersNestedInput;
 };
 export type TeamPlayerUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TeamPlayerCreateManyInput = {
     id?: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
     user_id?: number | null;
 };
 export type TeamPlayerUpdateManyMutationInput = {
@@ -411,24 +394,22 @@ export type TeamPlayerUpdateManyMutationInput = {
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type TeamPlayerUncheckedUpdateManyInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TeamPlayerListRelationFilter = {
@@ -439,69 +420,66 @@ export type TeamPlayerListRelationFilter = {
 export type TeamPlayerOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
-export type TeamPlayerTeam_idJersey_numberCompoundUniqueInput = {
-    team_id: number;
+export type TeamPlayerSeason_team_idJersey_numberCompoundUniqueInput = {
+    season_team_id: number;
     jersey_number: number;
 };
-export type TeamPlayerTeam_idPlayer_idCompoundUniqueInput = {
-    team_id: number;
+export type TeamPlayerSeason_team_idPlayer_idCompoundUniqueInput = {
+    season_team_id: number;
     player_id: number;
 };
 export type TeamPlayerCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     approval_status?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
+    joined_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TeamPlayerAvgOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TeamPlayerMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     approval_status?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
+    joined_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TeamPlayerMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     position?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     approval_status?: Prisma.SortOrder;
-    is_active?: Prisma.SortOrder;
     created_at?: Prisma.SortOrder;
     updated_at?: Prisma.SortOrder;
-    deleted_at?: Prisma.SortOrder;
+    joined_at?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
 };
 export type TeamPlayerSumOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    team_id?: Prisma.SortOrder;
+    season_team_id?: Prisma.SortOrder;
     player_id?: Prisma.SortOrder;
     jersey_number?: Prisma.SortOrder;
     user_id?: Prisma.SortOrder;
@@ -542,44 +520,6 @@ export type TeamPlayerUncheckedUpdateManyWithoutUserNestedInput = {
     connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
     update?: Prisma.TeamPlayerUpdateWithWhereUniqueWithoutUserInput | Prisma.TeamPlayerUpdateWithWhereUniqueWithoutUserInput[];
     updateMany?: Prisma.TeamPlayerUpdateManyWithWhereWithoutUserInput | Prisma.TeamPlayerUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
-};
-export type TeamPlayerCreateNestedManyWithoutTeamInput = {
-    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput> | Prisma.TeamPlayerCreateWithoutTeamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutTeamInput[];
-    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutTeamInput | Prisma.TeamPlayerCreateOrConnectWithoutTeamInput[];
-    createMany?: Prisma.TeamPlayerCreateManyTeamInputEnvelope;
-    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-};
-export type TeamPlayerUncheckedCreateNestedManyWithoutTeamInput = {
-    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput> | Prisma.TeamPlayerCreateWithoutTeamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutTeamInput[];
-    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutTeamInput | Prisma.TeamPlayerCreateOrConnectWithoutTeamInput[];
-    createMany?: Prisma.TeamPlayerCreateManyTeamInputEnvelope;
-    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-};
-export type TeamPlayerUpdateManyWithoutTeamNestedInput = {
-    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput> | Prisma.TeamPlayerCreateWithoutTeamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutTeamInput[];
-    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutTeamInput | Prisma.TeamPlayerCreateOrConnectWithoutTeamInput[];
-    upsert?: Prisma.TeamPlayerUpsertWithWhereUniqueWithoutTeamInput | Prisma.TeamPlayerUpsertWithWhereUniqueWithoutTeamInput[];
-    createMany?: Prisma.TeamPlayerCreateManyTeamInputEnvelope;
-    set?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    disconnect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    delete?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    update?: Prisma.TeamPlayerUpdateWithWhereUniqueWithoutTeamInput | Prisma.TeamPlayerUpdateWithWhereUniqueWithoutTeamInput[];
-    updateMany?: Prisma.TeamPlayerUpdateManyWithWhereWithoutTeamInput | Prisma.TeamPlayerUpdateManyWithWhereWithoutTeamInput[];
-    deleteMany?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
-};
-export type TeamPlayerUncheckedUpdateManyWithoutTeamNestedInput = {
-    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput> | Prisma.TeamPlayerCreateWithoutTeamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutTeamInput[];
-    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutTeamInput | Prisma.TeamPlayerCreateOrConnectWithoutTeamInput[];
-    upsert?: Prisma.TeamPlayerUpsertWithWhereUniqueWithoutTeamInput | Prisma.TeamPlayerUpsertWithWhereUniqueWithoutTeamInput[];
-    createMany?: Prisma.TeamPlayerCreateManyTeamInputEnvelope;
-    set?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    disconnect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    delete?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
-    update?: Prisma.TeamPlayerUpdateWithWhereUniqueWithoutTeamInput | Prisma.TeamPlayerUpdateWithWhereUniqueWithoutTeamInput[];
-    updateMany?: Prisma.TeamPlayerUpdateManyWithWhereWithoutTeamInput | Prisma.TeamPlayerUpdateManyWithWhereWithoutTeamInput[];
     deleteMany?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
 };
 export type TeamPlayerCreateNestedManyWithoutPlayerInput = {
@@ -629,32 +569,68 @@ export type EnumPlayerStatusFieldUpdateOperationsInput = {
 export type EnumApprovalStatusFieldUpdateOperationsInput = {
     set?: $Enums.ApprovalStatus;
 };
+export type TeamPlayerCreateNestedManyWithoutSeason_teamInput = {
+    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput> | Prisma.TeamPlayerCreateWithoutSeason_teamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput[];
+    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput | Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput[];
+    createMany?: Prisma.TeamPlayerCreateManySeason_teamInputEnvelope;
+    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+};
+export type TeamPlayerUncheckedCreateNestedManyWithoutSeason_teamInput = {
+    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput> | Prisma.TeamPlayerCreateWithoutSeason_teamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput[];
+    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput | Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput[];
+    createMany?: Prisma.TeamPlayerCreateManySeason_teamInputEnvelope;
+    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+};
+export type TeamPlayerUpdateManyWithoutSeason_teamNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput> | Prisma.TeamPlayerCreateWithoutSeason_teamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput[];
+    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput | Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput[];
+    upsert?: Prisma.TeamPlayerUpsertWithWhereUniqueWithoutSeason_teamInput | Prisma.TeamPlayerUpsertWithWhereUniqueWithoutSeason_teamInput[];
+    createMany?: Prisma.TeamPlayerCreateManySeason_teamInputEnvelope;
+    set?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    disconnect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    delete?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    update?: Prisma.TeamPlayerUpdateWithWhereUniqueWithoutSeason_teamInput | Prisma.TeamPlayerUpdateWithWhereUniqueWithoutSeason_teamInput[];
+    updateMany?: Prisma.TeamPlayerUpdateManyWithWhereWithoutSeason_teamInput | Prisma.TeamPlayerUpdateManyWithWhereWithoutSeason_teamInput[];
+    deleteMany?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
+};
+export type TeamPlayerUncheckedUpdateManyWithoutSeason_teamNestedInput = {
+    create?: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput> | Prisma.TeamPlayerCreateWithoutSeason_teamInput[] | Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput[];
+    connectOrCreate?: Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput | Prisma.TeamPlayerCreateOrConnectWithoutSeason_teamInput[];
+    upsert?: Prisma.TeamPlayerUpsertWithWhereUniqueWithoutSeason_teamInput | Prisma.TeamPlayerUpsertWithWhereUniqueWithoutSeason_teamInput[];
+    createMany?: Prisma.TeamPlayerCreateManySeason_teamInputEnvelope;
+    set?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    disconnect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    delete?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    connect?: Prisma.TeamPlayerWhereUniqueInput | Prisma.TeamPlayerWhereUniqueInput[];
+    update?: Prisma.TeamPlayerUpdateWithWhereUniqueWithoutSeason_teamInput | Prisma.TeamPlayerUpdateWithWhereUniqueWithoutSeason_teamInput[];
+    updateMany?: Prisma.TeamPlayerUpdateManyWithWhereWithoutSeason_teamInput | Prisma.TeamPlayerUpdateManyWithWhereWithoutSeason_teamInput[];
+    deleteMany?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
+};
 export type TeamPlayerCreateWithoutUserInput = {
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team: Prisma.TeamCreateNestedOneWithoutTeam_playersInput;
+    joined_at?: Date | string;
+    season_team: Prisma.SeasonTeamCreateNestedOneWithoutTeam_playersInput;
     player: Prisma.PlayerCreateNestedOneWithoutTeam_playersInput;
 };
 export type TeamPlayerUncheckedCreateWithoutUserInput = {
     id?: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
 };
 export type TeamPlayerCreateOrConnectWithoutUserInput = {
     where: Prisma.TeamPlayerWhereUniqueInput;
@@ -682,66 +658,17 @@ export type TeamPlayerScalarWhereInput = {
     OR?: Prisma.TeamPlayerScalarWhereInput[];
     NOT?: Prisma.TeamPlayerScalarWhereInput | Prisma.TeamPlayerScalarWhereInput[];
     id?: Prisma.IntFilter<"TeamPlayer"> | number;
-    team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
+    season_team_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     player_id?: Prisma.IntFilter<"TeamPlayer"> | number;
     jersey_number?: Prisma.IntFilter<"TeamPlayer"> | number;
     position?: Prisma.EnumPlayerPositionFilter<"TeamPlayer"> | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFilter<"TeamPlayer"> | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFilter<"TeamPlayer"> | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFilter<"TeamPlayer"> | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFilter<"TeamPlayer"> | boolean;
     created_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     updated_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
-    deleted_at?: Prisma.DateTimeNullableFilter<"TeamPlayer"> | Date | string | null;
+    joined_at?: Prisma.DateTimeFilter<"TeamPlayer"> | Date | string;
     user_id?: Prisma.IntNullableFilter<"TeamPlayer"> | number | null;
-};
-export type TeamPlayerCreateWithoutTeamInput = {
-    jersey_number: number;
-    position: $Enums.PlayerPosition;
-    role?: $Enums.PlayerRole;
-    status?: $Enums.PlayerStatus;
-    approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    player: Prisma.PlayerCreateNestedOneWithoutTeam_playersInput;
-    user?: Prisma.UserCreateNestedOneWithoutTeamPlayersInput;
-};
-export type TeamPlayerUncheckedCreateWithoutTeamInput = {
-    id?: number;
-    player_id: number;
-    jersey_number: number;
-    position: $Enums.PlayerPosition;
-    role?: $Enums.PlayerRole;
-    status?: $Enums.PlayerStatus;
-    approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-};
-export type TeamPlayerCreateOrConnectWithoutTeamInput = {
-    where: Prisma.TeamPlayerWhereUniqueInput;
-    create: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput>;
-};
-export type TeamPlayerCreateManyTeamInputEnvelope = {
-    data: Prisma.TeamPlayerCreateManyTeamInput | Prisma.TeamPlayerCreateManyTeamInput[];
-    skipDuplicates?: boolean;
-};
-export type TeamPlayerUpsertWithWhereUniqueWithoutTeamInput = {
-    where: Prisma.TeamPlayerWhereUniqueInput;
-    update: Prisma.XOR<Prisma.TeamPlayerUpdateWithoutTeamInput, Prisma.TeamPlayerUncheckedUpdateWithoutTeamInput>;
-    create: Prisma.XOR<Prisma.TeamPlayerCreateWithoutTeamInput, Prisma.TeamPlayerUncheckedCreateWithoutTeamInput>;
-};
-export type TeamPlayerUpdateWithWhereUniqueWithoutTeamInput = {
-    where: Prisma.TeamPlayerWhereUniqueInput;
-    data: Prisma.XOR<Prisma.TeamPlayerUpdateWithoutTeamInput, Prisma.TeamPlayerUncheckedUpdateWithoutTeamInput>;
-};
-export type TeamPlayerUpdateManyWithWhereWithoutTeamInput = {
-    where: Prisma.TeamPlayerScalarWhereInput;
-    data: Prisma.XOR<Prisma.TeamPlayerUpdateManyMutationInput, Prisma.TeamPlayerUncheckedUpdateManyWithoutTeamInput>;
 };
 export type TeamPlayerCreateWithoutPlayerInput = {
     jersey_number: number;
@@ -749,25 +676,23 @@ export type TeamPlayerCreateWithoutPlayerInput = {
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    team: Prisma.TeamCreateNestedOneWithoutTeam_playersInput;
+    joined_at?: Date | string;
+    season_team: Prisma.SeasonTeamCreateNestedOneWithoutTeam_playersInput;
     user?: Prisma.UserCreateNestedOneWithoutTeamPlayersInput;
 };
 export type TeamPlayerUncheckedCreateWithoutPlayerInput = {
     id?: number;
-    team_id: number;
+    season_team_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
     user_id?: number | null;
 };
 export type TeamPlayerCreateOrConnectWithoutPlayerInput = {
@@ -791,19 +716,64 @@ export type TeamPlayerUpdateManyWithWhereWithoutPlayerInput = {
     where: Prisma.TeamPlayerScalarWhereInput;
     data: Prisma.XOR<Prisma.TeamPlayerUpdateManyMutationInput, Prisma.TeamPlayerUncheckedUpdateManyWithoutPlayerInput>;
 };
-export type TeamPlayerCreateManyUserInput = {
+export type TeamPlayerCreateWithoutSeason_teamInput = {
+    jersey_number: number;
+    position: $Enums.PlayerPosition;
+    role?: $Enums.PlayerRole;
+    status?: $Enums.PlayerStatus;
+    approval_status?: $Enums.ApprovalStatus;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    joined_at?: Date | string;
+    player: Prisma.PlayerCreateNestedOneWithoutTeam_playersInput;
+    user?: Prisma.UserCreateNestedOneWithoutTeamPlayersInput;
+};
+export type TeamPlayerUncheckedCreateWithoutSeason_teamInput = {
     id?: number;
-    team_id: number;
     player_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
+    user_id?: number | null;
+};
+export type TeamPlayerCreateOrConnectWithoutSeason_teamInput = {
+    where: Prisma.TeamPlayerWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput>;
+};
+export type TeamPlayerCreateManySeason_teamInputEnvelope = {
+    data: Prisma.TeamPlayerCreateManySeason_teamInput | Prisma.TeamPlayerCreateManySeason_teamInput[];
+    skipDuplicates?: boolean;
+};
+export type TeamPlayerUpsertWithWhereUniqueWithoutSeason_teamInput = {
+    where: Prisma.TeamPlayerWhereUniqueInput;
+    update: Prisma.XOR<Prisma.TeamPlayerUpdateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedUpdateWithoutSeason_teamInput>;
+    create: Prisma.XOR<Prisma.TeamPlayerCreateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedCreateWithoutSeason_teamInput>;
+};
+export type TeamPlayerUpdateWithWhereUniqueWithoutSeason_teamInput = {
+    where: Prisma.TeamPlayerWhereUniqueInput;
+    data: Prisma.XOR<Prisma.TeamPlayerUpdateWithoutSeason_teamInput, Prisma.TeamPlayerUncheckedUpdateWithoutSeason_teamInput>;
+};
+export type TeamPlayerUpdateManyWithWhereWithoutSeason_teamInput = {
+    where: Prisma.TeamPlayerScalarWhereInput;
+    data: Prisma.XOR<Prisma.TeamPlayerUpdateManyMutationInput, Prisma.TeamPlayerUncheckedUpdateManyWithoutSeason_teamInput>;
+};
+export type TeamPlayerCreateManyUserInput = {
+    id?: number;
+    season_team_id: number;
+    player_id: number;
+    jersey_number: number;
+    position: $Enums.PlayerPosition;
+    role?: $Enums.PlayerRole;
+    status?: $Enums.PlayerStatus;
+    approval_status?: $Enums.ApprovalStatus;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    joined_at?: Date | string;
 };
 export type TeamPlayerUpdateWithoutUserInput = {
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -811,108 +781,49 @@ export type TeamPlayerUpdateWithoutUserInput = {
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team?: Prisma.TeamUpdateOneRequiredWithoutTeam_playersNestedInput;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutTeam_playersNestedInput;
     player?: Prisma.PlayerUpdateOneRequiredWithoutTeam_playersNestedInput;
 };
 export type TeamPlayerUncheckedUpdateWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type TeamPlayerUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     player_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-};
-export type TeamPlayerCreateManyTeamInput = {
-    id?: number;
-    player_id: number;
-    jersey_number: number;
-    position: $Enums.PlayerPosition;
-    role?: $Enums.PlayerRole;
-    status?: $Enums.PlayerStatus;
-    approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
-    created_at?: Date | string;
-    updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
-    user_id?: number | null;
-};
-export type TeamPlayerUpdateWithoutTeamInput = {
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
-    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
-    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
-    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
-    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    player?: Prisma.PlayerUpdateOneRequiredWithoutTeam_playersNestedInput;
-    user?: Prisma.UserUpdateOneWithoutTeamPlayersNestedInput;
-};
-export type TeamPlayerUncheckedUpdateWithoutTeamInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
-    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
-    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
-    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
-    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-};
-export type TeamPlayerUncheckedUpdateManyWithoutTeamInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
-    player_id?: Prisma.IntFieldUpdateOperationsInput | number;
-    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
-    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
-    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
-    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
-    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type TeamPlayerCreateManyPlayerInput = {
     id?: number;
-    team_id: number;
+    season_team_id: number;
     jersey_number: number;
     position: $Enums.PlayerPosition;
     role?: $Enums.PlayerRole;
     status?: $Enums.PlayerStatus;
     approval_status?: $Enums.ApprovalStatus;
-    is_active?: boolean;
     created_at?: Date | string;
     updated_at?: Date | string | null;
-    deleted_at?: Date | string | null;
+    joined_at?: Date | string;
     user_id?: number | null;
 };
 export type TeamPlayerUpdateWithoutPlayerInput = {
@@ -921,100 +832,145 @@ export type TeamPlayerUpdateWithoutPlayerInput = {
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    team?: Prisma.TeamUpdateOneRequiredWithoutTeam_playersNestedInput;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    season_team?: Prisma.SeasonTeamUpdateOneRequiredWithoutTeam_playersNestedInput;
     user?: Prisma.UserUpdateOneWithoutTeamPlayersNestedInput;
 };
 export type TeamPlayerUncheckedUpdateWithoutPlayerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TeamPlayerUncheckedUpdateManyWithoutPlayerInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
-    team_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    season_team_id?: Prisma.IntFieldUpdateOperationsInput | number;
     jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
     position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
     role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
     status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
     approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
-    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+};
+export type TeamPlayerCreateManySeason_teamInput = {
+    id?: number;
+    player_id: number;
+    jersey_number: number;
+    position: $Enums.PlayerPosition;
+    role?: $Enums.PlayerRole;
+    status?: $Enums.PlayerStatus;
+    approval_status?: $Enums.ApprovalStatus;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    joined_at?: Date | string;
+    user_id?: number | null;
+};
+export type TeamPlayerUpdateWithoutSeason_teamInput = {
+    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
+    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
+    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
+    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
+    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    player?: Prisma.PlayerUpdateOneRequiredWithoutTeam_playersNestedInput;
+    user?: Prisma.UserUpdateOneWithoutTeamPlayersNestedInput;
+};
+export type TeamPlayerUncheckedUpdateWithoutSeason_teamInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
+    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
+    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
+    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
+    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+};
+export type TeamPlayerUncheckedUpdateManyWithoutSeason_teamInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    player_id?: Prisma.IntFieldUpdateOperationsInput | number;
+    jersey_number?: Prisma.IntFieldUpdateOperationsInput | number;
+    position?: Prisma.EnumPlayerPositionFieldUpdateOperationsInput | $Enums.PlayerPosition;
+    role?: Prisma.EnumPlayerRoleFieldUpdateOperationsInput | $Enums.PlayerRole;
+    status?: Prisma.EnumPlayerStatusFieldUpdateOperationsInput | $Enums.PlayerStatus;
+    approval_status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    joined_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
 };
 export type TeamPlayerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
-    team_id?: boolean;
+    season_team_id?: boolean;
     player_id?: boolean;
     jersey_number?: boolean;
     position?: boolean;
     role?: boolean;
     status?: boolean;
     approval_status?: boolean;
-    is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
-    deleted_at?: boolean;
+    joined_at?: boolean;
     user_id?: boolean;
-    team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+    season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
     player?: boolean | Prisma.PlayerDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.TeamPlayer$userArgs<ExtArgs>;
 }, ExtArgs["result"]["teamPlayer"]>;
 export type TeamPlayerSelectScalar = {
     id?: boolean;
-    team_id?: boolean;
+    season_team_id?: boolean;
     player_id?: boolean;
     jersey_number?: boolean;
     position?: boolean;
     role?: boolean;
     status?: boolean;
     approval_status?: boolean;
-    is_active?: boolean;
     created_at?: boolean;
     updated_at?: boolean;
-    deleted_at?: boolean;
+    joined_at?: boolean;
     user_id?: boolean;
 };
-export type TeamPlayerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "team_id" | "player_id" | "jersey_number" | "position" | "role" | "status" | "approval_status" | "is_active" | "created_at" | "updated_at" | "deleted_at" | "user_id", ExtArgs["result"]["teamPlayer"]>;
+export type TeamPlayerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "season_team_id" | "player_id" | "jersey_number" | "position" | "role" | "status" | "approval_status" | "created_at" | "updated_at" | "joined_at" | "user_id", ExtArgs["result"]["teamPlayer"]>;
 export type TeamPlayerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-    team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+    season_team?: boolean | Prisma.SeasonTeamDefaultArgs<ExtArgs>;
     player?: boolean | Prisma.PlayerDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.TeamPlayer$userArgs<ExtArgs>;
 };
 export type $TeamPlayerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "TeamPlayer";
     objects: {
-        team: Prisma.$TeamPayload<ExtArgs>;
+        season_team: Prisma.$SeasonTeamPayload<ExtArgs>;
         player: Prisma.$PlayerPayload<ExtArgs>;
         user: Prisma.$UserPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
-        team_id: number;
+        season_team_id: number;
         player_id: number;
         jersey_number: number;
         position: $Enums.PlayerPosition;
         role: $Enums.PlayerRole;
         status: $Enums.PlayerStatus;
         approval_status: $Enums.ApprovalStatus;
-        is_active: boolean;
         created_at: Date;
         updated_at: Date | null;
-        deleted_at: Date | null;
+        joined_at: Date;
         user_id: number | null;
     }, ExtArgs["result"]["teamPlayer"]>;
     composites: {};
@@ -1293,7 +1249,7 @@ export interface TeamPlayerDelegate<ExtArgs extends runtime.Types.Extensions.Int
  */
 export interface Prisma__TeamPlayerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
-    team<T extends Prisma.TeamDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeamDefaultArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
+    season_team<T extends Prisma.SeasonTeamDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SeasonTeamDefaultArgs<ExtArgs>>): Prisma.Prisma__SeasonTeamClient<runtime.Types.Result.GetResult<Prisma.$SeasonTeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     player<T extends Prisma.PlayerDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlayerDefaultArgs<ExtArgs>>): Prisma.Prisma__PlayerClient<runtime.Types.Result.GetResult<Prisma.$PlayerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     user<T extends Prisma.TeamPlayer$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeamPlayer$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
@@ -1322,17 +1278,16 @@ export interface Prisma__TeamPlayerClient<T, Null = never, ExtArgs extends runti
  */
 export interface TeamPlayerFieldRefs {
     readonly id: Prisma.FieldRef<"TeamPlayer", 'Int'>;
-    readonly team_id: Prisma.FieldRef<"TeamPlayer", 'Int'>;
+    readonly season_team_id: Prisma.FieldRef<"TeamPlayer", 'Int'>;
     readonly player_id: Prisma.FieldRef<"TeamPlayer", 'Int'>;
     readonly jersey_number: Prisma.FieldRef<"TeamPlayer", 'Int'>;
     readonly position: Prisma.FieldRef<"TeamPlayer", 'PlayerPosition'>;
     readonly role: Prisma.FieldRef<"TeamPlayer", 'PlayerRole'>;
     readonly status: Prisma.FieldRef<"TeamPlayer", 'PlayerStatus'>;
     readonly approval_status: Prisma.FieldRef<"TeamPlayer", 'ApprovalStatus'>;
-    readonly is_active: Prisma.FieldRef<"TeamPlayer", 'Boolean'>;
     readonly created_at: Prisma.FieldRef<"TeamPlayer", 'DateTime'>;
     readonly updated_at: Prisma.FieldRef<"TeamPlayer", 'DateTime'>;
-    readonly deleted_at: Prisma.FieldRef<"TeamPlayer", 'DateTime'>;
+    readonly joined_at: Prisma.FieldRef<"TeamPlayer", 'DateTime'>;
     readonly user_id: Prisma.FieldRef<"TeamPlayer", 'Int'>;
 }
 /**

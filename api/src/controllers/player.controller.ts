@@ -120,6 +120,7 @@ export class PlayerController extends Controller {
 
   // ─── Team Players ─────────────────────────────────────────────────────────
 
+  // player.controller.ts
   @Get("{team_id}/team-players")
   async listTeamPlayers(
     @Path() team_id: number,
@@ -132,7 +133,7 @@ export class PlayerController extends Controller {
     @Query() approval_status?: string
   ): Promise<PaginatedResult<TeamPlayerDto>> {
     return this.service.listTeamPlayers({
-      team_id,
+      season_team_id: team_id,   // FIX: key phải khớp field service destructure
       page,
       per_page,
       sort,
@@ -140,7 +141,7 @@ export class PlayerController extends Controller {
       ...(position && { position }),
       ...(status && { status }),
       ...(approval_status && { approval_status }),
-    } as ListTeamPlayersQuery);
+    });
   }
 
   // FIX: cùng nhóm bug route-ordering như import-template — route tĩnh
@@ -238,13 +239,14 @@ export class PlayerController extends Controller {
     return this.service.rejectTeamPlayer(id, team_id);
   }
 
+  // player.controller.ts
   @Security("jwt", ["admin", "organizing", "leader"])
   @Delete("{team_id}/team-players")
   async bulkDeleteTeamPlayers(
     @Path() team_id: number,
     @Body() body: BulkDeleteDto
   ): Promise<{ deleted: number; notFound: number[] }> {
-    return this.service.bulkDeleteTeamPlayers(team_id, body);
+    return this.service.bulkDeleteTeamPlayers(team_id, body); // reason đã nằm trong body
   }
 
   // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer

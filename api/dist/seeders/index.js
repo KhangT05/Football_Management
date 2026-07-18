@@ -30,7 +30,7 @@ import { seedKnockoutBracket } from "./knockoutSeeder.js";
 import { seedPayments, FULL_SPREAD_WEIGHTS } from "./paymentSeeder.js";
 import { seedPlayerStatistics } from "./playerStatisticSeeder.js";
 import { applySuspensionsAndFines } from "./suspensionSeeder.js";
-import { seedOrphanLeaders, seedFreeAgentPlayers, seedOrphanTeam, seedIncompleteApprovalStates } from "./edgeCaseUserSeeder.js";
+import { seedOrphanLeaders, seedFreeAgentPlayers, seedUnregisteredTeam, seedIncompleteApprovalStates } from "./edgeCaseUserSeeder.js";
 import prisma from "../libs/prisma.js";
 const REGISTRATION_FEE = 5_000_000;
 /**
@@ -226,7 +226,8 @@ export async function main() {
     await seedOrphanLeaders(prisma, roleMap, 3);
     const freeAgentPlayerIds = await seedFreeAgentPlayers(prisma, roleMap, 5);
     void freeAgentPlayerIds; // cố ý không gán vào team nào — đúng mục đích "cầu thủ tự do"
-    const orphanTeamId = await seedOrphanTeam(prisma, organizerUserId, "CLB Chờ Đăng Ký", 8, classIdByName);
+    const orphanTeamId = await seedUnregisteredTeam(prisma, organizerUserId, "CLB Chờ Đăng Ký", classIdByName);
+    void orphanTeamId;
     await seedIncompleteApprovalStates(prisma, orphanTeamId);
     console.log("[Index] === Seed hoàn tất ===");
 }

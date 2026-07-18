@@ -1,5 +1,5 @@
-import { MatchEventType, MatchResultType, MatchStatus, PlayerPosition } from '../generated/prisma/client.js';
-import { MatchReportGoalEntry } from '../helper/match.helper.js';
+import { MatchResultType, MatchStatus, PlayerPosition } from '../generated/prisma/client.js';
+import { MatchReportEventEntry, MatchReportGoalEntry } from '../helper/match.helper.js';
 
 export interface MatchReportJerseyInfo {
     logoUrl: string | null;
@@ -13,11 +13,13 @@ export interface MatchReportTeamInfo {
     jersey: MatchReportJerseyInfo;
 }
 
-export interface MatchReportEventEntry {
-    minute: number | null;
-    addedMinute: number | null;
-}
-
+// FIX (row/type thừa): trước đây file này tự khai `MatchReportEventEntry`
+// riêng (chỉ minute/addedMinute), TRÙNG với field lõi của `MatchReportGoalEntry`
+// bên match.helper.ts (minute/addedMinute + clockTime/clockConfidence). 2 khai
+// báo cùng ý nghĩa ở 2 nơi khiến lần thêm "giờ thực" trước chỉ sửa được phía
+// goal, quên mất phía card (thẻ vàng/đỏ) — vì nó dùng type riêng ở đây, không
+// liên quan gì tới type bên kia. Giờ import lại từ match.helper.ts — 1 nguồn
+// duy nhất, card cũng tự động có clockTime/clockConfidence.
 export interface MatchReportPlayerRow {
     playerId: number;
     jerseyNumber: number | null;
@@ -59,8 +61,6 @@ export interface MatchReportOutput {
         home: MatchReportPlayerRow[];
         away: MatchReportPlayerRow[];
     };
-    // FIX: trước đây service tính goalsTimeline nhưng không đưa vào response —
-    // biến chết, và PDF/UI không thể hiển thị timeline bàn thắng theo phút.
     goalsTimeline: {
         home: MatchReportGoalEntry[];
         away: MatchReportGoalEntry[];

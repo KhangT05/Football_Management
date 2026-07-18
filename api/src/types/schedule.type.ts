@@ -128,4 +128,18 @@ export type DateRangeOverride = {
     dateRangeEnd?: Date;
 };
 
+export type MatchSlotOption = {
+    venueId: number;
+    venueName: string;
+    scheduledAt: string; // ISO
+};
+
+export type UnscheduledMatchOption = {
+    id: number;
+    homeTeamId: number;
+    homeTeamName: string;
+    awayTeamId: number;
+    awayTeamName: string;
+};
+
 export type MatchScheduleRow = Prisma.MatchGetPayload<{ select: typeof matchScheduleSelect }>;

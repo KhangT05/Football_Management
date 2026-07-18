@@ -52,3 +52,8 @@ export interface SeasonTeamWithRelations {
     user: { id: number; name: string; email: string } | null;
     group: { id: number; name: string } | null;
 }
+
+export type BulkActionResult = {
+    succeeded: number[];
+    failed: { id: number; reason: string }[];
+};

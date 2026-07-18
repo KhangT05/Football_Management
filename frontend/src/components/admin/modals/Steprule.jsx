@@ -10,7 +10,7 @@ import CustomStageBuilder from './CustomStageBuilder';
 import { useRuleTemplatesQuery } from '../../../queries/wizard.queries';
 import { ruleDtoToFormValues } from '../../../schemas/wizard.mappers';
 import {
-    FORMAT_META, KNOCKOUT_LEG_TYPE_META, TIEBREAKER_LABELS, ALL_TIEBREAKERS,
+    FORMAT_META, TIEBREAKER_LABELS, ALL_TIEBREAKERS,
     getFormatMeta, clampStagesForFormat,
 } from '../../../schemas/wizard.constants';
 import { defaultRuleForm, seedInitialCustomStage } from '../../../schemas/wizard.schema';
@@ -24,7 +24,6 @@ export default function StepRule() {
     const format = useWatch({ control, name: 'rule.format' });
     const roundRobinStages = useWatch({ control, name: 'rule.round_robin_stages' });
     const tiebreakerOrder = useWatch({ control, name: 'rule.tiebreaker_order' });
-    const knockoutLegType = useWatch({ control, name: 'season.knockout_leg_type' });
 
     const effectiveTournamentId = tournamentMode === 'existing' ? existingTournamentId : null;
     const { data: ruleTemplates = [], isLoading: isLoadingTemplates } = useRuleTemplatesQuery(
@@ -236,19 +235,6 @@ export default function StepRule() {
                             <NumberField name="rule.forfeit_score" label="Điểm xử thua" required min={0} max={20} />
                         </div>
                     </div>
-
-                    {!isCustomFormat && activeFormatMeta.hasKnockout && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {activeFormatMeta.hasGroupPhase && (
-                                <NumberField name="rule.teams_advance_per_group" label="Số đội đi tiếp / bảng" required min={1} />
-                            )}
-                            <FormField label="Thể thức sân đấu (Knockout)" required>
-                                <select className={INPUT} {...register('season.knockout_leg_type')}>
-                                    {KNOCKOUT_LEG_TYPE_META.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
-                                </select>
-                            </FormField>
-                        </div>
-                    )}
 
                     <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỷ luật</p>

@@ -4,7 +4,7 @@ import {
 } from 'tsoa';
 import { ScheduleService } from '../services/schedule.service.js';
 import * as scheduleSchema from '../dtos/schedule.schema.js';
-import { GenerateResult, MatchByTeamRow, RoundSummary } from '../types/schedule.type.js';
+import { GenerateResult, MatchByTeamRow, MatchSlotOption, RoundSummary, UnscheduledMatchOption } from '../types/schedule.type.js';
 import { rescheduleMatchSchema } from '../dtos/schedule.schema.js';
 import { PaginatedResult, QueryRequest } from '../types/queryable.type.js';
 import { Match } from '../generated/prisma/client.js';
@@ -106,5 +106,42 @@ export class ScheduleController extends Controller {
     ): Promise<PaginatedResult<MatchByTeamRow>> {
         const req: QueryRequest = { page, per_page, sort, direction };
         return this.service.findMatchesByTeam(seasonId, teamId, req);
+    }
+    @Security('jwt', ['organizing'])
+    @Get('seasons/{seasonId}/groups/{groupId}/rounds/{round}/unscheduled-matches')
+    async getUnscheduledMatchesInRound(
+        @Path() seasonId: number,
+        @Path() groupId: number,
+        @Path() round: number,
+    ): Promise<UnscheduledMatchOption[]> {
+        return this.service.findUnscheduledMatchesInRound(seasonId, groupId, round);
+    }
+
+    @Security('jwt', ['organizing'])
+    @Post('seasons/{seasonId}/matches/{matchId}/available-slots')
+    async getAvailableSlotsForMatch(
+        @Path() seasonId: number,
+        @Path() matchId: number,
+        @Body() body: scheduleSchema.GetAvailableSlotsDto,
+    ): Promise<MatchSlotOption[]> {
+        const parsed = scheduleSchema.getAvailableSlotsSchema.parse(body);
+        return this.service.getAvailableSlotsForMatch(seasonId, matchId, parsed);
+    }
+    @Security('jwt', ['organizing'])
+    @Get('seasons/{seasonId}/defaults')
+    async getScheduleDefaults(@Path() seasonId: number) {
+        return this.service.getScheduleDefaults(seasonId);
+    }
+
+    @Security('jwt', ['organizing'])
+    @Patch('seasons/{seasonId}/defaults')
+    @SuccessResponse(204, 'No Content')
+    async saveScheduleDefaults(
+        @Path() seasonId: number,
+        @Body() body: scheduleSchema.SeasonScheduleDefaultsDto,
+    ): Promise<void> {
+        const parsed = scheduleSchema.seasonScheduleDefaultsSchema.parse(body);
+        await this.service.saveScheduleDefaults(seasonId, parsed);
+        this.setStatus(204);
     }
 }

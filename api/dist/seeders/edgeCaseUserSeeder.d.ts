@@ -9,41 +9,53 @@ export declare function seedOrphanLeaders(db: PrismaClient, roleMap: Record<Role
 /** Tạo N user role=player + Player row NHƯNG không đưa vào bất kỳ TeamPlayer nào — cầu thủ tự do. */
 export declare function seedFreeAgentPlayers(db: PrismaClient, roleMap: Record<RoleName, number>, count: number): Promise<number[]>;
 /**
- * Tạo 1 Team mới KHÔNG đăng ký vào season nào — đội tồn tại trong hệ thống
- * (đã có HLV, có thể có vài cầu thủ) nhưng chưa từng tham dự giải đấu nào.
- * Nếu squadSize < 11, đội này cũng minh hoạ luôn case "chưa đủ người đá".
+ * Tạo 1 Team KHÔNG đăng ký vào season nào — đội tồn tại trong hệ thống (có
+ * HLV) nhưng chưa từng đăng ký giải. FIX: bản trước còn seed luôn TeamPlayer
+ * cho đội này bằng team_id — sai vì TeamPlayer chỉ tồn tại trong ngữ cảnh
+ * season_team_id. Team chưa đăng ký season thì KHÔNG THỂ có roster hợp lệ
+ * theo schema hiện tại — nên bản này chỉ tạo Team, không tạo squad.
  *
- * classIdByName (từ classSeeder.seedClasses, PHẢI chạy trước): đội mồ côi
- * vẫn cần class_id giống mọi Team khác trong hệ thống (đội sinh viên gắn với
- * 1 lớp cụ thể).
- *
- * FIX (P1 — jersey convention mismatch): bản trước gán vị trí theo
- * `positions[jersey % 4]` (round-robin 4 vị trí cơ bản theo thứ tự cố định:
- * GK, DF, MF, FW lặp lại mỗi 4 người) — KHÁC HẲN convention thật của hệ
- * thống. `squadSeeder.seedSquads` dùng `buildSquadPositions()`
- * (helperSeeder.ts): 23 người xếp thành BLOCK liên tục 3 GK (jersey 1-3) + 8
- * DF (4-11) + 8 MF (12-19) + 4 FW (20-23). `matchDetailSeeder.splitStartersSubs`
- * đọc ngược lại đúng theo block đó (`jersey<=3` -> GK, `4-11` -> DF,
- * `12-19` -> MF, `>=20` -> FW) để dựng đội hình ra sân.
- *
- * Nếu orphan team (squadSize >= 11) từng được lịch vào 1 trận thật, 2
- * convention lệch nhau sẽ khiến `splitStartersSubs` gán sai vị trí thực tế:
- * jersey #4 ở orphan team là DF theo modulo-4 nhưng `matchDetailSeeder` vẫn
- * coi #4 là DF (đúng ở biên này) — nhưng jersey #5 modulo-4 lại là GK (vì
- * `positions[5%4]=positions[1]=DF`... thực chất mọi vị trí modulo-4 lệch
- * hoàn toàn khỏi block 3/8/8/4 ngay từ jersey #4 trở đi) trong khi
- * `matchDetailSeeder` coi #5-11 đều là DF — kết quả: cầu thủ đăng ký vị trí
- * X (Player.position) có thể bị xếp đá ở vị trí khác trên sân
- * (MatchLineup.position lấy theo TeamPlayer.position, TeamPlayer.position
- * lại lấy theo convention modulo-4 sai). Fix: dùng chung
- * `buildSquadPositions()` như squadSeeder để 2 nơi luôn khớp nhau.
+ * Nếu cần test "team đăng ký nhưng thiếu người", dùng
+ * seedUnderStaffedSeasonTeam bên dưới (cần season_team_id thật, tức là team
+ * ĐÃ đăng ký season, chỉ là chưa đủ người).
  */
-export declare function seedOrphanTeam(db: PrismaClient, adminUserId: number, teamName: string, squadSize: number, classIdByName: Record<string, number>): Promise<number>;
+export declare function seedUnregisteredTeam(db: PrismaClient, adminUserId: number, teamName: string, classIdByName: Record<string, number>): Promise<number>;
 /**
- * Đánh dấu ngẫu nhiên vài TeamPlayer trong 1 đội sang trạng thái chưa hoàn
- * thiện: approval_status pending/rejected, status injured/suspended. Bản gốc
- * (squadSeeder) luôn hardcode approved/active cho MỌI cầu thủ — không có
- * case nào thể hiện quy trình duyệt danh sách đăng ký còn dang dở.
+ * Team ĐÃ đăng ký season (có season_team_id thật) nhưng số người dưới
+ * min_players_per_team của TournamentRule (default 7). Chỉ là wrapper gọi
+ * squadSeeder.seedBoundarySquad — không tự build lại logic vị trí ở đây,
+ * tránh 2 nguồn sự thật cho cùng 1 việc "sinh roster".
  */
-export declare function seedIncompleteApprovalStates(db: PrismaClient, teamId: number): Promise<void>;
+export declare function seedUnderStaffedSeasonTeam(db: PrismaClient, seasonTeamId: number, teamNameForEmail: string, squadSize: number): Promise<void>;
+/**
+ * Đánh dấu ngẫu nhiên vài TeamPlayer trong 1 season_team sang trạng thái
+ * chưa hoàn thiện: approval_status pending/rejected, status injured/suspended.
+ * FIX: bản trước filter theo team_id (không tồn tại) — đổi sang season_team_id.
+ */
+export declare function seedIncompleteApprovalStates(db: PrismaClient, seasonTeamId: number): Promise<void>;
+/**
+ * User giữ đồng thời 2 role (player + leader) — hệ thống cho phép 1 user
+ * nhiều role (User_Role là bảng nhiều-nhiều) nhưng flow UI/business logic
+ * thường viết theo giả định 1 user = 1 role chủ đạo. Case này lộ ra chỗ
+ * nào code đang implicit-assume single-role (vd: dashboard redirect theo
+ * role đầu tiên tìm thấy, permission check thiếu OR-logic giữa các role).
+ */
+export declare function seedRoleStackedUser(db: PrismaClient, roleMap: Record<RoleName, number>, label: string): Promise<number>;
+/**
+ * User bị khoá (is_active=false) nhưng vẫn còn TeamPlayer status=active
+ * trong 1 season_team đang thi đấu. Không có FK/constraint nào tự động
+ * đồng bộ User.is_active với TeamPlayer.status — nếu login bị chặn ở tầng
+ * auth nhưng match-day lineup validation không check User.is_active (chỉ
+ * check TeamPlayer.status/approval_status), cầu thủ này vẫn được xếp đá dù
+ * tài khoản đã khoá. Dùng để test đúng lớp nào PHẢI check is_active.
+ */
+export declare function seedInactiveUserWithLiveRoster(db: PrismaClient, seasonTeamId: number, label: string, jerseyNumber: number): Promise<void>;
+/**
+ * User email chưa verify nhưng đã được đưa vào roster ở trạng thái pending —
+ * mô phỏng luồng: leader thêm cầu thủ vào danh sách trước khi cầu thủ đó tự
+ * verify email tài khoản. Test: approval flow có vô tình auto-approve user
+ * chưa verify hay không (2 khái niệm "chưa xác thực" khác nhau: email
+ * verification vs squad approval — dễ bị lẫn lộn khi review code).
+ */
+export declare function seedUnverifiedEmailPendingPlayer(db: PrismaClient, seasonTeamId: number, label: string, jerseyNumber: number): Promise<void>;
 //# sourceMappingURL=edgeCaseUserSeeder.d.ts.map

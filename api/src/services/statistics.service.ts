@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import { LeaveReason, Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { PERIOD_DAYS, Queryable } from "../libs/queryable.js";
 import type {
     UserRegistrationStats,
@@ -46,6 +46,8 @@ import type {
     PlayerTeamsInPeriodStats,
     TeamFinanceEntry,
     PlayerPerformanceBatchEntry,
+    TeamPlayerLeaveStats,
+    PlayersWithoutTeamStats,
 } from "../types/statistics.type.js";
 
 const BUSINESS_TZ_OFFSET_HOURS = 7;
@@ -1279,15 +1281,22 @@ export class StatisticsService {
         });
         if (!player) throw createAppError("NOT_FOUND", `Player id=${playerId} not found`, "Không tìm thấy cầu thủ");
 
-        const [teamPlayers, statRows] = await Promise.all([
+        const [teamPlayers, historyRows, statRows] = await Promise.all([
             this.prisma.teamPlayer.findMany({
                 where: { player_id: playerId },
                 select: {
-                    team_id: true, jersey_number: true, role: true,
-                    created_at: true, deleted_at: true, is_active: true,
-                    team: { select: { id: true, name: true } },
+                    jersey_number: true, role: true, created_at: true,
+                    season_team: { select: { team: { select: { id: true, name: true } } } },
                 },
                 orderBy: { created_at: "desc" },
+            }),
+            this.prisma.teamPlayerHistory.findMany({
+                where: { player_id: playerId },
+                select: {
+                    jersey_number: true, role: true, joined_at: true, left_at: true, left_reason: true,
+                    season_team: { select: { team: { select: { id: true, name: true } } } },
+                },
+                orderBy: { left_at: "desc" },
             }),
             this.prisma.playerStatistic.findMany({
                 where: { player_id: playerId },
@@ -1295,25 +1304,44 @@ export class StatisticsService {
             }),
         ]);
 
-        const current = teamPlayers.find((tp) => tp.is_active && !tp.deleted_at) ?? null;
+        const current = teamPlayers[0] ?? null;
+
+        const liveHistory = teamPlayers.map((tp) => ({
+            team_id: tp.season_team.team.id,
+            team_name: tp.season_team.team.name,
+            joined_at: tp.created_at.toISOString(),
+            left_at: null as string | null,
+            jersey_number: tp.jersey_number,
+            role: tp.role,
+            left_reason: null as LeaveReason | null,
+        }));
+        const archivedHistory = historyRows.map((h) => ({
+            team_id: h.season_team.team.id,
+            team_name: h.season_team.team.name,
+            joined_at: h.joined_at.toISOString(),
+            left_at: h.left_at.toISOString(),
+            jersey_number: h.jersey_number,
+            role: h.role,
+            left_reason: h.left_reason,
+        }));
+
+        const team_history = [...liveHistory, ...archivedHistory]
+            .sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
 
         return {
             player_id: player.id,
             player_name: player.user.name,
             tournament_count: new Set(statRows.map((r) => r.season.tournament_id)).size,
             season_count: new Set(statRows.map((r) => r.season_id)).size,
-            team_count: new Set(teamPlayers.map((tp) => tp.team_id)).size,
-            current_team: current ? { team_id: current.team.id, team_name: current.team.name } : null,
-            team_history: teamPlayers.map((tp) => ({
-                team_id: tp.team.id,
-                team_name: tp.team.name,
-                joined_at: tp.created_at.toISOString(),
-                left_at: tp.deleted_at ? tp.deleted_at.toISOString() : null,
-                jersey_number: tp.jersey_number,
-                role: tp.role,
-            })),
+            team_count: new Set([
+                ...teamPlayers.map((tp) => tp.season_team.team.id),
+                ...historyRows.map((h) => h.season_team.team.id),
+            ]).size,
+            current_team: current ? { team_id: current.season_team.team.id, team_name: current.season_team.team.name } : null,
+            team_history,
         };
     }
+
     async getPlayerDisciplineStatus(playerId: number, seasonId: number): Promise<PlayerDisciplineStatus> {
         const row = await this.prisma.playerStatistic.findFirst({
             where: { player_id: playerId, season_id: seasonId },
@@ -1339,6 +1367,98 @@ export class StatisticsService {
             total_fine_owed: Number(row.total_fine_owed),
         };
     }
+
+    // statistics.service.ts
+
+    /**
+     * "Không tham gia team nào" hiểu là: hiện KHÔNG có record TeamPlayer sống
+     * (team_players: none) — không phân biệt player mới toanh chưa từng vào
+     * team nào với player đã từng vào rồi rời (ever_had_team phân biệt 2 case
+     * này cho FE, tránh gộp nhầm "free agent mới" với "bị đá khỏi đội").
+     */
+    async getPlayersWithoutTeam(): Promise<PlayersWithoutTeamStats> {
+        const players = await this.prisma.player.findMany({
+            where: { deleted_at: null, team_players: { none: {} } },
+            select: {
+                id: true,
+                position: true,
+                user: { select: { name: true } },
+                team_player_history: { select: { id: true }, take: 1 },
+            },
+        });
+
+        return {
+            total: players.length,
+            players: players.map((p) => ({
+                player_id: p.id,
+                player_name: p.user.name,
+                position: p.position,
+                ever_had_team: p.team_player_history.length > 0,
+            })),
+        };
+    }
+
+    /**
+     * Rời team theo TeamPlayerHistory — filter optional theo season + reason.
+     * reason_breakdown tính RIÊNG bằng groupBy trên toàn bộ where (không bị
+     * cắt bởi limit của entries), entries chỉ để hiển thị chi tiết trang đầu.
+     */
+    async getTeamPlayerLeaveStats(filter: {
+        seasonId?: number;
+        reason?: LeaveReason;
+        limit?: number;
+    } = {}): Promise<TeamPlayerLeaveStats> {
+        const { seasonId, reason, limit = 100 } = filter;
+        if (limit <= 0 || limit > 500) {
+            throw createAppError("VALIDATION_ERROR", `limit=${limit} invalid`, "limit phải trong khoảng 1-500");
+        }
+
+        const seasonWhere: Prisma.TeamPlayerHistoryWhereInput = seasonId
+            ? { season_team: { season_id: seasonId } }
+            : {};
+
+        const [entries, breakdown] = await Promise.all([
+            this.prisma.teamPlayerHistory.findMany({
+                where: { ...seasonWhere, ...(reason && { left_reason: reason }) },
+                select: {
+                    jersey_number: true, role: true, joined_at: true, left_at: true, left_reason: true,
+                    player: { select: { id: true, user: { select: { name: true } } } },
+                    season_team: { select: { team: { select: { id: true, name: true } } } },
+                },
+                orderBy: { left_at: "desc" },
+                take: limit,
+            }),
+            this.prisma.teamPlayerHistory.groupBy({
+                by: ["left_reason"],
+                where: seasonWhere, // KHÔNG filter theo reason ở đây — breakdown phải show đủ mọi reason
+                _count: { _all: true },
+            }),
+        ]);
+
+        const reason_breakdown = Object.fromEntries(
+            Object.values(LeaveReason).map((r) => [r, 0]),
+        ) as Record<LeaveReason, number>;
+        for (const b of breakdown) {
+            if (b.left_reason) reason_breakdown[b.left_reason] = b._count._all;
+        }
+
+        return {
+            season_id: seasonId ?? null,
+            reason_breakdown,
+            entries: entries.map((r) => ({
+                player_id: r.player.id,
+                player_name: r.player.user.name,
+                team_id: r.season_team.team.id,
+                team_name: r.season_team.team.name,
+                jersey_number: r.jersey_number,
+                role: r.role,
+                joined_at: r.joined_at.toISOString(),
+                left_at: r.left_at.toISOString(),
+                left_reason: r.left_reason!,
+            })),
+        };
+    }
+
     async getPlayerTeamsInPeriod(playerId: number, from: Date, to: Date): Promise<PlayerTeamsInPeriodStats> {
         // Overlap [from,to] với [Season.start_date, Season.end_date].
         // Season thiếu start_date hoặc end_date bị loại — không suy đoán.

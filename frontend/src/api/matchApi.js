@@ -98,11 +98,17 @@ export const matchApi = {
   deleteCorrectionEvent: (id, eventId) =>
     axiosClient.delete(`/matches/${id}/correction/events/${eventId}`),
 
-  // ── TODO ─────────────────────────────────────────────────────────────────────
+  getUnscheduledMatches: (seasonId, groupId, round) =>
+    axiosClient.get(`/schedules/seasons/${seasonId}/groups/${groupId}/rounds/${round}/unscheduled-matches`),
 
-  // voidResult — CHƯA IMPLEMENT.
+  getAvailableSlots: (seasonId, matchId, body) =>
+    axiosClient.post(`/schedules/seasons/${seasonId}/matches/${matchId}/available-slots`, body),
 
-  // ── Deprecated ───────────────────────────────────────────────────────────────
+  getScheduleDefaults: (seasonId) =>
+    axiosClient.get(`/schedules/seasons/${seasonId}/defaults`).then(r => r.data),
+
+  saveScheduleDefaults: (seasonId, body) =>
+    axiosClient.patch(`/schedules/seasons/${seasonId}/defaults`, body).then(r => r.data),
 
   getMatches: () => {
     console.warn('[matchApi] getMatches() deprecated. Dùng getScheduleBySeason(seasonId).');

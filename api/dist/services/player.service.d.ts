@@ -1,5 +1,5 @@
 import { AddPlayerToTeamDto, BulkDeleteDto, CreatePlayerDto, CreatePlayerForTeamDto, PlayerDetailDto, PlayerDto, PlayerPublicDto, TeamPlayerDto, UpdatePlayerDto, UpdateTeamPlayerDto } from "../dtos/player.schema.js";
-import { PrismaClient } from "../generated/prisma/client.js";
+import { LeaveReason, PlayerPosition, PrismaClient } from "../generated/prisma/client.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult, ListTeamPlayersQuery, PlayerPublicRow } from "../types/player.type.js";
 export declare class PlayerService {
@@ -42,19 +42,22 @@ export declare class PlayerService {
  * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
  * student_code + class match.
  */
-    private assertPlayerClassMatchesTeam;
+    /**
+ * FIX: nhận teamClassId đã biết thay vì tự query seasonTeam mỗi lần gọi.
+ * Trước đây mỗi call query lại team.class_id — trong import loop, giá trị
+ * này CỐ ĐỊNH cho toàn bộ request (cùng season_team_id), nên query lặp lại
+ * N lần là N-1 lần thừa. Caller chịu trách nhiệm fetch 1 lần duy nhất.
+ */
+    private assertPlayerClassMatchesUser;
+    /** Helper fetch teamClassId 1 lần — dùng ở mọi entrypoint gọi assertPlayerClassMatchesUser */
+    private getTeamClassId;
     private inviteKey;
     private issueInviteToken;
     consumeInviteToken(rawToken: string): Promise<number>;
     resendInvite(userId: number): Promise<void>;
     listTeamPlayers(query: ListTeamPlayersQuery): Promise<PaginatedResult<TeamPlayerDto>>;
-    getTeamPlayerById(id: number, team_id: number): Promise<TeamPlayerDto | null>;
-    /**
-     * FIX MỚI: thêm assertPlayerClassMatchesTeam TRƯỚC dupPlayer/dupJersey
-     * check — fail nhanh vì đây là lỗi nghiệp vụ nghiêm trọng hơn (cầu thủ
-     * sai lớp) so với trùng số áo.
-     */
-    addPlayerToTeam(team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
+    getTeamPlayerById(id: number, season_team_id: number): Promise<TeamPlayerDto | null>;
+    addPlayerToTeam(season_team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
     /**
      * FIX MỚI: dto giờ bắt buộc student_code. Với user MỚI tạo, ghi luôn
      * student_code vào User trong cùng tx (user mới chưa có gì để mất).
@@ -71,18 +74,34 @@ export declare class PlayerService {
      * CreatePlayerForTeamDto và set ngay lúc tạo user — hỏi lại UX trước
      * khi đổi, vì hiện tại đang cho phép admin gán lớp sau.
      */
-    createPlayerForTeamWithUser(team_id: number, dto: CreatePlayerForTeamDto): Promise<TeamPlayerDto>;
-    updateTeamPlayer(id: number, team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto>;
-    approveTeamPlayer(id: number, team_id: number): Promise<TeamPlayerDto>;
-    rejectTeamPlayer(id: number, team_id: number): Promise<TeamPlayerDto>;
-    bulkDeleteTeamPlayers(team_id: number, dto: BulkDeleteDto): Promise<{
+    createPlayerForTeamWithUser(season_team_id: number, dto: CreatePlayerForTeamDto): Promise<TeamPlayerDto>;
+    updateTeamPlayer(id: number, season_team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto>;
+    approveTeamPlayer(id: number, season_team_id: number): Promise<TeamPlayerDto>;
+    rejectTeamPlayer(id: number, season_team_id: number): Promise<TeamPlayerDto>;
+    bulkDeleteTeamPlayers(season_team_id: number, dto: BulkDeleteDto): Promise<{
         deleted: number;
         notFound: number[];
     }>;
-    hardDeleteTeamPlayers(team_id: number, dto: BulkDeleteDto): Promise<{
+    hardDeleteTeamPlayers(season_team_id: number, dto: BulkDeleteDto, reason?: LeaveReason): Promise<{
         deleted: number;
+        notFound: number[];
     }>;
-    exportTeamPlayersExcel(team_id: number): Promise<Buffer>;
+    getPlayerTeamHistory(player_id: number): Promise<{
+        history_id: number;
+        team_id: number;
+        team_name: string;
+        season_id: number;
+        season_name: string;
+        tournament_id: number;
+        tournament_name: string;
+        jersey_number: number;
+        position: PlayerPosition;
+        role: import("../generated/prisma/enums.js").PlayerRole;
+        joined_at: Date;
+        left_at: Date;
+        left_reason: LeaveReason | null;
+    }[]>;
+    exportTeamPlayersExcel(season_team_id: number): Promise<Buffer>;
     exportImportTemplate(minRows?: number): Promise<Buffer>;
     /**
      * FIX MỚI: student_code bắt buộc trong schema (validate ở
@@ -92,7 +111,7 @@ export declare class PlayerService {
      * tự động log vào result.errors[].reason theo đúng hành vi cũ (1 dòng
      * lỗi không ảnh hưởng dòng khác).
      */
-    importTeamPlayersFromExcel(team_id: number, fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult>;
+    importTeamPlayersFromExcel(season_team_id: number, fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult>;
     private mapPlayer;
     private mapTeamPlayer;
 }

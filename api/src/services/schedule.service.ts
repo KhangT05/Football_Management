@@ -24,6 +24,8 @@ import {
     ScheduleOptions,
     AutoScheduleFilterOptions,
     SeasonSchedule,
+    MatchSlotOption,
+    UnscheduledMatchOption,
 } from '../types/schedule.type.js';
 import { PaginatedResult, QueryRequest, SortDir } from '../types/queryable.type.js';
 import {
@@ -370,6 +372,12 @@ export class ScheduleService extends ScheduleEngine {
                 `IDs [${scheduleResult.failedMatchIds.join(', ')}]`,
             );
         }
+        await this.saveScheduleDefaults(seasonId, {
+            venueIds: options.venueIds,
+            dailyStartTime: options.dailyStartTime,
+            dailyEndTime: options.dailyEndTime,
+            bufferMinutes: options.bufferMinutes,
+        });
 
         return { groupCount, groupIds, ...scheduleResult, warnings };
     }
@@ -506,6 +514,12 @@ export class ScheduleService extends ScheduleEngine {
                 `IDs [${scheduleResult.failedMatchIds.join(', ')}]`,
             );
         }
+        await this.saveScheduleDefaults(seasonId, {
+            venueIds: options.venueIds,
+            dailyStartTime: options.dailyStartTime,
+            dailyEndTime: options.dailyEndTime,
+            bufferMinutes: options.bufferMinutes,
+        });
 
         return { groupCount, groupIds, ...scheduleResult, warnings };
     }
@@ -799,6 +813,215 @@ export class ScheduleService extends ScheduleEngine {
                 phaseFormat: m.phase?.format ?? null,
             })),
         };
+    }
+    async findUnscheduledMatchesInRound(
+        seasonId: number,
+        groupId: number,
+        round: number,
+    ): Promise<UnscheduledMatchOption[]> {
+        const rows = await this.prisma.match.findMany({
+            where: {
+                phase: { season_id: seasonId },
+                group_id: groupId,
+                round: String(round),
+                scheduled_at: null,
+                status: MatchStatus.scheduled,
+            },
+            select: {
+                id: true,
+                home_team_id: true,
+                away_team_id: true,
+                home_team: { select: { name: true } },
+                away_team: { select: { name: true } },
+            },
+            orderBy: { id: 'asc' },
+        });
+
+        return rows.map(r => ({
+            id: r.id,
+            homeTeamId: r.home_team_id,
+            homeTeamName: r.home_team?.name ?? `Đội ${r.home_team_id}`,
+            awayTeamId: r.away_team_id,
+            awayTeamName: r.away_team?.name ?? `Đội ${r.away_team_id}`,
+        }));
+    }
+
+    async getAvailableSlotsForMatch(
+        seasonId: number,
+        matchId: number,
+        options: ScheduleOptions & { limit?: number },
+    ): Promise<MatchSlotOption[]> {
+        if (options.venueIds.length === 0)
+            throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
+        if (!options.dailyStartTime || !options.dailyEndTime)
+            throw createAppError('VALIDATION_ERROR', 'dailyStartTime/dailyEndTime không được rỗng');
+
+        const match = await this.prisma.match.findFirst({
+            where: { id: matchId, phase: { season_id: seasonId }, is_active: true },
+            select: {
+                id: true, home_team_id: true, away_team_id: true, status: true,
+                scheduled_at: true, venue_id: true
+            },
+        });
+        if (!match)
+            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại trong season ${seasonId}`);
+
+        const RESCHEDULABLE: MatchStatus[] = [MatchStatus.scheduled, MatchStatus.postponed];
+        if (!RESCHEDULABLE.includes(match.status))
+            throw createAppError('CONFLICT', `Match ${matchId} đang ở '${match.status}' — không thể gán slot`);
+
+        const [phase, season] = await Promise.all([
+            this.prisma.phase.findFirst({
+                where: { season_id: seasonId, type: PhaseType.group_stage },
+                select: { min_rest_days_per_team: true },
+            }),
+            this.prisma.season.findUnique({
+                where: { id: seasonId },
+                select: { start_date: true, end_date: true },
+            }),
+        ]);
+        if (!phase)
+            throw createAppError('NOT_FOUND', `Không tìm thấy group_stage phase cho season ${seasonId}`);
+        if (!season?.start_date || !season?.end_date)
+            throw createAppError('VALIDATION_ERROR', `Season ${seasonId} chưa có start_date/end_date`);
+
+        const bufferMinutes = options.bufferMinutes ?? DEFAULT_VENUE_BUFFER_MINUTES;
+
+        const takenWindows = await this.loadTakenVenueWindows(
+            options.venueIds, season.start_date, season.end_date,
+        );
+
+        if (match.scheduled_at && match.venue_id) {
+            const ownWindowStart = match.scheduled_at.getTime(); // khớp convention loadTakenVenueWindows: start = scheduled_at
+            const windows = takenWindows.get(match.venue_id);
+            if (windows) {
+                takenWindows.set(
+                    match.venue_id,
+                    windows.filter(w => w.start !== ownWindowStart),
+                );
+            }
+        }
+
+        const pool = this.buildSlotPool(
+            options.venueIds, season.start_date, season.end_date,
+            options.dailyStartTime, options.dailyEndTime, bufferMinutes, takenWindows,
+            options.excludedDates ?? [],
+        );
+
+        // playedTimesByTeam: TẤT CẢ mốc giờ mỗi team đã đá trong season (trừ
+        // chính match đang xét) — dùng để check minRestDays đúng với mọi trận,
+        // không chỉ trận "gần nhất" (xem comment trong findAvailableSlotsForMatch).
+        const scheduledMatches = await this.prisma.match.findMany({
+            where: {
+                phase: { season_id: seasonId },
+                id: { not: matchId },
+                scheduled_at: { not: null },
+                status: { notIn: [MatchStatus.cancelled, MatchStatus.forfeited] },
+            },
+            select: { home_team_id: true, away_team_id: true, scheduled_at: true },
+        });
+        const playedTimesByTeam = new Map<number, number[]>();
+        for (const m of scheduledMatches) {
+            const t = m.scheduled_at!.getTime();
+            for (const tid of [m.home_team_id, m.away_team_id]) {
+                if (!playedTimesByTeam.has(tid)) playedTimesByTeam.set(tid, []);
+                playedTimesByTeam.get(tid)!.push(t);
+            }
+        }
+
+        const { conflictMap, occupiedWindows } = await this.loadPlayerConflictContext(
+            this.prisma, [match.home_team_id, match.away_team_id], [matchId],
+        );
+
+        const candidates = this.findAvailableSlotsForMatch(
+            pool, match.home_team_id, match.away_team_id,
+            playedTimesByTeam, phase.min_rest_days_per_team ?? 3,
+            conflictMap, occupiedWindows, options.limit ?? 50,
+        );
+
+        const venues = await this.prisma.venue.findMany({
+            where: { id: { in: options.venueIds } },
+            select: { id: true, name: true },
+        });
+        const venueNameById = new Map(venues.map(v => [v.id, v.name]));
+
+        return candidates.map(c => ({
+            venueId: c.venue_id,
+            venueName: venueNameById.get(c.venue_id) ?? `Sân ${c.venue_id}`,
+            scheduledAt: new Date(c.scheduledAtMs).toISOString(),
+        }));
+    }
+
+    async getScheduleDefaults(seasonId: number): Promise<{
+        venueIds: number[]; dailyStartTime: string | null;
+        dailyEndTime: string | null; bufferMinutes: number | null;
+    } | null> {
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: {
+                default_daily_start_time: true,
+                default_daily_end_time: true,
+                default_buffer_minutes: true,
+                default_venues: {
+                    // Lọc venue đã bị vô hiệu hoá — default không nên trỏ tới sân
+                    // không còn dùng được, kể cả khi record join vẫn tồn tại.
+                    where: { venue: { is_active: true } },
+                    select: { venue_id: true },
+                },
+            },
+        });
+        if (!season) throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+        if (!season.default_daily_start_time) return null; // chưa từng set
+
+        return {
+            venueIds: season.default_venues.map(v => v.venue_id),
+            dailyStartTime: season.default_daily_start_time,
+            dailyEndTime: season.default_daily_end_time,
+            bufferMinutes: season.default_buffer_minutes,
+        };
+    }
+
+    async saveScheduleDefaults(
+        seasonId: number,
+        input: { venueIds: number[]; dailyStartTime: string; dailyEndTime: string; bufferMinutes?: number },
+    ): Promise<void> {
+        if (input.venueIds.length === 0)
+            throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
+
+        const validVenues = await this.prisma.venue.findMany({
+            where: { id: { in: input.venueIds }, is_active: true },
+            select: { id: true },
+        });
+        if (validVenues.length !== input.venueIds.length) {
+            const validIds = new Set(validVenues.map(v => v.id));
+            const invalid = input.venueIds.filter(id => !validIds.has(id));
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `venueIds không hợp lệ hoặc đã inactive: [${invalid.join(', ')}]`,
+            );
+        }
+
+        const season = await this.prisma.season.findUnique({
+            where: { id: seasonId },
+            select: { id: true },
+        });
+        if (!season)
+            throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.season.update({
+                where: { id: seasonId },
+                data: {
+                    default_daily_start_time: input.dailyStartTime,
+                    default_daily_end_time: input.dailyEndTime,
+                    default_buffer_minutes: input.bufferMinutes ?? null,
+                },
+            });
+            await tx.seasonDefaultVenue.deleteMany({ where: { season_id: seasonId } });
+            await tx.seasonDefaultVenue.createMany({
+                data: input.venueIds.map(venue_id => ({ season_id: seasonId, venue_id })),
+            });
+        });
     }
 
     private resolveGroupCount(

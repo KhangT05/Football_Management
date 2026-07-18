@@ -74,9 +74,10 @@ let PlayerController = class PlayerController extends Controller {
         return this.service.softDeletePlayer(id);
     }
     // ─── Team Players ─────────────────────────────────────────────────────────
+    // player.controller.ts
     async listTeamPlayers(team_id, page = 1, per_page = 20, sort, direction, position, status, approval_status) {
         return this.service.listTeamPlayers({
-            team_id,
+            season_team_id: team_id, // FIX: key phải khớp field service destructure
             page,
             per_page,
             sort,
@@ -137,8 +138,9 @@ let PlayerController = class PlayerController extends Controller {
     async rejectTeamPlayer(team_id, id) {
         return this.service.rejectTeamPlayer(id, team_id);
     }
+    // player.controller.ts
     async bulkDeleteTeamPlayers(team_id, body) {
-        return this.service.bulkDeleteTeamPlayers(team_id, body);
+        return this.service.bulkDeleteTeamPlayers(team_id, body); // reason đã nằm trong body
     }
     // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer
     // + gán role vào bất kỳ team_id nào không cần auth. Đây là lỗ hổng nghiêm

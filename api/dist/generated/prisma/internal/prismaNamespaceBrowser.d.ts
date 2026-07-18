@@ -35,11 +35,13 @@ export declare const ModelName: {
     readonly Phase: "Phase";
     readonly BracketSlot: "BracketSlot";
     readonly Season: "Season";
+    readonly SeasonDefaultVenue: "SeasonDefaultVenue";
     readonly Group: "Group";
     readonly Team: "Team";
     readonly MatchJerseyAssignment: "MatchJerseyAssignment";
     readonly Player: "Player";
     readonly TeamPlayer: "TeamPlayer";
+    readonly TeamPlayerHistory: "TeamPlayerHistory";
     readonly TeamLeader: "TeamLeader";
     readonly SeasonTeam: "SeasonTeam";
     readonly SeasonTeamJersey: "SeasonTeamJersey";
@@ -198,8 +200,16 @@ export declare const SeasonScalarFieldEnum: {
     readonly user_id: "user_id";
     readonly tournament_rule_id: "tournament_rule_id";
     readonly max_teams_per_class: "max_teams_per_class";
+    readonly default_daily_start_time: "default_daily_start_time";
+    readonly default_daily_end_time: "default_daily_end_time";
+    readonly default_buffer_minutes: "default_buffer_minutes";
 };
 export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum];
+export declare const SeasonDefaultVenueScalarFieldEnum: {
+    readonly season_id: "season_id";
+    readonly venue_id: "venue_id";
+};
+export type SeasonDefaultVenueScalarFieldEnum = (typeof SeasonDefaultVenueScalarFieldEnum)[keyof typeof SeasonDefaultVenueScalarFieldEnum];
 export declare const GroupScalarFieldEnum: {
     readonly id: "id";
     readonly phase_id: "phase_id";
@@ -249,20 +259,31 @@ export declare const PlayerScalarFieldEnum: {
 export type PlayerScalarFieldEnum = (typeof PlayerScalarFieldEnum)[keyof typeof PlayerScalarFieldEnum];
 export declare const TeamPlayerScalarFieldEnum: {
     readonly id: "id";
-    readonly team_id: "team_id";
+    readonly season_team_id: "season_team_id";
     readonly player_id: "player_id";
     readonly jersey_number: "jersey_number";
     readonly position: "position";
     readonly role: "role";
     readonly status: "status";
     readonly approval_status: "approval_status";
-    readonly is_active: "is_active";
     readonly created_at: "created_at";
     readonly updated_at: "updated_at";
-    readonly deleted_at: "deleted_at";
+    readonly joined_at: "joined_at";
     readonly user_id: "user_id";
 };
 export type TeamPlayerScalarFieldEnum = (typeof TeamPlayerScalarFieldEnum)[keyof typeof TeamPlayerScalarFieldEnum];
+export declare const TeamPlayerHistoryScalarFieldEnum: {
+    readonly id: "id";
+    readonly season_team_id: "season_team_id";
+    readonly player_id: "player_id";
+    readonly jersey_number: "jersey_number";
+    readonly position: "position";
+    readonly role: "role";
+    readonly joined_at: "joined_at";
+    readonly left_at: "left_at";
+    readonly left_reason: "left_reason";
+};
+export type TeamPlayerHistoryScalarFieldEnum = (typeof TeamPlayerHistoryScalarFieldEnum)[keyof typeof TeamPlayerHistoryScalarFieldEnum];
 export declare const TeamLeaderScalarFieldEnum: {
     readonly id: "id";
     readonly team_id: "team_id";
@@ -573,6 +594,8 @@ export declare const SeasonOrderByRelevanceFieldEnum: {
     readonly bank_account_no: "bank_account_no";
     readonly bank_account_name: "bank_account_name";
     readonly cancel_reason: "cancel_reason";
+    readonly default_daily_start_time: "default_daily_start_time";
+    readonly default_daily_end_time: "default_daily_end_time";
 };
 export type SeasonOrderByRelevanceFieldEnum = (typeof SeasonOrderByRelevanceFieldEnum)[keyof typeof SeasonOrderByRelevanceFieldEnum];
 export declare const GroupOrderByRelevanceFieldEnum: {

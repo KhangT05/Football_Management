@@ -1,3 +1,4 @@
+import { LeaveReason, PlayerPosition } from "../generated/prisma/client.js";
 export interface UserRegistrationPoint {
     day: string;
     count: number;
@@ -451,5 +452,31 @@ export type PlayerPerformanceBatchEntry = {
     avg_goals_per_match: number;
     total_yellow_cards: number;
     total_red_cards: number;
+};
+export type PlayerWithoutTeamEntry = {
+    player_id: number;
+    player_name: string;
+    position: PlayerPosition;
+    ever_had_team: boolean;
+};
+export type PlayersWithoutTeamStats = {
+    total: number;
+    players: PlayerWithoutTeamEntry[];
+};
+export type PlayerLeaveEntry = {
+    player_id: number;
+    player_name: string;
+    team_id: number;
+    team_name: string;
+    jersey_number: number;
+    role: string;
+    joined_at: string;
+    left_at: string;
+    left_reason: LeaveReason;
+};
+export type TeamPlayerLeaveStats = {
+    season_id: number | null;
+    reason_breakdown: Record<LeaveReason, number>;
+    entries: PlayerLeaveEntry[];
 };
 //# sourceMappingURL=statistics.type.d.ts.map

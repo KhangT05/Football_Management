@@ -1,5 +1,5 @@
-import { PrismaClient } from "../generated/prisma/client.js";
-import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats, SystemOverviewStats, PlayerOverviewStats, TimeGranularity, TeamMatchTimeSeriesStats, TeamOverviewStats, TeamTournamentStats, TeamSeasonStats, TeamMatchStats, PlayerTournamentStats, PlayerSeasonStats, PlayerMatchStats, TeamAggregateStatsExtended, PlayerParticipationStats, TeamSeasonStatsBatch, TeamParticipationStats, PlayerDisciplineStatus, PlayerTeamsInPeriodStats, TeamFinanceEntry, PlayerPerformanceBatchEntry } from "../types/statistics.type.js";
+import { LeaveReason, PrismaClient } from "../generated/prisma/client.js";
+import type { UserRegistrationStats, SeasonRevenueStats, TournamentOverviewStats, TeamDisciplineStats, TopScorerStats, TeamRegistrationStats, MvpWeights, BestPlayerStats, PlayerRankingMetric, PlayerRankingStats, PlayerCareerStats, SystemOverviewStats, PlayerOverviewStats, TimeGranularity, TeamMatchTimeSeriesStats, TeamOverviewStats, TeamTournamentStats, TeamSeasonStats, TeamMatchStats, PlayerTournamentStats, PlayerSeasonStats, PlayerMatchStats, TeamAggregateStatsExtended, PlayerParticipationStats, TeamSeasonStatsBatch, TeamParticipationStats, PlayerDisciplineStatus, PlayerTeamsInPeriodStats, TeamFinanceEntry, PlayerPerformanceBatchEntry, TeamPlayerLeaveStats, PlayersWithoutTeamStats } from "../types/statistics.type.js";
 export type PlayerFinanceEntry = {
     player_id: number;
     player_name: string;
@@ -81,6 +81,23 @@ export declare class StatisticsService {
     getTeamsSeasonStatsBatch(seasonId: number): Promise<TeamSeasonStatsBatch>;
     getPlayerParticipationStats(playerId: number): Promise<PlayerParticipationStats>;
     getPlayerDisciplineStatus(playerId: number, seasonId: number): Promise<PlayerDisciplineStatus>;
+    /**
+     * "Không tham gia team nào" hiểu là: hiện KHÔNG có record TeamPlayer sống
+     * (team_players: none) — không phân biệt player mới toanh chưa từng vào
+     * team nào với player đã từng vào rồi rời (ever_had_team phân biệt 2 case
+     * này cho FE, tránh gộp nhầm "free agent mới" với "bị đá khỏi đội").
+     */
+    getPlayersWithoutTeam(): Promise<PlayersWithoutTeamStats>;
+    /**
+     * Rời team theo TeamPlayerHistory — filter optional theo season + reason.
+     * reason_breakdown tính RIÊNG bằng groupBy trên toàn bộ where (không bị
+     * cắt bởi limit của entries), entries chỉ để hiển thị chi tiết trang đầu.
+     */
+    getTeamPlayerLeaveStats(filter?: {
+        seasonId?: number;
+        reason?: LeaveReason;
+        limit?: number;
+    }): Promise<TeamPlayerLeaveStats>;
     getPlayerTeamsInPeriod(playerId: number, from: Date, to: Date): Promise<PlayerTeamsInPeriodStats>;
     /**
      * TOURNAMENT TEAM STATS — thống kê đội gộp qua TẤT CẢ season của 1 giải

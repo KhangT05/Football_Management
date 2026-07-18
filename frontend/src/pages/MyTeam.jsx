@@ -479,8 +479,14 @@ export default function MyTeam() {
         const result = res?.data ?? res;
         const successCount = result?.success ?? 0;
         const failedCount = result?.failed ?? 0;
-        if (successCount > 0) {
-          toast.success(`Đã import ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`, 5000);
+        const skippedCount = result?.skipped ?? 0;
+
+        if (successCount > 0 || skippedCount > 0) {
+          const parts = [];
+          if (successCount > 0) parts.push(`${successCount} cầu thủ mới`);
+          if (skippedCount > 0) parts.push(`${skippedCount} đã có sẵn (bỏ qua)`);
+          if (failedCount > 0) parts.push(`${failedCount} dòng lỗi`);
+          toast.success(`Import: ${parts.join(', ')}.`, 5000);
           setPlayerModal(null);
         } else {
           const firstErrors = (result?.errors ?? []).slice(0, 3).map(e2 => `Dòng ${e2.row}: ${e2.reason}`).join(' | ');

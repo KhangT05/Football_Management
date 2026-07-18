@@ -2,7 +2,7 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { MatchReportEventEntry, MatchReportOutput, MatchReportPlayerRow, MatchReportTeamInfo } from '../types/matchReport.type.js';
+import { MatchReportOutput, MatchReportPlayerRow, MatchReportTeamInfo } from '../types/matchReport.type.js';
 import { MatchReportGoalEntry } from '../helper/match.helper.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,33 +19,52 @@ interface TeamAssets {
 }
 type EventKind = 'goal' | 'ownGoal' | 'yellowCard' | 'redCard';
 
-// FIX: đổi tên từ `MatchEventRow` -> `RenderEventRow`. Tên cũ trùng với
-// `Prisma.MatchEventGetPayload<...>` (alias `MatchEventRow`) đã tồn tại ở
-// layer repository/helper — 2 type khác semantic hoàn toàn (1 bên là DB row
-// đầy đủ field, 1 bên là DTO rút gọn chỉ để render) nhưng trùng tên gây
-// nhầm lẫn/silent shadow nếu có lúc import chung module hoặc người đọc sau
-// tra nhầm định nghĩa.
-interface RenderEventRow {
-    // FIX: `MatchReportGoalEntry.minute` (../helper/match.helper.ts) là
-    // `number | null` — null xảy ra với event ở period `penalty_shootout`
-    // (assertMinuteInBounds() chủ động bỏ qua bounds check, tức không bắt
-    // buộc có minute, cho period này). Khai `minute: number` ở đây làm
-    // `toEventRow`/`toCardEventRow` gán thẳng field bị TS reject.
-    minute: number | null;
-    // FIX: tương tự — `addedMinute` cũng `number | null`, không phải optional
-    // `number | undefined`.
-    addedMinute: number | null;
+/**
+ * FIX (field bị rớt khi render): trước đây `RenderEventRow` chỉ có
+ * minute/addedMinute — bỏ hẳn `clockTime`/`clockConfidence` mà
+ * `MatchReportGoalEntry` (match.helper.ts) đã tính sẵn cho "giờ thực"
+ * (9h + phút = 9h05). Data có sẵn nhưng tầng render không dùng, nên PDF
+ * export không bao giờ hiện giờ thực dù report JSON đã có.
+ *
+ * Giờ chuẩn hoá thành 1 type duy nhất `TimelineEntry`, build qua 1 hàm
+ * `buildTimelineEntry()` duy nhất (trước đây có 2 hàm gần như giống hệt
+ * nhau — `toEventRow`/`toCardEventRow` — chỉ khác input shape, gộp lại).
+ *
+ * `clockLabel` là `string | null`: null chỉ khi thiếu `scheduled_at` của
+ * trận (report cho trận chưa có lịch cụ thể) — KHÔNG còn phân biệt goal vs
+ * card như trước. match.helper.ts đã được mở rộng để tính clockTime cho cả
+ * card (yellow/red), không chỉ goal.
+ */
+interface TimelineEntry {
+    minuteLabel: string;       // "45+2'" hoặc "-" (penalty không có phút)
+    clockLabel: string | null; // "~09:05" hoặc null nếu không tính được
     teamName: string;
     playerName: string;
     kind: EventKind;
+    sortMinute: number;        // tách riêng khỏi label để sort không phải parse lại string
+    sortAddedMinute: number;
 }
+
 const COL_WIDTHS = [30, 150, 55, 50, 30, 45, 40, 40] as const;
-const COL_HEADERS = ['Số áo', 'Cầu thủ', 'Vị trí', 'BT/DB', 'Bàn', 'Phản lưới', 'Thẻ V', 'Thẻ Đ'];
+const COL_HEADERS = ['Số áo', 'Cầu thủ', 'Vị trí', 'Trạng thái', 'Bàn', 'Phản lưới', 'Thẻ V', 'Thẻ Đ'];
 // FIX: table border trước đây hardcode x=555 (không khớp tổng COL_WIDTHS=440,
 // lệch ra ngoài nội dung bảng thật). Derive từ chính COL_WIDTHS — 1 nguồn sự thật.
 const TABLE_WIDTH = COL_WIDTHS.reduce((a, b) => a + b, 0);
 
 const IMAGE_FETCH_TIMEOUT_MS = 5000;
+
+// Màu badge — vector-based, KHÔNG phụ thuộc glyph emoji của font (NotoSans
+// không có emoji màu, ⚽/🟨/🟥 trước đây render ra ô trống, không đọc được
+// loại sự kiện sau khi export). doc.rect()/doc.circle().fill() luôn render
+// được bất kể font đang active, đây là kỹ thuật giống renderJerseySwatch()
+// đã dùng ổn định trong file này.
+const BADGE_COLOR: Record<EventKind, string> = {
+    goal: '#1f2937',
+    ownGoal: '#f97316',
+    yellowCard: '#facc15',
+    redCard: '#ef4444',
+};
+const BADGE_SIZE = 8;
 
 export class MatchReportPdfRenderer {
     // Font path resolution + fs.existsSync là I/O — cache ở static level,
@@ -84,10 +103,6 @@ export class MatchReportPdfRenderer {
 
             this.renderHeader(report, { logo: homeLogo }, { logo: awayLogo });
             this.renderScoreBlock(report);
-            // FIX (bug thật): gọi `renderGoalsTimeline` — method này không tồn tại,
-            // tên đúng là `renderEventsTimeline`. Trước đây mọi lần render() chạy
-            // đến đây sẽ throw TypeError ngay lập tức, tức toàn bộ export PDF luôn
-            // fail 100%, không phải edge case.
             this.renderEventsTimeline(report);
 
             doc.moveDown(1);
@@ -145,9 +160,6 @@ export class MatchReportPdfRenderer {
     }
 
     // ─── Logo fetch ─────────────────────────────────────────────────────────
-    // FIX: fetch trước không có timeout — 1 CDN logo treo là 1 PDF export
-    // treo vô thời hạn (không timeout, không release connection). Thêm
-    // AbortController timeout, fail-open về null như hành vi cũ.
     private async fetchImageBuffer(url: string | null | undefined): Promise<Buffer | null> {
         if (!url) return null;
         const controller = new AbortController();
@@ -167,11 +179,6 @@ export class MatchReportPdfRenderer {
     }
 
     // ─── Layout helper ──────────────────────────────────────────────────────
-    // FIX: `renderTeamSection` dùng hardcode `doc.y > 650` và trong loop dùng
-    // `doc.y > 720` — không neo theo `doc.page.height`/`margins.bottom` như
-    // các page-break guard khác trong file (renderScoreBlock, renderSignature
-    // Section). Nếu đổi page size/margin sau này, 2 chỗ đó sai trong khi phần
-    // còn lại vẫn đúng. Gom về 1 helper duy nhất, cùng convention.
     private hasSpaceFor(minHeight: number): boolean {
         const doc = this.doc;
         return doc.y + minHeight <= doc.page.height - doc.page.margins.bottom;
@@ -246,10 +253,6 @@ export class MatchReportPdfRenderer {
         doc.fontSize(9).font('Body');
         let y = doc.y;
         for (const [label, value] of rows) {
-            // FIX: không có page-break guard — score block dài (hiệp phụ + luân
-            // lưu) render gần cuối trang cũ có thể bị PDFKit tự flow sang trang
-            // mới giữa chừng row, lệch cột trái/phải. Guard rõ ràng như các
-            // section khác thay vì phó mặc auto-flow.
             if (y > doc.page.height - doc.page.margins.bottom - 20) {
                 doc.addPage();
                 y = doc.y;
@@ -262,81 +265,170 @@ export class MatchReportPdfRenderer {
         doc.moveDown(0.5);
     }
 
-    private renderEventsTimeline(report: MatchReportOutput) {
-        const doc = this.doc;
-        const leftX = doc.page.margins.left; // FIX: neo cố định, không dùng doc.x (bị pdfkit mutate)
+    // ─── Timeline: format + build ───────────────────────────────────────────
 
-        // Thẻ vàng/đỏ lấy từ chính `report.lineups.*[].yellowCards/redCards` —
-        // data đã được build sẵn theo từng player trong buildMatchReportPlayerRows
-        // (match.helper.ts), không cần field timeline riêng ở MatchReportOutput.
-        const events: RenderEventRow[] = [
-            ...report.goalsTimeline.home.map(e => this.toEventRow(e, report.home.name)),
-            ...report.goalsTimeline.away.map(e => this.toEventRow(e, report.away.name)),
-            ...this.collectCardEvents(report.lineups.home, report.home.name),
-            ...this.collectCardEvents(report.lineups.away, report.away.name),
-            // FIX: sort trước đây `a.minute - b.minute` crash kiểu học (minute
-            // giờ là number|null). Event period `penalty_shootout` có thể
-            // minute=null — coi như xảy ra sau cùng (Infinity) thay vì ép về 0
-            // (0 sẽ đẩy nó lên đầu timeline, sai thứ tự thời gian thực tế).
-        ].sort((a, b) => (a.minute ?? Infinity) - (b.minute ?? Infinity) || (a.addedMinute ?? 0) - (b.addedMinute ?? 0));
-
-        if (events.length === 0) return;
-
-        doc.fontSize(9).font('Body-Bold').text('Diễn biến trận đấu:', leftX, doc.y);
-        doc.font('Body').fontSize(8.5);
-
-        for (const ev of events) {
-            if (doc.y > doc.page.height - doc.page.margins.bottom - 20) doc.addPage();
-            const y = doc.y;
-            // FIX: minute có thể null (luân lưu) — không còn ép template string
-            // ra "null'" nữa.
-            const minuteLabel = ev.minute == null
-                ? '-'
-                : (ev.addedMinute ? `${ev.minute}+${ev.addedMinute}'` : `${ev.minute}'`);
-            const icon = this.eventIcon(ev.kind);
-            doc.text(minuteLabel, leftX, y, { width: 35 });
-            doc.text(`${icon} ${ev.playerName}${ev.kind === 'ownGoal' ? ' (phản lưới)' : ''}`, leftX + 40, y, { width: 260 });
-            doc.text(ev.teamName, leftX + 310, y, { width: TABLE_WIDTH - 310, align: 'right' });
-            doc.moveDown(0.7);
-        }
-        doc.moveDown(0.3);
+    /**
+     * Nguồn định dạng phút DUY NHẤT trong file này — trước đây bị viết tay
+     * lại ngay trong loop render (ternary trùng logic với
+     * `formatMinuteLabel()` đã export sẵn ở match.helper.ts). Không gọi
+     * thẳng `formatMinuteLabel` vì signature của nó yêu cầu nguyên object
+     * `MatchReportGoalEntry` (kèm isOwnGoal/playerName/clockTime không liên
+     * quan) — card events không có shape đó. Định nghĩa local 1 lần, dùng
+     * lại cho cả goal lẫn card, để KHÔNG còn 2 chỗ tự quyết định format phút
+     * khác nhau trong cùng file.
+     */
+    private formatMinute(minute: number | null, addedMinute: number | null): string {
+        if (minute == null) return '-';
+        return addedMinute ? `${minute}+${addedMinute}'` : `${minute}'`;
     }
 
-    private toEventRow(e: MatchReportGoalEntry, teamName: string): RenderEventRow {
+    /**
+     * Giờ thực — cùng công thức với `formatClockLabel()` (match.helper.ts)
+     * nhưng nhận thẳng (clockTime, clockConfidence) thay vì cả object
+     * `MatchReportGoalEntry`, để card events (không có object đó) vẫn gọi
+     * được nếu sau này match.helper.ts được mở rộng để tính clock cho thẻ.
+     */
+    private formatClock(clockTime: Date | null | undefined, clockConfidence: 'exact' | 'estimated' | null | undefined): string | null {
+        if (!clockTime) return null;
+        const hh = clockTime.getHours().toString().padStart(2, '0');
+        const mm = clockTime.getMinutes().toString().padStart(2, '0');
+        const prefix = clockConfidence === 'estimated' ? '~' : '';
+        return `${prefix}${hh}:${mm}`;
+    }
+
+    private buildTimelineEntry(params: {
+        minute: number | null;
+        addedMinute: number | null;
+        clockTime?: Date | null;
+        clockConfidence?: 'exact' | 'estimated' | null;
+        teamName: string;
+        playerName: string;
+        kind: EventKind;
+    }): TimelineEntry {
         return {
-            minute: e.minute,
-            addedMinute: e.addedMinute,
-            teamName,
-            playerName: e.playerName,
-            kind: e.isOwnGoal ? 'ownGoal' : 'goal',
+            minuteLabel: this.formatMinute(params.minute, params.addedMinute),
+            clockLabel: this.formatClock(params.clockTime, params.clockConfidence),
+            teamName: params.teamName,
+            playerName: params.playerName,
+            kind: params.kind,
+            sortMinute: params.minute ?? Infinity,
+            sortAddedMinute: params.addedMinute ?? 0,
         };
     }
 
-    private collectCardEvents(rows: MatchReportPlayerRow[], teamName: string): RenderEventRow[] {
-        const result: RenderEventRow[] = [];
+    private goalToTimelineEntry(e: MatchReportGoalEntry, teamName: string): TimelineEntry {
+        return this.buildTimelineEntry({
+            minute: e.minute,
+            addedMinute: e.addedMinute,
+            clockTime: e.clockTime,
+            clockConfidence: e.clockConfidence,
+            teamName,
+            playerName: e.playerName,
+            kind: e.isOwnGoal ? 'ownGoal' : 'goal',
+        });
+    }
+
+    private collectCardEntries(rows: MatchReportPlayerRow[], teamName: string): TimelineEntry[] {
+        const result: TimelineEntry[] = [];
         for (const p of rows) {
-            for (const e of p.yellowCards) result.push(this.toCardEventRow(e, teamName, p.fullName, 'yellowCard'));
-            for (const e of p.redCards) result.push(this.toCardEventRow(e, teamName, p.fullName, 'redCard'));
+            for (const e of p.yellowCards) {
+                result.push(this.buildTimelineEntry({
+                    minute: e.minute, addedMinute: e.addedMinute,
+                    clockTime: e.clockTime, clockConfidence: e.clockConfidence, // FIX: match.helper.ts giờ tính clock cho card, không còn luôn null
+                    teamName, playerName: p.fullName, kind: 'yellowCard',
+                }));
+            }
+            for (const e of p.redCards) {
+                result.push(this.buildTimelineEntry({
+                    minute: e.minute, addedMinute: e.addedMinute,
+                    clockTime: e.clockTime, clockConfidence: e.clockConfidence,
+                    teamName, playerName: p.fullName, kind: 'redCard',
+                }));
+            }
         }
         return result;
     }
 
-    private toCardEventRow(
-        e: MatchReportEventEntry,
-        teamName: string,
-        playerName: string,
-        kind: 'yellowCard' | 'redCard',
-    ): RenderEventRow {
-        return { minute: e.minute, addedMinute: e.addedMinute, teamName, playerName, kind };
+    /**
+     * Vẽ badge màu bằng vector (rect/circle), KHÔNG dùng ký tự emoji —
+     * đảm bảo hiển thị được bất kể font active có glyph emoji hay không.
+     * Reset fillColor về đen sau khi vẽ — nếu không, `doc.text()` gọi ngay
+     * sau đó (tên cầu thủ) sẽ bị nhuộm màu badge cuối cùng đã vẽ (cùng loại
+     * bug mà `renderJerseySwatch()` trong file này đã né bằng cách reset
+     * tương tự).
+     */
+    private drawEventBadge(kind: EventKind, x: number, y: number): void {
+        const doc = this.doc;
+        const color = BADGE_COLOR[kind];
+        if (kind === 'goal' || kind === 'ownGoal') {
+            doc.circle(x + BADGE_SIZE / 2, y + BADGE_SIZE / 2, BADGE_SIZE / 2).fillColor(color).fill();
+        } else {
+            doc.rect(x, y, BADGE_SIZE, BADGE_SIZE).fillColor(color).fill();
+        }
+        doc.fillColor('black');
     }
 
-    private eventIcon(kind: EventKind): string {
-        switch (kind) {
-            case 'goal': return '⚽';
-            case 'ownGoal': return '⚽(OG)';
-            case 'yellowCard': return '🟨';
-            case 'redCard': return '🟥';
+    private renderEventLegend() {
+        const doc = this.doc;
+        const leftX = doc.page.margins.left;
+        const items: [EventKind, string][] = [
+            ['goal', 'Bàn thắng'],
+            ['ownGoal', 'Phản lưới nhà'],
+            ['yellowCard', 'Thẻ vàng'],
+            ['redCard', 'Thẻ đỏ'],
+        ];
+        const y = doc.y;
+        let x = leftX;
+        doc.fontSize(7.5).font('Body');
+        for (const [kind, label] of items) {
+            this.drawEventBadge(kind, x, y + 1);
+            doc.text(label, x + BADGE_SIZE + 4, y, { width: 78, continued: false });
+            x += 90;
         }
+        doc.y = y + 14;
+        doc.moveDown(0.2);
+    }
+
+    private renderEventsTimeline(report: MatchReportOutput) {
+        const doc = this.doc;
+        const leftX = doc.page.margins.left; // neo cố định, không dùng doc.x (bị pdfkit mutate)
+
+        const entries: TimelineEntry[] = [
+            ...report.goalsTimeline.home.map(e => this.goalToTimelineEntry(e, report.home.name)),
+            ...report.goalsTimeline.away.map(e => this.goalToTimelineEntry(e, report.away.name)),
+            ...this.collectCardEntries(report.lineups.home, report.home.name),
+            ...this.collectCardEntries(report.lineups.away, report.away.name),
+        ].sort((a, b) => a.sortMinute - b.sortMinute || a.sortAddedMinute - b.sortAddedMinute);
+
+        if (entries.length === 0) return;
+
+        doc.fontSize(9).font('Body-Bold').text('Diễn biến trận đấu:', leftX, doc.y);
+        doc.moveDown(0.2);
+        this.renderEventLegend();
+
+        doc.font('Body').fontSize(8.5);
+
+        for (const ev of entries) {
+            if (doc.y > doc.page.height - doc.page.margins.bottom - 20) doc.addPage();
+            const y = doc.y;
+
+            this.drawEventBadge(ev.kind, leftX, y + 1);
+
+            doc.text(ev.minuteLabel, leftX + BADGE_SIZE + 6, y, { width: 32 });
+
+            const nameSuffix = ev.kind === 'ownGoal' ? ' (phản lưới)' : '';
+            doc.text(`${ev.playerName}${nameSuffix}`, leftX + BADGE_SIZE + 40, y, { width: 220 });
+
+            // Giờ thực — chỉ hiện khi có (goal luôn có nếu scheduled_at tồn
+            // tại; card hiện null cho tới khi match.helper.ts được mở rộng
+            // để tính clock cho thẻ, xem docblock TimelineEntry ở đầu file).
+            doc.fillColor('#6b7280').text(ev.clockLabel ?? '', leftX + BADGE_SIZE + 262, y, { width: 45 });
+            doc.fillColor('black');
+
+            doc.text(ev.teamName, leftX + BADGE_SIZE + 310, y, { width: TABLE_WIDTH - BADGE_SIZE - 310, align: 'right' });
+            doc.moveDown(0.75);
+        }
+        doc.moveDown(0.3);
     }
 
     // Màu áo hiển thị dạng swatch (rect fill) — không dùng ảnh jersey vì
@@ -357,10 +449,6 @@ export class MatchReportPdfRenderer {
 
     private renderTeamSection(team: MatchReportTeamInfo, rows: MatchReportPlayerRow[]) {
         const doc = this.doc;
-        // FIX: hardcode `doc.y > 650` thay bằng helper dựa trên page height/margins
-        // (xem `hasSpaceFor`) — nhất quán với các guard còn lại, không sai lệch
-        // nếu page size/margin đổi. ~180pt là ước lượng chỗ cần cho title+header
-        // bảng+ít nhất vài dòng cầu thủ trước khi tự tách trang giữa chừng bảng.
         if (!this.hasSpaceFor(180)) doc.addPage();
 
         const leftX = doc.page.margins.left;   // luôn neo lại left margin tường minh
@@ -384,8 +472,6 @@ export class MatchReportPdfRenderer {
         const subs = rows.filter(r => !r.isStarting);
 
         for (const p of [...starters, ...subs]) {
-            // FIX: hardcode `doc.y > 720` -> cùng helper `hasSpaceFor`, buffer 20pt
-            // cho 1 row (~font size 8.5 + padding), nhất quán convention toàn file.
             if (!this.hasSpaceFor(20)) doc.addPage();
             this.drawRow([
                 p.jerseyNumber?.toString() ?? '-',
@@ -400,12 +486,6 @@ export class MatchReportPdfRenderer {
         }
     }
 
-    // FIX (bug thật, không phải style): moveDown(1) cố định = 1 dòng chiều
-    // cao font hiện tại, bất kể nội dung cell dài bao nhiêu. Cột "Cầu thủ"
-    // width=150 — tên dài (kèm " (C)") wrap xuống 2 dòng thì hàng kế tiếp
-    // (jerseyNumber/position/...) sẽ đè lên dòng wrap thứ 2, dữ liệu chồng
-    // lên nhau không đọc được. Đo height thực tế mỗi cell bằng
-    // heightOfString(text, {width}), lấy max làm row height rồi mới advance y.
     private drawRow(cells: string[]) {
         const doc = this.doc;
         const startX = doc.x;

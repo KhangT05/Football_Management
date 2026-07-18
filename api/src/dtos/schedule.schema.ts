@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { venueIdsField, vnTimeRegex } from '../dtos/fields.schema.js';
+import { ScheduleOptions } from '../types/schedule.type.js';
 
 const dailyTimeField = z.string().regex(vnTimeRegex ?? /^([01]\d|2[0-3]):[0-5]\d$/, 'Định dạng giờ phải là HH:mm');
 
@@ -46,11 +47,7 @@ export const rescheduleMatchSchema = z.object({
 export const generateFromGroupsSchema = z.object({
     doubleRound: z.boolean().optional(),
     minRestDaysPerTeam: z.number().int().min(0).optional(),
-    venueIds: z.array(z.number().int().positive()).min(1, 'venueIds không được rỗng'),
-    dailyStartTime: dailyTimeField,
-    dailyEndTime: dailyTimeField,
-    bufferMinutes: z.number().int().positive().optional(),
-    excludedDates: z.array(z.string()).optional(),
+    ...scheduleWindowFields,
     rounds: z.array(z.number().int().positive()).optional(),
     groupIds: z.array(z.number().int().positive()).optional(),
     allowPastDate: z.boolean().optional(),
@@ -58,8 +55,24 @@ export const generateFromGroupsSchema = z.object({
     path: ['dailyEndTime'],
     message: 'dailyEndTime phải sau dailyStartTime',
 });
+export const getAvailableSlotsSchema = z.object({
+    ...scheduleWindowFields,
+    limit: z.number().int().positive().max(200).optional(),
+}).refine(scheduleWindowRefine, { path: ['dailyEndTime'], message: '...' });
 
-// Explicit TypeScript interfaces (tsoa reads these, not z.infer<>)
+const seasonDefaultsFields = {
+    venueIds: venueIdsField,
+    dailyStartTime: dailyTimeField,
+    dailyEndTime: dailyTimeField,
+    bufferMinutes: z.number().int().positive().optional(),
+};
+
+export const seasonScheduleDefaultsSchema = z.object({
+    ...seasonDefaultsFields,
+}).refine(scheduleWindowRefine, {
+    path: ['dailyEndTime'],
+    message: 'dailyEndTime phải sau dailyStartTime',
+});
 export interface GenerateScheduleDto {
     desiredGroupCount: number;
     minGroupSize: number;
@@ -101,4 +114,14 @@ export interface RescheduleMatchDto {
     scheduledAt: Date;
     venueId: number;
     bufferMinutes?: number;
-}
+}
+
+export interface GetAvailableSlotsDto extends ScheduleOptions {
+    limit?: number;
+}
+export interface SeasonScheduleDefaultsDto {
+    venueIds: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    bufferMinutes?: number;
+}

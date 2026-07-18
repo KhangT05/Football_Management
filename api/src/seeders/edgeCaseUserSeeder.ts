@@ -1,16 +1,34 @@
 // prisma/seed/edgeCaseUserSeeder.ts
 //
 // tập hợp các trạng thái "dữ liệu chưa hoàn thiện" ở mức
-// User/Team/Player mà pipeline gốc không tạo ra:
-//   - User có role "leader" nhưng CHƯA từng được gán làm TeamLeader của đội nào.
-//   - User có role "player" nhưng CHƯA từng có TeamPlayer (Player mồ côi).
-//   - Team được tạo (đăng ký giải) nhưng CHƯA đủ 11 cầu thủ tối thiểu để đá.
-//   - Team tồn tại nhưng KHÔNG đăng ký vào bất kỳ Season nào (đội "ngoài giải").
-//   - TeamPlayer với approval_status=pending/rejected và status=injured/suspended
-//     (bản gốc luôn hardcode approved/active).
+// User/Team/SeasonTeam/TeamPlayer mà pipeline gốc không tạo ra.
+//
+// PHÂN CHIA TRÁCH NHIỆM (tránh trùng logic giữa các seeder file):
+//   - squadSeeder.ts       : XÂY roster (số lượng, vị trí, jersey) — kể cả
+//                            case thiếu người (seedBoundarySquad,
+//                            seedGoalkeeperlessSquad) và chuyển nhượng
+//                            (seedMidSeasonTransfer).
+//   - edgeCaseUserSeeder.ts: trạng thái IDENTITY/REGISTRATION lệch chuẩn
+//                            (role không gắn thực thể, tài khoản bất thường,
+//                            approval/status desync trên roster có sẵn).
+//   - matchDetailSeeder.ts : trạng thái TRẬN ĐẤU bất thường (forfeit,
+//                            abandoned, disputed result).
+//
+// Vì roster (TeamPlayer) unique theo season_team_id (@@unique([season_team_id,
+// jersey_number]) / ([season_team_id, player_id])) — KHÔNG có team_id trên
+// TeamPlayer — "team chưa đủ người" hay "team thiếu vị trí" chỉ có ý nghĩa
+// trong ngữ cảnh 1 season cụ thể. seedUnderStaffedSeasonTeam bên dưới vì vậy
+// chỉ là 1 wrapper mỏng gọi squadSeeder.seedBoundarySquad, không tự build lại.
 import bcrypt from "bcrypt";
-import { PrismaClient, PlayerPosition, PlayerRole, ApprovalStatus, PlayerStatus } from "../generated/prisma/client.js";
-import { randInt, pickOrThrow, buildSquadPositions } from "./helperSeeder.js";
+import {
+    PrismaClient,
+    PlayerPosition,
+    PlayerRole,
+    ApprovalStatus,
+    PlayerStatus,
+} from "../generated/prisma/client.js";
+import { randInt, pickOrThrow } from "./helperSeeder.js";
+import { seedBoundarySquad } from "./squadSeeder.js";
 import type { RoleName } from "./roleSeeder.js";
 
 const BCRYPT_ROUNDS = 12;
@@ -95,47 +113,27 @@ export async function seedFreeAgentPlayers(
 }
 
 /**
- * Tạo 1 Team mới KHÔNG đăng ký vào season nào — đội tồn tại trong hệ thống
- * (đã có HLV, có thể có vài cầu thủ) nhưng chưa từng tham dự giải đấu nào.
- * Nếu squadSize < 11, đội này cũng minh hoạ luôn case "chưa đủ người đá".
+ * Tạo 1 Team KHÔNG đăng ký vào season nào — đội tồn tại trong hệ thống (có
+ * HLV) nhưng chưa từng đăng ký giải. FIX: bản trước còn seed luôn TeamPlayer
+ * cho đội này bằng team_id — sai vì TeamPlayer chỉ tồn tại trong ngữ cảnh
+ * season_team_id. Team chưa đăng ký season thì KHÔNG THỂ có roster hợp lệ
+ * theo schema hiện tại — nên bản này chỉ tạo Team, không tạo squad.
  *
- * classIdByName (từ classSeeder.seedClasses, PHẢI chạy trước): đội mồ côi
- * vẫn cần class_id giống mọi Team khác trong hệ thống (đội sinh viên gắn với
- * 1 lớp cụ thể).
- *
- * FIX (P1 — jersey convention mismatch): bản trước gán vị trí theo
- * `positions[jersey % 4]` (round-robin 4 vị trí cơ bản theo thứ tự cố định:
- * GK, DF, MF, FW lặp lại mỗi 4 người) — KHÁC HẲN convention thật của hệ
- * thống. `squadSeeder.seedSquads` dùng `buildSquadPositions()`
- * (helperSeeder.ts): 23 người xếp thành BLOCK liên tục 3 GK (jersey 1-3) + 8
- * DF (4-11) + 8 MF (12-19) + 4 FW (20-23). `matchDetailSeeder.splitStartersSubs`
- * đọc ngược lại đúng theo block đó (`jersey<=3` -> GK, `4-11` -> DF,
- * `12-19` -> MF, `>=20` -> FW) để dựng đội hình ra sân.
- *
- * Nếu orphan team (squadSize >= 11) từng được lịch vào 1 trận thật, 2
- * convention lệch nhau sẽ khiến `splitStartersSubs` gán sai vị trí thực tế:
- * jersey #4 ở orphan team là DF theo modulo-4 nhưng `matchDetailSeeder` vẫn
- * coi #4 là DF (đúng ở biên này) — nhưng jersey #5 modulo-4 lại là GK (vì
- * `positions[5%4]=positions[1]=DF`... thực chất mọi vị trí modulo-4 lệch
- * hoàn toàn khỏi block 3/8/8/4 ngay từ jersey #4 trở đi) trong khi
- * `matchDetailSeeder` coi #5-11 đều là DF — kết quả: cầu thủ đăng ký vị trí
- * X (Player.position) có thể bị xếp đá ở vị trí khác trên sân
- * (MatchLineup.position lấy theo TeamPlayer.position, TeamPlayer.position
- * lại lấy theo convention modulo-4 sai). Fix: dùng chung
- * `buildSquadPositions()` như squadSeeder để 2 nơi luôn khớp nhau.
+ * Nếu cần test "team đăng ký nhưng thiếu người", dùng
+ * seedUnderStaffedSeasonTeam bên dưới (cần season_team_id thật, tức là team
+ * ĐÃ đăng ký season, chỉ là chưa đủ người).
  */
-export async function seedOrphanTeam(
+export async function seedUnregisteredTeam(
     db: PrismaClient,
     adminUserId: number,
     teamName: string,
-    squadSize: number,
     classIdByName: Record<string, number>
 ): Promise<number> {
     const classIds = Object.values(classIdByName);
     if (classIds.length === 0) {
-        throw new Error("seedOrphanTeam: classIdByName rỗng — cần chạy seedClasses trước seedOrphanTeam");
+        throw new Error("seedUnregisteredTeam: classIdByName rỗng — cần chạy seedClasses trước");
     }
-    const classId = pickOrThrow(classIds, "seedOrphanTeam classIds");
+    const classId = pickOrThrow(classIds, "seedUnregisteredTeam classIds");
 
     const team = await db.team.upsert({
         where: { name: teamName },
@@ -143,62 +141,35 @@ export async function seedOrphanTeam(
         create: { name: teamName, coach_name: `HLV trưởng ${teamName}`, user_id: adminUserId, class_id: classId },
     });
 
-    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
-    // FIX: dùng đúng block convention 3GK/8DF/8MF/4FW giống squadSeeder,
-    // thay vì round-robin modulo-4 riêng của file này.
-    const positions = buildSquadPositions();
-
-    const already = await db.teamPlayer.count({ where: { team_id: team.id } });
-    for (let jersey = already + 1; jersey <= squadSize; jersey++) {
-        const email = `orphan-team.${team.id}.p${jersey}@fifa-seed.local`;
-        const user = await db.user.upsert({
-            where: { email },
-            update: {},
-            create: {
-                name: `CT dự bị #${jersey}`,
-                email,
-                password: passwordHash,
-                email_verified: true,
-                email_verified_at: new Date(),
-            },
-        });
-        const idx = (jersey - 1) % positions.length;
-        const position = positions[idx] as PlayerPosition;
-        const player = await db.player.upsert({
-            where: { user_id: user.id },
-            update: {},
-            create: { user_id: user.id, date_of_birth: new Date(2001, 0, 1), position, nationality: teamName },
-        });
-        await db.teamPlayer.upsert({
-            where: { team_id_jersey_number: { team_id: team.id, jersey_number: jersey } },
-            update: {},
-            create: {
-                team_id: team.id,
-                player_id: player.id,
-                jersey_number: jersey,
-                position,
-                role: PlayerRole.player,
-                status: PlayerStatus.active,
-                approval_status: ApprovalStatus.pending, // đội mới lập, HLV chưa duyệt xong danh sách
-            },
-        });
-    }
-
-    console.log(`[EdgeCaseUserSeeder] Team mồ côi "${teamName}" (#${team.id}): ${squadSize} cầu thủ, KHÔNG đăng ký season nào.`);
+    console.log(`[EdgeCaseUserSeeder] Team "${teamName}" (#${team.id}): tồn tại nhưng KHÔNG đăng ký season nào, không có roster.`);
     return team.id;
 }
 
 /**
- * Đánh dấu ngẫu nhiên vài TeamPlayer trong 1 đội sang trạng thái chưa hoàn
- * thiện: approval_status pending/rejected, status injured/suspended. Bản gốc
- * (squadSeeder) luôn hardcode approved/active cho MỌI cầu thủ — không có
- * case nào thể hiện quy trình duyệt danh sách đăng ký còn dang dở.
+ * Team ĐÃ đăng ký season (có season_team_id thật) nhưng số người dưới
+ * min_players_per_team của TournamentRule (default 7). Chỉ là wrapper gọi
+ * squadSeeder.seedBoundarySquad — không tự build lại logic vị trí ở đây,
+ * tránh 2 nguồn sự thật cho cùng 1 việc "sinh roster".
  */
-export async function seedIncompleteApprovalStates(db: PrismaClient, teamId: number): Promise<void> {
-    const squad = await db.teamPlayer.findMany({ where: { team_id: teamId }, orderBy: { jersey_number: "asc" } });
+export async function seedUnderStaffedSeasonTeam(
+    db: PrismaClient,
+    seasonTeamId: number,
+    teamNameForEmail: string,
+    squadSize: number
+): Promise<void> {
+    await seedBoundarySquad(db, seasonTeamId, teamNameForEmail, squadSize);
+    console.log(`[EdgeCaseUserSeeder] season_team #${seasonTeamId} (${teamNameForEmail}): ${squadSize} người — dưới mức tối thiểu.`);
+}
+
+/**
+ * Đánh dấu ngẫu nhiên vài TeamPlayer trong 1 season_team sang trạng thái
+ * chưa hoàn thiện: approval_status pending/rejected, status injured/suspended.
+ * FIX: bản trước filter theo team_id (không tồn tại) — đổi sang season_team_id.
+ */
+export async function seedIncompleteApprovalStates(db: PrismaClient, seasonTeamId: number): Promise<void> {
+    const squad = await db.teamPlayer.findMany({ where: { season_team_id: seasonTeamId }, orderBy: { jersey_number: "asc" } });
     if (squad.length === 0) return;
 
-    // ~15% pending, ~5% rejected, phần còn lại giữ approved (đã duyệt) — giống tỉ lệ thực tế.
     let pendingCount = 0;
     let rejectedCount = 0;
     let injuredCount = 0;
@@ -231,7 +202,147 @@ export async function seedIncompleteApprovalStates(db: PrismaClient, teamId: num
     }
 
     console.log(
-        `[EdgeCaseUserSeeder] Team #${teamId}: ${pendingCount} pending, ${rejectedCount} rejected, ` +
+        `[EdgeCaseUserSeeder] season_team #${seasonTeamId}: ${pendingCount} pending, ${rejectedCount} rejected, ` +
         `${injuredCount} injured, ${suspendedCount} suspended (trên ${squad.length} cầu thủ).`
     );
+}
+
+// ============================================================
+// EDGE CASES MỚI — identity/registration
+// ============================================================
+
+/**
+ * User giữ đồng thời 2 role (player + leader) — hệ thống cho phép 1 user
+ * nhiều role (User_Role là bảng nhiều-nhiều) nhưng flow UI/business logic
+ * thường viết theo giả định 1 user = 1 role chủ đạo. Case này lộ ra chỗ
+ * nào code đang implicit-assume single-role (vd: dashboard redirect theo
+ * role đầu tiên tìm thấy, permission check thiếu OR-logic giữa các role).
+ */
+export async function seedRoleStackedUser(
+    db: PrismaClient,
+    roleMap: Record<RoleName, number>,
+    label: string
+): Promise<number> {
+    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
+    const email = `role-stacked.${label}@fifa-seed.local`;
+
+    const user = await db.user.upsert({
+        where: { email },
+        update: {},
+        create: {
+            name: `User đa vai trò ${label}`,
+            email,
+            password: passwordHash,
+            email_verified: true,
+            email_verified_at: new Date(),
+            user_roles: { create: [{ role_id: roleMap.player }, { role_id: roleMap.leader }] },
+        },
+    });
+
+    const player = await db.player.upsert({
+        where: { user_id: user.id },
+        update: {},
+        create: { user_id: user.id, date_of_birth: new Date(1999, 5, 15), position: PlayerPosition.midfielder, nationality: "Vietnam" },
+    });
+
+    console.log(`[EdgeCaseUserSeeder] role-stacked user #${user.id} (player #${player.id}) — vừa là player vừa là leader.`);
+    return user.id;
+}
+
+/**
+ * User bị khoá (is_active=false) nhưng vẫn còn TeamPlayer status=active
+ * trong 1 season_team đang thi đấu. Không có FK/constraint nào tự động
+ * đồng bộ User.is_active với TeamPlayer.status — nếu login bị chặn ở tầng
+ * auth nhưng match-day lineup validation không check User.is_active (chỉ
+ * check TeamPlayer.status/approval_status), cầu thủ này vẫn được xếp đá dù
+ * tài khoản đã khoá. Dùng để test đúng lớp nào PHẢI check is_active.
+ */
+export async function seedInactiveUserWithLiveRoster(
+    db: PrismaClient,
+    seasonTeamId: number,
+    label: string,
+    jerseyNumber: number
+): Promise<void> {
+    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
+    const email = `inactive-user.${label}@fifa-seed.local`;
+
+    const user = await db.user.upsert({
+        where: { email },
+        update: { is_active: false },
+        create: {
+            name: `User bị khoá ${label}`,
+            email,
+            password: passwordHash,
+            email_verified: true,
+            email_verified_at: new Date(),
+            is_active: false,
+        },
+    });
+
+    const player = await db.player.upsert({
+        where: { user_id: user.id },
+        update: {},
+        create: { user_id: user.id, date_of_birth: new Date(2000, 2, 10), position: PlayerPosition.defender, nationality: "Vietnam" },
+    });
+
+    await db.teamPlayer.upsert({
+        where: { season_team_id_jersey_number: { season_team_id: seasonTeamId, jersey_number: jerseyNumber } },
+        update: {},
+        create: {
+            season_team_id: seasonTeamId,
+            player_id: player.id,
+            jersey_number: jerseyNumber,
+            position: PlayerPosition.defender,
+            role: PlayerRole.player,
+            status: PlayerStatus.active, // cố tình active dù user đã bị khoá — đây là điểm lệch cần test
+            approval_status: ApprovalStatus.approved,
+        },
+    });
+
+    console.log(`[EdgeCaseUserSeeder] user #${user.id} bị khoá (is_active=false) nhưng vẫn active trong season_team #${seasonTeamId}.`);
+}
+
+/**
+ * User email chưa verify nhưng đã được đưa vào roster ở trạng thái pending —
+ * mô phỏng luồng: leader thêm cầu thủ vào danh sách trước khi cầu thủ đó tự
+ * verify email tài khoản. Test: approval flow có vô tình auto-approve user
+ * chưa verify hay không (2 khái niệm "chưa xác thực" khác nhau: email
+ * verification vs squad approval — dễ bị lẫn lộn khi review code).
+ */
+export async function seedUnverifiedEmailPendingPlayer(
+    db: PrismaClient,
+    seasonTeamId: number,
+    label: string,
+    jerseyNumber: number
+): Promise<void> {
+    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, BCRYPT_ROUNDS);
+    const email = `unverified.${label}@fifa-seed.local`;
+
+    const user = await db.user.upsert({
+        where: { email },
+        update: {},
+        create: { name: `User chưa verify email ${label}`, email, password: passwordHash, email_verified: false },
+    });
+
+    const player = await db.player.upsert({
+        where: { user_id: user.id },
+        update: {},
+        create: { user_id: user.id, date_of_birth: new Date(2001, 8, 20), position: PlayerPosition.forward, nationality: "Vietnam" },
+    });
+
+    await db.teamPlayer.upsert({
+        where: { season_team_id_jersey_number: { season_team_id: seasonTeamId, jersey_number: jerseyNumber } },
+        update: {},
+        create: {
+            season_team_id: seasonTeamId,
+            player_id: player.id,
+            jersey_number: jerseyNumber,
+            position: PlayerPosition.forward,
+            role: PlayerRole.player,
+            status: PlayerStatus.active,
+            approval_status: ApprovalStatus.pending,
+        },
+    });
+
+    console.log(`[EdgeCaseUserSeeder] user #${user.id} (email chưa verify) — TeamPlayer pending trong season_team #${seasonTeamId}.`);
 }

@@ -185,6 +185,7 @@ export type VenueWhereInput = {
     updated_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     matches?: Prisma.MatchListRelationFilter;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueListRelationFilter;
 };
 export type VenueOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -195,6 +196,7 @@ export type VenueOrderByWithRelationInput = {
     updated_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder;
     matches?: Prisma.MatchOrderByRelationAggregateInput;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueOrderByRelationAggregateInput;
     _relevance?: Prisma.VenueOrderByRelevanceInput;
 };
 export type VenueWhereUniqueInput = Prisma.AtLeast<{
@@ -209,6 +211,7 @@ export type VenueWhereUniqueInput = Prisma.AtLeast<{
     updated_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     deleted_at?: Prisma.DateTimeNullableFilter<"Venue"> | Date | string | null;
     matches?: Prisma.MatchListRelationFilter;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueListRelationFilter;
 }, "id" | "name">;
 export type VenueOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -244,6 +247,7 @@ export type VenueCreateInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     matches?: Prisma.MatchCreateNestedManyWithoutVenueInput;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueCreateNestedManyWithoutVenueInput;
 };
 export type VenueUncheckedCreateInput = {
     id?: number;
@@ -254,6 +258,7 @@ export type VenueUncheckedCreateInput = {
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
     matches?: Prisma.MatchUncheckedCreateNestedManyWithoutVenueInput;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUncheckedCreateNestedManyWithoutVenueInput;
 };
 export type VenueUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -263,6 +268,7 @@ export type VenueUpdateInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     matches?: Prisma.MatchUpdateManyWithoutVenueNestedInput;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUpdateManyWithoutVenueNestedInput;
 };
 export type VenueUncheckedUpdateInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -273,6 +279,7 @@ export type VenueUncheckedUpdateInput = {
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     matches?: Prisma.MatchUncheckedUpdateManyWithoutVenueNestedInput;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUncheckedUpdateManyWithoutVenueNestedInput;
 };
 export type VenueCreateManyInput = {
     id?: number;
@@ -299,6 +306,10 @@ export type VenueUncheckedUpdateManyInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+};
+export type VenueScalarRelationFilter = {
+    is?: Prisma.VenueWhereInput;
+    isNot?: Prisma.VenueWhereInput;
 };
 export type VenueOrderByRelevanceInput = {
     fields: Prisma.VenueOrderByRelevanceFieldEnum | Prisma.VenueOrderByRelevanceFieldEnum[];
@@ -342,6 +353,18 @@ export type VenueNullableScalarRelationFilter = {
     is?: Prisma.VenueWhereInput | null;
     isNot?: Prisma.VenueWhereInput | null;
 };
+export type VenueCreateNestedOneWithoutSeasonDefaultVenuesInput = {
+    create?: Prisma.XOR<Prisma.VenueCreateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedCreateWithoutSeasonDefaultVenuesInput>;
+    connectOrCreate?: Prisma.VenueCreateOrConnectWithoutSeasonDefaultVenuesInput;
+    connect?: Prisma.VenueWhereUniqueInput;
+};
+export type VenueUpdateOneRequiredWithoutSeasonDefaultVenuesNestedInput = {
+    create?: Prisma.XOR<Prisma.VenueCreateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedCreateWithoutSeasonDefaultVenuesInput>;
+    connectOrCreate?: Prisma.VenueCreateOrConnectWithoutSeasonDefaultVenuesInput;
+    upsert?: Prisma.VenueUpsertWithoutSeasonDefaultVenuesInput;
+    connect?: Prisma.VenueWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.VenueUpdateToOneWithWhereWithoutSeasonDefaultVenuesInput, Prisma.VenueUpdateWithoutSeasonDefaultVenuesInput>, Prisma.VenueUncheckedUpdateWithoutSeasonDefaultVenuesInput>;
+};
 export type VenueCreateNestedOneWithoutMatchesInput = {
     create?: Prisma.XOR<Prisma.VenueCreateWithoutMatchesInput, Prisma.VenueUncheckedCreateWithoutMatchesInput>;
     connectOrCreate?: Prisma.VenueCreateOrConnectWithoutMatchesInput;
@@ -356,6 +379,57 @@ export type VenueUpdateOneWithoutMatchesNestedInput = {
     connect?: Prisma.VenueWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.VenueUpdateToOneWithWhereWithoutMatchesInput, Prisma.VenueUpdateWithoutMatchesInput>, Prisma.VenueUncheckedUpdateWithoutMatchesInput>;
 };
+export type VenueCreateWithoutSeasonDefaultVenuesInput = {
+    name: string;
+    address?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    matches?: Prisma.MatchCreateNestedManyWithoutVenueInput;
+};
+export type VenueUncheckedCreateWithoutSeasonDefaultVenuesInput = {
+    id?: number;
+    name: string;
+    address?: string | null;
+    is_active?: boolean;
+    created_at?: Date | string;
+    updated_at?: Date | string | null;
+    deleted_at?: Date | string | null;
+    matches?: Prisma.MatchUncheckedCreateNestedManyWithoutVenueInput;
+};
+export type VenueCreateOrConnectWithoutSeasonDefaultVenuesInput = {
+    where: Prisma.VenueWhereUniqueInput;
+    create: Prisma.XOR<Prisma.VenueCreateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedCreateWithoutSeasonDefaultVenuesInput>;
+};
+export type VenueUpsertWithoutSeasonDefaultVenuesInput = {
+    update: Prisma.XOR<Prisma.VenueUpdateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedUpdateWithoutSeasonDefaultVenuesInput>;
+    create: Prisma.XOR<Prisma.VenueCreateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedCreateWithoutSeasonDefaultVenuesInput>;
+    where?: Prisma.VenueWhereInput;
+};
+export type VenueUpdateToOneWithWhereWithoutSeasonDefaultVenuesInput = {
+    where?: Prisma.VenueWhereInput;
+    data: Prisma.XOR<Prisma.VenueUpdateWithoutSeasonDefaultVenuesInput, Prisma.VenueUncheckedUpdateWithoutSeasonDefaultVenuesInput>;
+};
+export type VenueUpdateWithoutSeasonDefaultVenuesInput = {
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    matches?: Prisma.MatchUpdateManyWithoutVenueNestedInput;
+};
+export type VenueUncheckedUpdateWithoutSeasonDefaultVenuesInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    is_active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    matches?: Prisma.MatchUncheckedUpdateManyWithoutVenueNestedInput;
+};
 export type VenueCreateWithoutMatchesInput = {
     name: string;
     address?: string | null;
@@ -363,6 +437,7 @@ export type VenueCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueCreateNestedManyWithoutVenueInput;
 };
 export type VenueUncheckedCreateWithoutMatchesInput = {
     id?: number;
@@ -372,6 +447,7 @@ export type VenueUncheckedCreateWithoutMatchesInput = {
     created_at?: Date | string;
     updated_at?: Date | string | null;
     deleted_at?: Date | string | null;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUncheckedCreateNestedManyWithoutVenueInput;
 };
 export type VenueCreateOrConnectWithoutMatchesInput = {
     where: Prisma.VenueWhereUniqueInput;
@@ -393,6 +469,7 @@ export type VenueUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUpdateManyWithoutVenueNestedInput;
 };
 export type VenueUncheckedUpdateWithoutMatchesInput = {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -402,15 +479,18 @@ export type VenueUncheckedUpdateWithoutMatchesInput = {
     created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    seasonDefaultVenues?: Prisma.SeasonDefaultVenueUncheckedUpdateManyWithoutVenueNestedInput;
 };
 /**
  * Count Type VenueCountOutputType
  */
 export type VenueCountOutputType = {
     matches: number;
+    seasonDefaultVenues: number;
 };
 export type VenueCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     matches?: boolean | VenueCountOutputTypeCountMatchesArgs;
+    seasonDefaultVenues?: boolean | VenueCountOutputTypeCountSeasonDefaultVenuesArgs;
 };
 /**
  * VenueCountOutputType without action
@@ -427,6 +507,12 @@ export type VenueCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
 export type VenueCountOutputTypeCountMatchesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.MatchWhereInput;
 };
+/**
+ * VenueCountOutputType without action
+ */
+export type VenueCountOutputTypeCountSeasonDefaultVenuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.SeasonDefaultVenueWhereInput;
+};
 export type VenueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     name?: boolean;
@@ -436,6 +522,7 @@ export type VenueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     updated_at?: boolean;
     deleted_at?: boolean;
     matches?: boolean | Prisma.Venue$matchesArgs<ExtArgs>;
+    seasonDefaultVenues?: boolean | Prisma.Venue$seasonDefaultVenuesArgs<ExtArgs>;
     _count?: boolean | Prisma.VenueCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["venue"]>;
 export type VenueSelectScalar = {
@@ -450,12 +537,14 @@ export type VenueSelectScalar = {
 export type VenueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "address" | "is_active" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["venue"]>;
 export type VenueInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     matches?: boolean | Prisma.Venue$matchesArgs<ExtArgs>;
+    seasonDefaultVenues?: boolean | Prisma.Venue$seasonDefaultVenuesArgs<ExtArgs>;
     _count?: boolean | Prisma.VenueCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type $VenuePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "Venue";
     objects: {
         matches: Prisma.$MatchPayload<ExtArgs>[];
+        seasonDefaultVenues: Prisma.$SeasonDefaultVenuePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: number;
@@ -743,6 +832,7 @@ export interface VenueDelegate<ExtArgs extends runtime.Types.Extensions.Internal
 export interface Prisma__VenueClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     matches<T extends Prisma.Venue$matchesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Venue$matchesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MatchPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    seasonDefaultVenues<T extends Prisma.Venue$seasonDefaultVenuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Venue$seasonDefaultVenuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonDefaultVenuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1129,6 +1219,29 @@ export type Venue$matchesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
     take?: number;
     skip?: number;
     distinct?: Prisma.MatchScalarFieldEnum | Prisma.MatchScalarFieldEnum[];
+};
+/**
+ * Venue.seasonDefaultVenues
+ */
+export type Venue$seasonDefaultVenuesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SeasonDefaultVenue
+     */
+    select?: Prisma.SeasonDefaultVenueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the SeasonDefaultVenue
+     */
+    omit?: Prisma.SeasonDefaultVenueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.SeasonDefaultVenueInclude<ExtArgs> | null;
+    where?: Prisma.SeasonDefaultVenueWhereInput;
+    orderBy?: Prisma.SeasonDefaultVenueOrderByWithRelationInput | Prisma.SeasonDefaultVenueOrderByWithRelationInput[];
+    cursor?: Prisma.SeasonDefaultVenueWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.SeasonDefaultVenueScalarFieldEnum | Prisma.SeasonDefaultVenueScalarFieldEnum[];
 };
 /**
  * Venue without action

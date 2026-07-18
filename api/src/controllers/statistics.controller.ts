@@ -9,6 +9,7 @@ import {
 } from "tsoa";
 
 import { StatisticsService } from "../services/statistics.service.js";
+import { LeaveReason } from "../generated/prisma/client.js";
 
 @Route("statistics")
 @Tags("Statistics")
@@ -105,8 +106,38 @@ export class StatisticsController extends Controller {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // TEAM STATS HIERARCHY (tournament / season / match level)
+    // BỔ SUNG — các method service chưa có route
     // ═══════════════════════════════════════════════════════════════════════
+
+    // Đếm số user mới trong N ngày (khác getUserRegistrationStats ở chỗ
+    // đây chỉ trả về 1 số, không bucket theo ngày — dùng cho KPI card).
+    @Security("jwt", ["admin"])
+    @Get("users/registrations/count")
+    async getNewUserCount(@Query() period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y") {
+        return this.statisticsService.getNewUserCount(period);
+    }
+
+    // Danh sách player hiện không thuộc team nào (free agent).
+    @Get("players/without-team")
+    async getPlayersWithoutTeam() {
+        return this.statisticsService.getPlayersWithoutTeam();
+    }
+
+    // Thống kê player rời team, filter theo season/reason — internal reporting.
+    @Security("jwt", ["admin"])
+    @Get("players/leaves")
+    async getTeamPlayerLeaveStats(
+        @Query() season_id?: number,
+        @Query() reason?: LeaveReason,
+        @Query() limit?: number,
+    ) {
+        return this.statisticsService.getTeamPlayerLeaveStats({
+            seasonId: season_id,
+            reason,
+            limit,
+        });
+    }
+
     @Get("teams/{teamId}/tournaments/{tournamentId}")
     async getTeamTournamentStats(@Path() teamId: number, @Path() tournamentId: number) {
         return this.statisticsService.getTeamTournamentStats(teamId, tournamentId);

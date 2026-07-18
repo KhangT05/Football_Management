@@ -79,6 +79,14 @@ export declare const ApprovalStatus: {
     readonly rejected: "rejected";
 };
 export type ApprovalStatus = (typeof ApprovalStatus)[keyof typeof ApprovalStatus];
+export declare const LeaveReason: {
+    readonly transferred: "transferred";
+    readonly dropped: "dropped";
+    readonly disqualified: "disqualified";
+    readonly season_ended: "season_ended";
+    readonly injured: "injured";
+};
+export type LeaveReason = (typeof LeaveReason)[keyof typeof LeaveReason];
 export declare const SeasonTeamStatus: {
     readonly approved: "approved";
     readonly pending: "pending";

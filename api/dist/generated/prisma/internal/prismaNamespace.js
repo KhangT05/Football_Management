@@ -76,11 +76,13 @@ export const ModelName = {
     Phase: 'Phase',
     BracketSlot: 'BracketSlot',
     Season: 'Season',
+    SeasonDefaultVenue: 'SeasonDefaultVenue',
     Group: 'Group',
     Team: 'Team',
     MatchJerseyAssignment: 'MatchJerseyAssignment',
     Player: 'Player',
     TeamPlayer: 'TeamPlayer',
+    TeamPlayerHistory: 'TeamPlayerHistory',
     TeamLeader: 'TeamLeader',
     SeasonTeam: 'SeasonTeam',
     SeasonTeamJersey: 'SeasonTeamJersey',
@@ -231,7 +233,14 @@ export const SeasonScalarFieldEnum = {
     pitch_type: 'pitch_type',
     user_id: 'user_id',
     tournament_rule_id: 'tournament_rule_id',
-    max_teams_per_class: 'max_teams_per_class'
+    max_teams_per_class: 'max_teams_per_class',
+    default_daily_start_time: 'default_daily_start_time',
+    default_daily_end_time: 'default_daily_end_time',
+    default_buffer_minutes: 'default_buffer_minutes'
+};
+export const SeasonDefaultVenueScalarFieldEnum = {
+    season_id: 'season_id',
+    venue_id: 'venue_id'
 };
 export const GroupScalarFieldEnum = {
     id: 'id',
@@ -278,18 +287,28 @@ export const PlayerScalarFieldEnum = {
 };
 export const TeamPlayerScalarFieldEnum = {
     id: 'id',
-    team_id: 'team_id',
+    season_team_id: 'season_team_id',
     player_id: 'player_id',
     jersey_number: 'jersey_number',
     position: 'position',
     role: 'role',
     status: 'status',
     approval_status: 'approval_status',
-    is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at',
-    deleted_at: 'deleted_at',
+    joined_at: 'joined_at',
     user_id: 'user_id'
+};
+export const TeamPlayerHistoryScalarFieldEnum = {
+    id: 'id',
+    season_team_id: 'season_team_id',
+    player_id: 'player_id',
+    jersey_number: 'jersey_number',
+    position: 'position',
+    role: 'role',
+    joined_at: 'joined_at',
+    left_at: 'left_at',
+    left_reason: 'left_reason'
 };
 export const TeamLeaderScalarFieldEnum = {
     id: 'id',
@@ -573,7 +592,9 @@ export const SeasonOrderByRelevanceFieldEnum = {
     bank_id: 'bank_id',
     bank_account_no: 'bank_account_no',
     bank_account_name: 'bank_account_name',
-    cancel_reason: 'cancel_reason'
+    cancel_reason: 'cancel_reason',
+    default_daily_start_time: 'default_daily_start_time',
+    default_daily_end_time: 'default_daily_end_time'
 };
 export const GroupOrderByRelevanceFieldEnum = {
     name: 'name'
