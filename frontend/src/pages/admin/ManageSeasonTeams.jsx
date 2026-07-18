@@ -431,9 +431,9 @@ export default function ManageSeasonTeams() {
             <div className="flex gap-1.5 flex-wrap">
               {[
                 { value: '', label: 'Tất cả' },
-                { value: 'registration_open', label: 'Mở ĐK' },
-                { value: 'ongoing', label: 'Đang diễn' },
-                { value: 'upcoming', label: 'Sắp tới' },
+                { value: 'registration_open', label: 'Mở Đăng Kí' },
+                { value: 'ongoing', label: 'Đang diễn Sắp' },
+                { value: 'upcoming', label: 'Sắp diễn ra' },
                 { value: 'finished', label: 'Kết thúc' },
               ].map(opt => (
                 <button

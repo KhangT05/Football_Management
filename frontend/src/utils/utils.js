@@ -37,3 +37,14 @@ export const normalizePlayer = (tp) => ({
     role: tp.role ?? 'player',
     avatar: tp.player?.avatar ?? null,
 });
+
+export const formatSeasonStatus = (status) => {
+    switch (status) {
+        case 'upcoming': return ' (Sắp diễn ra)';
+        case 'registration_open': return ' (Mở đăng ký)';
+        case 'ongoing': return ' (Đang diễn ra)';
+        case 'finished': return ' (Đã kết thúc)';
+        case 'cancelled': return ' (Đã hủy)';
+        default: return '';
+    }
+};
