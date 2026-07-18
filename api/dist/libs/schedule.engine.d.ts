@@ -41,11 +41,7 @@ export declare class ScheduleEngine {
     protected buildSlotPool(venueIds: number[], startDate: Date, rangeEnd: Date, dailyStartTime: string, dailyEndTime: string, bufferMinutes: number, takenWindows: Map<number, TimeWindow[]>, excludedDates?: string[]): Slot[];
     protected vnTimeToUtc(date: Date, vnTime: string): Date;
     protected findEarliestValidSlot(pool: Slot[], usedSlotIdx: Set<number>, homeTeamId: number, awayTeamId: number, lastPlayedAt: Map<number, number>, minRestDays: number, conflictMap?: Map<number, Set<number>>, occupiedWindows?: Map<number, TimeWindow[]>): number;
-    /**
-     * RENAMED từ loadTakenSlots: trả về Map venue_id -> windows thay vì
-     * Set<string> theo exact timestamp — cần thiết cho overlap+buffer check
-     * trong buildSlotPool (xem comment ở đó).
-     */
+    protected findAvailableSlotsForMatch(pool: Slot[], homeTeamId: number, awayTeamId: number, playedTimesByTeam: Map<number, number[]>, minRestDays: number, conflictMap: Map<number, Set<number>>, occupiedWindows: Map<number, TimeWindow[]>, limit: number): Slot[];
     protected loadTakenVenueWindows(venueIds: number[], startDate: Date, rangeEnd: Date): Promise<Map<number, TimeWindow[]>>;
     protected buildTeamConflictMap(client: Prisma.TransactionClient | PrismaClient, teamIds: number[]): Promise<Map<number, Set<number>>>;
     protected loadPlayerConflictContext(client: Prisma.TransactionClient | PrismaClient, teamIds: number[], excludeMatchIds?: number[]): Promise<{

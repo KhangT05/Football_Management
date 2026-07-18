@@ -75,4 +75,11 @@ export interface SeasonTeamWithRelations {
         name: string;
     } | null;
 }
+export type BulkActionResult = {
+    succeeded: number[];
+    failed: {
+        id: number;
+        reason: string;
+    }[];
+};
 //# sourceMappingURL=seasonTeam.type.d.ts.map

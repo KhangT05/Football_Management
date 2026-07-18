@@ -239,12 +239,14 @@ export default function RegisterTeam() {
         const result = res?.data ?? res;
         const successCount = result?.success ?? 0;
         const failedCount = result?.failed ?? 0;
+        const skippedCount = result?.skipped ?? 0;
 
-        if (successCount > 0) {
-          toast.success(
-            `Import thành công ${successCount} cầu thủ${failedCount > 0 ? `, ${failedCount} dòng lỗi` : ''}.`,
-            5000
-          );
+        if (successCount > 0 || skippedCount > 0) {
+          const parts = [];
+          if (successCount > 0) parts.push(`${successCount} cầu thủ mới`);
+          if (skippedCount > 0) parts.push(`${skippedCount} đã có sẵn (bỏ qua)`);
+          if (failedCount > 0) parts.push(`${failedCount} dòng lỗi`);
+          toast.success(`Import: ${parts.join(', ')}.`, 5000);
         } else {
           const firstErrors = (result?.errors ?? [])
             .slice(0, 3)
@@ -255,39 +257,7 @@ export default function RegisterTeam() {
             8000
           );
           setIsSubmitting(false);
-          return; // dừng lại, không chuyển sang màn "thành công" vì chưa tạo được gì
-        }
-      } else if (playerInputMode === 'manual') {
-        const validPlayers = players.filter(p => p.email.trim() && p.name.trim());
-        const skipped = players.length - validPlayers.length;
-        if (skipped > 0) {
-          toast.warning(`${skipped} dòng bị bỏ qua vì thiếu email hoặc họ tên.`);
-        }
-
-        let successCount = 0;
-        const failedNames = [];
-
-        for (const p of validPlayers) {
-          try {
-            await playerApi.createForTeam(createdTeam.id, {
-              name: p.name.trim(),
-              user_email: p.email.trim(),
-              date_of_birth: p.date_of_birth || '2000-01-01', // TODO: thêm ô nhập ngày sinh cho chính xác
-              position: p.position || 'forward',
-              jersey_number: parseInt(p.number, 10),
-            });
-            successCount++;
-          } catch (e) {
-            console.error('Lỗi thêm cầu thủ:', e);
-            failedNames.push(p.name || p.email);
-          }
-        }
-
-        if (successCount > 0) {
-          toast.success(`Đã thêm ${successCount} cầu thủ. Email mời đặt mật khẩu đã được gửi tới từng người.`, 5000);
-        }
-        if (failedNames.length > 0) {
-          toast.error(`Không thêm được: ${failedNames.join(', ')}`);
+          return;
         }
       }
 

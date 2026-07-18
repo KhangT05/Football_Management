@@ -86,11 +86,31 @@ export class ScheduleEngine {
         }
         return -1;
     }
-    /**
-     * RENAMED từ loadTakenSlots: trả về Map venue_id -> windows thay vì
-     * Set<string> theo exact timestamp — cần thiết cho overlap+buffer check
-     * trong buildSlotPool (xem comment ở đó).
-     */
+    findAvailableSlotsForMatch(pool, homeTeamId, awayTeamId, playedTimesByTeam, minRestDays, conflictMap, occupiedWindows, limit) {
+        const minRestMs = minRestDays * 24 * 60 * 60 * 1000;
+        const results = [];
+        for (const slot of pool) {
+            if (results.length >= limit)
+                break;
+            const t = slot.scheduledAtMs;
+            const restOk = (teamId) => {
+                const times = playedTimesByTeam.get(teamId);
+                if (!times)
+                    return true;
+                return times.every(pt => Math.abs(t - pt) >= minRestMs);
+            };
+            if (!restOk(homeTeamId) || !restOk(awayTeamId))
+                continue;
+            const windowStart = t - ASSUMED_MATCH_DURATION_MS;
+            const windowEnd = t + ASSUMED_MATCH_DURATION_MS;
+            if (this.hasWindowConflict(homeTeamId, windowStart, windowEnd, conflictMap, occupiedWindows))
+                continue;
+            if (this.hasWindowConflict(awayTeamId, windowStart, windowEnd, conflictMap, occupiedWindows))
+                continue;
+            results.push(slot);
+        }
+        return results;
+    }
     async loadTakenVenueWindows(venueIds, startDate, rangeEnd) {
         const taken = await this.prisma.match.findMany({
             where: {
@@ -118,27 +138,33 @@ export class ScheduleEngine {
             map.set(t, new Set([t]));
         if (uniqueTeamIds.length === 0)
             return map;
+        // FIX: TeamPlayer không có team_id/deleted_at — team_id nằm trên
+        // SeasonTeam (quan hệ season_team_id -> SeasonTeam.team_id), phải join
+        // qua season_team để lọc theo team. Cũng bỏ deleted_at vì cột này
+        // không tồn tại trên TeamPlayer trong schema hiện tại.
         const rosterRows = await client.teamPlayer.findMany({
-            where: { team_id: { in: uniqueTeamIds }, deleted_at: null },
-            select: { team_id: true, player_id: true },
+            where: { season_team: { team_id: { in: uniqueTeamIds } } },
+            select: { player_id: true, season_team: { select: { team_id: true } } },
         });
         const playerIds = [...new Set(rosterRows.map(r => r.player_id))];
         if (playerIds.length === 0)
             return map;
         const allRosterRows = await client.teamPlayer.findMany({
-            where: { player_id: { in: playerIds }, deleted_at: null },
-            select: { team_id: true, player_id: true },
+            where: { player_id: { in: playerIds } },
+            select: { player_id: true, season_team: { select: { team_id: true } } },
         });
         const teamsByPlayer = new Map();
         for (const row of allRosterRows) {
+            const tId = row.season_team.team_id;
             if (!teamsByPlayer.has(row.player_id))
                 teamsByPlayer.set(row.player_id, new Set());
-            teamsByPlayer.get(row.player_id).add(row.team_id);
+            teamsByPlayer.get(row.player_id).add(tId);
         }
         for (const row of rosterRows) {
+            const rowTeamId = row.season_team.team_id;
             const linked = teamsByPlayer.get(row.player_id) ?? new Set();
             for (const t of linked)
-                map.get(row.team_id).add(t);
+                map.get(rowTeamId).add(t);
         }
         return map;
     }

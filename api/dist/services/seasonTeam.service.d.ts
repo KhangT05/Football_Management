@@ -1,6 +1,6 @@
 import { PrismaClient, SeasonTeamStatus, SeasonStatus, Phase } from "../generated/prisma/client.js";
 import { AdminAddSeasonTeamDto, AssignGroupDto, SelfRegisterSeasonTeamDto, UpdateSeasonTeamStatusDto } from "../dtos/seasonTeam.schema.js";
-import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { BulkActionResult, SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { GroupService } from "./group.service.js";
 export type SeasonRegistrationEligibility = {
@@ -149,5 +149,17 @@ export declare class SeasonTeamService {
         }[];
     }>;
     getOrCreateGroupPhase(seasonId: number, stageOrder?: number): Promise<Phase>;
+    bulkApprove(seasonId: number, ids: number[], requesterId: number): Promise<BulkActionResult>;
+    /**
+     * Bulk reject = pending -> withdrawn hàng loạt. Không cần lock season vì
+     * reject không tranh chấp capacity (khác approve) — chỉ lock các row
+     * season_team đang xử lý để tránh 2 request đồng thời cùng update 1 id.
+     *
+     * LƯU Ý SCHEMA: SeasonTeam không có field lưu lý do từ chối (khác Season
+     * có cancel_reason). Nếu cần audit "vì sao reject", phải thêm cột hoặc
+     * ghi vào Notification (NotificationType đã có sẵn 'team_rejected') —
+     * hiện tại action này KHÔNG lưu lý do, chỉ đổi status.
+     */
+    bulkReject(ids: number[]): Promise<BulkActionResult>;
 }
 //# sourceMappingURL=seasonTeam.service.d.ts.map

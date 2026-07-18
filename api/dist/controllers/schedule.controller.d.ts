@@ -1,7 +1,7 @@
 import { Controller } from 'tsoa';
 import { ScheduleService } from '../services/schedule.service.js';
 import * as scheduleSchema from '../dtos/schedule.schema.js';
-import { GenerateResult, MatchByTeamRow, RoundSummary } from '../types/schedule.type.js';
+import { GenerateResult, MatchByTeamRow, MatchSlotOption, RoundSummary, UnscheduledMatchOption } from '../types/schedule.type.js';
 import { PaginatedResult } from '../types/queryable.type.js';
 import { Match } from '../generated/prisma/client.js';
 export declare class ScheduleController extends Controller {
@@ -26,5 +26,14 @@ export declare class ScheduleController extends Controller {
     rescheduleMatch(matchId: number, body: scheduleSchema.RescheduleMatchDto): Promise<void>;
     getSchedule(seasonId: number, page?: number, per_page?: number, sort?: string, direction?: 'asc' | 'desc'): Promise<PaginatedResult<Match>>;
     getTeamSchedule(seasonId: number, teamId: number, page?: number, per_page?: number, sort?: 'round' | 'scheduled_at', direction?: 'asc' | 'desc'): Promise<PaginatedResult<MatchByTeamRow>>;
+    getUnscheduledMatchesInRound(seasonId: number, groupId: number, round: number): Promise<UnscheduledMatchOption[]>;
+    getAvailableSlotsForMatch(seasonId: number, matchId: number, body: scheduleSchema.GetAvailableSlotsDto): Promise<MatchSlotOption[]>;
+    getScheduleDefaults(seasonId: number): Promise<{
+        venueIds: number[];
+        dailyStartTime: string | null;
+        dailyEndTime: string | null;
+        bufferMinutes: number | null;
+    } | null>;
+    saveScheduleDefaults(seasonId: number, body: scheduleSchema.SeasonScheduleDefaultsDto): Promise<void>;
 }
 //# sourceMappingURL=schedule.controller.d.ts.map

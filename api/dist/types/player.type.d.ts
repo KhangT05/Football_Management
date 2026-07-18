@@ -3,13 +3,18 @@ import { QueryRequest } from "./queryable.type.js";
 export interface ImportResult {
     success: number;
     failed: number;
+    skipped: number;
     errors: {
+        row: number;
+        reason: string;
+    }[];
+    skippedRows: {
         row: number;
         reason: string;
     }[];
 }
 export interface ListTeamPlayersQuery extends QueryRequest {
-    team_id: number;
+    season_team_id: number;
 }
 export declare const PLAYER_SELECT: {
     id: true;
@@ -54,16 +59,23 @@ export type PlayerPublicRow = Prisma.PlayerGetPayload<{
 }>;
 export declare const TEAM_PLAYER_SELECT: {
     id: true;
-    team_id: true;
+    season_team_id: true;
     player_id: true;
     jersey_number: true;
     position: true;
     role: true;
     status: true;
     approval_status: true;
-    is_active: true;
     created_at: true;
     updated_at: true;
+    joined_at: true;
+    season_team: {
+        select: {
+            id: true;
+            team_id: true;
+            season_id: true;
+        };
+    };
     player: {
         select: {
             id: true;
@@ -91,47 +103,41 @@ export declare const TEAM_PLAYER_SELECT: {
 };
 export declare const PLAYER_SELECT_WITH_SEASONS: {
     team_players: {
-        where: {
-            deleted_at: null;
-        };
         select: {
             id: true;
-            team_id: true;
+            season_team_id: true;
             jersey_number: true;
             position: true;
             role: true;
             status: true;
             approval_status: true;
-            team: {
+            season_team: {
                 select: {
                     id: true;
-                    name: true;
-                    season_teams: {
-                        where: {
-                            deleted_at: null;
-                        };
+                    status: true;
+                    group_id: true;
+                    group: {
                         select: {
                             id: true;
+                            name: true;
+                        };
+                    };
+                    team: {
+                        select: {
+                            id: true;
+                            name: true;
+                        };
+                    };
+                    season: {
+                        select: {
+                            id: true;
+                            name: true;
                             status: true;
-                            group_id: true;
-                            group: {
+                            tournament: {
                                 select: {
                                     id: true;
                                     name: true;
-                                };
-                            };
-                            season: {
-                                select: {
-                                    id: true;
-                                    name: true;
-                                    status: true;
-                                    tournament: {
-                                        select: {
-                                            id: true;
-                                            name: true;
-                                            logo: true;
-                                        };
-                                    };
+                                    logo: true;
                                 };
                             };
                         };

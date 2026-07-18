@@ -76,6 +76,13 @@ export const ApprovalStatus = {
     approved: 'approved',
     rejected: 'rejected'
 };
+export const LeaveReason = {
+    transferred: 'transferred',
+    dropped: 'dropped',
+    disqualified: 'disqualified',
+    season_ended: 'season_ended',
+    injured: 'injured'
+};
 export const SeasonTeamStatus = {
     approved: 'approved',
     pending: 'pending',

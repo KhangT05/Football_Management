@@ -1,23 +1,28 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   CalendarPlus, Zap, Edit3, X, Save,
-  MapPin, Clock, Loader2, RefreshCw, Search, Calendar, Plus,
+  MapPin, Clock, Loader2, RefreshCw, Search, Calendar,
   FileText, ShieldCheck, AlertTriangle, Users, PenLine, Lock, CheckCircle2 as CheckMini,
 } from 'lucide-react';
 import { IoFootball } from 'react-icons/io5';
 import { createPortal } from 'react-dom';
-import useScheduleStore from '../../store/scheduleStore';
+import useScheduleUiStore from '../../store/scheduleuistore';
 import useVenueStore from '../../store/venueStore';
 import useTeamStore from '../../store/teamStore';
 import useSeasonStore from '../../store/seasonStore';
 import useToastStore from '../../store/toastStore';
-import { groupApi, matchApi } from '../../api';
+import { matchApi } from '../../api';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import {
   vnInputToUtcDate, utcToVnInput, getDatesInRangeUtc, formatDateChipUtc, utcToVnDateInput
 } from '../../utils/vn-time';
 import { getFriendlyErrorMessage } from '../../utils/errorHelper';
+import {
+  useSeasonGroups, useRoundsSummary, useSeasonMatches, useScheduleDefaults,
+  useGenerateNewGroups, useGenerateFromGroups, useRescheduleMatch,
+} from '../../queries/useschedule.queries';
+import ManualAssignMatchModal from './ManualAssignMatchModal';
 
 // ─── Helpers: date range ───────────────────────────────────────────────────
 const getDatesInRange = getDatesInRangeUtc;
@@ -34,8 +39,7 @@ const toDateInputValue = utcToVnDateInput;
 const isSeasonClosedStatus = (status) => status === 'finished' || status === 'cancelled';
 const isSeasonOngoingStatus = (status) => status === 'ongoing';
 
-// Số đội tối thiểu để 1 group được coi là "sẵn sàng" xếp lịch (đồng bộ với
-// điều kiện round_robin ở BE: generateRoundRobin() cần >= 2 đội mới sinh match).
+// Đồng bộ với BE: generateRoundRobin() cần >= 2 đội mới sinh match.
 const MIN_TEAMS_PER_GROUP_READY = 2;
 
 // ─── Component: giờ input HH:mm không phụ thuộc OS locale ─────────────────
@@ -80,7 +84,7 @@ function TimeField({ value, onChange }) {
   );
 }
 
-// ─── Component: Reschedule Modal ──────────────────────────────────────────────
+// ─── Component: Reschedule Modal ──────────────────────────────────────────
 function RescheduleModal({ match, venues, teams, onClose, onSave }) {
   const toast = useToastStore();
   const [scheduledAt, setScheduledAt] = useState(() => utcToVnInput(match?.scheduled_at));
@@ -89,14 +93,8 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!scheduledAt) {
-      toast.warning('Vui lòng chọn thời gian thi đấu.');
-      return;
-    }
-    if (!venueId) {
-      toast.warning('Vui lòng chọn sân thi đấu.');
-      return;
-    }
+    if (!scheduledAt) { toast.warning('Vui lòng chọn thời gian thi đấu.'); return; }
+    if (!venueId) { toast.warning('Vui lòng chọn sân thi đấu.'); return; }
 
     setIsSaving(true);
     await onSave(match.id, {
@@ -193,25 +191,96 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
   );
 }
 
-// ─── Component: Generate Schedule Modal ───────────────────────────────────────
+// ─── Component: Generate Schedule Modal ────────────────────────────────────
 function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
   const toast = useToastStore();
-  const fetchRoundsSummary = useScheduleStore(s => s.fetchRoundsSummary);
 
-  // `groups`: TẤT CẢ group tồn tại của season (kể cả group vừa tạo, chưa có
-  // đội nào — auto-assign nhét đội vào rải rác, không đồng loạt như draw).
-  const [groups, setGroups] = useState([]);
+  // FIX: groups giờ đến từ useSeasonGroups (React Query) thay vì effect thủ
+  // công gọi groupApi.listBySeason trực tiếp trong modal — tránh 2 nguồn
+  // fetch group phân kỳ (modal cũ vs hook mới dùng ở ManualAssignMatchModal).
+  const { data: groups = [], isLoading: checkingGroups, isError: groupCheckError } = useSeasonGroups(seasonId);
+  const hasDrawnGroups = groups.length > 0;
+
+  const readyGroups = useMemo(
+    () => groups.filter(g => (g.season_teams?.length || 0) >= MIN_TEAMS_PER_GROUP_READY),
+    [groups],
+  );
+  const hasAnyReadyGroup = readyGroups.length > 0;
+
   const [selectedGroupIds, setSelectedGroupIds] = useState([]);
-  const [checkingGroups, setCheckingGroups] = useState(true);
-  // `hasDrawnGroups` giờ chỉ còn ý nghĩa "season đã có group nào tồn tại
-  // chưa" — KHÔNG còn đòi hỏi group đó phải có sẵn >= 2 đội. "Group tồn
-  // tại" và "group đủ đội để xếp lịch" là 2 khái niệm khác nhau, xử lý
-  // riêng ở UI (xem readyGroupIds / notReady bên dưới).
-  const [hasDrawnGroups, setHasDrawnGroups] = useState(false);
-  const [groupCheckError, setGroupCheckError] = useState(false);
-  const [roundSummaries, setRoundSummaries] = useState([]);
+
+  // FIX (state ghi đè bởi background refetch): trước đây effect này sync lại
+  // TOÀN BỘ selectedGroupIds mỗi khi `groups` đổi reference — kể cả refetch
+  // ngầm do staleTime (30s) hết hạn hoặc window refocus, không chỉ lần load
+  // đầu. Hệ quả: admin bỏ chọn 1 bảng, rồi một refetch ngầm bất kỳ âm thầm
+  // reset lại selection về mặc định (tất cả bảng đủ đội) mà không có tín
+  // hiệu gì — submit sai phạm vi bảng đấu.
+  // Giờ chỉ reconcile theo 2 quy tắc, không overwrite toàn bộ:
+  //   (1) bảng nào biến mất khỏi `groups` (bị xoá/deactivate) -> bỏ khỏi selection
+  //   (2) bảng ready nào LẦN ĐẦU xuất hiện trong phiên modal này -> tự thêm vào
+  // Bảng admin đã chủ động bỏ chọn không bao giờ bị tự thêm lại.
+  const knownReadyGroupIdsRef = useRef(new Set());
+  useEffect(() => {
+    if (checkingGroups) return;
+    setSelectedGroupIds(prev => {
+      const currentIds = new Set(groups.map(g => g.id));
+      const next = prev.filter(id => currentIds.has(id));
+      for (const g of readyGroups) {
+        if (!knownReadyGroupIdsRef.current.has(g.id)) {
+          knownReadyGroupIdsRef.current.add(g.id);
+          if (!next.includes(g.id)) next.push(g.id);
+        }
+      }
+      const unchanged = next.length === prev.length && next.every(id => prev.includes(id));
+      return unchanged ? prev : next;
+    });
+  }, [groups, readyGroups, checkingGroups]);
+
+  const { data: roundSummaryData = [], isFetching: loadingRounds } =
+    useRoundsSummary(seasonId, hasDrawnGroups ? selectedGroupIds : undefined);
+
   const [selectedRounds, setSelectedRounds] = useState([]);
-  const [loadingRounds, setLoadingRounds] = useState(false);
+
+  // FIX (cùng vấn đề, cho round selector): roundSummaryData có staleTime chỉ
+  // 10s nên background refetch xảy ra rất thường xuyên trong lúc admin đang
+  // điền form — effect cũ set lại selectedRounds TOÀN BỘ mỗi lần refetch,
+  // xoá lựa chọn vòng đấu admin vừa chọn tay.
+  // Phân biệt 2 tình huống bằng "context key" = tập selectedGroupIds đã sort:
+  //   - Context key ĐỔI (admin đổi bảng đấu) -> đây là phạm vi dữ liệu mới
+  //     hoàn toàn -> reset selectedRounds về mặc định là ĐÚNG hành vi.
+  //   - Context key GIỮ NGUYÊN (chỉ là refetch ngầm cùng phạm vi) -> chỉ
+  //     reconcile incremental như trên, không overwrite.
+  const roundsContextKeyRef = useRef(null);
+  const knownRoundsRef = useRef(new Set());
+  const roundsContextKey = hasDrawnGroups
+    ? [...selectedGroupIds].sort((a, b) => a - b).join(',')
+    : null;
+
+  useEffect(() => {
+    if (roundSummaryData.length === 0) return;
+
+    if (roundsContextKeyRef.current !== roundsContextKey) {
+      // Đổi phạm vi bảng đấu -> reset hợp lệ về mặc định (mọi round chưa xong).
+      roundsContextKeyRef.current = roundsContextKey;
+      knownRoundsRef.current = new Set(roundSummaryData.map(r => r.round));
+      setSelectedRounds(roundSummaryData.filter(r => !r.fullyScheduled).map(r => r.round));
+      return;
+    }
+
+    // Cùng phạm vi, chỉ là refetch ngầm -> reconcile incremental.
+    setSelectedRounds(prev => {
+      const currentRounds = new Set(roundSummaryData.map(r => r.round));
+      const next = prev.filter(r => currentRounds.has(r));
+      for (const r of roundSummaryData) {
+        if (!knownRoundsRef.current.has(r.round)) {
+          knownRoundsRef.current.add(r.round);
+          if (!r.fullyScheduled && !next.includes(r.round)) next.push(r.round);
+        }
+      }
+      const unchanged = next.length === prev.length && next.every(r => prev.includes(r));
+      return unchanged ? prev : next;
+    });
+  }, [roundSummaryData, roundsContextKey]);
 
   const [formData, setFormData] = useState({
     desiredGroupCount: 1,
@@ -228,15 +297,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const isSeasonOngoing = isSeasonOngoingStatus(season?.status);
   const blocksImplicitGroupCreation = isSeasonOngoing && !hasDrawnGroups && !checkingGroups;
   const isModalDisabled = isSeasonClosed || blocksImplicitGroupCreation;
-
-  // Group nào đã có đủ đội (>= MIN_TEAMS_PER_GROUP_READY) để có thể sinh
-  // round-robin / xếp lịch. Group chưa đủ đội vẫn hiển thị nhưng bị disable
-  // trong danh sách chọn bên dưới, thay vì bị ẩn hoàn toàn như trước.
-  const readyGroups = useMemo(
-    () => groups.filter(g => (g.season_teams?.length || 0) >= MIN_TEAMS_PER_GROUP_READY),
-    [groups],
-  );
-  const hasAnyReadyGroup = readyGroups.length > 0;
 
   const [dailyStartTime, setDailyStartTime] = useState('08:00');
   const [dailyEndTime, setDailyEndTime] = useState('20:00');
@@ -267,26 +327,8 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   }, [allDatesInRange]);
 
   const toggleDate = (date) => {
-    setExcludedDates(prev =>
-      prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
-    );
+    setExcludedDates(prev => prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]);
   };
-
-  useEffect(() => {
-    if (!seasonId || !hasDrawnGroups || selectedGroupIds.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      setLoadingRounds(true);
-      try {
-        const payload = await fetchRoundsSummary(seasonId, selectedGroupIds);
-        if (!cancelled) {
-          setRoundSummaries(payload ?? []);
-          setSelectedRounds((payload ?? []).filter(r => !r.fullyScheduled).map(r => r.round));
-        }
-      } finally { if (!cancelled) setLoadingRounds(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [seasonId, hasDrawnGroups, selectedGroupIds, fetchRoundsSummary]);
 
   const toggleGroup = (gid) => setSelectedGroupIds(prev =>
     prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]
@@ -296,80 +338,13 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     setSelectedRounds(prev => prev.includes(round) ? prev.filter(r => r !== round) : [...prev, round]);
   };
 
-  // FIX (bug nghiêm trọng, lần 1): logic fetch + tính eligible groups trước
-  // đây nằm rải rác ngoài mọi effect, ngay giữa component body — gọi
-  // groupApi.listBySeason(seasonId) KHÔNG await (res là Promise, res?.status
-  // luôn undefined -> payload/groups luôn rỗng) và gọi setGroups/
-  // setHasDrawnGroups/setSelectedGroupIds trực tiếp trong render body ở MỌI
-  // lần render -> "Too many re-renders". Gộp toàn bộ fetch + xử lý vào 1
-  // effect async duy nhất, có `cancelled` guard.
-  //
-  // FIX (bug lần 2 — nguồn của "bảng A/B/C đều không chọn được, vòng đấu
-  // không hiện"): season KHÔNG bốc thăm 1 lần cho tất cả (drawGroups) mà
-  // dùng autoAssignApprovedTeamToGroup() nhét TỪNG đội một vào group đang
-  // ít quân nhất mỗi khi 1 đăng ký được approve (xem GroupService). Vì vậy
-  // tại một thời điểm bất kỳ, các group hoàn toàn có thể đang ở trạng thái
-  // "có group nhưng chưa đủ 2 đội" (0 hoặc 1 đội). Bản cũ lọc luôn
-  // `g.season_teams.length >= 2` NGAY TRÊN state `groups` — khiến các group
-  // chưa đủ quân biến mất khỏi UI hoàn toàn (không hiển thị được để chọn),
-  // và nếu MỌI group đều chưa đủ quân thì `hasDrawnGroups` sai thành false,
-  // kéo theo effect fetchRoundsSummary phía trên không bao giờ chạy (điều
-  // kiện `hasDrawnGroups` false) -> danh sách vòng đấu không bao giờ hiện,
-  // đồng thời nếu season đã 'ongoing' thì cả modal bị khoá nhầm
-  // (blocksImplicitGroupCreation) với thông báo sai "chưa có bảng đấu nào
-  // được bốc thăm" dù bảng đã tồn tại thật.
-  //
-  // Sửa: tách 2 khái niệm — "group tồn tại" (season đã bước sang giai đoạn
-  // có bảng, không cho tạo bảng mới ngầm) và "group đã đủ đội để xếp lịch"
-  // (chỉ ảnh hưởng việc group đó có được PHÉP CHỌN hay không, xử lý ở UI
-  // render bằng readyGroups/notReady, không xoá khỏi state gốc).
-  useEffect(() => {
-    if (!seasonId) return;
-    let cancelled = false;
-    (async () => {
-      setCheckingGroups(true);
-      setGroupCheckError(false);
-      try {
-        const res = await groupApi.listBySeason(seasonId);
-        const payload = typeof res?.status === 'boolean' ? res.data : res;
-        const fetchedGroups = Array.isArray(payload?.groups) ? payload.groups : [];
-        const readyGroupIds = fetchedGroups
-          .filter(g => (g.season_teams?.length || 0) >= MIN_TEAMS_PER_GROUP_READY)
-          .map(g => g.id);
-        if (!cancelled) {
-          setGroups(fetchedGroups);
-          setHasDrawnGroups(fetchedGroups.length > 0);
-          // Mặc định chọn các bảng ĐÃ SẴN SÀNG (đủ >=2 đội). Nếu chưa bảng
-          // nào sẵn sàng, không chọn gì cả (chờ admin bổ sung đội) thay vì
-          // chọn nhầm bảng rỗng.
-          setSelectedGroupIds(readyGroupIds);
-        }
-      } catch (err) {
-        console.error('[GenerateScheduleModal] check groups failed:', err);
-        if (!cancelled) {
-          setGroups([]);
-          setHasDrawnGroups(false);
-          setGroupCheckError(true);
-        }
-      } finally {
-        if (!cancelled) setCheckingGroups(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [seasonId]);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleVenueToggle = (vid) => {
-    setSelectedVenues(prev =>
-      prev.includes(vid) ? prev.filter(id => id !== vid) : [...prev, vid]
-    );
+    setSelectedVenues(prev => prev.includes(vid) ? prev.filter(id => id !== vid) : [...prev, vid]);
   };
 
   const handleStartDateChange = (value) => {
@@ -378,9 +353,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       return;
     }
     setStartDate(value);
-    if (endDate && value > endDate) {
-      setEndDate(value);
-    }
+    if (endDate && value > endDate) setEndDate(value);
   };
 
   const handleEndDateChange = (value) => {
@@ -398,10 +371,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isSeasonClosed) {
-      toast.warning('Mùa giải đã kết thúc — không thể tạo/sửa lịch thi đấu nữa.');
-      return;
-    }
+    if (isSeasonClosed) { toast.warning('Mùa giải đã kết thúc — không thể tạo/sửa lịch thi đấu nữa.'); return; }
     if (blocksImplicitGroupCreation) {
       toast.warning('Mùa giải đã bắt đầu nhưng chưa có bảng đấu nào được tạo — không thể tự tạo bảng mới ở bước này. Vui lòng kiểm tra lại bước "Bốc thăm chia bảng".');
       return;
@@ -418,31 +388,15 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       toast.warning('Mùa giải chưa có ngày bắt đầu/kết thúc — vui lòng cập nhật mùa giải trước khi tạo lịch.');
       return;
     }
-    if (selectedVenues.length === 0) {
-      toast.warning('Vui lòng chọn ít nhất một sân thi đấu.');
-      return;
-    }
-    if (!startDate || !endDate) {
-      toast.warning('Vui lòng chọn khoảng ngày thi đấu.');
-      return;
-    }
+    if (selectedVenues.length === 0) { toast.warning('Vui lòng chọn ít nhất một sân thi đấu.'); return; }
+    if (!startDate || !endDate) { toast.warning('Vui lòng chọn khoảng ngày thi đấu.'); return; }
     if (startDate < seasonStartStr || endDate > seasonEndStr) {
       toast.warning(`Khoảng ngày thi đấu phải nằm trong khung mùa giải (${seasonStartStr} → ${seasonEndStr}).`);
       return;
     }
-    if (playableDates.length === 0) {
-      toast.warning('Không có ngày nào có thể đá trong khoảng đã chọn.');
-      return;
-    }
-
-    if (!dailyStartTime || !dailyEndTime) {
-      toast.warning('Vui lòng nhập khung giờ hoạt động trong ngày (bắt đầu & kết thúc).');
-      return;
-    }
-    if (dailyStartTime >= dailyEndTime) {
-      toast.warning('Giờ bắt đầu phải trước giờ kết thúc.');
-      return;
-    }
+    if (playableDates.length === 0) { toast.warning('Không có ngày nào có thể đá trong khoảng đã chọn.'); return; }
+    if (!dailyStartTime || !dailyEndTime) { toast.warning('Vui lòng nhập khung giờ hoạt động trong ngày (bắt đầu & kết thúc).'); return; }
+    if (dailyStartTime >= dailyEndTime) { toast.warning('Giờ bắt đầu phải trước giờ kết thúc.'); return; }
 
     setIsGenerating(true);
 
@@ -509,8 +463,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   Mùa giải đã ở trạng thái <strong>ongoing</strong> nhưng chưa có bảng đấu nào được tạo.
-                  Hệ thống không cho tự tạo bảng mới ở bước này nữa (bảng đấu phải được chốt trước khi mùa giải
-                  chuyển sang ongoing). Vui lòng kiểm tra lại tab "Bốc thăm chia bảng" trước khi tạo lịch.
+                  Hệ thống không cho tự tạo bảng mới ở bước này nữa. Vui lòng kiểm tra lại tab "Bốc thăm chia bảng" trước khi tạo lịch.
                 </span>
               </div>
             )}
@@ -519,33 +472,31 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
               <div className="flex items-start gap-2.5 text-amber-200 text-sm bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
-                  Season đã có {groups.length} bảng đấu nhưng chưa bảng nào đủ tối thiểu {MIN_TEAMS_PER_GROUP_READY} đội
-                  (đội đang được tự động phân bổ dần theo tiến độ duyệt đăng ký). Vui lòng chờ đủ đội hoặc bổ sung
-                  thủ công ở tab "Bốc thăm chia bảng" trước khi tạo lịch.
+                  Season đã có {groups.length} bảng đấu nhưng chưa bảng nào đủ tối thiểu {MIN_TEAMS_PER_GROUP_READY} đội.
+                  Vui lòng chờ đủ đội hoặc bổ sung thủ công ở tab "Bốc thăm chia bảng" trước khi tạo lịch.
                 </span>
               </div>
             )}
 
             {!seasonHasDateRange && (
               <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
-                Mùa giải này chưa có ngày bắt đầu / ngày kết thúc — vui lòng cập nhật thông tin mùa giải
-                trước khi tạo lịch (hệ thống bắt buộc phải biết khung ngày để xếp trận).
+                Mùa giải này chưa có ngày bắt đầu / ngày kết thúc — vui lòng cập nhật thông tin mùa giải trước khi tạo lịch.
               </p>
             )}
 
             {groupCheckError && (
               <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
-                Không kiểm tra được bảng đấu hiện có — mặc định coi như chưa có bảng. Nếu season đã có bảng
-                đấu, hãy tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
+                Không kiểm tra được bảng đấu hiện có — vui lòng tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
               </p>
             )}
-            {hasDrawnGroups && hasAnyReadyGroup && roundSummaries.length > 0 && (
+
+            {hasDrawnGroups && hasAnyReadyGroup && roundSummaryData.length > 0 && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Chọn vòng đấu cần xếp lịch
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {roundSummaries.map(r => (
+                  {roundSummaryData.map(r => (
                     <button
                       key={r.round}
                       type="button"
@@ -563,7 +514,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 </div>
                 {selectedRounds.length === 0 && (
                   <p className="text-[11px] text-amber-400/80 italic">
-                    Chưa chọn vòng nào — hệ thống sẽ xếp lịch cho TẤT CẢ vòng chưa xong (không lọc theo round).
+                    Chưa chọn vòng nào — hệ thống sẽ xếp lịch cho TẤT CẢ vòng chưa xong.
                   </p>
                 )}
               </div>
@@ -573,6 +524,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang tải danh sách vòng đấu...
               </div>
             )}
+
             <fieldset disabled={isModalDisabled} className="space-y-6 disabled:opacity-50">
               {hasDrawnGroups ? (
                 <div className="text-sm text-emerald-200 bg-emerald-950/60 p-3 rounded-lg border border-emerald-500/40">
@@ -583,30 +535,22 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số bảng đấu (Groups)</label>
-                    <input
-                      type="number" min="1" required
-                      name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
-                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                    />
+                    <input type="number" min="1" required name="desiredGroupCount" value={formData.desiredGroupCount} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối thiểu</label>
-                    <input
-                      type="number" min="2" required
-                      name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
-                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                    />
+                    <input type="number" min="2" required name="minGroupSize" value={formData.minGroupSize} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kích thước bảng tối đa</label>
-                    <input
-                      type="number" min="2" required
-                      name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
-                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                    />
+                    <input type="number" min="2" required name="maxGroupSize" value={formData.maxGroupSize} onChange={handleChange}
+                      className="w-full px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none" />
                   </div>
                 </div>
               ) : null}
+
               {hasDrawnGroups && groups.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn bảng đấu</label>
@@ -620,9 +564,7 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                           type="button"
                           disabled={notReady}
                           onClick={() => toggleGroup(g.id)}
-                          title={notReady
-                            ? `Bảng chưa đủ đội (${teamCount}/${MIN_TEAMS_PER_GROUP_READY}) — chưa thể xếp lịch`
-                            : undefined}
+                          title={notReady ? `Bảng chưa đủ đội (${teamCount}/${MIN_TEAMS_PER_GROUP_READY})` : undefined}
                           className={`px-3 py-1.5 rounded-lg text-xs font-black border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${selectedGroupIds.includes(g.id)
                             ? 'bg-neon/10 border-neon text-neon'
                             : 'bg-navy-dark border-navy-light text-gray-400'
@@ -640,13 +582,11 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                   )}
                 </div>
               )}
+
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Số ngày nghỉ tối thiểu / đội</label>
-                <input
-                  type="number" min="0"
-                  name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
-                  className="w-full sm:w-64 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                />
+                <input type="number" min="0" name="minRestDaysPerTeam" value={formData.minRestDaysPerTeam} onChange={handleChange}
+                  className="w-full sm:w-64 px-4 py-2 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none" />
               </div>
 
               <div className="space-y-3">
@@ -655,33 +595,21 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                 </label>
                 {seasonHasDateRange && (
                   <p className="text-[11px] text-gray-500 italic flex items-center gap-1.5">
-                    Khung mùa giải: <span className="text-gray-300 font-bold">{seasonStartStr}</span> → <span className="text-gray-300 font-bold">{seasonEndStr}</span> — không thể chọn ngày ngoài khung này.
+                    Khung mùa giải: <span className="text-gray-300 font-bold">{seasonStartStr}</span> → <span className="text-gray-300 font-bold">{seasonEndStr}</span>
                   </p>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <span className="text-[11px] text-gray-500 font-bold uppercase">Bắt đầu</span>
-                    <input
-                      type="date" required
-                      value={startDate}
-                      min={seasonStartStr || undefined}
-                      max={endDate || seasonEndStr || undefined}
-                      disabled={!seasonHasDateRange}
-                      onChange={e => handleStartDateChange(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50"
-                    />
+                    <input type="date" required value={startDate} min={seasonStartStr || undefined} max={endDate || seasonEndStr || undefined}
+                      disabled={!seasonHasDateRange} onChange={e => handleStartDateChange(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50" />
                   </div>
                   <div className="space-y-1">
                     <span className="text-[11px] text-gray-500 font-bold uppercase">Kết thúc</span>
-                    <input
-                      type="date" required
-                      value={endDate}
-                      min={startDate || seasonStartStr || undefined}
-                      max={seasonEndStr || undefined}
-                      disabled={!seasonHasDateRange}
-                      onChange={e => handleEndDateChange(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50"
-                    />
+                    <input type="date" required value={endDate} min={startDate || seasonStartStr || undefined} max={seasonEndStr || undefined}
+                      disabled={!seasonHasDateRange} onChange={e => handleEndDateChange(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none scheme-dark disabled:opacity-50" />
                   </div>
                 </div>
 
@@ -691,11 +619,8 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                       <span className="text-[11px] text-gray-500 font-bold uppercase">
                         Bỏ chọn ngày không thể đá ({playableDates.length}/{allDatesInRange.length} ngày được chọn)
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setExcludedDates(excludedDates.length === allDatesInRange.length ? [] : allDatesInRange)}
-                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
-                      >
+                      <button type="button" onClick={() => setExcludedDates(excludedDates.length === allDatesInRange.length ? [] : allDatesInRange)}
+                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300">
                         {excludedDates.length === allDatesInRange.length ? 'Chọn tất cả' : 'Bỏ chọn tất cả'}
                       </button>
                     </div>
@@ -703,15 +628,11 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                       {allDatesInRange.map(date => {
                         const isPlayable = !excludedDates.includes(date);
                         return (
-                          <button
-                            key={date}
-                            type="button"
-                            onClick={() => toggleDate(date)}
+                          <button key={date} type="button" onClick={() => toggleDate(date)}
                             className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-all ${isPlayable
                               ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
                               : 'bg-navy border-navy-light text-gray-600 line-through'
-                              }`}
-                          >
+                              }`}>
                             {formatDateChip(date)}
                           </button>
                         );
@@ -739,29 +660,20 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
                   <span className="text-[11px] text-gray-500 font-bold uppercase">
                     Cách quãng tối thiểu giữa 2 trận cùng sân (phút)
                   </span>
-                  <input
-                    type="number" min="0"
-                    value={bufferMinutes}
-                    onChange={e => setBufferMinutes(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none"
-                  />
+                  <input type="number" min="0" value={bufferMinutes} onChange={e => setBufferMinutes(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-navy-dark border border-navy-light rounded-xl text-white font-bold focus:border-neon outline-none" />
                 </div>
               </div>
 
               <div className="space-y-3">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chọn Sân Tổ Chức</label>
                 {venues.length === 0 ? (
-                  <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước (trong phần cài đặt sân) để có thể tạo lịch!</p>
+                  <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">Bạn cần thêm sân thi đấu trước để có thể tạo lịch!</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto p-2 bg-navy-dark rounded-xl border border-navy-light custom-scrollbar">
                     {venues.map(v => (
                       <label key={v.id} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${selectedVenues.includes(String(v.id)) ? 'bg-neon/10 border-neon text-neon' : 'bg-navy border-navy-light text-gray-300 hover:border-gray-500'}`}>
-                        <input
-                          type="checkbox"
-                          checked={selectedVenues.includes(String(v.id))}
-                          onChange={() => handleVenueToggle(String(v.id))}
-                          className="accent-neon w-4 h-4"
-                        />
+                        <input type="checkbox" checked={selectedVenues.includes(String(v.id))} onChange={() => handleVenueToggle(String(v.id))} className="accent-neon w-4 h-4" />
                         <span className="font-bold text-sm truncate">{v.name}</span>
                       </label>
                     ))}
@@ -772,11 +684,8 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
             <div className="pt-4 flex justify-end gap-3 border-t border-navy-light">
               <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors">Đóng</button>
-              <button
-                type="submit"
-                disabled={isGenerating || venues.length === 0 || !seasonHasDateRange || isModalDisabled || (hasDrawnGroups && !hasAnyReadyGroup)}
-                className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50"
-              >
+              <button type="submit" disabled={isGenerating || venues.length === 0 || !seasonHasDateRange || isModalDisabled || (hasDrawnGroups && !hasAnyReadyGroup)}
+                className="px-6 py-2.5 rounded-xl bg-neon hover:bg-neon-dark text-black font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50">
                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 Bắt đầu tạo
               </button>
@@ -788,10 +697,9 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   );
 }
 
-// Match.status enum value cho "finished"
 const MatchStatusFinished = 'finished';
 
-// ─── Component: Confirm Export Report Modal ───────────────────────────────
+// ─── Component: Confirm Export Report Modal ────────────────────────────────
 function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -818,8 +726,6 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     return () => { cancelled = true; };
   }, [match?.id]);
 
-  // Rules of Hooks: useMemo phải nằm TRƯỚC early return `if (!match) return
-  // null;` để thứ tự hook luôn cố định bất kể giá trị match.
   const mergedGoals = useMemo(() => {
     const home = (preview?.goalsTimeline?.home ?? []).map(e => ({ ...e, side: 'home' }));
     const away = (preview?.goalsTimeline?.away ?? []).map(e => ({ ...e, side: 'away' }));
@@ -844,14 +750,11 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     : 'Chưa xếp lịch';
 
   const isFinished = preview?.status === MatchStatusFinished;
-
   const previewHomeScore = preview?.score?.homeFinal;
   const previewAwayScore = preview?.score?.awayFinal;
   const hasFinalScore = isFinished && previewHomeScore != null && previewAwayScore != null;
-
   const homeHalfTime = preview?.score?.homeHalfTime;
   const awayHalfTime = preview?.score?.awayHalfTime;
-
   const homeLineup = preview?.lineups?.home ?? [];
   const awayLineup = preview?.lineups?.away ?? [];
   const hasLineupData = homeLineup.length > 0 || awayLineup.length > 0;
@@ -933,7 +836,7 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             ) : previewError ? (
               <div className="flex items-start gap-2 text-xs text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>Không tải được preview chi tiết (đội hình/sự kiện). Vẫn có thể xuất PDF — server sẽ tự tính lại report lúc export.</span>
+                <span>Không tải được preview chi tiết. Vẫn có thể xuất PDF — server sẽ tự tính lại report lúc export.</span>
               </div>
             ) : mergedGoals.length === 0 ? (
               <p className="text-xs text-gray-500 italic p-3 bg-navy-dark rounded-lg border border-navy-light">Chưa có bàn thắng nào được ghi nhận.</p>
@@ -1008,12 +911,8 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
             <button type="button" onClick={onClose} disabled={isExporting} className="px-5 py-2.5 rounded-xl border border-navy-light text-gray-400 hover:text-white font-bold text-sm transition-colors disabled:opacity-50">
               Hủy
             </button>
-            <button
-              type="button"
-              onClick={() => onConfirm(match.id)}
-              disabled={isExporting || !isFinished}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="button" onClick={() => onConfirm(match.id)} disabled={isExporting || !isFinished}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
               Xác nhận xuất
             </button>
@@ -1071,24 +970,23 @@ function LineupColumn({ title, color, rows }) {
   );
 }
 
-// ─── Main Component: ScheduleTab ─────────────────────────────────────────────────
+// ─── Main Component: ScheduleTab ───────────────────────────────────────────
 export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const toast = useToastStore();
-  const {
-    getMatchesFromCache, isSeasonLoading, fetchBySeason,
-    generateSchedule, generateFromGroups, rescheduleMatch,
-    scheduleCache,
-  } = useScheduleStore();
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams, fetchAll: fetchTeams } = useTeamStore();
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
 
-  const [generateModalOpen, setGenerateModalOpen] = useState(false);
-  const [rescheduleMatchData, setRescheduleMatchData] = useState(null);
+  // UI-only state — modal open/close. KHÔNG chứa server data (groups/matches/
+  // rounds/slots/defaults) — những thứ đó sống trong React Query cache.
+  const {
+    generateModalOpen, openGenerateModal, closeGenerateModal,
+    manualAssignTarget, openManualAssign, closeManualAssign,
+    rescheduleMatchId, openReschedule, closeReschedule,
+  } = useScheduleUiStore();
 
   const [confirmExportMatch, setConfirmExportMatch] = useState(null);
   const [exportingMatchId, setExportingMatchId] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [searchTerm, setSearchTerm] = useState('');
@@ -1099,28 +997,28 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
     fetchSeasons();
   }, [fetchVenues, fetchTeams, fetchSeasons]);
 
-  useEffect(() => {
-    if (selectedSeasonId) {
-      fetchBySeason(Number(selectedSeasonId), { force: true });
-    }
-  }, [selectedSeasonId, fetchBySeason]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedSeasonId]);
+  useEffect(() => { setCurrentPage(1); }, [selectedSeasonId]);
 
   const selectedSeason = useMemo(
     () => (seasons || []).find(s => String(s.id) === String(selectedSeasonId)) ?? null,
     [seasons, selectedSeasonId],
   );
-
   const isSelectedSeasonClosed = isSeasonClosedStatus(selectedSeason?.status);
 
-  const effectiveSeasonId = selectedSeasonId;
+  const seasonIdNum = selectedSeasonId ? Number(selectedSeasonId) : null;
+
+  // Nguồn dữ liệu DUY NHẤT cho danh sách trận — mọi mutation (generate/
+  // reschedule/manual-assign) invalidate đúng key này, không còn cache
+  // split-brain giữa Zustand và React Query.
+  const { data: rawMatches = [], isLoading, refetch } = useSeasonMatches(seasonIdNum);
+  const { data: scheduleDefaults } = useScheduleDefaults(seasonIdNum);
+
+  const generateNewGroupsMutation = useGenerateNewGroups(seasonIdNum);
+  const generateFromGroupsMutation = useGenerateFromGroups(seasonIdNum);
+  const rescheduleMutation = useRescheduleMatch(seasonIdNum);
+
   const matches = useMemo(() => {
-    if (!effectiveSeasonId) return [];
-    let list = getMatchesFromCache(Number(effectiveSeasonId));
-    list = list.filter(m => m.phase?.format !== 'knockout');
+    let list = rawMatches.filter(m => m.phase?.format !== 'knockout');
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       list = list.filter(m => {
@@ -1130,27 +1028,18 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       });
     }
     return list;
-  }, [effectiveSeasonId, getMatchesFromCache, scheduleCache, searchTerm, teams]);
-
-  const isLoading = effectiveSeasonId
-    ? isSeasonLoading(Number(effectiveSeasonId))
-    : false;
+  }, [rawMatches, searchTerm, teams]);
 
   const totalPages = Math.ceil(matches.length / itemsPerPage);
   const displayedMatches = matches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleRefresh = () => {
-    if (effectiveSeasonId) {
-      fetchBySeason(Number(effectiveSeasonId), { force: true });
-    }
-  };
+  const handleRefresh = () => { if (seasonIdNum) refetch(); };
 
   const handleGenerateSchedule = async (seasonId, payload) => {
     try {
-      await generateSchedule(seasonId, payload);
+      await generateNewGroupsMutation.mutateAsync(payload);
       toast.success('Đã tạo lịch thi đấu & bốc thăm thành công!');
-      setGenerateModalOpen(false);
-      handleRefresh();
+      closeGenerateModal();
     } catch (err) {
       toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi tạo lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
     }
@@ -1158,10 +1047,9 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
   const handleGenerateFromGroups = async (seasonId, payload) => {
     try {
-      await generateFromGroups(seasonId, payload);
+      await generateFromGroupsMutation.mutateAsync(payload);
       toast.success('Đã sinh lịch thi đấu từ bảng đã bốc thăm!');
-      setGenerateModalOpen(false);
-      handleRefresh();
+      closeGenerateModal();
     } catch (err) {
       toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi tạo lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
     }
@@ -1173,17 +1061,15 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       return;
     }
     try {
-      await rescheduleMatch(matchId, payload, Number(effectiveSeasonId));
+      await rescheduleMutation.mutateAsync({ matchId, payload });
       toast.success('Cập nhật lịch thành công!');
-      setRescheduleMatchData(null);
+      closeReschedule();
     } catch (err) {
       toast.error(getFriendlyErrorMessage(err, 'Lỗi khi cập nhật trận đấu, vui lòng kiểm tra lại thời gian/sân rồi thử lại.'));
     }
   };
 
-  const handleRequestExportMatchReport = (match) => {
-    setConfirmExportMatch(match);
-  };
+  const handleRequestExportMatchReport = (match) => setConfirmExportMatch(match);
 
   const handleConfirmExportMatchReport = async (matchId) => {
     setExportingMatchId(matchId);
@@ -1224,17 +1110,24 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
+            <button onClick={handleRefresh} disabled={isLoading}
               className="px-4 py-3 rounded-xl bg-navy-dark border border-navy-light text-gray-400 hover:text-white transition-all disabled:opacity-50"
-              title="Tải lại lịch"
-            >
+              title="Tải lại lịch">
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
-              onClick={() => setGenerateModalOpen(true)}
-              disabled={!effectiveSeasonId || isSelectedSeasonClosed}
+              onClick={() => seasonIdNum && openManualAssign(seasonIdNum)}
+              disabled={!seasonIdNum || isSelectedSeasonClosed || !scheduleDefaults}
+              title={!scheduleDefaults
+                ? 'Chưa có cấu hình sân/giờ mặc định — chạy "Tạo lịch thi đấu" ít nhất 1 lần trước'
+                : undefined}
+              className="px-5 py-3 rounded-xl bg-navy-dark border border-navy-light text-emerald-400 font-black transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Edit3 className="w-5 h-5" /> Gán thủ công
+            </button>
+            <button
+              onClick={openGenerateModal}
+              disabled={!seasonIdNum || isSelectedSeasonClosed}
               title={isSelectedSeasonClosed ? 'Mùa giải đã kết thúc — không thể tạo thêm lịch thi đấu' : undefined}
               className="px-5 py-3 rounded-xl bg-neon hover:bg-neon-dark text-black font-black transition-all shadow-lg shadow-neon/20 disabled:opacity-50 flex items-center gap-2"
             >
@@ -1252,11 +1145,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             <CalendarPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-black text-white mb-2">Chưa có lịch thi đấu</h3>
             <p className="text-gray-400 mb-6">Không có trận đấu nào được tìm thấy.</p>
-            {effectiveSeasonId && !isSelectedSeasonClosed && (
-              <button
-                onClick={() => setGenerateModalOpen(true)}
-                className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform"
-              >
+            {seasonIdNum && !isSelectedSeasonClosed && (
+              <button onClick={openGenerateModal} className="px-6 py-3 rounded-full bg-neon text-black font-black inline-flex items-center gap-2 hover:scale-105 transition-transform">
                 <Zap className="w-5 h-5" /> Tạo lịch tự động ngay
               </button>
             )}
@@ -1267,10 +1157,8 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
               {displayedMatches.map(m => {
                 const homeTeam = m.home_team || teams.find(t => t.id === m.home_team_id);
                 const awayTeam = m.away_team || teams.find(t => t.id === m.away_team_id);
-
                 const homeName = homeTeam?.name ?? `Đội ${m.home_team_id}`;
                 const awayName = awayTeam?.name ?? `Đội ${m.away_team_id}`;
-
                 const homeLogo = homeTeam?.logo;
                 const awayLogo = awayTeam?.logo;
                 const isExportingThis = exportingMatchId === m.id;
@@ -1279,11 +1167,9 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                     <div className="flex justify-between items-start mb-3">
                       <StatusBadge status={m.status} />
                       {!isSelectedSeasonClosed && (
-                        <button
-                          onClick={() => setRescheduleMatchData(m)}
+                        <button onClick={() => openReschedule(m)}
                           className="opacity-0 group-hover:opacity-100 p-1.5 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-lg text-emerald-400 transition-all absolute top-3 right-3"
-                          title="Đổi lịch / Sân"
-                        >
+                          title="Đổi lịch / Sân">
                           <Edit3 className="w-4 h-4" />
                         </button>
                       )}
@@ -1324,19 +1210,14 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                       </div>
                       <div className="flex gap-2 w-full mt-2">
                         {(m.status === 'completed' || m.status === 'finished') && (
-                          <button
-                            onClick={() => handleRequestExportMatchReport(m)}
-                            disabled={isExportingThis}
-                            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
+                          <button onClick={() => handleRequestExportMatchReport(m)} disabled={isExportingThis}
+                            className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                             {isExportingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                             Xuất Biên bản
                           </button>
                         )}
-                        <button
-                          onClick={() => onGoToLiveControl(m.id)}
-                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                        >
+                        <button onClick={() => onGoToLiveControl(m.id)}
+                          className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-emerald-400 font-bold text-sm transition-colors flex items-center justify-center gap-2">
                           <Zap className="w-4 h-4" /> Cập nhật
                         </button>
                       </div>
@@ -1347,11 +1228,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
             </div>
             {totalPages > 1 && (
               <div className="mt-8 flex justify-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
               </div>
             )}
           </div>
@@ -1360,23 +1237,32 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
       {generateModalOpen && createPortal(
         <GenerateScheduleModal
-          seasonId={Number(selectedSeasonId)}
+          seasonId={seasonIdNum}
           season={selectedSeason}
           venues={venues}
-          onClose={() => setGenerateModalOpen(false)}
+          onClose={closeGenerateModal}
           onGenerate={handleGenerateSchedule}
           onGenerateFromGroups={handleGenerateFromGroups}
         />,
         document.body
       )}
 
-      {rescheduleMatchData && createPortal(
+      {rescheduleMatchId && createPortal(
         <RescheduleModal
-          match={rescheduleMatchData}
+          match={rescheduleMatchId}
           venues={venues}
           teams={teams}
-          onClose={() => setRescheduleMatchData(null)}
+          onClose={closeReschedule}
           onSave={handleReschedule}
+        />,
+        document.body
+      )}
+
+      {manualAssignTarget && createPortal(
+        <ManualAssignMatchModal
+          seasonId={manualAssignTarget.seasonId}
+          scheduleWindow={scheduleDefaults}
+          onClose={closeManualAssign}
         />,
         document.body
       )}

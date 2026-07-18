@@ -4,7 +4,7 @@ import FormField from '../../ui/FormField';
 import { INPUT } from '../../../data/data';
 import NumberField from '../../ui/Numberfield';
 import useToastStore from '../../../store/toastStore';
-import { STAGE_TYPE_META, SEED_MODE_META, KNOCKOUT_LEG_TYPE_META, newCid } from '../../../schemas/wizard.constants';
+import { STAGE_TYPE_META, SEED_MODE_META, newCid } from '../../../schemas/wizard.constants';
 import { createDefaultStage } from '../../../schemas/wizard.schema';
 
 export default function CustomStageBuilder() {
@@ -146,11 +146,11 @@ export default function CustomStageBuilder() {
                                             {SEED_MODE_META.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                                         </select>
                                     </FormField>
-                                    <FormField label="Thể thức sân đấu" required>
+                                    {/* <FormField label="Thể thức sân đấu" required>
                                         <select className={INPUT} {...register(`rule.custom_stages.${index}.leg_type`)}>
                                             {KNOCKOUT_LEG_TYPE_META.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
                                         </select>
-                                    </FormField>
+                                    </FormField> */}
                                 </div>
                             )}
 
@@ -162,11 +162,11 @@ export default function CustomStageBuilder() {
                                             <option value="loser_of_stage" disabled={sourceStage?.type !== 'knockout'}>Đội thua ở stage nguồn</option>
                                         </select>
                                     </FormField>
-                                    <FormField label="Thể thức sân đấu" required>
+                                    {/* <FormField label="Thể thức sân đấu" required>
                                         <select className={INPUT} {...register(`rule.custom_stages.${index}.leg_type`)}>
                                             {KNOCKOUT_LEG_TYPE_META.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
                                         </select>
-                                    </FormField>
+                                    </FormField> */}
                                     {sourceStage?.type !== 'knockout' && (
                                         <p className="sm:col-span-2 text-[11px] text-gray-500 italic flex items-center gap-1.5">
                                             <Info className="w-3.5 h-3.5 shrink-0" />

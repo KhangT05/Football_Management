@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApprovalStatus, PlayerPosition, PlayerRole, PlayerStatus } from "../generated/prisma/client.js";
+import { ApprovalStatus, LeaveReason, PlayerPosition, PlayerRole, PlayerStatus } from "../generated/prisma/client.js";
 export const PlayerPositionEnum = z.nativeEnum(PlayerPosition);
 export const PlayerRoleEnum = z.nativeEnum(PlayerRole);
 export const PlayerStatusEnum = z.nativeEnum(PlayerStatus);
@@ -26,10 +26,10 @@ export const updateTeamPlayerSchema = z.object({
     role: PlayerRoleEnum.optional(),
     status: PlayerStatusEnum.optional(),
     approval_status: ApprovalStatusEnum.optional(),
-    is_active: z.boolean().optional(),
 });
 export const bulkDeleteSchema = z.object({
     ids: z.array(z.number().int().positive()).min(1).max(100),
+    reason: z.nativeEnum(LeaveReason).optional().default(LeaveReason.dropped),
 });
 // FIX: .trim().toLowerCase() — Excel do leader nhập tay dễ dính khoảng trắng/case
 // khác DB, gây false negative "User not found" ở Phase 2 matching trong service.

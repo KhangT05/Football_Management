@@ -1,5 +1,5 @@
 import { MatchResultType, MatchStatus, PlayerPosition } from '../generated/prisma/client.js';
-import { MatchReportGoalEntry } from '../helper/match.helper.js';
+import { MatchReportEventEntry, MatchReportGoalEntry } from '../helper/match.helper.js';
 export interface MatchReportJerseyInfo {
     logoUrl: string | null;
     primaryColor: string | null;
@@ -9,10 +9,6 @@ export interface MatchReportTeamInfo {
     id: number;
     name: string;
     jersey: MatchReportJerseyInfo;
-}
-export interface MatchReportEventEntry {
-    minute: number | null;
-    addedMinute: number | null;
 }
 export interface MatchReportPlayerRow {
     playerId: number;

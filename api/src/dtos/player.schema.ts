@@ -1,10 +1,12 @@
 import { z } from "zod";
 import {
     ApprovalStatus,
+    LeaveReason,
     PlayerPosition,
     PlayerRole,
     PlayerStatus
 } from "../generated/prisma/client.js";
+import { PlayerSeasonInfo } from "../types/player.type.js";
 
 export const PlayerPositionEnum = z.nativeEnum(PlayerPosition);
 export const PlayerRoleEnum = z.nativeEnum(PlayerRole);
@@ -38,29 +40,19 @@ export interface PlayerPublicDto {
     user: { id: number; name: string };
 }
 
-export interface PlayerSeasonInfo {
-    season_id: number;
-    season_name: string;
-    season_status: string;
-    team_id: number;
-    team_name: string;
-    season_team_status: string;
-    group_id: number | null;
-    jersey_number: number;
-}
 export interface PlayerDetailDto extends PlayerDto {
     seasons: PlayerSeasonInfo[];
 }
 export interface TeamPlayerDto {
     id: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: PlayerPosition;
     role: PlayerRole;
     status: PlayerStatus;
     approval_status: ApprovalStatus;
-    is_active: boolean;
+    joined_at: Date;
     created_at: Date;
     updated_at: Date | null;
     player?: PlayerDto | null;
@@ -91,11 +83,11 @@ export const updateTeamPlayerSchema = z.object({
     role: PlayerRoleEnum.optional(),
     status: PlayerStatusEnum.optional(),
     approval_status: ApprovalStatusEnum.optional(),
-    is_active: z.boolean().optional(),
 });
 
 export const bulkDeleteSchema = z.object({
     ids: z.array(z.number().int().positive()).min(1).max(100),
+    reason: z.nativeEnum(LeaveReason).optional().default(LeaveReason.dropped),
 });
 
 // FIX: .trim().toLowerCase() — Excel do leader nhập tay dễ dính khoảng trắng/case
@@ -122,6 +114,8 @@ export const createPlayerForTeamSchema = z.object({
     position: PlayerPositionEnum,
     jersey_number: z.number().int().min(1).max(99),
 });
+
+
 export type CreatePlayerForTeamDto = z.infer<typeof createPlayerForTeamSchema>;
 // ============================================================
 // TYPES

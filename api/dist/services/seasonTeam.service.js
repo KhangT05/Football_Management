@@ -1,5 +1,5 @@
 import { createAppError } from "../common/app.error.js";
-import { PhaseFormat, SeasonTeamStatus, SeasonStatus, PhaseType, PhaseStatus, ApprovalStatus, } from "../generated/prisma/client.js";
+import { Prisma, PhaseFormat, SeasonTeamStatus, SeasonStatus, PhaseType, PhaseStatus, ApprovalStatus, } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { withRelations } from "../types/seasonTeam.type.js";
 const ALLOWED_TRANSITIONS = {
@@ -293,24 +293,25 @@ export class SeasonTeamService {
      * player_id của team trước khi query, hoặc nâng isolation level lên
      * Serializable cho transaction này.
      */
+    // assertNoPlayerConflict — bỏ is_active ở cả where ngoài lẫn nested
     async assertNoPlayerConflict(tx, seasonId, teamId) {
         const conflict = await tx.teamPlayer.findFirst({
             where: {
-                team_id: teamId,
-                is_active: true,
                 approval_status: ApprovalStatus.approved,
+                season_team: { team_id: teamId },
                 player: {
                     team_players: {
                         some: {
-                            team_id: { not: teamId },
-                            is_active: true,
                             approval_status: ApprovalStatus.approved,
-                            team: {
-                                season_teams: {
-                                    some: {
-                                        season_id: seasonId,
-                                        deleted_at: null,
-                                        status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                            season_team: {
+                                team_id: { not: teamId },
+                                team: {
+                                    season_teams: {
+                                        some: {
+                                            season_id: seasonId,
+                                            deleted_at: null,
+                                            status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                                        },
                                     },
                                 },
                             },
@@ -320,47 +321,27 @@ export class SeasonTeamService {
             },
             select: {
                 player: { select: { id: true, user: { select: { name: true } } } },
-                team: {
-                    select: {
-                        id: true,
-                        name: true,
-                        season_teams: {
-                            where: {
-                                season_id: seasonId,
-                                deleted_at: null,
-                                status: { in: ACTIVE_SEASON_TEAM_STATUSES },
-                            },
-                            select: { team: { select: { name: true } } },
-                        },
-                    },
-                },
             },
         });
         if (!conflict)
             return;
-        // Không cần lấy tên team đối phương qua nested select phức tạp —
-        // query lại 1 lần cho message rõ ràng, đây là error path nên
-        // không ảnh hưởng hiệu năng chung.
         const rivalTeamPlayer = await tx.teamPlayer.findFirst({
             where: {
                 player_id: conflict.player.id,
-                team_id: { not: teamId },
-                is_active: true,
                 approval_status: ApprovalStatus.approved,
-                team: {
-                    season_teams: {
-                        some: {
-                            season_id: seasonId,
-                            deleted_at: null,
-                            status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                season_team: {
+                    team_id: { not: teamId },
+                    team: {
+                        season_teams: {
+                            some: { season_id: seasonId, deleted_at: null, status: { in: ACTIVE_SEASON_TEAM_STATUSES } },
                         },
                     },
                 },
             },
-            select: { team: { select: { name: true } } },
+            select: { season_team: { select: { team: { select: { name: true } } } } },
         });
         const playerName = conflict.player.user?.name ?? `#${conflict.player.id}`;
-        const rivalTeamName = rivalTeamPlayer?.team?.name ?? "một đội khác";
+        const rivalTeamName = rivalTeamPlayer?.season_team.team.name ?? "một đội khác";
         throw createAppError("CONFLICT", `Cầu thủ ${playerName} đang thuộc đội ${rivalTeamName}, đội này đã đăng ký mùa giải này rồi — không thể đăng ký thêm đội có cùng cầu thủ vào cùng 1 mùa giải`);
     }
     /**
@@ -388,25 +369,13 @@ export class SeasonTeamService {
         const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });
         if (!team)
             throw createAppError("NOT_FOUND", `Team ${teamId} not found`);
-        // FIX: trước đây chỉ lấy status = registration_open — season 'upcoming'
-        // (đã tạo, đã có lịch nhưng admin chưa bấm "Mở đăng ký") bị loại hoàn
-        // toàn khỏi kết quả, khiến team leader không biết giải này tồn tại cho
-        // tới khi admin mở. Giờ trả về cả 2, để FE hiển thị "sắp mở đăng ký"
-        // thay vì im lặng.
         const seasons = await this.prisma.season.findMany({
-            where: {
-                status: { in: [SeasonStatus.registration_open, SeasonStatus.upcoming] },
-                deleted_at: null,
-            },
+            where: { status: { in: [SeasonStatus.registration_open, SeasonStatus.upcoming] }, deleted_at: null },
             select: {
-                id: true,
-                name: true,
-                status: true,
-                start_date: true,
-                registration_deadline: true,
+                id: true, name: true, status: true, start_date: true, registration_deadline: true,
                 tournament: { select: { id: true, name: true, logo: true } },
             },
-            orderBy: [{ status: "asc" }, { id: "desc" }], // registration_open lên trước upcoming (enum order: registration_open < upcoming alphabetically không đảm bảo — xem note bên dưới)
+            orderBy: [{ status: "asc" }, { id: "desc" }],
         });
         if (seasons.length === 0)
             return [];
@@ -416,8 +385,9 @@ export class SeasonTeamService {
                 where: { team_id: teamId, season_id: { in: seasonIds }, deleted_at: null },
                 select: { season_id: true },
             }),
+            // FIX: TeamPlayer không có team_id — lọc qua season_team.team_id.
             this.prisma.teamPlayer.findMany({
-                where: { team_id: teamId, is_active: true, approval_status: ApprovalStatus.approved },
+                where: { season_team: { team_id: teamId }, approval_status: ApprovalStatus.approved },
                 select: { player_id: true },
             }),
         ]);
@@ -428,40 +398,26 @@ export class SeasonTeamService {
             const rivalTeamPlayers = await this.prisma.teamPlayer.findMany({
                 where: {
                     player_id: { in: myPlayerIds },
-                    team_id: { not: teamId },
-                    is_active: true,
                     approval_status: ApprovalStatus.approved,
-                    team: {
-                        season_teams: {
-                            some: {
-                                season_id: { in: seasonIds },
-                                deleted_at: null,
-                                status: { in: ACTIVE_SEASON_TEAM_STATUSES },
-                            },
-                        },
+                    season_team: {
+                        team_id: { not: teamId },
+                        season_id: { in: seasonIds },
+                        deleted_at: null,
+                        status: { in: ACTIVE_SEASON_TEAM_STATUSES },
                     },
                 },
                 select: {
                     player: { select: { user: { select: { name: true } } } },
-                    team: {
-                        select: {
-                            name: true,
-                            season_teams: {
-                                where: { season_id: { in: seasonIds }, deleted_at: null, status: { in: ACTIVE_SEASON_TEAM_STATUSES } },
-                                select: { season_id: true },
-                            },
-                        },
-                    },
+                    season_team: { select: { season_id: true, team: { select: { name: true } } } },
                 },
             });
             for (const tp of rivalTeamPlayers) {
-                for (const st of tp.team.season_teams) {
-                    if (!conflictBySeason.has(st.season_id)) {
-                        conflictBySeason.set(st.season_id, {
-                            playerName: tp.player.user?.name ?? "Cầu thủ",
-                            teamName: tp.team.name,
-                        });
-                    }
+                const sId = tp.season_team.season_id;
+                if (!conflictBySeason.has(sId)) {
+                    conflictBySeason.set(sId, {
+                        playerName: tp.player.user?.name ?? "Cầu thủ",
+                        teamName: tp.season_team.team.name,
+                    });
                 }
             }
         }
@@ -478,9 +434,6 @@ export class SeasonTeamService {
                 already_registered,
                 conflict,
                 tournament: s.tournament,
-                // FIX: eligible giờ bắt buộc season phải đang registration_open —
-                // trước đây thiếu check này, season 'upcoming' (nếu lọt qua) sẽ
-                // bị coi eligible=true sai, cho phép bấm đăng ký season chưa mở.
                 eligible: isOpen && !already_registered && !conflict,
             };
         });
@@ -581,6 +534,110 @@ export class SeasonTeamService {
                     status: PhaseStatus.draft,
                 },
             });
+        });
+    }
+    async bulkApprove(seasonId, ids, requesterId) {
+        if (ids.length === 0)
+            return { succeeded: [], failed: [] };
+        return this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
+            const season = await tx.season.findUnique({ where: { id: seasonId } });
+            if (!season)
+                throw createAppError("NOT_FOUND", `Season ${seasonId} not found`);
+            if (season.status !== SeasonStatus.registration_open)
+                throw createAppError("FORBIDDEN", "Season is not open for registration");
+            const sortedIds = [...ids].sort((a, b) => a - b);
+            await tx.$queryRaw `SELECT id FROM season_teams WHERE id IN (${Prisma.join(sortedIds)}) FOR UPDATE`;
+            const records = await tx.seasonTeam.findMany({
+                where: { id: { in: sortedIds } },
+                select: { id: true, season_id: true, status: true, team_id: true }, // + team_id
+            });
+            const recordMap = new Map(records.map((r) => [r.id, r]));
+            let currentApprovedCount = await tx.seasonTeam.count({
+                where: { season_id: seasonId, status: SeasonTeamStatus.approved, deleted_at: null },
+            });
+            const succeeded = [];
+            const failed = [];
+            for (const id of sortedIds) {
+                const st = recordMap.get(id);
+                if (!st) {
+                    failed.push({ id, reason: "SeasonTeam not found" });
+                    continue;
+                }
+                if (st.season_id !== seasonId) {
+                    failed.push({ id, reason: `SeasonTeam thuộc season ${st.season_id}, không phải ${seasonId}` });
+                    continue;
+                }
+                if (st.status !== SeasonTeamStatus.pending) {
+                    failed.push({ id, reason: `Cannot approve team in status ${st.status}` });
+                    continue;
+                }
+                if (currentApprovedCount >= season.max_teams) {
+                    failed.push({ id, reason: "Season has reached maximum team capacity" });
+                    continue;
+                }
+                // FIX: re-check player conflict TẠI THỜI ĐIỂM APPROVE — bắt được
+                // case player bị add vào 2 team pending SAU khi cả 2 đã đăng ký,
+                // không chỉ tại thời điểm registration. Nếu Team B trong cùng
+                // batch (hoặc đã pending từ trước) share player với Team A đang
+                // approve, throw ở đây và fail riêng id này, KHÔNG rollback cả
+                // batch — team hợp lệ khác vẫn approve bình thường.
+                try {
+                    await this.assertNoPlayerConflict(tx, seasonId, st.team_id);
+                }
+                catch (err) {
+                    failed.push({ id, reason: err instanceof Error ? err.message : "Player conflict" });
+                    continue;
+                }
+                await tx.seasonTeam.update({
+                    where: { id },
+                    data: { status: SeasonTeamStatus.approved, user_id: requesterId },
+                });
+                await this.groupService.autoAssignApprovedTeamToGroup(tx, seasonId, id);
+                currentApprovedCount++;
+                succeeded.push(id);
+            }
+            return { succeeded, failed };
+        });
+    }
+    /**
+     * Bulk reject = pending -> withdrawn hàng loạt. Không cần lock season vì
+     * reject không tranh chấp capacity (khác approve) — chỉ lock các row
+     * season_team đang xử lý để tránh 2 request đồng thời cùng update 1 id.
+     *
+     * LƯU Ý SCHEMA: SeasonTeam không có field lưu lý do từ chối (khác Season
+     * có cancel_reason). Nếu cần audit "vì sao reject", phải thêm cột hoặc
+     * ghi vào Notification (NotificationType đã có sẵn 'team_rejected') —
+     * hiện tại action này KHÔNG lưu lý do, chỉ đổi status.
+     */
+    async bulkReject(ids) {
+        if (ids.length === 0)
+            return { succeeded: [], failed: [] };
+        return this.prisma.$transaction(async (tx) => {
+            const sortedIds = [...ids].sort((a, b) => a - b);
+            await tx.$queryRaw `SELECT id FROM season_teams WHERE id IN (${Prisma.join(sortedIds)}) FOR UPDATE`;
+            const records = await tx.seasonTeam.findMany({
+                where: { id: { in: sortedIds } },
+                select: { id: true, status: true },
+            });
+            const recordMap = new Map(records.map((r) => [r.id, r]));
+            const succeeded = [];
+            const failed = [];
+            for (const id of sortedIds) {
+                const st = recordMap.get(id);
+                if (!st) {
+                    failed.push({ id, reason: "SeasonTeam not found" });
+                    continue;
+                }
+                const allowed = ALLOWED_TRANSITIONS[st.status] ?? [];
+                if (!allowed.includes(SeasonTeamStatus.withdrawn)) {
+                    failed.push({ id, reason: `Cannot reject team in status ${st.status}` });
+                    continue;
+                }
+                await tx.seasonTeam.update({ where: { id }, data: { status: SeasonTeamStatus.withdrawn } });
+                succeeded.push(id);
+            }
+            return { succeeded, failed };
         });
     }
 }

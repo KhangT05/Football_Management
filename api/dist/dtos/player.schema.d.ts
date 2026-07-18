@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApprovalStatus, PlayerPosition, PlayerRole, PlayerStatus } from "../generated/prisma/client.js";
+import { PlayerSeasonInfo } from "../types/player.type.js";
 export declare const PlayerPositionEnum: z.ZodEnum<{
     readonly goalkeeper: "goalkeeper";
     readonly defender: "defender";
@@ -54,29 +55,19 @@ export interface PlayerPublicDto {
         name: string;
     };
 }
-export interface PlayerSeasonInfo {
-    season_id: number;
-    season_name: string;
-    season_status: string;
-    team_id: number;
-    team_name: string;
-    season_team_status: string;
-    group_id: number | null;
-    jersey_number: number;
-}
 export interface PlayerDetailDto extends PlayerDto {
     seasons: PlayerSeasonInfo[];
 }
 export interface TeamPlayerDto {
     id: number;
-    team_id: number;
+    season_team_id: number;
     player_id: number;
     jersey_number: number;
     position: PlayerPosition;
     role: PlayerRole;
     status: PlayerStatus;
     approval_status: ApprovalStatus;
-    is_active: boolean;
+    joined_at: Date;
     created_at: Date;
     updated_at: Date | null;
     player?: PlayerDto | null;
@@ -146,10 +137,16 @@ export declare const updateTeamPlayerSchema: z.ZodObject<{
         readonly approved: "approved";
         readonly rejected: "rejected";
     }>>;
-    is_active: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
 export declare const bulkDeleteSchema: z.ZodObject<{
     ids: z.ZodArray<z.ZodNumber>;
+    reason: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        readonly transferred: "transferred";
+        readonly dropped: "dropped";
+        readonly disqualified: "disqualified";
+        readonly season_ended: "season_ended";
+        readonly injured: "injured";
+    }>>>;
 }, z.core.$strip>;
 export declare const importPlayerRowSchema: z.ZodObject<{
     name: z.ZodString;

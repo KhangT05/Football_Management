@@ -677,6 +677,10 @@ export class MatchResultService {
                         season_jersey: { select: { primary_color: true, secondary_color: true, image_url: true } },
                     },
                 },
+                // FIX: cần season_id để scope jersey_number đúng mùa giải của
+                // trận này — jersey_number chỉ unique theo season_team_id, không
+                // unique theo team, nên KHÔNG được lấy jersey xuyên mùa.
+                phase: { select: { season_id: true } },
             },
         });
 
@@ -700,10 +704,28 @@ export class MatchResultService {
         ]);
 
         const teamIds = [match.home_team_id, match.away_team_id];
-        const jerseyLookup = await this.prisma.teamPlayer.findMany({
-            where: { team_id: { in: teamIds }, player_id: { in: lineup.map(l => l.player_id) } },
-            select: { team_id: true, player_id: true, jersey_number: true },
+
+        // FIX: TeamPlayer không có team_id — chỉ có season_team_id → season_team.team_id.
+        // Đồng thời scope theo đúng season_id của match, vì jersey_number chỉ
+        // unique trong phạm vi 1 season_team, không phải toàn bộ lịch sử của team.
+        const jerseyLookupRaw = await this.prisma.teamPlayer.findMany({
+            where: {
+                season_team: { team_id: { in: teamIds }, season_id: match.phase.season_id },
+                player_id: { in: lineup.map(l => l.player_id) },
+            },
+            select: {
+                player_id: true,
+                jersey_number: true,
+                season_team: { select: { team_id: true } },
+            },
         });
+        // Flatten lại về shape { team_id, player_id, jersey_number } để không
+        // phải đổi signature của buildMatchReportPlayerRows (match.helper.ts).
+        const jerseyLookup = jerseyLookupRaw.map(j => ({
+            team_id: j.season_team.team_id,
+            player_id: j.player_id,
+            jersey_number: j.jersey_number,
+        }));
 
         const jerseyOf = (teamId: number) => {
             const a = match.matchJerseyAssignment.find(j => j.team_id === teamId);
@@ -747,10 +769,10 @@ export class MatchResultService {
             home: { id: match.home_team.id, name: match.home_team.name, jersey: jerseyOf(match.home_team_id) },
             away: { id: match.away_team.id, name: match.away_team.name, jersey: jerseyOf(match.away_team_id) },
             lineups: {
-                home: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.home_team_id),
-                away: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.away_team_id),
+                home: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.home_team_id, match.scheduled_at),
+                away: buildMatchReportPlayerRows(lineup, jerseyLookup, events, match.away_team_id, match.scheduled_at),
             },
-            goalsTimeline, // FIX: thêm vào response, trước đây tính xong rồi bỏ
+            goalsTimeline,
         };
     }
 }

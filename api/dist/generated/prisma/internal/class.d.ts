@@ -217,6 +217,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.seasonDefaultVenue`: Exposes CRUD operations for the **SeasonDefaultVenue** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more SeasonDefaultVenues
+      * const seasonDefaultVenues = await prisma.seasonDefaultVenue.findMany()
+      * ```
+      */
+    get seasonDefaultVenue(): Prisma.SeasonDefaultVenueDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.group`: Exposes CRUD operations for the **Group** model.
       * Example usage:
       * ```ts
@@ -269,6 +280,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
       * ```
       */
     get teamPlayer(): Prisma.TeamPlayerDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.teamPlayerHistory`: Exposes CRUD operations for the **TeamPlayerHistory** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more TeamPlayerHistories
+      * const teamPlayerHistories = await prisma.teamPlayerHistory.findMany()
+      * ```
+      */
+    get teamPlayerHistory(): Prisma.TeamPlayerHistoryDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
     /**

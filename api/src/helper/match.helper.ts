@@ -1,11 +1,15 @@
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 import { MatchEventType, MatchPeriod, MatchStatus, PhaseFormat, PlayerPosition, Prisma } from "../generated/prisma/client.js";
-import { MatchReportEventEntry, MatchReportPlayerRow } from "../types/matchReport.type.js";
-import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
 import { QueryRequest } from "../types/queryable.type.js";
 import { createAppError } from "../common/app.error.js";
 import { MAX_ADDED_MINUTE, MINUTE_BOUNDS } from "../types/match.type.js";
+import { ConfirmResultInput, WinnerResolution } from "../types/matchResult.type.js";
+// Circular type-only import với matchReport.type.ts (file đó import ngược lại
+// MatchReportEventEntry/MatchReportGoalEntry từ đây) — ĐÃ tồn tại từ code gốc
+// theo hướng ngược lại (match.helper.ts trước đây import MatchReportEventEntry/
+// MatchReportPlayerRow từ matchReport.type.ts), không phải circular mới phát
+// sinh do lần sửa này. TypeScript xử lý tốt circular import khi chỉ dùng cho
+// type (bị erase lúc compile, không có circular value ở runtime).
+import { MatchReportPlayerRow } from '../types/matchReport.type.js';
 
 export function isKnockoutFormat(format: PhaseFormat): boolean {
     return format === PhaseFormat.knockout;
@@ -84,7 +88,6 @@ export function computeEventClockTime(
     if (!match.scheduled_at || evt.minute == null || !evt.period) return null;
     if (evt.period === MatchPeriod.penalty_shootout) return null; // pen không có "phút" thật
 
-    const baseline = PERIOD_BASELINE_MINUTE[evt.period];
     // minute lưu theo chuẩn cumulative bóng đá (hiệp 2: 46-90...), nên
     // KHÔNG cộng thêm baseline vào minute — minute tự nó đã là tổng phút.
     const totalMinutes = evt.minute + (evt.added_minute ?? 0);
@@ -94,6 +97,28 @@ export function computeEventClockTime(
         confidence: 'estimated',
     };
 }
+
+/**
+ * FIX (type trùng lặp): trước đây `MatchReportEventEntry` (dùng cho thẻ,
+ * khai ở types/matchReport.type.ts) và field lõi của `MatchReportGoalEntry`
+ * (dùng cho bàn thắng, khai ở đây) là 2 khai báo riêng nhưng CÙNG shape
+ * (minute/addedMinute/clockTime/clockConfidence) — khi thêm giờ thực cho
+ * goal trước đó, phải nhớ sửa cả 2 nơi, dễ lệch nếu quên 1 bên (thực tế đã
+ * xảy ra: card bị bỏ sót clockTime/clockConfidence). Gộp về 1 interface lõi
+ * DUY NHẤT ở đây — `matchReport.type.ts` giờ import lại, không tự khai nữa.
+ */
+export interface MatchReportEventEntry {
+    minute: number | null;
+    addedMinute: number | null;
+    clockTime: Date | null;         // giờ thực (vd 9h + phút -> 09:05) — null nếu thiếu scheduled_at hoặc minute
+    clockConfidence: 'exact' | 'estimated' | null;
+}
+
+export interface MatchReportGoalEntry extends MatchReportEventEntry {
+    playerName: string;
+    isOwnGoal: boolean;
+}
+
 export type MatchEventRow = Prisma.MatchEventGetPayload<{ select: typeof MATCH_EVENT_SELECT }>;
 export type MatchResultRow = Prisma.MatchResultGetPayload<{ select: typeof MATCH_RESULT_SELECT }>;
 
@@ -184,18 +209,6 @@ export function toMatchResultCreateInput(
     };
 }
 
-// FIX (half-time score bị mất vĩnh viễn sau confirm): trước đây hàm này
-// LUÔN null hoá finalize_home_half_time/finalize_away_half_time khi confirm
-// — nhưng MatchResult KHÔNG có cột nào lưu half-time score cả (xem
-// MATCH_RESULT_SELECT phía trên, và matchResultSelect ở match.queries.ts —
-// không nơi nào có field này). Match.finalize_home_half_time/away_half_time
-// vì vậy là NƠI DUY NHẤT có thể lưu half-time score sau khi trận kết thúc.
-// getMatchReport() (matchresult.service.ts) đọc đúng 2 field này làm nguồn
-// hiển thị (score.homeHalfTime/awayHalfTime) — null hoá cứng ở đây khiến
-// half-time LUÔN biến mất ngay khi confirm, bất kể referee đã nhập gì ở
-// finalizeMatch(). Giờ nhận thêm 2 tham số optional, forward giá trị vào
-// thay vì null cứng — chỉ null khi thực sự không có data (VD manual score
-// hoặc admin nhập nhanh không kèm half-time).
 export function toMatchUpdateOnConfirm(
     resolution: WinnerResolution,
     targetMatchStatus: MatchStatus,
@@ -215,8 +228,8 @@ export function toMatchUpdateOnConfirm(
         finalize_away_half_time: awayHalfTimeScore ?? null,
         finalize_home_penalty: null,
         finalize_away_penalty: null,
-        finalize_home_extra_time: null,  // NEW — dọn staging field sau confirm
-        finalize_away_extra_time: null,  // NEW
+        finalize_home_extra_time: null,
+        finalize_away_extra_time: null,
     };
 }
 
@@ -338,12 +351,21 @@ type JerseyLookupRow = {
     jersey_number: number;
 };
 
+// FIX (thiếu field để tính giờ thực cho thẻ): trước đây type này chỉ có
+// player_id/team_id/type/minute/added_minute — đủ cho stat đếm số nhưng
+// KHÔNG đủ để tính clockTime (cần period + time_source + created_at, giống
+// hệt cách buildGoalsTimeline() đã tính cho bàn thắng). Data này ĐÃ có sẵn
+// trong DB và đã nằm trong MATCH_EVENT_SELECT — chỉ là chưa được truyền
+// qua type này. Mở rộng để card cũng hiện được giờ thực trong report/PDF.
 type EventRow = {
     player_id: number | null;
     team_id: number | null;
     type: MatchEventType;
     minute: number | null;
     added_minute: number | null;
+    period: MatchPeriod | null;
+    time_source: 'live' | 'estimated';
+    created_at: Date;
 };
 
 export function buildMatchReportPlayerRows(
@@ -351,6 +373,7 @@ export function buildMatchReportPlayerRows(
     jerseyLookup: JerseyLookupRow[],
     events: EventRow[],
     teamId: number,
+    scheduledAt: Date | null, // NEW — cần cho computeEventClockTime, xem toEntries bên dưới
 ): MatchReportPlayerRow[] {
     const jerseyMap = new Map<string, number>();
     for (const j of jerseyLookup) jerseyMap.set(`${j.team_id}:${j.player_id}`, j.jersey_number);
@@ -363,10 +386,22 @@ export function buildMatchReportPlayerRows(
         eventsByPlayer.set(ev.player_id, arr);
     }
 
+    // FIX: tính clockTime/clockConfidence cho MỌI loại event (không riêng
+    // goal) — trước đây chỉ map minute/addedMinute, bỏ hoàn toàn giờ thực dù
+    // computeEventClockTime() đã có sẵn và dùng chung được (chỉ cần period/
+    // time_source/created_at, đều đã có trong EventRow mở rộng ở trên).
     const toEntries = (evs: EventRow[], types: MatchEventType[]): MatchReportEventEntry[] =>
         evs.filter(e => types.includes(e.type))
             .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
-            .map(e => ({ minute: e.minute, addedMinute: e.added_minute }));
+            .map(e => {
+                const clock = computeEventClockTime({ scheduled_at: scheduledAt }, e);
+                return {
+                    minute: e.minute,
+                    addedMinute: e.added_minute,
+                    clockTime: clock?.time ?? null,
+                    clockConfidence: clock?.confidence ?? null,
+                };
+            });
 
     return lineup
         .filter(l => l.team_id === teamId)
@@ -388,15 +423,6 @@ export function buildMatchReportPlayerRows(
             };
         })
         .sort((a, b) => Number(b.isStarting) - Number(a.isStarting) || (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999));
-}
-
-export interface MatchReportGoalEntry {
-    playerName: string;
-    minute: number | null;
-    addedMinute: number | null;
-    isOwnGoal: boolean;
-    clockTime: Date | null;         // NEW
-    clockConfidence: 'exact' | 'estimated' | null;
 }
 
 export function buildGoalsTimeline(
@@ -429,8 +455,8 @@ export function buildGoalsTimeline(
             minute: ev.minute,
             addedMinute: ev.added_minute,
             isOwnGoal,
-            clockTime: clock?.time ?? null,       // NEW
-            clockConfidence: clock?.confidence ?? null, // NEW: 'exact' | 'estimated' | null
+            clockTime: clock?.time ?? null,
+            clockConfidence: clock?.confidence ?? null,
         };
 
         (creditedHome ? home : away).push(entry);

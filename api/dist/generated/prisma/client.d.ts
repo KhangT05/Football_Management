@@ -67,6 +67,11 @@ export type BracketSlot = Prisma.BracketSlotModel;
  */
 export type Season = Prisma.SeasonModel;
 /**
+ * Model SeasonDefaultVenue
+ *
+ */
+export type SeasonDefaultVenue = Prisma.SeasonDefaultVenueModel;
+/**
  * Model Group
  *
  */
@@ -91,6 +96,11 @@ export type Player = Prisma.PlayerModel;
  *
  */
 export type TeamPlayer = Prisma.TeamPlayerModel;
+/**
+ * Model TeamPlayerHistory
+ *
+ */
+export type TeamPlayerHistory = Prisma.TeamPlayerHistoryModel;
 /**
  * Model TeamLeader
  *

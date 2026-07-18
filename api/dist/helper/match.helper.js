@@ -1,4 +1,3 @@
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 import { MatchEventType, MatchPeriod, PhaseFormat } from "../generated/prisma/client.js";
 import { createAppError } from "../common/app.error.js";
 import { MAX_ADDED_MINUTE, MINUTE_BOUNDS } from "../types/match.type.js";
@@ -60,7 +59,6 @@ export function computeEventClockTime(match, evt) {
         return null;
     if (evt.period === MatchPeriod.penalty_shootout)
         return null; // pen không có "phút" thật
-    const baseline = PERIOD_BASELINE_MINUTE[evt.period];
     // minute lưu theo chuẩn cumulative bóng đá (hiệp 2: 46-90...), nên
     // KHÔNG cộng thêm baseline vào minute — minute tự nó đã là tổng phút.
     const totalMinutes = evt.minute + (evt.added_minute ?? 0);
@@ -127,18 +125,6 @@ export function toMatchResultCreateInput(matchId, input, resolution) {
         notes: input.notes ?? null,
     };
 }
-// FIX (half-time score bị mất vĩnh viễn sau confirm): trước đây hàm này
-// LUÔN null hoá finalize_home_half_time/finalize_away_half_time khi confirm
-// — nhưng MatchResult KHÔNG có cột nào lưu half-time score cả (xem
-// MATCH_RESULT_SELECT phía trên, và matchResultSelect ở match.queries.ts —
-// không nơi nào có field này). Match.finalize_home_half_time/away_half_time
-// vì vậy là NƠI DUY NHẤT có thể lưu half-time score sau khi trận kết thúc.
-// getMatchReport() (matchresult.service.ts) đọc đúng 2 field này làm nguồn
-// hiển thị (score.homeHalfTime/awayHalfTime) — null hoá cứng ở đây khiến
-// half-time LUÔN biến mất ngay khi confirm, bất kể referee đã nhập gì ở
-// finalizeMatch(). Giờ nhận thêm 2 tham số optional, forward giá trị vào
-// thay vì null cứng — chỉ null khi thực sự không có data (VD manual score
-// hoặc admin nhập nhanh không kèm half-time).
 export function toMatchUpdateOnConfirm(resolution, targetMatchStatus, homeHalfTimeScore, awayHalfTimeScore) {
     return {
         status: targetMatchStatus,
@@ -153,8 +139,8 @@ export function toMatchUpdateOnConfirm(resolution, targetMatchStatus, homeHalfTi
         finalize_away_half_time: awayHalfTimeScore ?? null,
         finalize_home_penalty: null,
         finalize_away_penalty: null,
-        finalize_home_extra_time: null, // NEW — dọn staging field sau confirm
-        finalize_away_extra_time: null, // NEW
+        finalize_home_extra_time: null,
+        finalize_away_extra_time: null,
     };
 }
 export function buildMatchEventsQueryRequest(query) {
@@ -235,7 +221,7 @@ export function isCreditedToHomeTeam(homeTeamId, eventTeamId, type, wasOwnGoal) 
     }
     return eventTeamId === homeTeamId;
 }
-export function buildMatchReportPlayerRows(lineup, jerseyLookup, events, teamId) {
+export function buildMatchReportPlayerRows(lineup, jerseyLookup, events, teamId, scheduledAt) {
     const jerseyMap = new Map();
     for (const j of jerseyLookup)
         jerseyMap.set(`${j.team_id}:${j.player_id}`, j.jersey_number);
@@ -247,9 +233,21 @@ export function buildMatchReportPlayerRows(lineup, jerseyLookup, events, teamId)
         arr.push(ev);
         eventsByPlayer.set(ev.player_id, arr);
     }
+    // FIX: tính clockTime/clockConfidence cho MỌI loại event (không riêng
+    // goal) — trước đây chỉ map minute/addedMinute, bỏ hoàn toàn giờ thực dù
+    // computeEventClockTime() đã có sẵn và dùng chung được (chỉ cần period/
+    // time_source/created_at, đều đã có trong EventRow mở rộng ở trên).
     const toEntries = (evs, types) => evs.filter(e => types.includes(e.type))
         .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
-        .map(e => ({ minute: e.minute, addedMinute: e.added_minute }));
+        .map(e => {
+        const clock = computeEventClockTime({ scheduled_at: scheduledAt }, e);
+        return {
+            minute: e.minute,
+            addedMinute: e.added_minute,
+            clockTime: clock?.time ?? null,
+            clockConfidence: clock?.confidence ?? null,
+        };
+    });
     return lineup
         .filter(l => l.team_id === teamId)
         .map(l => {
@@ -288,8 +286,8 @@ export function buildGoalsTimeline(events, homeTeamId, awayTeamId, playerNameLoo
             minute: ev.minute,
             addedMinute: ev.added_minute,
             isOwnGoal,
-            clockTime: clock?.time ?? null, // NEW
-            clockConfidence: clock?.confidence ?? null, // NEW: 'exact' | 'estimated' | null
+            clockTime: clock?.time ?? null,
+            clockConfidence: clock?.confidence ?? null,
         };
         (creditedHome ? home : away).push(entry);
     }

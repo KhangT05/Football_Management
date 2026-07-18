@@ -463,6 +463,21 @@ export type EnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
     _min?: Prisma.NestedEnumApprovalStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumApprovalStatusFilter<$PrismaModel>;
 };
+export type EnumLeaveReasonNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveReason | Prisma.EnumLeaveReasonFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.LeaveReason[] | null;
+    notIn?: $Enums.LeaveReason[] | null;
+    not?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel> | $Enums.LeaveReason | null;
+};
+export type EnumLeaveReasonNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveReason | Prisma.EnumLeaveReasonFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.LeaveReason[] | null;
+    notIn?: $Enums.LeaveReason[] | null;
+    not?: Prisma.NestedEnumLeaveReasonNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeaveReason | null;
+    _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel>;
+};
 export type EnumSeasonTeamStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.SeasonTeamStatus | Prisma.EnumSeasonTeamStatusFieldRefInput<$PrismaModel>;
     in?: $Enums.SeasonTeamStatus[];
@@ -1155,6 +1170,21 @@ export type NestedEnumApprovalStatusWithAggregatesFilter<$PrismaModel = never> =
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumApprovalStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumApprovalStatusFilter<$PrismaModel>;
+};
+export type NestedEnumLeaveReasonNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveReason | Prisma.EnumLeaveReasonFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.LeaveReason[] | null;
+    notIn?: $Enums.LeaveReason[] | null;
+    not?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel> | $Enums.LeaveReason | null;
+};
+export type NestedEnumLeaveReasonNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveReason | Prisma.EnumLeaveReasonFieldRefInput<$PrismaModel> | null;
+    in?: $Enums.LeaveReason[] | null;
+    notIn?: $Enums.LeaveReason[] | null;
+    not?: Prisma.NestedEnumLeaveReasonNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeaveReason | null;
+    _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumLeaveReasonNullableFilter<$PrismaModel>;
 };
 export type NestedEnumSeasonTeamStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.SeasonTeamStatus | Prisma.EnumSeasonTeamStatusFieldRefInput<$PrismaModel>;

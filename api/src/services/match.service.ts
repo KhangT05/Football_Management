@@ -160,6 +160,7 @@ export class MatchLifecycleService {
                     note: input.note,
                     card_color: this._deriveCardColor(input.type),
                     sub_out_player_id: input.subOutPlayerId,
+                    time_source: MatchEventTimeSource.live,
                 },
             });
             if (match.status === MatchStatus.ongoing) {
@@ -716,6 +717,7 @@ export class MatchLifecycleService {
                     note: input.note,
                     card_color: this._deriveCardColor(input.type),
                     sub_out_player_id: input.subOutPlayerId,
+                    time_source: MatchEventTimeSource.live,
                 },
             });
             return this._recalculateResultTx(tx, matchId, match.home_team_id);

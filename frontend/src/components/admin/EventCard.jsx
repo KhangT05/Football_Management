@@ -1,38 +1,42 @@
+import { Controller } from 'react-hook-form';
 import { Clock, Trash2, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { IoFootball } from 'react-icons/io5';
+import { MINUTE_BOUNDS_BY_PERIOD, PERIOD_LABELS } from '../../schemas/liveMatch.schema';
 
 /**
- * EventCard — Card hiển thị 1 sự kiện trận đấu (bàn thắng, thẻ vàng, thẻ đỏ, thay người).
+ * EventCard — card RHF-controlled cho 1 dòng sự kiện (bàn thắng, thẻ vàng,
+ * thẻ đỏ, thay người) trong LiveControlTab.
  *
- * Note: bug "dropdown cầu thủ rỗng cả 2 bên" không nằm ở file này — root cause ở
- * LiveControlTab (unwrap response). Xem LiveControlTab.jsx.
+ * Khác bản cũ (select-based, dùng onUpdate thủ công):
+ * - Phút: input số tự do, CHỈ nhận digit (mọi ký tự khác bị strip ngay khi
+ *   gõ), clamp theo period của chính dòng này (period gán 1 lần lúc tạo
+ *   dòng — xem LiveControlTab#addEvent, không đổi sau khi đã tạo).
+ * - Giây: cùng dạng input số 0-59 — UI-only, KHÔNG gửi lên BE (BE không có
+ *   cột lưu giây, xem buildEventPayload ở LiveControlTab).
+ * - Giờ thực (preview): "~09:05" cạnh ô phút — tính client-side thuần từ
+ *   scheduledAt + minute, KHÔNG cần lưu thêm gì ở DB.
+ * - Mọi field đi qua RHF Controller (control + name), không còn onUpdate
+ *   callback tay — validate tự động qua zodResolver ở form cha.
  *
- * FIX (input phút tự do → select): trước đây là <input type="number"> với
- * min/max hint — vẫn cho phép gõ số lẻ tuỳ ý trong khoảng, dễ gõ nhầm số
- * (VD "19" thay vì "9"), và trần chỉ là UI hint không chặn thật (nút
- * tăng/giảm native của input number vẫn có thể vượt qua trên một số browser
- * khi gõ tay + blur). Giờ nhận `minuteOptions` từ cha
- * (LiveControlTab#buildMinuteOptions) — domain đã đóng kín ở UI level, không
- * còn cách nào chọn giá trị ngoài khoảng hợp lệ, nên KHÔNG cần confirm-modal
- * phụ trợ nữa (đã xoá ConfirmExtraTimeMinuteModal ở LiveControlTab).
- * `minuteOptions = { regular: number[], extra: number[] }` — `extra` rỗng
- * với trận round-robin (không hiệp phụ), có giá trị với knockout.
- *
- * NEW: thêm select giây (`secondOptions`, mặc định bước 5 giây). LƯU Ý: giây
- * hiện KHÔNG được gửi lên BE — matchApi.recordEvent/adminRecordResult chỉ
- * nhận `minute: number` (BE: assertMinuteInBounds yêu cầu Number.isInteger,
- * schema MatchEvent không có cột giây). Giây ở đây chỉ phục vụ hiển thị/sắp
- * xếp cục bộ tại FE, sẽ mất khi F5 nếu event chưa commit. Nếu cần persist
- * giây thật, phải đổi schema + validate phía BE trước.
+ * sentOffPlayerIds tính CỤC BỘ trong component này, KHÔNG nhận sẵn dạng Set
+ * cố định từ cha — lý do: 1 cầu thủ chỉ "đã bị truất quyền" đối với các
+ * event XẢY RA SAU thời điểm họ bị đuổi. Nếu cha tính 1 Set chung cho toàn
+ * đội (không cắt theo thứ tự), sẽ disable nhầm cầu thủ ở NHỮNG DÒNG TẠO
+ * TRƯỚC khi họ thực sự bị đuổi — future rò ngược vào quá khứ. `allEvents`
+ * (mảng watched của toàn bộ phía, đọc từ useWatch ở component cha) được cắt
+ * tại đúng vị trí `evt.id` hiện tại để đảm bảo đúng thứ tự — pattern này
+ * giữ nguyên từ bản gốc, chỉ đổi cách nhận input (props thay vì đọc field
+ * DOM trực tiếp).
  */
 export default function EventCard({
-  evt,
+  control,
+  basePath,      // vd "homeEvents.3"
+  evt,           // giá trị watched hiện tại của dòng này
+  allEvents,     // toàn bộ mảng watched của phía này (home hoặc away), dùng để cắt theo thứ tự
   players,
   lineup,
-  allEvents,
-  minuteOptions = { regular: [], extra: [] },
-  secondOptions = [],
-  onUpdate,
+  scheduledAt,
+  disabled,
   onRemove,
 }) {
   const getEventStyle = (type) => {
@@ -65,62 +69,42 @@ export default function EventCard({
     }
   };
 
-  // ── Yellow-card count per player, giới hạn TRƯỚC evt hiện tại (theo id/thời
-  // gian tạo, giống pattern substitution tracking bên dưới) — dùng để: (1) hiện
-  // badge "Thẻ vàng 2 → Đỏ" khi user chọn player đã có 1 thẻ; (2) loại player đã
-  // bị truất quyền (red hoặc yellow-2) khỏi mọi dropdown khác (goal/card/sub-out).
+  // ── Yellow-card count + sent-off, chỉ tính các event TRƯỚC dòng này ──
   const yellowCountBefore = new Map();
-  const sentOffPlayerIds = new Set(); // đã nhận red_card HOẶC thẻ vàng thứ 2
-
-  if (allEvents) {
-    for (const e of allEvents) {
-      if (e.id === evt.id) break;
-      if (e.type === 'yellow' && e.player) {
-        const n = (yellowCountBefore.get(e.player) || 0) + 1;
-        yellowCountBefore.set(e.player, n);
-        if (n >= 2) sentOffPlayerIds.add(e.player);
-      }
-      if (e.type === 'red' && e.player) {
-        sentOffPlayerIds.add(e.player);
-      }
+  const sentOffPlayerIds = new Set();
+  for (const e of allEvents ?? []) {
+    if (e.id === evt.id) break;
+    if (e.type === 'yellow' && e.player) {
+      const n = (yellowCountBefore.get(e.player) || 0) + 1;
+      yellowCountBefore.set(e.player, n);
+      if (n >= 2) sentOffPlayerIds.add(e.player);
     }
+    if (e.type === 'red' && e.player) sentOffPlayerIds.add(e.player);
   }
-
   const isSecondYellow = evt.type === 'yellow' && evt.player && (yellowCountBefore.get(evt.player) || 0) >= 1;
 
-  // Determine current players on field and on bench
+  // ── On-field / bench TẠI THỜI ĐIỂM dòng này (dựa trên substitution xảy ra trước nó) ──
   let starters = players;
   let subs = [];
-
   if (lineup && lineup.length > 0) {
     const starterIds = lineup.filter(l => l.lineup_type === 'starter').map(l => String(l.player_id));
     const subIds = lineup.filter(l => l.lineup_type === 'substitute').map(l => String(l.player_id));
-
     starters = players.filter(p => starterIds.includes(String(p.id)) || starterIds.includes(String(p.player?.id)));
     subs = players.filter(p => subIds.includes(String(p.id)) || subIds.includes(String(p.player?.id)));
   }
 
-  let currentOnFieldIds = new Set(starters.map(p => String(p.id)));
-  let currentBenchIds = new Set(subs.map(p => String(p.id)));
+  const currentOnFieldIds = new Set(starters.map(p => String(p.id)));
+  const currentBenchIds = new Set(subs.map(p => String(p.id)));
 
-  if (allEvents) {
-    for (const e of allEvents) {
-      if (e.id === evt.id) break;
-      if (e.type === 'substitution') {
-        if (e.playerOut) {
-          currentOnFieldIds.delete(String(e.playerOut));
-          currentBenchIds.add(String(e.playerOut));
-        }
-        if (e.playerIn) {
-          currentBenchIds.delete(String(e.playerIn));
-          currentOnFieldIds.add(String(e.playerIn));
-        }
-      }
+  for (const e of allEvents ?? []) {
+    if (e.id === evt.id) break;
+    if (e.type === 'substitution') {
+      if (e.playerOut) { currentOnFieldIds.delete(String(e.playerOut)); currentBenchIds.add(String(e.playerOut)); }
+      if (e.playerIn) { currentBenchIds.delete(String(e.playerIn)); currentOnFieldIds.add(String(e.playerIn)); }
     }
   }
-
-  // Player bị đuổi (sentOffPlayerIds) không còn "on field" nữa dù chưa có
-  // substitution nào ghi nhận — loại khỏi field lẫn bench (không thể vào lại).
+  // Cầu thủ bị đuổi không còn "on field" nữa dù chưa có substitution ghi
+  // nhận — loại khỏi cả field lẫn bench (không thể vào lại).
   for (const pid of sentOffPlayerIds) {
     currentOnFieldIds.delete(pid);
     currentBenchIds.delete(pid);
@@ -129,39 +113,34 @@ export default function EventCard({
   const onFieldPlayers = players.filter(p => currentOnFieldIds.has(String(p.id)));
   const benchPlayers = players.filter(p => currentBenchIds.has(String(p.id)));
 
-  const renderPlayerOptions = (list) => {
-    return list.map(p => {
-      const name =
-        p.user?.name ||
-        p.player?.user?.name ||
-        p.name ||
-        p.player?.name ||
-        `Cầu thủ #${p.player_id || p.id}`;
-      const disabled = sentOffPlayerIds.has(String(p.id));
-      return (
-        <option key={p.id} value={String(p.id)} disabled={disabled}>
-          {name} ({p.jersey_number ?? p.number ?? '?'}){disabled ? ' — đã bị truất quyền' : ''}
-        </option>
-      );
-    });
-  };
+  const renderPlayerOptions = (list) => list.map(p => {
+    const name = p.user?.name || p.player?.user?.name || p.name || p.player?.name || `Cầu thủ #${p.player_id || p.id}`;
+    const isDisabled = sentOffPlayerIds.has(String(p.id));
+    return (
+      <option key={p.id} value={String(p.id)} disabled={isDisabled}>
+        {name} ({p.jersey_number ?? p.number ?? '?'}){isDisabled ? ' — đã bị truất quyền' : ''}
+      </option>
+    );
+  });
 
-  // FIX: format "0" -> "00" cho giây hiển thị đồng nhất 2 chữ số.
-  const fmtSecond = (s) => String(s).padStart(2, '0');
+  const [minBound, maxBound] = MINUTE_BOUNDS_BY_PERIOD[evt.period] ?? [1, 120];
 
   return (
     <div className={`flex flex-col gap-2 p-3 rounded-xl border relative group transition-all ${getEventStyle(evt.type)}`}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-          {getEventIcon(evt.type)} {getEventTitle(evt.type)}
+          {getEventIcon(evt.type)} {getEventTitle(evt.type)} · {PERIOD_LABELS[evt.period]}
         </span>
-        <button
-          onClick={() => onRemove(evt.id)}
-          className="w-6 h-6 bg-navy border border-red-500/40 text-red-400 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
-          title="Xóa sự kiện"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="w-6 h-6 bg-navy border border-red-500/40 text-red-400 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+            title="Xóa sự kiện"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {isSecondYellow && (
@@ -175,95 +154,149 @@ export default function EventCard({
         <div className="flex flex-col gap-2 bg-navy-dark/30 p-2 rounded-lg border border-blue-500/20">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-red-400 uppercase w-6 shrink-0">Ra</span>
-            <select
-              value={evt.playerOut}
-              onChange={e => onUpdate(evt.id, 'playerOut', e.target.value)}
-              className="w-full text-xs p-2 bg-navy border border-red-500/30 rounded-lg text-white outline-none focus:border-red-400"
-            >
-              <option value="">Chọn người ra sân...</option>
-              {renderPlayerOptions(onFieldPlayers)}
-              {evt.playerOut && !onFieldPlayers.find(p => String(p.id) === String(evt.playerOut)) && (
-                <option value={evt.playerOut}>Cầu thủ #{evt.playerOut} (đã chọn)</option>
+            <Controller
+              control={control}
+              name={`${basePath}.playerOut`}
+              render={({ field, fieldState }) => (
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <select
+                    disabled={disabled}
+                    value={field.value}
+                    onChange={e => field.onChange(e.target.value)}
+                    className={`w-full text-xs p-2 bg-navy border rounded-lg text-white outline-none disabled:opacity-40 ${fieldState.error ? 'border-red-500' : 'border-red-500/30 focus:border-red-400'
+                      }`}
+                  >
+                    <option value="">Chọn người ra sân...</option>
+                    {renderPlayerOptions(onFieldPlayers)}
+                  </select>
+                  {fieldState.error && <span className="text-[10px] text-red-400">{fieldState.error.message}</span>}
+                </div>
               )}
-            </select>
+            />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-emerald-400 uppercase w-6 shrink-0">Vào</span>
-            <select
-              value={evt.playerIn}
-              onChange={e => onUpdate(evt.id, 'playerIn', e.target.value)}
-              className="w-full text-xs p-2 bg-navy border border-emerald-500/30 rounded-lg text-white outline-none focus:border-emerald-400"
-            >
-              <option value="">Chọn người vào sân...</option>
-              {renderPlayerOptions(benchPlayers)}
-              {evt.playerIn && !benchPlayers.find(p => String(p.id) === String(evt.playerIn)) && (
-                <option value={evt.playerIn}>Cầu thủ #{evt.playerIn} (đã chọn)</option>
+            <Controller
+              control={control}
+              name={`${basePath}.playerIn`}
+              render={({ field, fieldState }) => (
+                <div className="flex flex-col gap-0.5 flex-1">
+                  <select
+                    disabled={disabled}
+                    value={field.value}
+                    onChange={e => field.onChange(e.target.value)}
+                    className={`w-full text-xs p-2 bg-navy border rounded-lg text-white outline-none disabled:opacity-40 ${fieldState.error ? 'border-red-500' : 'border-emerald-500/30 focus:border-emerald-400'
+                      }`}
+                  >
+                    <option value="">Chọn người vào sân...</option>
+                    {renderPlayerOptions(benchPlayers)}
+                  </select>
+                  {fieldState.error && <span className="text-[10px] text-red-400">{fieldState.error.message}</span>}
+                </div>
               )}
-            </select>
+            />
           </div>
         </div>
       ) : (
-        <select
-          value={evt.player}
-          onChange={e => onUpdate(evt.id, 'player', e.target.value)}
-          className="w-full text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none focus:border-neon"
-        >
-          <option value="">Chọn cầu thủ...</option>
-          {lineup && lineup.length > 0 ? (
-            <>
-              <optgroup label="Đang đá">
-                {renderPlayerOptions(onFieldPlayers)}
-              </optgroup>
-              <optgroup label="Dự bị">
-                {renderPlayerOptions(benchPlayers)}
-              </optgroup>
-            </>
-          ) : (
-            renderPlayerOptions(players)
+        <Controller
+          control={control}
+          name={`${basePath}.player`}
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-0.5">
+              <select
+                disabled={disabled}
+                value={field.value}
+                onChange={e => field.onChange(e.target.value)}
+                className={`w-full text-xs p-2 bg-navy border rounded-lg text-white outline-none disabled:opacity-40 ${fieldState.error ? 'border-red-500' : 'border-navy-light focus:border-neon'
+                  }`}
+              >
+                <option value="">Chọn cầu thủ...</option>
+                {lineup && lineup.length > 0 ? (
+                  <>
+                    <optgroup label="Đang đá">{renderPlayerOptions(onFieldPlayers)}</optgroup>
+                    <optgroup label="Dự bị">{renderPlayerOptions(benchPlayers)}</optgroup>
+                  </>
+                ) : renderPlayerOptions(players)}
+              </select>
+              {fieldState.error && <span className="text-[10px] text-red-400">{fieldState.error.message}</span>}
+            </div>
           )}
-        </select>
+        />
       )}
 
-      {/* FIX: input phút tự do -> select phút (đóng kín domain) + select giây
-          (UI-only, xem docblock đầu file). */}
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 opacity-70 shrink-0" />
 
-        <select
-          value={evt.minute}
-          onChange={e => onUpdate(evt.id, 'minute', e.target.value)}
-          className="flex-1 text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
-        >
-          <option value="">Phút</option>
-          {minuteOptions.regular.length > 0 && (
-            <optgroup label="Hiệp 1 &amp; 2">
-              {minuteOptions.regular.map(m => (
-                <option key={`r-${m}`} value={m}>{m}'</option>
-              ))}
-            </optgroup>
+        <Controller
+          control={control}
+          name={`${basePath}.minute`}
+          render={({ field, fieldState }) => (
+            <div className="flex-1 flex flex-col gap-0.5">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                disabled={disabled}
+                value={field.value}
+                placeholder={`${minBound}-${maxBound}`}
+                onChange={(e) => {
+                  // Chỉ giữ digit — không thể gõ dấu trừ/chữ/ký tự đặc biệt.
+                  const digits = e.target.value.replace(/[^0-9]/g, '');
+                  if (digits === '') { field.onChange(''); return; }
+                  field.onChange(Math.min(Math.max(Number(digits), minBound), maxBound));
+                }}
+                className={`w-full text-xs p-2 bg-navy border rounded-lg text-white outline-none text-center font-bold disabled:opacity-40 ${fieldState.error ? 'border-red-500' : 'border-navy-light focus:border-neon'
+                  }`}
+              />
+              {fieldState.error && <span className="text-[10px] text-red-400">{fieldState.error.message}</span>}
+            </div>
           )}
-          {minuteOptions.extra.length > 0 && (
-            <optgroup label="Hiệp phụ">
-              {minuteOptions.extra.map(m => (
-                <option key={`e-${m}`} value={m}>{m}'</option>
-              ))}
-            </optgroup>
-          )}
-        </select>
+        />
 
         <span className="text-xs opacity-50 shrink-0">:</span>
 
-        <select
-          value={evt.second ?? 0}
-          onChange={e => onUpdate(evt.id, 'second', e.target.value)}
-          title="Giây (chỉ hiển thị, không lưu lên server)"
-          className="w-16 text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon"
-        >
-          {secondOptions.map(s => (
-            <option key={s} value={s}>{fmtSecond(s)}</option>
-          ))}
-        </select>
+        <Controller
+          control={control}
+          name={`${basePath}.second`}
+          render={({ field }) => (
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              disabled={disabled}
+              value={String(field.value ?? 0).padStart(2, '0')}
+              title="Giây (chỉ hiển thị, không lưu lên server)"
+              onChange={(e) => {
+                const digits = e.target.value.replace(/[^0-9]/g, '');
+                field.onChange(digits === '' ? 0 : Math.min(Number(digits), 59));
+              }}
+              className="w-14 text-xs p-2 bg-navy border border-navy-light rounded-lg text-white outline-none text-center font-bold focus:border-neon disabled:opacity-40"
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name={`${basePath}.minute`}
+          render={({ field }) => (
+            <span className="text-[11px] text-gray-400 whitespace-nowrap shrink-0">
+              {formatClockPreview(scheduledAt, field.value) ?? '—'}
+            </span>
+          )}
+        />
       </div>
     </div>
   );
+}
+
+// Time thực: scheduled_at + minute cumulative — thuần client-side, không cần
+// lưu gì thêm ở DB. Khớp công thức backend computeEventClockTime() nhánh
+// estimated (helper/match.helper.ts).
+function formatClockPreview(scheduledAt, minute) {
+  if (!scheduledAt || minute === '' || minute == null || Number.isNaN(Number(minute))) return null;
+  const t = new Date(scheduledAt);
+  t.setMinutes(t.getMinutes() + Number(minute));
+  const hh = String(t.getHours()).padStart(2, '0');
+  const mm = String(t.getMinutes()).padStart(2, '0');
+  return `~${hh}:${mm}`;
 }
