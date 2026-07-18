@@ -22,6 +22,11 @@ services:
         - redis
     networks:
         - app_network
+  frontend:
+    image: ghcr.io/khangt05/football_management-fe:latest
+    restart: unless-stopped
+    networks:
+      - app_network
   mysql:
     image: mysql:8.0
     container_name: api-mysql
@@ -55,6 +60,7 @@ services:
       - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - api
+      - frontend
     networks:
       - app_network
 volumes:

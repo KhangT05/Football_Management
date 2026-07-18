@@ -14,6 +14,7 @@ COPY . .
 RUN npx prisma generate
 RUN npx tsoa spec-and-routes
 RUN npm run build
+
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -25,3 +26,19 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/app.js"]
+
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+
+# Nhận biến lúc build, không phải lúc chạy
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx-fe.conf /etc/nginx/conf.d/default.conf
