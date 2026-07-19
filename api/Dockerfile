@@ -2,18 +2,18 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 RUN npx prisma generate
 
-FROM node:22-alpine AS builder
+FROM deps AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
 COPY assets ./assets
 COPY . .
 RUN npx prisma generate
 RUN npx tsoa spec-and-routes
 RUN npm run build
+RUN npm prune --omit=dev
 
 FROM node:22-alpine AS runner
 WORKDIR /app
