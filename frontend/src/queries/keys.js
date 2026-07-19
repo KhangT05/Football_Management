@@ -6,7 +6,7 @@ export const myTeamKeys = {
     matches: (teamId, seasonId) => [...myTeamKeys.all, teamId, 'matches', seasonId],
     eligibility: (teamId) => [...myTeamKeys.all, teamId, 'eligibility'],
     stats: (teamId, granularity) => [...myTeamKeys.all, teamId, 'stats', granularity],
-    playerPerf: (playerId) => [...myTeamKeys.all, 'player-perf', playerId],
+    playerPerf: (playerId, seasonId) => [...myTeamKeys.all, 'player-perf', playerId, seasonId],
 };
 
 export const adminTeamKeys = {

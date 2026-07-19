@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Users, UserPlus, Trophy, Info, Settings, Trash2, Edit,
   AlertTriangle, CheckCircle2, Loader2, X,
@@ -237,7 +237,7 @@ function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
 
       {open && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-black/70 flex items-start justify-center p-4 pt-20 sm:pt-24"
+          className="fixed inset-0 z-100 bg-black/70 flex items-start justify-center p-4 pt-20 sm:pt-24"
           onClick={closeAndReset}
         >
           <div
@@ -260,7 +260,7 @@ function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
                   spellCheck={false}
                   role="combobox"
                   aria-autocomplete="list"
-                  className="w-full pl-10 pr-3 py-2.5 bg-slate-950 rounded-xl text-sm !text-white font-bold placeholder:text-slate-500 placeholder:font-normal outline-none border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-950 rounded-xl text-sm text-white! font-bold placeholder:text-slate-500 placeholder:font-normal outline-none border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
               <button type="button" onClick={closeAndReset} className="p-2 text-slate-400 hover:text-white transition-colors shrink-0">
@@ -346,8 +346,11 @@ export default function MyTeam() {
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [deletingPlayer, setDeletingPlayer] = useState(null);
   const [teamGranularity, setTeamGranularity] = useState('month');
+  const [playerStatsSeasonId, setPlayerStatsSeasonId] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [playerStatPage, setPlayerStatPage] = useState(1);
+  const [playerStatPerPage, setPlayerStatPerPage] = useState(10);
 
   useEffect(() => { if (allSeasons.length > 0 && !activeMatchSeasonId) setActiveMatchSeasonId(allSeasons[0].id); }, [allSeasons]); // eslint-disable-line
 
@@ -358,7 +361,8 @@ export default function MyTeam() {
     activeTeamId, teamGranularity, { enabled: activeTab === 'stats' }
   );
   const { data: playersPerf, isLoading: isPerfLoading } = usePlayersPerformance(
-    activeTab === 'stats' ? players : []
+    ['stats', 'player_stats'].includes(activeTab) ? players : [],
+    playerStatsSeasonId
   );
 
   // ── Mutations ──────────────────────────────────────────────
@@ -660,6 +664,7 @@ export default function MyTeam() {
             {[
               { id: 'roster', label: `Đội hình (${players.length})` },
               { id: 'stats', label: 'Thống kê đội' },
+              { id: 'player_stats', label: 'Thống kê cầu thủ' },
               { id: 'matches', label: 'Lịch thi đấu' },
               { id: 'transactions', label: 'Lịch sử giao dịch' },
             ].map(tab => (
@@ -802,52 +807,116 @@ export default function MyTeam() {
                         )}
                       </div>
                     </div>
+                  </>
+                )}
+              </div>
+            )}
 
-                    <div className="bg-navy/60 border border-navy-light rounded-3xl p-6">
-                      <h3 className="text-sm font-black text-white mb-4 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-cyan-400" /> Phong độ cầu thủ (toàn thời gian)
-                      </h3>
-                      {isPerfLoading ? (
-                        <div className="text-gray-400 text-sm py-4">Đang tải...</div>
-                      ) : playersPerf.length === 0 ? (
-                        <div className="text-gray-500 text-sm py-4">Chưa có dữ liệu thi đấu.</div>
-                      ) : (
-                        <div className="overflow-x-auto">
+            {activeTab === 'player_stats' && (() => {
+              const psTotal = Math.ceil(playersPerf.length / playerStatPerPage) || 1;
+              const psSafe = Math.min(playerStatPage, psTotal);
+              const psSlice = playersPerf.slice((psSafe - 1) * playerStatPerPage, psSafe * playerStatPerPage);
+              return (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-cyan-400" /> Thống kê cá nhân
+                      {!isPerfLoading && (
+                        <span className="text-xs font-medium text-gray-500 ml-1">({playersPerf.length} cầu thủ)</span>
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-gray-500 uppercase tracking-wider">Mùa giải:</span>
+                      <select
+                        value={playerStatsSeasonId}
+                        onChange={(e) => { setPlayerStatsSeasonId(e.target.value); setPlayerStatPage(1); }}
+                        className="bg-navy border border-navy-light rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition-colors"
+                      >
+                        <option value="all">Toàn thời gian</option>
+                        {allSeasons.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="bg-navy/60 border border-navy-light rounded-3xl overflow-hidden">
+                    {isPerfLoading ? (
+                      <div className="flex justify-center py-14"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>
+                    ) : playersPerf.length === 0 ? (
+                      <div className="text-gray-500 text-sm py-12 text-center">Đội bóng chưa có cầu thủ nào.</div>
+                    ) : (
+                      <>
+                        <div className="overflow-x-auto custom-scrollbar">
                           <table className="w-full text-left text-sm text-gray-300">
-                            <thead className="text-xs uppercase text-gray-500 border-b border-navy-light">
+                            <thead className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-navy-light bg-navy-dark/40">
                               <tr>
-                                <th className="py-2 pr-4">Cầu thủ</th>
-                                <th className="py-2 px-2 text-center">Trận</th>
-                                <th className="py-2 px-2 text-center">Đá chính</th>
-                                <th className="py-2 px-2 text-center">Dự bị</th>
-                                <th className="py-2 px-2 text-center">Đội trưởng</th>
-                                <th className="py-2 px-2 text-center">Bàn</th>
-                                <th className="py-2 px-2 text-center">Kiến tạo</th>
-                                <th className="py-2 px-2 text-center">V/Đ</th>
+                                <th className="py-3.5 px-5">#</th>
+                                <th className="py-3.5 px-4">Cầu thủ</th>
+                                <th className="py-3.5 px-3 text-center" title="Số trận">Trận</th>
+                                <th className="py-3.5 px-3 text-center" title="Đá chính">Chính</th>
+                                <th className="py-3.5 px-3 text-center" title="Dự bị">Dự bị</th>
+                                <th className="py-3.5 px-3 text-center" title="Bàn thắng">Bàn</th>
+                                <th className="py-3.5 px-3 text-center" title="Kiến tạo">Kiến tạo</th>
+                                <th className="py-3.5 px-3 text-center" title="Thẻ vàng / Thẻ đỏ">Thẻ V/Đ</th>
                               </tr>
                             </thead>
-                            <tbody>
-                              {playersPerf.map(p => (
-                                <tr key={p.player_id} className="border-b border-navy-light/50 last:border-0">
-                                  <td className="py-2 pr-4 font-bold text-white">{p.player_name}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_matches_played}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_starter_count}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_substitute_count}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_captain_count}</td>
-                                  <td className="py-2 px-2 text-center text-neon font-bold">{p.total_goals}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_assists}</td>
-                                  <td className="py-2 px-2 text-center">{p.total_yellow_cards}/{p.total_red_cards}</td>
+                            <tbody className="divide-y divide-navy-light/40">
+                              {psSlice.map((p, idx) => (
+                                <tr key={p.player_id} className="hover:bg-white/5 transition-colors">
+                                  <td className="py-3.5 px-5 text-gray-600 font-bold text-xs">
+                                    {(psSafe - 1) * playerStatPerPage + idx + 1}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="flex items-center gap-3">
+                                      {p.avatar ? (
+                                        <img src={p.avatar} alt={p.player_name} className="w-9 h-9 rounded-full object-cover shrink-0 border-2 border-navy-light" />
+                                      ) : (
+                                        <div className="w-9 h-9 rounded-full bg-navy-dark border-2 border-navy-light flex items-center justify-center shrink-0">
+                                          <span className="text-[11px] font-black text-gray-400">{p.player_number || '?'}</span>
+                                        </div>
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="font-bold text-white text-sm whitespace-nowrap">{p.player_name}</p>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{p.position || '—'}</p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-3 text-center font-bold text-white">{p.total_matches_played}</td>
+                                  <td className="py-3.5 px-3 text-center text-gray-400">{p.total_starter_count}</td>
+                                  <td className="py-3.5 px-3 text-center text-gray-400">{p.total_substitute_count}</td>
+                                  <td className="py-3.5 px-3 text-center font-bold text-neon">{p.total_goals}</td>
+                                  <td className="py-3.5 px-3 text-center font-medium text-blue-400">{p.total_assists}</td>
+                                  <td className="py-3.5 px-3 text-center">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <span className="inline-flex items-center gap-1 text-yellow-400 font-bold text-xs bg-yellow-400/10 border border-yellow-400/20 px-1.5 py-0.5 rounded-md">{p.total_yellow_cards}</span>
+                                      <span className="inline-flex items-center gap-1 text-red-400 font-bold text-xs bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-md">{p.total_red_cards}</span>
+                                    </div>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                        {psTotal > 1 && (
+                          <div className="p-4 border-t border-navy-light/50">
+                            <Pagination
+                              currentPage={psSafe}
+                              totalPages={psTotal}
+                              onPageChange={setPlayerStatPage}
+                              itemsPerPage={playerStatPerPage}
+                              onItemsPerPageChange={(n) => { setPlayerStatPerPage(n); setPlayerStatPage(1); }}
+                              options={[5, 10, 20]}
+                              totalCount={playersPerf.length}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {activeTab === 'matches' && (
               <div className="space-y-4">

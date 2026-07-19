@@ -166,14 +166,36 @@ export function useTeamStats(teamId, granularity, { enabled = true } = {}) {
 }
 
 // ── Phong độ từng cầu thủ (dynamic parallel) ───────────────────────────
-export function usePlayersPerformance(players) {
+export function usePlayersPerformance(players, seasonId) {
     const results = useQueries({
         queries: players.map((p) => ({
-            queryKey: myTeamKeys.playerPerf(p.player_id),
+            queryKey: myTeamKeys.playerPerf(p.player_id, seasonId),
             queryFn: async () => {
-                const res = await statisticsApi.getPlayerPerformance(p.player_id);
-                const data = unwrap(res);
-                return data ? { ...data, player_name: p.name } : null;
+                const effectiveSeasonId = seasonId === 'all' ? undefined : seasonId;
+                let data = {};
+                try {
+                    const res = await statisticsApi.getPlayerPerformance(p.player_id, effectiveSeasonId);
+                    data = unwrap(res) || {};
+                } catch (error) {
+                    // Ignore errors like 404 (Not Found) when player has no stats
+                    console.warn(`No stats found for player ${p.player_id}`, error);
+                }
+                
+                return {
+                    player_id: p.player_id,
+                    player_name: p.name,
+                    player_number: p.number || p.jersey_number || 0,
+                    position: p.position,
+                    avatar: p.avatar,
+                    total_matches_played: data.total_matches_played || 0,
+                    total_starter_count: data.total_starter_count || 0,
+                    total_substitute_count: data.total_substitute_count || 0,
+                    total_captain_count: data.total_captain_count || 0,
+                    total_goals: data.total_goals || 0,
+                    total_assists: data.total_assists || 0,
+                    total_yellow_cards: data.total_yellow_cards || 0,
+                    total_red_cards: data.total_red_cards || 0,
+                };
             },
             enabled: !!p.player_id,
         })),
