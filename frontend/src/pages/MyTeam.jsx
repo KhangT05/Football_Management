@@ -320,7 +320,7 @@ export default function MyTeam() {
   // ── Queries ────────────────────────────────────────────────
   const { data: teams = [], isLoading: loadingTeams } = useMyTeams(user?.id);
   const { data: detailData, isLoading: loadingDetail } = useTeamDetail(activeTeamId);
-  const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeamId);
+  const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeam?.activeSeasonTeamId);
   const { data: eligibility = [] } = useSeasonEligibility(activeTeamId);
 
   const activeTeam = detailData?.team ?? null;
@@ -368,10 +368,12 @@ export default function MyTeam() {
   // ── Mutations ──────────────────────────────────────────────
   const registerSeason = useRegisterSeasonMutation(activeTeamId);
   const dropOnPitch = useUpdatePlayerPositionMutation(activeTeamId);
-  const addPlayer = useAddPlayerMutation(activeTeamId);
-  const editPlayer = useEditPlayerMutation(activeTeamId);
-  const deletePlayer = useDeletePlayerMutation(activeTeamId);
-  const importExcel = useImportExcelMutation(activeTeamId);
+
+  const addPlayer = useAddPlayerMutation(activeTeam?.activeSeasonTeamId);
+  const editPlayer = useEditPlayerMutation(activeTeam?.activeSeasonTeamId);
+  const deletePlayer = useDeletePlayerMutation(activeTeam?.activeSeasonTeamId);
+  const importExcel = useImportExcelMutation(activeTeam?.activeSeasonTeamId);
+
   const updateTeam = useUpdateTeamMutation(activeTeamId);
   const deleteTeam = useDeleteTeamMutation(user?.id);
 

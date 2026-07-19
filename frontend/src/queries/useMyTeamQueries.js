@@ -102,15 +102,14 @@ export function useTeamDetail(teamId) {
     });
 }
 
-// ── Players ─────────────────────────────────────────────────────────────
-export function useTeamPlayers(teamId) {
+export function useTeamPlayers(seasonTeamId) {
     return useQuery({
-        queryKey: myTeamKeys.players(teamId),
+        queryKey: myTeamKeys.players(seasonTeamId),
         queryFn: async () => {
-            const res = await playerApi.listTeamPlayers(teamId, { per_page: 100 });
+            const res = await playerApi.listTeamPlayers(seasonTeamId, { per_page: 100 });
             return parseList(res).map(normalizePlayer);
         },
-        enabled: !!teamId,
+        enabled: !!seasonTeamId,
         staleTime: 15_000,
     });
 }
@@ -180,7 +179,7 @@ export function usePlayersPerformance(players, seasonId) {
                     // Ignore errors like 404 (Not Found) when player has no stats
                     console.warn(`No stats found for player ${p.player_id}`, error);
                 }
-                
+
                 return {
                     player_id: p.player_id,
                     player_name: p.name,
@@ -238,11 +237,11 @@ export function useUpdatePlayerPositionMutation(teamId) {
     });
 }
 
-export function useAddPlayerMutation(teamId) {
+export function useAddPlayerMutation(seasonTeamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (values) =>
-            playerApi.createForTeam(teamId, {
+            playerApi.createForTeam(seasonTeamId, {
                 name: values.name.trim(),
                 user_email: values.email.trim(),
                 student_code: values.student_code?.trim() || undefined,
@@ -251,13 +250,13 @@ export function useAddPlayerMutation(teamId) {
                 jersey_number: parseInt(values.number, 10),
             }),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: myTeamKeys.players(teamId) });
-            qc.invalidateQueries({ queryKey: myTeamKeys.detail(teamId) });
+            qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) });
+            qc.invalidateQueries({ queryKey: myTeamKeys.detail(seasonTeamId) });
         },
     });
 }
 
-export function useEditPlayerMutation(teamId) {
+export function useEditPlayerMutation(seasonTeamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async ({ editingPlayer, values }) => {
@@ -268,33 +267,33 @@ export function useEditPlayerMutation(teamId) {
                     console.error('Failed to update User name', e);
                 }
             }
-            return playerApi.updateTeamPlayer(teamId, editingPlayer.id, {
+            return playerApi.updateTeamPlayer(seasonTeamId, editingPlayer.id, {
                 jersey_number: parseInt(values.number, 10),
                 position: values.position,
                 role: values.role,
             });
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(teamId) }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) }),
     });
 }
 
-export function useDeletePlayerMutation(teamId) {
+export function useDeletePlayerMutation(seasonTeamId) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (playerId) => playerApi.bulkRemoveFromTeam(teamId, { ids: [playerId] }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(teamId) }),
+        mutationFn: (playerId) => playerApi.bulkRemoveFromTeam(seasonTeamId, { ids: [playerId] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) }),
     });
 }
 
-export function useImportExcelMutation(teamId) {
+export function useImportExcelMutation(seasonTeamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (file) => {
             const formData = new FormData();
             formData.append('file', file);
-            return playerApi.importTeamPlayers(teamId, formData);
+            return playerApi.importTeamPlayers(seasonTeamId, formData);
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(teamId) }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) }),
     });
 }
 

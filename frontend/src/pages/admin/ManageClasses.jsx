@@ -1,26 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import {
   Plus, Edit, Trash2, GraduationCap,
   AlertTriangle, RefreshCw, Search
 } from 'lucide-react';
-import { useCrudModal, useDebouncedValue } from '../../hooks';
-import useToastStore from '../../store/toastStore';
+import { useDebouncedValue } from '../../hooks';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import ClassFormModal from '../../components/admin/ClassFormModal';
 import Pagination from '../../components/ui/Pagination';
-import { classApi } from '../../api';
-
-const EMPTY_CLASS = { name: '', is_active: true };
+import { useClassModalStore } from '../../store/useClassStore';
+import { useClassesQuery, useCreateClass, useUpdateClass, useDeleteClass } from '../../hooks/useClasses';
+import { EMPTY_CLASS } from '../../schemas/class.schema';
 
 export default function ManageClasses() {
-  const toast = useToastStore();
-  const [classesList, setClassesList] = useState([]);
-  const [meta, setMeta] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState('');
-
-  // Pagination & Search
+  // Pagination & Search (vẫn là local UI state, không cần zustand cho phần này)
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -28,60 +21,44 @@ export default function ManageClasses() {
 
   useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
 
-  const fetchClasses = useCallback(async () => {
-    setIsLoading(true);
-    setFetchError('');
-    try {
-      const res = await classApi.getAll({
-        page: currentPage,
-        per_page: itemsPerPage,
-        q: debouncedSearch || undefined,
-        sort: 'created_at',
-        direction: 'desc'
-      });
+  const { data, isLoading, isFetching, error, refetch } = useClassesQuery({
+    page: currentPage,
+    per_page: itemsPerPage,
+    q: debouncedSearch || undefined,
+    sort: 'created_at',
+    direction: 'desc',
+  });
 
-      const payload = (typeof res?.status === 'boolean') ? res.data : res;
-      const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
-      const resultMeta = Array.isArray(payload) ? null : payload?.meta;
-
-      setClassesList(items);
-      setMeta(resultMeta);
-    } catch (err) {
-      console.error(err);
-      setFetchError(err?.response?.data?.message || 'Lỗi khi tải danh sách lớp học');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentPage, itemsPerPage, debouncedSearch]);
-
-  useEffect(() => { fetchClasses(); }, [fetchClasses]);
-
+  const classesList = data?.items ?? [];
+  const meta = data?.meta;
   const totalPages = meta?.last_page || 1;
 
-  // CRUD Modal
-  const classCrud = useCrudModal({ emptyForm: EMPTY_CLASS, onSuccess: fetchClasses });
+  // Modal UI state (zustand)
+  const { modal, editing, deleting, openAdd, openEdit, closeModal, setDeleting, clearDeleting } =
+    useClassModalStore();
 
-  const handleSaveClass = async (payload) => {
-    await classCrud.save(async () => {
-      if (classCrud.modal === 'add') {
-        await classApi.create(payload);
-        toast.success(`Đã tạo lớp học "${payload.name}"`);
+  // Server mutations (tanstack query)
+  const createClass = useCreateClass();
+  const updateClass = useUpdateClass();
+  const deleteClass = useDeleteClass();
+  const isSaving = createClass.isPending || updateClass.isPending;
+
+  const handleSaveClass = async (values) => {
+    try {
+      if (modal === 'add') {
+        await createClass.mutateAsync(values);
       } else {
-        await classApi.update(classCrud.editing.id, payload);
-        toast.success(`Đã cập nhật lớp học "${payload.name}"`);
+        await updateClass.mutateAsync({ id: editing.id, data: values });
       }
-    });
+      closeModal();
+    } catch {
+      // lỗi đã được toast trong onError của mutation, giữ modal mở để user sửa lại
+    }
   };
 
-  const handleDeleteClass = () => {
-    const cls = classCrud.deleting;
-    classCrud.confirmDelete(async () => {
-      await classApi.delete(cls.id);
-      toast.success(`Đã xóa lớp học "${cls.name}".`);
-    }).catch((err) => {
-      console.error(err);
-      toast.error(parseApiError(err, 'Không thể xóa lớp học.'));
-    });
+  const handleDeleteClass = async () => {
+    await deleteClass.mutateAsync(deleting);
+    clearDeleting();
   };
 
   return (
@@ -95,10 +72,10 @@ export default function ManageClasses() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={fetchClasses} disabled={isLoading} className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50">
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <button onClick={() => refetch()} disabled={isFetching} className="p-2.5 rounded-xl bg-navy border border-navy-light text-gray-400 hover:text-white transition-colors disabled:opacity-50">
+              <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={classCrud.openAdd} className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
+            <button onClick={() => openAdd()} className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all">
               <Plus className="w-5 h-5" /> Thêm Lớp học
             </button>
           </div>
@@ -138,12 +115,14 @@ export default function ManageClasses() {
                       ))}
                     </tr>
                   ))
-                ) : fetchError ? (
+                ) : error ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-red-400">
                       <div className="flex flex-col items-center gap-3">
                         <AlertTriangle className="w-10 h-10 text-red-500/50" />
-                        <p className="font-semibold">{fetchError}</p>
+                        <p className="font-semibold">
+                          {error?.response?.data?.message || 'Lỗi khi tải danh sách lớp học'}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -176,13 +155,10 @@ export default function ManageClasses() {
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => classCrud.openEdit(cls, {
-                              name: cls.name,
-                              is_active: cls.is_active,
-                            })} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
+                          <button onClick={() => openEdit(cls)} className="p-2 rounded-lg bg-navy-dark text-blue-400 hover:bg-blue-500/10 border border-navy-light hover:border-blue-500/40 transition-colors">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button onClick={() => classCrud.setDeleting(cls)} className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors">
+                          <button onClick={() => setDeleting(cls)} className="p-2 rounded-lg bg-navy-dark text-red-400 hover:bg-red-500/10 border border-navy-light hover:border-red-500/40 transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -207,23 +183,25 @@ export default function ManageClasses() {
           )}
         </div>
 
-        {classCrud.modal && (
+        {modal && (
           <ClassFormModal
-            mode={classCrud.modal}
-            initialData={classCrud.form}
-            isSaving={classCrud.isSaving}
+            mode={modal}
+            initialData={modal === 'edit'
+              ? { name: editing?.name ?? '', is_active: editing?.is_active ?? true }
+              : EMPTY_CLASS}
+            isSaving={isSaving}
             onSave={handleSaveClass}
-            onClose={classCrud.closeModal}
+            onClose={closeModal}
           />
         )}
 
-        {classCrud.deleting && (
+        {deleting && (
           <ConfirmDeleteModal
             title="Xóa lớp học?"
-            message={<>Xóa lớp <strong className="text-white">{classCrud.deleting.name}</strong>? Hành động này có thể ảnh hưởng đến các cầu thủ đang thuộc lớp học này.</>}
+            message={<>Xóa lớp <strong className="text-white">{deleting.name}</strong>? Hành động này có thể ảnh hưởng đến các cầu thủ đang thuộc lớp học này.</>}
             onConfirm={handleDeleteClass}
-            onCancel={() => classCrud.setDeleting(null)}
-            isDeleting={classCrud.isDeleting}
+            onCancel={clearDeleting}
+            isDeleting={deleteClass.isPending}
           />
         )}
       </div>
