@@ -95,20 +95,25 @@ export class TeamService {
     async softDelete(id: number): Promise<void> {
         await this.assertExists(id);
 
-        const activeSeasonCount = await this.prisma.season.count({
+        const activeSeasonCount = await this.prisma.seasonTeam.count({
             where: {
-                status: { in: ["registration_open", "ongoing"] },
+                team_id: id,
+                season: {
+                    status: { in: ["registration_open", "ongoing"] },
+                },
             },
         });
         if (activeSeasonCount > 0)
-            throw createAppError("VALIDATION_ERROR", "Cannot delete team with active seasons");
+            throw createAppError(
+                "VALIDATION_ERROR",
+                "Cannot delete team with active seasons"
+            );
 
         await this.prisma.team.update({
             where: { id },
             data: { is_active: false, deleted_at: new Date() },
         });
     }
-
     // ─── Captain ───────────────────────────────────────────────────────────────
 
     getCaptain(teamId: number): Promise<TeamLeader | null> {
