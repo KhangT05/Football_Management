@@ -2019,6 +2019,171 @@
                 ],
                 "type": "object"
             },
+            "PlayerPosition": {
+                "type": "string",
+                "enum": [
+                    "goalkeeper",
+                    "defender",
+                    "midfielder",
+                    "forward"
+                ]
+            },
+            "PlayerWithoutTeamEntry": {
+                "properties": {
+                    "ever_had_team": {
+                        "type": "boolean"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/PlayerPosition"
+                    },
+                    "player_name": {
+                        "type": "string"
+                    },
+                    "player_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "ever_had_team",
+                    "position",
+                    "player_name",
+                    "player_id"
+                ],
+                "type": "object"
+            },
+            "PlayersWithoutTeamStats": {
+                "properties": {
+                    "players": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerWithoutTeamEntry"
+                        },
+                        "type": "array"
+                    },
+                    "total": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "players",
+                    "total"
+                ],
+                "type": "object"
+            },
+            "Record_LeaveReason.number_": {
+                "properties": {
+                    "transferred": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "dropped": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "disqualified": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "season_ended": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "injured": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "transferred",
+                    "dropped",
+                    "disqualified",
+                    "season_ended",
+                    "injured"
+                ],
+                "type": "object",
+                "description": "Construct a type with a set of properties K of type T"
+            },
+            "LeaveReason": {
+                "type": "string",
+                "enum": [
+                    "transferred",
+                    "dropped",
+                    "disqualified",
+                    "season_ended",
+                    "injured"
+                ]
+            },
+            "PlayerLeaveEntry": {
+                "properties": {
+                    "left_reason": {
+                        "$ref": "#/components/schemas/LeaveReason"
+                    },
+                    "left_at": {
+                        "type": "string"
+                    },
+                    "joined_at": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "jersey_number": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "team_name": {
+                        "type": "string"
+                    },
+                    "team_id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "player_name": {
+                        "type": "string"
+                    },
+                    "player_id": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "left_reason",
+                    "left_at",
+                    "joined_at",
+                    "role",
+                    "jersey_number",
+                    "team_name",
+                    "team_id",
+                    "player_name",
+                    "player_id"
+                ],
+                "type": "object"
+            },
+            "TeamPlayerLeaveStats": {
+                "properties": {
+                    "entries": {
+                        "items": {
+                            "$ref": "#/components/schemas/PlayerLeaveEntry"
+                        },
+                        "type": "array"
+                    },
+                    "reason_breakdown": {
+                        "$ref": "#/components/schemas/Record_LeaveReason.number_"
+                    },
+                    "season_id": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "entries",
+                    "reason_breakdown",
+                    "season_id"
+                ],
+                "type": "object"
+            },
             "TeamAggregateStatsBase": {
                 "properties": {
                     "total_points": {
@@ -5261,15 +5426,6 @@
                 "type": "object",
                 "additionalProperties": false
             },
-            "PlayerPosition": {
-                "type": "string",
-                "enum": [
-                    "goalkeeper",
-                    "defender",
-                    "midfielder",
-                    "forward"
-                ]
-            },
             "PlayerDto": {
                 "properties": {
                     "id": {
@@ -5455,8 +5611,8 @@
             "PlayerStatus": {
                 "type": "string",
                 "enum": [
-                    "active",
                     "injured",
+                    "active",
                     "suspended"
                 ]
             },
@@ -5648,8 +5804,8 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "active",
                             "injured",
+                            "active",
                             "suspended"
                         ]
                     },
@@ -5685,11 +5841,11 @@
                     "reason": {
                         "type": "string",
                         "enum": [
-                            "injured",
                             "transferred",
                             "dropped",
                             "disqualified",
-                            "season_ended"
+                            "season_ended",
+                            "injured"
                         ]
                     },
                     "ids": {
@@ -10832,6 +10988,129 @@
                         "in": "path",
                         "name": "playerId",
                         "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/users/registrations/count": {
+            "get": {
+                "operationId": "GetNewUserCount",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "7d",
+                                "30d",
+                                "90d",
+                                "3m",
+                                "6m",
+                                "1y"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "/statistics/players/without-team": {
+            "get": {
+                "operationId": "GetPlayersWithoutTeam",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlayersWithoutTeamStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [],
+                "parameters": []
+            }
+        },
+        "/statistics/players/leaves": {
+            "get": {
+                "operationId": "GetTeamPlayerLeaveStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TeamPlayerLeaveStats"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "Statistics"
+                ],
+                "security": [
+                    {
+                        "jwt": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "season_id",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "reason",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/LeaveReason"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
                         "schema": {
                             "format": "double",
                             "type": "number"

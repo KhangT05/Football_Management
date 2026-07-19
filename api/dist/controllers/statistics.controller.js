@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Security, Query, } from "tsoa";
 import { StatisticsService } from "../services/statistics.service.js";
+import { LeaveReason } from "../generated/prisma/client.js";
 let StatisticsController = class StatisticsController extends Controller {
     statisticsService;
     constructor(statisticsService) {
@@ -64,8 +65,25 @@ let StatisticsController = class StatisticsController extends Controller {
         return this.statisticsService.getPlayerOverviewStats(playerId);
     }
     // ═══════════════════════════════════════════════════════════════════════
-    // TEAM STATS HIERARCHY (tournament / season / match level)
+    // BỔ SUNG — các method service chưa có route
     // ═══════════════════════════════════════════════════════════════════════
+    // Đếm số user mới trong N ngày (khác getUserRegistrationStats ở chỗ
+    // đây chỉ trả về 1 số, không bucket theo ngày — dùng cho KPI card).
+    async getNewUserCount(period) {
+        return this.statisticsService.getNewUserCount(period);
+    }
+    // Danh sách player hiện không thuộc team nào (free agent).
+    async getPlayersWithoutTeam() {
+        return this.statisticsService.getPlayersWithoutTeam();
+    }
+    // Thống kê player rời team, filter theo season/reason — internal reporting.
+    async getTeamPlayerLeaveStats(season_id, reason, limit) {
+        return this.statisticsService.getTeamPlayerLeaveStats({
+            seasonId: season_id,
+            reason,
+            limit,
+        });
+    }
     async getTeamTournamentStats(teamId, tournamentId) {
         return this.statisticsService.getTeamTournamentStats(teamId, tournamentId);
     }
@@ -248,6 +266,30 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StatisticsController.prototype, "getPlayerOverviewStats", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("users/registrations/count"),
+    __param(0, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getNewUserCount", null);
+__decorate([
+    Get("players/without-team"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getPlayersWithoutTeam", null);
+__decorate([
+    Security("jwt", ["admin"]),
+    Get("players/leaves"),
+    __param(0, Query()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, Number]),
+    __metadata("design:returntype", Promise)
+], StatisticsController.prototype, "getTeamPlayerLeaveStats", null);
 __decorate([
     Get("teams/{teamId}/tournaments/{tournamentId}"),
     __param(0, Path()),
