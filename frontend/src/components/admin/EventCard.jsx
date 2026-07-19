@@ -1,7 +1,7 @@
 import { Controller } from 'react-hook-form';
 import { Clock, Trash2, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { IoFootball } from 'react-icons/io5';
-import { MINUTE_BOUNDS_BY_PERIOD, PERIOD_LABELS } from '../../schemas/liveMatch.schema';
+import { MINUTE_BOUNDS_BY_PERIOD, PERIOD_LABELS } from '../../schemas/livematch.schema';
 
 /**
  * EventCard — card RHF-controlled cho 1 dòng sự kiện (bàn thắng, thẻ vàng,
