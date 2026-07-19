@@ -800,9 +800,9 @@ function EventColumn({ title, teamColor, control, side, fields, remove, players,
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {[
-            { icon: '⚽', val: c.goals, label: 'Bàn', color: 'emerald' },
-            { icon: '🟥', val: c.red, label: 'Đỏ', color: 'red' },
-            { icon: '🔄', val: c.subs, label: 'Thay', color: 'blue' },
+            { icon: <IoFootball className="w-4 h-4" />, val: c.goals, label: 'Bàn', color: 'emerald' },
+            { icon: <div className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_5px_rgba(239,68,68,0.5)]" />, val: c.red, label: 'Đỏ', color: 'red' },
+            { icon: <ArrowRightLeft className="w-4 h-4" />, val: c.subs, label: 'Thay', color: 'blue' },
           ].map(({ icon, val, label, color }) => (
             <div key={label} className={`flex flex-col items-center py-1.5 rounded-lg bg-${color}-500/10 border border-${color}-500/20`}>
               <span className="text-sm">{icon}</span>
