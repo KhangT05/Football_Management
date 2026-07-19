@@ -65,8 +65,8 @@ async function bootstrap() {
     await prisma.$connect();
 
     const isProduction = process.env.NODE_ENV === "production";
-    const runSeedOnBoot = process.env.RUN_SEED_ON_BOOT === "true";
-    const autoSeedDevDisabled = process.env.AUTO_SEED_DEV === "false";
+    const runSeedOnBoot = process.env.RUN_SEED_ON_BOOT === "false";
+    const autoSeedDevDisabled = process.env.AUTO_SEED_DEV === "true";
 
     const shouldAutoSeed = isProduction
         ? runSeedOnBoot
