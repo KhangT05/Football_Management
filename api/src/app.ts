@@ -16,20 +16,8 @@ import { matchResultService } from "./libs/ioc.js";
 import { main } from "./seeders/index.js";
 const app = express();
 
-const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:3000")
-    .split(",")
-    .map(o => o.trim());
-
-
 app.use(cors({
-    origin: (origin, callback) => {
-        // origin undefined = request không qua browser (Postman, curl, server-to-server)
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error(`CORS blocked: ${origin} not in allowed list`));
-        }
-    },
+    origin: process.env.APP_ORIGIN ?? "http://localhost:3000",
     credentials: true
 }));
 
