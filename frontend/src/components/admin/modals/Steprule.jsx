@@ -6,7 +6,7 @@ import {
 import FormField from '../../ui/FormField';
 import { INPUT } from '../../../data/data';
 import NumberField from '../../ui/Numberfield';
-import CustomStageBuilder from './CustomStageBuilder';
+import CustomStageBuilder from './Customstagebuilder';
 import { useRuleTemplatesQuery } from '../../../queries/wizard.queries';
 import { ruleDtoToFormValues } from '../../../schemas/wizard.mappers';
 import {
