@@ -619,6 +619,41 @@ const models = {
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "total_red_cards": { "dataType": "double", "required": true }, "total_yellow_cards": { "dataType": "double", "required": true }, "total_assists": { "dataType": "double", "required": true }, "total_goals": { "dataType": "double", "required": true }, "total_matches_played": { "dataType": "double", "required": true }, "season_count": { "dataType": "double", "required": true }, "team_count": { "dataType": "double", "required": true }, "tournament_count": { "dataType": "double", "required": true }, "player_name": { "dataType": "string", "required": true }, "player_id": { "dataType": "double", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerPosition": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerWithoutTeamEntry": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "ever_had_team": { "dataType": "boolean", "required": true }, "position": { "ref": "PlayerPosition", "required": true }, "player_name": { "dataType": "string", "required": true }, "player_id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayersWithoutTeamStats": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "players": { "dataType": "array", "array": { "dataType": "refAlias", "ref": "PlayerWithoutTeamEntry" }, "required": true }, "total": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Record_LeaveReason.number_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "transferred": { "dataType": "double", "required": true }, "dropped": { "dataType": "double", "required": true }, "disqualified": { "dataType": "double", "required": true }, "season_ended": { "dataType": "double", "required": true }, "injured": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LeaveReason": {
+        "dataType": "refAlias",
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["transferred"] }, { "dataType": "enum", "enums": ["dropped"] }, { "dataType": "enum", "enums": ["disqualified"] }, { "dataType": "enum", "enums": ["season_ended"] }, { "dataType": "enum", "enums": ["injured"] }], "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PlayerLeaveEntry": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "left_reason": { "ref": "LeaveReason", "required": true }, "left_at": { "dataType": "string", "required": true }, "joined_at": { "dataType": "string", "required": true }, "role": { "dataType": "string", "required": true }, "jersey_number": { "dataType": "double", "required": true }, "team_name": { "dataType": "string", "required": true }, "team_id": { "dataType": "double", "required": true }, "player_name": { "dataType": "string", "required": true }, "player_id": { "dataType": "double", "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TeamPlayerLeaveStats": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "entries": { "dataType": "array", "array": { "dataType": "refAlias", "ref": "PlayerLeaveEntry" }, "required": true }, "reason_breakdown": { "ref": "Record_LeaveReason.number_", "required": true }, "season_id": { "dataType": "union", "subSchemas": [{ "dataType": "double" }, { "dataType": "enum", "enums": [null] }], "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TeamAggregateStatsBase": {
         "dataType": "refAlias",
         "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "total_points": { "dataType": "double", "required": true }, "goal_difference": { "dataType": "double", "required": true }, "total_goals_against": { "dataType": "double", "required": true }, "total_goals_for": { "dataType": "double", "required": true }, "win_rate": { "dataType": "double", "required": true }, "total_losses": { "dataType": "double", "required": true }, "total_draws": { "dataType": "double", "required": true }, "total_wins": { "dataType": "double", "required": true }, "total_matches_played": { "dataType": "double", "required": true } }, "validators": {} },
@@ -1235,11 +1270,6 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PlayerPosition": {
-        "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }], "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerDto": {
         "dataType": "refObject",
         "properties": {
@@ -1286,7 +1316,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PlayerStatus": {
         "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["suspended"] }], "validators": {} },
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["suspended"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ApprovalStatus": {
@@ -1344,7 +1374,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateTeamPlayerSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "approval_status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["approved"] }, { "dataType": "enum", "enums": ["pending"] }, { "dataType": "enum", "enums": ["rejected"] }] }, "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["suspended"] }] }, "role": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["player"] }, { "dataType": "enum", "enums": ["captain"] }, { "dataType": "enum", "enums": ["vice_captain"] }] }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }] }, "jersey_number": { "dataType": "double" } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "approval_status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["approved"] }, { "dataType": "enum", "enums": ["pending"] }, { "dataType": "enum", "enums": ["rejected"] }] }, "status": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["active"] }, { "dataType": "enum", "enums": ["suspended"] }] }, "role": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["player"] }, { "dataType": "enum", "enums": ["captain"] }, { "dataType": "enum", "enums": ["vice_captain"] }] }, "position": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["goalkeeper"] }, { "dataType": "enum", "enums": ["defender"] }, { "dataType": "enum", "enums": ["midfielder"] }, { "dataType": "enum", "enums": ["forward"] }] }, "jersey_number": { "dataType": "double" } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateTeamPlayerDto": {
@@ -1354,7 +1384,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofbulkDeleteSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "reason": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["injured"] }, { "dataType": "enum", "enums": ["transferred"] }, { "dataType": "enum", "enums": ["dropped"] }, { "dataType": "enum", "enums": ["disqualified"] }, { "dataType": "enum", "enums": ["season_ended"] }], "required": true }, "ids": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "reason": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["transferred"] }, { "dataType": "enum", "enums": ["dropped"] }, { "dataType": "enum", "enums": ["disqualified"] }, { "dataType": "enum", "enums": ["season_ended"] }, { "dataType": "enum", "enums": ["injured"] }], "required": true }, "ids": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "BulkDeleteDto": {
@@ -3782,6 +3812,87 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'getPlayerOverviewStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsStatisticsController_getNewUserCount = {
+        period: { "in": "query", "name": "period", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["7d"] }, { "dataType": "enum", "enums": ["30d"] }, { "dataType": "enum", "enums": ["90d"] }, { "dataType": "enum", "enums": ["3m"] }, { "dataType": "enum", "enums": ["6m"] }, { "dataType": "enum", "enums": ["1y"] }] },
+    };
+    app.get('/statistics/users/registrations/count', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(StatisticsController)), ...(fetchMiddlewares(StatisticsController.prototype.getNewUserCount)), async function StatisticsController_getNewUserCount(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getNewUserCount, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(StatisticsController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getNewUserCount',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsStatisticsController_getPlayersWithoutTeam = {};
+    app.get('/statistics/players/without-team', ...(fetchMiddlewares(StatisticsController)), ...(fetchMiddlewares(StatisticsController.prototype.getPlayersWithoutTeam)), async function StatisticsController_getPlayersWithoutTeam(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getPlayersWithoutTeam, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(StatisticsController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getPlayersWithoutTeam',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsStatisticsController_getTeamPlayerLeaveStats = {
+        season_id: { "in": "query", "name": "season_id", "dataType": "double" },
+        reason: { "in": "query", "name": "reason", "ref": "LeaveReason" },
+        limit: { "in": "query", "name": "limit", "dataType": "double" },
+    };
+    app.get('/statistics/players/leaves', authenticateMiddleware([{ "jwt": ["admin"] }]), ...(fetchMiddlewares(StatisticsController)), ...(fetchMiddlewares(StatisticsController.prototype.getTeamPlayerLeaveStats)), async function StatisticsController_getTeamPlayerLeaveStats(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsStatisticsController_getTeamPlayerLeaveStats, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(StatisticsController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'getTeamPlayerLeaveStats',
                 controller,
                 response,
                 next,

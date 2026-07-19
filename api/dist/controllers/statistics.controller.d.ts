@@ -1,5 +1,6 @@
 import { Controller } from "tsoa";
 import { StatisticsService } from "../services/statistics.service.js";
+import { LeaveReason } from "../generated/prisma/client.js";
 export declare class StatisticsController extends Controller {
     private readonly statisticsService;
     constructor(statisticsService: StatisticsService);
@@ -18,6 +19,9 @@ export declare class StatisticsController extends Controller {
     getTeamOverviewStats(teamId: number): Promise<import("../types/statistics.type.js").TeamOverviewStats>;
     getTeamMatchTimeSeries(teamId: number, granularity?: "day" | "month" | "year", period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y"): Promise<import("../types/statistics.type.js").TeamMatchTimeSeriesStats>;
     getPlayerOverviewStats(playerId: number): Promise<import("../types/statistics.type.js").PlayerOverviewStats>;
+    getNewUserCount(period?: "7d" | "30d" | "90d" | "3m" | "6m" | "1y"): Promise<number>;
+    getPlayersWithoutTeam(): Promise<import("../types/statistics.type.js").PlayersWithoutTeamStats>;
+    getTeamPlayerLeaveStats(season_id?: number, reason?: LeaveReason, limit?: number): Promise<import("../types/statistics.type.js").TeamPlayerLeaveStats>;
     getTeamTournamentStats(teamId: number, tournamentId: number): Promise<import("../types/statistics.type.js").TeamTournamentStats>;
     getTeamSeasonStats(teamId: number, seasonId: number): Promise<import("../types/statistics.type.js").TeamSeasonStats>;
     getTeamMatchStats(teamId: number, matchId: number): Promise<import("../types/statistics.type.js").TeamMatchStats>;
