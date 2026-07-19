@@ -158,11 +158,9 @@ jobs:
             set -e
             cd /opt/football_management
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
-            docker compose pull api
-            docker compose up -d --no-build --remove-orphans
-            docker image prune -f
             docker compose pull api frontend
             docker compose up -d --no-build --remove-orphans
+            docker image prune -f
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
           GHCR_USER: ${{ github.actor }}
