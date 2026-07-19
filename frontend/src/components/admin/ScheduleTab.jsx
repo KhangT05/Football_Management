@@ -22,7 +22,7 @@ import {
   useSeasonGroups, useRoundsSummary, useSeasonMatches, useScheduleDefaults,
   useGenerateNewGroups, useGenerateFromGroups, useRescheduleMatch,
 } from '../../queries/useschedule.queries';
-import ManualAssignMatchModal from './ManualAssignMatchModal';
+import ManualAssignMatchModal from '../admin/Manualassignmatchmodal';
 
 // ─── Helpers: date range ───────────────────────────────────────────────────
 const getDatesInRange = getDatesInRangeUtc;

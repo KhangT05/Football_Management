@@ -11,7 +11,7 @@ import useScheduleStore from '../../store/scheduleStore';
 import useSeasonStore from '../../store/seasonStore';
 import useTeamStore from '../../store/teamStore';
 import useToastStore from '../../store/toastStore';
-import { useLiveMatchUiStore } from '../../store/liveMatchUiStore';
+import { useLiveMatchUiStore } from '../../store/livematchuistore';
 
 import {
   useTeamPlayers,
@@ -21,7 +21,7 @@ import {
   useRecordEvent,
   useAdminRecordResult,
   usePlayerSuspensionStats,
-} from '../../hooks/useLiveMatchQueries';
+} from '../../queries/uselivematch.queries';
 
 import {
   PERIOD_LABELS,
@@ -30,7 +30,7 @@ import {
   extraTimeScoreSchema,
   penaltyScoreSchema,
   computeSuspensionWarnings,
-} from '../../schemas/liveMatch.schema';
+} from '../../schemas/livematch.schema';
 
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
