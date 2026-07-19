@@ -1,6 +1,6 @@
 import { createAppError } from "../common/app.error.js";
 import { CancelSeasonDto, CreateSeasonDto, UpdateSeasonDto } from "../dtos/season.schema.js";
-import { PrismaClient, Season, SeasonStatus } from "../generated/prisma/client.js";
+import { ApprovalStatus, PrismaClient, Season, SeasonStatus, SeasonTeamStatus } from "../generated/prisma/client.js";
 import { Queryable } from "../libs/queryable.js";
 import { PaginatedResult, QueryRequest } from "../types/queryable.type.js";
 import { GroupService } from "./group.service.js";
@@ -36,6 +36,15 @@ const FULLY_EDITABLE_STATUSES: SeasonStatus[] = [
 ];
 const BANK_ONLY_EDITABLE_STATUSES: SeasonStatus[] = [SeasonStatus.ongoing];
 const BANK_FIELDS = ['bank_id', 'bank_account_no', 'bank_account_name'] as const;
+
+// Season_team status coi là "sẽ thi đấu thật" trong season — dùng để tính
+// sĩ số roster tối thiểu. pending KHÔNG tính (chưa được duyệt tham gia,
+// không có nghĩa vụ đủ quân số); withdrawn/eliminated cũng không tính (đã
+// rời hoặc bị loại).
+const ROSTER_CHECK_SEASON_TEAM_STATUSES: SeasonTeamStatus[] = [
+    SeasonTeamStatus.approved,
+    SeasonTeamStatus.active,
+];
 
 export class SeasonService {
     private readonly query: Queryable<Season>;
@@ -202,6 +211,14 @@ export class SeasonService {
      * lọc ra ngoài. Set field này bám sát theo status transition ngay tại
      * đây, không để 2 nguồn sự thật (status vs is_registration_open) lệch nhau.
      *
+     * FIX (roster tối thiểu — bug mới phát hiện): tournament_rule.min_players_per_team
+     * tồn tại trong schema nhưng trước đây KHÔNG được đọc ở đâu cả. Season
+     * có thể chuyển 'ongoing' với 1 team chỉ có 2 cầu thủ đã approved —
+     * assertRosterMinimums() chặn NGAY TRƯỚC autoFinalizeGroups, liệt kê rõ
+     * team nào thiếu quân số thay vì để lộ ra muộn khi tạo match/lineup.
+     * Đặt trước autoFinalizeGroups vì đây là check rẻ (đếm), nên fail sớm
+     * trước khi tốn công re-draw group.
+     *
      * FIX (auto-finalize groups khi đóng đăng ký): trước đây chuyển sang
      * 'ongoing' không đụng gì tới group cả — nếu season được tạo sẵn N group
      * rỗng (flow group_count lúc create) mà số team approved thực tế THẤP
@@ -213,11 +230,11 @@ export class SeasonService {
      * throw CONFLICT nếu team quá ít để tổ chức (chặn hẳn việc chuyển
      * 'ongoing' trong trường hợp đó thay vì âm thầm để lại group hỏng).
      *
-     * Lưu ý: đây là 2 transaction riêng (autoFinalizeGroups tự mở
-     * transaction, season.update là 1 statement rời) — không atomic tuyệt
-     * đối, nhưng chấp nhận được vì đây là thao tác admin tần suất thấp;
-     * nếu autoFinalizeGroups throw, season.update không chạy nên không có
-     * state nửa vời (status vẫn giữ nguyên registration_open).
+     * Lưu ý: đây là NHIỀU thao tác riêng (assertRosterMinimums đọc thuần,
+     * autoFinalizeGroups tự mở transaction, season.update là 1 statement
+     * rời) — không atomic tuyệt đối, nhưng chấp nhận được vì đây là thao
+     * tác admin tần suất thấp; nếu 1 bước throw, các bước sau không chạy
+     * nên không có state nửa vời (status vẫn giữ nguyên registration_open).
      */
     /**
      * Manual — admin bấm tay ở bất kỳ transition hợp lệ nào trong
@@ -236,9 +253,7 @@ export class SeasonService {
         this.validateStatusPreConditions(existing, newStatus);
 
         if (newStatus === SeasonStatus.ongoing) {
-            // Chốt group theo số team approved thực tế trước khi khoá
-            // registration — no-op nếu season không dùng flow group-based.
-            await this.groupService.autoFinalizeGroups(id);
+            return this.activateSeason(existing);
         }
 
         return this.prisma.season.update({
@@ -252,6 +267,75 @@ export class SeasonService {
     }
 
     /**
+     * FIX (chung logic ongoing-transition giữa updateStatus manual và cron):
+     * trước đây updateStatus() và runAutoTransitions() mỗi bên tự viết lại
+     * chuỗi "check roster -> finalize groups -> update status", dẫn tới rủi
+     * ro 1 bên được vá (VD thêm assertRosterMinimums) còn bên kia bị bỏ
+     * quên. Gộp về 1 hàm duy nhất — cả 2 entrypoint đều gọi qua đây, đảm
+     * bảo luôn nhất quán.
+     */
+    private async activateSeason(existing: Season): Promise<Season> {
+        await this.assertRosterMinimums(existing.id, existing.tournament_rule_id);
+
+        // Chốt group theo số team approved thực tế trước khi khoá
+        // registration — no-op nếu season không dùng flow group-based.
+        await this.groupService.autoFinalizeGroups(existing.id);
+
+        return this.prisma.season.update({
+            where: { id: existing.id },
+            data: {
+                status: SeasonStatus.ongoing,
+                is_registration_open: false,
+            },
+        });
+    }
+
+    /**
+     * FIX (roster tối thiểu): so sánh số TeamPlayer approved của mỗi
+     * season_team (status approved/active — xem ROSTER_CHECK_SEASON_TEAM_STATUSES)
+     * với tournament_rule.min_players_per_team. Season chưa gán rule
+     * (tournament_rule_id null) -> bỏ qua, không phải lỗi (dù trong thực tế
+     * create() luôn bắt buộc rule, giữ nhánh này cho an toàn/migration-safe).
+     *
+     * Throw liệt kê TÊN team thiếu quân số — admin cần biết ngay đội nào,
+     * không chỉ biết "có lỗi", để xử lý (bổ sung cầu thủ hoặc rút team đó).
+     */
+    private async assertRosterMinimums(seasonId: number, tournamentRuleId: number | null): Promise<void> {
+        if (tournamentRuleId == null) return;
+
+        const rule = await this.prisma.tournamentRule.findUnique({
+            where: { id: tournamentRuleId },
+            select: { min_players_per_team: true },
+        });
+        if (!rule) return;
+
+        const seasonTeams = await this.prisma.seasonTeam.findMany({
+            where: {
+                season_id: seasonId,
+                status: { in: ROSTER_CHECK_SEASON_TEAM_STATUSES },
+                deleted_at: null,
+            },
+            select: {
+                team: { select: { name: true } },
+                _count: {
+                    select: {
+                        team_players: { where: { approval_status: ApprovalStatus.approved } },
+                    },
+                },
+            },
+        });
+
+        const violations = seasonTeams.filter((st) => st._count.team_players < rule.min_players_per_team);
+        if (violations.length > 0) {
+            const names = violations.map((v) => v.team.name).join(', ');
+            throw createAppError(
+                'VALIDATION_ERROR',
+                `Không thể mở giải: các đội sau chưa đủ tối thiểu ${rule.min_players_per_team} cầu thủ (theo tournament rule) — ${names}`
+            );
+        }
+    }
+
+    /**
      * Cron entry point — bổ sung SONG SONG với updateStatus() manual ở trên,
      * không thay thế. Wire vào scheduler (node-cron, BullMQ repeatable job,
      * hoặc pg_cron) chạy mỗi vài phút:
@@ -262,38 +346,41 @@ export class SeasonService {
      * bấm tay trước đó rồi thì season không còn match điều kiện WHERE
      * (status đã đổi) → cron bỏ qua, không double-process. Idempotent theo
      * cách chạy trễ/lặp không gây lệch state.
+     *
+     * FIX: registration_open -> ongoing giờ đi qua activateSeason() dùng
+     * chung với updateStatus() — bao gồm cả assertRosterMinimums(). Trước
+     * đây cron gọi thẳng autoFinalizeGroups + season.update, bỏ qua hoàn
+     * toàn check roster tối thiểu (season có thể tự động mở dù có team
+     * thiếu quân số, chỉ path admin bấm tay mới được bảo vệ — bug do 2 nơi
+     * viết code trùng lặp, giờ không còn nữa).
      */
     async runAutoTransitions(): Promise<{ toOngoing: number; toFinished: number; failed: number[] }> {
         const now = new Date();
         const failed: number[] = [];
 
         // registration_open → ongoing khi start_date đã tới. Không dùng
-        // updateMany vì mỗi season cần autoFinalizeGroups() riêng (query DB,
-        // có thể throw CONFLICT cho từng season nếu team quá ít) — không phải
+        // updateMany vì mỗi season cần activateSeason() riêng (query DB, có
+        // thể throw VALIDATION_ERROR/CONFLICT cho từng season) — không phải
         // bulk UPDATE thuần.
         const dueToStart = await this.prisma.season.findMany({
             where: { status: SeasonStatus.registration_open, start_date: { lte: now } },
-            select: { id: true },
         });
 
         let toOngoing = 0;
-        for (const { id } of dueToStart) {
+        for (const season of dueToStart) {
             try {
-                await this.groupService.autoFinalizeGroups(id);
-                await this.prisma.season.update({
-                    where: { id },
-                    data: { status: SeasonStatus.ongoing, is_registration_open: false },
-                });
+                await this.activateSeason(season);
                 toOngoing++;
             } catch (err) {
-                // 1 season lỗi (VD quá ít team để chia group) không được chặn
-                // cron xử lý các season còn lại. Season lỗi vẫn giữ nguyên
-                // 'registration_open' quá hạn start_date — cần alert riêng
-                // (tối thiểu log ở đây, nên nối thêm kênh cảnh báo thật khi
-                // có infra, VD Sentry/Slack webhook), admin vẫn có thể vào
-                // bấm tay updateStatus() để xử lý thủ công case lỗi này.
-                failed.push(id);
-                console.error(`[SeasonAutoTransition] season ${id} failed to auto-start:`, err);
+                // 1 season lỗi (VD quá ít team để chia group, hoặc có team
+                // chưa đủ quân số) không được chặn cron xử lý các season còn
+                // lại. Season lỗi vẫn giữ nguyên 'registration_open' quá hạn
+                // start_date — cần alert riêng (tối thiểu log ở đây, nên nối
+                // thêm kênh cảnh báo thật khi có infra, VD Sentry/Slack
+                // webhook), admin vẫn có thể vào bấm tay updateStatus() để
+                // xử lý thủ công case lỗi này.
+                failed.push(season.id);
+                console.error(`[SeasonAutoTransition] season ${season.id} failed to auto-start:`, err);
             }
         }
 
@@ -399,8 +486,8 @@ export class SeasonService {
 
         // ongoing, finished, cancelled: admin chủ động chuyển tay — không
         // enforce date check ở các transition này (riêng 'ongoing' có check
-        // số lượng team/group qua groupService.autoFinalizeGroups ở
-        // updateStatus(), không đặt ở đây vì cần query DB, không thuần date).
+        // số lượng team/group + roster tối thiểu qua activateSeason(), không
+        // đặt ở đây vì cần query DB, không thuần date).
     }
 
     private validateStatusAllowsDelete(status: SeasonStatus): void {

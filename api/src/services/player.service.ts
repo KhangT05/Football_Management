@@ -147,6 +147,17 @@ function worksheetToRawRows(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
     return rows;
 }
 
+// Kết quả resolve giới hạn roster cho 1 season_team — gộp class_id (check
+// cầu thủ cùng lớp) và min/max_players_per_team (check sĩ số ĐĂNG KÝ cho
+// mùa giải này) trong 1 query, vì cả 2 đều cần join season_team -> team /
+// season -> tournament_rule, tránh round-trip trùng lặp.
+type SeasonTeamRosterConstraints = {
+    teamClassId: number | null;
+    // null = season chưa gán tournament_rule -> không enforce (migration-safe,
+    // giống cách teamClassId == null bỏ qua check class-match).
+    maxPlayers: number | null;
+};
+
 export class PlayerService {
     private readonly teamPlayerQuery: Queryable<TeamPlayerRow>;
     private readonly playerQuery: Queryable<PlayerRow>;
@@ -207,6 +218,12 @@ export class PlayerService {
      * user_id có sẵn) vì đây là entrypoint duy nhất không đi qua
      * createPlayerForTeamWithUser/import (2 path kia tự nhận student_code
      * qua DTO và ghi vào User trước).
+     *
+     * LƯU Ý: createPlayer KHÔNG gắn player vào season_team nào cả (chỉ tạo
+     * hồ sơ Player gắn với Team qua pool chung), nên KHÔNG áp
+     * max_players_per_team ở đây — giới hạn đó chỉ áp khi tạo TeamPlayer
+     * (đăng ký vào roster của 1 season cụ thể), xem addPlayerToTeam /
+     * createPlayerForTeamWithUser / importTeamPlayersFromExcel bên dưới.
      */
     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
         const user = await this.prisma.user.findUnique({
@@ -333,17 +350,6 @@ export class PlayerService {
      * không phá migration path. Enforce cứng sau khi backfill xong bằng
      * cách đổi Team.class_id thành NOT NULL ở schema.
      */
-    /**
- * FIX: đọc team.category TRƯỚC — nếu amateur, return ngay, không query User
- * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
- * student_code + class match.
- */
-    /**
- * FIX: nhận teamClassId đã biết thay vì tự query seasonTeam mỗi lần gọi.
- * Trước đây mỗi call query lại team.class_id — trong import loop, giá trị
- * này CỐ ĐỊNH cho toàn bộ request (cùng season_team_id), nên query lặp lại
- * N lần là N-1 lần thừa. Caller chịu trách nhiệm fetch 1 lần duy nhất.
- */
     private async assertPlayerClassMatchesUser(
         teamClassId: number | null,
         userId: number,
@@ -364,16 +370,63 @@ export class PlayerService {
         }
     }
 
-    /** Helper fetch teamClassId 1 lần — dùng ở mọi entrypoint gọi assertPlayerClassMatchesUser */
-    private async getTeamClassId(
+    /**
+     * FIX (roster cap — bug chính): trước đây tournament_rule.max_players_per_team
+     * tồn tại trong schema nhưng KHÔNG được đọc ở bất kỳ đâu. Team (Chelsea)
+     * có thể chứa N cầu thủ không giới hạn (đúng ý đồ), nhưng TeamPlayer
+     * luôn scope theo season_team_id — đây chính là "danh sách đăng ký cho
+     * 1 mùa giải cụ thể" mà max_players_per_team phải áp, KHÔNG áp lên Team
+     * (pool) và KHÔNG áp lên MatchLineup (đội hình ra sân từng trận, đã có
+     * enum LineupType.starter/substitute lo phần đó rồi, khác phạm vi).
+     *
+     * Trả về null cho maxPlayers nếu season chưa gán tournament_rule —
+     * migration-safe, giống pattern teamClassId == null ở trên.
+     */
+    private async getSeasonTeamRosterConstraints(
         seasonTeamId: number,
         tx: Prisma.TransactionClient | PrismaClient = this.prisma
-    ): Promise<number | null> {
+    ): Promise<SeasonTeamRosterConstraints> {
         const seasonTeam = await tx.seasonTeam.findUniqueOrThrow({
             where: { id: seasonTeamId },
-            select: { team: { select: { class_id: true } } },
+            select: {
+                team: { select: { class_id: true } },
+                season: {
+                    select: {
+                        tournamentRule: { select: { max_players_per_team: true } },
+                    },
+                },
+            },
         });
-        return seasonTeam.team.class_id;
+
+        return {
+            teamClassId: seasonTeam.team.class_id,
+            maxPlayers: seasonTeam.season.tournamentRule?.max_players_per_team ?? null,
+        };
+    }
+
+    /**
+     * Đếm số TeamPlayer đã approved trong roster của season_team này — đây
+     * là con số đối chiếu với max_players_per_team (chỉ cầu thủ approved
+     * mới tính là "đã đăng ký chính thức"; pending/rejected không chiếm slot).
+     * Luôn gọi trong CÙNG transaction với insert để thu hẹp race window
+     * (2 request add cùng lúc gần chạm max).
+     */
+    private async assertRosterCapacity(
+        seasonTeamId: number,
+        maxPlayers: number | null,
+        tx: Prisma.TransactionClient
+    ): Promise<void> {
+        if (maxPlayers == null) return;
+
+        const approvedCount = await tx.teamPlayer.count({
+            where: { season_team_id: seasonTeamId, approval_status: ApprovalStatus.approved },
+        });
+        if (approvedCount >= maxPlayers) {
+            throw createAppError(
+                "CONFLICT",
+                `Đội đã đăng ký đủ ${maxPlayers} cầu thủ cho mùa giải này (theo tournament rule) — không thể thêm cầu thủ mới`
+            );
+        }
     }
 
     // ----------------------------------------------------------
@@ -444,6 +497,13 @@ export class PlayerService {
         return tp ? this.mapTeamPlayer(tp) : null;
     }
 
+    /**
+     * FIX (roster cap): thêm assertRosterCapacity TRONG transaction, ngay
+     * trước insert — chặn vượt max_players_per_team của tournament rule áp
+     * cho season của season_team_id này. Đặt sau assertPlayerClassMatchesUser
+     * và sau check trùng player/jersey (fail nhanh các lỗi rẻ trước, lỗi cần
+     * transaction sau cùng).
+     */
     async addPlayerToTeam(season_team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto> {
         const player = await this.prisma.player.findFirst({
             where: { id: dto.player_id, deleted_at: null },
@@ -451,7 +511,7 @@ export class PlayerService {
         });
         if (!player) throw createAppError("NOT_FOUND", `Player ${dto.player_id} not found`);
 
-        const teamClassId = await this.getTeamClassId(season_team_id);
+        const { teamClassId, maxPlayers } = await this.getSeasonTeamRosterConstraints(season_team_id);
         await this.assertPlayerClassMatchesUser(teamClassId, player.user_id);
 
         const [dupPlayer, dupJersey] = await Promise.all([
@@ -463,6 +523,8 @@ export class PlayerService {
 
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
+                await this.assertRosterCapacity(season_team_id, maxPlayers, tx);
+
                 const created = await tx.teamPlayer.create({
                     data: {
                         season_team_id,
@@ -495,9 +557,12 @@ export class PlayerService {
      * đó đang null. Class-match check luôn chạy sau bước này, trong cùng
      * tx, trước khi tạo TeamPlayer.
      *
+     * FIX (roster cap): assertRosterCapacity chạy trong cùng tx, ngay trước
+     * insert TeamPlayer — cùng vị trí như addPlayerToTeam.
+     *
      * LƯU Ý CÒN HỞ: user mới tạo có class_id = null (chưa gán lớp), nên
-     * assertPlayerClassMatchesTeam sẽ pass cho user mới bất kể team thuộc
-     * lớp nào (điều kiện `team.class_id != null && user.class_id !== ...`
+     * assertPlayerClassMatchesUser sẽ pass cho user mới bất kể team thuộc
+     * lớp nào (điều kiện `teamClassId != null && user.class_id !== ...`
      * chỉ fail khi cả 2 khác nhau VÀ đều có giá trị). Nếu cần chặn cứng
      * "user phải có lớp trước khi vào team", phải thêm field class_id vào
      * CreatePlayerForTeamDto và set ngay lúc tạo user — hỏi lại UX trước
@@ -512,7 +577,7 @@ export class PlayerService {
 
         let createdNewUserId: number | null = null;
 
-        const teamClassId = await this.getTeamClassId(season_team_id);
+        const { teamClassId, maxPlayers } = await this.getSeasonTeamRosterConstraints(season_team_id);
 
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
@@ -557,6 +622,7 @@ export class PlayerService {
                 }
 
                 await this.assertPlayerClassMatchesUser(teamClassId, user.id, tx);
+                await this.assertRosterCapacity(season_team_id, maxPlayers, tx);
 
                 const created = await tx.teamPlayer.create({
                     data: {
@@ -599,6 +665,32 @@ export class PlayerService {
             select: { id: true, user_id: true },
         });
         if (!existing) throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in season_team ${season_team_id}`);
+
+        // FIX (roster cap): updateTeamPlayer có thể dùng để approve một
+        // TeamPlayer đang pending (approval_status: pending -> approved) —
+        // đường này KHÔNG đi qua addPlayerToTeam/createPlayerForTeamWithUser
+        // nên roster cap phải re-check ở đây nếu request đang chuyển sang
+        // approved, nếu không admin có thể approve vượt max_players_per_team
+        // qua route generic update. Các field khác (jersey_number, position...)
+        // không ảnh hưởng sĩ số nên không cần check.
+        if (dto.approval_status === ApprovalStatus.approved) {
+            const { maxPlayers } = await this.getSeasonTeamRosterConstraints(season_team_id);
+            if (maxPlayers != null) {
+                const approvedCount = await this.prisma.teamPlayer.count({
+                    where: {
+                        season_team_id,
+                        approval_status: ApprovalStatus.approved,
+                        id: { not: id },
+                    },
+                });
+                if (approvedCount >= maxPlayers) {
+                    throw createAppError(
+                        "CONFLICT",
+                        `Đội đã đăng ký đủ ${maxPlayers} cầu thủ cho mùa giải này (theo tournament rule) — không thể approve thêm`
+                    );
+                }
+            }
+        }
 
         const tp = await this.prisma.$transaction(async (tx) => {
             const updated = await tx.teamPlayer.update({ where: { id }, data: dto, select: TEAM_PLAYER_SELECT });
@@ -853,10 +945,17 @@ export class PlayerService {
     /**
      * FIX MỚI: student_code bắt buộc trong schema (validate ở
      * importPlayerRowSchema), ghi vào User khi tạo mới hoặc backfill khi
-     * user có sẵn nhưng chưa có. assertPlayerClassMatchesTeam chạy trong
+     * user có sẵn nhưng chưa có. assertPlayerClassMatchesUser chạy trong
      * tx per-row, TRƯỚC khi tạo TeamPlayer — lỗi rơi vào catch hiện có,
      * tự động log vào result.errors[].reason theo đúng hành vi cũ (1 dòng
      * lỗi không ảnh hưởng dòng khác).
+     *
+     * FIX (roster cap): maxPlayers resolve 1 lần cho toàn batch (cố định
+     * theo season_team_id, giống teamClassId). approvedCount khởi tạo từ
+     * số TeamPlayer approved hiện có, tăng dần in-memory sau mỗi dòng
+     * thành công — tránh query count lại DB mỗi dòng (N round-trip thừa),
+     * cùng pattern với usedJerseyNumbers/teamPlayerSet đã có sẵn. Dòng nào
+     * vượt max bị fail với lý do rõ ràng, KHÔNG chặn các dòng còn lại.
      */
     async importTeamPlayersFromExcel(
         season_team_id: number,
@@ -897,12 +996,12 @@ export class PlayerService {
         }
         if (validRows.length === 0) return result;
 
-        const teamClassId = await this.getTeamClassId(season_team_id);
+        const { teamClassId, maxPlayers } = await this.getSeasonTeamRosterConstraints(season_team_id);
 
         const emails = [...new Set(validRows.map((r) => r.dto.user_email))];
         const users = await this.prisma.user.findMany({
             where: { email: { in: emails } },
-            select: { id: true, email: true, student_code: true, class_id: true }, // FIX: thêm class_id
+            select: { id: true, email: true, student_code: true, class_id: true },
         });
 
         const userByEmail = new Map(users.map((u) => [u.email, u.id]));
@@ -917,16 +1016,18 @@ export class PlayerService {
                     select: { id: true, user_id: true },
                 })
                 : Promise.resolve([]),
-            // FIX: bỏ deleted_at (không tồn tại) — filter theo season_team_id
             this.prisma.teamPlayer.findMany({
                 where: { season_team_id },
-                select: { player_id: true, jersey_number: true },
+                select: { player_id: true, jersey_number: true, approval_status: true },
             }),
         ]);
 
         const playerByUserId = new Map(players.map((p) => [p.user_id, p.id]));
         const teamPlayerSet = new Set(existingTeamPlayers.map((tp) => tp.player_id));
         const usedJerseyNumbers = new Set(existingTeamPlayers.map((tp) => tp.jersey_number));
+        // FIX (roster cap): approvedCount khởi tạo từ DB, tăng dần in-memory —
+        // chỉ TeamPlayer approved mới chiếm slot max_players_per_team.
+        let approvedCount = existingTeamPlayers.filter((tp) => tp.approval_status === ApprovalStatus.approved).length;
 
         const playerRole = await this.prisma.role.findUnique({ where: { name: PLAYER_ROLE_NAME } });
         if (!playerRole) {
@@ -975,6 +1076,17 @@ export class PlayerService {
                 continue;
             }
 
+            // FIX (roster cap): check trước khi tốn công tạo user/player mới —
+            // dòng nào vượt max fail ngay, không rollback các dòng đã thành công.
+            if (maxPlayers != null && approvedCount >= maxPlayers) {
+                result.failed++;
+                result.errors.push({
+                    row: rowNum,
+                    reason: `Đội đã đăng ký đủ ${maxPlayers} cầu thủ cho mùa giải này (theo tournament rule)`,
+                });
+                continue;
+            }
+
             let createdNewUserId: number | null = null;
 
             try {
@@ -1000,6 +1112,11 @@ export class PlayerService {
                     }
 
                     await this.assertPlayerClassMatchesUser(teamClassId, userId, tx);
+                    // Re-check trong tx để thu hẹp race window giữa lúc đọc
+                    // approvedCount in-memory ở trên và lúc insert thật —
+                    // cùng lý do addPlayerToTeam/createPlayerForTeamWithUser
+                    // gọi assertRosterCapacity bên trong transaction.
+                    await this.assertRosterCapacity(season_team_id, maxPlayers, tx);
 
                     let playerId = existingPlayerId;
                     if (!playerId) {
@@ -1017,7 +1134,6 @@ export class PlayerService {
                         playerId = created.id;
                     }
 
-                    // FIX: data.team_id -> data.season_team_id
                     await tx.teamPlayer.create({
                         data: {
                             season_team_id,
@@ -1043,6 +1159,7 @@ export class PlayerService {
                 playerByUserId.set(userId, playerId);
                 teamPlayerSet.add(playerId);
                 usedJerseyNumbers.add(dto.jersey_number);
+                approvedCount++;
                 result.success++;
 
                 if (createdNewUserId) {
