@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { parseApiError } from '../utils/errorHelper';
+import { getFriendlyErrorMessage } from '../utils/errorHelper';
 
 import {
   UploadCloud, ShieldCheck, CheckCircle2, Trophy, Loader2, ArrowRight, ArrowLeft, X,
@@ -171,13 +171,31 @@ export default function RegisterTeam() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(parseApiError(err, 'Không thể tải file mẫu Excel.'));
+      toast.error(getFriendlyErrorMessage(err, 'Không thể tải file mẫu Excel.'));
     } finally {
       setIsDownloadingTemplate(false);
     }
   };
 
-  // ── BƯỚC 1: chỉ tạo Team (+ đăng ký mùa giải nếu có chọn) ──
+  // ── BƯỚC 1: chỉ tạo Team ──
+  // FIX (team_id resolution bug): trước đây suy newTeamId qua chuỗi fallback
+  // `teamRes?.data?.id || teamRes?.id || teamRes?.data?.data[0]?.id` — nhánh
+  // cuối lấy PHẦN TỬ ĐẦU của một danh sách nếu response của registerTeam()
+  // vô tình có shape giống getTeams() ({data:{data:[...]}}). Với user đã có
+  // sẵn team khác (đến từ bước 'choice'), nhánh này có thể âm thầm lấy NHẦM
+  // id của team CŨ thay vì team vừa tạo → gọi seasonTeamApi.register() với
+  // team_id không thuộc sở hữu đúng ngữ cảnh, BE trả FORBIDDEN
+  // ("You are not the leader of this team"), hiển thị ra UI là "Access
+  // denied" khó hiểu. registerTeam() luôn trả về ĐÚNG 1 object team vừa tạo,
+  // không phải danh sách — chỉ tin data.id / id trực tiếp.
+  //
+  // FIX (lỗi tạo đội vs lỗi đăng ký giải bị gộp chung): trước đây cả 2 lệnh
+  // gọi API (tạo team + đăng ký season) nằm chung 1 try/catch — nếu tạo team
+  // THÀNH CÔNG nhưng đăng ký season THẤT BẠI, user vẫn thấy toast lỗi
+  // "Có lỗi xảy ra khi tạo đội" (sai sự thật, đội đã tồn tại trong DB) và có
+  // thể bấm submit lại → tạo thêm 1 team trùng lặp/mồ côi mỗi lần bấm. Tách
+  // 2 bước: bước A (tạo team) lỗi thì dừng hẳn; bước B (đăng ký season) lỗi
+  // thì vẫn coi là thành công phần tạo đội, chỉ cảnh báo riêng phần season.
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     const errors = [];
@@ -189,6 +207,9 @@ export default function RegisterTeam() {
     }
 
     setIsSubmitting(true);
+
+    // ── Bước A: tạo team ──
+    let newTeamId = null;
     try {
       const payload = {
         name: teamInfo.name,
@@ -199,32 +220,39 @@ export default function RegisterTeam() {
       if (logoFile) payload.logo = logoFile;
 
       const teamRes = await teamApi.registerTeam(payload);
-      const newTeamId = teamRes?.data?.id || teamRes?.id || (Array.isArray(teamRes?.data?.data) ? teamRes?.data?.data[0]?.id : null);
+      newTeamId = teamRes?.data?.id ?? teamRes?.id ?? null;
 
       if (!newTeamId) {
         throw new Error('Không lấy được ID đội bóng vừa tạo.');
       }
 
-      if (selectedSeasonId) {
-        // FIX: thiếu team_id — BE selfRegister() trước đây tự suy team qua
-        // findFirst({ user_id }) không orderBy, bug này bị CHE ở đây vì
-        // user vừa tạo team mới nên (thường) chỉ có đúng 1 team tại thời
-        // điểm gọi. Sau khi BE đổi sang bắt buộc team_id tường minh (fix
-        // multi-team ownership bug ở SeasonTeamService.selfRegister), call
-        // này sẽ FAIL validation nếu không gửi kèm — phải gửi newTeamId vừa
-        // nhận được từ registerTeam(), không dựa vào suy đoán của BE nữa.
-        await seasonTeamApi.register({ season_id: parseInt(selectedSeasonId), team_id: newTeamId });
-      }
-
       setCreatedTeam({ id: newTeamId, name: teamInfo.name });
-      toast.success('Tạo đội bóng thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
-      setStep('roster');
     } catch (error) {
-      const msg = parseApiError(error, 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!');
-      toast.error(msg);
-    } finally {
+      toast.error(getFriendlyErrorMessage(error, 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!'));
       setIsSubmitting(false);
+      return; // chưa có team hợp lệ → dừng, không sang bước roster
     }
+
+    // ── Bước B: đăng ký mùa giải (tùy chọn) — lỗi ở đây KHÔNG rollback UI về form tạo đội ──
+    if (selectedSeasonId) {
+      try {
+        await seasonTeamApi.register({ season_id: parseInt(selectedSeasonId), team_id: newTeamId });
+        toast.success('Tạo đội & đăng ký giải thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
+      } catch (error) {
+        toast.warning(
+          getFriendlyErrorMessage(
+            error,
+            'Đội đã được tạo, nhưng đăng ký giải đấu thất bại. Bạn có thể đăng ký lại sau tại "Đội Của Tôi".'
+          ),
+          6000
+        );
+      }
+    } else {
+      toast.success('Tạo đội bóng thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
+    }
+
+    setIsSubmitting(false);
+    setStep('roster');
   };
 
   // ── BƯỚC 2: chỉ import cầu thủ vào team đã tạo — KHÔNG tạo lại team ──
@@ -264,8 +292,7 @@ export default function RegisterTeam() {
       setIsSuccess(true);
       setTimeout(() => navigate('/doi-cua-toi'), 2000);
     } catch (error) {
-      const msg = parseApiError(error, 'Có lỗi khi thêm cầu thủ. Vui lòng thử lại!');
-      toast.error(msg);
+      toast.error(getFriendlyErrorMessage(error, 'Có lỗi khi thêm cầu thủ. Vui lòng thử lại!'));
     } finally {
       setIsSubmitting(false);
     }
