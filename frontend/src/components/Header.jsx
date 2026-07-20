@@ -47,13 +47,13 @@ export default function Header() {
         <div className="flex items-center justify-between h-20">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 shrink-0" onClick={() => setMobileOpen(false)}>
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0" onClick={() => setMobileOpen(false)}>
             <div>
-              <img src={Information.imgUrl} alt="" className='w-12 h-12 text-white rounded-full' />
+              <img src={Information.imgUrl} alt="" className='w-10 h-10 sm:w-12 sm:h-12 text-white rounded-full' />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
-              <p className="text-gray-400 text-xs font-semibold tracking-wider">{Information.logoSubtitle}</p>
+              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-none uppercase italic">{Information.logoTitle}</h1>
+              <p className="text-[10px] sm:text-xs text-gray-400 font-semibold tracking-wider hidden sm:block">{Information.logoSubtitle}</p>
             </div>
           </Link>
 
@@ -252,7 +252,7 @@ export default function Header() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">{user?.name || 'Tài khoản'}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[180px]">{user?.email}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-45">{user?.email}</p>
                   </div>
                 </div>
 

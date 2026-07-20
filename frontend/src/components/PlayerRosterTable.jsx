@@ -14,7 +14,7 @@ export default function PlayerRosterTable({
   return (
     <div className={`border rounded-xl overflow-hidden ${isLight ? 'bg-white border-gray-200' : 'bg-navy border-navy-light'}`}>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left whitespace-nowrap min-w-[900px]">
+        <table className="w-full text-sm text-left whitespace-nowrap min-w-225">
           <thead>
             <tr className={`${isLight ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-navy-dark text-gray-400 border-navy-light'} text-xs font-bold uppercase tracking-wider border-b`}>
               <th className="py-3 px-4 w-16 text-center">Số</th>
@@ -90,7 +90,7 @@ export default function PlayerRosterTable({
                   </td>
                   {showActions && (
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => onEditPlayer?.(player)}
                           className="p-1.5 rounded text-blue-500 hover:bg-blue-50 transition-colors"

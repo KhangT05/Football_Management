@@ -8,8 +8,8 @@ export default function Hero() {
       
       {/* Background Layer: Abstract Shapes & Gradients */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600 rounded-full blur-[150px] opacity-10 -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4"></div>
+        <div className="absolute top-0 right-0 w-200 h-200 bg-blue-600 rounded-full blur-[150px] opacity-10 -translate-y-1/2 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-150 h-150 bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
       </div>
 
@@ -63,7 +63,7 @@ export default function Hero() {
           <div className="relative w-full max-w-md aspect-square flex flex-col justify-center gap-5">
             
             {/* Stat Card 1: Giải đấu */}
-            <div className="w-56 sm:w-64 p-4 sm:p-5 bg-navy/60 backdrop-blur-xl border border-navy-light/50 rounded-3xl shadow-2xl z-20 animate-float self-end mr-2 sm:mr-4">
+            <div className="w-[85%] max-w-[256px] sm:w-64 p-4 sm:p-5 bg-navy/60 backdrop-blur-xl border border-navy-light/50 rounded-3xl shadow-2xl z-20 animate-float self-end mr-2 sm:mr-4">
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                   <TrophyIcon className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
@@ -76,7 +76,7 @@ export default function Hero() {
             </div>
 
             {/* Stat Card 2: Đội bóng */}
-            <div className="w-64 sm:w-72 p-4 sm:p-5 bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-30 animate-float-delayed self-start ml-0 sm:ml-2 -mt-2">
+            <div className="w-[90%] max-w-[288px] sm:w-72 p-4 sm:p-5 bg-navy-dark/80 backdrop-blur-xl border border-navy-light rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-30 animate-float-delayed self-start ml-0 sm:ml-2 -mt-2">
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                   <Users className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
@@ -89,7 +89,7 @@ export default function Hero() {
             </div>
 
             {/* Stat Card 3: Cầu thủ */}
-            <div className="w-56 sm:w-64 p-4 sm:p-5 bg-navy/60 backdrop-blur-xl border border-navy-light/50 rounded-3xl shadow-2xl z-20 animate-float self-end mr-4 sm:mr-8 -mt-2" style={{ animationDelay: '400ms' }}>
+            <div className="w-[85%] max-w-[256px] sm:w-64 p-4 sm:p-5 bg-navy/60 backdrop-blur-xl border border-navy-light/50 rounded-3xl shadow-2xl z-20 animate-float self-end mr-4 sm:mr-8 -mt-2" style={{ animationDelay: '400ms' }}>
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
                   <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" />

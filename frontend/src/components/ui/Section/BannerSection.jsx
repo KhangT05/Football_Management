@@ -151,25 +151,25 @@ export default function BannerSection() {
                 {/* Oversized watermark icon, grounds the section in "sports" */}
                 <Trophy
                     aria-hidden="true"
-                    className="hidden lg:block absolute -right-14 -top-14 w-[340px] h-[340px] text-white/[0.035] rotate-12 pointer-events-none"
+                    className="hidden lg:block absolute -right-14 -top-14 w-85 h-85 text-white/[0.035] rotate-12 pointer-events-none"
                 />
 
                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-navy-dark to-transparent pointer-events-none" />
 
-                <div className="relative z-10 p-6 sm:p-10 md:p-16 lg:p-24 flex flex-col items-center text-center justify-center min-h-[380px] md:min-h-[460px]">
+                <div className="relative z-10 p-6 sm:p-10 md:p-16 lg:p-24 flex flex-col items-center text-center justify-center min-h-95 md:min-h-115">
                     <div className="w-full max-w-4xl space-y-6 md:space-y-8">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-semibold text-gray-300 uppercase tracking-wider">
                             <span className="relative flex h-2 w-2">
                                 <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
                             </span>
-                            Nền tảng quản lý thể thao
+                            Nền tảng quản lý bóng đá
                         </div>
 
                         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
                             Tổ chức giải đấu dễ dàng
                             <span className="block mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-blue-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">
-                                Quản lý đội thể thao đơn giản!
+                                Quản lý đội bóng đơn giản!
                             </span>
                         </h2>
 
@@ -181,7 +181,7 @@ export default function BannerSection() {
                                 <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 shrink-0">
                                     <Search className="w-5 h-5" />
                                 </span>
-                                Tìm giải đấu
+                                Tra cứu giải đấu
                             </Link>
                             <Link
                                 to="/tra-cuu-doi-bong"
