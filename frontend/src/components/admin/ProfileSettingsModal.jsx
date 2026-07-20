@@ -1,10 +1,10 @@
 import { User, Loader2, Save, AlertTriangle, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import useAuthStore from '../store/authStore';
+import useAuthStore from '../../store/authStore';
 import { useUpdateProfile } from '../../store/userProfile';
 import { profileSchema } from '../../schemas/profile.schema';
-import { INPUT } from '../utils/adminStyles';
+import { INPUT } from '../../utils/adminStyles';
 
 export default function ProfileSettingsModal({ onClose }) {
   const user = useAuthStore((s) => s.user);
