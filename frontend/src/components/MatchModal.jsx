@@ -40,7 +40,7 @@ function FormationPitchSingleTeam({ starters, kit, events }) {
   }
   return (
     <div
-      className="relative flex flex-col justify-between h-full rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
+      className="relative flex flex-col justify-between h-full min-h-[450px] rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
       style={{ background: 'repeating-linear-gradient(to bottom, #0f3d24 0px, #0f3d24 36px, #124a2c 36px, #124a2c 72px)' }}
     >
       <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20 h-full w-full">
@@ -55,7 +55,7 @@ function FormationPitchSingleTeam({ starters, kit, events }) {
         <div className="absolute top-4 left-1/2 w-32 sm:w-48 h-12 sm:h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
         <div className="absolute top-4 left-1/2 w-16 sm:w-24 h-4 sm:h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 pointer-events-none" />
         <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-14 h-14 rounded-full border border-white/20 pointer-events-none" />
-        <div className="absolute inset-0 flex flex-col justify-evenly py-6 pointer-events-auto z-10 text-white">
+        <div className="absolute inset-0 flex flex-col justify-evenly py-10 px-2 pointer-events-auto z-10 text-white">
           {/* FIX: biến gốc là `orderedRows` (không tồn tại) → ReferenceError
               crash toàn bộ modal ngay khi có starters. Đổi sang `rows` đúng
               tên. Đồng thời row là { pos, players }, không phải mảng — dùng
@@ -111,7 +111,7 @@ function PlayerColumn({ title, side, players, loading, kit, events, viewMode, on
           [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
         ) : viewMode === 'formation' ? (
           <div className="space-y-4 h-full flex flex-col">
-            <div className="h-[300px] sm:h-[340px] shrink-0">
+            <div className="flex-1 min-h-[400px] sm:min-h-[450px] shrink-0">
               <FormationPitchSingleTeam starters={starters} kit={kit} events={events} />
             </div>
             {subs.length > 0 && (
@@ -390,8 +390,8 @@ export default function MatchModal({ match, onClose }) {
 
         </div>
         {/* Body */}
-        <div className="flex-1 min-h-0 p-4 sm:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+        <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto lg:overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-full min-h-[1000px] lg:min-h-0">
             <div className={`${activeTab !== 'lineup' ? 'hidden lg:flex' : 'flex'} flex-col min-h-0`}>
               <PlayerColumn
                 title={homeName}

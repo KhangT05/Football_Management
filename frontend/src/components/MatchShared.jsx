@@ -406,23 +406,23 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
     const borderColor = kit?.border ?? 'rgba(255,255,255,0.75)';
 
     return (
-        <div className="flex flex-col items-center w-16 sm:w-18 shrink-0">
+        <div className="flex flex-col items-center w-14 sm:w-16 shrink-0">
             <div className="relative">
                 <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 shadow-lg shadow-black/30"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-[10px] sm:text-xs border-2 shadow-lg shadow-black/30"
                     style={{ backgroundColor: shirtColor, color: numberColor, borderColor }}
                 >
                     {tp.jersey_number ?? '-'}
                 </div>
 
                 {tp.is_captain && (
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 border border-amber-200 rounded-full flex items-center justify-center text-[8px] font-black text-black shadow">
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-amber-400 border border-amber-200 rounded-full flex items-center justify-center text-[7px] font-black text-black shadow">
                         C
                     </span>
                 )}
 
                 {hasBadge && (
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 rounded-full px-1 py-px whitespace-nowrap">
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-black/85 text-white! rounded-full px-1 py-px whitespace-nowrap">
                         {badges.goals > 0 && (
                             <span className="flex items-center leading-none"><IoFootball className="w-2.5 h-2.5" />{badges.goals > 1 ? badges.goals : ''}</span>
                         )}
@@ -436,7 +436,7 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
             </div>
 
             <span
-                className="mt-2 w-full text-center text-[10px] sm:text-[11px] font-bold text-white! leading-snug px-1 py-0.5 rounded bg-black/30 wrap-break-words"
+                className="mt-1 sm:mt-1.5 w-full text-center text-[9px] sm:text-[10px] font-bold text-white! leading-snug px-0.5 py-0.5 rounded bg-black/30 wrap-break-words"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                 title={displayName}
             >
@@ -449,7 +449,7 @@ export function FormationPlayerCell({ tp, kit, events = [] }) {
 export function FormationRow({ players, kit, events = [] }) {
     if (!players.length) return null;
     return (
-        <div className="flex justify-evenly items-start w-full px-1 sm:px-6">
+        <div className="flex justify-evenly items-start flex-wrap gap-y-2 w-full px-1 sm:px-4">
             {players.map(tp => (
                 <FormationPlayerCell key={tp.id ?? tp.player_id} tp={tp} kit={kit} events={events} />
             ))}

@@ -320,11 +320,13 @@ export default function MyTeam() {
   // ── Queries ────────────────────────────────────────────────
   const { data: teams = [], isLoading: loadingTeams } = useMyTeams(user?.id);
   const { data: detailData, isLoading: loadingDetail } = useTeamDetail(activeTeamId);
-  const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeam?.activeSeasonTeamId);
-  const { data: eligibility = [] } = useSeasonEligibility(activeTeamId);
 
   const activeTeam = detailData?.team ?? null;
   const allSeasons = detailData?.allSeasons ?? [];
+
+  const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeam?.activeSeasonTeamId);
+  const { data: eligibility = [] } = useSeasonEligibility(activeTeamId);
+
   const isLoading = loadingTeams || loadingDetail || loadingPlayers;
 
   const teamKit = useMemo(() => ({

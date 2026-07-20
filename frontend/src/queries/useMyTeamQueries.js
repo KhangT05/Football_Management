@@ -27,8 +27,8 @@ export function useMyTeams(userId) {
 
 // ── Chi tiết 1 đội (enriched: season/jersey/fee) ───────────────────────────
 async function fetchTeamDetail(teamId) {
-    const teamsRes = await teamApi.getTeams({ per_page: 50 });
-    const myTeam = parseList(teamsRes).find((t) => t.id === teamId);
+    const res = await teamApi.getTeamById(teamId);
+    const myTeam = res?.data?.data ?? res?.data ?? res;
     if (!myTeam) throw new Error('Không tìm thấy đội bóng.');
 
     let enriched = {
@@ -301,7 +301,14 @@ export function useUpdateTeamMutation(teamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async ({ values, activeSeasonTeamId }) => {
-            await teamApi.update(teamId, values);
+            const payload = {
+                name: values.name,
+                coach_name: values.coach_name || null,
+                phone: values.phone || null,
+                description: values.description || null,
+                color_hex: values.color_hex || '#334155',
+            };
+            await teamApi.update(teamId, payload);
             if (activeSeasonTeamId && values.color_hex) {
                 try {
                     await jerseyApi.upsert(activeSeasonTeamId, { type: 'home', primary_color: values.color_hex });
