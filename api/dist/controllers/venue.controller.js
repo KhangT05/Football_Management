@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+// venue.controller.ts
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
 import { VenueService } from "../services/venue.service.js";
 let VenueController = class VenueController extends Controller {
@@ -20,6 +21,10 @@ let VenueController = class VenueController extends Controller {
     }
     async findAll(page = 1, per_page = 20, q, sort, direction) {
         return this.service.findAll({ page, per_page, q, sort, direction });
+    }
+    // static route "deleted" phải đứng trước "{id}", nếu không tsoa/express match nhầm id="deleted"
+    async findDeleted(page = 1, per_page = 20, q, sort, direction) {
+        return this.service.findDeleted({ page, per_page, q, sort, direction });
     }
     async findById(id) {
         return this.service.findByIdOrFail(id);
@@ -38,9 +43,6 @@ let VenueController = class VenueController extends Controller {
     async restore(id) {
         return this.service.restore(id);
     }
-    async findDeleted() {
-        return this.service.findDeleted();
-    }
 };
 __decorate([
     Get("/"),
@@ -53,6 +55,18 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
 ], VenueController.prototype, "findAll", null);
+__decorate([
+    Get("deleted"),
+    Security("jwt", ["organizing"]),
+    __param(0, Query()),
+    __param(1, Query()),
+    __param(2, Query()),
+    __param(3, Query()),
+    __param(4, Query()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String, String, String]),
+    __metadata("design:returntype", Promise)
+], VenueController.prototype, "findDeleted", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),
@@ -89,19 +103,12 @@ __decorate([
 ], VenueController.prototype, "softDelete", null);
 __decorate([
     Patch("{id}/restore"),
-    Security("jwt", ['organizing']),
+    Security("jwt", ["organizing"]),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], VenueController.prototype, "restore", null);
-__decorate([
-    Get("deleted"),
-    Security("jwt", ['organizing']),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], VenueController.prototype, "findDeleted", null);
 VenueController = __decorate([
     Route("venues"),
     Tags("Venues"),

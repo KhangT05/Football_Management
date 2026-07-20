@@ -73,6 +73,10 @@ export type SeasonListItem = Pick<Season, "id" | "name" | "status" | "start_date
         phases: number;
     };
 };
+export declare const BulkSeasonTeamActionSchema: z.ZodObject<{
+    ids: z.ZodPipe<z.ZodArray<z.ZodNumber>, z.ZodTransform<number[], number[]>>;
+}, z.core.$strip>;
+export type BulkSeasonTeamActionDto = z.infer<typeof BulkSeasonTeamActionSchema>;
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>;
 export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>;
 export type UpdateSeasonStatusDto = z.infer<typeof UpdateSeasonStatusSchema>;

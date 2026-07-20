@@ -1,3 +1,4 @@
+// venue.controller.ts
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security } from "tsoa";
 import { VenueService } from "../services/venue.service.js";
 import type { Venue } from "../generated/prisma/client.js";
@@ -20,6 +21,19 @@ export class VenueController extends Controller {
     @Query() direction?: "asc" | "desc"
   ): Promise<PaginatedResult<Venue>> {
     return this.service.findAll({ page, per_page, q, sort, direction });
+  }
+
+  // static route "deleted" phải đứng trước "{id}", nếu không tsoa/express match nhầm id="deleted"
+  @Get("deleted")
+  @Security("jwt", ["organizing"])
+  async findDeleted(
+    @Query() page = 1,
+    @Query() per_page = 20,
+    @Query() q?: string,
+    @Query() sort?: string,
+    @Query() direction?: "asc" | "desc"
+  ): Promise<PaginatedResult<Venue>> {
+    return this.service.findDeleted({ page, per_page, q, sort, direction });
   }
 
   @Get("{id}")
@@ -53,13 +67,8 @@ export class VenueController extends Controller {
   }
 
   @Patch("{id}/restore")
-  @Security("jwt", ['organizing'])
+  @Security("jwt", ["organizing"])
   async restore(@Path() id: number): Promise<Venue> {
     return this.service.restore(id);
-  }
-  @Get("deleted")
-  @Security("jwt", ['organizing'])
-  async findDeleted(): Promise<Venue[]> {
-    return this.service.findDeleted();
   }
 }

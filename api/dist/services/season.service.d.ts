@@ -51,6 +51,14 @@ export declare class SeasonService {
      * lọc ra ngoài. Set field này bám sát theo status transition ngay tại
      * đây, không để 2 nguồn sự thật (status vs is_registration_open) lệch nhau.
      *
+     * FIX (roster tối thiểu — bug mới phát hiện): tournament_rule.min_players_per_team
+     * tồn tại trong schema nhưng trước đây KHÔNG được đọc ở đâu cả. Season
+     * có thể chuyển 'ongoing' với 1 team chỉ có 2 cầu thủ đã approved —
+     * assertRosterMinimums() chặn NGAY TRƯỚC autoFinalizeGroups, liệt kê rõ
+     * team nào thiếu quân số thay vì để lộ ra muộn khi tạo match/lineup.
+     * Đặt trước autoFinalizeGroups vì đây là check rẻ (đếm), nên fail sớm
+     * trước khi tốn công re-draw group.
+     *
      * FIX (auto-finalize groups khi đóng đăng ký): trước đây chuyển sang
      * 'ongoing' không đụng gì tới group cả — nếu season được tạo sẵn N group
      * rỗng (flow group_count lúc create) mà số team approved thực tế THẤP
@@ -62,11 +70,11 @@ export declare class SeasonService {
      * throw CONFLICT nếu team quá ít để tổ chức (chặn hẳn việc chuyển
      * 'ongoing' trong trường hợp đó thay vì âm thầm để lại group hỏng).
      *
-     * Lưu ý: đây là 2 transaction riêng (autoFinalizeGroups tự mở
-     * transaction, season.update là 1 statement rời) — không atomic tuyệt
-     * đối, nhưng chấp nhận được vì đây là thao tác admin tần suất thấp;
-     * nếu autoFinalizeGroups throw, season.update không chạy nên không có
-     * state nửa vời (status vẫn giữ nguyên registration_open).
+     * Lưu ý: đây là NHIỀU thao tác riêng (assertRosterMinimums đọc thuần,
+     * autoFinalizeGroups tự mở transaction, season.update là 1 statement
+     * rời) — không atomic tuyệt đối, nhưng chấp nhận được vì đây là thao
+     * tác admin tần suất thấp; nếu 1 bước throw, các bước sau không chạy
+     * nên không có state nửa vời (status vẫn giữ nguyên registration_open).
      */
     /**
      * Manual — admin bấm tay ở bất kỳ transition hợp lệ nào trong
@@ -81,6 +89,26 @@ export declare class SeasonService {
      */
     updateStatus(id: number, newStatus: SeasonStatus): Promise<Season>;
     /**
+     * FIX (chung logic ongoing-transition giữa updateStatus manual và cron):
+     * trước đây updateStatus() và runAutoTransitions() mỗi bên tự viết lại
+     * chuỗi "check roster -> finalize groups -> update status", dẫn tới rủi
+     * ro 1 bên được vá (VD thêm assertRosterMinimums) còn bên kia bị bỏ
+     * quên. Gộp về 1 hàm duy nhất — cả 2 entrypoint đều gọi qua đây, đảm
+     * bảo luôn nhất quán.
+     */
+    private activateSeason;
+    /**
+     * FIX (roster tối thiểu): so sánh số TeamPlayer approved của mỗi
+     * season_team (status approved/active — xem ROSTER_CHECK_SEASON_TEAM_STATUSES)
+     * với tournament_rule.min_players_per_team. Season chưa gán rule
+     * (tournament_rule_id null) -> bỏ qua, không phải lỗi (dù trong thực tế
+     * create() luôn bắt buộc rule, giữ nhánh này cho an toàn/migration-safe).
+     *
+     * Throw liệt kê TÊN team thiếu quân số — admin cần biết ngay đội nào,
+     * không chỉ biết "có lỗi", để xử lý (bổ sung cầu thủ hoặc rút team đó).
+     */
+    private assertRosterMinimums;
+    /**
      * Cron entry point — bổ sung SONG SONG với updateStatus() manual ở trên,
      * không thay thế. Wire vào scheduler (node-cron, BullMQ repeatable job,
      * hoặc pg_cron) chạy mỗi vài phút:
@@ -91,6 +119,13 @@ export declare class SeasonService {
      * bấm tay trước đó rồi thì season không còn match điều kiện WHERE
      * (status đã đổi) → cron bỏ qua, không double-process. Idempotent theo
      * cách chạy trễ/lặp không gây lệch state.
+     *
+     * FIX: registration_open -> ongoing giờ đi qua activateSeason() dùng
+     * chung với updateStatus() — bao gồm cả assertRosterMinimums(). Trước
+     * đây cron gọi thẳng autoFinalizeGroups + season.update, bỏ qua hoàn
+     * toàn check roster tối thiểu (season có thể tự động mở dù có team
+     * thiếu quân số, chỉ path admin bấm tay mới được bảo vệ — bug do 2 nơi
+     * viết code trùng lặp, giờ không còn nữa).
      */
     runAutoTransitions(): Promise<{
         toOngoing: number;

@@ -65,6 +65,37 @@ const GRANULARITY_OPTIONS = [
   { value: 'year', label: 'Năm' },
 ];
 
+// Thứ tự ưu tiên khi tự động chọn season_team mặc định cho 1 team —
+// season_team càng "sống" (đang thi đấu / đã duyệt) càng được ưu tiên hiện
+// trước, KHÔNG dựa theo status của season như logic cũ (đã gây bug: team
+// vừa tự đăng ký (pending, roster rỗng) vào 1 mùa mới bị chọn trước season_team
+// cũ đã approved/active có roster thật, chỉ vì season của nó đang mở đăng ký).
+const SEASON_TEAM_STATUS_PRIORITY = {
+  active: 0,
+  approved: 1,
+  pending: 2,
+  eliminated: 3,
+  withdrawn: 4,
+};
+
+function pickDefaultSeasonTeam(seasonTeams) {
+  if (!seasonTeams || seasonTeams.length === 0) return null;
+  return [...seasonTeams].sort((a, b) => {
+    const pa = SEASON_TEAM_STATUS_PRIORITY[a.status] ?? 99;
+    const pb = SEASON_TEAM_STATUS_PRIORITY[b.status] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return (b.season?.id ?? 0) - (a.season?.id ?? 0); // cùng mức ưu tiên -> season mới hơn lên trước
+  })[0];
+}
+
+const SEASON_TEAM_STATUS_LABEL = {
+  active: 'Đang thi đấu',
+  approved: 'Đã duyệt',
+  pending: 'Chờ duyệt',
+  eliminated: 'Đã bị loại',
+  withdrawn: 'Đã rút lui',
+};
+
 // ── Sơ đồ đội hình ───────────────────────────────────────────
 function RosterPitchDot({ player, kit, onClick }) {
   const isCap = player.role === 'captain';
@@ -306,6 +337,66 @@ function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
     </>
   );
 }
+
+// ── Chọn mùa giải (season_team) đang xem cho team hiện tại ─────────────
+// MỚI: thay cho logic tự đoán season_team "đúng" (đã gây bug ẩn roster có
+// thật — xem ghi chú ở pickDefaultSeasonTeam). Hiển thị tường minh mọi
+// season_team của team, có badge trạng thái, cho leader tự chọn xem mùa nào.
+function SeasonTeamSwitcher({ seasonTeams, activeSeasonTeamId, onSwitch }) {
+  const [open, setOpen] = useState(false);
+  const active = seasonTeams.find(st => st.id === activeSeasonTeamId);
+  if (seasonTeams.length === 0) return null;
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 bg-navy/40 border border-navy-light rounded-xl px-3 py-1.5 hover:border-blue-500/50 transition-colors text-sm font-bold text-blue-400/80">
+        <Calendar className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate max-w-[220px]">{active?.season?.name ?? 'Chọn mùa giải'}</span>
+        {active?.status && (
+          <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${active.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+            ['active', 'approved'].includes(active.status) ? 'bg-emerald-500/20 text-emerald-400' :
+              'bg-gray-500/20 text-gray-400'
+            }`}>
+            {SEASON_TEAM_STATUS_LABEL[active.status] ?? active.status}
+          </span>
+        )}
+        {seasonTeams.length > 1 && <ChevronDown className="w-3.5 h-3.5 shrink-0" />}
+      </button>
+
+      {open && seasonTeams.length > 1 && createPortal(
+        <div className="fixed inset-0 z-100" onClick={() => setOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-72 max-h-80 overflow-y-auto custom-scrollbar"
+            style={{ top: 0, left: 0 }}
+            ref={(el) => {
+              // Đặt gần nút bấm — đơn giản hoá bằng cách để trình duyệt tự
+              // scroll vào view thay vì tính toạ độ thủ công.
+              if (el) el.scrollIntoView?.({ block: 'nearest' });
+            }}
+          >
+            {seasonTeams.map(st => (
+              <button key={st.id} type="button"
+                onClick={() => { onSwitch(st.id); setOpen(false); }}
+                className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm hover:bg-slate-800 transition-colors text-left ${st.id === activeSeasonTeamId ? 'text-neon' : 'text-slate-300'}`}>
+                <span className="truncate">{st.season?.name}</span>
+                <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${st.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                  ['active', 'approved'].includes(st.status) ? 'bg-emerald-500/20 text-emerald-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                  {SEASON_TEAM_STATUS_LABEL[st.status] ?? st.status}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export default function MyTeam() {
   const { user } = useAuthStore(useShallow(s => ({ user: s.user })));
   const toast = useToastStore();
@@ -320,11 +411,52 @@ export default function MyTeam() {
   // ── Queries ────────────────────────────────────────────────
   const { data: teams = [], isLoading: loadingTeams } = useMyTeams(user?.id);
   const { data: detailData, isLoading: loadingDetail } = useTeamDetail(activeTeamId);
+
+  const teamBase = detailData?.team ?? null;
+  const seasonTeams = detailData?.seasonTeams ?? [];
+
+  // ── Season_team đang xem — chọn tường minh, không đoán ngầm ──────────
+  const [activeSeasonTeamId, setActiveSeasonTeamId] = useState(null);
+
+  useEffect(() => {
+    const preferred = pickDefaultSeasonTeam(seasonTeams);
+    setActiveSeasonTeamId(preferred?.id ?? null);
+    // Chỉ re-pick khi đổi TEAM hoặc khi danh sách season_team đổi số lượng
+    // (mới đăng ký thêm / bị xoá) — không re-pick mỗi lần data refetch giữ
+    // nguyên số lượng, để không "giật" lựa chọn đang xem của user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTeamId, seasonTeams.length]);
+
+  const activeSeasonTeam = seasonTeams.find(st => st.id === activeSeasonTeamId) ?? null;
+
+  const activeTeam = useMemo(() => {
+    if (!teamBase) return null;
+    return {
+      ...teamBase,
+      season: activeSeasonTeam?.season?.name ?? '—',
+      activeSeasonId: activeSeasonTeam?.season?.id ?? null,
+      activeSeasonTeamId: activeSeasonTeam?.id ?? null,
+      registrationStatus: activeSeasonTeam?.status ?? null,
+      registrationFee: activeSeasonTeam?.season?.registration_fee != null
+        ? Number(activeSeasonTeam.season.registration_fee) : 0,
+      bankInfo: activeSeasonTeam?.season?.bank_id
+        ? {
+          bank_id: activeSeasonTeam.season.bank_id,
+          bank_account_no: activeSeasonTeam.season.bank_account_no,
+          bank_account_name: activeSeasonTeam.season.bank_account_name,
+        }
+        : null,
+    };
+  }, [teamBase, activeSeasonTeam]);
+
   const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeam?.activeSeasonTeamId);
   const { data: eligibility = [] } = useSeasonEligibility(activeTeamId);
 
-  const activeTeam = detailData?.team ?? null;
-  const allSeasons = detailData?.allSeasons ?? [];
+  // allSeasons dùng cho tab "Lịch thi đấu" / dropdown mùa ở "Thống kê cầu thủ"
+  const allSeasons = useMemo(
+    () => seasonTeams.map(st => st.season).filter(Boolean),
+    [seasonTeams]
+  );
   const isLoading = loadingTeams || loadingDetail || loadingPlayers;
 
   const teamKit = useMemo(() => ({
@@ -367,7 +499,7 @@ export default function MyTeam() {
 
   // ── Mutations ──────────────────────────────────────────────
   const registerSeason = useRegisterSeasonMutation(activeTeamId);
-  const dropOnPitch = useUpdatePlayerPositionMutation(activeTeamId);
+  const dropOnPitch = useUpdatePlayerPositionMutation(activeTeam?.activeSeasonTeamId);
 
   const addPlayer = useAddPlayerMutation(activeTeam?.activeSeasonTeamId);
   const editPlayer = useEditPlayerMutation(activeTeam?.activeSeasonTeamId);
@@ -562,6 +694,11 @@ export default function MyTeam() {
               <TeamSwitcher teams={teams} activeTeamId={activeTeamId} onSwitch={handleSwitchTeam}
                 onCreateNew={() => navigate('/dang-ky-doi-bong')} />
             )}
+            <SeasonTeamSwitcher
+              seasonTeams={seasonTeams}
+              activeSeasonTeamId={activeSeasonTeamId}
+              onSwitch={setActiveSeasonTeamId}
+            />
             <button type="button" onClick={() => setShowSeasonRegModal(true)}
               className="relative flex items-center gap-2 bg-navy/60 backdrop-blur-xl border border-navy-light rounded-2xl px-4 py-2.5 hover:border-emerald-500/50 transition-colors text-sm font-bold text-gray-300">
               <Trophy className="w-4 h-4 text-emerald-400" /> Đăng ký giải

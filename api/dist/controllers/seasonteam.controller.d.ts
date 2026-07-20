@@ -8,8 +8,9 @@ type AuthRequest = ExRequest & {
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeam, SeasonTeamStatus } from "../generated/prisma/client.js";
-import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { BulkActionResult, SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult } from "../types/queryable.type.js";
+import * as seasonSchema from "../dtos/season.schema.js";
 export declare class SeasonTeamController extends Controller {
     private service;
     constructor(service: SeasonTeamService);
@@ -101,6 +102,11 @@ export declare class SeasonTeamController extends Controller {
             group_id: number | null;
         }[];
     }>;
+    /** Duyệt hàng loạt team pending -> approved trong 1 season. Ban tổ chức hoặc admin. */
+    bulkApprove(seasonId: number, body: seasonSchema.BulkSeasonTeamActionDto, // { ids: number[] }
+    req: AuthRequest): Promise<BulkActionResult>;
+    /** Từ chối hàng loạt team pending -> withdrawn. Ban tổ chức hoặc admin. */
+    bulkReject(body: seasonSchema.BulkSeasonTeamActionDto): Promise<BulkActionResult>;
 }
 export {};
 //# sourceMappingURL=seasonteam.controller.d.ts.map

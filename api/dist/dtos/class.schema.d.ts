@@ -1,9 +1,11 @@
 import { z } from "zod";
 export declare const createClassSchema: z.ZodObject<{
     name: z.ZodString;
+    is_active: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
 export declare const updateClassSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
+    is_active: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
 }, z.core.$strip>;
 export type CreateClassDto = z.infer<typeof createClassSchema>;
 export type UpdateClassDto = z.infer<typeof updateClassSchema>;

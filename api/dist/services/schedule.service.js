@@ -696,9 +696,7 @@ export class ScheduleService extends ScheduleEngine {
                 default_daily_end_time: true,
                 default_buffer_minutes: true,
                 default_venues: {
-                    // Lọc venue đã bị vô hiệu hoá — default không nên trỏ tới sân
-                    // không còn dùng được, kể cả khi record join vẫn tồn tại.
-                    where: { venue: { is_active: true } },
+                    where: { venue: { is_active: true, deleted_at: null } },
                     select: { venue_id: true },
                 },
             },
@@ -706,7 +704,7 @@ export class ScheduleService extends ScheduleEngine {
         if (!season)
             throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
         if (!season.default_daily_start_time)
-            return null; // chưa từng set
+            return null;
         return {
             venueIds: season.default_venues.map(v => v.venue_id),
             dailyStartTime: season.default_daily_start_time,
@@ -717,22 +715,21 @@ export class ScheduleService extends ScheduleEngine {
     async saveScheduleDefaults(seasonId, input) {
         if (input.venueIds.length === 0)
             throw createAppError('VALIDATION_ERROR', 'venueIds không được rỗng');
+        const uniqueVenueIds = [...new Set(input.venueIds)]; // tránh P2002 nếu FE gửi trùng id
         const validVenues = await this.prisma.venue.findMany({
-            where: { id: { in: input.venueIds }, is_active: true },
+            where: { id: { in: uniqueVenueIds }, is_active: true, deleted_at: null },
             select: { id: true },
         });
-        if (validVenues.length !== input.venueIds.length) {
+        if (validVenues.length !== uniqueVenueIds.length) {
             const validIds = new Set(validVenues.map(v => v.id));
-            const invalid = input.venueIds.filter(id => !validIds.has(id));
-            throw createAppError('VALIDATION_ERROR', `venueIds không hợp lệ hoặc đã inactive: [${invalid.join(', ')}]`);
+            const invalid = uniqueVenueIds.filter(id => !validIds.has(id));
+            throw createAppError('VALIDATION_ERROR', `venueIds không hợp lệ, đã inactive, hoặc đã bị xóa: [${invalid.join(', ')}]`);
         }
-        const season = await this.prisma.season.findUnique({
-            where: { id: seasonId },
-            select: { id: true },
-        });
-        if (!season)
-            throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
         await this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw `SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
+            const season = await tx.season.findUnique({ where: { id: seasonId }, select: { id: true } });
+            if (!season)
+                throw createAppError('NOT_FOUND', `Season ${seasonId} không tồn tại`);
             await tx.season.update({
                 where: { id: seasonId },
                 data: {
@@ -743,7 +740,7 @@ export class ScheduleService extends ScheduleEngine {
             });
             await tx.seasonDefaultVenue.deleteMany({ where: { season_id: seasonId } });
             await tx.seasonDefaultVenue.createMany({
-                data: input.venueIds.map(venue_id => ({ season_id: seasonId, venue_id })),
+                data: uniqueVenueIds.map(venue_id => ({ season_id: seasonId, venue_id })),
             });
         });
     }
