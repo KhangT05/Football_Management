@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApiQuery, useCrudModal, useDebouncedValue } from '../../hooks';
 import useToastStore from '../../store/toastStore';
+import { parseApiError } from '../../utils/errorHelper';
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal';
 import ArticleFormModal from '../../components/admin/ArticleFormModal';
 import Pagination from '../../components/ui/Pagination';
@@ -21,8 +22,16 @@ const EMPTY_ARTICLE = {
   is_published: false
 };
 
+import { useShallow } from 'zustand/react/shallow';
+
 export default function ManageArticles() {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
 
   // Pagination & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,7 +172,7 @@ export default function ManageArticles() {
 
         <div className="bg-navy border border-navy-light rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap min-w-[700px]">
+            <table className="w-full text-left whitespace-nowrap min-w-175">
               <thead>
                 <tr className="bg-navy-dark border-b border-navy-light text-gray-400 text-xs font-bold uppercase tracking-wider">
                   <th className="py-4 px-6 w-20 text-center">Ảnh bìa</th>

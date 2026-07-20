@@ -63,7 +63,13 @@ const isSeasonOngoingStatus = (status) => status === 'ongoing';
 const isBracketConfirmedStatus = (status) => status === 'locked';
 
 function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled }) {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
   const seasonStartStr = toDateInputValue(season?.start_date);
   const seasonEndStr = toDateInputValue(season?.end_date);
   const seasonHasDateRange = Boolean(seasonStartStr && seasonEndStr);
@@ -169,7 +175,7 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
                   <TimeField value={dailyEndTime} onChange={setDailyEndTime} />
                 </div>
               </div>
-              <div className="mt-3 max-w-[200px]">
+              <div className="mt-3 max-w-50">
                 <span className="text-[11px] text-gray-500 font-bold uppercase">Cách quãng tối thiểu (phút)</span>
                 <input
                   type="number" min="0"
@@ -254,7 +260,13 @@ function ScheduleBracketModal({ phaseId, season, venues, onClose, onScheduled })
 }
 
 export default function KnockoutUI({ seasonId }) {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
   const { venues, fetchAll: fetchVenues } = useVenueStore();
   const { teams } = useTeamStore(useShallow(state => ({ teams: state.teams })));
 

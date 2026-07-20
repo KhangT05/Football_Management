@@ -87,7 +87,13 @@ const extractRuleFormat = (seasonLike) =>
   seasonLike?.tournamentRule?.format ?? seasonLike?.tournament_rule?.format ?? null;
 
 export default function ManageSeasonTeams() {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
   const [activeTab, setActiveTab] = useState('teams');
 
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
@@ -427,7 +433,7 @@ export default function ManageSeasonTeams() {
             <p className="text-gray-400 text-sm mt-1">Duyệt đội đăng ký và tiến hành chia bảng ngẫu nhiên.</p>
           </div>
 
-          <div className="flex flex-col gap-2 min-w-[260px]">
+          <div className="flex flex-col gap-2 min-w-65">
             <div className="flex gap-1.5 flex-wrap">
               {[
                 { value: '', label: 'Tất cả' },

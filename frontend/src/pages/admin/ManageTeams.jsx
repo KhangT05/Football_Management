@@ -18,10 +18,16 @@ import { useShallow } from 'zustand/react/shallow';
 import useAdminUIStore from '../../store/adminUIStore';
 import { playerApi, seasonTeamApi } from '../../api';
 import { POSITIONS, EMPTY_TEAM, EMPTY_PLAYER } from '../../data/data';
-
+import { parseApiError } from '../../utils/errorHelper';
 
 export default function ManageTeams() {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
   const [activeTab, setActiveTab] = useState('teams');
 
   // ── Zustand store ──────────────────────────────────────────────

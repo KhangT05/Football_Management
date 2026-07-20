@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Users, Shuffle, AlertTriangle, Loader2, Trash2, LayoutGrid, Hash, ListChecks, ShieldCheck, Lock, Unlock } from 'lucide-react';
-import { seasonTeamApi, groupApi, seasonApi } from '../../api';
+import { groupApi, seasonApi } from '../../api';
 import useToastStore from '../../store/toastStore';
 import useTeamStore from '../../store/teamStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -39,7 +39,13 @@ const isSeasonFinalized = (status) => status === 'finished' || status === 'cance
 const isSeasonOngoing = (status) => status === 'ongoing';
 
 export default function GroupDrawUI({ seasonId }) {
-  const toast = useToastStore();
+  const toast = useToastStore(useShallow(state => ({
+    success: state.success,
+    error: state.error,
+    warning: state.warning,
+    info: state.info,
+    apiError: state.apiError
+  })));
 
   const { teams, fetchAll: fetchTeams } = useTeamStore(useShallow(state => ({
     teams: state.teams,
@@ -793,7 +799,7 @@ export default function GroupDrawUI({ seasonId }) {
                 </div>
               </div>
               <div
-                className={`p-2 transition-colors min-h-[80px] ${dragOverGroup === group.id && dragOverTeamId === null ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded-b-2xl' : ''}`}
+                className={`p-2 transition-colors min-h-20 ${dragOverGroup === group.id && dragOverTeamId === null ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded-b-2xl' : ''}`}
                 onDragOver={(e) => handleDragOver(e, group.id)}
                 onDragLeave={(e) => handleDragLeave(e, group.id)}
                 onDrop={(e) => handleDrop(e, group.id)}

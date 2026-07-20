@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { matchLineupApi } from '../api';
 import useToastStore from '../store/toastStore';
 import { mapPosition, PITCH_GOALKEEPER_COUNT } from '../utils/position';
+import { parseApiError } from '../utils/errorHelper';
+
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Quản lý state chọn đội hình (starter/substitute/captain) cho 1 (matchId, teamId).
@@ -15,7 +18,13 @@ import { mapPosition, PITCH_GOALKEEPER_COUNT } from '../utils/position';
  * onSaved: callback sau khi save API thành công (điều hướng / đóng modal — do caller quyết định)
  */
 export default function useLineupSelection({ matchId, teamId, roster, squadLimit, onSaved }) {
-    const toast = useToastStore();
+    const toast = useToastStore(useShallow(state => ({
+        success: state.success,
+        error: state.error,
+        warning: state.warning,
+        info: state.info,
+        apiError: state.apiError
+    })));
     // key: player_id, value: { lineup_type: 'starter' | 'substitute', is_captain: boolean }
     const [selections, setSelections] = useState({});
     const [isLoading, setIsLoading] = useState(true);

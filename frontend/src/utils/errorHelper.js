@@ -5,7 +5,7 @@ export const parseApiError = (err, defaultMsg = 'Có lỗi xảy ra') => {
   if (!err?.response?.data) return defaultMsg;
 
   const data = err.response.data;
-  const errors = data?.details || data?.errors || data?.data?.body || data?.data;
+  const errors = data?.details || data?.errors || data?.data;
 
   // Nếu có validation errors chi tiết (VD: từ Laravel, tsoa hoặc NestJS)
   if (errors && typeof errors === 'object') {
@@ -101,7 +101,10 @@ function translateValidationError(field, msg) {
   } else if (msg.includes('not found')) {
     translated = `Không tìm thấy ${fName}`;
   } else if (msg.includes('is an excess property')) {
-    translated = `${fName} không được phép gửi kèm trong yêu cầu này`;
+    const match = msg.match(/"([^"]+)" is an excess property/);
+    const excessProp = match ? (fieldNames[match[1].toLowerCase()] || match[1]) : fName;
+    let capitalized = excessProp.charAt(0).toUpperCase() + excessProp.slice(1);
+    translated = `${capitalized} không được phép gửi kèm trong yêu cầu này`;
   } else if (msg.includes('invalid type') || msg.includes('Expected') || msg.includes('invalid boolean') || msg.includes('invalid string')) {
     translated = `${fName} sai định dạng dữ liệu`;
   } else if (msg.includes('invalid')) {
