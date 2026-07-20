@@ -75,9 +75,20 @@ const useAuthStore = create((set) => ({
   isInitialized: false,
   isAuthenticated: false,
 
-  setUser: (userData) => set({ user: userData }),
+  // FIX: hỗ trợ functional update setUser(prev => ({ ...prev, ...patch })).
+  // Trước đây set({ user: userData }) gán thẳng — nếu userData là function
+  // (Profile.jsx, useUpdateProfile, useUpdateAvatar đều gọi setUser(prev => ...))
+  // thì `user` trong store bị gán = chính function đó, không được gọi/merge.
+  // Hệ quả: user.id === undefined sau lần đầu setUser(prev => ...) chạy,
+  // khiến mọi mutation sau đó (đổi mật khẩu, cập nhật hồ sơ, avatar) gửi
+  // request với userId = undefined -> /users/undefined.
+  setUser: (userData) =>
+    set((state) => ({
+      user: typeof userData === 'function' ? userData(state.user) : userData,
+    })),
 
-  // login()
+  // ── login ────────────────────────────────────────────────
+  // POST /auth/login → set token → GET /auth/me (roles từ DB)
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
@@ -112,7 +123,8 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // register() — cùng nguyên tắc, không set isAuthenticated:true khi thiếu id
+  // ── register ─────────────────────────────────────────────
+  // POST /auth/register → set token → GET /auth/me
   register: async (userData) => {
     set({ loading: true, error: null });
     try {
@@ -144,6 +156,8 @@ const useAuthStore = create((set) => ({
     }
   },
 
+  // ── logout ───────────────────────────────────────────────
+  // POST /auth/logout → clear state (kể cả khi API fail)
   logout: async () => {
     try {
       await authApi.logout();
@@ -156,7 +170,8 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // initializeAuth() — cùng nguyên tắc cho F5 flow
+  // ── initializeAuth ───────────────────────────────────────
+  // Khôi phục session khi F5 / mở tab mới.
   initializeAuth: async () => {
     if (getAccessToken()) {
       set({ isInitialized: true, isAuthenticated: true });
@@ -178,26 +193,16 @@ const useAuthStore = create((set) => ({
 
       if (!userProfile?.id) throw new Error('Profile response thiếu id');
 
-      set({ user: userProfile, isAuthenticated: true, isInitialized: true, loading: false });
+      set({
+        user: userProfile,
+        isAuthenticated: true,
+        isInitialized: true,
+        loading: false,
+      });
     } catch {
       clearAccessToken();
       localStorage.removeItem('csrf_token');
       set({ user: null, isAuthenticated: false, isInitialized: true, loading: false });
-    }
-  },
-
-  // ── socialLogin ──────────────────────────────────────────
-  // Backend chưa implement — stub tránh crash UI
-  socialLogin: async (provider) => {
-    set({ loading: true, error: null });
-    try {
-      await authApi.socialLogin(provider);
-      set({ loading: false });
-      return { success: true };
-    } catch (error) {
-      const errorMsg = error?.message || `Có lỗi xảy ra khi kết nối ${provider}.`;
-      set({ error: errorMsg, loading: false });
-      return { success: false, error: errorMsg };
     }
   },
 
