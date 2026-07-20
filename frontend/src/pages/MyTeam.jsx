@@ -23,16 +23,16 @@ import PlayerFormModal from '../components/admin/PlayerFormModal';
 import PosBadge from '../components/myteam/PosBadge';
 import TeamPaymentModal from '../components/myteam/TeamPaymentModal';
 import TransactionsTab from '../components/myteam/TransactionsTab';
-import { AVATAR_COLORS, getInitials } from '../utils/constants';
+import { AVATAR_COLORS, getInitials, POSITION_LABELS } from '../utils/constants';
 import { parseApiError } from '../utils/errorHelper';
-import { extractFilename, downloadBlob } from '../utils/teamHelpers';
+import { downloadBlob } from '../utils/teamHelpers';
 import { MATCH_STATUS_CLASS, MATCH_STATUS_LABEL } from '../data/data';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
   useMyTeams, useTeamDetail, useTeamPlayers, useTeamMatches, useSeasonEligibility,
-  useTeamStats, usePlayersPerformance,
+  useTeamStats, usePlayersPerformance, useTeamHistoryPlayers,
   useRegisterSeasonMutation, useUpdatePlayerPositionMutation,
   useAddPlayerMutation, useEditPlayerMutation, useDeletePlayerMutation,
   useImportExcelMutation, useUpdateTeamMutation, useDeleteTeamMutation,
@@ -100,7 +100,7 @@ function RosterPitchDot({ player, kit, onClick }) {
       type="button"
       onClick={onClick}
       title={`${player.name} — bấm để xem/sửa`}
-      className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 group cursor-grab active:cursor-grabbing"
+      className="flex flex-col items-center gap-1.5 w-16 sm:w-22 shrink-0 group cursor-grab active:cursor-grabbing"
       draggable
       onDragStart={(e) => e.dataTransfer.setData('app/player-id', String(player.id))}
     >
@@ -201,7 +201,7 @@ function RosterPitch({ players, kit, onSelectPlayer, onDropPlayer }) {
               {row.players.map((p, j) => p ? (
                 <RosterPitchDot key={p.id} player={p} kit={kit} onClick={() => onSelectPlayer?.(p)} />
               ) : (
-                <div key={`empty-${j}`} className="flex flex-col items-center gap-1.5 w-[64px] sm:w-[88px] shrink-0 opacity-40">
+                <div key={`empty-${j}`} className="flex flex-col items-center gap-1.5 w-16 sm:w-22 shrink-0 opacity-40">
                   <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-white/30 bg-black/20 flex items-center justify-center text-white text-xs">+</div>
                 </div>
               ))}
@@ -257,7 +257,7 @@ function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
             {getInitials(activeTeam?.name || '')[0]}
           </div>
         )}
-        <span className="font-bold text-sm text-white truncate max-w-[160px]">{activeTeam?.name}</span>
+        <span className="font-bold text-sm text-white truncate max-w-40">{activeTeam?.name}</span>
         <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
       </button>
 
@@ -343,7 +343,7 @@ function SeasonTeamSwitcher({ seasonTeams, activeSeasonTeamId, onSwitch }) {
       <button type="button" onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 bg-navy/40 border border-navy-light rounded-xl px-3 py-1.5 hover:border-blue-500/50 transition-colors text-sm font-bold text-blue-400/80">
         <Calendar className="w-3.5 h-3.5 shrink-0" />
-        <span className="truncate max-w-[220px]">{active?.season?.name ?? 'Chọn mùa giải'}</span>
+        <span className="truncate max-w-55">{active?.season?.name ?? 'Chọn mùa giải'}</span>
         {active?.status && (
           <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 ${active.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
             ['active', 'approved'].includes(active.status) ? 'bg-emerald-500/20 text-emerald-400' :
@@ -490,8 +490,16 @@ export default function MyTeam() {
   const { data: statsData, isLoading: isStatsLoading } = useTeamStats(
     activeTeamId, teamGranularity, { enabled: activeTab === 'stats' }
   );
-  const { data: playersPerf, isLoading: isPerfLoading } = usePlayersPerformance(
-    ['stats', 'player_stats'].includes(activeTab) ? players : [],
+  const { data: historyPlayers = [] } = useTeamHistoryPlayers(activeTeamId, seasonTeams);
+
+  const playersForStats = useMemo(() => {
+    if (!['stats', 'player_stats'].includes(activeTab)) return [];
+    if (playerStatsSeasonId === 'all') return historyPlayers;
+    return historyPlayers.filter(p => p.playedSeasons && p.playedSeasons.includes(Number(playerStatsSeasonId)));
+  }, [activeTab, playerStatsSeasonId, historyPlayers]);
+
+  const { data: playersPerf = [], isLoading: isPerfLoading } = usePlayersPerformance(
+    playersForStats,
     playerStatsSeasonId
   );
 
@@ -673,7 +681,7 @@ export default function MyTeam() {
   if (!isLoading && teams.length === 0) {
     return (
       <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-16 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600 rounded-full blur-[150px] opacity-10 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-200 h-200 bg-blue-600 rounded-full blur-[150px] opacity-10 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
         <div className="container mx-auto px-4 max-w-6xl relative z-10"><NoTeamState /></div>
       </div>
     );
@@ -681,10 +689,10 @@ export default function MyTeam() {
 
   return (
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-150 h-150 bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-200 h-200 bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
 
-      <div className="container mx-auto px-4 max-w-[1400px] animate-fade-in relative z-10">
+      <div className="container mx-auto px-4 max-w-350 animate-fade-in relative z-10">
 
         {!isLoading && activeTeamId && (
           <div className="mb-8 animate-slide-up flex items-center gap-3 flex-wrap">
@@ -925,7 +933,7 @@ export default function MyTeam() {
 
                     <div className="bg-navy/60 border border-navy-light rounded-3xl p-6">
                       <h3 className="text-sm font-black text-white mb-4">Phong độ theo thời gian</h3>
-                      <div className="h-[280px]">
+                      <div className="h-70">
                         {statsData.timeSeries.length === 0 ? (
                           <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">Chưa có dữ liệu</div>
                         ) : (
@@ -1015,7 +1023,7 @@ export default function MyTeam() {
                                       )}
                                       <div className="min-w-0">
                                         <p className="font-bold text-white text-sm whitespace-nowrap">{p.player_name}</p>
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{p.position || '—'}</p>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{POSITION_LABELS[normalizePosition(p.position)] || p.position || '—'}</p>
                                       </div>
                                     </div>
                                   </td>
@@ -1035,7 +1043,6 @@ export default function MyTeam() {
                             </tbody>
                           </table>
                         </div>
-                        {psTotal > 1 && (
                           <div className="p-4 border-t border-navy-light/50">
                             <Pagination
                               currentPage={psSafe}
@@ -1047,9 +1054,8 @@ export default function MyTeam() {
                               totalCount={playersPerf.length}
                             />
                           </div>
-                        )}
-                      </>
-                    )}
+                        </>
+                      )}
                   </div>
                 </div>
               );
@@ -1208,7 +1214,7 @@ export default function MyTeam() {
                               label: 'Màu áo', value: (
                                 <div className="flex items-center gap-2 bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light">
                                   <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0" style={{ backgroundColor: activeTeam?.colorHex }} />
-                                  <span className="font-bold text-white text-sm truncate max-w-[90px]">{activeTeam?.primaryColor}</span>
+                                  <span className="font-bold text-white text-sm truncate max-w-22.5">{activeTeam?.primaryColor}</span>
                                 </div>
                               )
                             },
@@ -1217,7 +1223,7 @@ export default function MyTeam() {
                             <div key={item.label} className="flex justify-between items-center py-2 border-b border-navy-light/30 last:border-0 last:pb-0 gap-3">
                               <span className="text-gray-400 text-sm font-medium shrink-0">{item.label}</span>
                               {typeof item.value === 'string' ? (
-                                <span className="text-white font-bold text-sm bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light truncate max-w-[140px]">{item.value}</span>
+                                <span className="text-white font-bold text-sm bg-navy-dark px-3 py-1.5 rounded-lg border border-navy-light truncate max-w-35">{item.value}</span>
                               ) : item.value}
                             </div>
                           ))}
