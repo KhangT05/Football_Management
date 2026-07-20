@@ -323,9 +323,7 @@ export function useUpdateTeamMutation(teamId) {
             const payload = {
                 name: values.name,
                 coach_name: values.coach_name || null,
-                phone: values.phone || null,
                 description: values.description || null,
-                color_hex: values.color_hex || '#334155',
             };
             await teamApi.update(teamId, payload);
             if (activeSeasonTeamId && values.color_hex) {
