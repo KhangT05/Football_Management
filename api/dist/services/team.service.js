@@ -81,9 +81,12 @@ export class TeamService {
     }
     async softDelete(id) {
         await this.assertExists(id);
-        const activeSeasonCount = await this.prisma.season.count({
+        const activeSeasonCount = await this.prisma.seasonTeam.count({
             where: {
-                status: { in: ["registration_open", "ongoing"] },
+                team_id: id,
+                season: {
+                    status: { in: ["registration_open", "ongoing"] },
+                },
             },
         });
         if (activeSeasonCount > 0)

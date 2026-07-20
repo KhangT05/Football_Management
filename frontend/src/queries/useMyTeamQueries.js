@@ -6,13 +6,41 @@ import { parseList, unwrap, normalizePlayer } from '../utils/teamHelpers';
 import { myTeamKeys } from './keys';
 
 // ── Danh sách đội của user (TeamSwitcher) ──────────────────────────────────
+// FIX (pagination bug): trước đây gọi teamApi.getTeams({ per_page: 50, ... })
+// và dừng lại — nếu user có > 50 team (hoặc filter user_id không loại bớt đủ
+// để dưới 50), các team ở trang 2 trở đi KHÔNG BAO GIỜ được fetch về. Bug lộ
+// ra rõ nhất khi total > per_page (thấy trong meta.has_next = true) nhưng FE
+// coi mảng nhận được là "toàn bộ" — TeamSwitcher search client-side trên
+// mảng thiếu này nên tìm không ra team nằm ở trang sau.
+//
+// Sửa bằng cách loop hết các trang (meta.has_next) thay vì tin per_page=50
+// là đủ. Không hardcode per_page lớn hơn vì maxPerPage phía server có thể
+// đổi bất cứ lúc nào (hiện tại là 100, xem TeamService) — loop là cách bền
+// vững nhất, không phụ thuộc giả định về maxPerPage.
 export function useMyTeams(userId) {
     return useQuery({
         queryKey: myTeamKeys.list(userId),
         queryFn: async () => {
-            const res = await teamApi.getTeams({ per_page: 50, user_id: userId, sort: 'id', direction: 'desc' });
-            const mine = parseList(res);
-            return mine.map((t) => ({
+            let page = 1;
+            let all = [];
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const res = await teamApi.getTeams({
+                    per_page: 100,
+                    page,
+                    user_id: userId,
+                    sort: 'id',
+                    direction: 'desc',
+                });
+                const list = parseList(res);
+                all = all.concat(list);
+
+                const meta = res?.data?.meta ?? res?.meta ?? null;
+                if (!meta?.has_next) break;
+                page += 1;
+            }
+
+            return all.map((t) => ({
                 id: t.id,
                 name: t.name,
                 logo: t.logo ?? null,
@@ -26,71 +54,62 @@ export function useMyTeams(userId) {
 }
 
 // ── Chi tiết 1 đội (enriched: season/jersey/fee) ───────────────────────────
+// FIX (wrong team lookup bug): trước đây gọi teamApi.getTeams({ per_page: 50 })
+// rồi .find(t => t.id === teamId) — 2 vấn đề chồng nhau:
+//   1) Không filter theo user_id -> quét TOÀN BỘ team trong hệ thống (82 team).
+//   2) Chỉ lấy 50 record đầu (trang 1) -> team nào có id rơi ngoài 50 record
+//      đầu (do sort mặc định theo id asc ở TeamService) sẽ KHÔNG được tìm
+//      thấy -> myTeam = undefined -> throw "Không tìm thấy đội bóng." ngay
+//      cả khi team đó tồn tại và user đang sở hữu.
+// Kết quả quan sát được: activeTeam = null, activeSeasonTeamId = undefined,
+// useTeamPlayers bị enabled:false -> UI hiện toàn bộ field rỗng + roster 0
+// dù DB có đủ dữ liệu.
+//
+// Sửa: gọi thẳng GET /teams/{id} qua teamApi.getTeamById — không giới hạn
+// bởi trang/số lượng team trong hệ thống.
+//
+// FIX (season_team auto-pick bug): trước đây tự chọn 1 season_team bằng
+// heuristic dựa theo STATUS CỦA SEASON (registration_open/ongoing/upcoming),
+// không quan tâm status của chính season_team đó. Hệ quả: nếu team vừa
+// tự đăng ký (status='pending', chưa có roster) vào 1 mùa giải MỚI đang mở
+// đăng ký, season_team pending này bị chọn TRƯỚC season_team cũ đã
+// approved/active (có roster thật, vd 23 cầu thủ) — vì season của nó thoả
+// điều kiện .find() trước. UI hiển thị "chưa có cầu thủ" dù team thực sự có
+// roster đầy đủ ở 1 season khác.
+//
+// Sửa triệt để: KHÔNG tự đoán season_team nào là "đúng" nữa. Trả nguyên
+// danh sách `seasonTeams` về cho component, để component tự chọn mặc định
+// hợp lý (ưu tiên approved/active) NHƯNG cho phép người dùng đổi sang xem
+// season_team khác một cách tường minh — giống hệt cách TeamSwitcher cho
+// đổi giữa các team.
 async function fetchTeamDetail(teamId) {
-    const res = await teamApi.getTeamById(teamId);
-    const myTeam = res?.data?.data ?? res?.data ?? res;
+    const teamRes = await teamApi.getTeamById(teamId);
+    const myTeam = unwrap(teamRes);
     if (!myTeam) throw new Error('Không tìm thấy đội bóng.');
 
-    let enriched = {
+    const enriched = {
         id: myTeam.id,
         name: myTeam.name,
         emoji: '🛡️',
         status: myTeam.is_active ? 'approved' : 'pending',
-        registrationStatus: null,
-        activeSeasonId: null,
-        activeSeasonTeamId: null,
         captain: myTeam.coach_name ?? '—',
         phone: myTeam.phone ?? '—',
         primaryColor: myTeam.primary_color ?? '—',
         colorHex: myTeam.color_hex ?? '#334155',
         registeredAt: myTeam.created_at ? new Date(myTeam.created_at).toLocaleDateString('vi-VN') : '—',
-        season: '—',
         description: myTeam.description,
         logo: myTeam.logo,
-        registrationFee: 0,
-        bankInfo: null,
     };
 
-    let allSeasons = [];
+    let seasonTeams = [];
     try {
         const stAllRes = await seasonTeamApi.getAll({ team_id: teamId });
-        const stAllList = parseList(stAllRes);
-        allSeasons = stAllList.map((st) => st.season).filter(Boolean);
-
-        const activeSt =
-            stAllList.find((st) => ['registration_open', 'ongoing', 'upcoming'].includes(st.season?.status)) ||
-            stAllList[0];
-        const active = activeSt?.season ?? null;
-
-        if (active) {
-            let homeJersey = null;
-            if (activeSt) {
-                try {
-                    const jRes = await jerseyApi.getBySeasonTeam(activeSt.id);
-                    homeJersey = parseList(jRes).find((j) => j.type === 'home');
-                } catch (e) {
-                    console.warn('Cannot load jersey:', e);
-                }
-            }
-            enriched = {
-                ...enriched,
-                season: active.name,
-                activeSeasonId: active.id,
-                activeSeasonTeamId: activeSt?.id ?? null,
-                registrationStatus: activeSt?.status ?? null,
-                primaryColor: homeJersey?.secondary_color || enriched.primaryColor,
-                colorHex: homeJersey?.primary_color || enriched.colorHex,
-                registrationFee: active.registration_fee != null ? Number(active.registration_fee) : 0,
-                bankInfo: active.bank_id
-                    ? { bank_id: active.bank_id, bank_account_no: active.bank_account_no, bank_account_name: active.bank_account_name }
-                    : null,
-            };
-        }
+        seasonTeams = parseList(stAllRes); // mỗi item: { id, status, season: {...}, group, ... }
     } catch (e) {
         console.warn('Cannot load season info:', e);
     }
 
-    return { team: enriched, allSeasons };
+    return { team: enriched, seasonTeams };
 }
 
 export function useTeamDetail(teamId) {
@@ -217,23 +236,23 @@ export function useRegisterSeasonMutation(teamId) {
     });
 }
 
-export function useUpdatePlayerPositionMutation(teamId) {
+export function useUpdatePlayerPositionMutation(seasonTeamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ playerId, position }) =>
-            playerApi.updateTeamPlayer(Number(playerId), teamId, { position }),
+            playerApi.updateTeamPlayer(seasonTeamId, Number(playerId), { position }),
         onMutate: async ({ playerId, position }) => {
-            await qc.cancelQueries({ queryKey: myTeamKeys.players(teamId) });
-            const prev = qc.getQueryData(myTeamKeys.players(teamId));
-            qc.setQueryData(myTeamKeys.players(teamId), (old) =>
+            await qc.cancelQueries({ queryKey: myTeamKeys.players(seasonTeamId) });
+            const prev = qc.getQueryData(myTeamKeys.players(seasonTeamId));
+            qc.setQueryData(myTeamKeys.players(seasonTeamId), (old) =>
                 old?.map((p) => (p.id === Number(playerId) ? { ...p, position } : p))
             );
             return { prev };
         },
         onError: (_e, _v, ctx) => {
-            if (ctx?.prev) qc.setQueryData(myTeamKeys.players(teamId), ctx.prev);
+            if (ctx?.prev) qc.setQueryData(myTeamKeys.players(seasonTeamId), ctx.prev);
         },
-        onSettled: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(teamId) }),
+        onSettled: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) }),
     });
 }
 

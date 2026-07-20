@@ -7,11 +7,11 @@ export declare class VenueController extends Controller {
     private service;
     constructor(service: VenueService);
     findAll(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Venue>>;
+    findDeleted(page?: number, per_page?: number, q?: string, sort?: string, direction?: "asc" | "desc"): Promise<PaginatedResult<Venue>>;
     findById(id: number): Promise<Venue>;
     create(body: CreateVenueDto): Promise<Venue>;
     update(id: number, body: UpdateVenueDto): Promise<Venue>;
     softDelete(id: number): Promise<void>;
     restore(id: number): Promise<Venue>;
-    findDeleted(): Promise<Venue[]>;
 }
 //# sourceMappingURL=venue.controller.d.ts.map

@@ -91,7 +91,29 @@ export type SeasonListItem = Pick<
         phases: number;
     };
 };
+// BulkSeasonTeamActionSchema — dùng chung cho cả bulk-approve và bulk-reject.
+// ids KHÔNG được rỗng (service đã có early-return cho []  nhưng chặn ngay ở
+// validation layer để trả lỗi rõ ràng thay vì trả về {succeeded:[],failed:[]}
+// im lặng khi FE gửi nhầm body rỗng).
+//
+// Dedupe bằng transform: service dùng `ids` trực tiếp trong raw SQL
+// `IN (...)` và loop qua `sortedIds` — nếu có id trùng lặp trong request,
+// loop sẽ xử lý cùng 1 season_team 2 lần trong cùng transaction (dùng
+// snapshot recordMap cũ, không refetch), dẫn tới currentApprovedCount bị
+// cộng dư và id đó xuất hiện lặp trong `succeeded`. Chặn ở đây rẻ hơn nhiều
+// so với việc sửa logic loop trong service.
+//
+// Giới hạn max 100: bulk action không nên cho phép payload vô hạn (tránh
+// FOR UPDATE lock quá nhiều row cùng lúc, và query IN (...) quá dài).
+export const BulkSeasonTeamActionSchema = z.object({
+    ids: z
+        .array(z.number().int().positive())
+        .min(1, "ids không được rỗng")
+        .max(100, "Chỉ được xử lý tối đa 100 team trong 1 lần")
+        .transform((ids) => Array.from(new Set(ids))),
+});
 
+export type BulkSeasonTeamActionDto = z.infer<typeof BulkSeasonTeamActionSchema>;
 export type CreateSeasonDto = z.infer<typeof createSeasonSchema>
 export type UpdateSeasonDto = z.infer<typeof updateSeasonSchema>
 export type UpdateSeasonStatusDto = z.infer<typeof UpdateSeasonStatusSchema>

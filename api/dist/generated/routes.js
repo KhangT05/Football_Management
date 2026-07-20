@@ -910,6 +910,21 @@ const models = {
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["draft"] }, { "dataType": "enum", "enums": ["in_progress"] }, { "dataType": "enum", "enums": ["locked"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BulkActionResult": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "failed": { "dataType": "array", "array": { "dataType": "nestedObjectLiteral", "nestedProperties": { "reason": { "dataType": "string", "required": true }, "id": { "dataType": "double", "required": true } } }, "required": true }, "succeeded": { "dataType": "array", "array": { "dataType": "double" }, "required": true } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "infer_typeofBulkSeasonTeamActionSchema_": {
+        "dataType": "refAlias",
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "ids": { "dataType": "array", "array": { "dataType": "double" } } }, "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BulkSeasonTeamActionDto": {
+        "dataType": "refAlias",
+        "type": { "ref": "infer_typeofBulkSeasonTeamActionSchema_", "validators": {} },
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PitchType": {
         "dataType": "refAlias",
         "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["san_5"] }, { "dataType": "enum", "enums": ["san_7"] }, { "dataType": "enum", "enums": ["san_11"] }], "validators": {} },
@@ -2094,7 +2109,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofcreateClassSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string", "required": true } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "name": { "dataType": "string", "required": true } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateClassDto": {
@@ -2104,7 +2119,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateClassSchema_": {
         "dataType": "refAlias",
-        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "name": { "dataType": "string" } }, "validators": {} },
+        "type": { "dataType": "nestedObjectLiteral", "nestedProperties": { "is_active": { "dataType": "boolean" }, "name": { "dataType": "string" } }, "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateClassDto": {
@@ -2370,6 +2385,37 @@ export function RegisterRoutes(app, opts) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsVenueController_findDeleted = {
+        page: { "default": 1, "in": "query", "name": "page", "dataType": "double" },
+        per_page: { "default": 20, "in": "query", "name": "per_page", "dataType": "double" },
+        q: { "in": "query", "name": "q", "dataType": "string" },
+        sort: { "in": "query", "name": "sort", "dataType": "string" },
+        direction: { "in": "query", "name": "direction", "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["asc"] }, { "dataType": "enum", "enums": ["desc"] }] },
+    };
+    app.get('/venues/deleted', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findDeleted)), async function VenueController_findDeleted(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsVenueController_findDeleted, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(VenueController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'findDeleted',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsVenueController_findById = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "double" },
     };
@@ -2494,31 +2540,6 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'restore',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-            });
-        }
-        catch (err) {
-            return next(err);
-        }
-    });
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsVenueController_findDeleted = {};
-    app.get('/venues/deleted', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(VenueController)), ...(fetchMiddlewares(VenueController.prototype.findDeleted)), async function VenueController_findDeleted(request, response, next) {
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        let validatedArgs = [];
-        try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsVenueController_findDeleted, request, response });
-            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
-            const controller = await container.get(VenueController);
-            if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-            }
-            await templateService.apiHandler({
-                methodName: 'findDeleted',
                 controller,
                 response,
                 next,
@@ -4703,6 +4724,62 @@ export function RegisterRoutes(app, opts) {
             }
             await templateService.apiHandler({
                 methodName: 'listBySeasonWithTeamInfo',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsSeasonTeamController_bulkApprove = {
+        seasonId: { "in": "path", "name": "seasonId", "required": true, "dataType": "double" },
+        body: { "in": "body", "name": "body", "required": true, "ref": "BulkSeasonTeamActionDto" },
+        req: { "in": "request", "name": "req", "required": true, "dataType": "object" },
+    };
+    app.patch('/seasonteams/season/:seasonId/bulk-approve', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.bulkApprove)), async function SeasonTeamController_bulkApprove(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_bulkApprove, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(SeasonTeamController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'bulkApprove',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsSeasonTeamController_bulkReject = {
+        body: { "in": "body", "name": "body", "required": true, "ref": "BulkSeasonTeamActionDto" },
+    };
+    app.patch('/seasonteams/bulk-reject', authenticateMiddleware([{ "jwt": ["organizing"] }]), ...(fetchMiddlewares(SeasonTeamController)), ...(fetchMiddlewares(SeasonTeamController.prototype.bulkReject)), async function SeasonTeamController_bulkReject(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_bulkReject, request, response });
+            const container = typeof iocContainer === 'function' ? iocContainer(request) : iocContainer;
+            const controller = await container.get(SeasonTeamController);
+            if (typeof controller['setStatus'] === 'function') {
+                controller.setStatus(undefined);
+            }
+            await templateService.apiHandler({
+                methodName: 'bulkReject',
                 controller,
                 response,
                 next,

@@ -20,7 +20,7 @@ import {
 import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 import {
   useSeasonGroups, useRoundsSummary, useSeasonMatches, useScheduleDefaults,
-  useGenerateNewGroups, useGenerateFromGroups, useRescheduleMatch,
+  useGenerateNewGroups, useGenerateFromGroups, useAutoScheduleMatches, useRescheduleMatch,
 } from '../../queries/useschedule.queries';
 import ManualAssignMatchModal from '../admin/Manualassignmatchmodal';
 
@@ -192,7 +192,7 @@ function RescheduleModal({ match, venues, teams, onClose, onSave }) {
 }
 
 // ─── Component: Generate Schedule Modal ────────────────────────────────────
-function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups }) {
+function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, onGenerateFromGroups, onAutoSchedule }) {
   const toast = useToastStore();
 
   // FIX: groups giờ đến từ useSeasonGroups (React Query) thay vì effect thủ
@@ -238,6 +238,13 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
 
   const { data: roundSummaryData = [], isFetching: loadingRounds } =
     useRoundsSummary(seasonId, hasDrawnGroups ? selectedGroupIds : undefined);
+
+  // NEW: signal "match đã tồn tại cho phạm vi bảng đang chọn" —
+  // getGroupStageRoundsSummary chỉ trả round có match thật sự trong DB.
+  // Mảng rỗng => generate-from-groups chưa từng chạy cho các group này =>
+  // vẫn phải tạo match mới. Mảng có phần tử => match đã tồn tại =>
+  // generate-from-groups sẽ bị BE reject (CONFLICT), phải dùng autoSchedule.
+  const matchesAlreadyExist = hasDrawnGroups && roundSummaryData.length > 0;
 
   const [selectedRounds, setSelectedRounds] = useState([]);
 
@@ -384,6 +391,10 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
       toast.warning('Vui lòng chọn ít nhất một bảng đấu đã đủ đội.');
       return;
     }
+    if (hasDrawnGroups && loadingRounds) {
+      toast.warning('Đang tải danh sách vòng đấu — vui lòng đợi rồi thử lại.');
+      return;
+    }
     if (!seasonHasDateRange) {
       toast.warning('Mùa giải chưa có ngày bắt đầu/kết thúc — vui lòng cập nhật mùa giải trước khi tạo lịch.');
       return;
@@ -410,7 +421,19 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
     };
 
     try {
-      if (hasDrawnGroups) {
+      if (matchesAlreadyExist) {
+        // Match đã được sinh ra từ lần generate-from-groups trước đó — chỉ
+        // còn thiếu giờ/sân cho một số round. generate-from-groups sẽ throw
+        // CONFLICT nếu gọi lại ở trạng thái này (BE chặn tạo trùng match) —
+        // dùng thẳng autoSchedule để gán slot cho match hiện có, không tạo
+        // match mới.
+        await onAutoSchedule(seasonId, {
+          ...apiPayload,
+          ...(selectedGroupIds.length > 0 && selectedGroupIds.length < readyGroups.length ?
+            { groupIds: selectedGroupIds } : {}),
+          ...(selectedRounds.length > 0 ? { rounds: selectedRounds } : {}),
+        });
+      } else if (hasDrawnGroups) {
         await onGenerateFromGroups(seasonId, {
           ...apiPayload,
           doubleRound: false,
@@ -488,6 +511,13 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
               <p className="text-sm text-amber-200 bg-amber-950/60 p-3 rounded-lg border border-amber-500/40">
                 Không kiểm tra được bảng đấu hiện có — vui lòng tải lại trang trước khi tạo lịch để tránh tạo trùng bảng.
               </p>
+            )}
+
+            {matchesAlreadyExist && (
+              <div className="text-sm text-blue-200 bg-blue-950/60 p-3 rounded-lg border border-blue-500/40">
+                Season đã có lịch thi đấu cho phạm vi bảng đã chọn. Hệ thống sẽ chỉ xếp giờ/sân cho các vòng
+                chưa có lịch, không tạo lại trận đấu.
+              </div>
             )}
 
             {hasDrawnGroups && hasAnyReadyGroup && roundSummaryData.length > 0 && (
@@ -697,8 +727,6 @@ function GenerateScheduleModal({ seasonId, season, venues, onClose, onGenerate, 
   );
 }
 
-const MatchStatusFinished = 'finished';
-
 // ─── Component: Confirm Export Report Modal ────────────────────────────────
 function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
   const [preview, setPreview] = useState(null);
@@ -749,7 +777,7 @@ function ConfirmExportModal({ match, teams, isExporting, onClose, onConfirm }) {
     ? new Date(match.scheduled_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
     : 'Chưa xếp lịch';
 
-  const isFinished = preview?.status === MatchStatusFinished;
+  const isFinished = preview?.status === 'finished';
   const previewHomeScore = preview?.score?.homeFinal;
   const previewAwayScore = preview?.score?.awayFinal;
   const hasFinalScore = isFinished && previewHomeScore != null && previewAwayScore != null;
@@ -999,6 +1027,15 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
 
   useEffect(() => { setCurrentPage(1); }, [selectedSeasonId]);
 
+  // FIX: VenueService.findAll chỉ loại deleted_at, KHÔNG loại is_active=false
+  // — saveScheduleDefaults/checkin ở BE reject venue inactive lúc submit.
+  // Lọc ngay tại nguồn hiển thị để checkbox/select không cho chọn sân
+  // không dùng được, thay vì để admin chọn xong mới bị BE từ chối.
+  const activeVenues = useMemo(
+    () => (venues || []).filter(v => v.is_active),
+    [venues],
+  );
+
   const selectedSeason = useMemo(
     () => (seasons || []).find(s => String(s.id) === String(selectedSeasonId)) ?? null,
     [seasons, selectedSeasonId],
@@ -1008,13 +1045,14 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
   const seasonIdNum = selectedSeasonId ? Number(selectedSeasonId) : null;
 
   // Nguồn dữ liệu DUY NHẤT cho danh sách trận — mọi mutation (generate/
-  // reschedule/manual-assign) invalidate đúng key này, không còn cache
-  // split-brain giữa Zustand và React Query.
+  // reschedule/manual-assign/auto-schedule) invalidate đúng key này, không
+  // còn cache split-brain giữa Zustand và React Query.
   const { data: rawMatches = [], isLoading, refetch } = useSeasonMatches(seasonIdNum);
   const { data: scheduleDefaults } = useScheduleDefaults(seasonIdNum);
 
   const generateNewGroupsMutation = useGenerateNewGroups(seasonIdNum);
   const generateFromGroupsMutation = useGenerateFromGroups(seasonIdNum);
+  const autoScheduleMutation = useAutoScheduleMatches(seasonIdNum);
   const rescheduleMutation = useRescheduleMatch(seasonIdNum);
 
   const matches = useMemo(() => {
@@ -1052,6 +1090,26 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       closeGenerateModal();
     } catch (err) {
       toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi tạo lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
+    }
+  };
+
+  // NEW: path xếp lịch cho lần thứ 2 trở đi — match đã được sinh từ lần
+  // generate-from-groups trước, chỉ cần gán giờ/sân cho round còn thiếu.
+  // Không dùng generateFromGroupsMutation ở đây vì BE reject CONFLICT khi
+  // match đã tồn tại cho phase.
+  const handleAutoSchedule = async (seasonId, payload) => {
+    try {
+      const res = await autoScheduleMutation.mutateAsync(payload);
+      const data = typeof res?.status === 'boolean' ? res.data : (res?.data ?? res);
+      const failedCount = data?.failedMatchIds?.length ?? 0;
+      if (failedCount > 0) {
+        toast.warning(`Đã xếp ${data.matchesScheduled} trận. Còn ${failedCount} trận chưa xếp được — thử thêm sân hoặc nới khung giờ.`);
+      } else {
+        toast.success(`Đã xếp lịch thành công ${data?.matchesScheduled ?? ''} trận!`);
+      }
+      closeGenerateModal();
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err, 'Có lỗi xảy ra khi xếp lịch, vui lòng kiểm tra lại thông tin và thử lại.'));
     }
   };
 
@@ -1209,7 +1267,10 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
                         <span className="truncate">{m.venue?.name ?? 'Chưa xếp sân'}</span>
                       </div>
                       <div className="flex gap-2 w-full mt-2">
-                        {(m.status === 'completed' || m.status === 'finished') && (
+                        {/* FIX: bỏ nhánh 'completed' — MatchStatus enum (Prisma
+                            schema) không có giá trị này, chỉ 'finished' tồn
+                            tại thật. Nhánh cũ không bao giờ match, dead code. */}
+                        {m.status === 'finished' && (
                           <button onClick={() => handleRequestExportMatchReport(m)} disabled={isExportingThis}
                             className="flex-1 py-2 bg-navy-dark hover:bg-navy-light border border-navy-light rounded-xl text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                             {isExportingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
@@ -1239,10 +1300,11 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
         <GenerateScheduleModal
           seasonId={seasonIdNum}
           season={selectedSeason}
-          venues={venues}
+          venues={activeVenues}
           onClose={closeGenerateModal}
           onGenerate={handleGenerateSchedule}
           onGenerateFromGroups={handleGenerateFromGroups}
+          onAutoSchedule={handleAutoSchedule}
         />,
         document.body
       )}
@@ -1250,7 +1312,7 @@ export default function ScheduleTab({ selectedSeasonId, onGoToLiveControl }) {
       {rescheduleMatchId && createPortal(
         <RescheduleModal
           match={rescheduleMatchId}
-          venues={venues}
+          venues={activeVenues}
           teams={teams}
           onClose={closeReschedule}
           onSave={handleReschedule}

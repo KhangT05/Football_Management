@@ -150,6 +150,7 @@ export declare class SeasonTeamService {
     }>;
     getOrCreateGroupPhase(seasonId: number, stageOrder?: number): Promise<Phase>;
     bulkApprove(seasonId: number, ids: number[], requesterId: number): Promise<BulkActionResult>;
+    private assertRosterWithinRule;
     /**
      * Bulk reject = pending -> withdrawn hàng loạt. Không cần lock season vì
      * reject không tranh chấp capacity (khác approve) — chỉ lock các row
