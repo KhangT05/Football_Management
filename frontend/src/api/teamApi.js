@@ -36,6 +36,10 @@ export const teamApi = {
   getTeamById: (id) => {
     return axiosClient.get(`/teams/${id}`);
   },
+  
+  getHistoryPlayers: (id) => {
+    return axiosClient.get(`/teams/${id}/history-players`);
+  },
   /**
    * Đăng ký đội bóng mới
    * POST /teams

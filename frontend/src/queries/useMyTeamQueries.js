@@ -133,6 +133,35 @@ export function useTeamPlayers(seasonTeamId) {
     });
 }
 
+export function useTeamHistoryPlayers(teamId, seasonTeams) {
+    return useQuery({
+        queryKey: myTeamKeys.historyPlayers(teamId),
+        queryFn: async () => {
+            if (!teamId || !seasonTeams || seasonTeams.length === 0) return [];
+            const res = await teamApi.getHistoryPlayers(teamId);
+            const allPlayers = res.data || res;
+            
+            // Deduplicate by player_id, keeping the latest info (or merging)
+            const uniquePlayersMap = new Map();
+            for (const p of allPlayers) {
+                if (p.player_id) {
+                    if (!uniquePlayersMap.has(p.player_id)) {
+                        uniquePlayersMap.set(p.player_id, { ...p, playedSeasons: [p.season_id] });
+                    } else {
+                        const existing = uniquePlayersMap.get(p.player_id);
+                        if (p.season_id && !existing.playedSeasons.includes(p.season_id)) {
+                            existing.playedSeasons.push(p.season_id);
+                        }
+                    }
+                }
+            }
+            return Array.from(uniquePlayersMap.values());
+        },
+        enabled: !!teamId && seasonTeams.length > 0,
+        staleTime: 60_000,
+    });
+}
+
 // ── Matches theo season đang chọn ──────────────────────────────────────
 export function useTeamMatches(teamId, seasonId, { enabled = true } = {}) {
     return useQuery({
@@ -185,43 +214,92 @@ export function useTeamStats(teamId, granularity, { enabled = true } = {}) {
 
 // ── Phong độ từng cầu thủ (dynamic parallel) ───────────────────────────
 export function usePlayersPerformance(players, seasonId) {
-    const results = useQueries({
-        queries: players.map((p) => ({
-            queryKey: myTeamKeys.playerPerf(p.player_id, seasonId),
-            queryFn: async () => {
-                const effectiveSeasonId = seasonId === 'all' ? undefined : seasonId;
-                let data = {};
-                try {
-                    const res = await statisticsApi.getPlayerPerformance(p.player_id, effectiveSeasonId);
-                    data = unwrap(res) || {};
-                } catch (error) {
-                    // Ignore errors like 404 (Not Found) when player has no stats
-                    console.warn(`No stats found for player ${p.player_id}`, error);
-                }
+    return useQuery({
+        queryKey: myTeamKeys.playerPerfBatch(players.map(p => p.player_id).join(','), seasonId),
+        queryFn: async () => {
+            if (!players || players.length === 0) return [];
 
-                return {
-                    player_id: p.player_id,
-                    player_name: p.name,
-                    player_number: p.number || p.jersey_number || 0,
-                    position: p.position,
-                    avatar: p.avatar,
-                    total_matches_played: data.total_matches_played || 0,
-                    total_starter_count: data.total_starter_count || 0,
-                    total_substitute_count: data.total_substitute_count || 0,
-                    total_captain_count: data.total_captain_count || 0,
-                    total_goals: data.total_goals || 0,
-                    total_assists: data.total_assists || 0,
-                    total_yellow_cards: data.total_yellow_cards || 0,
-                    total_red_cards: data.total_red_cards || 0,
-                };
-            },
-            enabled: !!p.player_id,
-        })),
+            if (seasonId === 'all') {
+                // Fetch individually using getPlayerOverview for all time
+                const promises = players.map(async (p) => {
+                    if (!p.player_id) return null;
+                    try {
+                        const res = await statisticsApi.getPlayerOverview(p.player_id);
+                        const data = unwrap(res) || {};
+                        return {
+                            player_id: p.player_id,
+                            player_name: p.name,
+                            player_number: p.number || p.jersey_number || 0,
+                            position: p.position,
+                            avatar: p.avatar,
+                            total_matches_played: data.total_matches_played || 0,
+                            total_starter_count: 0, // not available in overview
+                            total_substitute_count: 0,
+                            total_captain_count: 0,
+                            total_goals: data.total_goals || 0,
+                            total_assists: data.total_assists || 0,
+                            total_yellow_cards: data.total_yellow_cards || 0,
+                            total_red_cards: data.total_red_cards || 0,
+                        };
+                    } catch (err) {
+                        console.warn(`No stats for player ${p.player_id}`, err);
+                        return null;
+                    }
+                });
+                const results = await Promise.all(promises);
+                return results.filter(Boolean);
+            } else {
+                // Fetch batch for the season
+                try {
+                    const res = await statisticsApi.getPlayersPerformanceStatsBatch(seasonId);
+                    const batchData = unwrap(res) || { players: [] };
+                    const batchPlayers = batchData.players || [];
+                    
+                    const statsMap = new Map();
+                    for (const bp of batchPlayers) {
+                        statsMap.set(bp.player_id, bp);
+                    }
+                    
+                    return players.filter(p => !!p.player_id).map((p) => {
+                        const data = statsMap.get(p.player_id) || {};
+                        return {
+                            player_id: p.player_id,
+                            player_name: p.name,
+                            player_number: p.number || p.jersey_number || 0,
+                            position: p.position,
+                            avatar: p.avatar,
+                            total_matches_played: data.total_matches_played || 0,
+                            total_starter_count: data.total_starter_count || 0,
+                            total_substitute_count: data.total_substitute_count || 0,
+                            total_captain_count: data.total_captain_count || 0,
+                            total_goals: data.total_goals || 0,
+                            total_assists: data.total_assists || 0,
+                            total_yellow_cards: data.total_yellow_cards || 0,
+                            total_red_cards: data.total_red_cards || 0,
+                        };
+                    });
+                } catch (err) {
+                    console.error("Error fetching batch stats", err);
+                    return players.filter(p => !!p.player_id).map((p) => ({
+                        player_id: p.player_id,
+                        player_name: p.name,
+                        player_number: p.number || p.jersey_number || 0,
+                        position: p.position,
+                        avatar: p.avatar,
+                        total_matches_played: 0,
+                        total_starter_count: 0,
+                        total_substitute_count: 0,
+                        total_captain_count: 0,
+                        total_goals: 0,
+                        total_assists: 0,
+                        total_yellow_cards: 0,
+                        total_red_cards: 0,
+                    }));
+                }
+            }
+        },
+        enabled: players && players.length > 0,
     });
-    return {
-        data: results.map((r) => r.data).filter(Boolean),
-        isLoading: results.some((r) => r.isLoading),
-    };
 }
 
 // ── Mutations ───────────────────────────────────────────────────────────

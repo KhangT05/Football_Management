@@ -88,7 +88,7 @@ export default function ManageMatchLineup() {
 
   const {
     selections, isLoading: lineupLoading, isSaving,
-    startersCount, subsCount, hasCaptain,
+    startersCount, subsCount,
     starters, toggleLineupType, handleDropOnPitch, setCaptain, save,
   } = useLineupSelection({
     matchId: numericMatchId,
@@ -117,7 +117,7 @@ export default function ManageMatchLineup() {
 
   return (
     <div className="min-h-screen bg-navy-dark text-white pb-24 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-150 h-150 bg-blue-600 rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
 
       <div className="container mx-auto px-4 lg:px-8 pt-6">
         <button
@@ -149,13 +149,13 @@ export default function ManageMatchLineup() {
           </div>
 
           <div className="flex gap-4">
-            <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-[100px]">
+            <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-25">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Đá chính</span>
               <span className={`text-xl font-black ${startersCount === squadLimit.max_players_per_team ? 'text-emerald-400' : 'text-blue-400'}`}>
                 {startersCount}/{squadLimit.max_players_per_team}
               </span>
             </div>
-            <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-[100px]">
+            <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-25">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Dự bị</span>
               <span className="text-xl font-black text-gray-300">{subsCount}</span>
             </div>
@@ -185,7 +185,7 @@ export default function ManageMatchLineup() {
               <h2 className="text-lg font-black uppercase tracking-wider">Danh Sách Đăng Ký</h2>
             </div>
 
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-150">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-navy/80 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-navy-light sticky top-0">
