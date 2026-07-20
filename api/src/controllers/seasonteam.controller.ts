@@ -4,8 +4,9 @@ type AuthRequest = ExRequest & { user: { user_id: number } };
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeam, SeasonTeamStatus } from "../generated/prisma/client.js";
-import { SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
+import { BulkActionResult, SeasonTeamWithRelations } from "../types/seasonTeam.type.js";
 import { PaginatedResult } from "../types/queryable.type.js";
+import * as seasonSchema from "../dtos/season.schema.js";
 @Route("seasonteams")
 @Tags("SeasonTeams")
 export class SeasonTeamController extends Controller {
@@ -147,5 +148,24 @@ export class SeasonTeamController extends Controller {
     @Query() status?: SeasonTeamStatus[],
   ) {
     return this.service.listBySeasonWithTeamInfo(seasonId, status);
+  }
+  /** Duyệt hàng loạt team pending -> approved trong 1 season. Ban tổ chức hoặc admin. */
+  @Security("jwt", ["organizing"])
+  @Patch("season/{seasonId}/bulk-approve")
+  async bulkApprove(
+    @Path() seasonId: number,
+    @Body() body: seasonSchema.BulkSeasonTeamActionDto, // { ids: number[] }
+    @Request() req: AuthRequest
+  ): Promise<BulkActionResult> {
+    return this.service.bulkApprove(seasonId, body.ids, req.user.user_id);
+  }
+
+  /** Từ chối hàng loạt team pending -> withdrawn. Ban tổ chức hoặc admin. */
+  @Security("jwt", ["organizing"])
+  @Patch("bulk-reject")
+  async bulkReject(
+    @Body() body: seasonSchema.BulkSeasonTeamActionDto
+  ): Promise<BulkActionResult> {
+    return this.service.bulkReject(body.ids);
   }
 }

@@ -16,6 +16,12 @@ export declare class PlayerService {
      * user_id có sẵn) vì đây là entrypoint duy nhất không đi qua
      * createPlayerForTeamWithUser/import (2 path kia tự nhận student_code
      * qua DTO và ghi vào User trước).
+     *
+     * LƯU Ý: createPlayer KHÔNG gắn player vào season_team nào cả (chỉ tạo
+     * hồ sơ Player gắn với Team qua pool chung), nên KHÔNG áp
+     * max_players_per_team ở đây — giới hạn đó chỉ áp khi tạo TeamPlayer
+     * (đăng ký vào roster của 1 season cụ thể), xem addPlayerToTeam /
+     * createPlayerForTeamWithUser / importTeamPlayersFromExcel bên dưới.
      */
     createPlayer(dto: CreatePlayerDto): Promise<PlayerDto>;
     getPlayerById(id: number): Promise<PlayerDetailDto | null>;
@@ -25,38 +31,39 @@ export declare class PlayerService {
     softDeletePlayer(id: number): Promise<void>;
     private ensurePlayerRole;
     /**
-     * FIX MỚI: class-match giữa User của player và Team đang gán vào.
-     * Không FK-enforce được (derived qua User.class_id vs Team.class_id,
-     * 2 hop khác bảng) nên validate ở service layer. Gọi TRƯỚC mọi thao
-     * tác tạo TeamPlayer, dùng cùng `tx` của caller khi có transaction mở
-     * để tránh 1 round-trip riêng ngoài transaction (race giữa check và
-     * write nếu class_id của user/team đổi giữa chừng — chấp nhận được ở
-     * scale đồ án, nhưng cùng tx vẫn rẻ hơn tách riêng).
+     * FIX (roster cap — bug chính): trước đây tournament_rule.max_players_per_team
+     * tồn tại trong schema nhưng KHÔNG được đọc ở bất kỳ đâu. Team (Chelsea)
+     * có thể chứa N cầu thủ không giới hạn (đúng ý đồ), nhưng TeamPlayer
+     * luôn scope theo season_team_id — đây chính là "danh sách đăng ký cho
+     * 1 mùa giải cụ thể" mà max_players_per_team phải áp, KHÔNG áp lên Team
+     * (pool) và KHÔNG áp lên MatchLineup (đội hình ra sân từng trận, đã có
+     * enum LineupType.starter/substitute lo phần đó rồi, khác phạm vi).
      *
-     * team.class_id == null (chưa gán lớp / data cũ) -> bỏ qua check để
-     * không phá migration path. Enforce cứng sau khi backfill xong bằng
-     * cách đổi Team.class_id thành NOT NULL ở schema.
+     * Trả về null cho maxPlayers nếu season chưa gán tournament_rule —
+     * migration-safe, giống pattern teamClassId == null ở trên.
      */
+    private getSeasonTeamRosterConstraints;
     /**
- * FIX: đọc team.category TRƯỚC — nếu amateur, return ngay, không query User
- * (tránh round-trip thừa). Chỉ team.category === "student" mới enforce
- * student_code + class match.
- */
-    /**
- * FIX: nhận teamClassId đã biết thay vì tự query seasonTeam mỗi lần gọi.
- * Trước đây mỗi call query lại team.class_id — trong import loop, giá trị
- * này CỐ ĐỊNH cho toàn bộ request (cùng season_team_id), nên query lặp lại
- * N lần là N-1 lần thừa. Caller chịu trách nhiệm fetch 1 lần duy nhất.
- */
-    private assertPlayerClassMatchesUser;
-    /** Helper fetch teamClassId 1 lần — dùng ở mọi entrypoint gọi assertPlayerClassMatchesUser */
-    private getTeamClassId;
+     * Đếm số TeamPlayer đã approved trong roster của season_team này — đây
+     * là con số đối chiếu với max_players_per_team (chỉ cầu thủ approved
+     * mới tính là "đã đăng ký chính thức"; pending/rejected không chiếm slot).
+     * Luôn gọi trong CÙNG transaction với insert để thu hẹp race window
+     * (2 request add cùng lúc gần chạm max).
+     */
+    private assertRosterCapacity;
     private inviteKey;
     private issueInviteToken;
     consumeInviteToken(rawToken: string): Promise<number>;
     resendInvite(userId: number): Promise<void>;
     listTeamPlayers(query: ListTeamPlayersQuery): Promise<PaginatedResult<TeamPlayerDto>>;
     getTeamPlayerById(id: number, season_team_id: number): Promise<TeamPlayerDto | null>;
+    /**
+     * FIX (roster cap): thêm assertRosterCapacity TRONG transaction, ngay
+     * trước insert — chặn vượt max_players_per_team của tournament rule áp
+     * cho season của season_team_id này. Đặt sau assertPlayerClassMatchesUser
+     * và sau check trùng player/jersey (fail nhanh các lỗi rẻ trước, lỗi cần
+     * transaction sau cùng).
+     */
     addPlayerToTeam(season_team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto>;
     /**
      * FIX MỚI: dto giờ bắt buộc student_code. Với user MỚI tạo, ghi luôn
@@ -66,9 +73,12 @@ export declare class PlayerService {
      * đó đang null. Class-match check luôn chạy sau bước này, trong cùng
      * tx, trước khi tạo TeamPlayer.
      *
+     * FIX (roster cap): assertRosterCapacity chạy trong cùng tx, ngay trước
+     * insert TeamPlayer — cùng vị trí như addPlayerToTeam.
+     *
      * LƯU Ý CÒN HỞ: user mới tạo có class_id = null (chưa gán lớp), nên
-     * assertPlayerClassMatchesTeam sẽ pass cho user mới bất kể team thuộc
-     * lớp nào (điều kiện `team.class_id != null && user.class_id !== ...`
+     * assertPlayerClassMatchesUser sẽ pass cho user mới bất kể team thuộc
+     * lớp nào (điều kiện `teamClassId != null && user.class_id !== ...`
      * chỉ fail khi cả 2 khác nhau VÀ đều có giá trị). Nếu cần chặn cứng
      * "user phải có lớp trước khi vào team", phải thêm field class_id vào
      * CreatePlayerForTeamDto và set ngay lúc tạo user — hỏi lại UX trước
@@ -106,10 +116,17 @@ export declare class PlayerService {
     /**
      * FIX MỚI: student_code bắt buộc trong schema (validate ở
      * importPlayerRowSchema), ghi vào User khi tạo mới hoặc backfill khi
-     * user có sẵn nhưng chưa có. assertPlayerClassMatchesTeam chạy trong
+     * user có sẵn nhưng chưa có. assertPlayerClassMatchesUser chạy trong
      * tx per-row, TRƯỚC khi tạo TeamPlayer — lỗi rơi vào catch hiện có,
      * tự động log vào result.errors[].reason theo đúng hành vi cũ (1 dòng
      * lỗi không ảnh hưởng dòng khác).
+     *
+     * FIX (roster cap): maxPlayers resolve 1 lần cho toàn batch (cố định
+     * theo season_team_id, giống teamClassId). approvedCount khởi tạo từ
+     * số TeamPlayer approved hiện có, tăng dần in-memory sau mỗi dòng
+     * thành công — tránh query count lại DB mỗi dòng (N round-trip thừa),
+     * cùng pattern với usedJerseyNumbers/teamPlayerSet đã có sẵn. Dòng nào
+     * vượt max bị fail với lý do rõ ràng, KHÔNG chặn các dòng còn lại.
      */
     importTeamPlayersFromExcel(season_team_id: number, fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult>;
     private mapPlayer;

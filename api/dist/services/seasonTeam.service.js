@@ -144,6 +144,7 @@ export class SeasonTeamService {
      * đây là thao tác riêng ở TeamPlayer, nên chặn ở chỗ thêm player vào
      * team (ngoài scope service này), không chặn ở approve().
      */
+    // approve() — sửa 2 chỗ: fetch season kèm tournamentRule + gọi check
     async approve(id, requesterId) {
         return this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM season_teams WHERE id = ${id} FOR UPDATE`;
@@ -152,15 +153,17 @@ export class SeasonTeamService {
                 throw createAppError("NOT_FOUND", `SeasonTeam ${id} not found`);
             if (st.status !== SeasonTeamStatus.pending)
                 throw createAppError("CONFLICT", `Cannot approve team in status ${st.status}`);
-            // Lock season TRƯỚC assertSlotAvailable — serialize mọi approve()
-            // cùng season, đóng lỗ race đếm capacity.
             await tx.$queryRaw `SELECT id FROM seasons WHERE id = ${st.season_id} FOR UPDATE`;
-            const season = await tx.season.findUnique({ where: { id: st.season_id } });
+            const season = await tx.season.findUnique({
+                where: { id: st.season_id },
+                include: { tournamentRule: { select: { min_players_per_team: true, max_players_per_team: true } } },
+            });
             if (!season)
                 throw createAppError("NOT_FOUND", `Season ${st.season_id} not found`);
             if (season.status !== SeasonStatus.registration_open)
                 throw createAppError("FORBIDDEN", "Season is not open for registration");
             await this.assertSlotAvailable(tx, st.season_id, season.max_teams);
+            await this.assertRosterWithinRule(tx, id, season.tournamentRule);
             await tx.seasonTeam.update({
                 where: { id },
                 data: { status: SeasonTeamStatus.approved, user_id: requesterId },
@@ -536,12 +539,16 @@ export class SeasonTeamService {
             });
         });
     }
+    // bulkApprove() — sửa fetch season + thêm check trong loop, gộp chung try/catch với player-conflict để giữ semantics "fail riêng id, không rollback batch"
     async bulkApprove(seasonId, ids, requesterId) {
         if (ids.length === 0)
             return { succeeded: [], failed: [] };
         return this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
-            const season = await tx.season.findUnique({ where: { id: seasonId } });
+            const season = await tx.season.findUnique({
+                where: { id: seasonId },
+                include: { tournamentRule: { select: { min_players_per_team: true, max_players_per_team: true } } },
+            });
             if (!season)
                 throw createAppError("NOT_FOUND", `Season ${seasonId} not found`);
             if (season.status !== SeasonStatus.registration_open)
@@ -550,7 +557,7 @@ export class SeasonTeamService {
             await tx.$queryRaw `SELECT id FROM season_teams WHERE id IN (${Prisma.join(sortedIds)}) FOR UPDATE`;
             const records = await tx.seasonTeam.findMany({
                 where: { id: { in: sortedIds } },
-                select: { id: true, season_id: true, status: true, team_id: true }, // + team_id
+                select: { id: true, season_id: true, status: true, team_id: true },
             });
             const recordMap = new Map(records.map((r) => [r.id, r]));
             let currentApprovedCount = await tx.seasonTeam.count({
@@ -576,17 +583,12 @@ export class SeasonTeamService {
                     failed.push({ id, reason: "Season has reached maximum team capacity" });
                     continue;
                 }
-                // FIX: re-check player conflict TẠI THỜI ĐIỂM APPROVE — bắt được
-                // case player bị add vào 2 team pending SAU khi cả 2 đã đăng ký,
-                // không chỉ tại thời điểm registration. Nếu Team B trong cùng
-                // batch (hoặc đã pending từ trước) share player với Team A đang
-                // approve, throw ở đây và fail riêng id này, KHÔNG rollback cả
-                // batch — team hợp lệ khác vẫn approve bình thường.
                 try {
                     await this.assertNoPlayerConflict(tx, seasonId, st.team_id);
+                    await this.assertRosterWithinRule(tx, id, season.tournamentRule);
                 }
                 catch (err) {
-                    failed.push({ id, reason: err instanceof Error ? err.message : "Player conflict" });
+                    failed.push({ id, reason: err instanceof Error ? err.message : "Approve failed" });
                     continue;
                 }
                 await tx.seasonTeam.update({
@@ -599,6 +601,17 @@ export class SeasonTeamService {
             }
             return { succeeded, failed };
         });
+    }
+    async assertRosterWithinRule(tx, seasonTeamId, rule) {
+        if (!rule)
+            return; // season không gắn rule hợp lệ — không tự chặn ngầm định, để lỗi lộ ra chỗ khác nếu đây là data bug
+        const rosterCount = await tx.teamPlayer.count({
+            where: { season_team_id: seasonTeamId, approval_status: ApprovalStatus.approved },
+        });
+        if (rosterCount < rule.min_players_per_team)
+            throw createAppError("CONFLICT", `Đội chưa đủ số cầu thủ tối thiểu để duyệt (hiện có ${rosterCount}, tối thiểu ${rule.min_players_per_team} theo tournament rule)`);
+        if (rosterCount > rule.max_players_per_team)
+            throw createAppError("CONFLICT", `Đội vượt số cầu thủ tối đa được đăng ký (hiện có ${rosterCount}, tối đa ${rule.max_players_per_team} theo tournament rule)`);
     }
     /**
      * Bulk reject = pending -> withdrawn hàng loạt. Không cần lock season vì

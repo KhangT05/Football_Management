@@ -19,11 +19,12 @@ import { UserService } from '../services/user.service.js';
 const COOKIE_NAME = 'refresh_token';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IS_PROD = process.env.NODE_ENV === 'production';
+const USE_SECURE_COOKIE = process.env.USE_SECURE_COOKIE === 'true';
 const COOKIE_PATH = '/api/v1/auth/refresh';
 function setRefreshCookie(res, uuid) {
     res.cookie(COOKIE_NAME, uuid, {
         httpOnly: true,
-        secure: IS_PROD,
+        secure: USE_SECURE_COOKIE,
         sameSite: 'lax',
         maxAge: COOKIE_TTL_MS,
         path: COOKIE_PATH,

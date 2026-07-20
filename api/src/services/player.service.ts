@@ -228,12 +228,9 @@ export class PlayerService {
     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
         const user = await this.prisma.user.findUnique({
             where: { id: dto.user_id },
-            select: { id: true, student_code: true },
+            select: { id: true },
         });
         if (!user) throw createAppError("NOT_FOUND", `User ${dto.user_id} not found`);
-        if (!user.student_code) {
-            throw createAppError("BAD_REQUEST", "User chưa có MSSV — không thể tạo hồ sơ cầu thủ");
-        }
 
         const existing = await this.prisma.player.findFirst({
             where: { user_id: dto.user_id, deleted_at: null },
@@ -335,39 +332,6 @@ export class PlayerService {
             create: { user_id: userId, role_id: role.id },
             update: {},
         });
-    }
-
-    /**
-     * FIX MỚI: class-match giữa User của player và Team đang gán vào.
-     * Không FK-enforce được (derived qua User.class_id vs Team.class_id,
-     * 2 hop khác bảng) nên validate ở service layer. Gọi TRƯỚC mọi thao
-     * tác tạo TeamPlayer, dùng cùng `tx` của caller khi có transaction mở
-     * để tránh 1 round-trip riêng ngoài transaction (race giữa check và
-     * write nếu class_id của user/team đổi giữa chừng — chấp nhận được ở
-     * scale đồ án, nhưng cùng tx vẫn rẻ hơn tách riêng).
-     *
-     * team.class_id == null (chưa gán lớp / data cũ) -> bỏ qua check để
-     * không phá migration path. Enforce cứng sau khi backfill xong bằng
-     * cách đổi Team.class_id thành NOT NULL ở schema.
-     */
-    private async assertPlayerClassMatchesUser(
-        teamClassId: number | null,
-        userId: number,
-        tx: Prisma.TransactionClient | PrismaClient = this.prisma
-    ): Promise<void> {
-        if (teamClassId == null) return;
-
-        const user = await tx.user.findUniqueOrThrow({
-            where: { id: userId },
-            select: { class_id: true, student_code: true },
-        });
-
-        if (!user.student_code) {
-            throw createAppError("BAD_REQUEST", "Tài khoản chưa có MSSV — không thể tham gia đội sinh viên");
-        }
-        if (user.class_id !== teamClassId) {
-            throw createAppError("CONFLICT", "Cầu thủ không thuộc lớp của đội");
-        }
     }
 
     /**
@@ -512,7 +476,6 @@ export class PlayerService {
         if (!player) throw createAppError("NOT_FOUND", `Player ${dto.player_id} not found`);
 
         const { teamClassId, maxPlayers } = await this.getSeasonTeamRosterConstraints(season_team_id);
-        await this.assertPlayerClassMatchesUser(teamClassId, player.user_id);
 
         const [dupPlayer, dupJersey] = await Promise.all([
             this.prisma.teamPlayer.findFirst({ where: { season_team_id, player_id: dto.player_id }, select: { id: true } }),
@@ -621,7 +584,6 @@ export class PlayerService {
                     if (alreadyInTeam) throw createAppError("CONFLICT", "Player already in team");
                 }
 
-                await this.assertPlayerClassMatchesUser(teamClassId, user.id, tx);
                 await this.assertRosterCapacity(season_team_id, maxPlayers, tx);
 
                 const created = await tx.teamPlayer.create({
@@ -1110,8 +1072,6 @@ export class PlayerService {
                         await tx.user.update({ where: { id: userId }, data: { student_code: dto.student_code } });
                         studentCodeByUserId.set(userId, dto.student_code);
                     }
-
-                    await this.assertPlayerClassMatchesUser(teamClassId, userId, tx);
                     // Re-check trong tx để thu hẹp race window giữa lúc đọc
                     // approvedCount in-memory ở trên và lúc insert thật —
                     // cùng lý do addPlayerToTeam/createPlayerForTeamWithUser

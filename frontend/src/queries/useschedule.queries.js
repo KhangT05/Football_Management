@@ -113,6 +113,27 @@ export function useGenerateNewGroups(seasonId) {
     });
 }
 
+// NEW: gọi thẳng POST /schedules/seasons/{id}/schedule (matchApi.autoSchedule)
+// — dùng khi match ĐÃ tồn tại trong DB (generate-from-groups đã chạy trước
+// đó), chỉ còn round chưa có scheduled_at/venue_id do slot pool không đủ
+// hoặc admin chủ động xếp theo đợt. generateFromGroups sẽ throw CONFLICT
+// nếu gọi lại lúc match đã tồn tại — đây là path thay thế đúng, KHÔNG tạo
+// match mới, chỉ gán slot cho match `status=scheduled, scheduled_at=null`
+// hiện có, lọc theo rounds/groupIds nếu truyền (xem
+// ScheduleService.autoScheduleMatches ở BE).
+export function useAutoScheduleMatches(seasonId) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload) => matchApi.autoSchedule(seasonId, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['schedule', 'rounds', seasonId] });
+            qc.invalidateQueries({ queryKey: ['schedule', 'unscheduled-matches', seasonId] });
+            qc.invalidateQueries({ queryKey: scheduleKeys.matches(seasonId) });
+            qc.invalidateQueries({ queryKey: ['schedule', 'defaults', seasonId] });
+        },
+    });
+}
+
 // FIX: sai tên method — reschedule() không tồn tại, đúng là rescheduleMatch()
 export function useRescheduleMatch(seasonId) {
     const qc = useQueryClient();

@@ -10,6 +10,19 @@
 // gán thẳng vào season khi tạo — gọi thêm seedTournamentRule sẽ tạo rule
 // generic 3-1-0 và ghi đè rule đúng theo từng giải (xem comment trong
 // tournamentRuleSeeder.ts).
+//
+// FIX (squad seeding vị trí sai): seedSquads() nhận seasonTeamIdByName —
+// nghĩa là SeasonTeam.id, KHÔNG phải Team.id (xem docstring trong
+// squadSeeder.ts). TeamPlayer trong schema gắn theo season_team_id
+// (@@unique([season_team_id, jersey_number])), không có model nào cho phép
+// roster tồn tại độc lập với 1 season cụ thể. Bản cũ gọi seedSquads ngay sau
+// seedTeams — tại thời điểm đó Season/SeasonTeam của tournament CHƯA được
+// tạo (việc đó chỉ xảy ra trong seedFullSeason, bên trong vòng lặp season) —
+// nên seedSquads nhận nhầm Team.id, khiến assertNoCrossTeamConflictInSeason
+// query season_teams không tìm thấy record → P2025. Giờ seedSquads được gọi
+// bên trong seedFullSeason, ngay sau khi seedSeasonConfigurable trả về
+// seasonTeamIdByTeamId thật, và build map name -> SeasonTeam.id đúng cho
+// đúng season đang seed.
 import { SeasonTeamStatus } from "../generated/prisma/client.js";
 import { TOURNAMENTS, seasonStatusOf } from "./config.js";
 import { seedRoles } from "./roleSeeder.js";
@@ -73,8 +86,30 @@ function groupLettersToBracketTemplate(letters) {
     }
     return generateRoundOf16Template(letters);
 }
+/**
+ * Build map "team name -> SeasonTeam.id" cho ĐÚNG season đang seed, từ
+ * seasonTeamIdByTeamId (Team.id -> SeasonTeam.id) do seedSeasonConfigurable
+ * trả về. Tách riêng thành helper vì cần dùng ở cả seedFullSeason lẫn bất kỳ
+ * chỗ nào khác cần seed squad theo season sau này — tránh lặp logic throw.
+ */
+function buildSeasonTeamIdByName(teamNamesForSeason, teamIdByName, seasonTeamIdByTeamId, seasonId) {
+    const seasonTeamIdByName = {};
+    for (const name of teamNamesForSeason) {
+        const teamId = teamIdByName[name];
+        if (teamId === undefined) {
+            throw new Error(`buildSeasonTeamIdByName: thiếu Team.id cho "${name}"`);
+        }
+        const seasonTeamId = seasonTeamIdByTeamId[teamId];
+        if (seasonTeamId === undefined) {
+            throw new Error(`buildSeasonTeamIdByName: thiếu SeasonTeam.id cho team "${name}" (team_id=${teamId}, season #${seasonId}) — ` +
+                `seedSeasonConfigurable có thể đã chạy với registerAllTeams=false.`);
+        }
+        seasonTeamIdByName[name] = seasonTeamId;
+    }
+    return seasonTeamIdByName;
+}
 /** Mùa "finished"/"ongoing": season đăng ký đủ toàn bộ đội, có group + phase thật. */
-async function seedFullSeason(tournament, season, tournamentId, tournamentRuleId, organizerUserId, teamNamesForSeason, teamIdByName) {
+async function seedFullSeason(tournament, season, tournamentId, tournamentRuleId, organizerUserId, teamNamesForSeason, teamIdByName, realPlayerIds) {
     const seasonName = `${tournament.name} - Mùa ${season.key}`;
     const venues = generateVenues(8 + (season.groupCount >= 8 ? 2 : 0));
     const status = seasonStatusOf(season.archetype);
@@ -98,6 +133,14 @@ async function seedFullSeason(tournament, season, tournamentId, tournamentRuleId
         registerAllTeams: true,
     };
     const { seasonId, venueIds, seasonTeamIdByTeamId } = await seedSeasonConfigurable(prisma, seasonConfig, seasonTeamIdByNameSubset, venues);
+    // Roster gắn theo season_team_id (schema constraint thật:
+    // @@unique([season_team_id, jersey_number]) / ([season_team_id, player_id])),
+    // không tái dùng qua nhiều mùa. Phải seed squad TẠI ĐÂY — sau khi
+    // SeasonTeam đã tồn tại — chứ không phải ngay sau seedTeams (Team.id !=
+    // SeasonTeam.id, xem comment đầu file). Đặt trước seedGroupStage vì
+    // matchDetailSeeder/lineup cần roster đã có sẵn.
+    const seasonTeamIdByName = buildSeasonTeamIdByName(teamNamesForSeason, teamIdByName, seasonTeamIdByTeamId, seasonId);
+    await seedSquads(prisma, seasonTeamIdByName, realPlayerIds, 23);
     const groups = generateGroups(teamNamesForSeason, season.groupCount);
     const { groupStagePhaseId, groupIdByLetter } = await seedGroupStage(prisma, seasonId, seasonTeamIdByNameSubset, seasonTeamIdByTeamId, groups);
     const rulePoints = {
@@ -177,6 +220,11 @@ async function seedRegistrationOnlySeason(tournament, season, tournamentId, tour
     const { seasonTeamIdByTeamId } = await seedPartialRegistrations(prisma, seasonId, availableTeamIds, plan);
     await seedPayments(prisma, seasonTeamIdByTeamId, FULL_SPREAD_WEIGHTS, seasonConfig.registrationFee);
     console.log(`[Index] Season "${seasonName}" (#${seasonId}, ${season.archetype}) xong — chỉ có đăng ký, chưa có group/phase.`);
+    // LƯU Ý: mùa loại này không có match nên KHÔNG gọi seedSquads — roster
+    // đầy đủ chỉ có ý nghĩa khi có lineup/match thật để gán. Nếu sau này cần
+    // hiển thị "đội đã đủ người đăng ký chưa" cho các archetype này, seed
+    // squad riêng ở đây bằng seasonTeamIdByTeamId vừa có, KHÔNG tái dùng
+    // pattern "seed 1 lần cho cả pool" đã bị bỏ ở trên.
 }
 export async function main() {
     console.log("[Index] === Bắt đầu seed ===");
@@ -203,18 +251,17 @@ export async function main() {
         const teamNames = generateTeamNamesFromOffset(tournament.teamPoolSize, tournament.teamPoolOffset);
         const { teamIdByName } = await seedTeams(prisma, organizerUserId, teamNames, classIdByName);
         await seedTeamLeadersFromExistingUsers(prisma, teamIdByName);
-        // Squad đầy đủ cho CẢ pool đội của tournament (Team là entity dùng
-        // chung qua nhiều season/mùa) — chỉ cần seed 1 lần trước khi vào loop
-        // season; idempotent qua teamPlayer.count nên season sau tái sử dụng
-        // đúng squad đã seed, không tạo trùng.
-        await seedSquads(prisma, teamIdByName, realPlayerIds, 23);
+        // seedSquads KHÔNG còn gọi ở đây — Team.id != SeasonTeam.id, và
+        // schema buộc roster gắn theo season_team_id. Squad giờ được seed
+        // bên trong seedFullSeason, cho từng season riêng biệt (xem comment
+        // đầu file + trong seedFullSeason).
         for (const season of tournament.seasons) {
             // Mỗi mùa lấy N đội đầu tiên trong pool của tournament — deterministic
             // theo thứ tự generateTeamNamesFromOffset trả về, không random, để
             // idempotent giữa các lần seed lại.
             const teamNamesForSeason = teamNames.slice(0, season.teamCount);
             if (season.archetype === "finished" || season.archetype === "ongoing") {
-                await seedFullSeason(tournament, season, tournamentId, tournamentRuleId, organizerUserId, teamNamesForSeason, teamIdByName);
+                await seedFullSeason(tournament, season, tournamentId, tournamentRuleId, organizerUserId, teamNamesForSeason, teamIdByName, realPlayerIds);
             }
             else {
                 await seedRegistrationOnlySeason(tournament, season, tournamentId, tournamentRuleId, organizerUserId, teamNamesForSeason, teamIdByName);

@@ -14,6 +14,7 @@ import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse,
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeamStatus } from "../generated/prisma/client.js";
+import * as seasonSchema from "../dtos/season.schema.js";
 let SeasonTeamController = class SeasonTeamController extends Controller {
     service;
     constructor(service) {
@@ -101,6 +102,14 @@ let SeasonTeamController = class SeasonTeamController extends Controller {
     */
     async listBySeasonWithTeamInfo(seasonId, status) {
         return this.service.listBySeasonWithTeamInfo(seasonId, status);
+    }
+    /** Duyệt hàng loạt team pending -> approved trong 1 season. Ban tổ chức hoặc admin. */
+    async bulkApprove(seasonId, body, req) {
+        return this.service.bulkApprove(seasonId, body.ids, req.user.user_id);
+    }
+    /** Từ chối hàng loạt team pending -> withdrawn. Ban tổ chức hoặc admin. */
+    async bulkReject(body) {
+        return this.service.bulkReject(body.ids);
     }
 };
 __decorate([
@@ -213,6 +222,24 @@ __decorate([
     __metadata("design:paramtypes", [Number, Array]),
     __metadata("design:returntype", Promise)
 ], SeasonTeamController.prototype, "listBySeasonWithTeamInfo", null);
+__decorate([
+    Security("jwt", ["organizing"]),
+    Patch("season/{seasonId}/bulk-approve"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __param(2, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "bulkApprove", null);
+__decorate([
+    Security("jwt", ["organizing"]),
+    Patch("bulk-reject"),
+    __param(0, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SeasonTeamController.prototype, "bulkReject", null);
 SeasonTeamController = __decorate([
     Route("seasonteams"),
     Tags("SeasonTeams"),
