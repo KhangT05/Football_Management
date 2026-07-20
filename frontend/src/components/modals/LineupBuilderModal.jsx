@@ -1,38 +1,27 @@
 import { useMemo, useState } from 'react';
 import { X, Save, Loader2, Users, AlertCircle } from 'lucide-react';
 import useLineupSelection from '../../hooks/useLineupSelection';
-import { mapPosition, getSquadLimit, getPitchInfo, PITCH_LABEL_VI, POS_LABEL_VI } from '../../utils/position';
+import { mapPosition, getPitchInfo, PITCH_LABEL_VI, POS_LABEL_VI } from '../../utils/position';
 import PitchFormation from '../PitchFormation';
 
 // roster (prop): [{ player_id, name, number, position, avatar }]
-export default function LineupBuilderModal({ match, teamId, roster: rawRoster, onClose, onSave }) {
-  const squadLimit = useMemo(() => getSquadLimit(match), [match]);
+export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
   // Chỉ dùng để hiện badge "Sân 5/7/11" trên header — giá trị thật sự chốt
-  // giới hạn nằm trong squadLimit (đã đọc pitch_type bên trong getSquadLimit).
+  // giới hạn nằm trong starterReq (đã đọc pitch_type bên trong getStarterRequirement).
   const { pitchType } = useMemo(() => getPitchInfo(match), [match]);
 
   // State cho màu áo sân nhà / sân khách
   const [jerseyColor, setJerseyColor] = useState('#2563eb');
 
-  // Normalize field names khớp với hook + PitchFormation (jersey_number, không phải number).
-  const roster = useMemo(() => rawRoster.map(p => ({
-    player_id: p.player_id,
-    name: p.name,
-    jersey_number: p.number,
-    position: p.position,
-    avatar: p.avatar,
-  })), [rawRoster]);
-
   const {
     selections, isLoading, isSaving,
     startersCount, maxStarters,
-    starters, substitutes,
+    starters, substitutes, roster, canSave,
     toggleLineupType, handleDropOnPitch, setCaptain, save,
   } = useLineupSelection({
     matchId: match?.id,
     teamId,
-    roster,
-    squadLimit,
+    match,
     onSaved: () => { onSave?.(); onClose(); },
   });
 
@@ -73,7 +62,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
           {/* Sơ đồ sân — kéo cầu thủ từ danh sách bên phải vào đúng hàng vị trí.
               Đội tự chọn sơ đồ chiến thuật (DEF/MID/FW không bị ép tỷ lệ cố
               định), chỉ cần đủ tổng số theo luật sân + đúng 1 thủ môn. */}
-          <div className="w-full md:w-2/5 min-w-[320px] max-w-[420px] flex flex-col shrink-0">
+          <div className="w-full md:w-2/5 min-w-[320px] max-w-105 flex flex-col shrink-0">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Sơ đồ đội hình</h4>
               <div className="flex items-center gap-3">
@@ -124,7 +113,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
           </div>
 
           {/* Roster — vừa là nguồn kéo-thả vừa toggle Chính/Dự bị bằng nút */}
-          <div className="flex-1 bg-navy/50 border border-navy-light rounded-3xl p-5 overflow-y-auto max-h-[600px] custom-scrollbar">
+          <div className="flex-1 bg-navy/50 border border-navy-light rounded-3xl p-5 overflow-y-auto max-h-150 custom-scrollbar">
             <h4 className="text-sm font-black text-white mb-3 uppercase tracking-wider border-b border-navy-light pb-2">
               Danh sách đội bóng ({roster.length})
             </h4>
@@ -222,7 +211,7 @@ export default function LineupBuilderModal({ match, teamId, roster: rawRoster, o
             </button>
             <button
               onClick={save}
-              disabled={isSaving || startersCount !== maxStarters}
+              disabled={isSaving || !canSave}
               className="px-8 py-3 font-black bg-neon text-black rounded-xl flex items-center gap-2 hover:bg-neon-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

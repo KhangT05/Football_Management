@@ -17,7 +17,7 @@ export function mapPosition(rawPos) {
     if (p === 'DEF' || p === 'DEFENDER') return 'defender';
     if (p === 'MID' || p === 'MIDFIELDER') return 'midfielder';
     if (p === 'FW' || p === 'FORWARD') return 'forward';
-    return (rawPos || 'midfielder').toLowerCase();
+    return (rawPos || 'unknown').toLowerCase();
 }
 
 export const DEFAULT_SQUAD_LIMIT = { min_players_per_team: 7, max_players_per_team: 11 };
@@ -48,8 +48,20 @@ export function getPitchInfo(match) {
 // phải ĐÚNG bằng tổng số người/sân theo luật (min = max = totalStarters).
 // tournament_rule chỉ còn dùng cho max_squad_size (tổng đăng ký gồm dự bị,
 // KHÔNG liên quan luật số người trên sân).
+export function getStarterRequirement(match) {
+    const { pitchType } = getPitchInfo(match);
+    return PITCH_TOTAL_STARTERS[pitchType] ?? PITCH_TOTAL_STARTERS.san_5;
+}
+
+export function getSquadRange(match) {
+    const rule = match?.phase?.season?.tournamentRule;
+    if (rule) return { min_players_per_team: rule.min_players_per_team, max_players_per_team: rule.max_players_per_team };
+    return DEFAULT_SQUAD_LIMIT;
+}
+
+// Giữ lại hàm cũ nếu có nơi nào vẫn dùng, nhưng nó đã được decouple thành 2 hàm trên
 export function getSquadLimit(match) {
-    const rule = match?.phase?.season?.tournament_rule ?? match?.phase?.season?.tournamentRule;
+    const rule = getSquadRange(match);
     const { pitchType, totalStarters } = getPitchInfo(match);
 
     return {

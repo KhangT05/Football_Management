@@ -80,11 +80,7 @@ const FORMAT_LABEL = {
   multi_round_robin_knockout: 'Nhiều vòng bảng → Loại trực tiếp',
 };
 
-// Đọc format từ nhiều khả năng tên field (tuỳ serialize của BE) — ưu tiên
-// camelCase đúng theo Prisma model (`tournamentRule`), fallback snake_case
-// để an toàn nếu response được map lại.
-const extractRuleFormat = (seasonLike) =>
-  seasonLike?.tournamentRule?.format ?? seasonLike?.tournament_rule?.format ?? null;
+const extractRuleFormat = (seasonLike) => seasonLike?.tournamentRule?.format ?? null;
 
 export default function ManageSeasonTeams() {
   const toast = useToastStore(useShallow(state => ({

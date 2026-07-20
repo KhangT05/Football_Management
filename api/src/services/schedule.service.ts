@@ -48,7 +48,25 @@ const MATCH_CARD_INCLUDE = {
     // FIX (#4 review): FE Schedule Tab filter loại match knockout bằng
     // `m.phase?.format !== 'knockout'` nhưng include cũ không có `phase` —
     // filter luôn true, knockout lọt vào tab group-stage. Thêm field này.
-    phase: { select: { format: true } },
+    // Thêm season và tournamentRule để frontend có thể validate lineup.
+    phase: {
+        select: {
+            format: true,
+            season: {
+                select: {
+                    id: true,
+                    pitch_type: true,
+                    tournamentRule: {
+                        select: {
+                            min_players_per_team: true,
+                            max_players_per_team: true,
+                            format: true
+                        }
+                    }
+                }
+            }
+        }
+    },
     matchResult: {
         select: {
             result_type: true,

@@ -35,12 +35,13 @@ export function errorMiddleware(
     }
 
     if (err instanceof ValidateError || err?.name === "ValidateError") {
-        console.warn(`[ValidateError] Caught Validation Error for ${req.path}:`, err.fields);
+        const validateErr = err as ValidateError;
+        console.warn(`[ValidateError] Caught Validation Error for ${req.path}:`, validateErr.fields);
         res.status(422).json({
             status: false,
             code: "VALIDATION_FAILED",
             message: "Validation failed",
-            data: err?.fields,
+            data: validateErr.fields,
             timestamp: new Date().toISOString(),
             requestId,
         });

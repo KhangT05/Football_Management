@@ -16,6 +16,13 @@ export const matchLineupApi = {
     axiosClient.get(`/matches/${matchId}/lineups/teams/${teamId}`),
 
   /**
+   * Lấy danh sách cầu thủ hợp lệ có thể ra sân (pool)
+   * GET /matches/{matchId}/lineups/teams/{teamId}/eligible-players
+   */
+  getEligiblePlayers: (matchId, teamId) =>
+    axiosClient.get(`/matches/${matchId}/lineups/teams/${teamId}/eligible-players`),
+
+  /**
    * Cập nhật toàn bộ danh sách ra sân
    * POST /matches/{matchId}/lineups
    */
