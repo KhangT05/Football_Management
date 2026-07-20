@@ -61,7 +61,7 @@ export const matchApi = {
   // ── Match result / correction ────────────────────────────────────────────────
 
   getMatchById: (id) =>
-    axiosClient.get(`/matches/${id}/result`),
+    axiosClient.get(`/matches/${id}`),
 
   getMatchResult: (id) =>
     axiosClient.get(`/matches/${id}/result`),
