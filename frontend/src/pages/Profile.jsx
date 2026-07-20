@@ -7,7 +7,7 @@ import useToastStore from '../store/toastStore';
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { INPUT_CLASS } from '../data/data';
-import { useUserProfile, useUpdateProfile, useChangePassword, useUpdateAvatar } from '../store/profileStore';
+import { useUserProfile, useUpdateProfile, useChangePassword, useUpdateAvatar } from '../store/userProfile';
 import { profileSchema, passwordSchema } from '../schemas/profile.schema';
 
 export default function Profile() {
