@@ -24,12 +24,12 @@ function getErrorMessage(error, fallback) {
 async function enrichUserProfile(baseProfile) {
   if (!baseProfile) return null;
   let fullProfile = { ...baseProfile };
-  
+
   try {
     const res = await userApi.getUserById(fullProfile.id);
     const data = res.data ?? res;
     fullProfile = { ...fullProfile, ...data };
-    
+
     // Convert role objects to string array if necessary for authStore
     if (Array.isArray(fullProfile.roles)) {
       fullProfile.roles = fullProfile.roles.map(r => typeof r === 'string' ? r : r?.name).filter(Boolean);
@@ -37,7 +37,7 @@ async function enrichUserProfile(baseProfile) {
   } catch (err) {
     console.warn('[authStore] Không thể lấy full profile:', err);
   }
-  
+
   // Fallback if backend doesn't return roles
   if (!fullProfile.roles || fullProfile.roles.length === 0) {
     if (fullProfile.is_admin) {
@@ -48,7 +48,7 @@ async function enrichUserProfile(baseProfile) {
       fullProfile.roles = ['user'];
     }
   }
-  
+
   return fullProfile;
 }
 
@@ -77,8 +77,7 @@ const useAuthStore = create((set) => ({
 
   setUser: (userData) => set({ user: userData }),
 
-  // ── login ────────────────────────────────────────────────
-  // POST /auth/login → set token → GET /auth/me (roles từ DB)
+  // login()
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
@@ -90,13 +89,18 @@ const useAuthStore = create((set) => ({
       setAccessToken(accessToken);
       if (csrfToken) localStorage.setItem('csrf_token', csrfToken);
 
-      let userProfile = null;
+      let userProfile;
       try {
         const profileRes = await authApi.getProfile();
-        userProfile = profileRes.data;
-        userProfile = await enrichUserProfile(userProfile);
+        userProfile = await enrichUserProfile(profileRes.data);
+        if (!userProfile?.id) throw new Error('Profile response thiếu id');
       } catch (profileErr) {
-        console.warn('[authStore] Không lấy được profile:', profileErr);
+        // Rollback — không để app vào trạng thái isAuthenticated=true nhưng user rỗng/thiếu id
+        clearAccessToken();
+        localStorage.removeItem('csrf_token');
+        const errorMsg = 'Đăng nhập thành công nhưng không tải được hồ sơ. Vui lòng thử lại.';
+        set({ error: errorMsg, loading: false, user: null, isAuthenticated: false });
+        return { success: false, error: errorMsg };
       }
 
       set({ user: userProfile, isAuthenticated: true, isInitialized: true, loading: false });
@@ -108,8 +112,7 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // ── register ─────────────────────────────────────────────
-  // POST /auth/register → set token → GET /auth/me
+  // register() — cùng nguyên tắc, không set isAuthenticated:true khi thiếu id
   register: async (userData) => {
     set({ loading: true, error: null });
     try {
@@ -123,9 +126,12 @@ const useAuthStore = create((set) => ({
         try {
           const profileRes = await authApi.getProfile();
           const userProfile = await enrichUserProfile(profileRes.data);
+          if (!userProfile?.id) throw new Error('Profile response thiếu id');
           set({ user: userProfile, isAuthenticated: true, isInitialized: true });
         } catch {
-          set({ isAuthenticated: true, isInitialized: true });
+          clearAccessToken();
+          localStorage.removeItem('csrf_token');
+          set({ user: null, isAuthenticated: false, isInitialized: true });
         }
       }
 
@@ -138,8 +144,6 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // ── logout ───────────────────────────────────────────────
-  // POST /auth/logout → clear state (kể cả khi API fail)
   logout: async () => {
     try {
       await authApi.logout();
@@ -152,8 +156,7 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // ── initializeAuth ───────────────────────────────────────
-  // Khôi phục session khi F5 / mở tab mới.
+  // initializeAuth() — cùng nguyên tắc cho F5 flow
   initializeAuth: async () => {
     if (getAccessToken()) {
       set({ isInitialized: true, isAuthenticated: true });
@@ -171,16 +174,11 @@ const useAuthStore = create((set) => ({
       await refreshTokens();
 
       const profileRes = await authApi.getProfile();
-      let userProfile = profileRes?.data ?? profileRes;
+      const userProfile = await enrichUserProfile(profileRes?.data ?? profileRes);
 
-      userProfile = await enrichUserProfile(userProfile);
+      if (!userProfile?.id) throw new Error('Profile response thiếu id');
 
-      set({
-        user: userProfile,
-        isAuthenticated: true,
-        isInitialized: true,
-        loading: false,
-      });
+      set({ user: userProfile, isAuthenticated: true, isInitialized: true, loading: false });
     } catch {
       clearAccessToken();
       localStorage.removeItem('csrf_token');

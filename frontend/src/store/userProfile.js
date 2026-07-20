@@ -26,7 +26,10 @@ export function useUpdateProfile(userId) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data) => userApi.updateProfile(userId, data),
+        mutationFn: (data) => {
+            if (!userId) throw new Error('Thiếu userId — vui lòng đăng nhập lại.');
+            return userApi.updateProfile(userId, data);
+        },
         onSuccess: (res) => {
             const updated = res?.data ?? res;
             setUser((prev) => ({ ...prev, ...updated }));
@@ -41,7 +44,10 @@ export function useUpdateProfile(userId) {
 
 export function useChangePassword(userId) {
     return useMutation({
-        mutationFn: (data) => userApi.changePassword(userId, data),
+        mutationFn: (data) => {
+            if (!userId) throw new Error('Thiếu userId — vui lòng đăng nhập lại.');
+            return userApi.updatePassword(userId, data);
+        },
     });
 }
 
