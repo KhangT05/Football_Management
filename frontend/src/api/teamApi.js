@@ -42,15 +42,15 @@ export const teamApi = {
    * @param {{ name, coach_name?, description?, logo?(File) }} data
    */
   registerTeam: (data) => {
-    // Nếu có logo (File) → dùng FormData
-    if (data.logo instanceof File) {
-      const form = new FormData();
-      Object.entries(data).forEach(([k, v]) => {
-        if (v != null) form.append(k, v);
-      });
-      return axiosClient.post('/teams', form);
-    }
-    return axiosClient.post('/teams', data);
+    const form = new FormData();
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+        form.append(k, v);
+      } else {
+        form.append(k, '');
+      }
+    });
+    return axiosClient.post('/teams', form);
   },
 
   /**
@@ -60,14 +60,15 @@ export const teamApi = {
    * @param {{ name?, coach_name?, description?, logo?(File) }} data
    */
   update: (id, data) => {
-    if (data.logo instanceof File) {
-      const form = new FormData();
-      Object.entries(data).forEach(([k, v]) => {
-        if (v != null) form.append(k, v);
-      });
-      return axiosClient.patch(`/teams/${id}`, form);
-    }
-    return axiosClient.patch(`/teams/${id}`, data);
+    const form = new FormData();
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+        form.append(k, v);
+      } else {
+        form.append(k, '');
+      }
+    });
+    return axiosClient.patch(`/teams/${id}`, form);
   },
 
   /**
