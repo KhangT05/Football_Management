@@ -24,6 +24,7 @@ type MatchContext = {
     away_team_id: number;
     status: MatchStatus;
     pitch_type: PitchType;
+    season_id: number;
     tournament_rule: { min_players_per_team: number; max_players_per_team: number } | null;
 };
 const LINEUP_MUTABLE_STATUSES: MatchStatus[] = [MatchStatus.scheduled];
@@ -46,6 +47,7 @@ export class MatchLineupService {
                     select: {
                         season: {
                             select: {
+                                id: true,
                                 pitch_type: true, // NEW — cần để tính sơ đồ đá chính theo sân
                                 tournamentRule: {
                                     select: { min_players_per_team: true, max_players_per_team: true },
@@ -65,11 +67,31 @@ export class MatchLineupService {
             home_team_id: match.home_team_id,
             away_team_id: match.away_team_id,
             status: match.status,
-            // Season.pitch_type có default san_5 ở schema nên luôn có giá trị
-            // khi season tồn tại; fallback san_5 chỉ phòng match chưa gán phase/season.
+            season_id: match.phase?.season?.id ?? -1,
             pitch_type: match.phase?.season?.pitch_type ?? PitchType.san_5,
             tournament_rule: match.phase?.season?.tournamentRule ?? null,
         };
+    }
+
+    async getEligiblePlayers(matchId: number, teamId: number) {
+        const ctx = await this.getMatchContextOrFail(matchId);
+        this.assertTeamInMatch(ctx, teamId);
+
+        return this.prisma.teamPlayer.findMany({
+            where: {
+                approval_status: 'approved',
+                status: 'active',
+                season_team: { season_id: ctx.season_id, team_id: teamId },
+            },
+            select: {
+                player_id: true,
+                jersey_number: true,
+                position: true,
+                role: true,
+                player: { select: { user: { select: { name: true, avatar: true } } } },
+            },
+            orderBy: { jersey_number: 'asc' },
+        });
     }
 
     private assertTeamInMatch(ctx: MatchContext, teamId: number): void {
@@ -205,10 +227,9 @@ export class MatchLineupService {
             const validTeamPlayers = await tx.teamPlayer.findMany({
                 where: {
                     player_id: { in: playerIds },
-                    team_id: dto.team_id,
-                    is_active: true,
                     approval_status: 'approved',
                     status: 'active',
+                    season_team: { season_id: ctx.season_id, team_id: dto.team_id },
                 },
                 select: { player_id: true },
             });

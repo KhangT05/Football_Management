@@ -65,11 +65,6 @@ const GRANULARITY_OPTIONS = [
   { value: 'year', label: 'Năm' },
 ];
 
-// Thứ tự ưu tiên khi tự động chọn season_team mặc định cho 1 team —
-// season_team càng "sống" (đang thi đấu / đã duyệt) càng được ưu tiên hiện
-// trước, KHÔNG dựa theo status của season như logic cũ (đã gây bug: team
-// vừa tự đăng ký (pending, roster rỗng) vào 1 mùa mới bị chọn trước season_team
-// cũ đã approved/active có roster thật, chỉ vì season của nó đang mở đăng ký).
 const SEASON_TEAM_STATUS_PRIORITY = {
   active: 0,
   approved: 1,
@@ -84,7 +79,7 @@ function pickDefaultSeasonTeam(seasonTeams) {
     const pa = SEASON_TEAM_STATUS_PRIORITY[a.status] ?? 99;
     const pb = SEASON_TEAM_STATUS_PRIORITY[b.status] ?? 99;
     if (pa !== pb) return pa - pb;
-    return (b.season?.id ?? 0) - (a.season?.id ?? 0); // cùng mức ưu tiên -> season mới hơn lên trước
+    return (b.season?.id ?? 0) - (a.season?.id ?? 0);
   })[0];
 }
 
@@ -338,10 +333,6 @@ function TeamSwitcher({ teams, activeTeamId, onSwitch, onCreateNew }) {
   );
 }
 
-// ── Chọn mùa giải (season_team) đang xem cho team hiện tại ─────────────
-// MỚI: thay cho logic tự đoán season_team "đúng" (đã gây bug ẩn roster có
-// thật — xem ghi chú ở pickDefaultSeasonTeam). Hiển thị tường minh mọi
-// season_team của team, có badge trạng thái, cho leader tự chọn xem mùa nào.
 function SeasonTeamSwitcher({ seasonTeams, activeSeasonTeamId, onSwitch }) {
   const [open, setOpen] = useState(false);
   const active = seasonTeams.find(st => st.id === activeSeasonTeamId);
@@ -371,8 +362,6 @@ function SeasonTeamSwitcher({ seasonTeams, activeSeasonTeamId, onSwitch }) {
             className="absolute mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-72 max-h-80 overflow-y-auto custom-scrollbar"
             style={{ top: 0, left: 0 }}
             ref={(el) => {
-              // Đặt gần nút bấm — đơn giản hoá bằng cách để trình duyệt tự
-              // scroll vào view thay vì tính toạ độ thủ công.
               if (el) el.scrollIntoView?.({ block: 'nearest' });
             }}
           >
@@ -415,15 +404,12 @@ export default function MyTeam() {
   const teamBase = detailData?.team ?? null;
   const seasonTeams = detailData?.seasonTeams ?? [];
 
-  // ── Season_team đang xem — chọn tường minh, không đoán ngầm ──────────
+  // ── Season_team đang xem (tab Roster) — chọn tường minh, không đoán ngầm ─
   const [activeSeasonTeamId, setActiveSeasonTeamId] = useState(null);
 
   useEffect(() => {
     const preferred = pickDefaultSeasonTeam(seasonTeams);
     setActiveSeasonTeamId(preferred?.id ?? null);
-    // Chỉ re-pick khi đổi TEAM hoặc khi danh sách season_team đổi số lượng
-    // (mới đăng ký thêm / bị xoá) — không re-pick mỗi lần data refetch giữ
-    // nguyên số lượng, để không "giật" lựa chọn đang xem của user.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId, seasonTeams.length]);
 
@@ -452,7 +438,6 @@ export default function MyTeam() {
   const { data: players = [], isLoading: loadingPlayers } = useTeamPlayers(activeTeam?.activeSeasonTeamId);
   const { data: eligibility = [] } = useSeasonEligibility(activeTeamId);
 
-  // allSeasons dùng cho tab "Lịch thi đấu" / dropdown mùa ở "Thống kê cầu thủ"
   const allSeasons = useMemo(
     () => seasonTeams.map(st => st.season).filter(Boolean),
     [seasonTeams]
@@ -489,6 +474,19 @@ export default function MyTeam() {
   const { data: matches = [], isLoading: isLoadingMatches } = useTeamMatches(
     activeTeamId, activeMatchSeasonId, { enabled: activeTab === 'matches' }
   );
+
+  // FIX: season_team ĐÚNG với season của trận đang xếp đội hình. Trước đây
+  // LineupBuilderModal nhận activeTeam.activeSeasonTeamId — season đang được
+  // chọn ở SeasonTeamSwitcher của tab Roster, hoàn toàn độc lập với
+  // activeMatchSeasonId (season của tab Lịch thi đấu, nơi match thực sự
+  // thuộc về). Lệch season → useTeamRoster(seasonTeamId) chạy hợp lệ nhưng
+  // trả về đúng season SAI, roster rỗng, không có lỗi/loading nào báo hiệu —
+  // đây chính là nguyên nhân sơ đồ không có data player dù không lỗi.
+  const matchSeasonTeam = useMemo(
+    () => seasonTeams.find(st => st.season?.id === activeMatchSeasonId) ?? null,
+    [seasonTeams, activeMatchSeasonId]
+  );
+
   const { data: statsData, isLoading: isStatsLoading } = useTeamStats(
     activeTeamId, teamGranularity, { enabled: activeTab === 'stats' }
   );
@@ -1392,7 +1390,12 @@ export default function MyTeam() {
       )}
 
       {lineupModalMatch && activeTeam && (
-        <LineupBuilderModal match={lineupModalMatch} teamId={activeTeam.id} roster={players} onClose={() => setLineupModalMatch(null)} />
+        <LineupBuilderModal
+          match={lineupModalMatch}
+          teamId={activeTeam.id}
+          seasonTeamId={matchSeasonTeam?.id ?? null}
+          onClose={() => setLineupModalMatch(null)}
+        />
       )}
 
       {showSeasonRegModal && (
