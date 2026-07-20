@@ -25,7 +25,7 @@ export const FORMAT_META = [
         value: 'round_robin_knockout', label: 'Vòng bảng → Loại trực tiếp',
         desc: '1 vòng bảng tính điểm, sau đó vào nhánh knockout.',
         icon: Layers, color: 'blue',
-        hasGroupPhase: true, hasKnockout: true, stagesMode: 'fixed1',
+        hasGroupPhase: false, hasKnockout: false, stagesMode: 'min1',
     },
     {
         value: 'multi_round_robin_knockout', label: 'Nhiều vòng bảng → Loại trực tiếp',

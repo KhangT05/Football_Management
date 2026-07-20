@@ -104,7 +104,7 @@ export function useSubmitWizard(selectedRuleTemplate) {
                 end_date: w.season.end_date ? `${w.season.end_date}T23:59:59` : undefined,
                 registration_deadline: w.season.registration_deadline ? `${w.season.registration_deadline}T23:59:59` : undefined,
                 is_active: true,
-                group_count: shouldCreateInitialGroups ? (initialGroupCount || 1) : 1,
+                group_count: shouldCreateInitialGroups ? (initialGroupCount || 1) : 0,
                 tournament_id: finalTournamentId,
                 tournament_rule_id: finalRuleId,
             });
