@@ -9,17 +9,7 @@ import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 
 import { PlayerService } from "../services/player.service.js";
-import {
-  type CreatePlayerDto,
-  type UpdatePlayerDto,
-  type PlayerDto,
-  type TeamPlayerDto,
-  type AddPlayerToTeamDto,
-  type CreatePlayerForTeamDto,
-  type UpdateTeamPlayerDto,
-  type BulkDeleteDto,
-  PlayerPublicDto,
-} from "../dtos/player.schema.js";
+import * as playerSchema from "../dtos/player.schema.js";
 import { PaginatedResult } from "../types/queryable.type.js";
 import { ImportResult, ListTeamPlayersQuery, PlayerPublicRow } from "../types/player.type.js";
 
@@ -67,7 +57,7 @@ export class PlayerController extends Controller {
     @Query() direction?: "asc" | "desc",
     @Query() position?: string,
     @Query() nationality?: string
-  ): Promise<PaginatedResult<PlayerPublicDto>> {
+  ): Promise<PaginatedResult<playerSchema.PlayerPublicDto>> {
     return this.service.listPlayers({
       page, per_page, sort, direction,
       ...(position && { position }),
@@ -89,14 +79,14 @@ export class PlayerController extends Controller {
   }
 
   @Get("{id}")
-  async findById(@Path() id: number): Promise<PlayerDto> {
+  async findById(@Path() id: number): Promise<playerSchema.PlayerDto> {
     return this.service.getPlayerByIdOrFail(id);
   }
 
   @Security("jwt", ["admin", "organizing", "leader"])
   @Post("/")
   @SuccessResponse(201, "Created")
-  async create(@Body() body: CreatePlayerDto): Promise<PlayerDto> {
+  async create(@Body() body: playerSchema.CreatePlayerDto): Promise<playerSchema.PlayerDto> {
     this.setStatus(201);
     return this.service.createPlayer(body);
   }
@@ -105,8 +95,8 @@ export class PlayerController extends Controller {
   @Patch("{id}")
   async update(
     @Path() id: number,
-    @Body() body: UpdatePlayerDto
-  ): Promise<PlayerDto> {
+    @Body() body: playerSchema.UpdatePlayerDto
+  ): Promise<playerSchema.PlayerDto> {
     return this.service.updatePlayer(id, body);
   }
 
@@ -131,7 +121,7 @@ export class PlayerController extends Controller {
     @Query() position?: string,
     @Query() status?: string,
     @Query() approval_status?: string
-  ): Promise<PaginatedResult<TeamPlayerDto>> {
+  ): Promise<PaginatedResult<playerSchema.TeamPlayerDto>> {
     return this.service.listTeamPlayers({
       season_team_id: team_id,   // FIX: key phải khớp field service destructure
       page,
@@ -169,7 +159,7 @@ export class PlayerController extends Controller {
   async getTeamPlayer(
     @Path() team_id: number,
     @Path() id: number
-  ): Promise<TeamPlayerDto> {
+  ): Promise<playerSchema.TeamPlayerDto> {
     const tp = await this.service.getTeamPlayerById(id, team_id);
     if (!tp) {
       this.setStatus(404);
@@ -186,8 +176,8 @@ export class PlayerController extends Controller {
   @SuccessResponse(201, "Created")
   async addPlayerToTeam(
     @Path() team_id: number,
-    @Body() body: AddPlayerToTeamDto
-  ): Promise<TeamPlayerDto> {
+    @Body() body: playerSchema.AddPlayerToTeamDto
+  ): Promise<playerSchema.TeamPlayerDto> {
     this.setStatus(201);
     return this.service.addPlayerToTeam(team_id, body);
   }
@@ -202,8 +192,8 @@ export class PlayerController extends Controller {
   @SuccessResponse(201, "Created")
   async createPlayerForTeamWithUser(
     @Path() team_id: number,
-    @Body() body: CreatePlayerForTeamDto
-  ): Promise<TeamPlayerDto> {
+    @Body() body: playerSchema.CreatePlayerForTeamDto
+  ): Promise<playerSchema.TeamPlayerDto> {
     this.setStatus(201);
     return this.service.createPlayerForTeamWithUser(team_id, body);
   }
@@ -216,8 +206,8 @@ export class PlayerController extends Controller {
   async updateTeamPlayer(
     @Path() team_id: number,
     @Path() id: number,
-    @Body() body: UpdateTeamPlayerDto
-  ): Promise<TeamPlayerDto> {
+    @Body() body: playerSchema.UpdateTeamPlayerDto
+  ): Promise<playerSchema.TeamPlayerDto> {
     return this.service.updateTeamPlayer(id, team_id, body);
   }
 
@@ -226,7 +216,7 @@ export class PlayerController extends Controller {
   async approveTeamPlayer(
     @Path() team_id: number,
     @Path() id: number
-  ): Promise<TeamPlayerDto> {
+  ): Promise<playerSchema.TeamPlayerDto> {
     return this.service.approveTeamPlayer(id, team_id);
   }
 
@@ -235,7 +225,7 @@ export class PlayerController extends Controller {
   async rejectTeamPlayer(
     @Path() team_id: number,
     @Path() id: number
-  ): Promise<TeamPlayerDto> {
+  ): Promise<playerSchema.TeamPlayerDto> {
     return this.service.rejectTeamPlayer(id, team_id);
   }
 
@@ -244,7 +234,7 @@ export class PlayerController extends Controller {
   @Delete("{team_id}/team-players")
   async bulkDeleteTeamPlayers(
     @Path() team_id: number,
-    @Body() body: BulkDeleteDto
+    @Body() body: playerSchema.BulkDeleteDto
   ): Promise<{ deleted: number; notFound: number[] }> {
     return this.service.bulkDeleteTeamPlayers(team_id, body); // reason đã nằm trong body
   }
@@ -268,5 +258,21 @@ export class PlayerController extends Controller {
       throw Object.assign(new Error(`File too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024}MB)`), { status: 413 });
     }
     return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
+  }
+  // Copy roster từ 1 season_team NGUỒN (from_season_team_id, trong body)
+  // sang season_team ĐÍCH (team_id trong path — đúng quy ước hiện tại của
+  // file này: "team_id" ở path thực chất là season_team_id, xem comment
+  // ở listTeamPlayers). Dùng khi đội đăng ký mùa mới, muốn kế thừa danh
+  // sách cầu thủ đã duyệt của mùa trước thay vì add/import lại từ đầu.
+  // Route tĩnh ("copy-from") — đứng cùng nhóm với "create-with-user",
+  // không đụng độ với "{id}" (route động) vì literal khác nhau.
+  @Security("jwt", ["admin", "organizing", "leader"])
+  @Post("{team_id}/team-players/copy-from")
+  @SuccessResponse(200, "Copied")
+  async copyRosterFromSeason(
+    @Path() team_id: number,
+    @Body() body: playerSchema.CopyRosterDto
+  ): Promise<{ copied: number; skipped: number; errors: { player_id: number; reason: string }[] }> {
+    return this.service.copyRosterToSeasonTeam(body.from_season_team_id, team_id);
   }
 }

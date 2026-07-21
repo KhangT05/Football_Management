@@ -325,5 +325,4 @@ export class MatchController extends Controller {
         // Nếu cần override venue/matchTimes, mở rộng body hoặc thêm @Query params
         return this.lifecycleService.adminRecordResult(id, body, {});
     }
-
 }

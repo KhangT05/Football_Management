@@ -44,12 +44,17 @@ export default function PitchFormation({ starters, jerseyColor = '#2563eb', onRe
     };
 
     return (
-        <div className="relative w-full aspect-3/4 bg-emerald-800/40 rounded-3xl border border-emerald-500/30 overflow-hidden">
+        // FIX: bỏ aspect-3/4 cứng — pitch giờ chiếm full chiều cao khả dụng do
+        // parent cấp (h-full), tránh việc container cha phải overflow-y-auto
+        // rồi cuộn mất các hàng vị trí phía dưới.
+        <div className="relative w-full h-full bg-emerald-800/40 rounded-3xl border border-emerald-500/30 overflow-hidden">
             <div className="absolute inset-4 border-2 border-white/20 rounded-xl" />
             <div className="absolute top-1/2 left-4 right-4 border-t-2 border-white/20" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/20" />
 
-            <div className="relative h-full flex flex-col justify-between py-8">
+            {/* FIX: 4 hàng chia đều theo flex-1 thay vì min-h cố định, để luôn
+                fit trong chiều cao pitch hiện có mà không cần scroll. */}
+            <div className="relative h-full flex flex-col py-4 gap-1">
                 {POSITION_ORDER.map(({ key, label }) => {
                     const rowPlayers = grouped[key] || [];
                     const rowFull = isRowFull(key);
@@ -60,7 +65,7 @@ export default function PitchFormation({ starters, jerseyColor = '#2563eb', onRe
                             onDragOver={handleDragOver(key)}
                             onDragLeave={handleDragLeave(key)}
                             onDrop={handleDrop(key)}
-                            className={`flex justify-center items-center gap-4 flex-wrap px-4 py-2 min-h-22 rounded-xl transition-colors ${dragOverRow === key ? 'bg-blue-400/20 ring-2 ring-blue-400/60' : ''
+                            className={`flex-1 min-h-0 flex justify-center items-center gap-2 flex-wrap px-4 py-1 rounded-xl transition-colors overflow-hidden ${dragOverRow === key ? 'bg-blue-400/20 ring-2 ring-blue-400/60' : ''
                                 } ${rowFull ? 'bg-emerald-500/5' : ''}`}
                         >
                             {rowPlayers.length === 0 && (
@@ -70,7 +75,7 @@ export default function PitchFormation({ starters, jerseyColor = '#2563eb', onRe
                             )}
                             {rowPlayers.map(p => {
                                 // FIX (blank pill): p.name có thể undefined/"" nếu payload kéo-thả
-                                // thiếu field — trước đây không có fallback nào, pill trắng hoàn toàn.
+                                // thiếu field — fallback về "#playerId" khi rỗng.
                                 const displayName = (p.name || '').trim() || `#${p.player_id}`;
                                 return (
                                     <div key={p.player_id} className="flex flex-col items-center group relative w-20">
@@ -83,14 +88,20 @@ export default function PitchFormation({ starters, jerseyColor = '#2563eb', onRe
                                             {p.jersey_number ?? p.player_id}
                                         </button>
                                         {p.is_captain && <Star className="w-3 h-3 text-amber-400 absolute -top-1 -right-1 fill-current" />}
-                                        {/* FIX (không đọc được tên): trước đây "truncate" trên max-w-[70px]
-                                            cắt gần hết tên có dấu, nhiều trường hợp gần như không còn ký
-                                            tự nào hiển thị. Giờ bỏ truncate, cho chữ wrap tự nhiên (không
-                                            line-clamp — từng gây mất chữ hoàn toàn khi kết hợp sai với
-                                            block/inline-block ở nơi khác). Vẫn giữ nền đen mờ + text-shadow. */}
+
+                                        {/* FIX (chữ đen không đọc được): className "wrap-break-words"
+                                            không tồn tại trong Tailwind (đúng là "break-words") — class rác
+                                            này là dấu hiệu cả className list có thể bị style global đè lên,
+                                            khiến "text-white" không ăn. Ép màu trắng + text-shadow trực
+                                            tiếp qua inline style để luôn thắng mọi CSS global/specificity,
+                                            không phụ thuộc Tailwind class có được áp đúng hay không. */}
                                         <span
-                                            className="mt-1 w-full max-w-full inline-block wrap-break-words text-[10px] font-black text-white text-center leading-snug px-1.5 py-0.5 rounded bg-black/80"
-                                            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                                            className="mt-1 w-full max-w-full inline-block break-words text-[10px] font-black text-center leading-snug px-1.5 py-0.5 rounded"
+                                            style={{
+                                                color: '#ffffff',
+                                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                                textShadow: '0 1px 2px rgba(0,0,0,0.9)',
+                                            }}
                                             title={displayName}
                                         >
                                             {displayName}

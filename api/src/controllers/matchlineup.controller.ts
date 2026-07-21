@@ -55,7 +55,18 @@ export class MatchLineupController extends Controller {
     ): Promise<MatchLineup[]> {
         return this.lineupService.getByTeam(matchId, teamId);
     }
-
+    /**
+     * Lấy loại sân + tổng số cầu thủ đá chính bắt buộc theo luật sân (5/7/11).
+     * FE gọi LIVE mỗi lần mở LineupBuilderModal — không cache dài phía client,
+     * vì season.pitch_type có thể đổi sau khi match đã tồn tại (BE luôn validate
+     * theo giá trị hiện tại tại register(), không phải giá trị lúc match được tạo).
+     */
+    @Get("{matchId}/lineups/formation")
+    async getFormation(
+        @Path() matchId: number,
+    ): Promise<{ pitchType: string; totalStarters: number }> {
+        return this.lineupService.getFormationForMatch(matchId);
+    }
     /**
      * Đăng ký lineup cho team — bulk replace, idempotent.
      * Chỉ được gọi trước giờ thi đấu ít nhất 1 giờ.

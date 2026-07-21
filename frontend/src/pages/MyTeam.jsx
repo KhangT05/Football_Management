@@ -13,7 +13,7 @@ import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useTeamUiStore from '../store/teamUiStore';
 import { useShallow } from 'zustand/react/shallow';
-import { matchApi } from '../api';
+import { matchApi, playerApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import LineupBuilderModal from '../components/modals/LineupBuilderModal';
@@ -37,8 +37,10 @@ import {
   useRegisterSeasonMutation, useUpdatePlayerPositionMutation,
   useAddPlayerMutation, useEditPlayerMutation, useDeletePlayerMutation,
   useImportExcelMutation, useUpdateTeamMutation, useDeleteTeamMutation,
+  useCopyRosterMutation,
 } from '../queries/useMyTeamQueries';
 import SeasonRegistrationModal from '../components/myteam/SeasonRegistrationModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import TransferPlayerModal from '../components/myteam/TransferPlayerModal';
 // ─── Constants & format helpers ─────────────────────────────
 
@@ -93,7 +95,7 @@ const SEASON_TEAM_STATUS_LABEL = {
   withdrawn: 'Đã rút lui',
 };
 
-// ── Sơ đồ đội hình ───────────────────────────────────────────
+
 function RosterPitchDot({ player, kit, onClick }) {
   const isCap = player.role === 'captain';
   const isVice = player.role === 'vice_captain';
@@ -514,6 +516,7 @@ export default function MyTeam() {
   const editPlayer = useEditPlayerMutation(activeTeam?.activeSeasonTeamId);
   const deletePlayer = useDeletePlayerMutation(activeTeam?.activeSeasonTeamId);
   const importExcel = useImportExcelMutation(activeTeam?.activeSeasonTeamId);
+  const copyRoster = useCopyRosterMutation(activeTeam?.activeSeasonTeamId, activeTeamId);
 
   const updateTeam = useUpdateTeamMutation(activeTeamId);
   const deleteTeam = useDeleteTeamMutation(user?.id);
@@ -524,6 +527,34 @@ export default function MyTeam() {
   }, [teams, activeTeamId, setActiveTeamId]);
 
   const eligibleSeasonCount = useMemo(() => eligibility.filter(s => s.eligible).length, [eligibility]);
+  const [copyingFromId, setCopyingFromId] = useState(null);
+  // Season_team KHÁC (không phải season đang xem) mà team đã từng có cầu
+  // thủ — gợi ý nguồn để copy roster sang season hiện tại. Suy từ
+  // historyPlayers (đã load sẵn cho tab Thống kê cầu thủ, không cần thêm
+  // API call riêng).
+  const seasonTeamsWithPlayers = useMemo(() => {
+    if (!historyPlayers?.length) return [];
+    const seasonIdsWithPlayers = new Set(historyPlayers.flatMap(p => p.playedSeasons || []));
+    return seasonTeams
+      .filter(st => st.id !== activeTeam?.activeSeasonTeamId && seasonIdsWithPlayers.has(st.season?.id))
+      .map(st => ({ id: st.id, seasonName: st.season?.name ?? '—' }));
+  }, [historyPlayers, seasonTeams, activeTeam?.activeSeasonTeamId]);
+
+  const handleCopyRoster = (fromSeasonTeamId) => {
+    setCopyingFromId(fromSeasonTeamId);
+    copyRoster.mutate(fromSeasonTeamId, {
+      onSuccess: (res) => {
+        const { copied, skipped, errors } = res?.data ?? res ?? {};
+        const parts = [];
+        if (copied > 0) parts.push(`${copied} cầu thủ mới`);
+        if (skipped > 0) parts.push(`${skipped} đã có sẵn (bỏ qua)`);
+        if (errors?.length > 0) parts.push(`${errors.length} lỗi`);
+        toast.success(`Sao chép đội hình: ${parts.join(', ') || 'không có gì để copy'}.`, 6000);
+      },
+      onError: (err) => toast.error(parseApiError(err, 'Lỗi khi sao chép đội hình')),
+      onSettled: () => setCopyingFromId(null),
+    });
+  };
 
   const handleDropOnPitch = (playerId, position) => {
     dropOnPitch.mutate({ playerId, position }, {
@@ -1301,6 +1332,28 @@ export default function MyTeam() {
                                   <Search className="w-12 h-12 mx-auto mb-4 text-navy-light opacity-50" />
                                   <p className="font-bold text-gray-400 text-lg">{players.length === 0 ? 'Chưa có cầu thủ nào trong đội' : 'Không tìm thấy cầu thủ'}</p>
                                   <p className="text-sm mt-1">{players.length === 0 ? 'Nhấn "Thêm CT" để thêm cầu thủ đầu tiên!' : 'Thử thay đổi từ khóa tìm kiếm'}</p>
+
+                                  {players.length === 0 && seasonTeamsWithPlayers.length > 0 && (
+                                    <div className="mt-6 flex flex-col items-center gap-2">
+                                      <p className="text-xs text-gray-500">Hoặc sao chép đội hình từ mùa giải trước:</p>
+                                      <div className="flex flex-wrap gap-2 justify-center">
+                                        {seasonTeamsWithPlayers.map(st => (
+                                          <button
+                                            key={st.id}
+                                            type="button"
+                                            onClick={() => handleCopyRoster(st.id)}
+                                            disabled={copyRoster.isPending}
+                                            className="px-3 py-2 text-xs font-bold bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/30 rounded-xl transition-all disabled:opacity-50 inline-flex items-center gap-1.5"
+                                          >
+                                            {copyingFromId === st.id && copyRoster.isPending && (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            )}
+                                            Copy từ {st.seasonName}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ) : (

@@ -115,6 +115,17 @@ export const createPlayerForTeamSchema = z.object({
     jersey_number: z.number().int().min(1).max(99),
 });
 
+// NEW — DTO cho tính năng copy roster giữa 2 season_team CÙNG 1 team (vd:
+// đội đăng ký mùa mới, muốn kế thừa danh sách cầu thủ đã duyệt của mùa cũ
+// thay vì add/import lại từ đầu). to_season_team_id lấy từ @Path() ở
+// controller (season_team đích đang thao tác), chỉ from_season_team_id
+// cần trong body. Validate cùng-team, không trùng nguồn/đích, đều nằm ở
+// service (copyRosterToSeasonTeam) — schema chỉ giữ đúng hình dạng input.
+export const copyRosterSchema = z.object({
+    from_season_team_id: z.number().int().positive(),
+});
+
+export type CopyRosterDto = z.infer<typeof copyRosterSchema>;
 
 export type CreatePlayerForTeamDto = z.infer<typeof createPlayerForTeamSchema>;
 // ============================================================
