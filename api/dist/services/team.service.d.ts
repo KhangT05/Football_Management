@@ -24,5 +24,27 @@ export declare class TeamService {
     getCaptain(teamId: number): Promise<TeamLeader | null>;
     assignCaptain(teamId: number, newUserId: number, requesterId: number, requesterIsAdmin: boolean): Promise<TeamLeader>;
     restore(id: number): Promise<Team>;
+    /**
+     * Toàn bộ cầu thủ đã/đang gắn với team này, qua mọi season — merge
+     * TeamPlayer (live) + TeamPlayerHistory (đã rời), sort theo joined_at desc.
+     * Join qua season_team.team_id vì TeamPlayer/TeamPlayerHistory không có
+     * team_id trực tiếp (giống pattern StatisticsService.getPlayerParticipationStats).
+     */
+    getHistoryPlayers(teamId: number): Promise<{
+        team_id: number;
+        total: number;
+        players: Array<{
+            player_id: number;
+            player_name: string;
+            season_id: number;
+            season_name: string;
+            jersey_number: number | null;
+            role: string;
+            joined_at: string;
+            left_at: string | null;
+            left_reason: string | null;
+            is_current: boolean;
+        }>;
+    }>;
 }
 //# sourceMappingURL=team.service.d.ts.map

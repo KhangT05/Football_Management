@@ -69,5 +69,6 @@ export declare class StatisticsController extends Controller {
     }>;
     getPlayerDisciplineStatus(playerId: number, seasonId: number): Promise<import("../types/statistics.type.js").PlayerDisciplineStatus>;
     getPlayerTeamsInPeriod(playerId: number, from: string, to: string): Promise<import("../types/statistics.type.js").PlayerTeamsInPeriodStats>;
+    getTeamFinanceStats(teamId: number, season_id: number): Promise<import("../types/statistics.type.js").TeamFinanceEntry>;
 }
 //# sourceMappingURL=statistics.controller.d.ts.map

@@ -89,13 +89,13 @@ export declare const createPlayerSchema: z.ZodObject<{
 export declare const updatePlayerSchema: z.ZodObject<{
     height: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     avatar: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
-    date_of_birth: z.ZodOptional<z.ZodCoercedDate<unknown>>;
     position: z.ZodOptional<z.ZodEnum<{
         readonly goalkeeper: "goalkeeper";
         readonly defender: "defender";
         readonly midfielder: "midfielder";
         readonly forward: "forward";
     }>>;
+    date_of_birth: z.ZodOptional<z.ZodCoercedDate<unknown>>;
     weight: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     nationality: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
 }, z.core.$strip>;
@@ -177,6 +177,10 @@ export declare const createPlayerForTeamSchema: z.ZodObject<{
     }>;
     jersey_number: z.ZodNumber;
 }, z.core.$strip>;
+export declare const copyRosterSchema: z.ZodObject<{
+    from_season_team_id: z.ZodNumber;
+}, z.core.$strip>;
+export type CopyRosterDto = z.infer<typeof copyRosterSchema>;
 export type CreatePlayerForTeamDto = z.infer<typeof createPlayerForTeamSchema>;
 export type CreatePlayerDto = z.infer<typeof createPlayerSchema>;
 export type UpdatePlayerDto = z.infer<typeof updatePlayerSchema>;

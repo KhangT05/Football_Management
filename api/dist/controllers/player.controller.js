@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Res, UploadedFile, Consumes } from "tsoa";
 import { PlayerService } from "../services/player.service.js";
+import * as playerSchema from "../dtos/player.schema.js";
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 let PlayerController = class PlayerController extends Controller {
@@ -155,6 +156,16 @@ let PlayerController = class PlayerController extends Controller {
             throw Object.assign(new Error(`File too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024}MB)`), { status: 413 });
         }
         return this.service.importTeamPlayersFromExcel(team_id, file.buffer);
+    }
+    // Copy roster từ 1 season_team NGUỒN (from_season_team_id, trong body)
+    // sang season_team ĐÍCH (team_id trong path — đúng quy ước hiện tại của
+    // file này: "team_id" ở path thực chất là season_team_id, xem comment
+    // ở listTeamPlayers). Dùng khi đội đăng ký mùa mới, muốn kế thừa danh
+    // sách cầu thủ đã duyệt của mùa trước thay vì add/import lại từ đầu.
+    // Route tĩnh ("copy-from") — đứng cùng nhóm với "create-with-user",
+    // không đụng độ với "{id}" (route động) vì literal khác nhau.
+    async copyRosterFromSeason(team_id, body) {
+        return this.service.copyRosterToSeasonTeam(body.from_season_team_id, team_id);
     }
 };
 __decorate([
@@ -309,6 +320,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], PlayerController.prototype, "importTeamPlayers", null);
+__decorate([
+    Security("jwt", ["admin", "organizing", "leader"]),
+    Post("{team_id}/team-players/copy-from"),
+    SuccessResponse(200, "Copied"),
+    __param(0, Path()),
+    __param(1, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], PlayerController.prototype, "copyRosterFromSeason", null);
 PlayerController = __decorate([
     Route("players"),
     Tags("Players"),

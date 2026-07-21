@@ -110,12 +110,15 @@
 					"address": {
 						"type": "string"
 					},
+					"is_active": {
+						"type": "boolean"
+					},
 					"name": {
 						"type": "string"
 					}
 				},
 				"required": [
-					"address",
+					"is_active",
 					"name"
 				],
 				"type": "object"
@@ -125,16 +128,19 @@
 			},
 			"infer_typeofupdateVenueSchema_": {
 				"properties": {
-					"is_active": {
-						"type": "boolean"
-					},
 					"address": {
 						"type": "string"
 					},
 					"name": {
 						"type": "string"
+					},
+					"is_active": {
+						"type": "boolean"
 					}
 				},
+				"required": [
+					"is_active"
+				],
 				"type": "object"
 			},
 			"UpdateVenueDto": {
@@ -3803,20 +3809,67 @@
 			"AdminAddSeasonTeamDto": {
 				"$ref": "#/components/schemas/infer_typeofadminAddSeasonTeamSchema_"
 			},
-			"infer_typeofTransferSeasonTeamSchema_": {
+			"infer_typeofTransferSeasonTeamBodySchema_": {
 				"properties": {
+					"add_players": {
+						"items": {
+							"properties": {
+								"role": {
+									"type": "string",
+									"enum": [
+										"player",
+										"captain",
+										"vice_captain"
+									]
+								},
+								"position": {
+									"type": "string",
+									"enum": [
+										"goalkeeper",
+										"defender",
+										"midfielder",
+										"forward"
+									]
+								},
+								"jersey_number": {
+									"type": "number",
+									"format": "double"
+								},
+								"player_id": {
+									"type": "number",
+									"format": "double"
+								}
+							},
+							"required": [
+								"position",
+								"jersey_number",
+								"player_id"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"carry_player_ids": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
 					"season_id": {
 						"type": "number",
 						"format": "double"
 					}
 				},
 				"required": [
+					"add_players",
+					"carry_player_ids",
 					"season_id"
 				],
 				"type": "object"
 			},
 			"TransferSeasonTeamDto": {
-				"$ref": "#/components/schemas/infer_typeofTransferSeasonTeamSchema_"
+				"$ref": "#/components/schemas/infer_typeofTransferSeasonTeamBodySchema_"
 			},
 			"infer_typeofupdateSeasonTeamStatusSchema_": {
 				"properties": {
@@ -5163,14 +5216,43 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"Pick_Match.id-or-round-or-home_team_id-or-away_team_id-or-scheduled_at-or-venue_id-or-status_": {
+			"MatchByTeamRow": {
 				"properties": {
 					"id": {
 						"type": "number",
 						"format": "double"
 					},
+					"round": {
+						"type": "string",
+						"nullable": true
+					},
+					"scheduled_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"played_at": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"venue_id": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
 					"status": {
-						"$ref": "#/components/schemas/MatchStatus"
+						"type": "string"
+					},
+					"home_score": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"away_score": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
 					},
 					"home_team_id": {
 						"type": "number",
@@ -5180,32 +5262,109 @@
 						"type": "number",
 						"format": "double"
 					},
-					"scheduled_at": {
-						"type": "string",
-						"format": "date-time"
+					"home_team": {
+						"properties": {
+							"logo": {
+								"type": "string",
+								"nullable": true
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"logo",
+							"name",
+							"id"
+						],
+						"type": "object"
 					},
-					"round": {
-						"type": "string"
+					"away_team": {
+						"properties": {
+							"logo": {
+								"type": "string",
+								"nullable": true
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"logo",
+							"name",
+							"id"
+						],
+						"type": "object"
 					},
-					"venue_id": {
-						"type": "number",
-						"format": "double"
+					"venue": {
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"phase": {
+						"properties": {
+							"format": {
+								"type": "string"
+							},
+							"type": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"format",
+							"type",
+							"name",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
 					}
 				},
 				"required": [
 					"id",
+					"round",
+					"scheduled_at",
+					"played_at",
+					"venue_id",
 					"status",
+					"home_score",
+					"away_score",
 					"home_team_id",
 					"away_team_id",
-					"scheduled_at",
-					"round",
-					"venue_id"
+					"home_team",
+					"away_team",
+					"venue",
+					"phase"
 				],
 				"type": "object",
-				"description": "From T, pick a set of properties whose keys are in the union K"
-			},
-			"MatchByTeamRow": {
-				"$ref": "#/components/schemas/Pick_Match.id-or-round-or-home_team_id-or-away_team_id-or-scheduled_at-or-venue_id-or-status_"
+				"additionalProperties": false
 			},
 			"PaginatedResult_MatchByTeamRow_": {
 				"properties": {
@@ -5628,6 +5787,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"date_of_birth": {
+						"type": "string",
+						"format": "date-time"
+					},
 					"position": {
 						"type": "string",
 						"enum": [
@@ -5636,10 +5799,6 @@
 							"midfielder",
 							"forward"
 						]
-					},
-					"date_of_birth": {
-						"type": "string",
-						"format": "date-time"
 					},
 					"avatar": {
 						"type": "string"
@@ -5977,6 +6136,21 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"infer_typeofcopyRosterSchema_": {
+				"properties": {
+					"from_season_team_id": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"from_season_team_id"
+				],
+				"type": "object"
+			},
+			"CopyRosterDto": {
+				"$ref": "#/components/schemas/infer_typeofcopyRosterSchema_"
 			},
 			"InitiatePaymentOutput": {
 				"properties": {
@@ -6826,9 +7000,6 @@
 						"format": "double"
 					}
 				},
-				"required": [
-					"minute"
-				],
 				"type": "object"
 			},
 			"AbandonMatchDto": {
@@ -8919,7 +9090,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"admin"
 						]
 					}
 				],
@@ -8957,7 +9129,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"admin"
 						]
 					}
 				],
@@ -9064,7 +9237,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"admin"
 						]
 					}
 				],
@@ -9103,7 +9277,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"admin"
 						]
 					}
 				],
@@ -9141,7 +9316,8 @@
 				"security": [
 					{
 						"jwt": [
-							"organizing"
+							"organizing",
+							"admin"
 						]
 					}
 				],
@@ -10318,6 +10494,106 @@
 				}
 			}
 		},
+		"/teams/{id}/history-players": {
+			"get": {
+				"operationId": "GetHistoryPlayers",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"players": {
+											"items": {
+												"properties": {
+													"is_current": {
+														"type": "boolean"
+													},
+													"left_reason": {
+														"type": "string"
+													},
+													"left_at": {
+														"type": "string"
+													},
+													"joined_at": {
+														"type": "string"
+													},
+													"role": {
+														"type": "string"
+													},
+													"jersey_number": {
+														"type": "number",
+														"format": "double"
+													},
+													"season_name": {
+														"type": "string"
+													},
+													"season_id": {
+														"type": "number",
+														"format": "double"
+													},
+													"player_name": {
+														"type": "string"
+													},
+													"player_id": {
+														"type": "number",
+														"format": "double"
+													}
+												},
+												"required": [
+													"is_current",
+													"left_reason",
+													"left_at",
+													"joined_at",
+													"role",
+													"jersey_number",
+													"season_name",
+													"season_id",
+													"player_name",
+													"player_id"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										},
+										"total": {
+											"type": "number",
+											"format": "double"
+										},
+										"team_id": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"players",
+										"total",
+										"team_id"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Teams"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
 		"/teams/{id}": {
 			"get": {
 				"operationId": "FindById",
@@ -11488,7 +11764,8 @@
 				"security": [
 					{
 						"jwt": [
-							"admin"
+							"admin",
+							"leader"
 						]
 					}
 				],
@@ -12056,6 +12333,54 @@
 						"required": true,
 						"schema": {
 							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/statistics/teams/{teamId}/finance": {
+			"get": {
+				"operationId": "GetTeamFinanceStats",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TeamFinanceEntry"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Statistics"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"leader"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "teamId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "season_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
 						}
 					}
 				]
@@ -15364,6 +15689,90 @@
 				}
 			}
 		},
+		"/players/{team_id}/team-players/copy-from": {
+			"post": {
+				"operationId": "CopyRosterFromSeason",
+				"responses": {
+					"200": {
+						"description": "Copied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"errors": {
+											"items": {
+												"properties": {
+													"reason": {
+														"type": "string"
+													},
+													"player_id": {
+														"type": "number",
+														"format": "double"
+													}
+												},
+												"required": [
+													"reason",
+													"player_id"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										},
+										"skipped": {
+											"type": "number",
+											"format": "double"
+										},
+										"copied": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"errors",
+										"skipped",
+										"copied"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Players"
+				],
+				"security": [
+					{
+						"jwt": [
+							"admin",
+							"organizing",
+							"leader"
+						]
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "team_id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CopyRosterDto"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/payments/initiate": {
 			"post": {
 				"operationId": "InitiatePayment",
@@ -16332,6 +16741,52 @@
 				]
 			}
 		},
+		"/matches/{matchId}/lineups/formation": {
+			"get": {
+				"operationId": "GetFormation",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"totalStarters": {
+											"type": "number",
+											"format": "double"
+										},
+										"pitchType": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"totalStarters",
+										"pitchType"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lấy loại sân + tổng số cầu thủ đá chính bắt buộc theo luật sân (5/7/11).\r\nFE gọi LIVE mỗi lần mở LineupBuilderModal — không cache dài phía client,\r\nvì season.pitch_type có thể đổi sau khi match đã tồn tại (BE luôn validate\r\ntheo giá trị hiện tại tại register(), không phải giá trị lúc match được tạo).",
+				"tags": [
+					"Match Lineup"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "matchId",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
 		"/matches/{matchId}/lineups/teams/{teamId}/players/{playerId}": {
 			"patch": {
 				"operationId": "UpdateLineupEntry",
@@ -16447,6 +16902,234 @@
 				]
 			}
 		},
+		"/matches/{id}": {
+			"get": {
+				"operationId": "GetMatchById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"away_team": {
+											"properties": {
+												"logo": {
+													"type": "string"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												},
+												"name": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"logo",
+												"id",
+												"name"
+											],
+											"type": "object"
+										},
+										"home_team": {
+											"properties": {
+												"logo": {
+													"type": "string"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												},
+												"name": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"logo",
+												"id",
+												"name"
+											],
+											"type": "object"
+										},
+										"matchResult": {
+											"properties": {
+												"result_type": {
+													"$ref": "#/components/schemas/MatchResultType"
+												},
+												"away_final_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"home_final_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"away_penalty_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"home_penalty_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"away_extra_time_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"home_extra_time_score": {
+													"type": "number",
+													"format": "double"
+												},
+												"winner_team_id": {
+													"type": "number",
+													"format": "double"
+												},
+												"status": {
+													"$ref": "#/components/schemas/MatchResultStatus"
+												}
+											},
+											"required": [
+												"result_type",
+												"away_final_score",
+												"home_final_score",
+												"away_penalty_score",
+												"home_penalty_score",
+												"away_extra_time_score",
+												"home_extra_time_score",
+												"winner_team_id",
+												"status"
+											],
+											"type": "object"
+										},
+										"referee": {
+											"type": "string"
+										},
+										"leg": {
+											"type": "number",
+											"format": "double"
+										},
+										"round": {
+											"type": "string"
+										},
+										"away_score": {
+											"type": "number",
+											"format": "double"
+										},
+										"home_score": {
+											"type": "number",
+											"format": "double"
+										},
+										"played_at": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"scheduled_at": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"away_team_id": {
+											"type": "number",
+											"format": "double"
+										},
+										"home_team_id": {
+											"type": "number",
+											"format": "double"
+										},
+										"phase": {
+											"properties": {
+												"format": {
+													"$ref": "#/components/schemas/PhaseFormat"
+												},
+												"type": {
+													"$ref": "#/components/schemas/PhaseType"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												},
+												"name": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"format",
+												"type",
+												"id",
+												"name"
+											],
+											"type": "object"
+										},
+										"status": {
+											"$ref": "#/components/schemas/MatchStatus"
+										},
+										"id": {
+											"type": "number",
+											"format": "double"
+										},
+										"venue": {
+											"properties": {
+												"address": {
+													"type": "string"
+												},
+												"id": {
+													"type": "number",
+													"format": "double"
+												},
+												"name": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"address",
+												"id",
+												"name"
+											],
+											"type": "object"
+										}
+									},
+									"required": [
+										"away_team",
+										"home_team",
+										"matchResult",
+										"referee",
+										"leg",
+										"round",
+										"away_score",
+										"home_score",
+										"played_at",
+										"scheduled_at",
+										"away_team_id",
+										"home_team_id",
+										"phase",
+										"status",
+										"id",
+										"venue"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Bắt đầu trận đấu — chuyển scheduled → ongoing.\r\nKhởi tạo home_score/away_score = 0, current_period = first_half.",
+				"tags": [
+					"Match"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
 		"/matches/{id}/start": {
 			"post": {
 				"operationId": "StartMatch",
@@ -16455,7 +17138,6 @@
 						"description": "Started"
 					}
 				},
-				"description": "Bắt đầu trận đấu — chuyển scheduled → ongoing.\r\nKhởi tạo home_score/away_score = 0, current_period = first_half.",
 				"tags": [
 					"Match"
 				],
@@ -16717,7 +17399,6 @@
 						"description": "Abandoned"
 					}
 				},
-				"description": "Dừng trận giữa chừng (thời tiết, bạo lực...).\r\nMatch chuyển sang abandoned, không tạo MatchResult.",
 				"tags": [
 					"Match"
 				],

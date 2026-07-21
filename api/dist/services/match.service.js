@@ -417,16 +417,73 @@ export class MatchLifecycleService {
             where: { id: matchId },
             select: { status: true },
         });
-        if (match.status !== MatchStatus.ongoing)
-            throw createAppError('CONFLICT', `Match ${matchId} không ongoing — không abandon được`);
+        // FIX: trước đây CHỈ cho abandon khi status === 'ongoing' — chặn cả
+        // trường hợp hợp lệ (hủy trận trước khi đá vì sân hỏng/thời tiết, hoặc
+        // trận vừa start nhưng chưa ai ghi event nào). Giờ mở rộng: cho phép
+        // abandon khi 'scheduled'/'postponed' (chưa đá), HOẶC 'ongoing' nhưng
+        // CHƯA có event nào (coi như tương đương "chưa thực sự bắt đầu đá").
+        // Một khi đã có event thật (bàn/thẻ/thay người), CHẶN — vì abandon xóa
+        // ý nghĩa trận đấu mà không xử lý gì với data đã ghi, dễ gây mất dữ
+        // liệu ngầm. Case đó nên xử lý qua correction/resolveAppeal thủ công.
+        const preMatchStatuses = [MatchStatus.scheduled, MatchStatus.postponed];
+        const isPreMatch = preMatchStatuses.includes(match.status);
+        const isOngoing = match.status === MatchStatus.ongoing;
+        if (!isPreMatch && !isOngoing)
+            throw createAppError('CONFLICT', `Match ${matchId} đang ở '${match.status}' — không thể hủy trận (chỉ hủy được khi chưa đá hoặc đang diễn ra)`);
+        if (isOngoing) {
+            const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
+            if (eventCount > 0)
+                throw createAppError('CONFLICT', `Match ${matchId} đã có ${eventCount} sự kiện được ghi nhận — không thể hủy trận trực tiếp, cần xử lý qua khiếu nại/correction`);
+        }
+        // Trận chưa bắt đầu thì "phút hủy" không có ý nghĩa — ép về null bất kể
+        // FE gửi gì, tránh dữ liệu rác. Trận ongoing (chưa event) vẫn giữ minute
+        // FE gửi để ghi nhận đúng thời điểm hủy.
         await this.prisma.match.update({
             where: { id: matchId },
             data: {
                 status: MatchStatus.abandoned,
-                abandoned_minute: minute,
+                abandoned_minute: isPreMatch ? null : minute,
                 abandoned_reason: reason,
             },
         });
+    }
+    async getMatchById(matchId) {
+        const match = await this.prisma.match.findUnique({
+            where: { id: matchId },
+            select: {
+                id: true,
+                status: true,
+                round: true,
+                leg: true,
+                scheduled_at: true,
+                played_at: true,
+                home_score: true,
+                away_score: true,
+                referee: true,
+                home_team_id: true,
+                away_team_id: true,
+                home_team: { select: { id: true, name: true, logo: true } },
+                away_team: { select: { id: true, name: true, logo: true } },
+                venue: { select: { id: true, name: true, address: true } },
+                phase: { select: { id: true, name: true, type: true, format: true } },
+                matchResult: {
+                    select: {
+                        result_type: true,
+                        winner_team_id: true,
+                        home_final_score: true,
+                        away_final_score: true,
+                        home_extra_time_score: true,
+                        away_extra_time_score: true,
+                        home_penalty_score: true,
+                        away_penalty_score: true,
+                        status: true,
+                    },
+                },
+            },
+        });
+        if (!match)
+            throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+        return match;
     }
     async fileAppeal(matchId, reason) {
         await this._fileDispute(matchId, reason, MatchResultStatus.under_review);

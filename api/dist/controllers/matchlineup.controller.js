@@ -45,6 +45,15 @@ let MatchLineupController = class MatchLineupController extends Controller {
         return this.lineupService.getByTeam(matchId, teamId);
     }
     /**
+     * Lấy loại sân + tổng số cầu thủ đá chính bắt buộc theo luật sân (5/7/11).
+     * FE gọi LIVE mỗi lần mở LineupBuilderModal — không cache dài phía client,
+     * vì season.pitch_type có thể đổi sau khi match đã tồn tại (BE luôn validate
+     * theo giá trị hiện tại tại register(), không phải giá trị lúc match được tạo).
+     */
+    async getFormation(matchId) {
+        return this.lineupService.getFormationForMatch(matchId);
+    }
+    /**
      * Đăng ký lineup cho team — bulk replace, idempotent.
      * Chỉ được gọi trước giờ thi đấu ít nhất 1 giờ.
      * Admin: bất kỳ team nào.
@@ -94,6 +103,13 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], MatchLineupController.prototype, "getTeamLineup", null);
+__decorate([
+    Get("{matchId}/lineups/formation"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], MatchLineupController.prototype, "getFormation", null);
 __decorate([
     Security("jwt", ["admin", "leader", 'organizing']),
     Post("{matchId}/lineups"),

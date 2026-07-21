@@ -156,5 +156,12 @@ export declare class StatisticsService {
         season_id: number;
         players: PlayerPerformanceBatchEntry[];
     }>;
+    /**
+ * Single-team finance — filter lại từ getTeamsFinanceStatsBatch thay vì
+ * viết query riêng, tránh lệch công thức tính bonus/fine giữa 2 method.
+ * Chấp nhận overhead query batch cho cả season dù chỉ cần 1 team — route
+ * này không phải hot path (single-team lookup, không phải bulk export).
+ */
+    getTeamFinanceStats(teamId: number, seasonId: number): Promise<TeamFinanceEntry>;
 }
 //# sourceMappingURL=statistics.service.d.ts.map

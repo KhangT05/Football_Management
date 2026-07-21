@@ -129,6 +129,25 @@ export declare class PlayerService {
      * vượt max bị fail với lý do rõ ràng, KHÔNG chặn các dòng còn lại.
      */
     importTeamPlayersFromExcel(season_team_id: number, fileBuffer: Buffer | Uint8Array | ArrayBuffer): Promise<ImportResult>;
+    /**
+     * Copy roster từ 1 season_team NGUỒN sang season_team ĐÍCH — dùng khi đội
+     * đăng ký mùa giải mới và muốn kế thừa danh sách cầu thủ cũ thay vì
+     * add/import lại từ đầu. Chỉ copy TeamPlayer đang approved (không copy
+     * pending/rejected). approval_status luôn reset về 'approved' vì đây là
+     * đăng ký MỚI cho mùa MỚI, không kế thừa lịch sử duyệt của mùa cũ.
+     *
+     * Roster cap của season ĐÍCH vẫn được enforce (assertRosterCapacity) —
+     * nếu roster nguồn > max_players_per_team của season đích, dừng lại và
+     * báo lỗi rõ ràng thay vì copy tràn giới hạn.
+     */
+    copyRosterToSeasonTeam(fromSeasonTeamId: number, toSeasonTeamId: number): Promise<{
+        copied: number;
+        skipped: number;
+        errors: {
+            player_id: number;
+            reason: string;
+        }[];
+    }>;
     private mapPlayer;
     private mapTeamPlayer;
 }

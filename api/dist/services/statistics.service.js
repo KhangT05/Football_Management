@@ -1759,5 +1759,19 @@ export class StatisticsService {
             }),
         };
     }
+    /**
+ * Single-team finance — filter lại từ getTeamsFinanceStatsBatch thay vì
+ * viết query riêng, tránh lệch công thức tính bonus/fine giữa 2 method.
+ * Chấp nhận overhead query batch cho cả season dù chỉ cần 1 team — route
+ * này không phải hot path (single-team lookup, không phải bulk export).
+ */
+    async getTeamFinanceStats(teamId, seasonId) {
+        const batch = await this.getTeamsFinanceStatsBatch(seasonId);
+        const entry = batch.teams.find((t) => t.team_id === teamId);
+        if (!entry) {
+            throw createAppError("NOT_FOUND", `Team ${teamId} không có dữ liệu finance ở season ${seasonId}`, "Đội chưa tham gia mùa giải này hoặc chưa có dữ liệu tài chính");
+        }
+        return entry;
+    }
 }
 //# sourceMappingURL=statistics.service.js.map

@@ -120,8 +120,22 @@ export const matchScheduleSelect = {
     status: true,
 } as const satisfies Prisma.MatchSelect;
 
-export type MatchByTeamRow = Pick<Match,
-    'id' | 'round' | 'home_team_id' | 'away_team_id' | 'scheduled_at' | 'venue_id' | 'status'>;
+export interface MatchByTeamRow {
+    id: number;
+    round: string | null;
+    scheduled_at: Date | null;
+    played_at: Date | null;
+    venue_id: number | null;
+    status: string;
+    home_score: number | null;
+    away_score: number | null;
+    home_team_id: number;
+    away_team_id: number;
+    home_team: { id: number; name: string; logo: string | null };
+    away_team: { id: number; name: string; logo: string | null };
+    venue: { id: number; name: string } | null;
+    phase: { id: number; name: string; type: string; format: string } | null;
+}
 
 export type DateRangeOverride = {
     dateRangeStart?: Date;

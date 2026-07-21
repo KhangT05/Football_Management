@@ -1,4 +1,3 @@
-// src/pages/MatchDetail.jsx
 import { useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Shield, Activity, WifiOff, Settings, Trophy } from 'lucide-react';

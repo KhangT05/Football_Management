@@ -13,6 +13,59 @@ export declare class MatchController extends Controller {
      * Bắt đầu trận đấu — chuyển scheduled → ongoing.
      * Khởi tạo home_score/away_score = 0, current_period = first_half.
      */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    getMatchById(id: number): Promise<{
+        id: number;
+        venue: {
+            name: string;
+            address: string | null;
+            id: number;
+        } | null;
+        phase: {
+            type: import("../generated/prisma/enums.js").PhaseType;
+            name: string;
+            id: number;
+            format: import("../generated/prisma/enums.js").PhaseFormat;
+        };
+        matchResult: {
+            status: import("../generated/prisma/enums.js").MatchResultStatus;
+            winner_team_id: number | null;
+            home_extra_time_score: number | null;
+            away_extra_time_score: number | null;
+            home_penalty_score: number | null;
+            away_penalty_score: number | null;
+            home_final_score: number;
+            away_final_score: number;
+            result_type: import("../generated/prisma/enums.js").MatchResultType;
+        } | null;
+        status: import("../generated/prisma/enums.js").MatchStatus;
+        home_team_id: number;
+        away_team_id: number;
+        scheduled_at: Date | null;
+        played_at: Date | null;
+        home_score: number | null;
+        away_score: number | null;
+        round: string | null;
+        leg: number | null;
+        referee: string | null;
+        home_team: {
+            name: string;
+            id: number;
+            logo: string | null;
+        };
+        away_team: {
+            name: string;
+            id: number;
+            logo: string | null;
+        };
+    }>;
     startMatch(id: number): Promise<void>;
     /**
      * Chuyển period (first_half → second_half → extra_time_first...).
@@ -58,10 +111,6 @@ export declare class MatchController extends Controller {
      * venueIds/matchTimes optional — bắt buộc nếu knockout (validated tại matchResultService).
      */
     forfeitMatch(id: number, body: matchSchema.ForfeitMatchDto): Promise<ConfirmResultOutput>;
-    /**
-     * Dừng trận giữa chừng (thời tiết, bạo lực...).
-     * Match chuyển sang abandoned, không tạo MatchResult.
-     */
     abandonMatch(id: number, body: matchSchema.AbandonMatchDto): Promise<void>;
     /**
      * File khiếu nại — chỉ khi MatchResult.status = official.

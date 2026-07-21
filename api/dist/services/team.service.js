@@ -166,5 +166,66 @@ export class TeamService {
             throw err;
         }
     }
+    // TeamService
+    /**
+     * Toàn bộ cầu thủ đã/đang gắn với team này, qua mọi season — merge
+     * TeamPlayer (live) + TeamPlayerHistory (đã rời), sort theo joined_at desc.
+     * Join qua season_team.team_id vì TeamPlayer/TeamPlayerHistory không có
+     * team_id trực tiếp (giống pattern StatisticsService.getPlayerParticipationStats).
+     */
+    async getHistoryPlayers(teamId) {
+        await this.assertExists(teamId);
+        const [live, archived] = await Promise.all([
+            this.prisma.teamPlayer.findMany({
+                where: { season_team: { team_id: teamId } },
+                select: {
+                    jersey_number: true,
+                    role: true,
+                    created_at: true,
+                    player: { select: { id: true, user: { select: { name: true } } } },
+                    season_team: { select: { season: { select: { id: true, name: true } } } },
+                },
+            }),
+            this.prisma.teamPlayerHistory.findMany({
+                where: { season_team: { team_id: teamId } },
+                select: {
+                    jersey_number: true,
+                    role: true,
+                    joined_at: true,
+                    left_at: true,
+                    left_reason: true,
+                    player: { select: { id: true, user: { select: { name: true } } } },
+                    season_team: { select: { season: { select: { id: true, name: true } } } },
+                },
+            }),
+        ]);
+        const players = [
+            ...live.map((r) => ({
+                player_id: r.player.id,
+                player_name: r.player.user.name,
+                season_id: r.season_team.season.id,
+                season_name: r.season_team.season.name,
+                jersey_number: r.jersey_number,
+                role: r.role,
+                joined_at: r.created_at.toISOString(),
+                left_at: null,
+                left_reason: null,
+                is_current: true,
+            })),
+            ...archived.map((r) => ({
+                player_id: r.player.id,
+                player_name: r.player.user.name,
+                season_id: r.season_team.season.id,
+                season_name: r.season_team.season.name,
+                jersey_number: r.jersey_number,
+                role: r.role,
+                joined_at: r.joined_at.toISOString(),
+                left_at: r.left_at.toISOString(),
+                left_reason: r.left_reason,
+                is_current: false,
+            })),
+        ].sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
+        return { team_id: teamId, total: players.length, players };
+    }
 }
 //# sourceMappingURL=team.service.js.map

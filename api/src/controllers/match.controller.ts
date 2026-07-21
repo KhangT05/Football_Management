@@ -48,6 +48,14 @@ export class MatchController extends Controller {
  * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
  * Public — guest xem được.
  */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    @Get("{id}")
+    async getMatchById(@Path() id: number) {
+        return this.lifecycleService.getMatchById(id);
+    }
 
     @Security("jwt", ["organizing", "admin"])
     @Post("{id}/start")
@@ -320,12 +328,5 @@ export class MatchController extends Controller {
         // Nếu cần override venue/matchTimes, mở rộng body hoặc thêm @Query params
         return this.lifecycleService.adminRecordResult(id, body, {});
     }
-    /**
- * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
- * Public — guest xem được.
- */
-    @Get("{id}")
-    async getMatchById(@Path() id: number) {
-        return this.lifecycleService.getMatchById(id);
-    }
+
 }
