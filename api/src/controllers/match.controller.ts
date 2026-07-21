@@ -175,10 +175,6 @@ export class MatchController extends Controller {
         });
     }
 
-    /**
-     * Dừng trận giữa chừng (thời tiết, bạo lực...).
-     * Match chuyển sang abandoned, không tạo MatchResult.
-     */
     @Security("jwt", ["admin", 'organizing'])
     @Post("{id}/abandon")
     @SuccessResponse(204, "Abandoned")
@@ -187,7 +183,8 @@ export class MatchController extends Controller {
         @Body() body: matchSchema.AbandonMatchDto,
     ): Promise<void> {
         this.setStatus(204);
-        return this.lifecycleService.abandonMatch(id, body.minute, body.reason);
+        // body.minute giờ có thể null khi hủy trận trước khi đá (scheduled/postponed).
+        return this.lifecycleService.abandonMatch(id, body.minute ?? null, body.reason);
     }
 
     // ─── Appeal / protest ─────────────────────────────────────────────────────

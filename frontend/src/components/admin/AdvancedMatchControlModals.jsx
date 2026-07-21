@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { X, Save, Loader2, AlertTriangle, ShieldAlert, Gavel, Scale } from 'lucide-react';
 import { matchApi } from '../../api';
+// FIX: input "phút" trước đây không strip ký tự non-digit (bug bạn gặp: gõ
+// được "ghghhh") -> đổi sang pattern digit-only giống MinuteInput. Đồng thời
+// thêm dropdown chọn HIỆP để tự tính khoảng phút hợp lệ (dùng lại
+// MINUTE_BOUNDS_BY_PERIOD đã có sẵn ở livematch.schema.js) — BE
+// abandonMatch(matchId, minute, reason) chỉ cần `minute` số nguyên nên
+// KHÔNG cần đổi API, period chỉ dùng để UI validate/gợi ý đúng khoảng.
+import { PERIOD_LABELS, PERIOD_ORDER, MINUTE_BOUNDS_BY_PERIOD } from '../../schemas/livematch.schema';
+import { getFriendlyErrorMessage } from '../../utils/errorHelper';
 
-// ── 1. Transition Period Modal ──────────────────────────────────────────────
 export function TransitionPeriodModal({ isOpen, onClose, match, onSuccess }) {
   const [period, setPeriod] = useState('second_half');
   const [isSaving, setIsSaving] = useState(false);
@@ -18,7 +25,7 @@ export function TransitionPeriodModal({ isOpen, onClose, match, onSuccess }) {
       await matchApi.transitionPeriod(match.id, { period });
       onSuccess(`Chuyển sang hiệp: ${period}`);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi khi chuyển hiệp.');
+      setError(getFriendlyErrorMessage(err, 'Lỗi khi chuyển hiệp.'));
     } finally {
       setIsSaving(false);
     }
@@ -68,6 +75,7 @@ export function ForfeitMatchModal({ isOpen, onClose, match, onSuccess }) {
 
   if (!isOpen) return null;
 
+  // ── 2. Forfeit Match Modal ──────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -76,7 +84,7 @@ export function ForfeitMatchModal({ isOpen, onClose, match, onSuccess }) {
       await matchApi.forfeitMatch(match.id, { forfeitingTeamId: Number(forfeitingTeamId) });
       onSuccess('Xử thua thành công.');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi xử thua.');
+      setError(getFriendlyErrorMessage(err, 'Lỗi xử thua.'));
     } finally {
       setIsSaving(false);
     }
@@ -118,25 +126,44 @@ export function ForfeitMatchModal({ isOpen, onClose, match, onSuccess }) {
     </div>
   );
 }
+export function AbandonMatchModal({ isOpen, onClose, match, currentPeriod, isKnockout, matchStatus, onSuccess }) {
+  const allowedPeriods = isKnockout ? PERIOD_ORDER : PERIOD_ORDER.slice(0, 2);
+  const initialPeriod = allowedPeriods.includes(currentPeriod) ? currentPeriod : allowedPeriods[0];
+  const isPreMatch = matchStatus === 'scheduled' || matchStatus === 'postponed';
 
-// ── 3. Abandon Match Modal ──────────────────────────────────────────────────
-export function AbandonMatchModal({ isOpen, onClose, match, currentMinute, onSuccess }) {
-  const [minute, setMinute] = useState(currentMinute || 0);
+  const [period, setPeriod] = useState(initialPeriod);
+  const [minute, setMinute] = useState('');
   const [reason, setReason] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
+  const [minMinute, maxMinute] = MINUTE_BOUNDS_BY_PERIOD[period];
+
+  const handleMinuteChange = (e) => setMinute(e.target.value.replace(/[^0-9]/g, ''));
+  const handlePeriodChange = (e) => { setPeriod(e.target.value); setMinute(''); };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isPreMatch) {
+      if (minute === '') { setError('Vui lòng nhập phút hủy trận.'); return; }
+      const minuteNum = Number(minute);
+      if (minuteNum < minMinute || minuteNum > maxMinute) {
+        setError(`Phút phải trong khoảng ${minMinute}-${maxMinute} cho ${PERIOD_LABELS[period]}.`);
+        return;
+      }
+    }
     setIsSaving(true);
     setError('');
     try {
-      await matchApi.abandonMatch(match.id, { minute: Number(minute), reason });
+      await matchApi.abandonMatch(match.id, {
+        minute: isPreMatch ? null : Number(minute),
+        reason,
+      });
       onSuccess('Hủy trận thành công.');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi hủy trận.');
+      setError(getFriendlyErrorMessage(err, 'Lỗi hủy trận.'));
     } finally {
       setIsSaving(false);
     }
@@ -153,14 +180,27 @@ export function AbandonMatchModal({ isOpen, onClose, match, currentMinute, onSuc
         <div className="p-6">
           {error && <div className="mb-4 text-red-400 text-sm font-bold bg-red-500/10 p-3 rounded-lg">{error}</div>}
           <p className="text-gray-400 text-sm mb-4">
-            Sử dụng khi trận đấu không thể tiếp tục (ví dụ: thời tiết xấu, bạo loạn).
-            Kết quả của trận đấu sẽ do BTC giải quyết sau.
+            {isPreMatch
+              ? 'Trận chưa diễn ra — hủy ngay lập tức, không cần nhập phút.'
+              : 'Sử dụng khi trận đấu không thể tiếp tục (ví dụ: thời tiết xấu, bạo loạn). Kết quả của trận đấu sẽ do BTC giải quyết sau.'}
           </p>
           <form id="abandon-form" onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-300 uppercase mb-2">Phút hủy trận:</label>
-              <input type="number" min="0" max="130" value={minute} onChange={e => setMinute(e.target.value)} className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white" />
-            </div>
+            {!isPreMatch && (
+              <>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 uppercase mb-2">Hiệp đấu:</label>
+                  <select value={period} onChange={handlePeriodChange} className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white focus:border-orange-500">
+                    {allowedPeriods.map(p => <option key={p} value={p}>{PERIOD_LABELS[p]}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 uppercase mb-2">
+                    Phút hủy trận ({minMinute}-{maxMinute}):
+                  </label>
+                  <input type="text" inputMode="numeric" value={minute} onChange={handleMinuteChange} placeholder={`${minMinute}-${maxMinute}`} className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white" />
+                </div>
+              </>
+            )}
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase mb-2">Lý do hủy:</label>
               <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="Mô tả lý do..." className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white resize-none" />
@@ -177,7 +217,6 @@ export function AbandonMatchModal({ isOpen, onClose, match, currentMinute, onSuc
     </div>
   );
 }
-
 // ── 4. Dispute Modal (Appeal / Protest) ─────────────────────────────────────
 export function DisputeModal({ isOpen, onClose, match, type, onSuccess }) {
   const [reason, setReason] = useState('');
@@ -187,6 +226,7 @@ export function DisputeModal({ isOpen, onClose, match, type, onSuccess }) {
   if (!isOpen) return null;
   const isAppeal = type === 'appeal';
 
+  // ── 4. Dispute Modal (Appeal / Protest) ─────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reason.trim()) { setError('Lý do không được để trống.'); return; }
@@ -200,12 +240,11 @@ export function DisputeModal({ isOpen, onClose, match, type, onSuccess }) {
       }
       onSuccess(`Đã nộp đơn ${isAppeal ? 'Kháng cáo' : 'Khiếu nại'} thành công.`);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi khi gửi đơn.');
+      setError(getFriendlyErrorMessage(err, 'Lỗi khi gửi đơn.'));
     } finally {
       setIsSaving(false);
     }
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
@@ -243,6 +282,7 @@ export function ResolveAppealModal({ isOpen, onClose, match, onSuccess }) {
 
   if (!isOpen) return null;
 
+  // ── 5. Resolve Appeal Modal ─────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!note.trim()) { setError('Vui lòng nhập ghi chú.'); return; }
@@ -257,7 +297,7 @@ export function ResolveAppealModal({ isOpen, onClose, match, onSuccess }) {
       await matchApi.resolveAppeal(match.id, payload);
       onSuccess('Đã giải quyết kháng cáo thành công.');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi khi giải quyết kháng cáo.');
+      setError(getFriendlyErrorMessage(err, 'Lỗi khi giải quyết kháng cáo.'));
     } finally {
       setIsSaving(false);
     }
@@ -281,7 +321,7 @@ export function ResolveAppealModal({ isOpen, onClose, match, onSuccess }) {
                 <option value="overturn">Đảo ngược quyết định (Overturn)</option>
               </select>
             </div>
-            
+
             {resolution === 'overturn' && (
               <div className="grid grid-cols-2 gap-4">
                 <div>

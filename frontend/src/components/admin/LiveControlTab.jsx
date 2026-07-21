@@ -442,9 +442,12 @@ function MatchWorkspace({ match, teams, onRefresh }) {
     fieldArray.append(makeEmptyEvent(type, ui.currentPeriod));
   };
 
-  // ── Chuyển hiệp ──
   const handleTransitionPeriod = async (nextPeriod) => {
     try {
+      if (matchStatus === 'scheduled' || matchStatus === 'postponed') {
+        await startMatchMutation.mutateAsync();
+        ui.setMatchStatus('ongoing');
+      }
       await transitionPeriodMutation.mutateAsync(nextPeriod);
       ui.setCurrentPeriod(nextPeriod);
       toast.info(`Đã chuyển sang ${PERIOD_LABELS[nextPeriod]}.`);
@@ -668,7 +671,9 @@ function MatchWorkspace({ match, teams, onRefresh }) {
                   <RotateCcw className="w-3 h-3" /> Đặt lại
                 </button>
                 <button onClick={() => ui.setActiveModal('forfeit')} className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold border border-red-500/20 transition-colors">Xử Thua</button>
-                <button onClick={() => ui.setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">Hủy Trận</button>
+                <button onClick={() => ui.setActiveModal('abandon')} className="px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs font-bold border border-orange-500/20 transition-colors">
+                  Hủy Trận
+                </button>
               </div>
             )}
             {(isFinished || isProtested) && (
@@ -755,7 +760,15 @@ function MatchWorkspace({ match, teams, onRefresh }) {
       )}
 
       <ForfeitMatchModal isOpen={ui.activeModal === 'forfeit'} onClose={() => ui.setActiveModal(null)} match={match} onSuccess={handleModalSuccess} />
-      <AbandonMatchModal isOpen={ui.activeModal === 'abandon'} onClose={() => ui.setActiveModal(null)} match={match} onSuccess={handleModalSuccess} />
+      <AbandonMatchModal
+        isOpen={ui.activeModal === 'abandon'}
+        onClose={() => ui.setActiveModal(null)}
+        match={match}
+        currentPeriod={ui.currentPeriod}
+        isKnockout={isKnockout}
+        matchStatus={matchStatus}
+        onSuccess={handleModalSuccess}
+      />
       <DisputeModal isOpen={ui.activeModal === 'appeal' || ui.activeModal === 'protest'} onClose={() => ui.setActiveModal(null)} match={match} type={ui.activeModal} onSuccess={handleModalSuccess} />
       <ResolveAppealModal isOpen={ui.activeModal === 'resolve'} onClose={() => ui.setActiveModal(null)} match={match} onSuccess={handleModalSuccess} />
 
