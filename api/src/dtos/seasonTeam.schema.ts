@@ -35,9 +35,9 @@ export const transferSeasonRosterSchema = z.object({
     add_players: z.array(transferRosterPlayerAddSchema).default([]),
 });
 
+export const TransferSeasonTeamBodySchema = TransferSeasonTeamSchema.merge(transferSeasonRosterSchema);
 export type TransferRosterInput = z.infer<typeof transferSeasonRosterSchema>;
-
-export type TransferSeasonTeamDto = z.infer<typeof TransferSeasonTeamSchema>;
+export type TransferSeasonTeamDto = z.infer<typeof TransferSeasonTeamBodySchema>;
 export type SelfRegisterSeasonTeamDto = z.infer<typeof selfRegisterSeasonTeamSchema>;
 export type AdminAddSeasonTeamDto = z.infer<typeof adminAddSeasonTeamSchema>;
 export type UpdateSeasonTeamStatusDto = z.infer<typeof updateSeasonTeamStatusSchema>;
