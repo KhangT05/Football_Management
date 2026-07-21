@@ -535,6 +535,10 @@ export default function MyTeam() {
   };
 
   const handleRegisterSeason = (seasonId) => {
+    // FIX: chặn double-fire — nếu đang có request pending (bất kể season nào),
+    // bỏ qua click mới. Đủ dùng vì UI chỉ cho đăng ký tuần tự từng giải một.
+    if (registerSeason.isPending) return;
+
     setRegisteringSeasonId(seasonId);
     registerSeason.mutate(seasonId, {
       onSuccess: () => toast.success('Đã gửi yêu cầu đăng ký giải!'),
@@ -1043,19 +1047,19 @@ export default function MyTeam() {
                             </tbody>
                           </table>
                         </div>
-                          <div className="p-4 border-t border-navy-light/50">
-                            <Pagination
-                              currentPage={psSafe}
-                              totalPages={psTotal}
-                              onPageChange={setPlayerStatPage}
-                              itemsPerPage={playerStatPerPage}
-                              onItemsPerPageChange={(n) => { setPlayerStatPerPage(n); setPlayerStatPage(1); }}
-                              options={[5, 10, 20]}
-                              totalCount={playersPerf.length}
-                            />
-                          </div>
-                        </>
-                      )}
+                        <div className="p-4 border-t border-navy-light/50">
+                          <Pagination
+                            currentPage={psSafe}
+                            totalPages={psTotal}
+                            onPageChange={setPlayerStatPage}
+                            itemsPerPage={playerStatPerPage}
+                            onItemsPerPageChange={(n) => { setPlayerStatPerPage(n); setPlayerStatPage(1); }}
+                            options={[5, 10, 20]}
+                            totalCount={playersPerf.length}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -1406,6 +1410,7 @@ export default function MyTeam() {
 
       {showSeasonRegModal && (
         <SeasonRegistrationModal seasons={eligibility} registeringId={registeringSeasonId}
+          isRegistering={registerSeason.isPending}
           onRegister={handleRegisterSeason} onClose={() => setShowSeasonRegModal(false)} />
       )}
     </div>

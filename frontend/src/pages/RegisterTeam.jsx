@@ -4,6 +4,7 @@ import { getFriendlyErrorMessage } from '../utils/errorHelper';
 import {
   UploadCloud, ShieldCheck, CheckCircle2, Trophy, Loader2, ArrowRight, ArrowLeft, X,
   Users, Plus, Trash2, Info, FileSpreadsheet, Upload, FileDown, Shield, UserPlus,
+  AlertTriangle,
 } from 'lucide-react';
 import useToastStore from '../store/toastStore';
 import useAuthStore from '../store/authStore';
@@ -27,13 +28,15 @@ export default function RegisterTeam() {
   const { seasons, fetchAll: fetchSeasons } = useSeasonStore();
 
   // ── Step control ──
-  // 'loading' : đang check xem user đã có team nào chưa
-  // 'choice'  : user đã có ≥1 team → hỏi "thêm CT vào team cũ" hay "tạo team mới"
-  // 'info'    : form tạo team (mặc định nếu chưa có team nào)
-  // 'roster'  : sau khi tạo team mới xong → nhập đội hình (tùy chọn)
   const [step, setStep] = useState('loading');
   const [existingTeams, setExistingTeams] = useState([]);
-  const [createdTeam, setCreatedTeam] = useState(null); // { id, name }
+
+  // FIX (season_team_id bug): createdTeam giờ có thêm `seasonTeamId`.
+  // `id` ở đây LUÔN là Team.id — KHÔNG được dùng để gọi bất kỳ API nào
+  // scope theo season (import players, roster, v.v.). Mọi API roster-scoped
+  // phải dùng `seasonTeamId`, và field này có thể là null nếu user không
+  // đăng ký giải lúc tạo team (xem step 'roster' bên dưới).
+  const [createdTeam, setCreatedTeam] = useState(null); // { id, name, seasonTeamId }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -45,9 +48,6 @@ export default function RegisterTeam() {
     fetchSeasons({ per_page: 50, sort: 'id', direction: 'desc' });
   }, [fetchSeasons]);
 
-  // ── FIX: check team hiện có trước khi bắt user tạo mới ──
-  // Fail-open: nếu API lỗi, coi như chưa có team nào (step 'info') thay vì
-  // chặn hẳn — velocity > edge-case safety cho 1 lần check onboarding.
   useEffect(() => {
     let cancelled = false;
     const checkExisting = async () => {
@@ -178,24 +178,6 @@ export default function RegisterTeam() {
   };
 
   // ── BƯỚC 1: chỉ tạo Team ──
-  // FIX (team_id resolution bug): trước đây suy newTeamId qua chuỗi fallback
-  // `teamRes?.data?.id || teamRes?.id || teamRes?.data?.data[0]?.id` — nhánh
-  // cuối lấy PHẦN TỬ ĐẦU của một danh sách nếu response của registerTeam()
-  // vô tình có shape giống getTeams() ({data:{data:[...]}}). Với user đã có
-  // sẵn team khác (đến từ bước 'choice'), nhánh này có thể âm thầm lấy NHẦM
-  // id của team CŨ thay vì team vừa tạo → gọi seasonTeamApi.register() với
-  // team_id không thuộc sở hữu đúng ngữ cảnh, BE trả FORBIDDEN
-  // ("You are not the leader of this team"), hiển thị ra UI là "Access
-  // denied" khó hiểu. registerTeam() luôn trả về ĐÚNG 1 object team vừa tạo,
-  // không phải danh sách — chỉ tin data.id / id trực tiếp.
-  //
-  // FIX (lỗi tạo đội vs lỗi đăng ký giải bị gộp chung): trước đây cả 2 lệnh
-  // gọi API (tạo team + đăng ký season) nằm chung 1 try/catch — nếu tạo team
-  // THÀNH CÔNG nhưng đăng ký season THẤT BẠI, user vẫn thấy toast lỗi
-  // "Có lỗi xảy ra khi tạo đội" (sai sự thật, đội đã tồn tại trong DB) và có
-  // thể bấm submit lại → tạo thêm 1 team trùng lặp/mồ côi mỗi lần bấm. Tách
-  // 2 bước: bước A (tạo team) lỗi thì dừng hẳn; bước B (đăng ký season) lỗi
-  // thì vẫn coi là thành công phần tạo đội, chỉ cảnh báo riêng phần season.
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     const errors = [];
@@ -225,18 +207,30 @@ export default function RegisterTeam() {
       if (!newTeamId) {
         throw new Error('Không lấy được ID đội bóng vừa tạo.');
       }
-
-      setCreatedTeam({ id: newTeamId, name: teamInfo.name });
     } catch (error) {
       toast.error(getFriendlyErrorMessage(error, 'Có lỗi xảy ra khi tạo đội. Vui lòng thử lại!'));
       setIsSubmitting(false);
       return; // chưa có team hợp lệ → dừng, không sang bước roster
     }
 
-    // ── Bước B: đăng ký mùa giải (tùy chọn) — lỗi ở đây KHÔNG rollback UI về form tạo đội ──
+    // ── Bước B: đăng ký mùa giải (tùy chọn) ──
+    // FIX: capture đúng SeasonTeam.id trả về từ API, không được đoán/bỏ qua.
+    // Toàn bộ import cầu thủ ở bước 'roster' phụ thuộc vào giá trị này —
+    // TeamPlayer luôn scope theo season_team_id (xem player.service.ts:
+    // getSeasonTeamRosterConstraints tra bảng SeasonTeam bằng đúng id này,
+    // KHÔNG phải Team.id). Nếu backend không trả field id ở response này,
+    // đây là API contract cần fix ở BE trước, không thể suy ra từ đâu khác.
+    let newSeasonTeamId = null;
     if (selectedSeasonId) {
       try {
-        await seasonTeamApi.register({ season_id: parseInt(selectedSeasonId), team_id: newTeamId });
+        const stRes = await seasonTeamApi.register({ season_id: parseInt(selectedSeasonId), team_id: newTeamId });
+        newSeasonTeamId = stRes?.data?.id ?? stRes?.id ?? null;
+        if (!newSeasonTeamId) {
+          // Team đã tạo thành công, đăng ký giải "coi như" thành công (BE
+          // không trả lỗi), nhưng thiếu id để import sau này — báo rõ thay
+          // vì âm thầm dùng nhầm Team.id.
+          console.error('seasonTeamApi.register() không trả về id — kiểm tra lại response shape ở BE');
+        }
         toast.success('Tạo đội & đăng ký giải thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
       } catch (error) {
         toast.warning(
@@ -251,19 +245,24 @@ export default function RegisterTeam() {
       toast.success('Tạo đội bóng thành công! Giờ bạn có thể thêm cầu thủ.', 4000);
     }
 
+    setCreatedTeam({ id: newTeamId, name: teamInfo.name, seasonTeamId: newSeasonTeamId });
     setIsSubmitting(false);
     setStep('roster');
   };
 
-  // ── BƯỚC 2: chỉ import cầu thủ vào team đã tạo — KHÔNG tạo lại team ──
+  // ── BƯỚC 2: chỉ import cầu thủ vào roster của season_team đã tạo ──
+  // FIX: dùng createdTeam.seasonTeamId (SeasonTeam.id), KHÔNG dùng
+  // createdTeam.id (Team.id) — đây chính là bug khiến import ở trang này
+  // fail hoặc (tệ hơn) âm thầm ghi nhầm cầu thủ vào season_team khác nếu
+  // 2 id trùng số ngẫu nhiên.
   const handleAddPlayers = async () => {
-    if (!createdTeam?.id) return;
+    if (!createdTeam?.seasonTeamId) return; // guard: không nên gọi được vì UI đã chặn, nhưng để chắc chắn
     setIsSubmitting(true);
     try {
       if (playerInputMode === 'excel' && excelFile) {
         const formData = new FormData();
         formData.append('file', excelFile);
-        const res = await playerApi.importTeamPlayers(createdTeam.id, formData);
+        const res = await playerApi.importTeamPlayers(createdTeam.seasonTeamId, formData);
         const result = res?.data ?? res;
         const successCount = result?.success ?? 0;
         const failedCount = result?.failed ?? 0;
@@ -288,6 +287,9 @@ export default function RegisterTeam() {
           return;
         }
       }
+      // NOTE (bug có sẵn, chưa fix ở đây): nhánh playerInputMode === 'manual'
+      // không gửi `players` đi đâu cả — xem chặn UI phía dưới (đã disable
+      // tab "Nhập Thủ Công" ở bước roster cho tới khi có API rõ ràng).
 
       setIsSuccess(true);
       setTimeout(() => navigate('/doi-cua-toi'), 2000);
@@ -303,12 +305,10 @@ export default function RegisterTeam() {
     navigate('/doi-cua-toi');
   };
 
-  // Chọn "thêm cầu thủ vào team đã có" → sang MyTeam, active đúng team + auto mở modal add player
   const handleAddPlayerToExisting = (teamId) => {
     navigate('/doi-cua-toi', { state: { autoOpenAddPlayer: true, teamId } });
   };
 
-  // ── Loading state (đang check existing teams) ──
   if (step === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-dark">
@@ -316,6 +316,11 @@ export default function RegisterTeam() {
       </div>
     );
   }
+
+  // FIX: đây là điều kiện then chốt — nếu user không chọn giải lúc tạo
+  // team, không có SeasonTeam nào tồn tại để import cầu thủ vào. Không thể
+  // "tự chế" seasonTeamId, phải chặn UI và hướng dẫn đăng ký giải trước.
+  const hasSeasonTeam = Boolean(createdTeam?.seasonTeamId);
 
   return (
     <div className="min-h-screen relative pt-24 pb-20 overflow-x-hidden bg-navy-dark">
@@ -325,9 +330,6 @@ export default function RegisterTeam() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* ─────────────────────────────────────────────────────
-            STEP: choice — user đã có ≥1 team, hỏi muốn làm gì
-        ───────────────────────────────────────────────────── */}
         {step === 'choice' && (
           <div className="animate-slide-up">
             <div className="text-center mb-12">
@@ -340,7 +342,6 @@ export default function RegisterTeam() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {/* Card: thêm CT vào team có sẵn */}
               <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl p-8 flex flex-col">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
@@ -371,7 +372,6 @@ export default function RegisterTeam() {
                 </div>
               </div>
 
-              {/* Card: tạo team mới */}
               <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-4xl p-8 flex flex-col">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-blue-500/20 rounded-xl border border-blue-500/30">
@@ -394,9 +394,6 @@ export default function RegisterTeam() {
           </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────
-            STEP: info / roster — flow tạo team gốc
-        ───────────────────────────────────────────────────── */}
         {(step === 'info' || step === 'roster') && (
           <>
             <div className="text-center mb-12 animate-slide-up relative">
@@ -419,7 +416,6 @@ export default function RegisterTeam() {
               </p>
             </div>
 
-            {/* Step indicator */}
             <div className="flex items-center justify-center gap-3 mb-10 animate-fade-in">
               <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border ${step === 'info' ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
                 {step === 'roster' ? <CheckCircle2 className="w-4 h-4" /> : <span className="w-4 h-4 rounded-full bg-blue-400 text-navy-dark flex items-center justify-center text-[10px]">1</span>}
@@ -562,7 +558,7 @@ export default function RegisterTeam() {
                           </div>
                           <h3 className="text-gray-300 font-bold mb-2">Chưa có giải đấu nào mở đăng ký</h3>
                           <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                            Bạn vẫn có thể tạo đội trước. Khi có giải đấu mới, bạn có thể đăng ký tham gia sau tại mục "Đội Của Tôi".
+                            Bạn vẫn có thể tạo đội trước. Khi có giải đấu mới, bạn có thể đăng ký tham gia sau tại mục "Đội Của Tôi". Lưu ý: bạn sẽ cần đăng ký giải trước khi có thể thêm cầu thủ vào đội hình.
                           </p>
                         </div>
                       ) : (
@@ -646,193 +642,217 @@ export default function RegisterTeam() {
                   </p>
                 </div>
 
-                <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] p-6 md:p-12 shadow-2xl shadow-black/40">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-navy-light pb-5 mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-                        <Users className="w-6 h-6 text-emerald-400" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-wider">Đội Hình Thi Đấu</h2>
-                        <p className="text-gray-400 text-sm mt-1">Thêm cầu thủ vào đội (Tùy chọn — có thể làm sau tại Quản Lý Đội)</p>
-                      </div>
+                {/* FIX: chặn UI import khi chưa có SeasonTeam — không có bất kỳ
+                    season_team_id nào để gắn cầu thủ vào, gọi API chắc chắn fail
+                    hoặc phải đoán id sai. */}
+                {!hasSeasonTeam ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-[2.5rem] p-8 flex flex-col items-center text-center gap-4">
+                    <div className="p-3 bg-amber-500/20 rounded-xl border border-amber-500/30">
+                      <AlertTriangle className="w-8 h-8 text-amber-400" />
                     </div>
-
-                    <div className="flex bg-navy-dark border border-navy-light rounded-xl p-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setPlayerInputMode('manual')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'manual'
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'text-gray-400 hover:text-white'
-                          }`}
-                      >
-                        Nhập Thủ Công
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPlayerInputMode('excel')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'excel'
-                          ? 'bg-emerald-600 text-white shadow-md'
-                          : 'text-gray-400 hover:text-white'
-                          }`}
-                      >
-                        <FileSpreadsheet className="w-4 h-4" /> Import Excel
-                      </button>
+                    <div>
+                      <h3 className="text-amber-400 font-black text-lg mb-2">Chưa thể thêm cầu thủ ngay lúc này</h3>
+                      <p className="text-gray-400 text-sm max-w-md mx-auto">
+                        Đội của bạn chưa đăng ký tham gia mùa giải nào. Danh sách cầu thủ luôn gắn với một mùa giải cụ thể,
+                        vì vậy bạn cần đăng ký giải trước, sau đó thêm cầu thủ tại trang "Đội Của Tôi".
+                      </p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleSkipRoster}
+                      className="mt-2 flex items-center gap-3 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-0.5 transition-all shadow-[0_8px_30px_rgba(37,99,235,0.3)]"
+                    >
+                      Đến Quản Lý Đội <ArrowRight className="w-5 h-5" />
+                    </button>
                   </div>
-
-                  {playerInputMode === 'excel' ? (
-                    <div className="animate-fade-in">
-                      <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
-                        <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                        <div className="text-sm text-red-400 leading-relaxed">
-                          Tải lên file Excel (.xlsx, .xls) chứa danh sách cầu thủ của bạn. Hệ thống sẽ tự động đọc và gửi lời mời đến email của từng cầu thủ để họ xác nhận tham gia.
-                          <br />
-                          <button
-                            type="button"
-                            onClick={handleDownloadTemplate}
-                            disabled={isDownloadingTemplate}
-                            className="text-red-500 hover:text-red-400 underline font-medium mt-2 inline-flex items-center gap-1.5 disabled:opacity-60"
-                          >
-                            {isDownloadingTemplate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                            Tải file mẫu tại đây
-                          </button>
+                ) : (
+                  <div className="bg-navy/60 backdrop-blur-2xl border border-navy-light rounded-[2.5rem] p-6 md:p-12 shadow-2xl shadow-black/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-navy-light pb-5 mb-8">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
+                          <Users className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-black text-white uppercase tracking-wider">Đội Hình Thi Đấu</h2>
+                          <p className="text-gray-400 text-sm mt-1">Thêm cầu thủ vào đội (Tùy chọn — có thể làm sau tại Quản Lý Đội)</p>
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-navy-light rounded-3xl bg-navy-dark/50 hover:border-emerald-500/50 transition-colors relative group">
-                        <input
-                          type="file"
-                          accept=".xlsx, .xls"
-                          onChange={handleExcelChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-
-                        {excelFile ? (
-                          <div className="text-center relative z-20 pointer-events-none">
-                            <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
-                              <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
-                            </div>
-                            <h3 className="text-white font-bold text-lg mb-1">{excelFileName}</h3>
-                            <p className="text-emerald-400 text-sm font-medium">Đã tải lên thành công • {(excelFile.size / 1024).toFixed(1)} KB</p>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                removeExcelFile();
-                              }}
-                              className="mt-6 px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-bold transition-colors pointer-events-auto flex items-center gap-2 mx-auto"
-                            >
-                              <Trash2 className="w-4 h-4" /> Xóa file
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="text-center pointer-events-none">
-                            <div className="w-16 h-16 bg-navy rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                              <Upload className="w-8 h-8 text-emerald-400" />
-                            </div>
-                            <h3 className="text-white font-bold text-lg mb-2">Kéo thả file Excel vào đây</h3>
-                            <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                              Hoặc click để chọn file từ máy tính của bạn (Tối đa 5MB)
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="animate-fade-in">
-                      <div className="flex justify-end mb-4">
+                      <div className="flex bg-navy-dark border border-navy-light rounded-xl p-1 shrink-0">
                         <button
                           type="button"
-                          onClick={addPlayer}
-                          className="flex items-center justify-center gap-2 bg-navy-dark border border-navy-light hover:border-blue-500 text-gray-300 hover:text-blue-400 px-5 py-3 rounded-xl transition-all font-medium text-sm"
+                          // FIX: "Nhập Thủ Công" hiện chưa gửi dữ liệu lên BE (dead
+                          // code có sẵn trong file gốc) — disable để tránh user
+                          // tưởng đã lưu thành công trong khi thực chất không có gì
+                          // được gửi đi. Bật lại khi có API bulk-add rõ ràng.
+                          disabled
+                          title="Tính năng đang tạm khóa — vui lòng dùng Import Excel"
+                          className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-gray-600 cursor-not-allowed opacity-50"
                         >
-                          <Plus className="w-4 h-4" /> Thêm Cầu Thủ
+                          Nhập Thủ Công
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPlayerInputMode('excel')}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-emerald-600 text-white shadow-md"
+                        >
+                          <FileSpreadsheet className="w-4 h-4" /> Import Excel
                         </button>
                       </div>
+                    </div>
 
-                      <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
-                        <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-300 leading-relaxed">
-                          Nhập email và họ tên từng cầu thủ. Nếu email chưa có tài khoản trong hệ thống, một tài khoản mới sẽ được tự động tạo cho họ.
+                    {playerInputMode === 'excel' ? (
+                      <div className="animate-fade-in">
+                        <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
+                          <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                          <div className="text-sm text-red-400 leading-relaxed">
+                            Tải lên file Excel (.xlsx, .xls) chứa danh sách cầu thủ của bạn. Hệ thống sẽ tự động đọc và gửi lời mời đến email của từng cầu thủ để họ xác nhận tham gia.
+                            <br />
+                            <button
+                              type="button"
+                              onClick={handleDownloadTemplate}
+                              disabled={isDownloadingTemplate}
+                              className="text-red-500 hover:text-red-400 underline font-medium mt-2 inline-flex items-center gap-1.5 disabled:opacity-60"
+                            >
+                              {isDownloadingTemplate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                              Tải file mẫu tại đây
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-navy-light rounded-3xl bg-navy-dark/50 hover:border-emerald-500/50 transition-colors relative group">
+                          <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            onChange={handleExcelChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+
+                          {excelFile ? (
+                            <div className="text-center relative z-20 pointer-events-none">
+                              <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+                                <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
+                              </div>
+                              <h3 className="text-white font-bold text-lg mb-1">{excelFileName}</h3>
+                              <p className="text-emerald-400 text-sm font-medium">Đã tải lên thành công • {(excelFile.size / 1024).toFixed(1)} KB</p>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  removeExcelFile();
+                                }}
+                                className="mt-6 px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm font-bold transition-colors pointer-events-auto flex items-center gap-2 mx-auto"
+                              >
+                                <Trash2 className="w-4 h-4" /> Xóa file
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-center pointer-events-none">
+                              <div className="w-16 h-16 bg-navy rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Upload className="w-8 h-8 text-emerald-400" />
+                              </div>
+                              <h3 className="text-white font-bold text-lg mb-2">Kéo thả file Excel vào đây</h3>
+                              <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                                Hoặc click để chọn file từ máy tính của bạn (Tối đa 5MB)
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
+                    ) : (
+                      <div className="animate-fade-in">
+                        <div className="flex justify-end mb-4">
+                          <button
+                            type="button"
+                            onClick={addPlayer}
+                            className="flex items-center justify-center gap-2 bg-navy-dark border border-navy-light hover:border-blue-500 text-gray-300 hover:text-blue-400 px-5 py-3 rounded-xl transition-all font-medium text-sm"
+                          >
+                            <Plus className="w-4 h-4" /> Thêm Cầu Thủ
+                          </button>
+                        </div>
 
-                      <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left min-w-[700px]">
-                          <thead>
-                            <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
-                              <th className="pb-4 pl-4">#</th>
-                              <th className="pb-4">Email Liên Kết</th>
-                              <th className="pb-4">Tên Cầu Thủ</th>
-                              <th className="pb-4">Số Áo</th>
-                              <th className="pb-4">Vị Trí</th>
-                              <th className="pb-4 text-right pr-4">Xóa</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-navy-light/50">
-                            {players.map((p, idx) => (
-                              <tr key={p.id} className="group hover:bg-navy-light/20 transition-colors">
-                                <td className="py-4 pl-4 text-gray-500 font-bold">{idx + 1}</td>
-                                <td className="py-4 pr-4">
-                                  <input
-                                    type="email"
-                                    placeholder="Email tài khoản cầu thủ"
-                                    value={p.email}
-                                    onChange={(e) => updatePlayer(p.id, 'email', e.target.value)}
-                                    className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                                  />
-                                </td>
-                                <td className="py-4 pr-4">
-                                  <input
-                                    type="text"
-                                    placeholder="Họ tên cầu thủ"
-                                    value={p.name}
-                                    onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
-                                    className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                                  />
-                                </td>
-                                <td className="py-4 pr-4 w-24">
-                                  <input
-                                    type="number"
-                                    placeholder="Số"
-                                    value={p.number}
-                                    onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
-                                    className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                                  />
-                                </td>
-                                <td className="py-4 pr-4 w-40">
-                                  <select
-                                    value={p.position}
-                                    onChange={(e) => updatePlayer(p.id, 'position', e.target.value)}
-                                    className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none"
-                                  >
-                                    <option value="goalkeeper">Thủ Môn</option>
-                                    <option value="defender">Hậu Vệ</option>
-                                    <option value="midfielder">Tiền Vệ</option>
-                                    <option value="forward">Tiền Đạo</option>
-                                  </select>
-                                </td>
-                                <td className="py-4 pr-4 text-right w-16">
-                                  <button
-                                    type="button"
-                                    onClick={() => removePlayer(p.id)}
-                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                    title="Xóa cầu thủ"
-                                  >
-                                    <Trash2 className="w-5 h-5" />
-                                  </button>
-                                </td>
+                        <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
+                          <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div className="text-sm text-blue-300 leading-relaxed">
+                            Nhập email và họ tên từng cầu thủ. Nếu email chưa có tài khoản trong hệ thống, một tài khoản mới sẽ được tự động tạo cho họ.
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto custom-scrollbar">
+                          <table className="w-full text-left min-w-[700px]">
+                            <thead>
+                              <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
+                                <th className="pb-4 pl-4">#</th>
+                                <th className="pb-4">Email Liên Kết</th>
+                                <th className="pb-4">Tên Cầu Thủ</th>
+                                <th className="pb-4">Số Áo</th>
+                                <th className="pb-4">Vị Trí</th>
+                                <th className="pb-4 text-right pr-4">Xóa</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-navy-light/50">
+                              {players.map((p, idx) => (
+                                <tr key={p.id} className="group hover:bg-navy-light/20 transition-colors">
+                                  <td className="py-4 pl-4 text-gray-500 font-bold">{idx + 1}</td>
+                                  <td className="py-4 pr-4">
+                                    <input
+                                      type="email"
+                                      placeholder="Email tài khoản cầu thủ"
+                                      value={p.email}
+                                      onChange={(e) => updatePlayer(p.id, 'email', e.target.value)}
+                                      className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                    />
+                                  </td>
+                                  <td className="py-4 pr-4">
+                                    <input
+                                      type="text"
+                                      placeholder="Họ tên cầu thủ"
+                                      value={p.name}
+                                      onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
+                                      className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                    />
+                                  </td>
+                                  <td className="py-4 pr-4 w-24">
+                                    <input
+                                      type="number"
+                                      placeholder="Số"
+                                      value={p.number}
+                                      onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
+                                      className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                    />
+                                  </td>
+                                  <td className="py-4 pr-4 w-40">
+                                    <select
+                                      value={p.position}
+                                      onChange={(e) => updatePlayer(p.id, 'position', e.target.value)}
+                                      className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none"
+                                    >
+                                      <option value="goalkeeper">Thủ Môn</option>
+                                      <option value="defender">Hậu Vệ</option>
+                                      <option value="midfielder">Tiền Vệ</option>
+                                      <option value="forward">Tiền Đạo</option>
+                                    </select>
+                                  </td>
+                                  <td className="py-4 pr-4 text-right w-16">
+                                    <button
+                                      type="button"
+                                      onClick={() => removePlayer(p.id)}
+                                      className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                      title="Xóa cầu thủ"
+                                    >
+                                      <Trash2 className="w-5 h-5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-4">
                   <button
@@ -843,31 +863,33 @@ export default function RegisterTeam() {
                   >
                     Bỏ qua, vào Quản Lý Đội
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleAddPlayers}
-                    disabled={isSubmitting || isSuccess}
-                    className={`
-                      relative overflow-hidden group
-                      flex items-center gap-3 px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-base transition-all duration-300
-                      ${isSubmitting || isSuccess
-                        ? 'bg-blue-600/50 text-white/50 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-1 shadow-[0_8px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_12px_40px_rgba(37,99,235,0.4)]'
-                      }
-                    `}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                        Đang xử lý...
-                      </>
-                    ) : (
-                      <>
-                        <span className="relative z-10">Hoàn Tất</span>
-                        <ArrowRight className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
+                  {hasSeasonTeam && (
+                    <button
+                      type="button"
+                      onClick={handleAddPlayers}
+                      disabled={isSubmitting || isSuccess}
+                      className={`
+                        relative overflow-hidden group
+                        flex items-center gap-3 px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-base transition-all duration-300
+                        ${isSubmitting || isSuccess
+                          ? 'bg-blue-600/50 text-white/50 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-1 shadow-[0_8px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_12px_40px_rgba(37,99,235,0.4)]'
+                        }
+                      `}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        <>
+                          <span className="relative z-10">Hoàn Tất</span>
+                          <ArrowRight className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

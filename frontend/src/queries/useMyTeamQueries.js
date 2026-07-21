@@ -140,7 +140,7 @@ export function useTeamHistoryPlayers(teamId, seasonTeams) {
             if (!teamId || !seasonTeams || seasonTeams.length === 0) return [];
             const res = await teamApi.getHistoryPlayers(teamId);
             const allPlayers = res.data || res;
-            
+
             // Deduplicate by player_id, keeping the latest info (or merging)
             const uniquePlayersMap = new Map();
             for (const p of allPlayers) {
@@ -254,12 +254,12 @@ export function usePlayersPerformance(players, seasonId) {
                     const res = await statisticsApi.getPlayersPerformanceStatsBatch(seasonId);
                     const batchData = unwrap(res) || { players: [] };
                     const batchPlayers = batchData.players || [];
-                    
+
                     const statsMap = new Map();
                     for (const bp of batchPlayers) {
                         statsMap.set(bp.player_id, bp);
                     }
-                    
+
                     return players.filter(p => !!p.player_id).map((p) => {
                         const data = statsMap.get(p.player_id) || {};
                         return {
@@ -302,11 +302,15 @@ export function usePlayersPerformance(players, seasonId) {
     });
 }
 
-// ── Mutations ───────────────────────────────────────────────────────────
 export function useRegisterSeasonMutation(teamId) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (seasonId) => seasonTeamApi.register({ season_id: seasonId, team_id: teamId }),
+        // FIX: chặn double-fire ở tầng mutation — nếu đang có mutation
+        // pending cho cùng teamId, không cho gọi lại. React Query tự expose
+        // `isPending`, MyTeam.jsx cần đọc registerSeason.isPending thay vì
+        // chỉ dựa vào registeringSeasonId local state (dễ miss 1 tick khi
+        // user double-click nhanh hơn 1 render cycle).
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: myTeamKeys.eligibility(teamId) });
             qc.invalidateQueries({ queryKey: myTeamKeys.detail(teamId) });

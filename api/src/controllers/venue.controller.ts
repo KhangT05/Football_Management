@@ -25,7 +25,7 @@ export class VenueController extends Controller {
 
   // static route "deleted" phải đứng trước "{id}", nếu không tsoa/express match nhầm id="deleted"
   @Get("deleted")
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "admin"])
   async findDeleted(
     @Query() page = 1,
     @Query() per_page = 20,
@@ -42,7 +42,7 @@ export class VenueController extends Controller {
   }
 
   @Post("/")
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "admin"])
   @SuccessResponse(201, "Created")
   async create(@Body() body: CreateVenueDto): Promise<Venue> {
     this.setStatus(201);
@@ -50,7 +50,7 @@ export class VenueController extends Controller {
   }
 
   @Patch("{id}")
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "admin"])
   async update(
     @Path() id: number,
     @Body() body: UpdateVenueDto
@@ -59,7 +59,7 @@ export class VenueController extends Controller {
   }
 
   @Delete("{id}")
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "admin"])
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
     this.setStatus(204);
@@ -67,7 +67,7 @@ export class VenueController extends Controller {
   }
 
   @Patch("{id}/restore")
-  @Security("jwt", ["organizing"])
+  @Security("jwt", ["organizing", "admin"])
   async restore(@Path() id: number): Promise<Venue> {
     return this.service.restore(id);
   }
