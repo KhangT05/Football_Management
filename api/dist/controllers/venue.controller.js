@@ -57,7 +57,7 @@ __decorate([
 ], VenueController.prototype, "findAll", null);
 __decorate([
     Get("deleted"),
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "admin"]),
     __param(0, Query()),
     __param(1, Query()),
     __param(2, Query()),
@@ -76,7 +76,7 @@ __decorate([
 ], VenueController.prototype, "findById", null);
 __decorate([
     Post("/"),
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "admin"]),
     SuccessResponse(201, "Created"),
     __param(0, Body()),
     __metadata("design:type", Function),
@@ -85,7 +85,7 @@ __decorate([
 ], VenueController.prototype, "create", null);
 __decorate([
     Patch("{id}"),
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "admin"]),
     __param(0, Path()),
     __param(1, Body()),
     __metadata("design:type", Function),
@@ -94,7 +94,7 @@ __decorate([
 ], VenueController.prototype, "update", null);
 __decorate([
     Delete("{id}"),
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "admin"]),
     SuccessResponse(204, "Deleted"),
     __param(0, Path()),
     __metadata("design:type", Function),
@@ -103,7 +103,7 @@ __decorate([
 ], VenueController.prototype, "softDelete", null);
 __decorate([
     Patch("{id}/restore"),
-    Security("jwt", ["organizing"]),
+    Security("jwt", ["organizing", "admin"]),
     __param(0, Path()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),

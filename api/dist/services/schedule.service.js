@@ -5,7 +5,11 @@ import { shuffle } from '../libs/array.utils.js';
 import { ScheduleEngine, ASSUMED_MATCH_DURATION_MS, DEFAULT_VENUE_BUFFER_MINUTES, } from '../libs/schedule.engine.js';
 const MATCH_WITH_PHASE_SELECT = {
     id: true, round: true, home_team_id: true, away_team_id: true,
-    scheduled_at: true, venue_id: true, status: true,
+    scheduled_at: true, played_at: true, venue_id: true, status: true,
+    home_score: true, away_score: true,
+    home_team: { select: { id: true, name: true, logo: true } },
+    away_team: { select: { id: true, name: true, logo: true } },
+    venue: { select: { id: true, name: true } },
     phase: { select: { id: true, name: true, type: true, format: true } },
 };
 const MATCH_CARD_INCLUDE = {
@@ -15,7 +19,25 @@ const MATCH_CARD_INCLUDE = {
     // FIX (#4 review): FE Schedule Tab filter loại match knockout bằng
     // `m.phase?.format !== 'knockout'` nhưng include cũ không có `phase` —
     // filter luôn true, knockout lọt vào tab group-stage. Thêm field này.
-    phase: { select: { format: true } },
+    // Thêm season và tournamentRule để frontend có thể validate lineup.
+    phase: {
+        select: {
+            format: true,
+            season: {
+                select: {
+                    id: true,
+                    pitch_type: true,
+                    tournamentRule: {
+                        select: {
+                            min_players_per_team: true,
+                            max_players_per_team: true,
+                            format: true
+                        }
+                    }
+                }
+            }
+        }
+    },
     matchResult: {
         select: {
             result_type: true,

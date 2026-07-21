@@ -80,9 +80,9 @@ export declare class StandingsService {
         red_cards: number;
         season_id: number;
         team_id: number;
+        player_id: number;
         assists: number;
         matches_played: number;
-        player_id: number;
         minutes_played: number;
         accumulated_yellow_cards: number;
         yellow_cards_since_reset: number;

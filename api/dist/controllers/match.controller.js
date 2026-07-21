@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Security, Queries, } from "tsoa";
+import { Controller, Path, Tags, Route, Post, Patch, Get, Body, SuccessResponse, Delete, Security, Queries, } from "tsoa";
 import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
 import * as matchSchema from "../dtos/match.schema.js";
@@ -38,6 +38,17 @@ let MatchController = class MatchController extends Controller {
      * Bắt đầu trận đấu — chuyển scheduled → ongoing.
      * Khởi tạo home_score/away_score = 0, current_period = first_half.
      */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    async getMatchById(id) {
+        return this.lifecycleService.getMatchById(id);
+    }
     async startMatch(id) {
         this.setStatus(204);
         return this.lifecycleService.startMatch(id);
@@ -112,13 +123,10 @@ let MatchController = class MatchController extends Controller {
             venueIds, dailyStartTime, dailyEndTime, bufferMinutes, dateRangeStart, dateRangeEnd,
         });
     }
-    /**
-     * Dừng trận giữa chừng (thời tiết, bạo lực...).
-     * Match chuyển sang abandoned, không tạo MatchResult.
-     */
     async abandonMatch(id, body) {
         this.setStatus(204);
-        return this.lifecycleService.abandonMatch(id, body.minute, body.reason);
+        // body.minute giờ có thể null khi hủy trận trước khi đá (scheduled/postponed).
+        return this.lifecycleService.abandonMatch(id, body.minute ?? null, body.reason);
     }
     // ─── Appeal / protest ─────────────────────────────────────────────────────
     /**
@@ -199,6 +207,13 @@ let MatchController = class MatchController extends Controller {
         return this.lifecycleService.adminRecordResult(id, body, {});
     }
 };
+__decorate([
+    Get("{id}"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], MatchController.prototype, "getMatchById", null);
 __decorate([
     Security("jwt", ["organizing", "admin"]),
     Post("{id}/start"),

@@ -21,13 +21,14 @@ export function errorMiddleware(err, req, res, next) {
         });
         return;
     }
-    if (err instanceof ValidateError) {
-        console.warn(`[ValidateError] Caught Validation Error for ${req.path}:`, err.fields);
+    if (err instanceof ValidateError || err?.name === "ValidateError") {
+        const validateErr = err;
+        console.warn(`[ValidateError] Caught Validation Error for ${req.path}:`, validateErr.fields);
         res.status(422).json({
             status: false,
             code: "VALIDATION_FAILED",
             message: "Validation failed",
-            data: err?.fields,
+            data: validateErr.fields,
             timestamp: new Date().toISOString(),
             requestId,
         });
@@ -35,11 +36,15 @@ export function errorMiddleware(err, req, res, next) {
     }
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
+            let field = "";
+            if (err.meta && err.meta.target) {
+                field = Array.isArray(err.meta.target) ? err.meta.target.join(", ") : String(err.meta.target);
+            }
             res.status(409).json({
                 status: false,
                 code: "CONFLICT",
-                message: "A record with this value already exists (Unique constraint failed)",
-                data: err.meta,
+                message: field ? `Dữ liệu thuộc trường "${field}" đã tồn tại trong hệ thống.` : "Dữ liệu này đã tồn tại trong hệ thống.",
+                data: null,
                 timestamp: new Date().toISOString(),
                 requestId,
             });
@@ -49,8 +54,8 @@ export function errorMiddleware(err, req, res, next) {
             res.status(400).json({
                 status: false,
                 code: "FOREIGN_KEY_FAILED",
-                message: "Foreign key constraint failed (e.g. Tournament or User does not exist)",
-                data: err.meta,
+                message: "Ràng buộc dữ liệu không hợp lệ (Dữ liệu liên quan không tồn tại).",
+                data: null,
                 timestamp: new Date().toISOString(),
                 requestId,
             });

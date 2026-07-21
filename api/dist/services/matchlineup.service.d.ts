@@ -4,6 +4,18 @@ export declare class MatchLineupService {
     private readonly prisma;
     constructor(prisma: PrismaClient);
     private getMatchContextOrFail;
+    getEligiblePlayers(matchId: number, teamId: number): Promise<{
+        role: import("../generated/prisma/enums.js").PlayerRole;
+        player: {
+            user: {
+                name: string;
+                avatar: string | null;
+            };
+        };
+        player_id: number;
+        jersey_number: number;
+        position: import("../generated/prisma/enums.js").PlayerPosition;
+    }[]>;
     private assertTeamInMatch;
     private assertMatchMutable;
     private assertCanRegister;

@@ -74,7 +74,7 @@ export declare const ForfeitMatchSchema: z.ZodObject<{
     dateRangeEnd: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
 export declare const AbandonMatchSchema: z.ZodObject<{
-    minute: z.ZodCoercedNumber<unknown>;
+    minute: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     reason: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const FileDisputeSchema: z.ZodObject<{

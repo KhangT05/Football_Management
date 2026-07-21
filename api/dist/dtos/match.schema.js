@@ -86,7 +86,7 @@ export const ForfeitMatchSchema = z.object({
     dateRangeEnd: z.coerce.date().optional(),
 }).refine(d => !d.dailyStartTime || !d.dailyEndTime || d.dailyStartTime < d.dailyEndTime, { path: ['dailyEndTime'], message: 'dailyEndTime phải sau dailyStartTime' });
 export const AbandonMatchSchema = z.object({
-    minute: z.coerce.number().int().min(0).max(130),
+    minute: z.number().int().nonnegative().nullable().optional(),
     reason: z.string().max(1000).optional(),
 });
 // ─── Appeal / protest ────────────────────────────────────────────────────────

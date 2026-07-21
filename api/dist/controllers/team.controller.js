@@ -22,6 +22,9 @@ let TeamController = class TeamController extends Controller {
     async findAll(page = 1, per_page = 20, q, sort, user_id, direction) {
         return this.service.findAll({ page, per_page, q, sort, direction, user_id });
     }
+    async getHistoryPlayers(id) {
+        return this.service.getHistoryPlayers(id);
+    }
     async findById(id) {
         return this.service.findByIdOrFail(id);
     }
@@ -80,6 +83,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, String, String, Number, String]),
     __metadata("design:returntype", Promise)
 ], TeamController.prototype, "findAll", null);
+__decorate([
+    Get("{id}/history-players"),
+    __param(0, Path()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], TeamController.prototype, "getHistoryPlayers", null);
 __decorate([
     Get("{id}"),
     __param(0, Path()),

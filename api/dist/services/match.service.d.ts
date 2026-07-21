@@ -1,4 +1,4 @@
-import { MatchPeriod, PrismaClient } from '../generated/prisma/client.js';
+import { MatchPeriod, MatchResultStatus, MatchResultType, MatchStatus, PhaseFormat, PrismaClient } from '../generated/prisma/client.js';
 import { ConfirmResultOutput } from '../types/matchResult.type.js';
 import { OptionalScheduleOptions } from '../types/schedule.type.js';
 import { AddEventInput, FinalizeMatchInput, ManualScoreInput, RecordEventInput, ResolveAppealInput, EditEventInput, EditScoreInput, AdminRecordResultInput } from '../types/match.type.js';
@@ -27,7 +27,52 @@ export declare class MatchLifecycleService {
         flaggedForReview: number[];
     }>;
     forfeitMatch(matchId: number, forfeitingTeamId: number, scheduleOptions: OptionalScheduleOptions): Promise<ConfirmResultOutput>;
-    abandonMatch(matchId: number, minute: number, reason?: string): Promise<void>;
+    abandonMatch(matchId: number, minute: number | null, reason?: string): Promise<void>;
+    getMatchById(matchId: number): Promise<{
+        id: number;
+        venue: {
+            name: string;
+            address: string | null;
+            id: number;
+        } | null;
+        phase: {
+            type: import("../generated/prisma/enums.js").PhaseType;
+            name: string;
+            id: number;
+            format: PhaseFormat;
+        };
+        matchResult: {
+            status: MatchResultStatus;
+            winner_team_id: number | null;
+            home_extra_time_score: number | null;
+            away_extra_time_score: number | null;
+            home_penalty_score: number | null;
+            away_penalty_score: number | null;
+            home_final_score: number;
+            away_final_score: number;
+            result_type: MatchResultType;
+        } | null;
+        status: MatchStatus;
+        home_team_id: number;
+        away_team_id: number;
+        scheduled_at: Date | null;
+        played_at: Date | null;
+        home_score: number | null;
+        away_score: number | null;
+        round: string | null;
+        leg: number | null;
+        referee: string | null;
+        home_team: {
+            name: string;
+            id: number;
+            logo: string | null;
+        };
+        away_team: {
+            name: string;
+            id: number;
+            logo: string | null;
+        };
+    }>;
     fileAppeal(matchId: number, reason: string): Promise<void>;
     fileProtest(matchId: number, reason: string): Promise<void>;
     private _fileDispute;

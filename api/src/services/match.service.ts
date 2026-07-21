@@ -569,6 +569,8 @@ export class MatchLifecycleService {
                 home_score: true,
                 away_score: true,
                 referee: true,
+                home_team_id: true,
+                away_team_id: true,
                 home_team: { select: { id: true, name: true, logo: true } },
                 away_team: { select: { id: true, name: true, logo: true } },
                 venue: { select: { id: true, name: true, address: true } },
