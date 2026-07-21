@@ -1,16 +1,6 @@
 import {
-    Controller,
-    Path,
-    Tags,
-    Route,
-    Post,
-    Patch,
-    Body,
-    SuccessResponse,
-    Delete,
-    Security,
-    Query,
-    Queries,
+    Controller, Path, Tags, Route, Post, Patch, Get, Body,
+    SuccessResponse, Delete, Security, Query, Queries,
 } from "tsoa";
 import { MatchLifecycleService } from "../services/match.service.js";
 import * as matchType from "../types/match.type.js";
@@ -54,6 +44,11 @@ export class MatchController extends Controller {
      * Bắt đầu trận đấu — chuyển scheduled → ongoing.
      * Khởi tạo home_score/away_score = 0, current_period = first_half.
      */
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+
     @Security("jwt", ["organizing", "admin"])
     @Post("{id}/start")
     @SuccessResponse(204, "Started")
@@ -324,5 +319,13 @@ export class MatchController extends Controller {
         // scheduleOptions: pass empty — knockout advance sẽ dùng venue/time default
         // Nếu cần override venue/matchTimes, mở rộng body hoặc thêm @Query params
         return this.lifecycleService.adminRecordResult(id, body, {});
+    }
+    /**
+ * Lấy thông tin 1 trận đấu — dùng cho trang chi tiết trận (/tran-dau/:id).
+ * Public — guest xem được.
+ */
+    @Get("{id}")
+    async getMatchById(@Path() id: number) {
+        return this.lifecycleService.getMatchById(id);
     }
 }

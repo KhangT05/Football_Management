@@ -37,7 +37,11 @@ import {
 
 const MATCH_WITH_PHASE_SELECT = {
     id: true, round: true, home_team_id: true, away_team_id: true,
-    scheduled_at: true, venue_id: true, status: true,
+    scheduled_at: true, played_at: true, venue_id: true, status: true,
+    home_score: true, away_score: true,
+    home_team: { select: { id: true, name: true, logo: true } },
+    away_team: { select: { id: true, name: true, logo: true } },
+    venue: { select: { id: true, name: true } },
     phase: { select: { id: true, name: true, type: true, format: true } },
 } as const;
 

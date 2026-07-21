@@ -1138,7 +1138,7 @@ export default function MyTeam() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border whitespace-nowrap ${statusClass}`}>{statusLabel}</span>
-                            <span className="text-sm font-medium text-gray-400 whitespace-nowrap">{formatMatchTime(match.start_time)}</span>
+                            <span className="text-sm font-medium text-gray-400 whitespace-nowrap">{formatMatchTime(match.scheduled_at)}</span>
                           </div>
                           <p className="text-lg font-black text-white truncate flex items-center gap-2">
                             <span>{match.home_team?.name || 'Đội nhà'}</span>
