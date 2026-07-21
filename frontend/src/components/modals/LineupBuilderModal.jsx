@@ -4,14 +4,15 @@ import useLineupSelection from '../../hooks/useLineupSelection';
 import { mapPosition, getPitchInfo, PITCH_LABEL_VI, POS_LABEL_VI } from '../../utils/position';
 import PitchFormation from '../PitchFormation';
 
-// roster (prop): [{ player_id, name, number, position, avatar }]
+// roster (prop, đến từ bên trong useLineupSelection): [{ player_id, name, number, position, avatar }]
 export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
+  // Màu áo — chỉ là state hiển thị cục bộ trong modal, không cần lưu store
+  // (mỗi lần mở modal chọn lại là hợp lý cho use-case này).
+  const [jerseyColor, setJerseyColor] = useState('#3b82f6');
+
   // Chỉ dùng để hiện badge "Sân 5/7/11" trên header — giá trị thật sự chốt
   // giới hạn nằm trong starterReq (đã đọc pitch_type bên trong getStarterRequirement).
   const { pitchType } = useMemo(() => getPitchInfo(match), [match]);
-
-  // State cho màu áo sân nhà / sân khách
-  const [jerseyColor, setJerseyColor] = useState('#2563eb');
 
   const {
     selections, isLoading, isSaving,
@@ -25,35 +26,21 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
     onSaved: () => { onSave?.(); onClose(); },
   });
 
-  if (!match?.id) return null; // không render nếu thiếu match — chặn crash tại nguồn thay vì fail ở API call
+  if (!match?.id) return null;
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
-
+      <div className="relative bg-navy-dark/95 border border-navy-light rounded-[2.5rem] w-full max-w-5xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-navy-light bg-navy/40 shrink-0">
-          <div>
-            <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3 flex-wrap">
-              <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
-              {/* NEW — loại sân lấy từ season của match, không cho chọn tay
-                  (đã cố định theo giải đấu). Chỉ mang tính hiển thị; giới hạn
-                  thật sự nằm trong squadLimit ở trên. */}
-              <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-lg align-middle">
-                {PITCH_LABEL_VI[pitchType] ?? pitchType}
-              </span>
-            </h3>
-            <p className="text-sm text-gray-400 mt-1 font-medium">
-              {match.home_team?.name || 'Đội nhà'} <span className="text-gray-600 mx-1">vs</span> {match.away_team?.name || 'Đội khách'}
-            </p>
-            {match.start_time && !isNaN(new Date(match.start_time).getTime()) && (
-              <p className="text-xs text-gray-500 mt-0.5">
-                {new Date(match.start_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
-              </p>
-            )}
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-navy-light transition-colors">
-            <X className="w-6 h-6" />
+          <h3 className="text-2xl font-black text-white uppercase flex items-center gap-3 flex-wrap">
+            <Users className="w-6 h-6 text-neon" /> Đội hình ra sân
+            <span className="text-xs font-black bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-lg">
+              {PITCH_LABEL_VI[pitchType] ?? pitchType}
+            </span>
+          </h3>
+          <button onClick={onClose}>
+            <X className="w-6 h-6 text-gray-400 hover:text-white" />
           </button>
         </div>
 
@@ -68,11 +55,11 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 bg-navy border border-navy-light px-2 py-1 rounded-lg">
                   <span className="text-[10px] font-bold text-gray-400 uppercase">Màu áo:</span>
-                  <input 
-                    type="color" 
-                    value={jerseyColor} 
+                  <input
+                    type="color"
+                    value={jerseyColor}
                     onChange={(e) => setJerseyColor(e.target.value)}
-                    className="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent" 
+                    className="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent"
                     title="Chọn màu áo"
                   />
                 </div>
@@ -81,7 +68,6 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
                 </span>
               </div>
             </div>
-
             {isLoading ? (
               <div className="aspect-3/4 flex items-center justify-center bg-emerald-800/20 rounded-3xl border border-emerald-500/20">
                 <Loader2 className="w-8 h-8 text-neon animate-spin" />
@@ -95,7 +81,6 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
                 onDropPlayer={handleDropOnPitch}
               />
             )}
-
             <div className="mt-4 bg-navy/50 border border-blue-500/20 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black text-blue-400 uppercase">Dự bị</span>
@@ -126,19 +111,19 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
                 {[...roster].sort((a, b) => {
                   const selA = selections[a.player_id]?.lineup_type;
                   const selB = selections[b.player_id]?.lineup_type;
-                  
+
                   const getWeight = (type) => {
                     if (type === 'starter') return 3;
                     if (type === 'substitute') return 2;
                     return 1;
                   };
-                  
+
                   const weightA = getWeight(selA);
                   const weightB = getWeight(selB);
-                  
+
                   // Đưa đá chính lên đầu, rồi dự bị, rồi chưa chọn
                   if (weightA !== weightB) return weightB - weightA;
-                  
+
                   // Nếu cùng loại, xếp theo số áo
                   return (parseInt(a.jersey_number) || 999) - (parseInt(b.jersey_number) || 999);
                 }).map(player => {
@@ -175,21 +160,17 @@ export default function LineupBuilderModal({ match, teamId, onClose, onSave }) {
                         <div>
                           <p className={`font-bold text-sm ${isStarter ? 'text-emerald-400' : isSub ? 'text-blue-400' : 'text-white'}`}>{player.name}</p>
                           <p className="text-[10px] uppercase font-black text-gray-500 tracking-wider">
-                            Số {player.jersey_number || '?'} · {POS_LABEL_VI[mappedPos]}
+                            Số {player.jersey_number || '?'} · {POS_LABEL_VI[player.position]}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => toggleLineupType(player.player_id, 'starter')}
-                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isStarter ? 'bg-emerald-500 text-white' : 'bg-navy-light text-gray-400 hover:text-emerald-400'}`}
-                        >
+                        <button onClick={() => toggleLineupType(player.player_id, 'starter')}
+                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isStarter ? 'bg-emerald-500 text-white' : 'bg-navy-light text-gray-400 hover:text-emerald-400'}`}>
                           Chính
                         </button>
-                        <button
-                          onClick={() => toggleLineupType(player.player_id, 'substitute')}
-                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isSub ? 'bg-blue-500 text-white' : 'bg-navy-light text-gray-400 hover:text-blue-400'}`}
-                        >
+                        <button onClick={() => toggleLineupType(player.player_id, 'substitute')}
+                          className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${isSub ? 'bg-blue-500 text-white' : 'bg-navy-light text-gray-400 hover:text-blue-400'}`}>
                           Dự bị
                         </button>
                       </div>

@@ -1,4 +1,3 @@
-// middleware/error.middleware.ts
 import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { AppError } from "../common/app.error.js";

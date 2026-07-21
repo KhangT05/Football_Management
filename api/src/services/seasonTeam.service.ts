@@ -9,11 +9,14 @@ import {
     PhaseStatus,
     Phase,
     ApprovalStatus,
+    LeaveReason,
+    PlayerRole,
 } from "../generated/prisma/client.js";
 import {
     AdminAddSeasonTeamDto,
     AssignGroupDto,
     SelfRegisterSeasonTeamDto,
+    TransferRosterInput,
     UpdateSeasonTeamStatusDto,
 } from "../dtos/seasonTeam.schema.js";
 import { Queryable } from "../libs/queryable.js";
@@ -228,26 +231,28 @@ export class SeasonTeamService {
         });
     }
 
+    // ── transferSeason() — đổi signature, giữ nguyên phần đầu ─────────
     async transferSeason(
         id: number,
         targetSeasonId: number,
-        requesterId: number
+        requesterId: number,
+        rosterInput: TransferRosterInput,
+        requesterIsAdmin: boolean = false,
     ): Promise<SeasonTeamWithRelations> {
         return this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT id FROM season_teams WHERE id = ${id} FOR UPDATE`;
 
-            const st = await tx.seasonTeam.findUnique({ where: { id } });
+            const st = await tx.seasonTeam.findUnique({ where: { id }, include: { team: { select: { user_id: true } } } });
             if (!st) throw createAppError("NOT_FOUND", `SeasonTeam ${id} not found`);
+
+            if (!requesterIsAdmin && st.team.user_id !== requesterId) {
+                throw createAppError("FORBIDDEN", "Bạn không phải leader của đội này");
+            }
+
             if (st.group_id !== null)
-                throw createAppError(
-                    "CONFLICT",
-                    `Cannot transfer team already assigned to group ${st.group_id}`
-                );
+                throw createAppError("CONFLICT", `Cannot transfer team already assigned to group ${st.group_id}`);
             if (st.status !== SeasonTeamStatus.pending && st.status !== SeasonTeamStatus.approved)
-                throw createAppError(
-                    "CONFLICT",
-                    `Cannot transfer team in status ${st.status}`
-                );
+                throw createAppError("CONFLICT", `Cannot transfer team in status ${st.status}`);
             if (st.season_id === targetSeasonId)
                 throw createAppError("BAD_REQUEST", "Team already in this season");
 
@@ -261,21 +266,24 @@ export class SeasonTeamService {
                 throw createAppError("FORBIDDEN", "Target season is not open for registration");
 
             await this.assertSlotAvailable(tx, targetSeasonId, targetSeason.max_teams);
-            // Không check season overlap — xem ghi chú ở selfRegister().
-
-            // FIX (player conflict): team chuyển sang season đích cũng phải
-            // pass check này ở season đích — team khác đã có mặt sẵn ở đó
-            // có thể share player với team đang transfer.
-            await this.assertNoPlayerConflict(tx, targetSeasonId, st.team_id);
+            // NOTE: assertNoPlayerConflict(team-level) không còn cần gọi ở đây —
+            // roster đích giờ do leader tự chọn (carry/add), conflict được check
+            // per-player trong transferRosterPlayers() qua assertSinglePlayerNoConflict.
+            // Giữ team-level check này sẽ SAI vì nó check nguyên roster CŨ của team,
+            // trong khi roster THẬT sự sang season mới có thể đã khác (do bớt/thêm).
 
             await tx.seasonTeam.update({
                 where: { id },
                 data: { is_active: false, deleted_at: new Date() },
             });
 
-            // Transfer luôn reset về pending — buộc duyệt lại ở season đích,
-            // không cần auto-assign group ở đây (chỉ khi approve() lần nữa).
-            return this.createOrReactivate(tx, targetSeasonId, st.team_id, requesterId, SeasonTeamStatus.pending);
+            const newSeasonTeam = await this.createOrReactivate(
+                tx, targetSeasonId, st.team_id, requesterId, SeasonTeamStatus.pending
+            );
+
+            await this.transferRosterPlayers(tx, id, newSeasonTeam.id, rosterInput);
+
+            return tx.seasonTeam.findUniqueOrThrow({ where: { id: newSeasonTeam.id }, ...withRelations });
         });
     }
 
@@ -790,5 +798,185 @@ export class SeasonTeamService {
 
             return { succeeded, failed };
         });
+    }
+    // ── services/seasonTeam.service.ts ────────────────────────────────
+
+    /**
+     * FIX (leader chọn roster khi transfer, thay vì copy nguyên toàn bộ):
+     * trước đây transferRosterPlayers copy 100% roster approved cũ, không cho
+     * bớt/thêm. Đổi sang nhận input tường minh từ leader — carry_player_ids
+     * là subset của roster cũ (validate ⊆), add_players là player MỚI hoàn
+     * toàn chưa từng ở season_team cũ.
+     *
+     * ATOMIC theo thiết kế: đây là 1 hành động "Confirm chuyển đội" của
+     * leader trên roster nhỏ (~7-20 người) — nếu add_players có 1 player bị
+     * conflict, toàn bộ transaction rollback (kể cả phần carry hợp lệ và cả
+     * transferSeason() gọi hàm này), KHÔNG dùng partial-success kiểu
+     * bulkApprove/bulkReject. Lý do: đây không phải batch xử lý nhiều entity
+     * độc lập — để lại season_team mới với roster nửa vời buộc leader phải tự
+     * dò thiếu ai, tệ hơn nhận 1 lỗi rõ ràng và làm lại.
+     *
+     * jersey_number uniqueness được validate CROSS-SET (carried vs add_players)
+     * trước khi insert — nếu để DB constraint bắt, lỗi Prisma thô lộ ra thay
+     * vì AppError sạch.
+     */
+    private async transferRosterPlayers(
+        tx: Prisma.TransactionClient,
+        oldSeasonTeamId: number,
+        newSeasonTeamId: number,
+        input: TransferRosterInput,
+    ): Promise<void> {
+        const oldRoster = await tx.teamPlayer.findMany({
+            where: { season_team_id: oldSeasonTeamId, approval_status: ApprovalStatus.approved },
+        });
+
+        // --- validate carry_player_ids ⊆ oldRoster ---
+        const oldRosterIds = new Set(oldRoster.map((tp) => tp.player_id));
+        const invalidCarryIds = input.carry_player_ids.filter((id) => !oldRosterIds.has(id));
+        if (invalidCarryIds.length > 0)
+            throw createAppError(
+                "BAD_REQUEST",
+                `Cầu thủ ${invalidCarryIds.join(", ")} không thuộc roster hiện tại của đội, không thể giữ lại`
+            );
+
+        const carrySet = new Set(input.carry_player_ids);
+        const carried = oldRoster.filter((tp) => carrySet.has(tp.player_id));
+
+        // --- validate add_players không trùng player_id với carried, và không trùng nhau trong chính add_players ---
+        const addPlayerIds = input.add_players.map((p) => p.player_id);
+        const dupWithCarry = addPlayerIds.filter((id) => carrySet.has(id));
+        if (dupWithCarry.length > 0)
+            throw createAppError(
+                "BAD_REQUEST",
+                `Cầu thủ ${dupWithCarry.join(", ")} vừa nằm trong carry_player_ids vừa trong add_players`
+            );
+        const addPlayerIdSet = new Set(addPlayerIds);
+        if (addPlayerIdSet.size !== addPlayerIds.length)
+            throw createAppError("BAD_REQUEST", "add_players chứa player_id trùng lặp");
+
+        // --- validate jersey_number uniqueness CROSS-SET (carried + add_players) ---
+        const jerseyNumbers = [
+            ...carried.map((tp) => tp.jersey_number),
+            ...input.add_players.map((p) => p.jersey_number),
+        ];
+        const jerseySet = new Set(jerseyNumbers);
+        if (jerseySet.size !== jerseyNumbers.length)
+            throw createAppError("BAD_REQUEST", "Số áo bị trùng giữa các cầu thủ trong roster mới");
+
+        // --- roster cap theo tournament_rule của season ĐÍCH ---
+        const newSeasonTeam = await tx.seasonTeam.findUniqueOrThrow({
+            where: { id: newSeasonTeamId },
+            select: { season: { select: { tournamentRule: { select: { max_players_per_team: true } } } } },
+        });
+        const maxPlayers = newSeasonTeam.season.tournamentRule?.max_players_per_team ?? null;
+        const totalAfter = carried.length + input.add_players.length;
+        if (maxPlayers != null && totalAfter > maxPlayers)
+            throw createAppError(
+                "CONFLICT",
+                `Roster sau khi chuyển có ${totalAfter} cầu thủ, vượt giới hạn ${maxPlayers} của mùa giải đích`
+            );
+
+        // --- conflict check cho từng player MỚI add (player-level, không phải team-level) ---
+        for (const p of input.add_players) {
+            await this.assertSinglePlayerNoConflict(tx, newSeasonTeamId, p.player_id);
+        }
+
+        const now = new Date();
+
+        // --- history cho TOÀN BỘ oldRoster: carried -> transferred, không carry -> dropped ---
+        if (oldRoster.length > 0) {
+            await tx.teamPlayerHistory.createMany({
+                data: oldRoster.map((tp) => ({
+                    season_team_id: oldSeasonTeamId,
+                    player_id: tp.player_id,
+                    jersey_number: tp.jersey_number,
+                    position: tp.position,
+                    role: tp.role,
+                    joined_at: tp.joined_at,
+                    left_at: now,
+                    left_reason: carrySet.has(tp.player_id) ? LeaveReason.transferred : LeaveReason.dropped,
+                })),
+            });
+        }
+
+        // --- ghi carried sang season_team mới, giữ nguyên jersey/position/role cũ ---
+        if (carried.length > 0) {
+            await tx.teamPlayer.createMany({
+                data: carried.map((tp) => ({
+                    season_team_id: newSeasonTeamId,
+                    player_id: tp.player_id,
+                    jersey_number: tp.jersey_number,
+                    position: tp.position,
+                    role: tp.role,
+                    status: tp.status,
+                    approval_status: ApprovalStatus.pending,
+                    user_id: tp.user_id,
+                })),
+            });
+        }
+
+        // --- ghi add_players (net-new) ---
+        if (input.add_players.length > 0) {
+            await tx.teamPlayer.createMany({
+                data: input.add_players.map((p) => ({
+                    season_team_id: newSeasonTeamId,
+                    player_id: p.player_id,
+                    jersey_number: p.jersey_number,
+                    position: p.position,
+                    role: p.role ?? PlayerRole.player,
+                    approval_status: ApprovalStatus.pending,
+                })),
+            });
+        }
+    }
+
+    /**
+     * Player-level conflict check — KHÁC assertNoPlayerConflict (scope theo
+     * team_id, đối chiếu roster nguyên team). Dùng khi cần check 1 player_id
+     * đơn lẻ vừa được add vào roster (chưa chắc từng thuộc roster nào trước
+     * đó ở season này) có đang bị "khoá" bởi 1 team KHÁC đã ở season đích hay
+     * không.
+     */
+    private async assertSinglePlayerNoConflict(
+        tx: Prisma.TransactionClient,
+        newSeasonTeamId: number,
+        playerId: number,
+    ): Promise<void> {
+        const st = await tx.seasonTeam.findUniqueOrThrow({
+            where: { id: newSeasonTeamId },
+            select: { season_id: true, team_id: true },
+        });
+
+        const rival = await tx.teamPlayer.findFirst({
+            where: {
+                player_id: playerId,
+                approval_status: ApprovalStatus.approved,
+                season_team: {
+                    team_id: { not: st.team_id },
+                    deleted_at: null,
+                    team: {
+                        season_teams: {
+                            some: {
+                                season_id: st.season_id,
+                                deleted_at: null,
+                                status: { in: ACTIVE_SEASON_TEAM_STATUSES },
+                            },
+                        },
+                    },
+                },
+            },
+            select: {
+                player: { select: { user: { select: { name: true } } } },
+                season_team: { select: { team: { select: { name: true } } } },
+            },
+        });
+
+        if (!rival) return;
+
+        const playerName = rival.player.user?.name ?? `#${playerId}`;
+        throw createAppError(
+            "CONFLICT",
+            `Cầu thủ ${playerName} đang thuộc đội ${rival.season_team.team.name}, đội này đã đăng ký mùa giải này rồi — không thể thêm vào roster`
+        );
     }
 }

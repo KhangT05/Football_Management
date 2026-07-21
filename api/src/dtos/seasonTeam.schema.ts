@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SeasonTeamStatus, Prisma } from "../generated/prisma/client.js";
+import { SeasonTeamStatus, Prisma, PlayerPosition, PlayerRole } from "../generated/prisma/client.js";
 
 export const selfRegisterSeasonTeamSchema = z.object({
     season_id: z.number().int().positive(),
@@ -22,6 +22,21 @@ export const assignGroupSchema = z.object({
 export const TransferSeasonTeamSchema = z.object({
     season_id: z.number().int().positive(),
 });
+
+export const transferRosterPlayerAddSchema = z.object({
+    player_id: z.number().int().positive(),
+    jersey_number: z.number().int().min(1).max(99),
+    position: z.nativeEnum(PlayerPosition),
+    role: z.nativeEnum(PlayerRole).optional(),
+});
+
+export const transferSeasonRosterSchema = z.object({
+    carry_player_ids: z.array(z.number().int().positive()).default([]),
+    add_players: z.array(transferRosterPlayerAddSchema).default([]),
+});
+
+export type TransferRosterInput = z.infer<typeof transferSeasonRosterSchema>;
+
 export type TransferSeasonTeamDto = z.infer<typeof TransferSeasonTeamSchema>;
 export type SelfRegisterSeasonTeamDto = z.infer<typeof selfRegisterSeasonTeamSchema>;
 export type AdminAddSeasonTeamDto = z.infer<typeof adminAddSeasonTeamSchema>;
