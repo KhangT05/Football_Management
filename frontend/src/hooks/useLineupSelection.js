@@ -1,42 +1,33 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { matchLineupApi } from '../api';
 import useToastStore from '../store/toastStore';
-import { mapPosition, PITCH_GOALKEEPER_COUNT, getStarterRequirement, getSquadRange } from '../utils/position';
+import { mapPosition, PITCH_GOALKEEPER_COUNT, getSquadRange } from '../utils/position';
 import { parseApiError } from '../utils/errorHelper';
-
 import { useShallow } from 'zustand/react/shallow';
 
-/**
- * Quản lý state chọn đội hình (starter/substitute/captain) cho 1 (matchId, teamId).
- * Dùng chung cho ManageMatchLineup (full page) và LineupBuilderModal.
- *
- * roster: mảng đã normalize { player_id, name, jersey_number, position (raw), avatar? }
- * squadLimit: { min_players_per_team, max_players_per_team, max_squad_size, pitchType }
- *   — min/max_players_per_team ở đây LUÔN bằng nhau = tổng số người/sân theo
- *   luật (5/7/11), không phải khoảng linh hoạt. max_squad_size là tổng đăng
- *   ký tối đa (chính + dự bị) theo tournament_rule, tách biệt hoàn toàn.
- * onSaved: callback sau khi save API thành công (điều hướng / đóng modal — do caller quyết định)
- */
 export default function useLineupSelection({ matchId, teamId, match, onSaved }) {
     const toast = useToastStore(useShallow(state => ({
-        success: state.success,
-        error: state.error,
-        warning: state.warning,
-        info: state.info,
-        apiError: state.apiError
+        success: state.success, error: state.error, warning: state.warning,
+        info: state.info, apiError: state.apiError
     })));
-    
+
     const [roster, setRoster] = useState([]);
-    // key: player_id, value: { lineup_type: 'starter' | 'substitute', is_captain: boolean }
     const [selections, setSelections] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    // live formation — nguồn sự thật duy nhất cho totalStarters/pitchType,
+    // KHÔNG suy từ match.phase.season.pitch_type (stale cache risk).
+    const [formation, setFormation] = useState(null); // { pitchType, totalStarters } | null khi chưa load xong
 
-    const starterReq = getStarterRequirement(match);
-    const squadRange = getSquadRange(match);
+    const squadRange = getSquadRange(match); // tournamentRule max_squad_size — rủi ro stale chấp nhận được (ít đổi giữa mùa)
+
+    // null khi formation chưa fetch xong -> caller phải chặn tương tác,
+    // không fallback ngầm về san_5 (5) như bug cũ.
+    const starterReq = formation?.totalStarters ?? null;
     const maxStarters = starterReq;
     const minStarters = starterReq;
     const maxSquadSize = squadRange?.max_players_per_team ?? Infinity;
+    const formationLoaded = starterReq !== null;
 
     useEffect(() => {
         if (!matchId || !teamId) {
@@ -48,11 +39,12 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
         async function load() {
             setIsLoading(true);
             try {
-                const [lineupRes, eligibleRes] = await Promise.all([
+                const [lineupRes, eligibleRes, formationRes] = await Promise.all([
                     matchLineupApi.getLineup(matchId, teamId),
-                    matchLineupApi.getEligiblePlayers(matchId, teamId)
+                    matchLineupApi.getEligiblePlayers(matchId, teamId),
+                    matchLineupApi.getFormation(matchId, teamId), // GET /matches/:id/lineups/formation — LIVE, không cache
                 ]);
-                
+
                 const eligibleData = typeof eligibleRes?.status === 'boolean' ? eligibleRes.data : eligibleRes;
                 const pool = Array.isArray(eligibleData?.data) ? eligibleData.data : Array.isArray(eligibleData) ? eligibleData : [];
                 const mappedRoster = pool.map(tp => ({
@@ -63,6 +55,14 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
                     avatar: tp.player?.avatar,
                 }));
                 if (!cancelled) setRoster(mappedRoster);
+
+                const formationData = typeof formationRes?.status === 'boolean' ? formationRes.data : formationRes;
+                if (!cancelled) {
+                    setFormation({
+                        pitchType: formationData?.pitchType ?? formationData?.pitch_type,
+                        totalStarters: formationData?.totalStarters ?? formationData?.total_starters,
+                    });
+                }
 
                 const data = typeof lineupRes?.status === 'boolean' ? lineupRes.data : lineupRes;
                 const lineupData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
@@ -79,6 +79,7 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
                 if (!cancelled) {
                     setSelections({});
                     setRoster([]);
+                    setFormation(null);
                 }
             } finally {
                 if (!cancelled) setIsLoading(false);
@@ -106,10 +107,6 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
         [selections]
     );
 
-    // Đếm số cầu thủ đang đá chính theo từng hàng vị trí (đã mapPosition) —
-    // chỉ dùng để khoá hàng "goalkeeper" ở đúng 1 người (luật bóng đá bắt
-    // buộc). Các hàng DEF/MID/FW KHÔNG bị giới hạn riêng — đội tự chọn sơ đồ
-    // chiến thuật, chỉ bị chặn chung khi startersCount đã chạm maxStarters.
     const startersByRow = useMemo(() => {
         const counts = {};
         roster.forEach(p => {
@@ -121,17 +118,16 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
         return counts;
     }, [roster, selections]);
 
-    // Chỉ hàng thủ môn có giới hạn cứng (PITCH_GOALKEEPER_COUNT = 1). Các
-    // hàng khác trả về false — không có trần riêng, chỉ bị chặn bởi
-    // startersCount >= maxStarters (tổng số người/sân).
     const rowIsFull = useCallback((row) => {
         if (row === 'goalkeeper') return (startersByRow.goalkeeper || 0) >= PITCH_GOALKEEPER_COUNT;
         return false;
     }, [startersByRow]);
 
-    // Dùng cho nút Chính/Dự bị trong bảng danh sách, và cũng dùng làm "remove"
-    // khi gọi lại với type='starter' trên 1 cầu thủ đang là starter (toggle off).
     const toggleLineupType = useCallback((playerId, type) => {
+        if (!formationLoaded) {
+            toast.warning('Đang tải thông tin sân thi đấu, vui lòng chờ...');
+            return;
+        }
         setSelections(prev => {
             const current = prev[playerId];
             const next = { ...prev };
@@ -158,11 +154,13 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
             next[playerId] = { lineup_type: type, is_captain: current?.is_captain || false };
             return next;
         });
-    }, [startersCount, subsCount, maxStarters, maxSquadSize, findPlayer, rowIsFull, toast]);
+    }, [formationLoaded, startersCount, subsCount, maxStarters, maxSquadSize, findPlayer, rowIsFull, toast]);
 
-    // Gọi khi thả cầu thủ vào 1 hàng vị trí trên PitchFormation.
-    // Chỉ chấp nhận nếu vị trí thật của cầu thủ khớp hàng đích.
     const handleDropOnPitch = useCallback((playerId, rowPosition) => {
+        if (!formationLoaded) {
+            toast.warning('Đang tải thông tin sân thi đấu, vui lòng chờ...');
+            return;
+        }
         const player = findPlayer(playerId);
         if (!player) return;
 
@@ -174,7 +172,7 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
 
         setSelections(prev => {
             const current = prev[playerId];
-            if (current?.lineup_type === 'starter') return prev; // đã trên sân rồi
+            if (current?.lineup_type === 'starter') return prev;
             if (startersCount >= maxStarters) {
                 toast.error(`Chỉ được chọn tối đa ${maxStarters} cầu thủ đá chính (đúng luật sân)`);
                 return prev;
@@ -185,11 +183,11 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
             }
             return { ...prev, [playerId]: { lineup_type: 'starter', is_captain: current?.is_captain || false } };
         });
-    }, [findPlayer, startersCount, maxStarters, rowIsFull, toast]);
+    }, [formationLoaded, findPlayer, startersCount, maxStarters, rowIsFull, toast]);
 
     const setCaptain = useCallback((playerId) => {
         setSelections(prev => {
-            if (!prev[playerId]) return prev; // phải được chọn trước
+            if (!prev[playerId]) return prev;
             const next = {};
             Object.entries(prev).forEach(([id, sel]) => { next[id] = { ...sel, is_captain: false }; });
             next[playerId] = { ...next[playerId], is_captain: true };
@@ -213,6 +211,7 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
     );
 
     const canSave = useMemo(() => {
+        if (!formationLoaded) return false;
         const gkCount = startersByRow.goalkeeper || 0;
         const totalPlayers = startersCount + subsCount;
         return (
@@ -222,9 +221,13 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
             (!squadRange?.min_players_per_team || totalPlayers >= squadRange.min_players_per_team) &&
             (!squadRange?.max_players_per_team || totalPlayers <= squadRange.max_players_per_team)
         );
-    }, [startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange]);
+    }, [formationLoaded, startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange]);
 
     const save = useCallback(async () => {
+        if (!formationLoaded) {
+            toast.error('Chưa xác định được sân thi đấu (đang tải), thử lại sau');
+            return false;
+        }
         const gkCount = startersByRow.goalkeeper || 0;
         const totalPlayers = startersCount + subsCount;
 
@@ -274,12 +277,13 @@ export default function useLineupSelection({ matchId, teamId, match, onSaved }) 
         } finally {
             setIsSaving(false);
         }
-    }, [startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange, selections, teamId, matchId, findPlayer, toast, onSaved]);
+    }, [formationLoaded, startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange, selections, teamId, matchId, findPlayer, toast, onSaved]);
 
     return {
         selections, isLoading, isSaving,
         startersCount, subsCount, hasCaptain,
         maxStarters, minStarters, maxSquadSize,
+        formationLoaded, pitchType: formation?.pitchType ?? null,
         startersByRow,
         starters, substitutes, roster, canSave,
         toggleLineupType, handleDropOnPitch, setCaptain, save,
