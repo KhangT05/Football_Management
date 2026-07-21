@@ -398,6 +398,24 @@ export function useImportExcelMutation(seasonTeamId) {
     });
 }
 
+// NEW — Copy roster từ 1 season_team NGUỒN (mùa cũ, đã có cầu thủ đã duyệt)
+// sang season_team ĐÍCH (mùa hiện đang xem, roster rỗng) — tránh phải
+// add/import lại từ đầu mỗi khi đăng ký mùa mới. `seasonTeamId` truyền vào
+// đây LUÔN LÀ season_team ĐÍCH; `fromSeasonTeamId` truyền lúc gọi mutate
+// là season_team NGUỒN. Invalidate players + historyPlayers của ĐÍCH sau
+// khi copy xong để roster/tab thống kê phản ánh ngay cầu thủ mới copy vào.
+export function useCopyRosterMutation(seasonTeamId, teamId) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (fromSeasonTeamId) =>
+            playerApi.copyRosterFromSeason(seasonTeamId, fromSeasonTeamId),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) });
+            qc.invalidateQueries({ queryKey: myTeamKeys.historyPlayers(teamId) });
+        },
+    });
+}
+
 export function useUpdateTeamMutation(teamId) {
     const qc = useQueryClient();
     return useMutation({

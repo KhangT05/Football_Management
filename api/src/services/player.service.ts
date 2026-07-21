@@ -1144,7 +1144,98 @@ export class PlayerService {
 
         return result;
     }
+    /**
+     * Copy roster từ 1 season_team NGUỒN sang season_team ĐÍCH — dùng khi đội
+     * đăng ký mùa giải mới và muốn kế thừa danh sách cầu thủ cũ thay vì
+     * add/import lại từ đầu. Chỉ copy TeamPlayer đang approved (không copy
+     * pending/rejected). approval_status luôn reset về 'approved' vì đây là
+     * đăng ký MỚI cho mùa MỚI, không kế thừa lịch sử duyệt của mùa cũ.
+     *
+     * Roster cap của season ĐÍCH vẫn được enforce (assertRosterCapacity) —
+     * nếu roster nguồn > max_players_per_team của season đích, dừng lại và
+     * báo lỗi rõ ràng thay vì copy tràn giới hạn.
+     */
+    async copyRosterToSeasonTeam(
+        fromSeasonTeamId: number,
+        toSeasonTeamId: number
+    ): Promise<{ copied: number; skipped: number; errors: { player_id: number; reason: string }[] }> {
+        if (fromSeasonTeamId === toSeasonTeamId) {
+            throw createAppError("BAD_REQUEST", "Season_team nguồn và đích không được trùng nhau");
+        }
 
+        const [fromTeam, toTeam] = await Promise.all([
+            this.prisma.seasonTeam.findUnique({ where: { id: fromSeasonTeamId }, select: { id: true, team_id: true } }),
+            this.prisma.seasonTeam.findUnique({ where: { id: toSeasonTeamId }, select: { id: true, team_id: true } }),
+        ]);
+        if (!fromTeam) throw createAppError("NOT_FOUND", `SeasonTeam ${fromSeasonTeamId} not found`);
+        if (!toTeam) throw createAppError("NOT_FOUND", `SeasonTeam ${toSeasonTeamId} not found`);
+        if (fromTeam.team_id !== toTeam.team_id) {
+            throw createAppError("BAD_REQUEST", "Chỉ có thể copy roster giữa các season_team CÙNG một team");
+        }
+
+        const sourcePlayers = await this.prisma.teamPlayer.findMany({
+            where: { season_team_id: fromSeasonTeamId, approval_status: ApprovalStatus.approved },
+            select: { player_id: true, jersey_number: true, position: true, role: true, user_id: true },
+        });
+        if (sourcePlayers.length === 0) {
+            return { copied: 0, skipped: 0, errors: [] };
+        }
+
+        const { maxPlayers } = await this.getSeasonTeamRosterConstraints(toSeasonTeamId);
+
+        const existingInDest = await this.prisma.teamPlayer.findMany({
+            where: { season_team_id: toSeasonTeamId },
+            select: { player_id: true, jersey_number: true },
+        });
+        const existingPlayerIds = new Set(existingInDest.map(p => p.player_id));
+        const existingJerseys = new Set(existingInDest.map(p => p.jersey_number));
+
+        let approvedCount = existingInDest.length; // tất cả TeamPlayer tạo qua copy đều approved
+        let copied = 0, skipped = 0;
+        const errors: { player_id: number; reason: string }[] = [];
+
+        for (const p of sourcePlayers) {
+            if (existingPlayerIds.has(p.player_id)) {
+                skipped++;
+                continue;
+            }
+            if (existingJerseys.has(p.jersey_number)) {
+                errors.push({ player_id: p.player_id, reason: `Số áo ${p.jersey_number} đã dùng ở season đích` });
+                continue;
+            }
+            if (maxPlayers != null && approvedCount >= maxPlayers) {
+                errors.push({ player_id: p.player_id, reason: `Đã đạt giới hạn ${maxPlayers} cầu thủ của season đích` });
+                continue;
+            }
+
+            try {
+                await this.prisma.$transaction(async (tx) => {
+                    await this.assertRosterCapacity(toSeasonTeamId, maxPlayers, tx);
+                    await tx.teamPlayer.create({
+                        data: {
+                            season_team_id: toSeasonTeamId,
+                            player_id: p.player_id,
+                            jersey_number: p.jersey_number,
+                            position: p.position,
+                            role: p.role,
+                            user_id: p.user_id,
+                            approval_status: ApprovalStatus.approved,
+                        },
+                    });
+                });
+                existingJerseys.add(p.jersey_number);
+                approvedCount++;
+                copied++;
+            } catch (err) {
+                errors.push({
+                    player_id: p.player_id,
+                    reason: err instanceof Error ? err.message : "Unknown error",
+                });
+            }
+        }
+
+        return { copied, skipped, errors };
+    }
     // ----------------------------------------------------------
     // MAPPERS
     // ----------------------------------------------------------
