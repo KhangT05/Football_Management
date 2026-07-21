@@ -20,7 +20,7 @@ export default function PlayerRosterTable({
               <th className="py-3 px-4 w-16 text-center">Số</th>
               <th className="py-3 px-4">Cầu thủ</th>
               <th className="py-3 px-4 text-center">Ngày sinh</th>
-              <th className="py-3 px-4 text-center">Chiều cao / Cân nặng</th>
+              <th className="py-3 px-4 text-center">MSSV</th>
               <th className="py-3 px-4 text-center">Quốc tịch</th>
               <th className="py-3 px-4 text-center">Vị trí</th>
               <th className="py-3 px-4 text-center">Vai trò</th>
@@ -61,13 +61,7 @@ export default function PlayerRosterTable({
                       : '—'}
                   </td>
                   <td className={`py-3 px-4 text-center text-xs ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>
-                    {player.player?.height || player.player?.weight ? (
-                      <>
-                        {player.player?.height ? `${player.player.height}cm` : '—'}
-                        {' / '}
-                        {player.player?.weight ? `${player.player.weight}kg` : '—'}
-                      </>
-                    ) : '—'}
+                    {player.player?.user?.student_code || '—'}
                   </td>
                   <td className={`py-3 px-4 text-center ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>
                     {player.player?.nationality || '—'}

@@ -25,7 +25,7 @@ export function TransitionPeriodModal({ isOpen, onClose, match, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative w-full max-w-sm bg-navy border border-navy-light rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-navy-light flex items-center justify-between bg-navy-dark/50">
@@ -83,7 +83,7 @@ export function ForfeitMatchModal({ isOpen, onClose, match, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative w-full max-w-md bg-navy border border-red-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-navy-light flex items-center gap-3 bg-red-500/10">
@@ -143,7 +143,7 @@ export function AbandonMatchModal({ isOpen, onClose, match, currentMinute, onSuc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative w-full max-w-md bg-navy border border-orange-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-navy-light flex items-center gap-3 bg-orange-500/10">
@@ -159,7 +159,7 @@ export function AbandonMatchModal({ isOpen, onClose, match, currentMinute, onSuc
           <form id="abandon-form" onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase mb-2">Phút hủy trận:</label>
-              <input type="number" min="0" max="130" value={minute} onChange={e => setMinute(e.target.value)} className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white" />
+              <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength="3" value={minute} onChange={e => setMinute(e.target.value.replace(/[^0-9]/g, ''))} className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-3 text-white" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-300 uppercase mb-2">Lý do hủy:</label>
@@ -207,7 +207,7 @@ export function DisputeModal({ isOpen, onClose, match, type, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative w-full max-w-md bg-navy border border-purple-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-navy-light flex items-center gap-3 bg-purple-500/10">
@@ -264,7 +264,7 @@ export function ResolveAppealModal({ isOpen, onClose, match, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-navy-dark/90 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative w-full max-w-lg bg-navy border border-blue-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-navy-light flex items-center gap-3 bg-blue-500/10">

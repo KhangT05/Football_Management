@@ -28,7 +28,7 @@ export default function AsideAdmin({ onClose, isCollapsed }) {
       'Bốc thăm & Lên lịch',
       'Thi đấu & Loại trực tiếp',
       'Quản lý bài viết',
-      'Xác nhận thanh toán'
+      'Quản lý thanh toán'
     ].forEach(item => allowedItems.add(item));
   }
 
@@ -48,7 +48,7 @@ export default function AsideAdmin({ onClose, isCollapsed }) {
 
       {/* Logo / Brand */}
       <div className={`
-        h-16 md:h-[72px] flex items-center border-b border-navy-light shrink-0 transition-all duration-300
+        h-16 md:h-18 flex items-center border-b border-navy-light shrink-0 transition-all duration-300
         px-5 ${isCollapsed ? 'md:justify-center md:px-0' : 'md:justify-between'} justify-between
       `}>
         <div className={`flex items-center w-full ${isCollapsed ? 'md:justify-center gap-0' : 'gap-3'} transition-all`}>
