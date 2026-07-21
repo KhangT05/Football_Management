@@ -169,4 +169,16 @@ export const playerApi = {
 */
   createForTeam: (teamId, data) =>
     axiosClient.post(`/players/${teamId}/team-players/create-with-user`, data),
+  /**
+   * Sao chép đội hình (roster) đã duyệt từ 1 season_team khác của CÙNG
+   * team sang season_team đích — dùng khi đội đăng ký mùa mới và muốn
+   * kế thừa danh sách cầu thủ cũ thay vì add/import lại từ đầu.
+   * POST /players/{toSeasonTeamId}/team-players/copy-from
+   * @param {number} toSeasonTeamId - season_team ĐÍCH (đang active)
+   * @param {number} fromSeasonTeamId - season_team NGUỒN (mùa cũ có sẵn roster)
+   */
+  copyRosterFromSeason: (toSeasonTeamId, fromSeasonTeamId) =>
+    axiosClient.post(`/players/${toSeasonTeamId}/team-players/copy-from`, {
+      from_season_team_id: fromSeasonTeamId,
+    }),
 };
