@@ -32,7 +32,6 @@ export default function ManageMatchLineup() {
 
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState(null);
-  const [allPlayers, setAllPlayers] = useState([]);
 
   const matchDetailData = getMatchDetailFromCache(numericMatchId);
   const match = matchDetailData?.match;
@@ -63,10 +62,6 @@ export default function ManageMatchLineup() {
 
         const teamInfo = isHomeLeader ? currentMatch.home_team : currentMatch.away_team;
         setTeam(teamInfo);
-
-        const playersRes = await teamApi.getPlayers(myTeamId, { per_page: 50 });
-        const players = Array.isArray(playersRes?.data) ? playersRes.data : [];
-        setAllPlayers(players);
       } catch (err) {
         toast.error(parseApiError(err, 'Lỗi tải dữ liệu'));
       } finally {
@@ -77,24 +72,14 @@ export default function ManageMatchLineup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
-  // Normalize allPlayers (shape API trả về) sang shape chung mà hook + PitchFormation dùng.
-  const roster = useMemo(() => allPlayers.map(tp => ({
-    player_id: tp.player_id ?? tp.player?.id,
-    name: tp.player?.name ?? tp.name,
-    jersey_number: tp.jersey_number ?? tp.number,
-    position: tp.position,
-    avatar: tp.player?.avatar,
-  })), [allPlayers]);
-
   const {
     selections, isLoading: lineupLoading, isSaving,
     startersCount, subsCount,
-    starters, toggleLineupType, handleDropOnPitch, setCaptain, save,
+    starters, toggleLineupType, handleDropOnPitch, setCaptain, save, roster, canSave,
   } = useLineupSelection({
     matchId: numericMatchId,
     teamId: team?.id,
-    roster,
-    squadLimit,
+    match,
     onSaved: () => navigate(`/matches/${matchId}`),
   });
 
@@ -198,8 +183,8 @@ export default function ManageMatchLineup() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-navy-light/50">
-                  {allPlayers.map(tp => {
-                    const pid = tp.player_id ?? tp.player?.id;
+                  {roster.map(tp => {
+                    const pid = tp.player_id;
                     const sel = selections[pid];
                     const isStarter = sel?.lineup_type === 'starter';
                     const isSub = sel?.lineup_type === 'substitute';
@@ -208,7 +193,7 @@ export default function ManageMatchLineup() {
 
                     return (
                       <tr
-                        key={tp.id}
+                        key={pid}
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('app/player-id', String(pid));
@@ -218,12 +203,12 @@ export default function ManageMatchLineup() {
                         className={`transition-colors cursor-grab active:cursor-grabbing ${sel ? 'bg-blue-900/10' : 'hover:bg-navy-light/30'}`}
                       >
                         <td className="py-3 px-6 text-center">
-                          <span className="font-black text-gray-300">{tp.jersey_number ?? tp.number}</span>
+                          <span className="font-black text-gray-300">{tp.jersey_number}</span>
                         </td>
                         <td className="py-3 px-6">
                           <div className="flex items-center gap-3">
-                            <img src={tp.player?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(tp.player?.name ?? tp.name ?? 'Player')}&background=random`} alt="" className="w-8 h-8 rounded-full border border-navy-light" />
-                            <span className="font-bold text-sm text-white">{tp.player?.name ?? tp.name}</span>
+                            <img src={tp.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(tp.name ?? 'Player')}&background=random`} alt="" className="w-8 h-8 rounded-full border border-navy-light" />
+                            <span className="font-bold text-sm text-white">{tp.name}</span>
                           </div>
                         </td>
                         <td className="py-3 px-6 text-center">
@@ -283,7 +268,7 @@ export default function ManageMatchLineup() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-navy-dark/90 backdrop-blur-xl border-t border-navy-light z-40 flex justify-center">
           <button
             onClick={save}
-            disabled={isSaving}
+            disabled={isSaving || !canSave}
             className="w-full max-w-md py-4 px-8 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-70 text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all uppercase tracking-wider text-sm"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { matchLineupApi } from '../api';
 import useToastStore from '../store/toastStore';
-import { mapPosition, PITCH_GOALKEEPER_COUNT } from '../utils/position';
+import { mapPosition, PITCH_GOALKEEPER_COUNT, getStarterRequirement, getSquadRange } from '../utils/position';
 import { parseApiError } from '../utils/errorHelper';
 
 import { useShallow } from 'zustand/react/shallow';
@@ -17,7 +17,7 @@ import { useShallow } from 'zustand/react/shallow';
  *   ký tối đa (chính + dự bị) theo tournament_rule, tách biệt hoàn toàn.
  * onSaved: callback sau khi save API thành công (điều hướng / đóng modal — do caller quyết định)
  */
-export default function useLineupSelection({ matchId, teamId, roster, squadLimit, onSaved }) {
+export default function useLineupSelection({ matchId, teamId, match, onSaved }) {
     const toast = useToastStore(useShallow(state => ({
         success: state.success,
         error: state.error,
@@ -25,18 +25,18 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
         info: state.info,
         apiError: state.apiError
     })));
+    
+    const [roster, setRoster] = useState([]);
     // key: player_id, value: { lineup_type: 'starter' | 'substitute', is_captain: boolean }
     const [selections, setSelections] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Tổng số đá chính bắt buộc theo luật sân (vd sân 7 => 7). Không phải
-    // khoảng — min và max ở đây luôn bằng nhau, xem getSquadLimit().
-    const maxStarters = squadLimit?.max_players_per_team ?? 11;
-    const minStarters = squadLimit?.min_players_per_team ?? 1;
-    // Tổng quân số tối đa (đá chính + dự bị) theo tournament_rule của giải —
-    // Infinity nếu chưa có rule, để không chặn nhầm khi thiếu dữ liệu.
-    const maxSquadSize = squadLimit?.max_squad_size ?? Infinity;
+    const starterReq = getStarterRequirement(match);
+    const squadRange = getSquadRange(match);
+    const maxStarters = starterReq;
+    const minStarters = starterReq;
+    const maxSquadSize = squadRange?.max_players_per_team ?? Infinity;
 
     useEffect(() => {
         if (!matchId || !teamId) {
@@ -48,8 +48,23 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
         async function load() {
             setIsLoading(true);
             try {
-                const res = await matchLineupApi.getLineup(matchId, teamId);
-                const data = typeof res?.status === 'boolean' ? res.data : res;
+                const [lineupRes, eligibleRes] = await Promise.all([
+                    matchLineupApi.getLineup(matchId, teamId),
+                    matchLineupApi.getEligiblePlayers(matchId, teamId)
+                ]);
+                
+                const eligibleData = typeof eligibleRes?.status === 'boolean' ? eligibleRes.data : eligibleRes;
+                const pool = Array.isArray(eligibleData?.data) ? eligibleData.data : Array.isArray(eligibleData) ? eligibleData : [];
+                const mappedRoster = pool.map(tp => ({
+                    player_id: tp.player_id ?? tp.player?.id ?? tp.id,
+                    name: tp.player?.name ?? tp.name,
+                    jersey_number: tp.jersey_number ?? tp.number,
+                    position: tp.position,
+                    avatar: tp.player?.avatar,
+                }));
+                if (!cancelled) setRoster(mappedRoster);
+
+                const data = typeof lineupRes?.status === 'boolean' ? lineupRes.data : lineupRes;
                 const lineupData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
                 const initial = {};
                 lineupData.forEach(p => {
@@ -61,7 +76,10 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
                 if (!cancelled) setSelections(initial);
             } catch (err) {
                 console.error(err);
-                if (!cancelled) setSelections({});
+                if (!cancelled) {
+                    setSelections({});
+                    setRoster([]);
+                }
             } finally {
                 if (!cancelled) setIsLoading(false);
             }
@@ -194,12 +212,26 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
         [roster, selections]
     );
 
+    const canSave = useMemo(() => {
+        const gkCount = startersByRow.goalkeeper || 0;
+        const totalPlayers = startersCount + subsCount;
+        return (
+            startersCount === starterReq &&
+            gkCount === PITCH_GOALKEEPER_COUNT &&
+            hasCaptain &&
+            (!squadRange?.min_players_per_team || totalPlayers >= squadRange.min_players_per_team) &&
+            (!squadRange?.max_players_per_team || totalPlayers <= squadRange.max_players_per_team)
+        );
+    }, [startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange]);
+
     const save = useCallback(async () => {
-        if (startersCount !== maxStarters) {
-            toast.error(`Cần đúng ${maxStarters} cầu thủ đá chính theo luật sân`);
+        const gkCount = startersByRow.goalkeeper || 0;
+        const totalPlayers = startersCount + subsCount;
+
+        if (startersCount !== starterReq) {
+            toast.error(`Cần đúng ${starterReq} cầu thủ đá chính theo luật sân`);
             return false;
         }
-        const gkCount = startersByRow.goalkeeper || 0;
         if (gkCount !== PITCH_GOALKEEPER_COUNT) {
             toast.error(`Đội hình chính cần đúng ${PITCH_GOALKEEPER_COUNT} thủ môn (hiện tại: ${gkCount})`);
             return false;
@@ -208,8 +240,12 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
             toast.error('Vui lòng chọn một đội trưởng');
             return false;
         }
-        if (startersCount + subsCount > maxSquadSize) {
-            toast.error(`Tổng quân số đăng ký (chính + dự bị) vượt quá ${maxSquadSize} cầu thủ`);
+        if (squadRange?.min_players_per_team && totalPlayers < squadRange.min_players_per_team) {
+            toast.error(`Cần tối thiểu ${squadRange.min_players_per_team} cầu thủ đăng ký`);
+            return false;
+        }
+        if (squadRange?.max_players_per_team && totalPlayers > squadRange.max_players_per_team) {
+            toast.error(`Tổng quân số đăng ký vượt quá ${squadRange.max_players_per_team} cầu thủ`);
             return false;
         }
 
@@ -217,10 +253,8 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
             team_id: Number(teamId),
             players: Object.entries(selections).map(([playerId, sel]) => {
                 const player = findPlayer(playerId);
-                const jNum = parseInt(player?.jersey_number || 1, 10);
                 return {
                     player_id: Number(playerId),
-                    jersey_number: isNaN(jNum) || jNum < 1 ? 1 : Math.min(jNum, 99),
                     position: mapPosition(player?.position),
                     lineup_type: sel.lineup_type,
                     is_captain: sel.is_captain,
@@ -240,14 +274,14 @@ export default function useLineupSelection({ matchId, teamId, roster, squadLimit
         } finally {
             setIsSaving(false);
         }
-    }, [startersCount, maxStarters, startersByRow, hasCaptain, subsCount, maxSquadSize, selections, teamId, matchId, findPlayer, toast, onSaved]);
+    }, [startersCount, starterReq, startersByRow, hasCaptain, subsCount, squadRange, selections, teamId, matchId, findPlayer, toast, onSaved]);
 
     return {
         selections, isLoading, isSaving,
         startersCount, subsCount, hasCaptain,
         maxStarters, minStarters, maxSquadSize,
         startersByRow,
-        starters, substitutes,
+        starters, substitutes, roster, canSave,
         toggleLineupType, handleDropOnPitch, setCaptain, save,
         findPlayer,
     };
