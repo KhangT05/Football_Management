@@ -66,14 +66,14 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-navy-dark border border-navy-light flex items-center justify-center text-xs font-bold text-gray-300">
-                          {(player.player?.name ?? player.name ?? '?')[0]?.toUpperCase()}
+                          {(player.player?.user?.name ?? player.player?.name ?? player.name ?? '?')[0]?.toUpperCase()}
                         </div>
                         <div>
                           <span className="font-semibold text-white block">
-                            {player.player?.name ?? player.name ?? '—'}
+                            {player.player?.user?.name ?? player.player?.name ?? player.name ?? '—'}
                           </span>
-                          {player.player?.user?.email && (
-                            <span className="text-xs text-gray-500">{player.player.user.email}</span>
+                          {(player.player?.user?.email || player.email) && (
+                            <span className="text-xs text-gray-500">{player.player?.user?.email || player.email}</span>
                           )}
                         </div>
                       </div>
@@ -84,7 +84,7 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                         : '—'}
                     </td>
                     <td className="py-3 px-4 text-center text-gray-300 text-xs">
-                      {player.player?.user?.student_code || '—'}
+                      {player.player?.user?.student_code || player.player?.student_code || player.student_code || '—'}
                     </td>
                     <td className="py-3 px-4 text-center text-gray-300">
                       {player.player?.nationality || '—'}

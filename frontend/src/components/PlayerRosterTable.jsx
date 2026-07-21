@@ -43,14 +43,14 @@ export default function PlayerRosterTable({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${isLight ? 'bg-gray-100 border-gray-200 text-gray-600' : 'bg-navy-dark border-navy-light text-gray-300'}`}>
-                        {(player.player?.name ?? player.name ?? '?')[0]?.toUpperCase()}
+                        {(player.player?.user?.name ?? player.player?.name ?? player.name ?? '?')[0]?.toUpperCase()}
                       </div>
                       <div>
                         <span className={`font-semibold block ${isLight ? 'text-gray-900' : 'text-white'}`}>
-                          {player.player?.name ?? player.name ?? '—'}
+                          {player.player?.user?.name ?? player.player?.name ?? player.name ?? '—'}
                         </span>
-                        {player.player?.user?.email && (
-                          <span className="text-xs text-gray-500">{player.player.user.email}</span>
+                        {(player.player?.user?.email || player.email) && (
+                          <span className="text-xs text-gray-500">{player.player?.user?.email || player.email}</span>
                         )}
                       </div>
                     </div>
@@ -61,7 +61,7 @@ export default function PlayerRosterTable({
                       : '—'}
                   </td>
                   <td className={`py-3 px-4 text-center text-xs ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>
-                    {player.player?.user?.student_code || '—'}
+                    {player.player?.user?.student_code || player.player?.student_code || player.student_code || '—'}
                   </td>
                   <td className={`py-3 px-4 text-center ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>
                     {player.player?.nationality || '—'}

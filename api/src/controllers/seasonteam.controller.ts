@@ -1,6 +1,6 @@
 import { Controller, Get, Path, Tags, Route, Post, Patch, Body, SuccessResponse, Delete, Query, Security, Request } from "tsoa";
 import type { Request as ExRequest } from "express";
-type AuthRequest = ExRequest & { user: { user_id: number } };
+type AuthRequest = ExRequest & { user: { user_id: number, roles: string[] } };
 import { SeasonTeamService } from "../services/seasonTeam.service.js";
 import * as seasonTeamSchema from "../dtos/seasonTeam.schema.js";
 import { SeasonTeam, SeasonTeamStatus } from "../generated/prisma/client.js";
@@ -92,22 +92,7 @@ export class SeasonTeamController extends Controller {
   async approve(@Path() id: number, @Request() req: AuthRequest): Promise<SeasonTeamWithRelations> {
     return this.service.approve(id, req.user.user_id);
   }
-  /** Chuyển team sang season khác. Ban tổ chức hoặc admin. */
-  @Security("jwt", ["organizing"])
-  @Patch("{id}/transfer")
-  async transferSeason(
-    @Path() id: number,
-    @Body() body: seasonTeamSchema.TransferSeasonTeamDto,
-    @Request() req: AuthRequest
-  ): Promise<SeasonTeamWithRelations> {
-    return this.service.transferSeason(
-      id,
-      body.season_id,
-      req.user.user_id,
-      { carry_player_ids: body.carry_player_ids, add_players: body.add_players },
-      true // route is organizing-only right now; requesterIsAdmin is always true here
-    );
-  }
+
   /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
   @Security("jwt", ["organizing"])
   @Patch("{id}/status")

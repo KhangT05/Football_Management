@@ -179,12 +179,25 @@ export default function ManageTeams() {
   const [expandedTeamId, setExpandedTeamId] = useState(null);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
+  const getActiveSeasonTeam = (team) => {
+    if (!team || !team.season_teams || team.season_teams.length === 0) return null;
+    const activeSeasons = seasons.filter(s => ['upcoming', 'registration_open', 'ongoing'].includes(s.status));
+    const activeSeasonIds = activeSeasons.map(s => String(s.id));
+    const activeST = team.season_teams.find(st => activeSeasonIds.includes(String(st.season_id)));
+    // Fallback: lấy cái mới nhất (id lớn nhất)
+    return activeST || [...team.season_teams].sort((a, b) => b.id - a.id)[0];
+  };
+
   const toggleTeamExpand = (teamId) => {
     if (expandedTeamId === teamId) {
       setExpandedTeamId(null);
     } else {
       setExpandedTeamId(teamId);
-      fetchPlayers(teamId); // dùng cache nếu còn hợp lệ
+      const team = teamsWithSeasons.find(t => t.id === teamId);
+      const activeST = getActiveSeasonTeam(team);
+      if (activeST) {
+        fetchPlayers(activeST.id); // dùng cache nếu còn hợp lệ
+      }
     }
   };
 
@@ -195,13 +208,17 @@ export default function ManageTeams() {
     onSuccess: () => { if (playerTargetTeamId) fetchPlayers(playerTargetTeamId, { force: true }); },
   });
 
-  const openAddPlayer = (teamId) => {
-    setPlayerTargetTeamId(teamId);
+  const openAddPlayer = (seasonTeamId) => {
+    if (!seasonTeamId) {
+      toast.warning('Đội bóng chưa tham gia giải đấu nào. Vui lòng thêm đội vào giải trước.');
+      return;
+    }
+    setPlayerTargetTeamId(seasonTeamId);
     playerCrud.openAdd();
   };
 
-  const openEditPlayer = (teamId, player) => {
-    setPlayerTargetTeamId(teamId);
+  const openEditPlayer = (seasonTeamId, player) => {
+    setPlayerTargetTeamId(seasonTeamId);
     playerCrud.openEdit(player, {
       name: player.player?.user?.name ?? player.player?.name ?? player.name ?? '',
       email: player.player?.user?.email ?? '',
@@ -311,7 +328,15 @@ export default function ManageTeams() {
     }
   };
 
-  const getTeamRoster = (team) => getPlayersFromCache(team.id);
+  const getTeamRoster = (team) => {
+    const activeST = getActiveSeasonTeam(team);
+    return activeST ? getPlayersFromCache(activeST.id) : [];
+  };
+
+  const getTeamPlayersLoading = (team) => {
+    const activeST = getActiveSeasonTeam(team);
+    return activeST ? !!playersLoading[activeST.id] : false;
+  };
 
   return (
     <AdminLayout>
@@ -396,10 +421,19 @@ export default function ManageTeams() {
                           onEdit={openEditTeam}
                           onDelete={(team) => teamCrud.setDeleting(team)}
                           getTeamRoster={getTeamRoster}
-                          playersLoading={playersLoading}
-                          onAddPlayer={openAddPlayer}
-                          onEditPlayer={openEditPlayer}
-                          onDeletePlayer={(player, teamId) => setDeletePlayerState({ player, teamId })}
+                          playersLoading={getTeamPlayersLoading(team)}
+                          onAddPlayer={(teamId) => {
+                            const activeST = getActiveSeasonTeam(teamsWithSeasons.find(t => t.id === teamId));
+                            openAddPlayer(activeST?.id);
+                          }}
+                          onEditPlayer={(teamId, player) => {
+                            const activeST = getActiveSeasonTeam(teamsWithSeasons.find(t => t.id === teamId));
+                            openEditPlayer(activeST?.id, player);
+                          }}
+                          onDeletePlayer={(player, teamId) => {
+                            const activeST = getActiveSeasonTeam(teamsWithSeasons.find(t => t.id === teamId));
+                            setDeletePlayerState({ player, teamId: activeST?.id });
+                          }}
                         />
                       ))
                     )}

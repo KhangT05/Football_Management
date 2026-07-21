@@ -1,4 +1,4 @@
-import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     teamApi, playerApi, matchApi, seasonTeamApi, jerseyApi, userApi, statisticsApi,
 } from '../api';
@@ -139,7 +139,8 @@ export function useTeamHistoryPlayers(teamId, seasonTeams) {
         queryFn: async () => {
             if (!teamId || !seasonTeams || seasonTeams.length === 0) return [];
             const res = await teamApi.getHistoryPlayers(teamId);
-            const allPlayers = res.data || res;
+            const resData = res.data || res;
+            const allPlayers = Array.isArray(resData) ? resData : (resData.players || []);
 
             // Deduplicate by player_id, keeping the latest info (or merging)
             const uniquePlayersMap = new Map();
@@ -375,6 +376,27 @@ export function useEditPlayerMutation(seasonTeamId) {
             });
         },
         onSuccess: () => qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) }),
+    });
+}
+
+export function useTransferPlayerMutation(seasonTeamId) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (playersToTransfer) => {
+            const promises = playersToTransfer.map(p =>
+                playerApi.addToTeam(seasonTeamId, {
+                    player_id: p.player_id,
+                    jersey_number: parseInt(p.number, 10),
+                    position: p.position,
+                    role: p.role || 'player',
+                })
+            );
+            return Promise.all(promises);
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: myTeamKeys.players(seasonTeamId) });
+            qc.invalidateQueries({ queryKey: myTeamKeys.detail(seasonTeamId) });
+        },
     });
 }
 

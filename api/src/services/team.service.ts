@@ -210,6 +210,7 @@ export class TeamService {
             season_id: number;
             season_name: string;
             jersey_number: number | null;
+            position: string;
             role: string;
             joined_at: string;
             left_at: string | null;
@@ -224,6 +225,7 @@ export class TeamService {
                 where: { season_team: { team_id: teamId } },
                 select: {
                     jersey_number: true,
+                    position: true,
                     role: true,
                     created_at: true,
                     player: { select: { id: true, user: { select: { name: true } } } },
@@ -234,6 +236,7 @@ export class TeamService {
                 where: { season_team: { team_id: teamId } },
                 select: {
                     jersey_number: true,
+                    position: true,
                     role: true,
                     joined_at: true,
                     left_at: true,
@@ -251,6 +254,7 @@ export class TeamService {
                 season_id: r.season_team.season.id,
                 season_name: r.season_team.season.name,
                 jersey_number: r.jersey_number,
+                position: r.position,
                 role: r.role,
                 joined_at: r.created_at.toISOString(),
                 left_at: null as string | null,
@@ -263,6 +267,7 @@ export class TeamService {
                 season_id: r.season_team.season.id,
                 season_name: r.season_team.season.name,
                 jersey_number: r.jersey_number,
+                position: r.position,
                 role: r.role,
                 joined_at: r.joined_at.toISOString(),
                 left_at: r.left_at.toISOString(),

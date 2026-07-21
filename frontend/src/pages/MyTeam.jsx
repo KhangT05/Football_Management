@@ -5,6 +5,7 @@ import {
   Search, ArrowUpDown, CreditCard, Calendar,
   DollarSign, Flame, Award, Ban, Activity,
   ChevronDown, Plus, Star,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -38,6 +39,7 @@ import {
   useImportExcelMutation, useUpdateTeamMutation, useDeleteTeamMutation,
 } from '../queries/useMyTeamQueries';
 import SeasonRegistrationModal from '../components/myteam/SeasonRegistrationModal';
+import TransferPlayerModal from '../components/myteam/TransferPlayerModal';
 // ─── Constants & format helpers ─────────────────────────────
 
 const normalizePosition = (posStr) => {
@@ -456,6 +458,7 @@ export default function MyTeam() {
   const [showSeasonRegModal, setShowSeasonRegModal] = useState(false);
   const [registeringSeasonId, setRegisteringSeasonId] = useState(null);
   const [editTeamModalOpen, setEditTeamModalOpen] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [lineupModalMatch, setLineupModalMatch] = useState(null);
   const [playerModal, setPlayerModal] = useState(null); // null | 'add' | 'edit'
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -600,6 +603,8 @@ export default function MyTeam() {
       onError: (err) => setModalError(parseApiError(err, 'Lỗi khi xóa đội bóng.')),
     });
   };
+
+
 
   // ── Handlers: player (RHF-driven, nhận values sạch) ────────
   const openAddModal = () => { setEditingPlayer(null); setModalError(''); setPlayerModal('add'); };
@@ -799,6 +804,10 @@ export default function MyTeam() {
               <button onClick={() => setEditTeamModalOpen(true)}
                 className="bg-navy/60 backdrop-blur-xl text-white font-bold px-4 py-3 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light shadow-lg hover:-translate-y-0.5 text-sm whitespace-nowrap">
                 <Settings className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Cài đặt</span>
+              </button>
+              <button onClick={() => setTransferModalOpen(true)}
+                className="bg-navy/60 backdrop-blur-xl text-white font-bold px-4 py-3 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light shadow-lg hover:-translate-y-0.5 text-sm whitespace-nowrap">
+                <ArrowUpDown className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Thêm từ mùa khác</span>
               </button>
               <button onClick={openAddModal} disabled={players.length >= 20}
                 className="bg-linear-to-r from-blue-500 to-indigo-600 text-white font-black px-4 py-3 rounded-2xl hover:from-blue-400 hover:to-indigo-500 flex items-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.4)] text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 whitespace-nowrap">
@@ -1317,9 +1326,14 @@ export default function MyTeam() {
                                         </div>
                                         <div className="min-w-0">
                                           <p className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors truncate">{player.name}</p>
-                                          <div className="flex items-center gap-1.5 mt-1">
+                                          <div className="flex items-center flex-wrap gap-1.5 mt-1">
                                             <span className="text-[10px] font-black text-gray-300 bg-navy-dark border border-navy-light px-1.5 py-0.5 rounded-md tabular-nums">#{player.number || '—'}</span>
                                             <PosBadge pos={player.position} />
+                                            {player.student_code && (
+                                              <span className="text-[10px] font-medium text-gray-400 border border-gray-600 px-1.5 py-0.5 rounded-md tabular-nums">
+                                                MSSV: {player.student_code}
+                                              </span>
+                                            )}
                                           </div>
                                           <p className="text-xs font-medium text-gray-500 mt-0.5">
                                             {player.role === 'captain' && <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Đội trưởng</span>}
@@ -1413,6 +1427,14 @@ export default function MyTeam() {
           isRegistering={registerSeason.isPending}
           onRegister={handleRegisterSeason} onClose={() => setShowSeasonRegModal(false)} />
       )}
+      
+      <TransferPlayerModal
+        isOpen={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        activeSeasonTeamId={activeTeam?.activeSeasonTeamId}
+        historyPlayers={historyPlayers}
+        currentPlayers={players}
+      />
     </div>
   );
 }
