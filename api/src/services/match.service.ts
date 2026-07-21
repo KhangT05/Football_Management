@@ -556,6 +556,42 @@ export class MatchLifecycleService {
         });
     }
 
+    async getMatchById(matchId: number) {
+        const match = await this.prisma.match.findUnique({
+            where: { id: matchId },
+            select: {
+                id: true,
+                status: true,
+                round: true,
+                leg: true,
+                scheduled_at: true,
+                played_at: true,
+                home_score: true,
+                away_score: true,
+                referee: true,
+                home_team: { select: { id: true, name: true, logo: true } },
+                away_team: { select: { id: true, name: true, logo: true } },
+                venue: { select: { id: true, name: true, address: true } },
+                phase: { select: { id: true, name: true, type: true, format: true } },
+                matchResult: {
+                    select: {
+                        result_type: true,
+                        winner_team_id: true,
+                        home_final_score: true,
+                        away_final_score: true,
+                        home_extra_time_score: true,
+                        away_extra_time_score: true,
+                        home_penalty_score: true,
+                        away_penalty_score: true,
+                        status: true,
+                    },
+                },
+            },
+        });
+        if (!match) throw createAppError('NOT_FOUND', `Match ${matchId} không tồn tại`);
+        return match;
+    }
+
     async fileAppeal(matchId: number, reason: string): Promise<void> {
         await this._fileDispute(matchId, reason, MatchResultStatus.under_review);
     }
