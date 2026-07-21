@@ -47,7 +47,7 @@ export const matchApi = {
     axiosClient.post(`/matches/${id}/confirm-official`, body),
 
   forfeitMatch: (id, body) =>
-    axiosClient.post(`/matches/${id}/forfeit`, body),
+    axiosClient.post(`/matches/${id}/correction/forfeit`, body),
 
   abandonMatch: (id, body) =>
     axiosClient.post(`/matches/${id}/abandon`, body),

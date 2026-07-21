@@ -121,7 +121,7 @@ export const ForfeitMatchSchema = z.object({
 );
 
 export const AbandonMatchSchema = z.object({
-    minute: z.coerce.number().int().min(0).max(130),
+    minute: z.number().int().nonnegative().nullable().optional(),
     reason: z.string().max(1000).optional(),
 });
 

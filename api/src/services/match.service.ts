@@ -510,18 +510,47 @@ export class MatchLifecycleService {
         );
     }
 
-    async abandonMatch(matchId: number, minute: number, reason?: string): Promise<void> {
+    async abandonMatch(matchId: number, minute: number | null, reason?: string): Promise<void> {
         const match = await this.prisma.match.findUniqueOrThrow({
             where: { id: matchId },
             select: { status: true },
         });
-        if (match.status !== MatchStatus.ongoing)
-            throw createAppError('CONFLICT', `Match ${matchId} không ongoing — không abandon được`);
+
+        // FIX: trước đây CHỈ cho abandon khi status === 'ongoing' — chặn cả
+        // trường hợp hợp lệ (hủy trận trước khi đá vì sân hỏng/thời tiết, hoặc
+        // trận vừa start nhưng chưa ai ghi event nào). Giờ mở rộng: cho phép
+        // abandon khi 'scheduled'/'postponed' (chưa đá), HOẶC 'ongoing' nhưng
+        // CHƯA có event nào (coi như tương đương "chưa thực sự bắt đầu đá").
+        // Một khi đã có event thật (bàn/thẻ/thay người), CHẶN — vì abandon xóa
+        // ý nghĩa trận đấu mà không xử lý gì với data đã ghi, dễ gây mất dữ
+        // liệu ngầm. Case đó nên xử lý qua correction/resolveAppeal thủ công.
+        const preMatchStatuses: MatchStatus[] = [MatchStatus.scheduled, MatchStatus.postponed];
+        const isPreMatch = preMatchStatuses.includes(match.status);
+        const isOngoing = match.status === MatchStatus.ongoing;
+
+        if (!isPreMatch && !isOngoing)
+            throw createAppError(
+                'CONFLICT',
+                `Match ${matchId} đang ở '${match.status}' — không thể hủy trận (chỉ hủy được khi chưa đá hoặc đang diễn ra)`,
+            );
+
+        if (isOngoing) {
+            const eventCount = await this.prisma.matchEvent.count({ where: { match_id: matchId } });
+            if (eventCount > 0)
+                throw createAppError(
+                    'CONFLICT',
+                    `Match ${matchId} đã có ${eventCount} sự kiện được ghi nhận — không thể hủy trận trực tiếp, cần xử lý qua khiếu nại/correction`,
+                );
+        }
+
+        // Trận chưa bắt đầu thì "phút hủy" không có ý nghĩa — ép về null bất kể
+        // FE gửi gì, tránh dữ liệu rác. Trận ongoing (chưa event) vẫn giữ minute
+        // FE gửi để ghi nhận đúng thời điểm hủy.
         await this.prisma.match.update({
             where: { id: matchId },
             data: {
                 status: MatchStatus.abandoned,
-                abandoned_minute: minute,
+                abandoned_minute: isPreMatch ? null : minute,
                 abandoned_reason: reason,
             },
         });

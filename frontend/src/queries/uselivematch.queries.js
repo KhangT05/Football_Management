@@ -84,7 +84,15 @@ export function useStartMatch(matchId) {
 
 export function useTransitionPeriod(matchId) {
     return useMutation({
-        mutationFn: (period) => matchApi.transitionPeriod(matchId, period),
+        // FIX: matchApi.transitionPeriod(id, body) forward `body` thẳng vào
+        // axios POST — trước đây truyền `period` (string trần, vd
+        // "second_half") làm body, nên request lên BE có JSON body là string
+        // thay vì object, khiến `req.body.period` ở tầng validate luôn
+        // undefined -> BE trả lỗi "Validation failed" chung chung (KHÔNG
+        // phải lỗi nghiệp vụ CONFLICT như "không ongoing" mà service thực
+        // sự throw). Phải bọc thành { period } để khớp DTO/schema của route
+        // POST /matches/:id/period.
+        mutationFn: (period) => matchApi.transitionPeriod(matchId, { period }),
     });
 }
 
