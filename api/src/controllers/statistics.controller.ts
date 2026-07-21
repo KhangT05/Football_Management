@@ -171,7 +171,7 @@ export class StatisticsController extends Controller {
     // ═══════════════════════════════════════════════════════════════════════
     // PLAYER FINANCE (thưởng/phạt theo season)
     // ═══════════════════════════════════════════════════════════════════════
-    @Security("jwt", ["admin"])
+    @Security("jwt", ["admin", "leader"])
     @Get("seasons/{seasonId}/finance")
     async getPlayerFinanceStats(@Path() seasonId: number) {
         return this.statisticsService.getPlayerFinanceStats(seasonId);
@@ -247,5 +247,11 @@ export class StatisticsController extends Controller {
             throw new Error("from/to phải là ISO date string hợp lệ");
         }
         return this.statisticsService.getPlayerTeamsInPeriod(playerId, fromDate, toDate);
+    }
+
+    @Security("jwt", ["admin", "leader"])
+    @Get("teams/{teamId}/finance")
+    async getTeamFinanceStats(@Path() teamId: number, @Query() season_id: number) {
+        return this.statisticsService.getTeamFinanceStats(teamId, season_id);
     }
 }

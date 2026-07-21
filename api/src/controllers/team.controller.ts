@@ -40,6 +40,10 @@ export class TeamController extends Controller {
     return this.service.findAll({ page, per_page, q, sort, direction, user_id });
   }
 
+  @Get("{id}/history-players")
+  async getHistoryPlayers(@Path() id: number) {
+    return this.service.getHistoryPlayers(id);
+  }
   @Get("{id}")
   async findById(@Path() id: number): Promise<Team> {
     return this.service.findByIdOrFail(id);
