@@ -50,7 +50,7 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                   <th className="py-3 px-4 w-16 text-center">Số</th>
                   <th className="py-3 px-4 w-auto">Cầu thủ</th>
                   <th className="py-3 px-4 w-32 text-center">Ngày sinh</th>
-                  <th className="py-3 px-4 w-40 text-center">Chiều cao / Cân nặng</th>
+                  <th className="py-3 px-4 w-40 text-center">MSSV</th>
                   <th className="py-3 px-4 w-32 text-center">Quốc tịch</th>
                   <th className="py-3 px-4 w-24 text-center">Vị trí</th>
                   <th className="py-3 px-4 w-28 text-center">Vai trò</th>
@@ -84,13 +84,7 @@ export default function TeamRosterPanel({ team, players, isLoading, onAddPlayer,
                         : '—'}
                     </td>
                     <td className="py-3 px-4 text-center text-gray-300 text-xs">
-                      {player.player?.height || player.player?.weight ? (
-                        <>
-                          {player.player?.height ? `${player.player.height}cm` : '—'}
-                          {' / '}
-                          {player.player?.weight ? `${player.player.weight}kg` : '—'}
-                        </>
-                      ) : '—'}
+                      {player.player?.user?.student_code || '—'}
                     </td>
                     <td className="py-3 px-4 text-center text-gray-300">
                       {player.player?.nationality || '—'}
