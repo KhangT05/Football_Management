@@ -100,7 +100,13 @@ export class SeasonTeamController extends Controller {
     @Body() body: seasonTeamSchema.TransferSeasonTeamDto,
     @Request() req: AuthRequest
   ): Promise<SeasonTeamWithRelations> {
-    return this.service.transferSeason(id, body.season_id, req.user.user_id);
+    return this.service.transferSeason(
+      id,
+      body.season_id,
+      req.user.user_id,
+      { carry_player_ids: body.carry_player_ids, add_players: body.add_players },
+      true // route is organizing-only right now; requesterIsAdmin is always true here
+    );
   }
   /** Update status generic (eliminated/withdrawn). KHÔNG dùng để approve. */
   @Security("jwt", ["organizing"])
