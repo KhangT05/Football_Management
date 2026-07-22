@@ -106,16 +106,40 @@ export class UserService {
 
     // ─── Write ─────────────────────────────────────────────────────────────────
 
-    async create(data: CreateUserDto): Promise<SafeUser> {
-        const existing = await this.findByEmail(data.email);
-        if (existing) throw createAppError("CONFLICT", `Email ${data.email} already exists`);
+async create(data: CreateUserDto): Promise<SafeUser> {
+    const existing = await this.findByEmail(data.email);
+    if (existing) throw createAppError("CONFLICT", `Email ${data.email} already exists`);
 
-        const hashed = await bcrypt.hash(data.password, 10);
-        return this.prisma.user.create({
-            data: { ...data, password: hashed },
+    const { role_ids, ...fields } = data;
+    const hashed = await bcrypt.hash(data.password, 10);
+
+    return this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+            data: { ...fields, password: hashed },
             ...USER_SELECT,
         });
-    }
+
+        let roleIds = role_ids;
+        if (!roleIds?.length) {
+            const defaultRole = await tx.role.findFirstOrThrow({
+                where: { name: 'user', is_active: true },
+                select: { id: true },
+            });
+            roleIds = [defaultRole.id];
+        } else {
+            const found = await tx.role.findMany({ where: { id: { in: roleIds }, is_active: true }, select: { id: true } });
+            if (found.length !== roleIds.length) {
+                throw createAppError('BAD_REQUEST', 'Role IDs không hợp lệ');
+            }
+        }
+
+        await tx.user_Role.createMany({
+            data: roleIds.map((rid) => ({ user_id: user.id, role_id: rid })),
+        });
+
+        return user;
+    });
+}
 
     async update(id: number, data: UpdateUserDto): Promise<SafeUser> {
         const exists = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });

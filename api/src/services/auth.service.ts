@@ -32,15 +32,30 @@ export class AuthService {
 
     async register(dto: RegisterDto): Promise<AuthTokens> {
         const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
-
         if (exists) {
-            throw createAppError('CONFLICT',
-                `Email already exists: ${dto.email}`, 'Email đã được sử dụng');
+            throw createAppError('CONFLICT', `Email already exists: ${dto.email}`, 'Email đã được sử dụng');
         }
 
         const hashed = await bcrypt.hash(dto.password, 12);
-        const user = await this.prisma.user.create({
-            data: { email: dto.email, password: hashed, name: dto.name },
+
+        const user = await this.prisma.$transaction(async (tx) => {
+            const created = await tx.user.create({
+                data: { email: dto.email, password: hashed, name: dto.name },
+            });
+
+            const defaultRole = await tx.role.findFirst({
+                where: { name: 'user', is_active: true },
+                select: { id: true },
+            });
+            if (!defaultRole) {
+                throw createAppError('INTERNAL_SERVER_ERROR', 'Default role "user" không tồn tại trong DB');
+            }
+
+            await tx.user_Role.create({
+                data: { user_id: created.id, role_id: defaultRole.id },
+            });
+
+            return created;
         });
 
         return this.issueTokens(user.id);
