@@ -11,7 +11,6 @@ import type { Request as ExRequest } from "express";
 type AuthRequest = ExRequest & { user: { user_id: number } };
 
 
-@Security("jwt", ["admin", "user", "organizing"])
 @Route("users")
 @Tags("Users")
 export class UserController extends Controller {
@@ -20,6 +19,7 @@ export class UserController extends Controller {
   }
 
   @Get("/")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   async findAll(
     @Query() page = 1,
     @Query() per_page = 20,
@@ -31,11 +31,13 @@ export class UserController extends Controller {
   }
 
   @Get("{id}")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   async findById(@Path() id: number): Promise<SafeUser> {
     return this.service.findByIdOrFail(id);
   }
 
   @Post("/")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   @SuccessResponse(201, "Created")
   async create(@Body() body: userSchema.CreateUserDto): Promise<SafeUser> {
     this.setStatus(201);
@@ -43,6 +45,7 @@ export class UserController extends Controller {
   }
 
   @Patch("{id}")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   async update(
     @Path() id: number,
     @Body() body: userSchema.UpdateUserDto
@@ -51,16 +54,19 @@ export class UserController extends Controller {
   }
 
   @Delete("{id}")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   @SuccessResponse(204, "Deleted")
   async softDelete(@Path() id: number): Promise<void> {
     this.setStatus(204);
     return this.service.softDelete(id);
   }
   @Patch("{id}/restore")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   async restore(@Path() id: number): Promise<SafeUser> {
     return this.service.restore(id);
   }
   @Patch("{id}/avatar")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   async updateAvatar(
     @Path() id: number,
     @UploadedFile("avatar") avatar: Express.Multer.File
@@ -70,6 +76,7 @@ export class UserController extends Controller {
   }
 
   @Patch("{id}/password")
+  @Security("jwt", ["admin", "user", "organizing", "leader"])
   @SuccessResponse(204, "OK")
   async updatePassword(
     @Path() id: number,
