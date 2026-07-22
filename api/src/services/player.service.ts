@@ -147,6 +147,49 @@ function worksheetToRawRows(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
     return rows;
 }
 
+// ----------------------------------------------------------
+// SỐ ÁO THEO VỊ TRÍ — validate sát thực tế bóng đá
+// ----------------------------------------------------------
+// FIX: quy ước số áo theo vị trí, ĐỒNG BỘ với FE (RegisterTeam.jsx —
+// hằng số POSITION_JERSEY_NUMBERS). Trước đây rule này CHỈ tồn tại ở FE,
+// nhánh "Nhập Thủ Công" — mọi entrypoint khác của BE (addPlayerToTeam,
+// createPlayerForTeamWithUser, updateTeamPlayer, importTeamPlayersFromExcel,
+// copyRosterToSeasonTeam) hoàn toàn không enforce, nghĩa là 1 file Excel
+// hoặc 1 request API trực tiếp (Postman, app khác) vẫn có thể gán bất kỳ
+// số 1-99 cho bất kỳ vị trí nào, bỏ qua rule FE. Đưa validate xuống service
+// layer để áp dụng THỰC SỰ ĐỒNG NHẤT, không phụ thuộc FE nào gọi vào.
+//
+// Nếu sau này cần đổi bảng số — chỉ sửa DUY NHẤT tại đây (BE là nguồn sự
+// thật); nhớ đồng bộ lại hằng số tương ứng bên FE.
+const POSITION_JERSEY_NUMBERS: Record<PlayerPosition, number[]> = {
+    [PlayerPosition.goalkeeper]: [1, 13, 26],
+    [PlayerPosition.defender]: [2, 3, 4, 5, 6, 14, 15, 16, 17, 27, 28],
+    [PlayerPosition.midfielder]: [7, 8, 9, 18, 19, 20, 29, 30],
+    [PlayerPosition.forward]: [10, 11, 12, 21, 22, 23, 24, 25],
+};
+
+const POSITION_LABEL_VN: Record<PlayerPosition, string> = {
+    [PlayerPosition.goalkeeper]: "Thủ Môn",
+    [PlayerPosition.defender]: "Hậu Vệ",
+    [PlayerPosition.midfielder]: "Tiền Vệ",
+    [PlayerPosition.forward]: "Tiền Đạo",
+};
+
+/**
+ * Ném BAD_REQUEST nếu số áo không thuộc dải cho phép của vị trí. Gọi ở
+ * MỌI nơi tạo/sửa cặp (position, jersey_number) — xem danh sách call site
+ * trong comment phía trên POSITION_JERSEY_NUMBERS.
+ */
+function assertJerseyNumberMatchesPosition(position: PlayerPosition, jerseyNumber: number): void {
+    const allowed = POSITION_JERSEY_NUMBERS[position];
+    if (!allowed || !allowed.includes(jerseyNumber)) {
+        throw createAppError(
+            "BAD_REQUEST",
+            `Số áo ${jerseyNumber} không hợp lệ cho vị trí ${POSITION_LABEL_VN[position] ?? position} — số áo cho phép: ${allowed?.join(", ") ?? "không xác định"}`
+        );
+    }
+}
+
 // Kết quả resolve giới hạn roster cho 1 season_team — gộp class_id (check
 // cầu thủ cùng lớp) và min/max_players_per_team (check sĩ số ĐĂNG KÝ cho
 // mùa giải này) trong 1 query, vì cả 2 đều cần join season_team -> team /
@@ -224,6 +267,8 @@ export class PlayerService {
      * max_players_per_team ở đây — giới hạn đó chỉ áp khi tạo TeamPlayer
      * (đăng ký vào roster của 1 season cụ thể), xem addPlayerToTeam /
      * createPlayerForTeamWithUser / importTeamPlayersFromExcel bên dưới.
+     * Tương tự, rule số áo theo vị trí (assertJerseyNumberMatchesPosition)
+     * KHÔNG áp ở đây vì createPlayer không nhận jersey_number.
      */
     async createPlayer(dto: CreatePlayerDto): Promise<PlayerDto> {
         const user = await this.prisma.user.findUnique({
@@ -467,8 +512,15 @@ export class PlayerService {
      * cho season của season_team_id này. Đặt sau assertPlayerClassMatchesUser
      * và sau check trùng player/jersey (fail nhanh các lỗi rẻ trước, lỗi cần
      * transaction sau cùng).
+     *
+     * FIX (số áo theo vị trí): assertJerseyNumberMatchesPosition chạy NGAY
+     * ĐẦU HÀM — fail nhanh nhất có thể (không tốn query DB nào) nếu cặp
+     * position/jersey_number gửi lên đã sai quy ước trước khi làm bất cứ
+     * việc gì khác.
      */
     async addPlayerToTeam(season_team_id: number, dto: AddPlayerToTeamDto): Promise<TeamPlayerDto> {
+        assertJerseyNumberMatchesPosition(dto.position, dto.jersey_number);
+
         const player = await this.prisma.player.findFirst({
             where: { id: dto.player_id, deleted_at: null },
             select: { id: true, user_id: true },
@@ -482,7 +534,7 @@ export class PlayerService {
             this.prisma.teamPlayer.findFirst({ where: { season_team_id, jersey_number: dto.jersey_number }, select: { id: true } }),
         ]);
         if (dupPlayer) throw createAppError("CONFLICT", "Player already in team");
-        if (dupJersey) throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
+        if (dupJersey) throw createAppError("CONFLICT", `Số Áo ${dto.jersey_number} đã được sử dụng trong đội`);
 
         try {
             const tp = await this.prisma.$transaction(async (tx) => {
@@ -523,6 +575,10 @@ export class PlayerService {
      * FIX (roster cap): assertRosterCapacity chạy trong cùng tx, ngay trước
      * insert TeamPlayer — cùng vị trí như addPlayerToTeam.
      *
+     * FIX (số áo theo vị trí): assertJerseyNumberMatchesPosition chạy NGAY
+     * ĐẦU HÀM, trước cả việc query dupJersey / tạo user mới — fail nhanh,
+     * không tốn công tạo tài khoản mới rồi mới phát hiện số áo sai vị trí.
+     *
      * LƯU Ý CÒN HỞ: user mới tạo có class_id = null (chưa gán lớp), nên
      * assertPlayerClassMatchesUser sẽ pass cho user mới bất kể team thuộc
      * lớp nào (điều kiện `teamClassId != null && user.class_id !== ...`
@@ -532,11 +588,13 @@ export class PlayerService {
      * khi đổi, vì hiện tại đang cho phép admin gán lớp sau.
      */
     async createPlayerForTeamWithUser(season_team_id: number, dto: CreatePlayerForTeamDto): Promise<TeamPlayerDto> {
+        assertJerseyNumberMatchesPosition(dto.position, dto.jersey_number);
+
         const dupJersey = await this.prisma.teamPlayer.findFirst({
             where: { season_team_id, jersey_number: dto.jersey_number },
             select: { id: true },
         });
-        if (dupJersey) throw createAppError("CONFLICT", `Jersey number ${dto.jersey_number} đã được sử dụng trong đội`);
+        if (dupJersey) throw createAppError("CONFLICT", `Số Áo ${dto.jersey_number} đã được sử dụng trong đội`);
 
         let createdNewUserId: number | null = null;
 
@@ -621,12 +679,27 @@ export class PlayerService {
         }
     }
 
+    /**
+     * FIX (số áo theo vị trí): updateTeamPlayer có thể sửa jersey_number
+     * và/hoặc position ĐỘC LẬP với nhau (chỉ 1 trong 2 field, hoặc cả 2).
+     * Validate cô lập từng field đang đổi là KHÔNG đủ — ví dụ đổi
+     * position từ forward -> goalkeeper mà không đổi jersey_number thì số
+     * áo cũ (vd 10) không còn hợp lệ với vị trí mới, dù dto không hề gửi
+     * jersey_number. Nên PHẢI merge dto với giá trị hiện có rồi validate
+     * lại CẶP GIÁ TRỊ SAU KHI MERGE.
+     */
     async updateTeamPlayer(id: number, season_team_id: number, dto: UpdateTeamPlayerDto): Promise<TeamPlayerDto> {
         const existing = await this.prisma.teamPlayer.findFirst({
             where: { id, season_team_id },
-            select: { id: true, user_id: true },
+            select: { id: true, user_id: true, position: true, jersey_number: true },
         });
         if (!existing) throw createAppError("NOT_FOUND", `TeamPlayer ${id} not found in season_team ${season_team_id}`);
+
+        if (dto.position != null || dto.jersey_number != null) {
+            const resolvedPosition = dto.position ?? existing.position;
+            const resolvedJerseyNumber = dto.jersey_number ?? existing.jersey_number;
+            assertJerseyNumberMatchesPosition(resolvedPosition, resolvedJerseyNumber);
+        }
 
         // FIX (roster cap): updateTeamPlayer có thể dùng để approve một
         // TeamPlayer đang pending (approval_status: pending -> approved) —
@@ -879,11 +952,18 @@ export class PlayerService {
         ];
 
         const positionHint = Object.values(PlayerPosition).join(" | ");
+        // FIX: thêm dòng hướng dẫn số áo theo vị trí vào sheet "Hướng dẫn"
+        // — trước đây rule này chỉ nằm trong code, người điền file Excel
+        // không có cách nào biết trước mà tránh, phải nộp lên mới bị BE
+        // trả lỗi.
+        const jerseyHint = (Object.keys(POSITION_JERSEY_NUMBERS) as PlayerPosition[])
+            .map((pos) => `${POSITION_LABEL_VN[pos]}: ${POSITION_JERSEY_NUMBERS[pos].join(", ")}`)
+            .join(" | ");
         const instructions = [
             { field: "name", note: "Họ và tên đầy đủ — bắt buộc. Dùng để tạo tài khoản mới nếu email chưa có trong hệ thống." },
             { field: "email", note: "Bắt buộc. Nếu email đã có tài khoản → gắn cầu thủ vào tài khoản đó. Nếu chưa có → hệ thống tự tạo tài khoản (chưa có mật khẩu) và gửi email mời đặt mật khẩu, hiệu lực 24h." },
             { field: "student_code", note: "MSSV — bắt buộc. Xác nhận tư cách sinh viên, điều kiện tiên quyết để tham gia đội." },
-            { field: "jersey_number", note: "Số nguyên 1-99, duy nhất trong đội" },
+            { field: "jersey_number", note: `Số nguyên, duy nhất trong đội, PHẢI thuộc dải cho phép của vị trí: ${jerseyHint}` },
             { field: "date_of_birth", note: "Định dạng YYYY-MM-DD" },
             { field: "position", note: positionHint },
             { field: "height", note: "cm, có thể để trống" },
@@ -918,6 +998,14 @@ export class PlayerService {
      * thành công — tránh query count lại DB mỗi dòng (N round-trip thừa),
      * cùng pattern với usedJerseyNumbers/teamPlayerSet đã có sẵn. Dòng nào
      * vượt max bị fail với lý do rõ ràng, KHÔNG chặn các dòng còn lại.
+     *
+     * FIX (số áo theo vị trí — bug chính của lần sửa này): trước đây rule
+     * số áo theo vị trí CHỈ tồn tại ở FE, nhánh Import Excel hoàn toàn
+     * không check gì — 1 file Excel có thể gán số áo bất kỳ 1-99 cho bất
+     * kỳ vị trí nào mà vẫn import thành công. Check ngay sau bước validate
+     * jersey_number != null (rẻ, không tốn query DB nào), TRƯỚC khi query
+     * users/players/existingTeamPlayers cho cả batch — dòng nào sai vị
+     * trí/số áo bị đánh fail sớm, không kéo theo các dòng khác.
      */
     async importTeamPlayersFromExcel(
         season_team_id: number,
@@ -1005,6 +1093,19 @@ export class PlayerService {
                 continue;
             }
 
+            // FIX (số áo theo vị trí): check ngay sau khi biết jersey_number
+            // không null, TRƯỚC mọi query/side-effect khác của dòng này.
+            try {
+                assertJerseyNumberMatchesPosition(dto.position, dto.jersey_number);
+            } catch (err) {
+                result.failed++;
+                result.errors.push({
+                    row: rowNum,
+                    reason: err instanceof Error ? err.message : "Số áo không hợp lệ cho vị trí",
+                });
+                continue;
+            }
+
             const existingUserId = userByEmail.get(dto.user_email);
             const existingPlayerId = existingUserId ? playerByUserId.get(existingUserId) : undefined;
 
@@ -1034,7 +1135,7 @@ export class PlayerService {
 
             if (usedJerseyNumbers.has(dto.jersey_number)) {
                 result.failed++;
-                result.errors.push({ row: rowNum, reason: `Jersey number ${dto.jersey_number} đã được sử dụng trong đội` });
+                result.errors.push({ row: rowNum, reason: `Số Áo ${dto.jersey_number} đã được sử dụng trong đội` });
                 continue;
             }
 
@@ -1154,6 +1255,14 @@ export class PlayerService {
      * Roster cap của season ĐÍCH vẫn được enforce (assertRosterCapacity) —
      * nếu roster nguồn > max_players_per_team của season đích, dừng lại và
      * báo lỗi rõ ràng thay vì copy tràn giới hạn.
+     *
+     * FIX (số áo theo vị trí): rule POSITION_JERSEY_NUMBERS được thêm SAU
+     * khi nhiều roster cũ đã tồn tại — dữ liệu nguồn có thể có cặp
+     * (position, jersey_number) không còn hợp lệ theo rule mới. Validate
+     * TRƯỚC khi copy từng dòng, KHÔNG chặn cả batch — dòng nào vi phạm bị
+     * đẩy vào `errors` (giống cách xử lý trùng số áo/vượt cap hiện có),
+     * các dòng hợp lệ khác vẫn copy bình thường. Leader thấy rõ dòng nào
+     * cần sửa thủ công (đổi vị trí hoặc đổi số áo) trước khi thêm lại.
      */
     async copyRosterToSeasonTeam(
         fromSeasonTeamId: number,
@@ -1199,6 +1308,17 @@ export class PlayerService {
                 skipped++;
                 continue;
             }
+
+            try {
+                assertJerseyNumberMatchesPosition(p.position, p.jersey_number);
+            } catch (err) {
+                errors.push({
+                    player_id: p.player_id,
+                    reason: err instanceof Error ? err.message : "Số áo không hợp lệ cho vị trí (dữ liệu cũ không còn hợp lệ)",
+                });
+                continue;
+            }
+
             if (existingJerseys.has(p.jersey_number)) {
                 errors.push({ player_id: p.player_id, reason: `Số áo ${p.jersey_number} đã dùng ở season đích` });
                 continue;
