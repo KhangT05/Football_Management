@@ -21,6 +21,35 @@ const parseList = (res) => {
   return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
 };
 
+// Số cầu thủ tối thiểu chỉ mang tính KHUYẾN NGHỊ ở bước này (đội thi đấu
+// thực tế cần đủ quân), KHÔNG phải rule cứng chặn xoá — nếu chặn cứng thì
+// user không thể xoá nổi 1 dòng rác/nhập nhầm trước khi đã điền xong 5
+// dòng hợp lệ. Validate số lượng thực sự xảy ra ở bước submit
+// (validateManualPlayers), không phải ở removePlayer.
+const RECOMMENDED_MIN_PLAYERS = 5;
+
+// FIX: số áo hợp lệ theo từng vị trí, sát quy ước thực tế bóng đá (thủ
+// môn số đặc thù, hậu vệ dải thấp, tiền vệ dải giữa, tiền đạo dải cao).
+// ⚠️ ĐÂY LÀ RULE CHỈ ÁP Ở FE CHO NHÁNH NHẬP THỦ CÔNG — backend
+// (player.service.ts) hiện KHÔNG enforce rule này cho bất kỳ đường nào
+// (addPlayerToTeam, createPlayerForTeamWithUser, importTeamPlayersFromExcel
+// đều chỉ check số áo 1-99 không trùng trong đội, không check theo vị
+// trí). Nhánh Import Excel do đó KHÔNG bị chặn bởi bảng số này. Nếu cần
+// áp rule cứng toàn hệ thống, phải thêm validate tương ứng ở BE.
+const POSITION_JERSEY_NUMBERS = {
+  goalkeeper: [1, 13, 26],
+  defender: [2, 3, 4, 5, 6, 14, 15, 16, 17, 27, 28],
+  midfielder: [7, 8, 9, 18, 19, 20, 29, 30],
+  forward: [10, 11, 12, 21, 22, 23, 24, 25],
+};
+
+const POSITION_LABELS_VN = {
+  goalkeeper: 'Thủ Môn',
+  defender: 'Hậu Vệ',
+  midfielder: 'Tiền Vệ',
+  forward: 'Tiền Đạo',
+};
+
 export default function RegisterTeam() {
   const toast = useToastStore();
   const navigate = useNavigate();
@@ -79,32 +108,67 @@ export default function RegisterTeam() {
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
 
   // ── Phương thức nhập cầu thủ ──
-  const [playerInputMode, setPlayerInputMode] = useState('manual');
+  // FIX: mặc định 'excel' — nhánh 'manual' trước đây bị disable ở UI nhưng
+  // state khởi tạo vẫn là 'manual', khiến người dùng thấy bảng nhập tay dù
+  // tab "Import Excel" hiển thị như đang active. Giờ cả 2 tab đều hoạt
+  // động thật nên mặc định nào cũng được, giữ 'excel' để tương thích hành
+  // vi cũ nhất có thể.
+  const [playerInputMode, setPlayerInputMode] = useState('excel');
   const [excelFile, setExcelFile] = useState(null);
   const [excelFileName, setExcelFileName] = useState('');
 
+  // FIX: thêm student_code (MSSV) và date_of_birth — 2 field bắt buộc theo
+  // backend (importPlayerRowSchema / CreatePlayerForTeamDto,
+  // player.service.ts: createPlayerForTeamWithUser). Thiếu 2 field này thì
+  // API luôn reject dù form tay có "trông" hợp lệ.
   const [players, setPlayers] = useState([
-    { id: 1, email: '', name: '', number: '', position: 'goalkeeper' },
-    { id: 2, email: '', name: '', number: '', position: 'defender' },
-    { id: 3, email: '', name: '', number: '', position: 'midfielder' },
-    { id: 4, email: '', name: '', number: '', position: 'midfielder' },
-    { id: 5, email: '', name: '', number: '', position: 'forward' },
+    { id: 1, email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'goalkeeper' },
+    { id: 2, email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'defender' },
+    { id: 3, email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'midfielder' },
+    { id: 4, email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'midfielder' },
+    { id: 5, email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'forward' },
   ]);
 
   const addPlayer = () => {
-    setPlayers([...players, { id: Date.now(), email: '', name: '', number: '', position: 'midfielder' }]);
+    setPlayers([...players, {
+      id: Date.now(), email: '', name: '', student_code: '', date_of_birth: '', number: '', position: 'midfielder',
+    }]);
   };
 
+  // FIX: bỏ chặn cứng "tối thiểu 5 dòng". Rule cũ khiến user không thể xoá
+  // một dòng nhập nhầm/rác trước khi đã điền đủ 5 dòng hợp lệ khác — vô lý
+  // vì đây chỉ là danh sách NHẬP LIỆU, không phải roster đã lưu. Số lượng
+  // cầu thủ thực sự cần validate ở bước SUBMIT (validateManualPlayers),
+  // không phải chặn thao tác xoá UI. Vẫn giữ cảnh báo mềm để nhắc user.
   const removePlayer = (id) => {
-    if (players.length <= 5) {
-      toast.warning('Đội bóng cần tối thiểu 5 thành viên!');
+    if (players.length <= 1) {
+      toast.warning('Cần giữ lại ít nhất 1 dòng để nhập cầu thủ.');
       return;
+    }
+    if (players.length - 1 < RECOMMENDED_MIN_PLAYERS) {
+      toast.warning(
+        `Đội thi đấu nên có tối thiểu ${RECOMMENDED_MIN_PLAYERS} cầu thủ. Bạn vẫn có thể xoá và thêm lại sau tại "Quản Lý Đội".`,
+        5000
+      );
     }
     setPlayers(players.filter(p => p.id !== id));
   };
 
+  // FIX: khi đổi vị trí, nếu số áo đang chọn không còn hợp lệ với vị trí
+  // mới (theo POSITION_JERSEY_NUMBERS) thì tự reset về rỗng — tránh giữ
+  // lại 1 cặp position/number không khớp mà user không để ý.
   const updatePlayer = (id, field, value) => {
-    setPlayers(players.map(p => p.id === id ? { ...p, [field]: value } : p));
+    setPlayers(players.map(p => {
+      if (p.id !== id) return p;
+      const updated = { ...p, [field]: value };
+      if (field === 'position') {
+        const allowed = POSITION_JERSEY_NUMBERS[value] || [];
+        if (updated.number && !allowed.includes(Number(updated.number))) {
+          updated.number = '';
+        }
+      }
+      return updated;
+    }));
   };
 
   const handleChange = (e) => {
@@ -250,13 +314,124 @@ export default function RegisterTeam() {
     setStep('roster');
   };
 
-  // ── BƯỚC 2: chỉ import cầu thủ vào roster của season_team đã tạo ──
+  // FIX: validate danh sách nhập tay trước khi gửi — chỉ xét các dòng đã
+  // có dữ liệu (bỏ qua dòng hoàn toàn trống, vì đó chỉ là placeholder chưa
+  // dùng tới). Đủ các field bắt buộc theo backend (email, tên, MSSV, ngày
+  // sinh, số áo hợp lệ 1-99) + chặn trùng số áo NGAY TRONG danh sách đang
+  // nhập (trùng với roster đã có sẽ do API trả lỗi CONFLICT).
+  const validateManualPlayers = () => {
+    const errors = [];
+    const filled = players.filter(p => p.email.trim() || p.name.trim());
+
+    if (filled.length === 0) {
+      errors.push('Vui lòng nhập ít nhất 1 cầu thủ.');
+      return { valid: [], errors };
+    }
+
+    const seenJersey = new Set();
+    const seenEmail = new Set();
+    const valid = [];
+
+    filled.forEach((p, idx) => {
+      const rowLabel = `Dòng ${idx + 1}`;
+      const email = p.email.trim().toLowerCase();
+      const jerseyNum = Number(p.number);
+      const allowedNumbers = POSITION_JERSEY_NUMBERS[p.position] || [];
+
+      if (!email) return errors.push(`${rowLabel}: thiếu email.`);
+      if (!p.name.trim()) return errors.push(`${rowLabel}: thiếu họ tên.`);
+      if (!p.student_code.trim()) return errors.push(`${rowLabel}: thiếu MSSV.`);
+      if (!p.date_of_birth) return errors.push(`${rowLabel}: thiếu ngày sinh.`);
+      if (!p.number) return errors.push(`${rowLabel}: chưa chọn số áo.`);
+      if (!allowedNumbers.includes(jerseyNum)) {
+        return errors.push(
+          `${rowLabel}: số áo ${p.number} không hợp lệ cho vị trí ${POSITION_LABELS_VN[p.position] || p.position} (chỉ được chọn: ${allowedNumbers.join(', ')}).`
+        );
+      }
+      if (seenEmail.has(email)) return errors.push(`${rowLabel}: email "${email}" bị lặp lại trong danh sách đang nhập.`);
+      if (seenJersey.has(jerseyNum)) return errors.push(`${rowLabel}: số áo ${jerseyNum} bị trùng trong danh sách đang nhập.`);
+
+      seenEmail.add(email);
+      seenJersey.add(jerseyNum);
+      valid.push({ ...p, email, number: jerseyNum });
+    });
+
+    return { valid, errors };
+  };
+
+  // ── BƯỚC 2: import cầu thủ vào roster của season_team đã tạo ──
   // FIX: dùng createdTeam.seasonTeamId (SeasonTeam.id), KHÔNG dùng
   // createdTeam.id (Team.id) — đây chính là bug khiến import ở trang này
   // fail hoặc (tệ hơn) âm thầm ghi nhầm cầu thủ vào season_team khác nếu
   // 2 id trùng số ngẫu nhiên.
+  //
+  // FIX (bug thật, đã xác nhận qua screenshot — Network tab "No requests"
+  // nghĩa là lỗi xảy ra TRƯỚC khi kịp gọi fetch): nhánh 'manual' trước đó
+  // gọi `playerApi.addTeamPlayer(...)` — hàm này KHÔNG TỒN TẠI trong
+  // playerApi.js thật của dự án, nên mọi lần bấm "Hoàn Tất" đều throw
+  // ngay trong JS ("... is not a function"), rơi vào catch và hiện toast
+  // "Lỗi không xác định". Hàm đúng theo playerApi.js là
+  // `playerApi.createForTeam(teamId, data)` → POST
+  // /players/{teamId}/team-players/create-with-user, khớp với
+  // service.createPlayerForTeamWithUser ở BE (find-or-create theo email,
+  // tự gửi invite nếu tài khoản mới).
   const handleAddPlayers = async () => {
     if (!createdTeam?.seasonTeamId) return; // guard: không nên gọi được vì UI đã chặn, nhưng để chắc chắn
+
+    if (playerInputMode === 'manual') {
+      const { valid, errors } = validateManualPlayers();
+      if (errors.length > 0) {
+        toast.warning('Vui lòng kiểm tra lại danh sách cầu thủ:', { details: errors.slice(0, 6) });
+        return;
+      }
+
+      setIsSubmitting(true);
+      let success = 0;
+      let failed = 0;
+      const failReasons = [];
+
+      for (const p of valid) {
+        try {
+          await playerApi.createForTeam(createdTeam.seasonTeamId, {
+            user_email: p.email,
+            name: p.name.trim(),
+            student_code: p.student_code.trim(),
+            date_of_birth: p.date_of_birth,
+            jersey_number: p.number,
+            position: p.position,
+          });
+          success++;
+        } catch (err) {
+          failed++;
+          const reason = getFriendlyErrorMessage(err, 'Lỗi không xác định');
+          failReasons.push(`${p.name || p.email}: ${reason}`);
+        }
+      }
+      setIsSubmitting(false);
+
+      if (success === 0) {
+        toast.error(
+          failReasons.slice(0, 3).join('\n') || 'Không có cầu thủ nào được thêm. Vui lòng kiểm tra lại thông tin.',
+          8000
+        );
+        return;
+      }
+
+      if (failed > 0) {
+        toast.warning(
+          `Đã thêm ${success} cầu thủ, ${failed} dòng lỗi (email/MSSV có thể đã dùng ở nơi khác, số áo trùng, hoặc đội đã đủ chỉ tiêu). Chi tiết: ${failReasons.slice(0, 3).join(' | ')}`,
+          8000
+        );
+      } else {
+        toast.success(`Đã thêm ${success} cầu thủ vào đội.`, 5000);
+      }
+
+      setIsSuccess(true);
+      setTimeout(() => navigate('/doi-cua-toi'), 2000);
+      return;
+    }
+
+    // ── Nhánh Excel (giữ nguyên logic cũ) ──
     setIsSubmitting(true);
     try {
       if (playerInputMode === 'excel' && excelFile) {
@@ -287,9 +462,6 @@ export default function RegisterTeam() {
           return;
         }
       }
-      // NOTE (bug có sẵn, chưa fix ở đây): nhánh playerInputMode === 'manual'
-      // không gửi `players` đi đâu cả — xem chặn UI phía dưới (đã disable
-      // tab "Nhập Thủ Công" ở bước roster cho tới khi có API rõ ràng).
 
       setIsSuccess(true);
       setTimeout(() => navigate('/doi-cua-toi'), 2000);
@@ -642,7 +814,7 @@ export default function RegisterTeam() {
                   </p>
                 </div>
 
-                {/* FIX: chặn UI import khi chưa có SeasonTeam — không có bất kỳ
+                {/* FIX: chặn UI khi chưa có SeasonTeam — không có bất kỳ
                     season_team_id nào để gắn cầu thủ vào, gọi API chắc chắn fail
                     hoặc phải đoán id sai. */}
                 {!hasSeasonTeam ? (
@@ -681,20 +853,21 @@ export default function RegisterTeam() {
                       <div className="flex bg-navy-dark border border-navy-light rounded-xl p-1 shrink-0">
                         <button
                           type="button"
-                          // FIX: "Nhập Thủ Công" hiện chưa gửi dữ liệu lên BE (dead
-                          // code có sẵn trong file gốc) — disable để tránh user
-                          // tưởng đã lưu thành công trong khi thực chất không có gì
-                          // được gửi đi. Bật lại khi có API bulk-add rõ ràng.
-                          disabled
-                          title="Tính năng đang tạm khóa — vui lòng dùng Import Excel"
-                          className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-gray-600 cursor-not-allowed opacity-50"
+                          onClick={() => setPlayerInputMode('manual')}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'manual'
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-gray-400 hover:text-white'
+                            }`}
                         >
                           Nhập Thủ Công
                         </button>
                         <button
                           type="button"
                           onClick={() => setPlayerInputMode('excel')}
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-emerald-600 text-white shadow-md"
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${playerInputMode === 'excel'
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-gray-400 hover:text-white'
+                            }`}
                         >
                           <FileSpreadsheet className="w-4 h-4" /> Import Excel
                         </button>
@@ -775,19 +948,24 @@ export default function RegisterTeam() {
                         <div className="bg-navy border border-navy-light p-4 rounded-xl flex items-start gap-3 mb-8">
                           <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                           <div className="text-sm text-blue-300 leading-relaxed">
-                            Nhập email và họ tên từng cầu thủ. Nếu email chưa có tài khoản trong hệ thống, một tài khoản mới sẽ được tự động tạo cho họ.
+                            Nhập đầy đủ email, họ tên, <strong>MSSV</strong> và <strong>ngày sinh</strong> của từng cầu thủ — đây là các
+                            trường bắt buộc. Nếu email chưa có tài khoản trong hệ thống, một tài khoản mới sẽ được tự động tạo cho họ.
+                            <br />
+                            Số áo được giới hạn theo vị trí: Thủ Môn (1, 13, 26) · Hậu Vệ (2-6, 14-17, 27-28) · Tiền Vệ (7-9, 18-20, 29-30) · Tiền Đạo (10-12, 21-25).
                           </div>
                         </div>
 
                         <div className="overflow-x-auto custom-scrollbar">
-                          <table className="w-full text-left min-w-[700px]">
+                          <table className="w-full text-left min-w-[920px]">
                             <thead>
                               <tr className="text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-navy-light">
                                 <th className="pb-4 pl-4">#</th>
                                 <th className="pb-4">Email Liên Kết</th>
                                 <th className="pb-4">Tên Cầu Thủ</th>
-                                <th className="pb-4">Số Áo</th>
+                                <th className="pb-4">MSSV</th>
+                                <th className="pb-4">Ngày Sinh</th>
                                 <th className="pb-4">Vị Trí</th>
+                                <th className="pb-4">Số Áo</th>
                                 <th className="pb-4 text-right pr-4">Xóa</th>
                               </tr>
                             </thead>
@@ -813,13 +991,21 @@ export default function RegisterTeam() {
                                       className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
                                     />
                                   </td>
-                                  <td className="py-4 pr-4 w-24">
+                                  <td className="py-4 pr-4 w-32">
                                     <input
-                                      type="number"
-                                      placeholder="Số"
-                                      value={p.number}
-                                      onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
+                                      type="text"
+                                      placeholder="MSSV"
+                                      value={p.student_code}
+                                      onChange={(e) => updatePlayer(p.id, 'student_code', e.target.value)}
                                       className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                    />
+                                  </td>
+                                  <td className="py-4 pr-4 w-40">
+                                    <input
+                                      type="date"
+                                      value={p.date_of_birth}
+                                      onChange={(e) => updatePlayer(p.id, 'date_of_birth', e.target.value)}
+                                      className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm [color-scheme:dark]"
                                     />
                                   </td>
                                   <td className="py-4 pr-4 w-40">
@@ -833,6 +1019,33 @@ export default function RegisterTeam() {
                                       <option value="midfielder">Tiền Vệ</option>
                                       <option value="forward">Tiền Đạo</option>
                                     </select>
+                                  </td>
+                                  <td className="py-4 pr-4 w-32">
+                                    {/* FIX: dropdown chỉ hiện số áo hợp lệ theo vị trí đang chọn
+                                        (POSITION_JERSEY_NUMBERS), số đã bị dòng khác dùng thì disable
+                                        luôn trong list — chặn ngay lúc nhập thay vì báo lỗi sau khi submit. */}
+                                    {(() => {
+                                      const allowedNumbers = POSITION_JERSEY_NUMBERS[p.position] || [];
+                                      const usedByOthers = new Set(
+                                        players
+                                          .filter(other => other.id !== p.id && other.number !== '')
+                                          .map(other => Number(other.number))
+                                      );
+                                      return (
+                                        <select
+                                          value={p.number}
+                                          onChange={(e) => updatePlayer(p.id, 'number', e.target.value)}
+                                          className="w-full bg-navy-dark border border-navy-light rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm appearance-none"
+                                        >
+                                          <option value="">Chọn số</option>
+                                          {allowedNumbers.map(n => (
+                                            <option key={n} value={n} disabled={usedByOthers.has(n)}>
+                                              {n}{usedByOthers.has(n) ? ' (đã dùng)' : ''}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      );
+                                    })()}
                                   </td>
                                   <td className="py-4 pr-4 text-right w-16">
                                     <button
