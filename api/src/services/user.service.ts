@@ -10,7 +10,7 @@ import { mailService } from "./mail.service.js";
 import crypto from "crypto";
 import redis from "../libs/redis.js";
 import { storageService } from "./storage.service.js";
-
+import { invalidateUserRoles } from "../libs/session.js";
 export type SafeUser = Omit<User, "password"> & { roles?: Role[] };
 
 // ─── Projection ───────────────────────────────────────────────────────────────
@@ -174,10 +174,12 @@ export class UserService {
     /** Idempotent — skipDuplicates, safe khi gọi nhiều lần */
     async attachRoles(userId: number, roleIds: number[]): Promise<void> {
         await this.rolesRelationService.attach(userId, roleIds, this.prisma);
+        await invalidateUserRoles(userId);
     }
 
     async detachRoles(userId: number, roleIds: number[]): Promise<void> {
         await this.rolesRelationService.detach(userId, roleIds, this.prisma);
+        await invalidateUserRoles(userId);
     }
 
     /** Replace toàn bộ role set — wrap $transaction enforce bởi RelationService.sync */
@@ -185,6 +187,7 @@ export class UserService {
         await this.prisma.$transaction((tx) =>
             this.rolesRelationService.sync(userId, roleIds, tx)
         );
+        await invalidateUserRoles(userId);
     }
 
     async restore(id: number): Promise<SafeUser> {
