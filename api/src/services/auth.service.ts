@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import type { AuthTokens, UserPayload } from '../types/auth.types.js';
 import { createAppError } from '../common/app.error.js';
 import { LoginDto, RegisterDto } from '../dtos/auth.schema.js';
-import { sessionStore } from '../libs/session.js';
+import { invalidateUserRoles, sessionStore } from '../libs/session.js';
 import { signAccessToken } from '../libs/jwt.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
@@ -51,12 +51,20 @@ export class AuthService {
                 throw createAppError('INTERNAL_SERVER_ERROR', 'Default role "user" không tồn tại trong DB');
             }
 
-            await tx.user_Role.create({
-                data: { user_id: created.id, role_id: defaultRole.id },
+            const attached = await tx.user_Role.createMany({
+                data: [{ user_id: created.id, role_id: defaultRole.id }],
             });
+            // Fail loudly nếu insert không thành công — không để silent gap tái diễn
+            if (attached.count !== 1) {
+                throw createAppError('INTERNAL_SERVER_ERROR', `Failed to attach default role for user ${created.id}`);
+            }
 
             return created;
         });
+
+        // Bắt buộc: cache roles (TTL 120s) phải được invalidate ngay sau commit,
+        // nếu không request kế tiếp trong TTL window vẫn thấy roles rỗng dù DB đã đúng
+        await invalidateUserRoles(user.id);
 
         return this.issueTokens(user.id);
     }
