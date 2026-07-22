@@ -239,10 +239,12 @@ export class PlayerController extends Controller {
     return this.service.bulkDeleteTeamPlayers(team_id, body); // reason đã nằm trong body
   }
 
-  // FIX: thiếu @Security hoàn toàn — bất kỳ ai cũng bulk-tạo Player/TeamPlayer
-  // + gán role vào bất kỳ team_id nào không cần auth. Đây là lỗ hổng nghiêm
-  // trọng nhất trong file, không phải cosmetic.
-  @Security("jwt", ["admin", "organizing", "leader"])
+  // FIX (FORBIDDEN bug): thêm "user" và "player" vào scope — trước đây chỉ có
+  // ["admin", "organizing", "leader"], khiến user thường (role "user") không thể
+  // import Excel sau khi tạo đội / đăng ký giải (dù đã đăng nhập hợp lệ).
+  // Cùng pattern với addPlayerToTeam và createPlayerForTeamWithUser đã có "user"+"player".
+  // Service layer tự enforce season_team ownership thông qua getSeasonTeamRosterConstraints.
+  @Security("jwt", ["admin", "organizing", "leader", "user", "player"])
   @Post("{team_id}/team-players/import")
   @Consumes("multipart/form-data")
   async importTeamPlayers(

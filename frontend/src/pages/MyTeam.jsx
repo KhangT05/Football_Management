@@ -5,7 +5,7 @@ import {
   Search, ArrowUpDown, CreditCard, Calendar,
   DollarSign, Flame, Award, Ban, Activity,
   ChevronDown, Plus, Star,
-  ArrowRightLeft,
+  ArrowRightLeft, FileSpreadsheet,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -474,6 +474,25 @@ export default function MyTeam() {
   const [playerStatPage, setPlayerStatPage] = useState(1);
   const [playerStatPerPage, setPlayerStatPerPage] = useState(10);
 
+  // FIX: chỉ cho phép thêm/import cầu thủ khi:
+  // 1. Đã có activeSeasonTeamId (team đã đăng ký vào giải nào đó)
+  // 2. Trạng thái đăng ký là 'approved' hoặc 'active' (không phải 'pending')
+  // 3. Roster chưa đầy (< 20)
+  // Khi pending: đang chờ admin duyệt → không thể thêm cầu thủ vào roster giải này.
+  const canAddPlayers = useMemo(() => {
+    if (!activeTeam?.activeSeasonTeamId) return false;
+    const regStatus = activeTeam?.registrationStatus;
+    return ['approved', 'active'].includes(regStatus) && players.length < 20;
+  }, [activeTeam?.activeSeasonTeamId, activeTeam?.registrationStatus, players.length]);
+
+  const addPlayerDisabledReason = useMemo(() => {
+    if (!activeTeam?.activeSeasonTeamId) return 'Đội chưa đăng ký giải nào';
+    const regStatus = activeTeam?.registrationStatus;
+    if (regStatus === 'pending') return 'Đăng ký giải đang chờ duyệt — thêm cầu thủ sau khi được duyệt';
+    if (players.length >= 20) return 'Đội đã đủ 20 cầu thủ';
+    return '';
+  }, [activeTeam?.activeSeasonTeamId, activeTeam?.registrationStatus, players.length]);
+
   useEffect(() => { if (allSeasons.length > 0 && !activeMatchSeasonId) setActiveMatchSeasonId(allSeasons[0].id); }, [allSeasons]); // eslint-disable-line
 
   const { data: matches = [], isLoading: isLoadingMatches } = useTeamMatches(
@@ -658,6 +677,14 @@ export default function MyTeam() {
   const handleImportExcel = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Guard: cần có activeSeasonTeamId để import — không có thì URL sẽ là /players/null/...
+    if (!activeTeam?.activeSeasonTeamId) {
+      toast.error('Đội chưa đăng ký tham gia giải nào — không thể import cầu thủ.');
+      e.target.value = null;
+      return;
+    }
+
     importExcel.mutate(file, {
       onSuccess: (res) => {
         const result = res?.data ?? res;
@@ -770,10 +797,11 @@ export default function MyTeam() {
         {!isLoading && activeTeam?.status === 'approved' && activeTeam?.registrationStatus === 'pending' && (
           <div className="bg-navy border border-navy-light p-5 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-slide-up">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="p-2 bg-red-500/20 rounded-xl shrink-0"><AlertTriangle className="w-6 h-6 text-red-500" /></div>
+              <div className="p-2 bg-amber-500/20 rounded-xl shrink-0"><AlertTriangle className="w-6 h-6 text-amber-500" /></div>
               <div>
-                <p className="text-red-500 font-black text-lg mb-1 tracking-tight">Chờ duyệt tham gia giải</p>
-                <p className="text-red-400 font-medium">Yêu cầu tham gia giải <strong>{activeTeam.season}</strong> đang chờ Admin xác nhận.</p>
+                <p className="text-amber-400 font-black text-lg mb-1 tracking-tight">Chờ duyệt tham gia giải</p>
+                <p className="text-amber-500/80 font-medium">Yêu cầu tham gia giải <strong>{activeTeam.season}</strong> đang chờ Admin xác nhận.</p>
+                <p className="text-amber-600/60 text-sm mt-1">Bạn sẽ có thể thêm cầu thủ sau khi đăng ký được duyệt.</p>
               </div>
             </div>
           </div>
@@ -785,13 +813,41 @@ export default function MyTeam() {
               <div className="p-2 bg-emerald-500/20 rounded-xl shrink-0"><CheckCircle2 className="w-6 h-6 text-emerald-400" /></div>
               <div>
                 <p className="text-emerald-400 font-black text-lg mb-1 tracking-tight">Đăng ký thành công!</p>
-                <p className="text-emerald-500/80 font-medium">Đội đã được duyệt tham gia <strong>{activeTeam.season}</strong>. Thanh toán lệ phí để bốc thăm chia bảng.</p>
+                <p className="text-emerald-500/80 font-medium">Đội đã được duyệt tham gia <strong>{activeTeam.season}</strong>. Giờ bạn có thể thêm cầu thủ vào đội!</p>
               </div>
             </div>
-            <button onClick={handleOpenPayment}
-              className="px-6 py-3.5 shrink-0 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap">
-              <CreditCard className="w-5 h-5" /> Thanh toán
-            </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              {/* Import Excel nhanh — shortcut không cần mở modal */}
+              <div className="relative">
+                <input
+                  type="file"
+                  id="quick-import-excel"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleImportExcel}
+                  disabled={importExcel.isPending}
+                />
+                <label
+                  htmlFor="quick-import-excel"
+                  className={`px-5 py-3.5 shrink-0 bg-blue-500/20 hover:bg-blue-500 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-black rounded-xl transition-all flex items-center gap-2 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap cursor-pointer ${
+                    importExcel.isPending ? 'opacity-70 pointer-events-none' : ''
+                  }`}
+                >
+                  {importExcel.isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang import...</>
+                    : <><FileSpreadsheet className="w-4 h-4" /> Import Excel</>
+                  }
+                </label>
+              </div>
+              <button onClick={openAddModal}
+                className="px-5 py-3.5 shrink-0 bg-blue-500/20 hover:bg-blue-500 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-black rounded-xl transition-all flex items-center gap-2 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap">
+                <UserPlus className="w-4 h-4" /> Thêm cầu thủ
+              </button>
+              <button onClick={handleOpenPayment}
+                className="px-6 py-3.5 shrink-0 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-3 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap">
+                <CreditCard className="w-5 h-5" /> Thanh toán
+              </button>
+            </div>
           </div>
         )}
 
@@ -840,8 +896,15 @@ export default function MyTeam() {
                 className="bg-navy/60 backdrop-blur-xl text-white font-bold px-4 py-3 rounded-2xl hover:bg-navy transition-colors flex items-center gap-2 border border-navy-light shadow-lg hover:-translate-y-0.5 text-sm whitespace-nowrap">
                 <ArrowUpDown className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Thêm từ mùa khác</span>
               </button>
-              <button onClick={openAddModal} disabled={players.length >= 20}
-                className="bg-linear-to-r from-blue-500 to-indigo-600 text-white font-black px-4 py-3 rounded-2xl hover:from-blue-400 hover:to-indigo-500 flex items-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.4)] text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 whitespace-nowrap">
+              <button
+                onClick={canAddPlayers ? openAddModal : () => toast.warning(addPlayerDisabledReason, 4000)}
+                disabled={players.length >= 20 && !addPlayerDisabledReason}
+                title={addPlayerDisabledReason || undefined}
+                className={`font-black px-4 py-3 rounded-2xl flex items-center gap-2 text-sm transition-all hover:-translate-y-0.5 whitespace-nowrap ${
+                  canAddPlayers
+                    ? 'bg-linear-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-400 hover:to-indigo-500 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+                    : 'bg-navy/60 border border-navy-light text-gray-500 cursor-not-allowed opacity-60'
+                }`}>
                 <UserPlus className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Thêm cầu thủ</span><span className="sm:hidden">Thêm CT</span>
               </button>
             </div>

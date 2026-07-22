@@ -292,6 +292,13 @@
 			},
 			"infer_typeofcreateUserSchema_": {
 				"properties": {
+					"role_ids": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					},
 					"phone": {
 						"type": "string"
 					},
@@ -3809,68 +3816,6 @@
 			"AdminAddSeasonTeamDto": {
 				"$ref": "#/components/schemas/infer_typeofadminAddSeasonTeamSchema_"
 			},
-			"infer_typeofTransferSeasonTeamBodySchema_": {
-				"properties": {
-					"add_players": {
-						"items": {
-							"properties": {
-								"role": {
-									"type": "string",
-									"enum": [
-										"player",
-										"captain",
-										"vice_captain"
-									]
-								},
-								"position": {
-									"type": "string",
-									"enum": [
-										"goalkeeper",
-										"defender",
-										"midfielder",
-										"forward"
-									]
-								},
-								"jersey_number": {
-									"type": "number",
-									"format": "double"
-								},
-								"player_id": {
-									"type": "number",
-									"format": "double"
-								}
-							},
-							"required": [
-								"position",
-								"jersey_number",
-								"player_id"
-							],
-							"type": "object"
-						},
-						"type": "array"
-					},
-					"carry_player_ids": {
-						"items": {
-							"type": "number",
-							"format": "double"
-						},
-						"type": "array"
-					},
-					"season_id": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"add_players",
-					"carry_player_ids",
-					"season_id"
-				],
-				"type": "object"
-			},
-			"TransferSeasonTeamDto": {
-				"$ref": "#/components/schemas/infer_typeofTransferSeasonTeamBodySchema_"
-			},
 			"infer_typeofupdateSeasonTeamStatusSchema_": {
 				"properties": {
 					"status": {
@@ -5787,10 +5732,6 @@
 						"type": "number",
 						"format": "double"
 					},
-					"date_of_birth": {
-						"type": "string",
-						"format": "date-time"
-					},
 					"position": {
 						"type": "string",
 						"enum": [
@@ -5799,6 +5740,10 @@
 							"midfielder",
 							"forward"
 						]
+					},
+					"date_of_birth": {
+						"type": "string",
+						"format": "date-time"
 					},
 					"avatar": {
 						"type": "string"
@@ -9357,7 +9302,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9434,7 +9380,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9474,7 +9421,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9512,7 +9460,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9553,7 +9502,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9593,7 +9543,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9633,7 +9584,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -9685,7 +9637,8 @@
 						"jwt": [
 							"admin",
 							"user",
-							"organizing"
+							"organizing",
+							"leader"
 						]
 					}
 				],
@@ -10522,6 +10475,9 @@
 													"role": {
 														"type": "string"
 													},
+													"position": {
+														"type": "string"
+													},
 													"jersey_number": {
 														"type": "number",
 														"format": "double"
@@ -10547,6 +10503,7 @@
 													"left_at",
 													"joined_at",
 													"role",
+													"position",
 													"jersey_number",
 													"season_name",
 													"season_id",
@@ -12698,55 +12655,6 @@
 				]
 			}
 		},
-		"/seasonteams/{id}/transfer": {
-			"patch": {
-				"operationId": "TransferSeason",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/SeasonTeamWithRelations"
-								}
-							}
-						}
-					}
-				},
-				"description": "Chuyển team sang season khác. Ban tổ chức hoặc admin.",
-				"tags": [
-					"SeasonTeams"
-				],
-				"security": [
-					{
-						"jwt": [
-							"organizing"
-						]
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "id",
-						"required": true,
-						"schema": {
-							"format": "double",
-							"type": "number"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/TransferSeasonTeamDto"
-							}
-						}
-					}
-				}
-			}
-		},
 		"/seasonteams/{id}/status": {
 			"patch": {
 				"operationId": "UpdateStatus",
@@ -13194,7 +13102,7 @@
 						}
 					}
 				},
-				"description": "List seasons có thể xem standings.\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\n\nQuery params:\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\n  ?tournamentId=1\n  ?page=1&per_page=20\n  ?q=keyword&sort=start_date&direction=desc",
+				"description": "List seasons có thể xem standings.\r\nChỉ trả ongoing / finished / cancelled — loại upcoming và registration_open.\r\n\r\nQuery params:\r\n  ?status=ongoing|finished|cancelled  (default: tất cả 3 status)\r\n  ?tournamentId=1\r\n  ?page=1&per_page=20\r\n  ?q=keyword&sort=start_date&direction=desc",
 				"tags": [
 					"Seasons"
 				],
@@ -13433,7 +13341,7 @@
 						}
 					}
 				},
-				"description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\n(theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho\naudit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có\nđường tắt nào set 'cancelled' mà thiếu cancel_reason.",
+				"description": "Hủy season. Chỉ hợp lệ khi status hiện tại là upcoming/registration_open/ongoing\r\n(theo CANCELLABLE_FROM trong service). cancel_reason bắt buộc — dùng cho\r\naudit/thông báo. Route riêng, tách khỏi PATCH {id}/status — không có\r\nđường tắt nào set 'cancelled' mà thiếu cancel_reason.",
 				"tags": [
 					"Seasons"
 				],
@@ -13482,7 +13390,7 @@
 						}
 					}
 				},
-				"description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\n(id, status) — dùng cho registration_open/ongoing/finished, organizing bấm\ntay song song với cron SeasonService.runAutoTransitions().",
+				"description": "FIX: service.updateStatus() không còn nhận `meta`/cancel_reason —\r\ncancelled đã tách hẳn sang cancelSeason() ở trên, và\r\nUpdateSeasonStatusSchema loại 'cancelled' khỏi enum hợp lệ nên\r\nbody.cancel_reason không còn tồn tại trong UpdateSeasonStatusDto (gọi\r\n`body.cancel_reason` cũ sẽ là lỗi biên dịch TS). Chỉ còn truyền\r\n(id, status) — dùng cho registration_open/ongoing/finished, organizing bấm\r\ntay song song với cron SeasonService.runAutoTransitions().",
 				"tags": [
 					"Seasons"
 				],
@@ -13553,7 +13461,7 @@
 						}
 					}
 				},
-				"description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\ncho organizing/ops, không phải cách vận hành chính.",
+				"description": "Trigger thủ công cron auto-transition (registration_open→ongoing khi\r\nstart_date đã tới, ongoing→finished khi end_date đã tới). Dùng để:\r\n  - Debug/verify logic trước khi wire scheduler thật (node-cron/BullMQ).\r\n  - Chạy bù thủ công nếu scheduler bị down một khoảng thời gian.\r\nKHÔNG thay thế scheduler — production vẫn cần cron gọi định kỳ\r\n`seasonService.runAutoTransitions()`, endpoint này chỉ là escape hatch\r\ncho organizing/ops, không phải cách vận hành chính.",
 				"tags": [
 					"Seasons"
 				],
@@ -15653,7 +15561,9 @@
 						"jwt": [
 							"admin",
 							"organizing",
-							"leader"
+							"leader",
+							"user",
+							"player"
 						]
 					}
 				],

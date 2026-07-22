@@ -160,7 +160,9 @@ export const playerApi = {
    * @param {FormData} formData
    */
   importTeamPlayers: (teamId, formData) =>
-    axiosClient.post(`/players/${teamId}/team-players/import`, formData),
+    axiosClient.post(`/players/${teamId}/team-players/import`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   /**
 * Thêm cầu thủ vào đội + tự tạo tài khoản nếu email chưa tồn tại (gửi invite email)
 * POST /players/{teamId}/team-players/create-with-user

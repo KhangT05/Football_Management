@@ -160,7 +160,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofcreateUserSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"phone":{"dataType":"string","required":true},"password":{"dataType":"string","required":true},"email":{"dataType":"string","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"role_ids":{"dataType":"array","array":{"dataType":"double"}},"phone":{"dataType":"string","required":true},"password":{"dataType":"string","required":true},"email":{"dataType":"string","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateUserDto": {
@@ -876,16 +876,6 @@ const models: TsoaRoute.Models = {
         "type": {"ref":"infer_typeofadminAddSeasonTeamSchema_","validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "infer_typeofTransferSeasonTeamBodySchema_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"add_players":{"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"role":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["player"]},{"dataType":"enum","enums":["captain"]},{"dataType":"enum","enums":["vice_captain"]}]},"position":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}],"required":true},"jersey_number":{"dataType":"double","required":true},"player_id":{"dataType":"double","required":true}}},"required":true},"carry_player_ids":{"dataType":"array","array":{"dataType":"double"},"required":true},"season_id":{"dataType":"double","required":true}},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TransferSeasonTeamDto": {
-        "dataType": "refAlias",
-        "type": {"ref":"infer_typeofTransferSeasonTeamBodySchema_","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdateSeasonTeamStatusSchema_": {
         "dataType": "refAlias",
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"status":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["approved"]},{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["eliminated"]},{"dataType":"enum","enums":["withdrawn"]}],"required":true}},"validators":{}},
@@ -1338,7 +1328,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "infer_typeofupdatePlayerSchema_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"nationality":{"dataType":"string"},"weight":{"dataType":"double"},"height":{"dataType":"double"},"date_of_birth":{"dataType":"datetime"},"position":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}]},"avatar":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"nationality":{"dataType":"string"},"weight":{"dataType":"double"},"height":{"dataType":"double"},"position":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["goalkeeper"]},{"dataType":"enum","enums":["defender"]},{"dataType":"enum","enums":["midfielder"]},{"dataType":"enum","enums":["forward"]}]},"date_of_birth":{"dataType":"datetime"},"avatar":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdatePlayerDto": {
@@ -2662,7 +2652,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 direction: {"in":"query","name":"direction","dataType":"union","subSchemas":[{"dataType":"enum","enums":["asc"]},{"dataType":"enum","enums":["desc"]}]},
         };
         app.get('/users',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findAll)),
 
@@ -2698,7 +2688,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.get('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.findById)),
 
@@ -2734,7 +2724,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"CreateUserDto"},
         };
         app.post('/users',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.create)),
 
@@ -2771,7 +2761,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateUserDto"},
         };
         app.patch('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.update)),
 
@@ -2807,7 +2797,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.delete('/users/:id',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.softDelete)),
 
@@ -2843,7 +2833,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
         };
         app.patch('/users/:id/restore',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.restore)),
 
@@ -2880,7 +2870,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 avatar: {"in":"formData","name":"avatar","required":true,"dataType":"file"},
         };
         app.patch('/users/:id/avatar',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             upload.fields([
                 {
                     name: "avatar",
@@ -2923,7 +2913,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 body: {"in":"body","name":"body","required":true,"ref":"ChangePasswordDto"},
         };
         app.patch('/users/:id/password',
-            authenticateMiddleware([{"jwt":["admin","user","organizing"]}]),
+            authenticateMiddleware([{"jwt":["admin","user","organizing","leader"]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.updatePassword)),
 
@@ -5352,44 +5342,6 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsSeasonTeamController_transferSeason: Record<string, TsoaRoute.ParameterSchema> = {
-                id: {"in":"path","name":"id","required":true,"dataType":"double"},
-                body: {"in":"body","name":"body","required":true,"ref":"TransferSeasonTeamDto"},
-                req: {"in":"request","name":"req","required":true,"dataType":"object"},
-        };
-        app.patch('/seasonteams/:id/transfer',
-            authenticateMiddleware([{"jwt":["organizing"]}]),
-            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController)),
-            ...(fetchMiddlewares<RequestHandler>(SeasonTeamController.prototype.transferSeason)),
-
-            async function SeasonTeamController_transferSeason(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsSeasonTeamController_transferSeason, request, response });
-
-                const container: IocContainer = typeof iocContainer === 'function' ? (iocContainer as IocContainerFactory)(request) : iocContainer;
-
-                const controller: any = await container.get<SeasonTeamController>(SeasonTeamController);
-                if (typeof controller['setStatus'] === 'function') {
-                controller.setStatus(undefined);
-                }
-
-              await templateService.apiHandler({
-                methodName: 'transferSeason',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSeasonTeamController_updateStatus: Record<string, TsoaRoute.ParameterSchema> = {
                 id: {"in":"path","name":"id","required":true,"dataType":"double"},
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateSeasonTeamStatusDto"},
@@ -7323,7 +7275,7 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
                 file: {"in":"formData","name":"file","required":true,"dataType":"file"},
         };
         app.post('/players/:team_id/team-players/import',
-            authenticateMiddleware([{"jwt":["admin","organizing","leader"]}]),
+            authenticateMiddleware([{"jwt":["admin","organizing","leader","user","player"]}]),
             upload.fields([
                 {
                     name: "file",
