@@ -42,8 +42,8 @@ export default function SearchTeams() {
   return (
     <div className="bg-navy-dark min-h-[calc(100vh-80px)] py-12 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-150 h-150 bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 z-0 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-200 h-200 bg-indigo-600 rounded-full blur-[150px] opacity-10 translate-y-1/3 -translate-x-1/4 z-0 pointer-events-none" />
       
       <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="mb-10 text-center animate-slide-up">

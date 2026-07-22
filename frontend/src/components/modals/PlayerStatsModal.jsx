@@ -101,7 +101,7 @@ export default function PlayerStatsModal({ player, onClose }) {
                     <h4 className="font-bold text-white uppercase tracking-wider">{tournament.tournament_name}</h4>
                   </div>
                   <div className="p-4 overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[500px]">
+                    <table className="w-full text-left border-collapse min-w-125">
                       <thead>
                         <tr className="border-b border-navy-light/50">
                           <th className="py-3 px-4 font-bold text-gray-400 text-xs uppercase tracking-wider">Mùa giải</th>

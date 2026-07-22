@@ -13,7 +13,7 @@ import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
 import useTeamUiStore from '../store/teamUiStore';
 import { useShallow } from 'zustand/react/shallow';
-import { matchApi, playerApi } from '../api';
+import { matchApi } from '../api';
 import PlayerRowSkeleton from '../components/skeletons/PlayerRowSkeleton';
 import Pagination from '../components/ui/Pagination';
 import LineupBuilderModal from '../components/modals/LineupBuilderModal';
@@ -40,7 +40,6 @@ import {
   useCopyRosterMutation,
 } from '../queries/useMyTeamQueries';
 import SeasonRegistrationModal from '../components/myteam/SeasonRegistrationModal';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import TransferPlayerModal from '../components/myteam/TransferPlayerModal';
 // ─── Constants & format helpers ─────────────────────────────
 
@@ -406,7 +405,7 @@ export default function MyTeam() {
   const { data: detailData, isLoading: loadingDetail } = useTeamDetail(activeTeamId);
 
   const teamBase = detailData?.team ?? null;
-  const seasonTeams = detailData?.seasonTeams ?? [];
+  const seasonTeams = useMemo(() => detailData?.seasonTeams ?? [], [detailData?.seasonTeams]);
 
   // ── Season_team đang xem (tab Roster) — chọn tường minh, không đoán ngầm ─
   const [activeSeasonTeamId, setActiveSeasonTeamId] = useState(null);
@@ -482,16 +481,14 @@ export default function MyTeam() {
   const canAddPlayers = useMemo(() => {
     if (!activeTeam?.activeSeasonTeamId) return false;
     const regStatus = activeTeam?.registrationStatus;
-    return ['approved', 'active'].includes(regStatus) && players.length < 20;
+    return ['pending', 'approved', 'active'].includes(regStatus) && players.length < 20;
   }, [activeTeam?.activeSeasonTeamId, activeTeam?.registrationStatus, players.length]);
 
   const addPlayerDisabledReason = useMemo(() => {
     if (!activeTeam?.activeSeasonTeamId) return 'Đội chưa đăng ký giải nào';
-    const regStatus = activeTeam?.registrationStatus;
-    if (regStatus === 'pending') return 'Đăng ký giải đang chờ duyệt — thêm cầu thủ sau khi được duyệt';
     if (players.length >= 20) return 'Đội đã đủ 20 cầu thủ';
     return '';
-  }, [activeTeam?.activeSeasonTeamId, activeTeam?.registrationStatus, players.length]);
+  }, [activeTeam?.activeSeasonTeamId, players.length]);
 
   useEffect(() => { if (allSeasons.length > 0 && !activeMatchSeasonId) setActiveMatchSeasonId(allSeasons[0].id); }, [allSeasons]); // eslint-disable-line
 
@@ -801,8 +798,36 @@ export default function MyTeam() {
               <div>
                 <p className="text-amber-400 font-black text-lg mb-1 tracking-tight">Chờ duyệt tham gia giải</p>
                 <p className="text-amber-500/80 font-medium">Yêu cầu tham gia giải <strong>{activeTeam.season}</strong> đang chờ Admin xác nhận.</p>
-                <p className="text-amber-600/60 text-sm mt-1">Bạn sẽ có thể thêm cầu thủ sau khi đăng ký được duyệt.</p>
+                <p className="text-amber-600/80 font-bold text-sm mt-1">⚠ Lưu ý: Đội cần thêm đủ số lượng cầu thủ tối thiểu (14) để được duyệt.</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              {/* Import Excel nhanh */}
+              <div className="relative">
+                <input
+                  type="file"
+                  id="quick-import-excel-pending"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleImportExcel}
+                  disabled={importExcel.isPending}
+                />
+                <label
+                  htmlFor="quick-import-excel-pending"
+                  className={`px-5 py-3.5 shrink-0 bg-blue-500/20 hover:bg-blue-500 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-black rounded-xl transition-all flex items-center gap-2 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap cursor-pointer ${
+                    importExcel.isPending ? 'opacity-70 pointer-events-none' : ''
+                  }`}
+                >
+                  {importExcel.isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang import...</>
+                    : <><FileSpreadsheet className="w-4 h-4" /> Import Excel</>
+                  }
+                </label>
+              </div>
+              <button onClick={openAddModal}
+                className="px-5 py-3.5 shrink-0 bg-blue-500/20 hover:bg-blue-500 border border-blue-500/40 hover:border-blue-500 text-blue-300 hover:text-white font-black rounded-xl transition-all flex items-center gap-2 uppercase tracking-wider text-sm hover:-translate-y-0.5 whitespace-nowrap">
+                <UserPlus className="w-4 h-4" /> Thêm cầu thủ
+              </button>
             </div>
           </div>
         )}

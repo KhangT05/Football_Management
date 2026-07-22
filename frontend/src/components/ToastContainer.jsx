@@ -59,7 +59,7 @@ function ToastItem({ toast }) {
     <div
       className={`
         flex items-start gap-3 px-4 py-3.5 rounded-xl border shadow-2xl shadow-black/50
-        min-w-[280px] max-w-md relative overflow-hidden
+        min-w-70 max-w-md relative overflow-hidden
         transition-all duration-300 ease-out
         ${color.border}
         ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}

@@ -40,7 +40,7 @@ function FormationPitchSingleTeam({ starters, kit, events }) {
   }
   return (
     <div
-      className="relative flex flex-col justify-between h-full min-h-[450px] rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
+      className="relative flex flex-col justify-between h-full min-h-112.5 rounded-2xl overflow-hidden border border-emerald-900/40 py-3"
       style={{ background: 'repeating-linear-gradient(to bottom, #0f3d24 0px, #0f3d24 36px, #124a2c 36px, #124a2c 72px)' }}
     >
       <div className="relative rounded-2xl border border-navy-light overflow-hidden shadow-lg shadow-black/20 h-full w-full">
@@ -111,7 +111,7 @@ function PlayerColumn({ title, side, players, loading, kit, events, viewMode, on
           [1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg mb-3" />)
         ) : viewMode === 'formation' ? (
           <div className="space-y-4 h-full flex flex-col">
-            <div className="flex-1 min-h-[400px] sm:min-h-[450px] shrink-0">
+            <div className="flex-1 min-h-100 sm:min-h-112.5 shrink-0">
               <FormationPitchSingleTeam starters={starters} kit={kit} events={events} />
             </div>
             {subs.length > 0 && (
@@ -182,7 +182,7 @@ function EventTimeline({ events, status, allPlayers = [] }) {
         return (
           <div key={i} className={`flex items-center w-full relative z-10 ${isHome ? 'justify-start' : 'justify-end'}`}>
             <div className={`w-1/2 flex items-center ${isHome ? 'justify-end pr-4' : 'justify-start pl-4'}`}>
-              <div className={`flex flex-col ${isHome ? 'items-end' : 'items-start'} bg-navy border border-navy-light p-2.5 rounded-xl shadow-lg w-full max-w-[180px]`}>
+              <div className={`flex flex-col ${isHome ? 'items-end' : 'items-start'} bg-navy border border-navy-light p-2.5 rounded-xl shadow-lg w-full max-w-45`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {isHome && eventIcon(ev.type)}
                   <span className="text-xs font-black text-gray-400">{formatMinuteLabel(ev)}</span>
@@ -332,7 +332,7 @@ export default function MatchModal({ match, onClose }) {
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center justify-center w-full gap-4 sm:gap-10 pt-2">
-            <div className="flex flex-col items-center flex-1 max-w-[200px]">
+            <div className="flex flex-col items-center flex-1 max-w-50">
               <TeamAvatar name={homeName} side="home" logo={match.home_team?.logo} jersey={hasScore ? jerseys.home : null} size="md" isWinner={homeIsWinner} />
             </div>
             <div className="flex flex-col items-center shrink-0">
@@ -374,7 +374,7 @@ export default function MatchModal({ match, onClose }) {
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-center flex-1 max-w-[200px]">
+            <div className="flex flex-col items-center flex-1 max-w-50">
               <TeamAvatar name={awayName} side="away" logo={match.away_team?.logo} jersey={hasScore ? jerseys.away : null} size="md" isWinner={awayIsWinner} />
             </div>
           </div>
@@ -391,7 +391,7 @@ export default function MatchModal({ match, onClose }) {
         </div>
         {/* Body */}
         <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto lg:overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-full min-h-[1000px] lg:min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-full min-h-250 lg:min-h-0">
             <div className={`${activeTab !== 'lineup' ? 'hidden lg:flex' : 'flex'} flex-col min-h-0`}>
               <PlayerColumn
                 title={homeName}
