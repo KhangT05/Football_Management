@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { parseApiError } from '../utils/errorHelper';
 
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import useToastStore from '../store/toastStore';
 import useScheduleStore from '../store/scheduleStore';
 import { teamApi } from '../api';
 import { POSITION_LABELS } from '../utils/constants';
-import { mapPosition, getSquadLimit } from '../utils/position';
+import { mapPosition } from '../utils/position';
 import useLineupSelection from '../hooks/useLineupSelection';
 import PitchFormation from '../components/PitchFormation';
 
@@ -35,7 +35,6 @@ export default function ManageMatchLineup() {
 
   const matchDetailData = getMatchDetailFromCache(numericMatchId);
   const match = matchDetailData?.match;
-  const squadLimit = useMemo(() => getSquadLimit(match), [match]);
 
   useEffect(() => {
     async function loadData() {
@@ -75,7 +74,7 @@ export default function ManageMatchLineup() {
   const {
     selections, isLoading: lineupLoading, isSaving,
     startersCount, subsCount,
-    starters, toggleLineupType, handleDropOnPitch, setCaptain, save, roster, canSave,
+    starters, toggleLineupType, handleDropOnPitch, setCaptain, save, roster, canSave, maxStarters,
   } = useLineupSelection({
     matchId: numericMatchId,
     teamId: team?.id,
@@ -136,8 +135,8 @@ export default function ManageMatchLineup() {
           <div className="flex gap-4">
             <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-25">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Đá chính</span>
-              <span className={`text-xl font-black ${startersCount === squadLimit.max_players_per_team ? 'text-emerald-400' : 'text-blue-400'}`}>
-                {startersCount}/{squadLimit.max_players_per_team}
+              <span className={`text-xl font-black ${startersCount === maxStarters ? 'text-emerald-400' : 'text-blue-400'}`}>
+                {startersCount}/{maxStarters || '?'}
               </span>
             </div>
             <div className="bg-navy border border-navy-light rounded-xl p-3 flex flex-col items-center min-w-25">
@@ -150,7 +149,7 @@ export default function ManageMatchLineup() {
         <div className="bg-navy border border-navy-light p-4 rounded-xl mb-8 flex items-start gap-3 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
           <Info className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <p className="text-sm text-red-400 font-medium leading-relaxed">
-            Bạn cần chọn tối đa {squadLimit.max_players_per_team} cầu thủ đá chính và bầu 1 Đội trưởng (nhấn biểu tượng
+            Bạn cần chọn tối đa {maxStarters || '?'} cầu thủ đá chính và bầu 1 Đội trưởng (nhấn biểu tượng
             Ngôi sao bên cạnh cầu thủ). Kéo cầu thủ từ danh sách vào đúng hàng vị trí trên sơ đồ sân, hoặc dùng nút
             trong bảng bên dưới. Đội hình có thể được thay đổi trước khi trận đấu diễn ra ít nhất 10 phút.
           </p>
